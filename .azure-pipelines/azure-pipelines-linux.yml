@@ -1,6 +1,17 @@
 trigger:
 - master
 
+resources:
+  containers:
+  - container: centos6
+    image: simnibs/simnibs-testing:centos6
+  - container: centos7
+    image: simnibs/simnibs-testing:centos7
+  - container: ubuntu16
+    image: simnibs/simnibs-testing:ubuntu16
+  - container: ubuntu18
+    image: simnibs/simnibs-testing:ubuntu18
+
 # Build SimNIBS on a Centos 6 container
 jobs:
 - job: Build
@@ -8,7 +19,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: simnibs/simnibs-testing:centos6
+  container: centos6
 
   steps:
   - bash: |
@@ -34,19 +45,17 @@ jobs:
   strategy:
     matrix:
       CentOS6:
-        container: 'simnibs/simnibs-testing:centos6'
+        container: centos6
       CentOS7:
-        container: 'simnibs/simnibs-testing:centos7'
+        container: centos7
       Ubuntu16:
-        container: 'simnibs/simnibs-testing:ubuntu16'
+        container: ubuntu16
       Ubuntu18:
-        container: 'simnibs/simnibs-testing:ubuntu18'
+        container: ubuntu18
 
   pool:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
-
-  container: '$(container)'
 
   steps:
 
