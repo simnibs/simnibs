@@ -1,17 +1,6 @@
 trigger:
 - master
 
-resources:
-  containers:
-  - container: centos6
-    image: simnibs/simnibs-testing:centos6
-  - container: centos7
-    image: simnibs/simnibs-testing:centos7
-  - container: ubuntu16
-    image: simnibs/simnibs-testing:ubuntu16
-  - container: ubuntu18
-    image: simnibs/simnibs-testing:ubuntu18
-
 # Build SimNIBS on a Centos 6 container
 jobs:
 - job: Build
@@ -19,19 +8,16 @@ jobs:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: centos6
-
+  container: simnibs/simnibs-testing:centos6
   steps:
   - bash: |
       conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
     displayName: Create Conda environment
-
   - bash: |
       source activate simnibs_build
       python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
       cp environment_unix.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -39,23 +25,23 @@ jobs:
     displayName: Publish Artifact
 
 # Test SimNIBS in a series of containers
-# I use my own containers because Azure won't let me sudo to install a few nescessary things
 - job: 'Test'
   dependsOn: Build
   strategy:
     matrix:
-      CentOS6:
-        container: centos6
-      CentOS7:
-        container: centos7
-      Ubuntu16:
-        container: ubuntu16
-      Ubuntu18:
-        container: ubuntu18
-
+      centos6:
+        containerImage: simnibs/simnibs-testing:centos6
+      centos7:
+        containerImage: simnibs/simnibs-testing:centos7
+      ubuntu16:
+        containerImage: simnibs/simnibs-testing:ubuntu16
+      ubuntu18:
+        containerImage: simnibs/simnibs-testing:ubuntu18
   pool:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
+
+  container:  $[ variables['containerImage'] ]
 
   steps:
 
@@ -63,7 +49,6 @@ jobs:
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_unix.yml  > env.yml
       conda env create -f env.yml
     displayName: Create conda environment
-
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
@@ -82,7 +67,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+testRunTitle: 'Publish test results'
   
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
