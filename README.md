@@ -1,6 +1,7 @@
 # SimNIBS
 
 THIS REPOSITORY CONTAINS SIMNIBS 3.0 ONLY.
+
 SIMNIBS 3.0 IS STILL IN ALPHA VERSION.
 
 The main goal of SimNIBS is to calculate electric fields caused by Transcranial Electrical Stimulation (TES) and Transcranial Magnetic Stimulation (TMS).
@@ -58,20 +59,3 @@ We have included code or binaries from the following project to this repository:
 * [pygpc](https://github.com/konstantinweise/pygpc)
 
 For a full list of files and licenses, please see the 3RD-PARTY.md file
-
-## Contributing
-
-Contributions with new Python or MATLAB functionality or examples are welcome
-
-### Documentation
-
-- Please document *ALL* python functions, classes and modules following the [NumPy Standards](https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt)
-- Please document *ALL* MATLAB functions
-
-### Testing
-
-- Please write [Pytest](http://pytest.org/latest/) unit tests for all new functions.
-
-### Style
-
-- Please try to follow [PEP8](https://www.python.org/dev/peps/pep-0008/). Linters on your IDE are there to help, as well as tools such as [flake8](https://flake8.readthedocs.io/en/latest/)
