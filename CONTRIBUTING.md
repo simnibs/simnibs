@@ -1,11 +1,11 @@
-Basics
-======
+## Basics
 
 Development takes place in the **develop** branch. Right after cloning, please do
 ```
 git checkout develop
 ```
 
+## Setup
 For a smoother experience, I've set-up a few hooks to help development. Please ensure you are using those by
 
 ```
@@ -13,11 +13,10 @@ git config core.hooksPath .githooks
 ```
 
 
-Doing a New Release
-====================
+## Preparing a New Release
 
 
-1. Bring changes from the Master branch by merging
+1. From the develop branch, bring changes from the Master branch by merging
 ```
 git merge master
 ```
