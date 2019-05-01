@@ -1,0 +1,586 @@
+IBSR atlas:
+--------------------------------------------------------------------------------
+This atlas, based on the IBSR datasets (A,B). 
+
+CAT12 was used to segment the T1 data (Collins brain) and to estimate the 
+normalization parameter to project the probability maps each cytoarchitectonic 
+regions of Simon Eickhoffs Anatomy Toolbox (A) to IXI550 space. 
+A 3D median filter was used to remove outliers in the label map. ROI-IDs 
+were reseted to guaranty that left side ROIs were described by odd numbers, 
+whereas right-hand side ROIs only have even numbers. ROIs without side-alignment 
+in the original atlas like the brainstem were broken into a right and left part.
+Therefore, a Laplace filter was used to estimate the potential field of unaligned
+regions between the left an right potential. If most or no side alignment in the
+original map was available, a side label map from the anatomy toolbox of SPM was
+used.
+
+If you use these atlases, please have a look for the IBSR terms below. 
+
+
+Websites:    
+A) http://www.cma.mgh.harvard.edu/ibsr/
+B) http://www.nitrc.org/projects/ibsr
+
+
+References:
+See IBSR terms below.
+
+
+--------------------------------------------------------------------------------
+
+
+These data are
+
+*  (c) Copyright 2003-2004  The General Hospital Corporation        *
+*                      All Rights Reserved                          *
+
+PLEASE REFER ALL REQUESTS FOR COPIES OF THIS DATA DIRECTLY TO THE IBSR:
+
+               http://www.cma.mgh.harvard.edu/ibsr/
+
+BY USING THESE DATA, YOU AGREE TO 1) ACKNOWLEDGE that the data came from
+the ibsr, and 2) PARTICIPATE in the ibsr by providing your resulting
+segmentations for comparison and by providing (at least) a reference to
+a description of your methods.
+
+When publishing results using the data, acknowledge the source by including
+the statement, "The MR brain data sets and their manual segmentations were
+provided by the Center for Morphometric Analysis at Massachusetts General
+Hospital and are available at http://www.cma.mgh.harvard.edu/ibsr/."
+
+The purpose of this policy is to increase collaboration.  These data
+have been made available for research in automating segmentation.
+Specifically, you may not use and may not allow these data to be used
+for anatomical or morphological studies without explicit permission from
+the copyright holder.  You must also obtain permission before publishing
+any image or segmentation data.
+
+=---------------------------------------------------------------------=
+
+This README is for IBSR V2.0, the 1.5mm data distribution.
+
+For each subject we have: 
+
+  T1-weighted volumetric images that have been 'positionally
+  normalized' into the Talairach orientation (rotation only).
+  Also note that these data have been processed by the CMA
+  'autoseg' biasfield correction routines.
+
+  Segmentation results for 'general segmentation' of the
+  principle gray and white matter structures of the brain
+  including the: 3rd Ventricle, 4th Ventricle, Brain Stem,
+  and Left and Right: Accumbens area , Amygdala, Amygdala Anterior,
+  Caudate, Cerebellum Cortex, Cerebellum Exterior, Cerebellum White 
+  Matter, Cerebral Cortex, Cerebral Exterior, Cerebral White Matter,
+  Hippocampus, Inf Lat Vent, Lateral Ventricle, Pallidum, Putamen,
+  Thalamus Proper, VentralDC, and vessel.
+
+Image Resolutions are as follows:
+   #        X              Y        SLICE
+   -- -------------  -------------  -----
+   01 0.9375         0.9375         1.5
+   02 0.9375         0.9375         1.5
+   03 0.9375         0.9375         1.5
+   04 0.9375         0.9375         1.5
+   05 0.9375         0.9375         1.5
+   06 0.9375         0.9375         1.5
+   07 1.0            1.0            1.5
+   08 1.0            1.0            1.5
+   09 1.0            1.0            1.5
+   10 1.0            1.0            1.5
+   11 1.0            1.0            1.5
+   12 1.0            1.0            1.5
+   13 0.9375         0.9375         1.5
+   14 0.9375         0.9375         1.5
+   15 0.837053571429 0.837053571429 1.5
+   16 0.837053571429 0.837053571429 1.5
+   17 0.837053571429 0.837053571429 1.5
+   18 0.837053571429 0.837053571429 1.5
+
+The images are in two formats.  We include 'CMA-style'
+data (ID_*.img) and Analyze (ID_ana.img) versions of the data.
+CMA image files include a ASCII readable 'description file'
+(ID.info) which includes, amoungst other things, the data
+dimensionality, size, spatial resolutions, orientation, etc.
+This information should be sufficient for image data display.
+
+Segmentation files are also provided in the 'Native CMA'
+(ID_*.otl) outline format and as a filled volume in analyze
+format. The CMA .otl format is described as an appendix below.
+For the filled analyze formats,  the fill code represents the
+various structures thta were segmented.  The code-to-structure
+conversion is provided in another appendix below.  Also
+included are "trinary" representations of the segmentations.
+These are in Analyze format files where the voxel value has
+been mapped from the code-to-structure codes into the basic
+tissue types: backround, CSF, Gray Matter and White Matter.
+The codes are converted to the numbers 0, 1, 2, and 3 as
+described in the file tr_CMA_to_3 (attached below as an
+appendix).
+
+The Distribution:
+There are 18 subjects, named IBSR_01 - IBSR_18.  Each
+subject has two gzipped tar files, one for the CMA
+format and one for the Analyze format, e.g.,  called:
+
+  IBSR_01_CMA.tgz
+  IBSR_01_ANALYZE.tgz
+
+Use the GNU version of tar to unzip and extract the tar 
+file using:
+
+% tar zxvf IBSR_01_CMA.tgz
+% tar zxvf IBSR_01_ANALYZE.tgz
+
+This will create the IBSR_01 directory with the following
+sub-directory structure:
+
+$ ls IBSR_01/*/*
+IBSR_01/images/analyze:
+IBSR_01_ana.hdr  IBSR_01_ana.img  IBSR_01_ana.mat
+
+IBSR_01/images/CMA:
+IBSR_01_100.img  IBSR_01_14.img  IBSR_01_44.img  IBSR_01_74.img
+IBSR_01_101.img  IBSR_01_15.img  IBSR_01_45.img  IBSR_01_75.img
+IBSR_01_102.img  IBSR_01_16.img  IBSR_01_46.img  IBSR_01_76.img
+...
+IBSR_01_126.img  IBSR_01_3.img   IBSR_01_6.img   IBSR_01_9.img
+IBSR_01_127.img  IBSR_01_40.img  IBSR_01_70.img  IBSR_01.info
+IBSR_01_128.img  IBSR_01_41.img  IBSR_01_71.img
+IBSR_01_12.img   IBSR_01_42.img  IBSR_01_72.img
+IBSR_01_13.img   IBSR_01_43.img  IBSR_01_73.img
+
+BSR_01/segmentation/analyze:
+IBSR_01_seg_ana.hdr  IBSR_01_seg_ana.mat     IBSR_01_segTRI_ana.img
+IBSR_01_seg_ana.img  IBSR_01_segTRI_ana.hdr  IBSR_01_segTRI_ana.mat
+
+IBSR_01/segmentation/CMA:
+IBSR_01_seg_100.otl  IBSR_01_seg_29.otl  IBSR_01_seg_65.otl
+IBSR_01_seg_101.otl  IBSR_01_seg_2.otl   IBSR_01_seg_66.otl
+IBSR_01_seg_102.otl  IBSR_01_seg_30.otl  IBSR_01_seg_67.otl
+...
+IBSR_01_seg_25.otl   IBSR_01_seg_61.otl  IBSR_01_seg_98.otl
+IBSR_01_seg_26.otl   IBSR_01_seg_62.otl  IBSR_01_seg_99.otl
+IBSR_01_seg_27.otl   IBSR_01_seg_63.otl  IBSR_01_seg_9.otl
+IBSR_01_seg_28.otl   IBSR_01_seg_64.otl
+
+
+
+The largest compressed tar file is almost 5MB, all compressed tar files
+require just over 62MB, each uncompressed directory containing
+both Analyze and CMA data is around 136MB and all of the 
+uncompressed data requires 680MB.
+
+WARNING: Dan Withey reports that there seems to be an artifact
+         introduced by uncompressing the ".otl" files with WinZip
+
+    Some versions of WinZip (eg. ver 9.0) will open the CMA
+    tar archives.  For proper recovery of the mixed ascii-binary
+    .otl files The option "TAR file smart CR/LF conversion" under
+    Options-Configuration-Miscellaneous should be disabled.
+
+
+      #    Sex  age 
+     ---  ----------
+       1    M   37   
+       2    M   41   
+       3    F   JUV                 
+       4    M   JUV                 
+       5    M   41          
+       6    M   46
+       7    F   70
+       8    M   60
+       9    M   41
+      10    F   35
+      11    F   59
+      12    M   71
+      13    M   JUV
+      14    M   JUV
+      15    M    8
+      16    M    7
+      17    M    8
+      18    M   13
+
+
+GDF File Format
+----------------------------------------------------------------------
+GDF stands for Generic Data Format.
+
+GDF files have a main header that defines the defaults for the rest of
+the file.  The rest of the file is made up of "blocks".  Each block has
+a header and data.  The bulk of data should be stored in the data
+portion of the blocks.  The header must contain information describing
+the size and type of the bulk data, but can contain other associated
+descriptors (e.g a label) for that block.  The programmer will usually
+design the data structure such that information pertinent to the entire
+series of data blocks is assigned to the main header and is absent in
+the block headers. Information retrieval routines query the main header
+after determining field is absent in the block header, so a specified
+block header value overrides the main header value.  Headers are always
+ascii, both in memory and on file. The data blocks are always non-ascii
+in memory, but can be represented either as ascii or non-ascii on
+file.
+
+Here is an example (the gdf file is on the left and comments are on the
+right):
+
+GDF FILE VERSION3               |  Main header: version ID
+START MAIN HEADER               |  Main header:
+TYPE short                      |  Main header: field 0
+COL_NUM 2                       |  Main header: field 1
+ONUM 5                          |  Main header: ...etc...
+END MAIN HEADER                 |  Main header:
+
+START GDF HEADER                |  BLock 0 header:
+ROW_NUM 248                     |  Block 0 header: field 0
+SEED 309 301                    |  Block 0 header: field 1
+LABEL Tumor Boundary            |  Block 0 header: ...etc...
+END GDF HEADER                  |  Block 0 header:
+
+START POINTS                    |  Block 0 data:
+<data points>                   |  Block 0 data: bulk data here
+END POINTS                      |  Block 0 data:
+
+START GDF HEADER                |  BLock 1 header:
+ROW_NUM 248                     |  Block 1 header: field 0
+SEED 309 301                    |  Block 1 header: field 1
+LABEL Tumor Boundary            |  Block 1 header: ...etc...
+END GDF HEADER                  |  Block 1 header:
+
+START POINTS                    |  Block 1 data:
+<data points>                   |  Block 0 data: bulk data here
+END POINTS                      |  Block 1 data:
+
+START GDF HEADER                |  ...etc...
+
+Header fields are stored as text and consist of:
+
+        <field name> <field data>
+
+All gdf files will have the following fields:
+
+        TYPE <type>
+        COL_NUM <int>
+        ROW_NUM <int>
+
+Bulk data <data points> are stored in a COL_NUM by ROW_NUM array and
+have a <type> that can be any C data type:
+
+        char
+        short
+        double
+        float
+        long
+        unsigned char
+        unsigned short  
+        table  /* gdf specific type for using mulitple C data types */
+
+NOTE: All numbers in gdf files are assumed to be big endian since gdf
+was originally implemented on a Sun.  This means the most significant
+byte of multiple-byte words are stored first (lower addresses).
+
+
+
+Fill code to Structure List for Segmentation
+----------------------------------------------------------------------
+# tkmeditColorsCMA from the FreeSurfer distribution
+#
+# Format:
+# Fill_Value  Anatomic_Label   RGB Color values   Alpha_channel
+#
+#
+  0  Unknown                                  0    0    0     0
+  1  Left-Cerebral-Exterior                 205   62   78     0 
+  2  Left-Cerebral-White-Matter             225  225  225     0 
+  3  Left-Cerebral-Cortex                   205   62   78     0 
+  4  Left-Lateral-Ventricle                 120   18  134     0 
+  5  Left-Inf-Lat-Vent                      196   58  250     0 
+  6  Left-Cerebellum-Exterior                 0  148    0     0           
+  7  Left-Cerebellum-White-Matter           220  248  164     0    
+  8  Left-Cerebellum-Cortex                 230  148   34     0             
+  9  Left-Thalamus                            0  118   14     0 
+ 10  Left-Thalamus-Proper                     0  118   14     0          
+ 11  Left-Caudate                           122  186  220     0          
+ 12  Left-Putamen                           236   13  176     0          
+ 13  Left-Pallidum                           12   48  255     0          
+ 14  3rd-Ventricle                          204  182  142     0    
+ 15  4th-Ventricle                           42  204  164     0    
+ 16  Brain-Stem                             119  159  176     0    
+ 17  Left-Hippocampus                       220  216   20     0    
+ 18  Left-Amygdala                          103  255  255     0    
+ 19  Left-Insula                             80  196   98     0    
+ 20  Left-Operculum                          60   58  210     0    
+ 21  Line-1                                  60   58  210     0    
+ 22  Line-2                                  60   58  210     0    
+ 23  Line-3                                  60   58  210     0    
+ 24  CSF                                     60   60   60     0    
+ 25  Left-Lesion                            255  165    0     0    
+ 26  Left-Accumbens-area                    255  165    0     0          
+ 27  Left-Substancia-Nigra                    0  255  127     0 
+ 28  Left-VentralDC                         165   42   42     0        
+ 29  Left-undetermined                      135  206  235     0       
+ 30  Left-vessel                            160   32  240     0      
+ 31  Left-choroid-plexus                      0  255  255     0        
+ 32  Left-F3orb                             100   50  100     0   
+ 33  Left-lOg                               135   50   74     0   
+ 34  Left-aOg                               122  135   50     0   
+ 35  Left-mOg                                51   50  135     0   
+ 36  Left-pOg                                74  155   60     0   
+ 37  Left-Stellate                          120   62   43     0   
+ 38  Left-Porg                               74  155   60     0   
+ 39  Left-Aorg                              122  135   50     0  
+ 40  Right-Cerebral-Exterior                205   62   78     0   
+ 41  Right-Cerebral-White-Matter              0  225    0     0   
+ 42  Right-Cerebral-Cortex                  205   62   78     0   
+ 43  Right-Lateral-Ventricle                120   18  134     0   
+ 44  Right-Inf-Lat-Vent                     196   58  250     0   
+ 45  Right-Cerebellum-Exterior                0  148    0     0   
+ 46  Right-Cerebellum-White-Matter          220  248  164     0   
+ 47  Right-Cerebellum-Cortex                230  148   34     0   
+ 48  Right-Thalamus                           0  118   14     0   
+ 49  Right-Thalamus-Proper                    0  118   14     0   
+ 50  Right-Caudate                          122  186  220     0   
+ 51  Right-Putamen                          236   13  176     0   
+ 52  Right-Pallidum                         255   48  255     0   
+ 53  Right-Hippocampus                      220  216   20     0   
+ 54  Right-Amygdala                         103  255  255     0   
+ 55  Right-Insula                            80  196   98     0   
+ 56  Right-Operculum                         60   58  210     0   
+ 57  Right-Lesion                           255  165    0     0   
+ 58  Right-Accumbens-area                   255  165    0     0   
+ 59  Right-Substancia-Nigra                   0  255  127     0   
+ 60  Right-VentralDC                        165   42   42     0   
+ 61  Right-undetermined                     135  206  235     0   
+ 62  Right-vessel                           160   32  240     0   
+ 63  Right-choroid-plexus                     0  255  255     0   
+ 64  Right-F3orb                            100   50  100     0   
+ 65  Right-lOg                              135   50   74     0   
+ 66  Right-aOg                              122  135   50     0   
+ 67  Right-mOg                               51   50  135     0   
+ 68  Right-pOg                               74  155   60     0   
+ 69  Right-Stellate                         120   62   43     0   
+ 70  Right-Porg                              74  155   60     0   
+ 71  Right-Aorg                             122  135   50     0
+ 72  5th-Ventricle                          120  190  150     0
+ 73  Right_Thin_Cerebral_White_Matter       240  240  240     0 
+ 74  Left_Thin_Cerebral_White_Matter        240  240  240     0 
+ 80  Bone                                   100  100  100     0 
+ 81  Fat                                    255  255  255     0
+ 82  Bright-Unknown                         100  240  240     0
+ 83  Dark_Unknown                            20  100  100     0  
+ 84  Corpus_Callosum                         50  255  150     0
+
+Fill code to Structure List for Parcellations
+----------------------------------------------------------------------
+# tkmeditLatParcColorsCMA
+#
+# Format:
+# Fill_Value  Anatomic_Label   RGB Color values   Alpha_channel
+#
+     0	Unknown            0   0   0 0
+     1	Dummy              0   0   0 0
+     2	Left-FP            0 238   0 0
+     3	Left-INS         160  82  45 0
+     4	Left-F1          255 218 185 0
+     5	Left-F2            0 206 209 0
+     6	Left-F3t         127 255 212 0
+     7	Left-F3o         178  34  34 0
+     8	Left-PRG         238   0   0 0
+     9	Left-TP           34 139  34 0
+    10	Left-T1a         208  32 144 0
+    11	Left-T1p         173 255  47 0
+    12	Left-T2a         240 230 140 0
+    13	Left-T2p         173 216 230 0
+    14	Left-TO2         238 238   0 0
+    15	Left-T3a          50 205  50 0
+    16	Left-T3p         255   0 255 0
+    17	Left-TO3         176  48  96 0
+    18	Left-POG           0 255 127 0
+    19	Left-SPL         245 222 179 0
+    20	Left-SG          255 165   5 0
+    21	Left-SGa         255 165   0 0
+    22	Left-SGp         255  69   0 0
+    23	Left-AG          205  91  69 0
+    24	Left-OLs         255 192 203 0
+    25	Left-OLi         152 251 152 0
+    26	Left-CALC        100 149 237 0
+    27	Left-FMC         160  32 240 0
+    28	Left-SMC         238 130 238 0
+    29	Left-SC          238 201   0 0
+    30	Left-PAC         218 112 214 0
+    31	Left-CGa         255  62 150 0
+    32	Left-CGp           0   0 255 0
+    33	Left-PCN          39  64 139 0
+    34	Left-CN          250 128 114 0
+    35	Left-FOC         255 110 180 0
+    36	Left-PHa         255  99  71 0
+    37	Left-PHp         255 255   0 0
+    38	Left-LG            0 100   0 0
+    39	Left-TFa         205  92  92 0
+    40	Left-TFp         165  42  42 0
+    41	Left-TOF         153  50 204 0
+    42	Left-OF            0 255 255 0
+    43	Left-FO          221 160 221 0
+    44	Left-CO          135 206 235 0
+    45	Left-CaO         152 200 214 0
+    46	Left-CpO         153  29 242 0
+    47	Left-PO          210 180 140 0
+    48	Left-PP          255 215   0 0
+    49	Left-H1            0   0 128 0
+    50	Left-PT           46 139  87 0
+    51	Left-SCLC        102 205 170 0
+    52	Left-OP            0 255   0 0
+    53	Left-rm            0   0   0 0
+    54	Left-Hippocampus 220 216  20 0
+    55	Left-Amygdala     60  58 210 0
+    56	Left-F3orb       100  50 100 0
+    57	Left-lOg         135  50  74 0
+    58	Left-aOg         122 135  50 0
+    59	Left-mOg          51  50 135 0
+    60	Left-pOg          74  155 60 0
+    61	Right-FP            0 238   0 0
+    62	Right-INS         160  82  45 0
+    63	Right-F1          255 218 185 0
+    64	Right-F2            0 206 209 0
+    65	Right-F3t         127 255 212 0
+    66	Right-F3o         178  34  34 0
+    67	Right-PRG         238   0   0 0
+    68	Right-TP           34 139  34 0
+    69	Right-T1a         208  32 144 0
+    70	Right-T1p         173 255  47 0
+    71	Right-T2a         240 230 140 0
+    72	Right-T2p         173 216 230 0
+    73	Right-TO2         238 238   0 0
+    74	Right-T3a          50 205  50 0
+    75	Right-T3p         255   0 255 0
+    76	Right-TO3         176  48  96 0
+    77	Right-POG           0 255 127 0
+    78	Right-SPL         245 222 179 0
+    79	Right-SG          255 165   5 0
+    80	Right-SGa         255 165   0 0
+    81	Right-SGp         255  69   0 0
+    82	Right-AG          205  91  69 0
+    83	Right-OLs         255 192 203 0
+    84	Right-OLi         152 251 152 0
+    85	Right-CALC        100 149 237 0
+    86	Right-FMC         160  32 240 0
+    87	Right-SMC         238 130 238 0
+    88	Right-SC          238 201   0 0
+    89	Right-PAC         218 112 214 0
+    90	Right-CGa         255  62 150 0
+    91	Right-CGp           0   0 255 0
+    92	Right-PCN          39  64 139 0
+    93	Right-CN          250 128 114 0
+    94	Right-FOC         255 110 180 0
+    95	Right-PHa         255  99  71 0
+    96	Right-PHp         255 255   0 0
+    97	Right-LG            0 100   0 0
+    98	Right-TFa         205  92  92 0
+    99	Right-TFp         165  42  42 0
+   100	Right-TOF         153  50 204 0
+   101	Right-OF            0 255 255 0
+   102	Right-FO          221 160 221 0
+   103	Right-CO          135 206 235 0
+   104	Right-CaO         152 200 214 0
+   105	Right-CpO         153  29 242 0
+   106	Right-PO          210 180 140 0
+   107	Right-PP          255 215   0 0
+   108	Right-H1            0   0 128 0
+   109	Right-PT           46 139  87 0
+   110	Right-SCLC        102 205 170 0
+   111	Right-OP            0 255   0 0
+   112	Right-rm            0   0   0 0
+   113	Right-Hippocampus 220 216  20 0
+   114	Right-Amygdala     60  58 210 0
+   115	Right-F3orb       100  50 100 0
+   116	Right-lOg         135  50  74 0
+   117	Right-aOg         122 135  50 0
+   118	Right-mOg          51  50 135 0
+   119	Right-pOg          74  155 60 0
+   120	Medial              1   1   1 0
+
+
+tr_CMA_to_3
+----------------------------------------------------------------------
+0  0 
+1  0 
+2  3 
+3  2 
+4  1 
+5  1 
+6  0 
+7  3 
+8  2 
+9  2 
+10  2 
+11  2 
+12  2 
+13  2 
+14  1 
+15  1 
+16  3 
+17  2 
+18  2 
+19  2 
+20  2 
+21  0 
+22  0 
+23  0 
+24  1 
+25  0 
+26  2 
+27  2 
+28  2 
+29  0 
+30  0 
+31  0 
+32  0 
+33  0 
+34  0 
+35  0 
+36  0 
+37  0 
+38  0 
+39  0 
+40  0 
+41  3 
+42  2 
+43  1 
+44  1  
+45  0  
+46  3  
+47  2 
+48  2 
+49  2 
+50  2 
+51  2 
+52  2 
+53  2 
+54  2 
+55  2 
+56  2 
+57  0 
+58  2 
+59  2 
+60  2 
+61  0 
+62  0 
+63  0 
+64  0 
+65  0 
+66  0 
+67  0 
+68  0 
+69  0 
+70  0 
+71  0 
+72  0 
+73  0 
+74  0 
+80  0 
+81  0 
+82  0 
+83  0 
+84  3
+--------------------------------------------------------------------------------
+$Id: ibsr.txt 909 2016-03-21 14:56:45Z gaser $

@@ -1,0 +1,4 @@
+simnibs/include/* linguist-vendored
+simnibs/resources/* linguist-vendored
+simnibs/ccd-files/* linguist-vendored
+docs/* linguist-documentation

@@ -1,0 +1,19 @@
+name: simnibs_env
+channels:
+  - defaults
+dependencies:
+  - python>=3.7
+  - numpy>=1.16
+  - scipy>=1.2
+  - h5py>=2.9
+  - pyopengl
+  - pyqt
+  - pytest
+  - qt
+  - mock
+  - freeglut
+  - cython
+  - nomkl
+  - pip
+  - pip:
+    - nibabel>=2.3

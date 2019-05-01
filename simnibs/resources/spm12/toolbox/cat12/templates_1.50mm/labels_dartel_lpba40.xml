@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This is a Temporary file format -->
+  <atlas version="2.0">
+    <header>
+      <name>lpba40</name>
+      <version>1.0</version>
+      <description></description>
+      <url></url>
+      <licence>CC BY-NC</licence>
+      <coordinate_system>MNI</coordinate_system>
+      <type>Label</type>
+      <images>
+        <imagefile>lpba40.nii</imagefile>
+      </images>
+    </header>
+  <data>
+    <!-- could also include short_name, RGBA, XYZmm -->
+    <label><index>21</index><short_name>lSupFroG</short_name><name>Left Superior Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>22</index><short_name>rSupFroG</short_name><name>Right Superior Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>23</index><short_name>lMidFroG</short_name><name>Left Middle Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>24</index><short_name>rMidFroG</short_name><name>Right Middle Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>25</index><short_name>lInfFroG</short_name><name>Left Inferior Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>26</index><short_name>rInfFroG</short_name><name>Right Inferior Frontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>27</index><short_name>lPrcG</short_name><name>Left Precentral Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>28</index><short_name>rPrcG</short_name><name>Right Precentral Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>29</index><short_name>lMidOrbG</short_name><name>Left Middle Orbitofrontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>30</index><short_name>rMidOrbG</short_name><name>Right Middle Orbitofrontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>31</index><short_name>lLatOrbG</short_name><name>Left Lateral Orbitofrontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>32</index><short_name>rLatOrbG</short_name><name>Right Lateral Orbitofrontal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>33</index><short_name>lRecG</short_name><name>Left Gyrus Rectus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>34</index><short_name>rRecG</short_name><name>Right Gyrus Rectus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>41</index><short_name>lPoCG</short_name><name>Left Postcentral Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>42</index><short_name>rPoCG</short_name><name>Right Postcentral Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>43</index><short_name>lSupParG</short_name><name>Left Superior Parietal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>44</index><short_name>rSupParG</short_name><name>Right Superior Parietal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>45</index><short_name>lSupMarG</short_name><name>Left Supramarginal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>46</index><short_name>rSupMarG</short_name><name>Right Supramarginal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>47</index><short_name>lAngG</short_name><name>Left Angular Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>48</index><short_name>rAngG</short_name><name>Right Angular Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>49</index><short_name>lPCu</short_name><name>Left Precuneus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>50</index><short_name>rPCu</short_name><name>Right Precuneus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>61</index><short_name>lSupOccG</short_name><name>Left Superior Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>62</index><short_name>rSupOccG</short_name><name>Right Superior Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>63</index><short_name>lMidOccG</short_name><name>Left Middle Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>64</index><short_name>rMidOccG</short_name><name>Right Middle Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>65</index><short_name>lInfOccG</short_name><name>Left Inferior Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>66</index><short_name>rInfOccG</short_name><name>Right Inferior Occipital Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>67</index><short_name>lCun</short_name><name>Left Cuneus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>68</index><short_name>rCun</short_name><name>Right Cuneus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>81</index><short_name>lSupTemG</short_name><name>Left Superior Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>82</index><short_name>rSupTemG</short_name><name>Right Superior Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>83</index><short_name>lMidTemG</short_name><name>Left Middle Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>84</index><short_name>rMidTemG</short_name><name>Right Middle Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>85</index><short_name>lInfTemG</short_name><name>Left Inferior Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>86</index><short_name>rInfTemG</short_name><name>Right Inferior Temporal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>87</index><short_name>lParHipG</short_name><name>Left Parahippocampal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>88</index><short_name>rParHipG</short_name><name>Right Parahippocampal Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>89</index><short_name>lLinG</short_name><name>Left Lingual Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>90</index><short_name>rLinG</short_name><name>Right Lingual Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>91</index><short_name>lFusG</short_name><name>Left Fusiform Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>92</index><short_name>rFusG</short_name><name>Right Fusiform Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>101</index><short_name>lIns</short_name><name>Left Insula</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>102</index><short_name>rIns</short_name><name>Right Insula</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>121</index><short_name>lCinG</short_name><name>Left Cingulate Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>122</index><short_name>rCinG</short_name><name>Right Cingulate Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>161</index><short_name>lCau</short_name><name>Left Caudate</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>162</index><short_name>rCau</short_name><name>Right Caudate</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>163</index><short_name>lPut</short_name><name>Left Putamen</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>164</index><short_name>rPut</short_name><name>Right Putamen</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>165</index><short_name>lHip</short_name><name>Left Hippocampus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>166</index><short_name>rHip</short_name><name>Right Hippocampus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>181</index><short_name>bCBeL</short_name><name>Bothside Cerebellar Lobe</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>182</index><short_name>bBst</short_name><name>Bothside Brainstem</name><RGBA></RGBA><XYZmm></XYZmm></label>
+  </data>
+</atlas>

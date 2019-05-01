@@ -1,0 +1,309 @@
+#!/bin/bash
+LC_NUMERIC=C
+LC_COLLATE=C
+FSF_OUTPUT_FORMAT=nii.gz
+FSLOUTPUTTYPE=NIFTI_GZ
+
+NUMBER_OF_VERTICES=60000
+VOXSIZE=1 # voxel size used for conformed space
+STD_MNI=$FSLDIR/data/standard/MNI152_T1_1mm.nii.gz
+EXIT_ON_ERROR=1 # exit script when a called program returns an error 
+
+MRI2MESHPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" # directory containing bash scrips for mri2mesh
+SIMNIBSDIR=$(dirname $MRI2MESHPATH) #SIMNIBSDIR
+TEMPLATEPATH=$SIMNIBSDIR/resources/templates # directory containing mri2mesh template images
+# directory containing binaries
+case `uname` in
+	Linux )
+		BINDIR=${SIMNIBSDIR}/bin/linux
+	;;
+	Darwin )
+		BINDIR=${SIMNIBSDIR}/bin/osx
+	;;
+esac
+export LD_LIBRARY_PATH=$BINDIR${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+PRINT_USAGE() {
+echo 'USAGES:
+mri2mesh by Mirko Windhoff, Alexander Opitz, Axel Thielscher.
+mri2mesh --help    # display the complete help'
+}
+
+PRINT_HELP() {
+  echo 'mri2mesh -- Create an optimized tetrahedral FE head mesh from MR images.
+
+USAGE (depending on options):
+  mri2mesh [options] <subjectID> <input images>
+  <input images> depend on chosen option:
+    --all/--brain/--brainf: T1.nii.gz
+			    OR T1.nii.gz T2.nii.gz 
+			    OR T1.nii.gz T1fs.nii.gz T2.nii.gz T2fs.nii.gz
+    other options: no input images
+  input images are T1 and T2 weighted images with optional
+  fat suppressed (fs) versions.
+
+OPTIONS:
+ -h, --help     Print this help.
+ --version      Print the Version String.
+ --all          Run all steps of the workflow.
+   --brain      Prepare GM and WM surfaces
+		(calls FreeSurfer recon-all if no previous results available).
+   --brainf     Prepare GM and WM surfaces
+		(forces call of FreeSurfer recon-all; takes about 24h!).
+   --subcort    Prepare ventricles surface and cerebellum/brainstem surface
+   --head       Prepare CSF, skull and skin surfaces
+   --volumemesh Create a volume mesh of the segmented surfaces.
+   --mni	Create linear and non-linear registrations to MNI space
+   --mnimaskskull Downweight the skull intensity for FNIRT registration
+		  to prevent warping of bright skull into skin or brain
+		  (can improve registration for T1w images without fat suppression)
+ --numvertices=XX Sets the number of vertices for each WM hemisphere to the 
+		given value (default: 60000)
+ --keep_masks	when rerunning mri2mesh, do not recreate the masks for 
+		ventricles, cerebellum, csf, skull and skin as stored
+		in the mask_prep subdirectory. This has to be set after manually
+		editing some or all of these masks! Otherwise they are
+		overwritten!
+ --t2pial	The T2 image is used by FreeSurfer to improve the 
+		estimate of the pial surfaces (recommended only for high-res
+		with T2 images 1mm iso voxel)
+ --t2mask	The T2 image is used to build an inside-of-skull (without pial)
+		that is applied to bias the T1 to show some GM-pial contrast;
+		depending on the quality of the T2, this seems to work better
+		than the t2pial option provided by FreeSurfer
+ -c, --check    Show surfaces over the T1 image to check the segmentation.
+   --cache      Just show the surfaces, don`t remerge (faster when reopening).
+ --qc		quick check of the final regions overlaid over the T1fs_conform
+ --nocleanup	do not remove temporary files - useful for further development
+		or debugging
+
+DESCRIPTION:
+ This program produces a tetrahedral volume mesh to be used in FE simulations.
+ It is based on FreeSurfer, FSL, MeshFix and Gmsh (optionally MATLAB).
+ The following mesh files are produced in the working directory:
+   <subject name>.{msh,geo} - Gmsh Volume Mesh; Gmsh file to view the surfaces.
+   <subject name>.mat - MATLAB Volume mesh (optionally generated).
+ The following mesh files are produced in the m2m_<subjectID> subdirectory:
+  {wm,gm,cerebellum,csf,ventricles,skull,skin}.stl - STL surface meshes.
+
+KNOWN ISSUES:
+ It does not like space characters in file- or path-names. This includes the
+ directory from which you start it.
+
+AUTHORS:
+ Mirko Windhoff, Alexander Opitz, Axel Thielscher.'
+}
+
+
+# ======================================
+# Functions
+# ======================================
+
+e() {
+  # only stderr is stored to logfile
+  # does not work for all commands, due to redirection (e.g. do not use for cat) and the fact that
+  # the command will be executed in a subshell (e.g. do not use for cd)
+  echo '' >> $LOGFILE
+  echo "$@" >> $LOGFILE
+  "$@" 3>&1 1>&2 2>&3 3>&- | tee -a $LOGFILE
+
+  ERRCODE=${PIPESTATUS[0]}
+  if [ $ERRCODE -gt 0 ] && [ $EXIT_ON_ERROR = 1 ]; then
+	echo 'exiting mri2mesh after error'
+	echo 'error code' $ERRCODE >> $LOGFILE
+	echo 'exiting mri2mesh' >> $LOGFILE
+	echo '</pre></BODY></HTML>' >> $LOGFILE
+	exit 1
+  fi
+}
+
+e2() {
+  # logs error code rather than error text to file; also works for cd and cat
+  echo '' >> $LOGFILE
+  echo "$@" >> $LOGFILE
+  "$@"
+
+  ERRCODE=$?
+  if [ $ERRCODE -gt 0 ] && [ $EXIT_ON_ERROR = 1 ]; then
+	echo 'exiting mri2mesh after error'
+	echo 'error code' $ERRCODE >> $LOGFILE
+	echo 'exiting mri2mesh' >> $LOGFILE
+	echo '</pre></BODY></HTML>' >> $LOGFILE
+	exit 1
+  fi
+}
+
+SAY() { 
+  echo " "  | tee -a $LOGFILE
+  echo "==============================" | tee -a $LOGFILE
+  echo "==> $1 ..." | tee -a "$LOGFILE"
+  echo "==============================" | tee -a $LOGFILE
+}
+
+CALC() { printf "%.6f\n" `echo $@ |bc -l`;}
+
+
+# ======================================
+# Options Handling
+# ======================================
+OPTIONS=$*; # only stored for logging later on
+optarr=$($BINDIR/getopt -o 'chv' --long 'help,version,verbose,all,brain,brainf,subcort,head,volumemesh,check,cache,qc,nocleanup,numvertices:,\
+keep_masks,t2pial,t2mask,mni,mnimaskskull' -n "$0" -- "$@")
+eval declare -a optarr=($optarr); # change into array (for handling of strings with white spaces)
+run_brain=false;
+run_brainf=false;
+run_subcort=false;
+run_head=false;
+run_volumemesh=false;
+run_mni=false;
+run_check=false;
+run_cleanup=true;
+read_numvertices=false;
+KEEP_MASKS=false;
+check_cache=0;
+QUICKCHECK=0;
+T2PIAL=0;
+T2MASK=0;
+MNIMASKSKULL=0;
+for opt in "${optarr[@]}"; do # first check for --help or --version
+  case $opt in
+    -h|--help)
+      PRINT_HELP; exit;;
+    --version)
+      echo 'mri2mesh v. 3.0'; exit;;
+  esac
+done
+
+OPTNR=0; SKIPNEXT=false;
+for opt in "${optarr[@]}"; do
+  let OPTNR++
+
+  if $SKIPNEXT; then SKIPNEXT=false; continue; fi # skip list entries after '='
+  
+  case $opt in
+    --brain) run_brain=true; shift;;
+    --brainf) run_brainf=true; shift;;
+    --subcort) run_subcort=true; shift;;
+    --head) run_head=true; shift;;
+    --volumemesh) run_volumemesh=true; shift;;
+    --mni) run_mni=true; shift;;
+    --mnimaskskull) MNIMASKSKULL=1; shift;;
+    --all) run_brain=true; run_subcort=true; run_head=true; run_volumemesh=true; run_mni=true; shift;;
+    -c|--check) run_check=true; shift;;
+    --cache) check_cache=1; shift;;
+    --qc) run_check=true; QUICKCHECK=1; shift;;
+    --nocleanup) run_cleanup=false; shift;;
+    --numvertices) NUMBER_OF_VERTICES=${optarr[$OPTNR]}; echo 'number of WM vertices set to '$NUMBER_OF_VERTICES; SKIPNEXT=true; shift;;
+    --keep_masks) KEEP_MASKS=true; shift;;
+    --t2pial) T2PIAL=1; shift;;
+    --t2mask) T2MASK=1; shift;;
+    --) break;;
+    -*) echo "ERROR: Unimplemented option '$opt' chosen."; break;;   # Default.
+    *) break;;
+  esac
+done
+if ! ($run_brain || $run_brainf || $run_subcort || $run_head || $run_volumemesh || $run_check || $run_mni); then
+  echo "WARNING: No option given. Consider the rerun with option --all";
+fi
+
+
+
+# ======================================
+# assigning input variables and checking files
+# ======================================
+case $# in
+  1) SUBJECT=$1;;
+  2) SUBJECT=$1; T1=""; T1fs=$2; T2=""; T2fs="";;
+  3) SUBJECT=$1; T1=""; T1fs=$2; T2=$3; T2fs="";;
+  5) SUBJECT=$1; T1=$2; T1fs=$3; T2=$4; T2fs=$5;;
+  *) PRINT_USAGE; exit;;
+esac
+
+
+if ( $run_brain || $run_brainf )  &&  [ $# -lt 2 ]; then
+  echo "ERROR: This option requires MR images as input!"; exit 1;
+fi
+
+if [ $# -ge 2 ]; then
+  if [ ! -r $T1fs ]; then echo "ERROR: File $T1fs doesn't exist or is not readable!"; exit 1; fi
+fi
+
+if [ $# -ge 3 ]; then
+  if [ ! -r $T2   ]; then echo "ERROR: File $T2 doesn't exist or is not readable!"; exit 1; fi
+fi
+
+if [ $# -eq 5 ]; then
+  if [ ! -r $T1   ]; then echo "ERROR: File $T1 doesn't exist or is not readable!"; exit 1; fi
+  if [ ! -r $T2fs ]; then echo "ERROR: File $T2fs doesn't exist or is not readable!"; exit 1; fi
+fi
+
+
+# ======================================
+# start of main part
+# ======================================
+SUBJECTS_DIR=`pwd`
+M2M_DIR=`pwd`/m2m_$SUBJECT
+FS_DIR=`pwd`/fs_$SUBJECT
+if [ ! -d $M2M_DIR ]; then mkdir $M2M_DIR; fi
+if [ ! -d $M2M_DIR/tmp ]; then mkdir $M2M_DIR/tmp; fi
+MASK_DIR=$M2M_DIR/mask_prep
+if [ ! -d $MASK_DIR ]; then mkdir $MASK_DIR; fi
+EEG_DIR=$M2M_DIR/eeg_positions
+if [ ! -d $EEG_DIR ]; then mkdir $EEG_DIR; fi
+
+LOGFILE=$M2M_DIR/mri2mesh_log.html
+echo '<HTML><HEAD><TITLE>mri2mesh report</TITLE></HEAD><BODY><pre>' >> $LOGFILE
+
+SAY "mri2mesh started  `date`"
+START=$(date +%s)
+echo 'command line options: '$OPTIONS >> $LOGFILE
+
+if $run_brain || $run_brainf; then
+  SAY "--brain/--brainf: Preparing GM and WM surfaces"
+  source $MRI2MESHPATH/mri2mesh.brain.source.sh
+fi
+
+if $run_subcort; then
+  SAY "--subcort: Preparing ventricles surface and cerebellum/brainstem surface"
+  source $MRI2MESHPATH/mri2mesh.subcortical.source.sh
+fi
+
+if $run_head; then
+  SAY "--head: Preparing CSF, skull and skin surfaces"
+  source $MRI2MESHPATH/mri2mesh.head.source.sh
+fi
+
+if $run_volumemesh; then
+  SAY "--vol: Volume meshing"
+  source $MRI2MESHPATH/mri2mesh.volumemesh.source.sh
+fi
+
+if $run_mni; then
+  SAY "--mni: Registration to MNI space"
+  source $MRI2MESHPATH/mri2mesh.mni.source.sh
+fi
+
+if $run_check; then
+  SAY "--check: Opening freeview to check the quality of the segmentation."
+  source $MRI2MESHPATH/mri2mesh.check.source.sh
+  run_cleanup=false;
+fi
+
+if $run_cleanup; then
+  SAY "Cleanup: deleting intermediate files"
+  if [ "$(ls -A $M2M_DIR/tmp/*)" ]; then
+    e rm $M2M_DIR/tmp/*
+  else
+    e echo "tmp-directory is emtpy ... nothing to delete"
+  fi
+fi
+
+stty echo
+
+e echo "==> mri2mesh finished `date`."
+DIFF=$(( $(date +%s) - $START ))
+HRS=$(($DIFF/3600)); MTS=$(($DIFF/60 - $HRS*60)); SEC=$(($DIFF - $MTS*60 - $HRS*3600))
+e echo 'Duration: '$HRS':'$MTS':'$SEC' (hours:minutes:seconds)'
+
+echo '</pre></BODY></HTML>' >> $LOGFILE
+exit

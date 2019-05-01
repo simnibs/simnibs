@@ -1,0 +1,95 @@
+trigger:
+- master
+- test_release
+
+# Build SimNIBS on a Centos 6 container
+jobs:
+- job: Build
+  pool:
+    vmImage: 'ubuntu-16.04'
+    maxParallel: 4
+
+  container: simnibs/simnibs-testing:centos6
+  steps:
+  - bash: |
+      conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
+    displayName: Create Conda environment
+
+  - bash: |
+      source activate simnibs_build
+      python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
+      cp environment_unix.yml $(Build.ArtifactStagingDirectory)
+    displayName: Build SimNIBS
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: linux_wheel
+    displayName: Publish Artifact
+
+# Test SimNIBS in a series of containers
+- job: 'Test'
+  dependsOn: Build
+  pool:
+    vmImage: 'ubuntu-16.04'
+    maxParallel: 4
+
+  container: simnibs/simnibs-testing:ubuntu18
+    #TODO: use containers, for now I can't get root acces to install nescessary things
+    #The solution might be for me to build my own containters
+
+  steps:
+
+  - bash: |
+      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_unix.yml  > env.yml
+      conda env create -f env.yml
+    displayName: Create conda environment
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'linux_wheel'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download Wheel
+
+  - bash: |
+      source activate simnibs_env
+      pip install -f file://$(System.ArtifactsDirectory)/linux_wheel simnibs
+      pytest tests --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run unit tests
+  
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Publish test results'
+  
+# If everything went fine, we upload the wheel as a draft to GitHub
+- job: Release
+  dependsOn: Test
+  pool:
+    vmImage: 'ubuntu-16.04'
+
+  steps:
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'linux_wheel'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download Wheel
+
+  - task: GithubRelease@0
+    displayName: Edit GitHub Release
+    inputs: 
+      gitHubConnection: guilhermebs
+      repositoryName: guilhermebs/simnibs
+      action: edit
+      tag: dev
+      assets: $(System.ArtifactsDirectory)/linux_wheel/*
+      assetUploadMode: 'replace'
+      isDraft: true
+
+

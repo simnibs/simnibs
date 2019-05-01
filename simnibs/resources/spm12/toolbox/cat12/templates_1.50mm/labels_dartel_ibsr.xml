@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This is a temporary file format -->
+  <atlas version="2.0">
+    <header>
+      <name>ibsr</name>
+      <version>1.0</version>
+      <description></description>
+      <url>http://www.nitrc.org/projects/ibsr</url>
+      <licence>IBSR terms</licence>
+      <coordinate_system>MNI</coordinate_system>
+      <type>Label</type>
+      <images>
+        <imagefile>ibsr.nii</imagefile>
+      </images>
+    </header>
+  <data>
+    <!-- could also include short_name, RGBA, XYZmm -->
+    <label><index>0</index><short_name>BG</short_name><name>Background</name><RGBA></RGBA><XYZmm>-0.31,-16.26,21.53</XYZmm></label>
+    <label><index>1</index><short_name>lCbr</short_name><name>Left Cerebrum</name><RGBA></RGBA><XYZmm>-28.87,-19.36,15.29</XYZmm></label>
+    <label><index>2</index><short_name>rCbr</short_name><name>Right Cerebrum</name><RGBA></RGBA><XYZmm>30.58,-17.38,15.36</XYZmm></label>
+    <label><index>3</index><short_name>lLatVen</short_name><name>Left Lateral Ventricle</name><RGBA></RGBA><XYZmm>-11.97,-14.66,12.32</XYZmm></label>
+    <label><index>4</index><short_name>rLatVen</short_name><name>Right Lateral Ventricle</name><RGBA></RGBA><XYZmm>14.24,-13.08,12.32</XYZmm></label>
+    <label><index>5</index><short_name>lInfLatVen</short_name><name>Left Inferior Lateral Ventricle</name><RGBA></RGBA><XYZmm>-28.50,-11.10,-22.50</XYZmm></label>
+    <label><index>6</index><short_name>rInfLatVen</short_name><name>Right Inferior Lateral Ventricle</name><RGBA></RGBA><XYZmm>24.38,-15.12,-13.75</XYZmm></label>
+    <label><index>7</index><short_name>lCbe</short_name><name>Left Cerebellum</name><RGBA></RGBA><XYZmm>-21.87,-61.55,-38.01</XYZmm></label>
+    <label><index>8</index><short_name>rCbe</short_name><name>Right Cerebellum</name><RGBA></RGBA><XYZmm>23.26,-61.28,-37.64</XYZmm></label>
+    <label><index>9</index><short_name>lThaPro</short_name><name>Left Thalamus Proper</name><RGBA></RGBA><XYZmm>-8.74,-20.01,5.07</XYZmm></label>
+    <label><index>10</index><short_name>rThaPro</short_name><name>Right Thalamus Proper</name><RGBA></RGBA><XYZmm>10.82,-19.06,5.12</XYZmm></label>
+    <label><index>11</index><short_name>lCau</short_name><name>Left Caudate</name><RGBA></RGBA><XYZmm>-11.91,8.90,7.42</XYZmm></label>
+    <label><index>12</index><short_name>rCau</short_name><name>Right Caudate</name><RGBA></RGBA><XYZmm>14.21,9.92,7.29</XYZmm></label>
+    <label><index>13</index><short_name>lPut</short_name><name>Left Putamen</name><RGBA></RGBA><XYZmm>-24.84,0.38,-3.14</XYZmm></label>
+    <label><index>14</index><short_name>rPut</short_name><name>Right Putamen</name><RGBA></RGBA><XYZmm>26.97,1.80,-2.68</XYZmm></label>
+    <label><index>15</index><short_name>lPal</short_name><name>Left Pallidum</name><RGBA></RGBA><XYZmm>-20.34,-4.94,-3.33</XYZmm></label>
+    <label><index>16</index><short_name>rPal</short_name><name>Right Pallidum</name><RGBA></RGBA><XYZmm>22.05,-3.17,-3.49</XYZmm></label>
+    <label><index>17</index><short_name>l3thVen</short_name><name>Left Third Ventricle</name><RGBA></RGBA><XYZmm>-0.11,-9.66,-6.74</XYZmm></label>
+    <label><index>18</index><short_name>r3thVen</short_name><name>Right Third Ventricle</name><RGBA></RGBA><XYZmm>2.10,-9.52,-6.47</XYZmm></label>
+    <label><index>19</index><short_name>l4thVen</short_name><name>Left Fourth Ventricle</name><RGBA></RGBA><XYZmm>-1.85,-45.46,-33.90</XYZmm></label>
+    <label><index>20</index><short_name>r4thVen</short_name><name>Right Fourth Ventricle</name><RGBA></RGBA><XYZmm>3.53,-45.21,-33.62</XYZmm></label>
+    <label><index>21</index><short_name>lBst</short_name><name>Left Brainstem</name><RGBA></RGBA><XYZmm>-5.10,-30.02,-34.96</XYZmm></label>
+    <label><index>22</index><short_name>rBst</short_name><name>Right Brainstem</name><RGBA></RGBA><XYZmm>7.85,-30.78,-33.13</XYZmm></label>
+    <label><index>23</index><short_name>lHip</short_name><name>Left Hippocampus</name><RGBA></RGBA><XYZmm>-25.04,-22.66,-15.53</XYZmm></label>
+    <label><index>24</index><short_name>rHip</short_name><name>Right Hippocampus</name><RGBA></RGBA><XYZmm>27.06,-20.54,-16.10</XYZmm></label>
+    <label><index>25</index><short_name>lAmy</short_name><name>Left Amygdala</name><RGBA></RGBA><XYZmm>-21.70,-6.86,-20.12</XYZmm></label>
+    <label><index>26</index><short_name>rAmy</short_name><name>Right Amygdala</name><RGBA></RGBA><XYZmm>23.75,-5.47,-20.07</XYZmm></label>
+    <label><index>27</index><short_name>lAcc</short_name><name>Left Accumbens</name><RGBA></RGBA><XYZmm>-1.89,-28.86,5.20</XYZmm></label>
+    <label><index>28</index><short_name>rAcc</short_name><name>Right Accumbens</name><RGBA></RGBA><XYZmm>3.34,-27.81,5.54</XYZmm></label>
+    <label><index>29</index><short_name>lVenVen</short_name><name>Left Ventral Ventricle</name><RGBA></RGBA><XYZmm>-8.75,10.56,-9.48</XYZmm></label>
+    <label><index>30</index><short_name>rVenVen</short_name><name>Right Ventral Ventricle</name><RGBA></RGBA><XYZmm>10.80,11.97,-8.83</XYZmm></label>
+    <label><index>31</index><short_name>lBV</short_name><name>Left Blood-vessel</name><RGBA></RGBA><XYZmm>-8.25,-15.96,-12.41</XYZmm></label>
+    <label><index>32</index><short_name>rBV</short_name><name>Right Blood-vessel</name><RGBA></RGBA><XYZmm>10.18,-15.02,-12.50</XYZmm></label>
+  </data>
+</atlas>

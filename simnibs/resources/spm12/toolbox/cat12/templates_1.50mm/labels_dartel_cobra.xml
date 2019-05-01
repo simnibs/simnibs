@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This is a Temporary file format -->
+  <atlas version="2.0">
+    <header>
+      <name>cobra</name>
+      <version>1.0</version>
+      <description></description>
+      <url></url>
+      <licence>CC BY-NC</licence>
+      <coordinate_system>MNI</coordinate_system>
+      <type>Label</type>
+      <images>
+        <imagefile>cobra.nii</imagefile>
+      </images>
+    </header>
+  <data>
+    <!-- could also include short_name, RGBA, XYZmm -->
+    <label><index>1</index><short_name>rHCA1_2_3_Strat</short_name><name>Right Hippocampus CA1/CA2/Ca3/Subiculum/Stratum</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>4</index><short_name>rHCA4</short_name><name>Right Hippocampus CA4/Dentate Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>11</index><short_name>lAntCerebLI_II</short_name><name>Left Anterior Cerebellar Lobule I-II</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>12</index><short_name>lAntCerebLIII</short_name><name>Left Anterior Cerebellar Lobule III</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>13</index><short_name>lAntCerebLIV</short_name><name>Left Anterior Cerebellar Lobule IV</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>14</index><short_name>lAntCerebLV</short_name><name>Left Anterior Cerebellar Lobule V</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>15</index><short_name>lSupPostCerebLVI</short_name><name>Left Superior Posterior Cerebellar Lobule VI</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>16</index><short_name>lSupPostCerebCI</short_name><name>Left Superior Posterior Cerebellar Lobule Crus I</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>17</index><short_name>lSupPostCerebCII</short_name><name>Left Superior Posterior Cerebellar Lobule Crus II</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>18</index><short_name>lSupPostCerebLVIIB</short_name><name>Left Superior Posterior Cerebellar Lobule VIIB</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>19</index><short_name>lInfPostCerebLVIIIA</short_name><name>Left Inferior Posterior Cerebellar Lobule VIIIA</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>20</index><short_name>lInfPostCerebLVIIIB</short_name><name>Left Inferior Posterior Cerebellar Lobule VIIIB</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>21</index><short_name>lInfPostCerebLIX</short_name><name>Left Inferior Posterior Cerebellar Lobule IX-</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>22</index><short_name>lInfPostCerebLX</short_name><name>Left Inferior Posterior Cerebellar Lobule X</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>23</index><short_name>lAntCerebWM</short_name><name>Left Cerebellar White Matter</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>26</index><short_name>lAmy</short_name><name>Left Amygdala</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>101</index><short_name>lHCA1_2_3_Strat</short_name><name>Left Hippocampus CA1/CA2/Ca3/Subiculum/Stratum</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>104</index><short_name>lHCA4</short_name><name>Left Hippocampus CA4/Dentate Gyrus</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>111</index><short_name>rAntCerebLI_II</short_name><name>Right Anterior Cerebellar Lobule I-II</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>112</index><short_name>rAntCerebLIII</short_name><name>Right Anterior Cerebellar Lobule III</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>113</index><short_name>rAntCerebLIV</short_name><name>Right Anterior Cerebellar Lobule IV</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>114</index><short_name>rAntCerebLV</short_name><name>Right Anterior Cerebellar Lobule V</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>115</index><short_name>rSupPostCerebLVI</short_name><name>Right Superior Posterior Cerebellar Lobule VI</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>116</index><short_name>rSupPostCerebCI</short_name><name>Right Superior Posterior Cerebellar Lobule Crus I</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>117</index><short_name>rSupPostCerebCII</short_name><name>Right Superior Posterior Cerebellar Lobule Crus II</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>118</index><short_name>rSupPostCerebLVIIB</short_name><name>Right Superior Posterior Cerebellar Lobule VIIB</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>119</index><short_name>rInfPostCerebLVIIIA</short_name><name>Right Inferior Posterior Cerebellar Lobule VIIIA</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>120</index><short_name>rInfPostCerebLVIIIB</short_name><name>Right Inferior Posterior Cerebellar Lobule VIIIB</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>121</index><short_name>rInfPostCerebLIX</short_name><name>Right Inferior Posterior Cerebellar Lobule IX-</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>122</index><short_name>rInfPostCerebLX</short_name><name>Right Inferior Posterior Cerebellar Lobule X</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>123</index><short_name>rAntCerebWM</short_name><name>Right Cerebellar White Matter</name><RGBA></RGBA><XYZmm></XYZmm></label>
+    <label><index>126</index><short_name>rAmy</short_name><name>Right Amygdala</name><RGBA></RGBA><XYZmm></XYZmm></label>
+  </data>
+</atlas>

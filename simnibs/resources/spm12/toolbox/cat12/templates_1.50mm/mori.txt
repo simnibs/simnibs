@@ -1,0 +1,34 @@
+Mori atlas:
+--------------------------------------------------------------------------------
+This atlas based on the "Slicer3:Mori_Atlas_labels_JHU-MNI_SS_Type-II" atlas (A)
+of Version 2010-05. The T1 and label data was segmented and normalized by CAT12 
+to projected the atlas to IXI550 template space.
+If you use these atlases, please cite the references below.
+
+
+Websites:    
+A) http://www.spl.harvard.edu/publications/item/view/1883
+B) http://wiki.slicer.org/slicerWiki/index.php/Slicer3:Mori-Atlas_labels
+C) http://na-mic.org/Wiki/index.php/Projects:RegistrationLibrary:RegLib_C26
+
+
+References:
+Oishi K, Faria A, Jiang H, Li X, Akhter K, Zhang J, Hsu JT, 
+Miller MI, van Zijl PC, Albert M, Lyketsos CG, Woods R, Toga AW, Pike GB, 
+Rosa-Neto P, Evans A, Mazziotta J, Mori S. Atlas-based whole brain white matter 
+analysis using large deformation diffeomorphic metric mapping: application to 
+normal elderly and Alzheimer's disease participants. Neuroimage. 2009 46(2):486-99.
+
+
+--------------------------------------------------------------------------------
+We are pleased to make our white matter atlas available. The JHU-MNI-ss atlas, 
+which is often called "Eve Atlas", is based on a single-subject data as described 
+in Oishi et al, 2009. There are co-registered T1 (MPRAGE), T2, and DTI images as 
+well as white matter parcellation map (WMPM). Once the image of interest is 
+normalized to this atlas coordinate, the WMPM (which also includes gray matter 
+structures) can be superimposed for anatomical definition (e.g. which structure 
+is affected by a lesion or where exactly is the fMRI activation site) or automated
+segmentation. All images have 181x217x181 / 1x1x1 mm dimensions. See the Atlas 
+Look-up Table here (2). For more information please follow this link (3).
+--------------------------------------------------------------------------------
+$Id: mori.txt 909 2016-03-21 14:56:45Z gaser $

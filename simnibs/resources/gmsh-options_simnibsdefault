@@ -1,0 +1,57 @@
+// Gmsh Option File
+//
+// This file contains configuration options (preferences) that
+// are loaded each time Gmsh is launched. You can create this
+// file by hand, or let Gmsh generate it for you (with
+// 'File->Save Default Options'). This file can also be
+// automatically saved every time you quit Gmsh if the option
+// 'General.SaveOptions' is set.
+//
+General.BackgroundGradient = 0; // Draw background gradient (0=none, 1=vertical, 2=horizontal, 3=radial)
+General.FieldWidth = 449;
+General.MaxX = 150.0;
+General.MaxY = 150.0;
+General.MaxZ = 150.0;
+General.MinX = -150.0;
+General.MinY = -150.0;
+General.MinZ = -150.0;
+General.RotationX = 291.7866150042338;
+General.RotationY = 359.3666166267545;
+General.RotationZ = 153.1795186816626;
+General.ScaleX = 1.0;
+General.ScaleY = 1.0;
+General.ScaleZ = 1.0;
+General.TrackballQuaternion0 = 0.1344966115037936;
+General.TrackballQuaternion1 = -0.5443772043350141;
+General.TrackballQuaternion2 = -0.8061256037170713;
+General.TrackballQuaternion3 = 0.1890122533757437;
+General.TranslationX = 3.844376848011358;
+General.TranslationY = 3.699782618579281;
+General.VisibilityPositionX = 10;
+General.VisibilityPositionY = 443;
+General.VectorType = 1; // Default vector display type (for normals, etc.)
+Geometry.LineType = 0; // Display lines as solid color segments (0), 3D cylinders (1) or tapered cylinders (2)
+Geometry.PointSize = 3.4; // Display size of points (in pixels)
+Geometry.PointType = 1; // Display points as solid color dots (0) or 3D spheres (1)
+Geometry.Color.Points = {0,145,46}; // Normal geometry point color
+Mesh.AngleSmoothNormals = 180; // Threshold angle below which normals are not smoothed
+Mesh.ChacoHypercubeDim = 1; // (Adv. Chaco): Dimensional partitioning for a hypercube topology
+Mesh.ChacoMeshDim1 = 1; // (Adv. Chaco): Number of partitions in the first dimension of a mesh topology
+Mesh.SmoothNormals = 1; // Smooth the mesh normals?
+Mesh.SurfaceEdges = 0; // Display edges of surface mesh?
+Mesh.SurfaceFaces = 1; // Display faces of surface mesh?
+Mesh.VolumeEdges = 0; // Display edges of volume mesh?
+Mesh.Color.One = {230,230,230}; // Color 1 in color carousel
+Mesh.Color.Two = {129,129,129}; // Color 2 in color carousel
+Mesh.Color.Three = {104,163,255}; // Color 3 in color carousel
+Mesh.Color.Four = {255,239,179}; // Color 4 in color carousel
+Mesh.Color.Five = {255,166,133}; // Color 5 in color carousel
+Mesh.LightTwoSide = 1;
+View.CenterGlyphs = 1; // Center glyphs (arrows, numbers, etc.)? (0=left, 1=centered, 2=right)
+View.GlyphLocation = 1; // Glyph (arrow, number, etc.) location (1=center of gravity, 2=node)
+View.VectorType = 1; // Vector display type (1=segment, 2=arrow, 3=pyramid, 4=3D arrow, 5=displacement, 6=comet)
+View.TensorType = 6; // Tensor Visualization Type 6=ellipsoid
+View.LightTwoSide = 1;
+View.PointType=1;
+View.PointSize=7;
+View.Visible = 0;

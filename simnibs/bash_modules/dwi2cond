@@ -1,0 +1,325 @@
+#!/bin/bash
+
+: '
+    Preprocesses diffusion MRI data for conductivity tensor estimation in SimNIBS
+    Copyright (C) 2015 Axel Thielscher
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License or any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+'
+
+LC_NUMERIC=C
+LC_COLLATE=C
+FSF_OUTPUT_FORMAT=nii.gz
+FSLOUTPUTTYPE=NIFTI_GZ
+
+EXIT_ON_ERROR=true # exit script when a called program returns an error 
+
+DWI2CONDPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" # directory containing bash scrips for dwi2cond
+SIMNIBSDIR=$(dirname $DWI2CONDPATH) # SIMNIBSDIR
+# directory containing binaries
+case `uname` in
+	Linux )
+		BINDIR=${SIMNIBSDIR}/bin/linux
+	;;
+	Darwin )
+		BINDIR=${SIMNIBSDIR}/bin/osx
+	;;
+esac
+export LD_LIBRARY_PATH=$BINDIR${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+# ======================================
+# STANDARD SETTINGS
+# ======================================
+# general
+NOMOCO=false # do not use any kind of eddy current correction
+DOEDDY=false # use fsl eddy for eddy current correction
+
+# field map based distortion correction
+DWIDWELL='' # dwell-time of DWI-sequence in [ms]
+FMTEDIFF=2.46 # TE difference of field maps in [ms]
+UDIR='y-' # warping direction for distortion correction based on field maps
+DENOISE=true # denoise phase map using median filtering
+
+# FSL eddy
+READOUTTIME='' # read-out time of DWI sequence
+PHASEDIR='' # phase encoding direction of DWI sequence
+EDDYOPT='--repol' # detect and replace outlier slices, enabling it is "always a good idea" according to fsl user guide
+#EDDYOPT='--repol --slm=quadratic --flm=cubic --niter=20' # maybe overdoing it a bit...
+
+# FSL dtifit
+DTIFITOPT='--wls' # using weighted least squares to improve stability of tensor fitting
+
+# method for registration to T1
+T1REGMTHD='nonl'
+
+# which eddy binary?
+EDDYBINARY=$(which eddy)
+if [ -z $EDDYBINARY ]; then
+  EDDYBINARY=$(which eddy_openmp) # change to eddy_cuda if wished 
+  if [ -z $EDDYBINARY ]; then
+    echo 'ERROR: could not locate FSL eddy or eddy_openmp'
+    exit;
+  fi
+fi
+
+PRINT_USAGE() {
+echo 'USAGES:
+dwi2cond by Axel Thielscher.
+dwi2cond --help    # display the complete help'
+}
+PRINT_HELP() {
+echo 'dwi2cond -- Preprocess diffusion MRI images data
+	    for conductivity tensor estimation in SimNIBS.
+            It requires that mri2mesh or headreco was already run.
+
+USAGE (depending on options):
+  dwi2cond [options] <subjectID> <input files>
+  <input files> for options --all and --prepro:
+ 	DWIs bvals bvecs
+        OR DWIs bvals bvecs DWI_B0_revphase
+	OR DWIs bvals bvecs fieldmap_mag fieldmap_phase
+        OR DTI_tensor (output by FSL dtifit with option --save_tensor)
+  (no input images for options --T1reg and --check)
+  
+OPTIONS:
+ -h, --help     Print this help.
+ --version      Print the version string.
+ --all		--prepro and --T1reg
+ --prepro       preprocess data: eddy current correction, distortion
+                correction, DTI fitting
+ --T1reg 	registration to T1fs_conform
+   --regmthd=XX registration method (6dof, 12dof, nonl; standard is "nonl"
+		which calls FSL fnirt)
+ -c, --check    show final results for visual check
+
+SETTINGS for --prepro:
+ --nomoco	do not use any kind of motion/eddy-current correction;
+		not recommended
+ --eddy		use fsl eddy for motion/eddy-current correction
+		It requires a DWI sequence with diffusion directions that
+		span the entire sphere
+
+ When a fieldmap-based distortion correction is used:
+ --dwidwell=XX  dwell-time (or echo-spacing) of DWI sequence in [ms]
+		(NO standard value, MANDATORY when using a fieldmap)
+ --te_diff=XX   TE difference in [ms] needed to scale fieldmap to rad/s
+		(standard: 2.46, as set in the standard Siemens gre fieldmap)
+                A Siemens gre field map is assumed. It is first brought
+		into the range [0 ... 2*pi] by applying a scaling factor,
+	        and then scaled to [rad/s].
+                If you use a field map from another manufacturer, then scale
+		it to rad/s on your own, and set the TE difference to -1
+ --udir="XX"	warping direction for fieldmap-based distortion correction
+		(standard: "y-"; should be one of: x/x-/y/y-/z/z-)
+ --dontdenoise  do NOT denoise fieldmap using median filter
+
+ When FSL eddy is used:
+ --phasedir="XX" phase encoding direction of DWI sequence
+		 (NO standard value, MANDATORY when using FSL eddy; 
+                 should be one of: x/-x/y/-y/z/-z):
+ --readout=XX	readout time of DWI sequence in [s]
+
+DESCRIPTION:
+ This program preprocesses diffusion MRI data to create a diffusion tensor image
+ which is used for conductivity tensor estimation in SimNIBS. Unlike the first
+ version, the functionality of dwi2cond is now restricted to cover only the
+ steps up to the fitting of the diffusion tensors and coregistration to the
+ T1fs_conform image. Only single shell diffusion MRI data with a single phase
+ encoding direction for the EPI readout is supported.
+
+ The program can be used in the following ways:
+ * "Standard" eddy current correction based on affine registrations
+   (input files: DWIs bvals bvecs)
+ * Standard eddy current correction and distortion correction based on a field
+   map (input files: DWIs bvals bvecs fieldmap_mag fieldmap_phase)
+ * Eddy current correction using FSL eddy with or without distortion correction
+   using FSL topup (input files w/o topup: DWIs bvals bvecs; 
+   input files with topup: DWIs bvals bvecs DWI_B0_revphase)
+ * A preprocessed DTI tensor (written out by FSL dtifit using --save_tensor).
+   In this case, the data will be coregistered to the T1fs_conform image.
+
+AUTHOR:
+ Axel Thielscher.'
+}
+
+
+# ======================================
+# load functions
+# ======================================
+source $DWI2CONDPATH/dwi2cond.functions.source.sh
+
+
+# ======================================
+# Options Handling
+# ======================================
+OPTIONS=$*; # only stored for logging later on
+optarr=$($BINDIR/getopt -o 'chv' --long 'help,version,all,prepro,T1reg,check,udir:,dontdenoise,\
+readout:,te_diff:,dwidwell:,eddy,phasedir:,regmthd:,nomoco' -n "$0" -- "$@")
+eval declare -a optarr=($optarr); # change into array (for handling of strings with white spaces)
+run_prepro=false;
+run_t1reg=false;
+run_check=false;
+
+for opt in "${optarr[@]}"; do # first check for --help or --version
+  case $opt in
+    -h|--help)
+      PRINT_HELP; exit;;
+    -v|--version)
+      echo 'Version 0.3'; exit;;
+  esac
+done
+
+OPTNR=0; SKIPNEXT=false;
+for opt in "${optarr[@]}"; do
+  let OPTNR++
+  if $SKIPNEXT; then SKIPNEXT=false; continue; fi # skip list entries after '='
+  
+  case $opt in
+    --prepro) run_prepro=true; shift;;
+    --T1reg) run_t1reg=true; shift;;
+    --regmthd) T1REGMTHD=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --all) run_prepro=true; run_t1reg=true; shift;;
+    -c|--check) run_check=true; shift;;
+    --udir) UDIR=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --dontdenoise) DENOISE=false; shift;;
+    --readout) READOUTTIME=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --te_diff) FMTEDIFF=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --dwidwell) DWIDWELL=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --eddy) DOEDDY=true; shift;;
+    --phasedir) PHASEDIR=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
+    --nomoco) NOMOCO=true; shift;;
+    --) break;;
+    -*) echo "ERROR: Unimplemented option '$opt' chosen."; break;;   # Default.
+    *) break;;
+  esac
+done
+
+
+# ======================================
+# assigning input variables and checking option settings
+# ======================================
+case $# in
+  1) SUBJECT=$1;;
+  2) SUBJECT=$1; DWIDATA=$2;;
+  4) SUBJECT=$1; DWIDATA=$2; BVALS=$3; BVECS=$4; REVPHASEDATA=""; FMMAG=""; FMPHASE="";;
+  5) SUBJECT=$1; DWIDATA=$2; BVALS=$3; BVECS=$4; REVPHASEDATA=$5; FMMAG=""; FMPHASE="";;
+  6) SUBJECT=$1; DWIDATA=$2; BVALS=$3; BVECS=$4; REVPHASEDATA=""; FMMAG=$5; FMPHASE=$6;;
+  *) PRINT_USAGE; exit;;
+esac
+
+if ! ($run_prepro || $run_t1reg || $run_check); then
+  echo "ERROR: No option given. Consider to rerun with option --prepro"; exit;
+fi
+
+if ( $run_prepro )  &&  [ $# -lt 2 ]; then
+  echo "ERROR: This option requires DWI data and (optionally) a field map or" 
+  echo "       a B0 image with reversed phase encoding as input!"
+  echo "       Alternatively, preprocessed DTI data (from FSL dtifit) can be used."; exit;
+fi
+
+DOTOPUP=false
+if [ -n "$REVPHASEDATA" ]; then
+    DOTOPUP=true
+    if ! $DOEDDY; then
+      echo "ERROR: distortion correction using fsl topup requires --eddy !"
+      exit;
+    fi
+fi
+
+FMCORR=false
+if [ -n "$FMMAG" ]; then
+    FMCORR=true
+    if [ -z "$DWIDWELL" ]; then
+      echo "ERROR: The dwell-time of the DWI sequence has to be provided when"
+      echo "       using the fieldmap-based distortion correction (--dwidwell)"; exit;
+    fi
+
+    if $DOEDDY; then
+      echo "ERROR: distortion correction based on fieldmaps cannot be combined with fsl eddy!"
+      exit;
+    fi
+fi
+
+if ( $DOEDDY ) && [ -z "$PHASEDIR" ]; then
+  echo "ERROR: The phase encoding direction of the DWI sequence has to be"
+  echo "       provided when using fsl eddy (--phasedir)"; exit;
+fi
+
+if ( $DOEDDY ) && [ -z "$READOUTTIME" ]; then
+  echo "ERROR: The readout time of the DWI sequence has to be provided" 
+  echo "when using fsl eddy (--readout)"; exit;
+fi
+
+if ( $NOMOCO ) && ( $FMCORR || $DOEDDY ); then
+    echo "ERROR: --nomoco cannot be combined with --eddy or field-maps!"
+    exit;
+fi 
+
+DTI_EXISTS=false;
+if ( $run_prepro )  &&  [ $# -eq 2 ]; then
+  echo 'using preprocessed DTI tensor (ignoring other preprocessing options) ...'
+  DTI_EXISTS=true;
+fi
+
+
+
+# ======================================
+# start of main part
+# ======================================
+SUBJECTS_DIR=`pwd`
+M2M_DIR=`pwd`/m2m_$SUBJECT
+D2C_DIR=`pwd`/d2c_$SUBJECT
+
+RAW_DIR=$D2C_DIR/raw # for raw dMRI data
+TOPUP_DIR=$D2C_DIR/topup # input files to and results of FSL topup
+EDDY_DIR=$D2C_DIR/eddy # folder for eddy current correction via FSL eddy
+FM_DIR=$D2C_DIR/fieldmap # folder for field map-based distortion correction
+EDDYCOR_DIR=$D2C_DIR/eddycorr # folder for standard eddy current correction via home-grown script
+DTIRAW_DIR=$D2C_DIR/dti_results_rawspace # folder containing the DTI results in DTI space
+DTICONF_DIR=$D2C_DIR/dti_results_T1space # folder containing the DTI results in T1 space
+
+
+if [ ! -d $D2C_DIR ]; then mkdir $D2C_DIR; fi
+
+LOGFILE=$D2C_DIR/dwi2cond_log.html
+echo '<HTML><HEAD><TITLE>dwi2cond report</TITLE></HEAD><BODY><pre>' >> $LOGFILE
+
+SAY "dwi2cond started  `date`"
+START=$(date +%s)
+echo 'command line options: '$OPTIONS >> $LOGFILE
+
+if $run_prepro; then
+SAY "--prepro: Preprocessing DWI data"
+source $DWI2CONDPATH/dwi2cond.prepro.source.sh
+fi
+
+if $run_t1reg; then
+SAY "--T1reg: Registration of preprocessed DWI data to conformed T1 image"
+source $DWI2CONDPATH/dwi2cond.t1reg.source.sh
+fi
+
+if $run_check; then
+SAY "--check: Show final & diverse intermediate results for visual control."
+source $DWI2CONDPATH/dwi2cond.check.source.sh
+fi
+
+stty echo
+
+e echo "==> dwi2cond finished `date`."
+DIFF=$(( $(date +%s) - $START ))
+HRS=$(($DIFF/3600)); MTS=$(($DIFF/60 - $HRS*60)); SEC=$(($DIFF - $MTS*60 - $HRS*3600))
+e echo 'Duration: '$HRS':'$MTS':'$SEC' (hours:minutes:seconds)'
+
+echo '</pre></BODY></HTML>' >> $LOGFILE
+exit

@@ -1,0 +1,34 @@
+ROIid;ROIabbr;ROIname;ROIbase
+0;BG;Background;Background
+1;rHCA1_2_3_Strat;Right Hippocampus CA1/CA2/Ca3/Subiculum/Stratum;
+4;rHCA4;Right Hippocampus CA4/Dentate Gyrus;
+11;lAntCerebLI_II;Left Anterior Cerebellar Lobule I-II;
+12;lAntCerebLIII;Left Anterior Cerebellar Lobule III;
+13;lAntCerebLIV;Left Anterior Cerebellar Lobule IV;
+14;lAntCerebLV;Left Anterior Cerebellar Lobule V;
+15;lSupPostCerebLVI;Left Superior Posterior Cerebellar Lobule VI;
+16;lSupPostCerebCI;Left Superior Posterior Cerebellar Lobule Crus I;
+17;lSupPostCerebCII;Left Superior Posterior Cerebellar Lobule Crus II;
+18;lSupPostCerebLVIIB;Left Superior Posterior Cerebellar Lobule VIIB;
+19;lInfPostCerebLVIIIA;Left Inferior Posterior Cerebellar Lobule VIIIA;
+20;lInfPostCerebLVIIIB;Left Inferior Posterior Cerebellar Lobule VIIIB;
+21;lInfPostCerebLIX;Left Inferior Posterior Cerebellar Lobule IX-;
+22;lInfPostCerebLX;Left Inferior Posterior Cerebellar Lobule X;
+23;lAntCerebWM;Left Cerebellar White Matter;
+26;lAmy;Left Amygdala;
+101;lHCA1_2_3_Strat;Left Hippocampus CA1/CA2/Ca3/Subiculum/Stratum;
+104;lHCA4;Left Hippocampus CA4/Dentate Gyrus;
+111;rAntCerebLI_II;Right Anterior Cerebellar Lobule I-II;
+112;rAntCerebLIII;Right Anterior Cerebellar Lobule III;
+113;rAntCerebLIV;Right Anterior Cerebellar Lobule IV;
+114;rAntCerebLV;Right Anterior Cerebellar Lobule V;
+115;rSupPostCerebLVI;Right Superior Posterior Cerebellar Lobule VI;
+116;rSupPostCerebCI;Right Superior Posterior Cerebellar Lobule Crus I;
+117;rSupPostCerebCII;Right Superior Posterior Cerebellar Lobule Crus II;
+118;rSupPostCerebLVIIB;Right Superior Posterior Cerebellar Lobule VIIB;
+119;rInfPostCerebLVIIIA;Right Inferior Posterior Cerebellar Lobule VIIIA;
+120;rInfPostCerebLVIIIB;Right Inferior Posterior Cerebellar Lobule VIIIB;
+121;rInfPostCerebLIX;Right Inferior Posterior Cerebellar Lobule IX-;
+122;rInfPostCerebLX;Right Inferior Posterior Cerebellar Lobule X;
+123;rAntCerebWM;Right Cerebellar White Matter;
+126;rAmy;Right Amygdala;

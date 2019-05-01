@@ -1,0 +1,56 @@
+% HCP 32k meshes are generally on a standard mesh, where left and right hemispheres are 
+% aligned. Freesurfer data are based on the fsaverage mesh with no correspondence between 
+% hemispheres).
+%
+% --------------------------------------------------------------------------------
+% ?h.aparc_DK40.freesurfer.annot 
+% --------------------------------------------------------------------------------
+% Desikan-Killiany atlas:
+% FreeSurfer atlas aparc.a2005s
+% 
+% If you use these atlases, please cite the references below.
+% 
+% Website:    
+% A) https://surfer.nmr.mgh.harvard.edu/fswiki/CorticalParcellation
+% 
+% References:
+% Desikan RS, Ségonne F, Fischl B, Quinn BT, Dickerson BC, Blacker D, Buckner RL, 
+% Dale AM, Maguire RP, Hyman BT, Albert MS, Killiany RJ. An automated labeling 
+% system for subdividing the human cerebral cortex on MRI scans into gyral based 
+% regions of interest. Neuroimage. 2006 Jul 1;31(3):968-80. 
+% 
+%
+% --------------------------------------------------------------------------------
+% ?h.aparc_a2009s.freesurfer.annot 
+% --------------------------------------------------------------------------------
+% Destrieux atlas:
+% FreeSurfer atlas aparc.a2009s (August 2009, Freesurfer v4.5)
+% 
+% If you use these atlases, please cite the references below.
+% 
+% Websites:    
+% A) https://surfer.nmr.mgh.harvard.edu/fswiki/CorticalParcellation
+% B) https://surfer.nmr.mgh.harvard.edu/fswiki/DestrieuxAtlasChanges
+% 
+% References:
+% Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal depth-based anatomical 
+% parcellation of the cerebral cortex. Human Brain Mapping (HBM) Congress 2009, Poster #541
+% 
+% 
+% --------------------------------------------------------------------------------
+% ?h.aparc_HCP_MMP1.freesurfer.annot 
+% --------------------------------------------------------------------------------
+% Human Connectome Project (HCP) Multi-Modal Parcellation
+%
+% Conversions to freesurfer fsaverage were derived from:
+% https://figshare.com/articles/HCP-MMP1_0_projected_on_fsaverage/3498446/2
+%
+% If you use these atlases, please cite the references below.
+% 
+% Website:    
+% A) https://balsa.wustl.edu/study/show/RVVG
+%
+% References:
+% Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal parcellation of human cerebral 
+% cortex. Nature. 2016;536(7615):171-178.
+%

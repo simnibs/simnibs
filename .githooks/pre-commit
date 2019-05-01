@@ -1,0 +1,28 @@
+#!/bin/bash
+
+
+########################################################
+# This hook will check if any folder called "internal/"#
+# is being commited to the release branch              #
+########################################################
+
+set -e
+
+repo_root=$(git rev-parse --show-toplevel)
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+files_staged=$(git diff --name-only --cached)
+if [ "$current_branch" = "release" ]; then
+	has_internal=false
+	for f in $files_staged
+	do
+	    if [[ $f == *"internal/"* ]]; then
+		    has_internal=true
+		    echo "Found internal File: $f"
+	    fi
+	done
+	if [ "$has_internal" = true ]; then
+		echo "Cannot commit to release branch: internal files found"
+		echo "Please read the CONTRIBUTING.md file for instruction as to how to update the release branch"
+		exit 2
+	fi
+fi

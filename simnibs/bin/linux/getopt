@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# We use a bash wrapper to avoid working with symlinks
+
+exec getopt "$@"

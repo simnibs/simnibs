@@ -1,0 +1,31 @@
+% Template_?_IXI555_MNI152.nii
+% ---------------------------------
+% Dartel templates with 6 iteration steps
+% 
+% This Dartel template was derived from 555 subjects from the IXI database:
+% http://brain-development.org/ixi-dataset/
+%
+% The Dartel toolbox was used to create the template and finally images
+% were transformed to MNI space.
+%
+%
+% Template_?_IXI555_MNI152_GS.nii
+% ---------------------------------
+% Geodesic shooting templates with 6 iteration steps
+% 
+% This Geodesic Shooting template was derived from 555 subjects from the IXI 
+% database:
+% http://brain-development.org/ixi-dataset/
+%
+% The Geodesic Shooting toolbox was used to create the template and finally 
+% images were transformed to MNI space.
+%
+%
+% Template_T1_IXI555_MNI152_GS.nii 
+% ---------------------------------
+% Average T1 image from Geodesic Shooting
+% 
+% This average T1 image was derived using the abovementioned Geodesic
+% Shooting approach and is also based on 555 subjects from the IXI
+% data base and was finally transformed to MNI space.
+%

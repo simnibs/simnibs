@@ -1,0 +1,130 @@
+ROIid;ROIabbr;ROIname;ROIbaseid;ROIbasename;Voxel;Volume;XYZ
+0;BG;Background;[0];Background;1670969;5639.52;-0.35,-16.74,19.89
+1;lSupParLo;Left Superior Parietal Lobule;[ 1 66 ];Unk:SUPERIOR-PARIETAL-LOBULE-left.SUPERIOR-PARIETAL-LOBULE-right;   7409;  25.01;-23.50,-52.94,51.76
+2;rSupParLo;Right Superior Parietal Lobule;[ 1 66 ];Unk:SUPERIOR-PARIETAL-LOBULE-left.SUPERIOR-PARIETAL-LOBULE-right;   8216;  27.73;23.65,-51.63,51.92
+3;lCinGy;Left Cingulate Gyrus;[ 2 67 ];Left/Right:CINGULATE-GYRUS-left.CINGULATE-GYRUS-right;   9861;  33.28;-5.10,-9.98,26.53
+4;rCinGy;Right Cingulate Gyrus;[ 2 67 ];Left/Right:CINGULATE-GYRUS-left.CINGULATE-GYRUS-right;   7472;  25.22;8.06,-11.11,27.49
+5;lSupFroGy;Left Superior Frontal Gyrus;[ 3 68 ];Left/Right:SUPERIOR-FRONTAL-GYRUS-left.SUPERIOR-FRONTAL-GYRUS-right;  19940;  67.30;-11.57,29.19,37.58
+6;rSupFroGy;Right Superior Frontal Gyrus;[ 3 68 ];Left/Right:SUPERIOR-FRONTAL-GYRUS-left.SUPERIOR-FRONTAL-GYRUS-right;  19720;  66.56;13.89,32.41,34.44
+7;lMidFroGy;Left Middle Frontal Gyrus;[ 4 69 ];Left/Right:MIDDLE-FRONTAL-GYRUS-left.MIDDLE-FRONTAL-GYRUS-right;  14492;  48.91;-33.58,28.91,26.49
+8;rMidFroGy;Right Middle Frontal Gyrus;[ 4 69 ];Left/Right:MIDDLE-FRONTAL-GYRUS-left.MIDDLE-FRONTAL-GYRUS-right;  15261;  51.51;35.81,31.29,26.71
+9;lFroGy;Left Frontal Gyrus;[ 5 70 ];Left/Right:INFERIOR-FRONTAL-GYRUS-left.INFERIOR-FRONTAL-GYRUS-right;   7316;  24.69;-41.37,22.97,5.92
+10;rFroGy;Right Frontal Gyrus;[ 5 70 ];Left/Right:INFERIOR-FRONTAL-GYRUS-left.INFERIOR-FRONTAL-GYRUS-right;   7983;  26.94;44.08,24.19,6.70
+11;lPrcGy;Left Precentral Gyrus;[ 6 71 ];Left/Right:PRECENTRAL-GYRUS-left.PRECENTRAL-GYRUS-right;  12984;  43.82;-33.60,-10.07,42.11
+12;rPrcGy;Right Precentral Gyrus;[ 6 71 ];Left/Right:PRECENTRAL-GYRUS-left.PRECENTRAL-GYRUS-right;  10984;  37.07;36.09,-8.66,43.01
+13;lPoCGy;Left Postcentral Gyrus;[ 7 72 ];Left/Right:POSTCENTRAL-GYRUS-left.POSTCENTRAL-GYRUS-right;   9810;  33.11;-33.63,-26.11,48.01
+14;rPoCGy;Right Postcentral Gyrus;[ 7 72 ];Left/Right:POSTCENTRAL-GYRUS-left.POSTCENTRAL-GYRUS-right;   9724;  32.82;36.89,-23.72,46.92
+15;lAngGy;Left Angular Gyrus;[ 8 73 ];Left/Right:ANGULAR-GYRUS-left.ANGULAR-GYRUS-right;   7986;  26.95;-43.19,-55.80,36.45
+16;rAngGy;Right Angular Gyrus;[ 8 73 ];Left/Right:ANGULAR-GYRUS-left.ANGULAR-GYRUS-right;   6398;  21.59;42.80,-55.13,38.53
+17;lCun;Left Cuneus;[ 9 10 74 75 ];Left/Right:CUNEUS-left.CUNEUS-right.PRE-CUNEUS-left.PRE-CUNEUS-right;  10142;  34.23;-6.72,-66.89,35.06
+18;rCun;Right Cuneus;[ 9 10 74 75 ];Left/Right:CUNEUS-left.CUNEUS-right.PRE-CUNEUS-left.PRE-CUNEUS-right;  10651;  35.95;9.40,-69.59,31.12
+19;lLinGy;Left Lingual Gyrus;[ 11 76 ];Left/Right:LINGUAL-GYRUS-left.LINGUAL-GYRUS-right;   4970;  16.77;-12.70,-68.69,-4.31
+20;rLinGy;Right Lingual Gyrus;[ 11 76 ];Left/Right:LINGUAL-GYRUS-left.LINGUAL-GYRUS-right;   6497;  21.93;14.37,-68.87,-3.84
+21;lFusGy;Left Fusiform Gyrus;[ 12 77 ];Left/Right:FUSIFORM-GYRUS-left.FUSIFORM-GYRUS-right;   7138;  24.09;-30.16,-48.23,-20.44
+22;rFusGy;Right Fusiform Gyrus;[ 12 77 ];Left/Right:FUSIFORM-GYRUS-left.FUSIFORM-GYRUS-right;   7276;  24.56;33.97,-45.91,-20.51
+23;lParHipGy;Left Parahippocampus Gyrus;[ 13 78 ];Left/Right:PARAHIPPOCAMPAL-GYRUS-left.PARAHIPPOCAMPAL-GYRUS-right;    645;   2.18;-19.80,-27.95,-18.22
+24;rParHipGy;Right Parahippocampus Gyrus;[ 13 78 ];Left/Right:PARAHIPPOCAMPAL-GYRUS-left.PARAHIPPOCAMPAL-GYRUS-right;    439;   1.48;20.41,-28.49,-15.81
+25;lSupOccGy;Left Superior Occipital Gyrus;[ 14 79 ];Left/Right:SUPERIOR-OCCIPITAL-GYRUS-left.SUPERIOR-OCCIPITAL-GYRUS-right;   3005;  10.14;-18.06,-79.14,29.85
+26;rSupOccGy;Right Superior Occipital Gyrus;[ 14 79 ];Left/Right:SUPERIOR-OCCIPITAL-GYRUS-left.SUPERIOR-OCCIPITAL-GYRUS-right;   2577;   8.70;22.38,-76.59,29.23
+27;lOccGy;Left Occipital Gyrus;[ 15 80 ];Unk:INFERIOR-OCCIPITAL-GYRUS.INFERIOR-OCCIPITAL-GYRUS-right;   3437;  11.60;-39.62,-72.44,-4.77
+28;rOccGy;Right Occipital Gyrus;[ 15 80 ];Unk:INFERIOR-OCCIPITAL-GYRUS.INFERIOR-OCCIPITAL-GYRUS-right;   2538;   8.57;42.27,-72.22,-4.30
+29;lMidOccGy;Left Middle Occipital Gyrus;[ 16 81 ];Unk:MIDDLE-OCCIPITAL-GYRUS.MIDDLE-OCCIPITAL-GYRUS-right;  10817;  36.51;-25.13,-83.47,12.45
+30;rMidOccGy;Right Middle Occipital Gyrus;[ 16 81 ];Unk:MIDDLE-OCCIPITAL-GYRUS.MIDDLE-OCCIPITAL-GYRUS-right;   8855;  29.89;32.51,-79.26,14.73
+31;lEnt;Left Entorhinal Area;[ 17 82 ];Unk:ENTORHINAL-AREA.ENTORHINAL-AREA-right;    314;   1.06;-22.68,2.51,-33.97
+32;rEnt;Right Entorhinal Area;[ 17 82 ];Unk:ENTORHINAL-AREA.ENTORHINAL-AREA-right;    276;   0.93;23.18,2.84,-35.39
+33;lSupTemGy;Left Superior Temporal Gyrus;[ 18 83 ];Unk:SUPERIOR-TEMPORAL-GYRUS.SUPERIOR-TEMPORAL-GYRUS-right;  12876;  43.46;-30.65,-12.87,-6.16
+34;rSupTemGy;Right Superior Temporal Gyrus;[ 18 83 ];Unk:SUPERIOR-TEMPORAL-GYRUS.SUPERIOR-TEMPORAL-GYRUS-right;   9164;  30.93;49.89,-13.19,-1.23
+35;lTemGy;Left Temporal Gyrus;[ 19 84 ];Unk:INFERIOR-TEMPORAL-GYRUS.INFERIOR-TEMPORAL-GYRUS-right;   6282;  21.20;-32.88,-25.83,-26.73
+36;rTemGy;Right Temporal Gyrus;[ 19 84 ];Unk:INFERIOR-TEMPORAL-GYRUS.INFERIOR-TEMPORAL-GYRUS-right;   4760;  16.07;47.27,-24.90,-26.39
+37;lMidTemGy;Left Middle Temporal Gyrus;[ 20 85 ];Unk:MIDDLE-TEMPORAL-GYRUS.MIDDLE-TEMPORAL-GYRUS-right;  12240;  41.31;-11.53,-22.49,-15.27
+38;rMidTemGy;Right Middle Temporal Gyrus;[ 20 85 ];Unk:MIDDLE-TEMPORAL-GYRUS.MIDDLE-TEMPORAL-GYRUS-right;   5648;  19.06;48.16,-35.02,-4.42
+39;lLatOrbGy;Left Lateral Orbital Gyrus;[ 21 86 ];Unk:LATERAL-FRONTO-ORBITAL-GYRUS.LATERAL-FRONTO-ORBITAL-GYRUS-right;   2283;   7.71;-26.28,34.29,-15.72
+40;rLatOrbGy;Right Lateral Orbital Gyrus;[ 21 86 ];Unk:LATERAL-FRONTO-ORBITAL-GYRUS.LATERAL-FRONTO-ORBITAL-GYRUS-right;   2238;   7.55;27.62,36.66,-15.51
+41;lMidOrbGy;Left Middle Orbital Gyrus;[ 22 87 ];Unk:MIDDLE-FRONTO-ORBITAL-GYRUS.MIDDLE-FRONTO-ORBITAL-GYRUS-right;   1658;   5.60;-12.83,36.49,-21.72
+42;rMidOrbGy;Right Middle Orbital Gyrus;[ 22 87 ];Unk:MIDDLE-FRONTO-ORBITAL-GYRUS.MIDDLE-FRONTO-ORBITAL-GYRUS-right;   1566;   5.29;14.73,39.81,-19.80
+43;lSupMarGy;Left Supramarginal Gyrus;[ 23 88 ];Unk:SUPRAMARGINAL-GYRUS.SUPRAMARGINAL-GYRUS-right;   5760;  19.44;-49.54,-33.48,28.81
+44;rSupMarGy;Right Supramarginal Gyrus;[ 23 88 ];Unk:SUPRAMARGINAL-GYRUS.SUPRAMARGINAL-GYRUS-right;   5812;  19.62;52.19,-31.64,34.52
+45;lRecGy;Left Gyrus Rectus;[ 24 89 ];Both:GYRUS-RECTUS.GYRUS-RECTUS-right;   2686;   9.07;-4.13,38.29,-17.60
+46;rRecGy;Right Gyrus Rectus;[ 24 89 ];Both:GYRUS-RECTUS.GYRUS-RECTUS-right;   1543;   5.21;7.64,38.84,-15.05
+47;lIns;Left Insula;[ 25 90 ];Unk:INSULAR.INSULAR-right;   2966;  10.01;-34.71,1.87,-1.85
+48;rIns;Right Insula;[ 25 90 ];Unk:INSULAR.INSULAR-right;   3104;  10.48;37.98,4.44,-2.50
+49;lAmy;Left Amygdala;[ 26 91 ];Unk:AMYGDALA.AMYGDALA-right;    377;   1.27;-14.50,-1.99,-23.35
+50;rAmy;Right Amygdala;[ 26 91 ];Unk:AMYGDALA.AMYGDALA-right;    326;   1.10;22.63,0.22,-25.05
+51;lHip;Left Hippocampus;[ 27 92 ];Unk:HIPPOCAMPUS.HIPPOCAMPUS-right;   1282;   4.33;-27.38,-24.93,-14.27
+52;rHip;Right Hippocampus;[ 27 92 ];Unk:HIPPOCAMPUS.HIPPOCAMPUS-right;   1286;   4.34;28.70,-23.17,-15.05
+53;lCbe;Left Cerebellum;[ 28 93 ];Unk:CEREBELLUM.CEREBELLUM-right;  32477; 109.61;-8.65,-62.79,-37.29
+54;rCbe;Right Cerebellum;[ 28 93 ];Unk:CEREBELLUM.CEREBELLUM-right;  13914;  46.96;25.25,-58.76,-32.04
+55;lCST;Left corticospinal_tract;[ 29 94 ];Left/Right:Corticospinal-tract-left.Corticospinal-tract-right;    386;   1.30;-5.51,-25.23,-31.91
+56;rCST;Right corticospinal_tract;[ 29 94 ];Left/Right:Corticospinal-tract-left.Corticospinal-tract-right;    403;   1.36;7.82,-25.27,-32.50
+57;lCbePed;Left Cerebellar Peduncle;[ 30 95 ];Left/Right:Inferior-cerebellar-peduncle-left.Inferior-cerebellar-peduncle-right;    257;   0.87;-6.57,-42.49,-45.47
+58;rCbePed;Right Cerebellar Peduncle;[ 30 95 ];Left/Right:Inferior-cerebellar-peduncle-left.Inferior-cerebellar-peduncle-right;    212;   0.72;9.53,-42.89,-44.12
+59;lMedLem;Left Medial Lemniscus;[ 31 96 ];Left:Medial-lemniscus-left.Medial-lemniscus-right;      0;   0.00;NaN,NaN,NaN
+60;rMedLem;Right Medial Lemniscus;[ 31 96 ];Left:Medial-lemniscus-left.Medial-lemniscus-right;    499;   1.68;1.66,-34.73,-34.60
+61;lSupCbePed;Left Superior Cerebellar Peduncle;[ 32 97 ];Left/Right:Superior-cerebellar-peduncle-left.Superior-cerebellar-peduncle-right;    391;   1.32;-4.76,-37.57,-23.67
+62;rSupCbePed;Right Superior Cerebellar Peduncle;[ 32 97 ];Left/Right:Superior-cerebellar-peduncle-left.Superior-cerebellar-peduncle-right;    448;   1.51;8.18,-38.03,-24.11
+63;lCbrPed;Left Cerebral Peduncle;[ 33 98 ];Left/Right:Cerebral-peduncle-left.Cerebral-peduncle-right;    566;   1.91;-12.59,-17.48,-11.63
+64;rCbrPed;Right Cerebral Peduncle;[ 33 98 ];Left/Right:Cerebral-peduncle-left.Cerebral-peduncle-right;    615;   2.08;16.07,-16.50,-11.06
+65;lAntCapLIC;Left Anterior Capsule Limb of Internal;[ 34 99 ];Unk:Anterior-limb-of-internal-capsule-left.Anterior-limb-of-internal-capsule-right;    853;   2.88;-16.36,6.03,5.18
+66;rAntCapLIC;Right Anterior Capsule Limb of Internal;[ 34 99 ];Unk:Anterior-limb-of-internal-capsule-left.Anterior-limb-of-internal-capsule-right;    886;   2.99;19.02,8.97,4.88
+67;lPosCapLIC;Left Posterior Capsule Limb of Internal;[ 35 100 ];Unk:Posterior-limb-of-internal-capsule-left.Posterior-limb-of-internal-capsule-right;   1238;   4.18;-19.47,-12.78,7.21
+68;rPosCapLIC;Right Posterior Capsule Limb of Internal;[ 35 100 ];Unk:Posterior-limb-of-internal-capsule-left.Posterior-limb-of-internal-capsule-right;   1252;   4.23;21.29,-9.60,7.17
+69;lPosThR;Left Posterior Thalamic Radiation;[ 36 101 ];Unk:Posterior-thalamic-radiation-(include-optic-radiation)-right.Posterior-thalamic-radiation-left;   2134;   7.20;-29.11,-60.95,7.30
+70;rPosThR;Right Posterior Thalamic Radiation;[ 36 101 ];Unk:Posterior-thalamic-radiation-(include-optic-radiation)-right.Posterior-thalamic-radiation-left;   2168;   7.32;32.10,-54.59,7.97
+71;lAntCR;Left Anterior Corona Radiata;[ 37 102 ];Unk:Anterior-corona-radiata-left.Anterior-corona-radiata-right;   2436;   8.22;-18.54,30.43,4.60
+72;rAntCR;Right Anterior Corona Radiata;[ 37 102 ];Unk:Anterior-corona-radiata-left.Anterior-corona-radiata-right;   2614;   8.82;21.50,31.42,4.56
+73;lSupCR;Left Superior Corona Radiata;[ 38 103 ];Unk:Superior-corona-radiata-left.Superior-corona-radiata-right;   3142;  10.60;-22.44,-6.35,29.23
+74;rSupCR;Right Superior Corona Radiata;[ 38 103 ];Unk:Superior-corona-radiata-left.Superior-corona-radiata-right;   3084;  10.41;24.60,-3.21,29.71
+75;lPosCR;Left Posterior Corona Radiata;[ 39 104 ];Unk:Posterior-corona-radiata-left.Posterior-corona-radiata-right;    842;   2.84;-24.36,-35.82,28.78
+76;rPosCR;Right Posterior Corona Radiata;[ 39 104 ];Unk:Posterior-corona-radiata-left.Posterior-corona-radiata-right;    873;   2.95;26.40,-32.00,29.06
+77;lCin+CinGy;Left Cingulate and Cingulum Gyrus;[ 40 105 ];Left/Right:Cingulum-(cingulate-gyrus)-left.Cingulum-(cingulate-gyrus)-right;   1258;   4.25;-8.46,-2.25,25.47
+78;rCin+CinGy;Right Cingulate and Cingulum Gyrus;[ 40 105 ];Left/Right:Cingulum-(cingulate-gyrus)-left.Cingulum-(cingulate-gyrus)-right;   1393;   4.70;10.35,-0.93,25.85
+79;lCin+Hip;Left Cingulum and Hippocampus;[ 41 106 ];Left/Right:Cingulum-(hippocampus)-left.Cingulum-(hippocampus)-right;    296;   1.00;-15.78,-39.45,-1.80
+80;rCin+Hip;Right Cingulum and Hippocampus;[ 41 106 ];Left/Right:Cingulum-(hippocampus)-left.Cingulum-(hippocampus)-right;    333;   1.12;19.94,-34.46,-6.58
+81;lForStrTer;Left Fornix Stria Terminalis;[ 42 107 ];Left/Right:Fornix(cres)-Stria-terminalis-left.Fornix(cres)-Stria-terminalis-right;    440;   1.49;-24.53,-28.36,-1.96
+82;rForStrTer;Right Fornix Stria Terminalis;[ 42 107 ];Left/Right:Fornix(cres)-Stria-terminalis-left.Fornix(cres)-Stria-terminalis-right;    522;   1.76;27.25,-25.44,-2.01
+83;lSupLonLon;Left Superior Longitudinal Longitudinal;[ 43 108 ];Unk:Superior-longitudinal-fasciculus-left.Superior-longitudinal-fasciculus-right;   1722;   5.81;-32.81,-27.04,31.29
+84;rSupLonLon;Right Superior Longitudinal Longitudinal;[ 43 108 ];Unk:Superior-longitudinal-fasciculus-left.Superior-longitudinal-fasciculus-right;   1589;   5.36;34.89,-21.54,32.01
+85;lSupOcc;Left Superior Occipital;[ 44 109 ];Left/Right:Superior-fronto-occipital-fasciculus-left.Superior-fronto-occipital-fasciculus-right;    119;   0.40;-20.13,4.49,19.93
+86;rSupOcc;Right Superior Occipital;[ 44 109 ];Left/Right:Superior-fronto-occipital-fasciculus-left.Superior-fronto-occipital-fasciculus-right;    124;   0.42;22.12,7.23,19.73
+87;lOcc;Left Occipital;[ 45 110 ];Left/Right:Inferior-fronto-occipital-fasciculus-left.Inferior-fronto-occipital-fasciculus-right;    439;   1.48;-25.47,11.31,-10.97
+88;rOcc;Right Occipital;[ 45 110 ];Left/Right:Inferior-fronto-occipital-fasciculus-left.Inferior-fronto-occipital-fasciculus-right;    425;   1.43;27.73,11.56,-11.34
+89;lSagStr;Left Sagital Stratum;[ 46 111 ];Left/Right:Sagittal-stratum-left.Sagittal-stratum-right;   1040;   3.51;-37.13,-38.35,-9.33
+90;rSagStr;Right Sagital Stratum;[ 46 111 ];Left/Right:Sagittal-stratum-left.Sagittal-stratum-right;   1034;   3.49;38.82,-33.74,-10.07
+91;lCapExt;Left Capsule External;[ 47 112 ];Left/Right:External-capsule-left.External-capsule-right;   1150;   3.88;-28.04,1.94,4.85
+92;rCapExt;Right Capsule External;[ 47 112 ];Left/Right:External-capsule-left.External-capsule-right;   1143;   3.86;31.00,3.29,4.29
+93;lUNC;Left Uncinate;[ 48 113 ];Left/Right:Uncinate-fasciculus-left.Uncinate-fasciculus-right;     97;   0.33;-31.10,-0.96,-18.49
+94;rUNC;Right Uncinate;[ 48 113 ];Left/Right:Uncinate-fasciculus-left.Uncinate-fasciculus-right;    116;   0.39;32.35,2.13,-19.58
+95;lPCT;Left Pontine Crossing Tract;[ 49 114 ];Left/Right:Pontine-crossing-tract-left.Pontine-crossing-tract-right;    298;   1.01;-1.80,-28.42,-31.07
+96;rPCT;Right Pontine Crossing Tract;[ 49 114 ];Left/Right:Pontine-crossing-tract-left.Pontine-crossing-tract-right;    237;   0.80;6.20,-29.36,-31.52
+97;lMidCbePed;Left Middle Cerebellar Peduncle;[ 50 115 ];Left/Right:Middle-cerebellar-peduncle-left.Middle-cerebellar-peduncle-right;   1869;   6.31;-13.82,-35.88,-36.90
+98;rMidCbePed;Right Middle Cerebellar Peduncle;[ 50 115 ];Left/Right:Middle-cerebellar-peduncle-left.Middle-cerebellar-peduncle-right;   1704;   5.75;17.84,-37.80,-37.07
+99;lBodForCol;Left (Body) Fornix Column;[ 51 116 ];Left/Right:Fornix-(column-and-body)-left.Fornix-(column-and-body)-right;     68;   0.23;-0.42,-8.65,12.75
+100;rBodForCol;Right (Body) Fornix Column;[ 51 116 ];Left/Right:Fornix-(column-and-body)-left.Fornix-(column-and-body)-right;      9;   0.03;4.33,-13.50,14.17
+101;lCCGen;Left Corpus Callosum (Genu);[ 52 117 ];Left/Right:Genu-of-corpus-callosum-left.Genu-of-corpus-callosum-right;   1145;   3.86;-7.02,26.76,5.34
+102;rCCGen;Right Corpus Callosum (Genu);[ 52 117 ];Left/Right:Genu-of-corpus-callosum-left.Genu-of-corpus-callosum-right;    845;   2.85;10.04,27.23,5.38
+103;lCCBod;Left Corpus Callosum (Body);[ 53 118 ];Left/Right:Body-of-corpus-callosum-left.Body-of-corpus-callosum-right;   1699;   5.73;-7.34,-1.35,24.82
+104;rCCBod;Right Corpus Callosum (Body);[ 53 118 ];Left/Right:Body-of-corpus-callosum-left.Body-of-corpus-callosum-right;   1475;   4.98;10.41,-0.20,25.73
+105;lCC;Left Corpus Callosum;[ 54 119 ];Left/Right:Splenium-of-corpus-callosum-left.Splenium-of-corpus-callosum-right;   1971;   6.65;-12.04,-40.22,19.35
+106;rCC;Right Corpus Callosum;[ 54 119 ];Left/Right:Splenium-of-corpus-callosum-left.Splenium-of-corpus-callosum-right;   1899;   6.41;13.78,-37.50,19.91
+107;lCapRetLenINC;Left Capsule Retrolenticular_part_of_internal_capsule;[ 55 120 ];Left/Right:Retrolenticular-part-of-internal-capsule-left.Retrolenticular-part-of-internal-capsule-right;    787;   2.66;-28.63,-26.76,4.24
+108;rCapRetLenINC;Right Capsule Retrolenticular_part_of_internal_capsule;[ 55 120 ];Left/Right:Retrolenticular-part-of-internal-capsule-left.Retrolenticular-part-of-internal-capsule-right;    734;   2.48;30.50,-23.32,5.67
+109;lRedNuc;Left Red-Nucleus;[ 56 121 ];Left/Right:Red-Nucleus-left.Red-Nucleus-right;     31;   0.10;-3.58,-19.06,-8.90
+110;rRedNuc;Right Red-Nucleus;[ 56 121 ];Left/Right:Red-Nucleus-left.Red-Nucleus-right;     53;   0.18;5.46,-19.02,-8.21
+111;lSubNig;Left Substancia-Nigra;[ 57 122 ];Left/Right:Substancia-Nigra-left.Substancia-Nigra-right;     34;   0.11;-9.62,-12.93,-7.81
+112;rSubNig;Right Substancia-Nigra;[ 57 122 ];Left/Right:Substancia-Nigra-left.Substancia-Nigra-right;     47;   0.16;12.19,-12.38,-7.44
+113;lTap;Left Tapatum;[ 58 123 ];Left/Right:Tapatum-left.Tapatum-right;    129;   0.44;-26.57,-41.55,18.30
+114;rTap;Right Tapatum;[ 58 123 ];Left/Right:Tapatum-left.Tapatum-right;    180;   0.61;29.48,-39.64,16.32
+115;lCauNuc;Left Caudate Nucleus;[ 59 124 ];Left/Right:CAUDATE-NUCLEUS-left.CAUDATE-NUCLEUS-right;   1168;   3.94;-12.84,9.75,7.07
+116;rCauNuc;Right Caudate Nucleus;[ 59 124 ];Left/Right:CAUDATE-NUCLEUS-left.CAUDATE-NUCLEUS-right;   1152;   3.89;14.88,9.45,8.09
+117;lPut;Left Putamen;[ 60 125 ];Left/Right:PUTAMEN-left.PUTAMEN-right;   1130;   3.81;-24.13,1.02,-1.83
+118;rPut;Right Putamen;[ 60 125 ];Left/Right:PUTAMEN-left.PUTAMEN-right;   1080;   3.65;26.48,2.88,-1.93
+119;lTha;Left Thalamus;[ 61 126 ];Left/Right:THALAMUS-left.THALAMUS-right;   2299;   7.76;-10.72,-20.45,4.64
+120;rTha;Right Thalamus;[ 61 126 ];Left/Right:THALAMUS-left.THALAMUS-right;   2331;   7.87;12.84,-18.10,5.19
+121;lGloPal;Left Globus Pallidus;[ 62 127 ];Left/Right:GLOBUS-PALLIDUS-left.GLOBUS-PALLIDUS-right;    367;   1.24;-18.76,-2.96,-2.84
+122;rGloPal;Right Globus Pallidus;[ 62 127 ];Left/Right:GLOBUS-PALLIDUS-left.GLOBUS-PALLIDUS-right;    404;   1.36;21.59,-1.62,-3.12
+123;lMBR;Left Midbrain;[ 63 128 ];Left/Right:MIDBRAIN-left.MIDBRAIN-right;    952;   3.21;-3.61,-23.31,-10.60
+124;rMBR;Right Midbrain;[ 63 128 ];Left/Right:MIDBRAIN-left.MIDBRAIN-right;    812;   2.74;7.33,-22.66,-10.81
+125;lPNS;Left Pons;[ 64 129 ];Left/Right:PONS-left.PONS-right;    216;   0.73;0.81,-31.19,-33.72
+126;rPNS;Right Pons;[ 64 129 ];Left/Right:PONS-left.PONS-right;     46;   0.16;3.20,-29.87,-29.38
+127;lMDA;Left Medulla;[ 65 130 ];Left/Right:MEDULLA-left.MEDULLA-right;    514;   1.73;-0.82,-40.84,-56.55
+128;rMDA;Right Medulla;[ 65 130 ];Left/Right:MEDULLA-left.MEDULLA-right;    371;   1.25;4.96,-40.51,-57.19
