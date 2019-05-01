@@ -46,7 +46,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: $(container)
+  container: '$(container)'
 
   steps:
 
