@@ -101,8 +101,8 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs
-      repositoryName: guilhermebs/simnibs
+      gitHubConnection: simnibs
+      repositoryName: simnibs/simnibs
       action: edit
       tag: dev
       assets: $(System.ArtifactsDirectory)\windows_wheel\*
