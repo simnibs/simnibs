@@ -1,6 +1,5 @@
 trigger:
 - master
-- test_release
 
 # Build SimNIBS on a Centos 6 container
 jobs:
@@ -28,6 +27,7 @@ jobs:
     displayName: Publish Artifact
 
 # Test SimNIBS in a series of containers
+# I use my own containers because Azure won't let me sudo to install a few nescessary things
 - job: 'Test'
   dependsOn: Build
   pool:
@@ -35,8 +35,6 @@ jobs:
     maxParallel: 4
 
   container: simnibs/simnibs-testing:ubuntu18
-    #TODO: use containers, for now I can't get root acces to install nescessary things
-    #The solution might be for me to build my own containters
 
   steps:
 

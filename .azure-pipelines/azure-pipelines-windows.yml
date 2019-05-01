@@ -1,6 +1,5 @@
 trigger:
 - master
-- test_release
 
 jobs:
 
@@ -33,7 +32,7 @@ jobs:
       artifactName: windows_wheel
     displayName: Publish Artifact
 
-# NOw we test the previously build wheels on different windows versions
+# Now we test the previously build wheels on different windows versions
 
 - job: Test
   dependsOn: Build
