@@ -39,11 +39,11 @@ The pipeline is divided in three parts:
 ## Getting Started
  
 SimNIBS runs on 64bit Windows, Linux and OSX machines.
-Please visit [the SimNIBS website](www.simnibs.org) for instructions into how to download and install SimNIBS.
+Please visit [the SimNIBS website](http://www.simnibs.org) for instructions into how to download and install SimNIBS.
 
 
 ## Authors
-Please see [the SimNIBS website](www.simnibs.org) for a complete list of contributors.
+Please see [the SimNIBS website](http://www.simnibs.org) for a complete list of contributors.
 
 ## 3rd Party Files
 We have included code or binaries from the following project to this repository:
@@ -58,4 +58,4 @@ We have included code or binaries from the following project to this repository:
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
 
-For a full list of files and licenses, please see the 3RD-PARTY.md file
+For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file
