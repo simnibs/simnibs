@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>TMSLIST &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -40,7 +38,7 @@
 <div class="section" id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first"><strong>Python</strong></p>
+<li><p><strong>Python</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
 <span class="n">tms_list</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">()</span>
@@ -48,7 +46,7 @@
 </div>
 <p></p>
 </li>
-<li><p class="first"><strong>MATLAB</strong></p>
+<li><p><strong>MATLAB</strong></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
 <span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span>
 </pre></div>
@@ -60,43 +58,41 @@
 <div class="section" id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first"><strong>fnamecoil</strong>: <em>string (Python)/ character array (MATLAB)</em></p>
+<li><p><strong>fnamecoil</strong>: <em>string (Python)/ character array (MATLAB)</em></p>
 <ul>
-<li><p class="first"><strong>Description</strong>: Name of coil file. Coil files come in two types</p>
+<li><p><strong>Description</strong>: Name of coil file. Coil files come in two types</p>
 <ul class="simple">
-<li><em>.nii.gz</em> files: NifTi files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (<a class="reference external" href="https://doi.org/10.1016/j.brs.2015.07.035">Madsen et al., 2015</a>)</li>
-<li><em>.ccd</em> files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (<a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher and Kammer, 2004</a>)</li>
+<li><p><em>.nii.gz</em> files: NifTi files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (<a class="reference external" href="https://doi.org/10.1016/j.brs.2015.07.035">Madsen et al., 2015</a>)</p></li>
+<li><p><em>.ccd</em> files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (<a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher and Kammer, 2004</a>)</p></li>
 </ul>
 </li>
-<li><p class="first"><strong>Examples</strong>: <em>Python/MATLAB</em></p>
+<li><p><strong>Examples</strong>: <em>Python/MATLAB</em></p>
 <p>Select the SimNIBS model for the Magstim 70mm figure-of-eight coil</p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tmslist</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
 </pre></div>
 </div>
 <p></p>
 </li>
-<li><p class="first"><strong>Note</strong>: When using a <a class="reference internal" href="../coils.html#coil-fies"><span class="std std-ref">coil provided by SimNIBS</span></a> you only need to use the file name. If using some other coil file, please use the full path.</p>
-</li>
-<li><p class="first"><strong>References</strong>: <a class="reference external" href="https://doi.org/10.1016/j.brs.2015.07.035">Madsen et al., 2015</a>, <a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher and Kammer, 2004</a></p>
-</li>
+<li><p><strong>Note</strong>: When using a <a class="reference internal" href="../coils.html#coil-fies"><span class="std std-ref">coil provided by SimNIBS</span></a> you only need to use the file name. If using some other coil file, please use the full path.</p></li>
+<li><p><strong>References</strong>: <a class="reference external" href="https://doi.org/10.1016/j.brs.2015.07.035">Madsen et al., 2015</a>, <a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher and Kammer, 2004</a></p></li>
 </ul>
 </li>
-<li><p class="first"><strong>pos</strong>: <em>list/array of POSITION structures (Python/MATLAB)</em></p>
+<li><p><strong>pos</strong>: <em>list/array of POSITION structures (Python/MATLAB)</em></p>
 <ul class="simple">
-<li><strong>Description</strong>: List of coil positions for the simulations</li>
-<li><strong>Examples</strong>: See the <a class="reference internal" href="position.html#position-doc"><span class="std std-ref">documentation for the POSITION strucure</span></a>.</li>
+<li><p><strong>Description</strong>: List of coil positions for the simulations</p></li>
+<li><p><strong>Examples</strong>: See the <a class="reference internal" href="position.html#position-doc"><span class="std std-ref">documentation for the POSITION strucure</span></a>.</p></li>
 </ul>
 </li>
-<li><p class="first"><strong>cond</strong>: <em>list/array of COND structures (Python/MATLAB), optional</em></p>
+<li><p><strong>cond</strong>: <em>list/array of COND structures (Python/MATLAB), optional</em></p>
 <p><a class="reference internal" href="tdcslist.html#cond-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p>
 </li>
-<li><p class="first"><strong>anisotropy_type</strong>: <em>‘scalar’, ‘vn’, ‘dir’ or ‘mc’, optional</em></p>
+<li><p><strong>anisotropy_type</strong>: <em>‘scalar’, ‘vn’, ‘dir’ or ‘mc’, optional</em></p>
 <p><a class="reference internal" href="tdcslist.html#anisotropy-type-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p>
 </li>
-<li><p class="first"><strong>aniso_maxratio</strong>: <em>float</em></p>
+<li><p><strong>aniso_maxratio</strong>: <em>float</em></p>
 <p><a class="reference internal" href="tdcslist.html#aniso-maxratio-doc"><span class="std std-ref">Follow this link</span></a>.</p>
 </li>
-<li><p class="first"><strong>aniso_maxcond</strong>: <em>float</em></p>
+<li><p><strong>aniso_maxcond</strong>: <em>float</em></p>
 <p><a class="reference internal" href="tdcslist.html#aniso-maxcond-doc"><span class="std std-ref">Follow this link</span></a>.</p>
 </li>
 </ul>
@@ -104,10 +100,10 @@
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first">Set up a simulation with a coil over C3, pointing posteriorly.
+<li><p>Set up a simulation with a coil over C3, pointing posteriorly.
 See the documentation on <a class="reference internal" href="session.html#session-doc"><span class="std std-ref">SESSION</span></a> and the <a class="reference internal" href="position.html#position-doc"><span class="std std-ref">POSITION</span></a> structures for more information.</p>
 <ul class="simple">
-<li><em>Python</em></li>
+<li><p><em>Python</em></p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
 <span class="c1"># Create a SESSION structure</span>
@@ -130,7 +126,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 </div>
 <p></p>
 <ul class="simple">
-<li><em>MATLAB</em></li>
+<li><p><em>MATLAB</em></p></li>
 </ul>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Create a SESSION structure</span>
 <span class="n">S</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
@@ -209,8 +205,6 @@ See the documentation on <a class="reference internal" href="session.html#sessio
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -231,7 +225,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

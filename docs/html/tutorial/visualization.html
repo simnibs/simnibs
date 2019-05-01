@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Visualizing Results &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -41,19 +39,18 @@
 <blockquote>
 <div><img alt="../_images/tutorial_output.png" src="../_images/tutorial_output.png" />
 </div></blockquote>
-<dl class="docutils">
-<dt></dt>
-<dd><p class="first">For the current example, the output folder contains the following files and folders:</p>
-<ul class="last simple">
-<li><code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code>: Contains surface overlays with fields in FsAverage space</li>
-<li><code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code>: Contains NIfTI volumes with fields in MNI space</li>
-<li><code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code>: Contains surface overlays with fields in the subject specific space (same as the {subID}_T1fs_conform.nii.gz)</li>
-<li><code class="file docutils literal notranslate"><span class="pre">subject_volumes/</span></code>: Contains NIfTI volumes with fields in a subject specific space</li>
-<li><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code>: Mesh with tDCS electrodes and electric fields</li>
-<li><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo</span></code>: Contains a simplified coil model showing it’s center and axes. For “.ccd” coil models, this is a more detail model showing dipoles.</li>
-<li><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh</span></code>: Mesh with the TMS-induced electric field</li>
-<li><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.log</span></code>: Simulation log</li>
-<li><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.mat</span></code>: Simulation configuration file</li>
+<dl class="simple">
+<dt></dt><dd><p>For the current example, the output folder contains the following files and folders:</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code>: Contains surface overlays with fields in FsAverage space</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code>: Contains NIfTI volumes with fields in MNI space</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code>: Contains surface overlays with fields in the subject specific space (same as the {subID}_T1fs_conform.nii.gz)</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">subject_volumes/</span></code>: Contains NIfTI volumes with fields in a subject specific space</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code>: Mesh with tDCS electrodes and electric fields</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo</span></code>: Contains a simplified coil model showing it’s center and axes. For “.ccd” coil models, this is a more detail model showing dipoles.</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh</span></code>: Mesh with the TMS-induced electric field</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.log</span></code>: Simulation log</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.mat</span></code>: Simulation configuration file</p></li>
 </ul>
 </dd>
 </dl>
@@ -71,34 +68,34 @@
 <h2>Visualizing Results in Gmsh<a class="headerlink" href="#visualizing-results-in-gmsh" title="Permalink to this headline">¶</a></h2>
 <p>Gmsh is a powerfull program for 3D visualization. However, it has somewhat steep learning curve. Here we will give the basics as to how to visualize simulation results in Gmsh</p>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">For Windows and MacOSX users, we recommended <a class="reference external" href="http://gmsh.info/">downloading and installing Gmsh from their website</a></p>
+<p class="admonition-title">Attention</p>
+<p>For Windows and MacOSX users, we recommended <a class="reference external" href="http://gmsh.info/">downloading and installing Gmsh from their website</a></p>
 </div>
 <ol class="arabic simple">
-<li>Start Gmsh by double clicking in the <code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code> file (Windows and MacOSX, installation from Gmsh website), or by typing on a terminal window located at the output folder</li>
+<li><p>Start Gmsh by double clicking in the <code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code> file (Windows and MacOSX, installation from Gmsh website), or by typing on a terminal window located at the output folder</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gmsh ernie_TDCS_1_scalar.msh
 </pre></div>
 </div>
-<dl class="docutils">
-<dt></dt>
-<dd><p class="first">The following window will appear</p>
-<blockquote class="last">
+<dl>
+<dt></dt><dd><p>The following window will appear</p>
+<blockquote>
 <div><img alt="../_images/tutorial_gmshinit.png" src="../_images/tutorial_gmshinit.png" />
 </div></blockquote>
 </dd>
 </dl>
 <p></p>
 <blockquote>
-<div>There, we see all the tissue and electrode surfaces. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel</div></blockquote>
+<div><p>There, we see all the tissue and electrode surfaces. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel</p>
+</div></blockquote>
 <ol class="arabic" start="2">
-<li><p class="first">We will now visualize just the gray matter surface. First, go to <em>Tools</em> → <em>Visibility</em></p>
+<li><p>We will now visualize just the gray matter surface. First, go to <em>Tools</em> → <em>Visibility</em></p>
 <img alt="../_images/tutorial_gmshvisibility.png" src="../_images/tutorial_gmshvisibility.png" />
 </li>
 </ol>
 <p></p>
 <ol class="arabic" start="3">
-<li><p class="first">There you can select surfaces and volumes to be visualized. In SimNIBS, we have defined</p>
+<li><p>There you can select surfaces and volumes to be visualized. In SimNIBS, we have defined</p>
 <p>1: White Matter volume</p>
 <p>2: Gray Matter volume</p>
 <p>3: Cerebrospinal Fluid (CSF) volume</p>
@@ -111,22 +108,21 @@
 <img alt="../_images/tutorial_gmshsurface.png" src="../_images/tutorial_gmshsurface.png" />
 </li>
 </ol>
-<dl class="docutils">
-<dt></dt>
-<dd><p class="first">We have now a visualization the gray matter surface</p>
-<img alt="../_images/tutorial_gmshbrain.png" class="last" src="../_images/tutorial_gmshbrain.png" />
+<dl>
+<dt></dt><dd><p>We have now a visualization the gray matter surface</p>
+<img alt="../_images/tutorial_gmshbrain.png" src="../_images/tutorial_gmshbrain.png" />
 </dd>
 </dl>
 <p>4. Go to <em>Tools</em> → <em>Options</em> → <em>Mesh</em> and deselect <em>Surface Faces</em></p>
 <blockquote>
 <div><img alt="../_images/tutorial_gmshdeselecsurf.png" src="../_images/tutorial_gmshdeselecsurf.png" />
 </div></blockquote>
-<dl class="docutils">
-<dt></dt>
-<dd>The model will momentarily disappear.</dd>
+<dl class="simple">
+<dt></dt><dd><p>The model will momentarily disappear.</p>
+</dd>
 </dl>
 <ol class="arabic" start="5">
-<li><p class="first">To visualize the norm of the electric field, click on <em>normE</em> on the left side of the main Gmsh window.</p>
+<li><p>To visualize the norm of the electric field, click on <em>normE</em> on the left side of the main Gmsh window.</p>
 <img alt="../_images/tutorial_gmshnorme.png" src="../_images/tutorial_gmshnorme.png" />
 </li>
 </ol>
@@ -134,10 +130,9 @@
 <blockquote>
 <div><img alt="../_images/tutorial_gmshview.png" src="../_images/tutorial_gmshview.png" />
 </div></blockquote>
-<dl class="docutils">
-<dt></dt>
-<dd><p class="first">This will give a view such as the one bellow</p>
-<blockquote class="last">
+<dl>
+<dt></dt><dd><p>This will give a view such as the one bellow</p>
+<blockquote>
 <div><img alt="../_images/tutorial_gmshnorm.png" src="../_images/tutorial_gmshnorm.png" />
 </div></blockquote>
 </dd>
@@ -151,32 +146,29 @@
 <div class="section" id="visualizing-surface-overlays-in-freeview">
 <h2>Visualizing surface overlays in FreeView<a class="headerlink" href="#visualizing-surface-overlays-in-freeview" title="Permalink to this headline">¶</a></h2>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">FreeView is not avaliable on Windows. However, overlays can also be visualized using the MATLAB usign the <em>mesh_load_fsresults</em> and the <em>mesh_show_surface</em> functions</p>
+<p class="admonition-title">Attention</p>
+<p>FreeView is not avaliable on Windows. However, overlays can also be visualized using the MATLAB usign the <em>mesh_load_fsresults</em> and the <em>mesh_show_surface</em> functions</p>
 </div>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">To obtain <em>freeview</em> surface files from simulations, please <a class="reference internal" href="../documentation/gui.html#sim-opt"><span class="std std-ref">set the appropriate options from the GUI</span></a>, in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a> (if scripting) or use the <a class="reference internal" href="../documentation/command_line/msh2cortex.html#msh2cortex-docs"><span class="std std-ref">msh2cortex</span></a> command line tool</p>
+<p class="admonition-title">Attention</p>
+<p>To obtain <em>freeview</em> surface files from simulations, please <a class="reference internal" href="../documentation/gui.html#sim-opt"><span class="std std-ref">set the appropriate options from the GUI</span></a>, in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a> (if scripting) or use the <a class="reference internal" href="../documentation/command_line/msh2cortex.html#msh2cortex-docs"><span class="std std-ref">msh2cortex</span></a> command line tool</p>
 </div>
 <p><em>freeview</em> is a visualization tool by FreeSurfer. It allows visualization of the files in the <code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code> and <code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code> folders. You need to have FreeSurfer installed in order to use FreeView</p>
 <p>In the <code class="file docutils literal notranslate"><span class="pre">subject_overlays</span></code> folder, we have the files following the pattern</p>
 <p><code class="file docutils literal notranslate"><span class="pre">&lt;hemisphere&gt;.&lt;simulation_id&gt;.central.&lt;field&gt;.&lt;scalar_quantity&gt;</span></code></p>
 <p>Where</p>
 <ul>
-<li><p class="first"><strong>hemisphere</strong>: Cortical hemisphere: either left hemisphere (lh) or right hemisphere (rh)</p>
-</li>
-<li><p class="first"><strong>simulation_id</strong>: A name attributed to the simulation, with the subject id, type of simulation, a number, and in the case of TMS a coil position number and the name of the coil file</p>
-</li>
-<li><p class="first"><strong>field</strong>: typically E (electric field) or J (current density)</p>
-</li>
-<li><p class="first"><strong>scalar_quantity</strong>: Quantity calculated from the vector field:</p>
+<li><p><strong>hemisphere</strong>: Cortical hemisphere: either left hemisphere (lh) or right hemisphere (rh)</p></li>
+<li><p><strong>simulation_id</strong>: A name attributed to the simulation, with the subject id, type of simulation, a number, and in the case of TMS a coil position number and the name of the coil file</p></li>
+<li><p><strong>field</strong>: typically E (electric field) or J (current density)</p></li>
+<li><p><strong>scalar_quantity</strong>: Quantity calculated from the vector field:</p>
 <blockquote>
 <div><ul class="simple">
-<li><strong>angle</strong>: Angle of the field with a vector normal to the cortical surface, in radians. An angle of 0 indicates that the field vectors are pointing the outside the cortical surface, and an angle of π that the currents are pointing inside. An angle of π/2 indicates that the currents are flowing tangentially to the surface.</li>
-<li><strong>norm</strong>: Norm (i.e., length) of the electric field vector (that is, field strength).</li>
-<li><strong>normal</strong>: Component of the electric field pointing to the inside (negative values) or to the outside (positive values) of the cortical surface.</li>
-<li><strong>tangent</strong>: Component of the electric field tangent to the cortical surface.</li>
-<li><strong>normal</strong>: Component of the electric field pointing to the inside (negative values) or to the outside (positive values) of the cortical surface.</li>
+<li><p><strong>angle</strong>: Angle of the field with a vector normal to the cortical surface, in radians. An angle of 0 indicates that the field vectors are pointing the outside the cortical surface, and an angle of π that the currents are pointing inside. An angle of π/2 indicates that the currents are flowing tangentially to the surface.</p></li>
+<li><p><strong>norm</strong>: Norm (i.e., length) of the electric field vector (that is, field strength).</p></li>
+<li><p><strong>normal</strong>: Component of the electric field pointing to the inside (negative values) or to the outside (positive values) of the cortical surface.</p></li>
+<li><p><strong>tangent</strong>: Component of the electric field tangent to the cortical surface.</p></li>
+<li><p><strong>normal</strong>: Component of the electric field pointing to the inside (negative values) or to the outside (positive values) of the cortical surface.</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -184,47 +176,47 @@
 <p>Additionally, we also have the <code class="file docutils literal notranslate"><span class="pre">lh.central</span></code> and <code class="file docutils literal notranslate"><span class="pre">rh.central</span></code> files. Those contain the cortical surface located halfway between the gray and white matter surfaces.</p>
 <p>The <code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code> folder has a very similar structure to the <code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code> folder.</p>
 <ol class="arabic simple">
-<li>To start <em>freeview</em> run in a terminal window</li>
+<li><p>To start <em>freeview</em> run in a terminal window</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>freeview
 </pre></div>
 </div>
 <p>2. Go to <em>File</em> → <em>Load Surface</em> and select the <code class="file docutils literal notranslate"><span class="pre">lh.central</span></code> file to visualize the left hemisphere. To better view the surfaces, select the big white square and the 3D head on the top of the window.</p>
 <ol class="arabic simple" start="3">
-<li>After opening the surface, go to <em>Overlay</em> → <em>Load Generic</em></li>
+<li><p>After opening the surface, go to <em>Overlay</em> → <em>Load Generic</em></p></li>
 </ol>
 <img alt="../_images/tutorial_freeviewloadgeneric.png" src="../_images/tutorial_freeviewloadgeneric.png" />
 <ol class="arabic simple" start="4">
-<li>Click on the folder icon to the right of <em>Select overlay file</em> and select the <code class="file docutils literal notranslate"><span class="pre">lh.ernie_TDCS_1_scalar.central.E.normal</span></code> file</li>
+<li><p>Click on the folder icon to the right of <em>Select overlay file</em> and select the <code class="file docutils literal notranslate"><span class="pre">lh.ernie_TDCS_1_scalar.central.E.normal</span></code> file</p></li>
 </ol>
 <img alt="../_images/tutorial_freeviewselectoverlay.png" src="../_images/tutorial_freeviewselectoverlay.png" />
 <ol class="arabic simple" start="5">
-<li>You can adjust the color scale by clicking on <em>Configure</em></li>
+<li><p>You can adjust the color scale by clicking on <em>Configure</em></p></li>
 </ol>
 <img alt="../_images/tutorial_freeviewconfigureoverlay.png" src="../_images/tutorial_freeviewconfigureoverlay.png" />
 <ol class="arabic simple" start="6">
-<li>By adjusting the parameters, we can generate a visualization such as the one bellow</li>
+<li><p>By adjusting the parameters, we can generate a visualization such as the one bellow</p></li>
 </ol>
 <img alt="../_images/tutorial_freeviewvisualization.png" src="../_images/tutorial_freeviewvisualization.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>We can clearly see the electric field inflow (in red) in the posterior part of the gyri and the field outflow (in blue) in the anterior parts.</dd>
+<dl class="simple">
+<dt></dt><dd><p>We can clearly see the electric field inflow (in red) in the posterior part of the gyri and the field outflow (in blue) in the anterior parts.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="visualizing-volumes">
 <h2>Visualizing Volumes<a class="headerlink" href="#visualizing-volumes" title="Permalink to this headline">¶</a></h2>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">To obtain nifti volume files from simulations, please <a class="reference internal" href="../documentation/gui.html#sim-opt"><span class="std std-ref">set the appropriate options from the GUI</span></a>, in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a> (if scripting) or use the <a class="reference internal" href="../documentation/command_line/msh2nii.html#msh2nii-doc"><span class="std std-ref">msh2nii</span></a> or the <a class="reference internal" href="../documentation/command_line/subject2mni.html#subject2mni-docs"><span class="std std-ref">subject2mni</span></a> command line tool</p>
+<p class="admonition-title">Attention</p>
+<p>To obtain nifti volume files from simulations, please <a class="reference internal" href="../documentation/gui.html#sim-opt"><span class="std std-ref">set the appropriate options from the GUI</span></a>, in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a> (if scripting) or use the <a class="reference internal" href="../documentation/command_line/msh2nii.html#msh2nii-doc"><span class="std std-ref">msh2nii</span></a> or the <a class="reference internal" href="../documentation/command_line/subject2mni.html#subject2mni-docs"><span class="std std-ref">subject2mni</span></a> command line tool</p>
 </div>
 <p>The files in the <code class="file docutils literal notranslate"><span class="pre">subject_volumes/</span></code> and <code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code> folders are NIfTI files.
 Their file names have the format</p>
 <blockquote>
 <div><p><code class="file docutils literal notranslate"><span class="pre">&lt;simulation_id&gt;_&lt;field&gt;_[MNI].nii.gz</span></code></p>
 <ul class="simple">
-<li><strong>simulation_id</strong>: A name attributed to the simulation, with the subject id, type of simulation, a number, and in the case of TMS a coil position number and the name of the coil file</li>
-<li><strong>field</strong>: For vector quantities, such as E, we have 2 outputs: the vector field (which is 3-dimensional) and the norm of the vectors.</li>
-<li><strong>MNI</strong>: In the case of <code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code>, the names are appended by MNI</li>
+<li><p><strong>simulation_id</strong>: A name attributed to the simulation, with the subject id, type of simulation, a number, and in the case of TMS a coil position number and the name of the coil file</p></li>
+<li><p><strong>field</strong>: For vector quantities, such as E, we have 2 outputs: the vector field (which is 3-dimensional) and the norm of the vectors.</p></li>
+<li><p><strong>MNI</strong>: In the case of <code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code>, the names are appended by MNI</p></li>
 </ul>
 </div></blockquote>
 <p>The files can be visualized in any NIfTI viewer such as FreeView or FSLeyes.</p>
@@ -286,8 +278,6 @@ Their file names have the format</p>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -308,7 +298,7 @@ Their file names have the format</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

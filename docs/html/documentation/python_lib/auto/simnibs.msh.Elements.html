@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>simnibs.msh.Elements &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -42,72 +40,56 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mesh elements.</p>
 <p>Can only handle triangles and tetrahedra!</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>triangles</em>) – List of nodes composing each triangle</li>
-<li><strong>tetrahedra</strong><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of nodes composing each tetrahedra</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>triangles</em>) – List of nodes composing each triangle</p></li>
+<li><p><strong>tetrahedra</strong><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of nodes composing each tetrahedra</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="simnibs.msh.Elements.elm_number">
 <code class="descname">elm_number</code><a class="headerlink" href="#simnibs.msh.Elements.elm_number" title="Permalink to this definition">¶</a></dt>
 <dd><p>element ID (u from 1 till nr)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx1) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx1) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="simnibs.msh.Elements.elm_type">
 <code class="descname">elm_type</code><a class="headerlink" href="#simnibs.msh.Elements.elm_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>elm-type (2=triangle, 4=tetrahedron, etc)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx1) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx1) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="simnibs.msh.Elements.tag1">
 <code class="descname">tag1</code><a class="headerlink" href="#simnibs.msh.Elements.tag1" title="Permalink to this definition">¶</a></dt>
 <dd><p>first tag for each element</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx1) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx1) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="simnibs.msh.Elements.tag2">
 <code class="descname">tag2</code><a class="headerlink" href="#simnibs.msh.Elements.tag2" title="Permalink to this definition">¶</a></dt>
 <dd><p>second tag for each elenent</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx1) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx1) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -115,28 +97,22 @@
 <code class="descname">node_number_list</code><a class="headerlink" href="#simnibs.msh.Elements.node_number_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>4xnumber_of_element matrix of the nodes that constitute the element.
 For the triangles, the fourth element = 1</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx4) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx4) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="simnibs.msh.Elements.nr">
 <code class="descname">nr</code><a class="headerlink" href="#simnibs.msh.Elements.nr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number or elemets</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">int</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
 </dd></dl>
 
 <p class="rubric">Notes</p>
@@ -148,50 +124,50 @@ For the triangles, the fourth element = 1</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table border="1" class="longtable docutils">
+<table class="longtable docutils align-center">
 <colgroup>
-<col width="10%" />
-<col width="90%" />
+<col style="width: 10%" />
+<col style="width: 90%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Elements.__init__" title="simnibs.msh.Elements.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([triangles,&nbsp;tetrahedra])</td>
-<td>Initialize self.</td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Elements.__init__" title="simnibs.msh.Elements.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([triangles, tetrahedra])</p></td>
+<td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Elements.find_all_elements_with_node" title="simnibs.msh.Elements.find_all_elements_with_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_all_elements_with_node</span></code></a>(node_nr)</td>
-<td>Finds all elements that have a given node</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Elements.find_all_elements_with_node" title="simnibs.msh.Elements.find_all_elements_with_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_all_elements_with_node</span></code></a>(node_nr)</p></td>
+<td><p>Finds all elements that have a given node</p></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Elements.find_neighbouring_nodes" title="simnibs.msh.Elements.find_neighbouring_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_neighbouring_nodes</span></code></a>(node_nr)</td>
-<td>Finds the nodes that share an element with the specified node</td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Elements.find_neighbouring_nodes" title="simnibs.msh.Elements.find_neighbouring_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_neighbouring_nodes</span></code></a>(node_nr)</p></td>
+<td><p>Finds the nodes that share an element with the specified node</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Elements.get_faces" title="simnibs.msh.Elements.get_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_faces</span></code></a>([tetrahedra_indexes])</td>
-<td>Creates a list of nodes in each face and a list of faces in each tetrahedra</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Elements.get_faces" title="simnibs.msh.Elements.get_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_faces</span></code></a>([tetrahedra_indexes])</p></td>
+<td><p>Creates a list of nodes in each face and a list of faces in each tetrahedra</p></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Elements.get_outside_faces" title="simnibs.msh.Elements.get_outside_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_outside_faces</span></code></a>([tetrahedra_indexes])</td>
-<td>Creates a list of nodes in each face that are in the outer volume</td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Elements.get_outside_faces" title="simnibs.msh.Elements.get_outside_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_outside_faces</span></code></a>([tetrahedra_indexes])</p></td>
+<td><p>Creates a list of nodes in each face that are in the outer volume</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Elements.nodes_with_tag" title="simnibs.msh.Elements.nodes_with_tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_with_tag</span></code></a>(tags)</td>
-<td>Gets all nodes indexes that are part of at least one element with the given tags</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Elements.nodes_with_tag" title="simnibs.msh.Elements.nodes_with_tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_with_tag</span></code></a>(tags)</p></td>
+<td><p>Gets all nodes indexes that are part of at least one element with the given tags</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table border="1" class="longtable docutils">
+<table class="longtable docutils align-center">
 <colgroup>
-<col width="10%" />
-<col width="90%" />
+<col style="width: 10%" />
+<col style="width: 90%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Elements.elm_number" title="simnibs.msh.Elements.elm_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_number</span></code></a></td>
-<td>Element numbers (1, …, nr)</td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Elements.elm_number" title="simnibs.msh.Elements.elm_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_number</span></code></a></p></td>
+<td><p>Element numbers (1, …, nr)</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Elements.nr" title="simnibs.msh.Elements.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></td>
-<td>Number of elements</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Elements.nr" title="simnibs.msh.Elements.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></p></td>
+<td><p>Number of elements</p></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Elements.tetrahedra" title="simnibs.msh.Elements.tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra</span></code></a></td>
-<td>Tetrahedra element numbers</td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Elements.tetrahedra" title="simnibs.msh.Elements.tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra</span></code></a></p></td>
+<td><p>Tetrahedra element numbers</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Elements.triangles" title="simnibs.msh.Elements.triangles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangles</span></code></a></td>
-<td>Triangle element numbers</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Elements.triangles" title="simnibs.msh.Elements.triangles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangles</span></code></a></p></td>
+<td><p>Triangle element numbers</p></td>
 </tr>
 </tbody>
 </table>
@@ -205,36 +181,34 @@ For the triangles, the fourth element = 1</p>
 <dt id="simnibs.msh.Elements.find_all_elements_with_node">
 <code class="descname">find_all_elements_with_node</code><span class="sig-paren">(</span><em>node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Elements.find_all_elements_with_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds all elements that have a given node</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>node_nr</strong> (<em>int</em>) – number of node</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>elm_nr</strong> – array with indices of element numbers</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node_nr</strong> (<em>int</em>) – number of node</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>elm_nr</strong> – array with indices of element numbers</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="simnibs.msh.Elements.find_neighbouring_nodes">
 <code class="descname">find_neighbouring_nodes</code><span class="sig-paren">(</span><em>node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Elements.find_neighbouring_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the nodes that share an element with the specified node</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>node_nr</strong> (<em>int</em>) – number of query node (mesh listing)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>all_neighbours</strong> – list of all nodes what share an element with the node</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node_nr</strong> (<em>int</em>) – number of query node (mesh listing)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>all_neighbours</strong> – list of all nodes what share an element with the node</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
 <p class="rubric">Example</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">elm</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">Elements</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">elm</span><span class="o">.</span><span class="n">node_number_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">]])</span>
@@ -248,43 +222,40 @@ For the triangles, the fourth element = 1</p>
 <dt id="simnibs.msh.Elements.get_faces">
 <code class="descname">get_faces</code><span class="sig-paren">(</span><em>tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Elements.get_faces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a list of nodes in each face and a list of faces in each tetrahedra</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tetrahedra_indexes</strong> (<em>np.ndarray</em>) – Indices of the tetrehedra where the faces are to be determined (default: all
-tetrahedra)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
-<li><strong>faces</strong> (<em>np.ndarray</em>) – List of nodes in faces, in arbitrary order</li>
-<li><strong>th_faces</strong> (<em>np.ndarray</em>) – List of faces in each tetrahedra, starts at 0, order=((0, 2, 1), (0, 1, 3), (0, 3, 2), (1, 2, 3))</li>
-<li><strong>face_adjacency_list</strong> (<em>np.ndarray</em>) – List of tetrahedron adjacent to each face, filled with -1 if a face is in a
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tetrahedra_indexes</strong> (<em>np.ndarray</em>) – Indices of the tetrehedra where the faces are to be determined (default: all
+tetrahedra)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>faces</strong> (<em>np.ndarray</em>) – List of nodes in faces, in arbitrary order</p></li>
+<li><p><strong>th_faces</strong> (<em>np.ndarray</em>) – List of faces in each tetrahedra, starts at 0, order=((0, 2, 1), (0, 1, 3), (0, 3, 2), (1, 2, 3))</p></li>
+<li><p><strong>face_adjacency_list</strong> (<em>np.ndarray</em>) – List of tetrahedron adjacent to each face, filled with -1 if a face is in a
 single tetrahedron. Not in the normal element ordering, but only in the order
-the tetrahedra are presented</li>
+the tetrahedra are presented</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="simnibs.msh.Elements.get_outside_faces">
 <code class="descname">get_outside_faces</code><span class="sig-paren">(</span><em>tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Elements.get_outside_faces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a list of nodes in each face that are in the outer volume</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tetrahedra_indexes</strong> (<em>np.ndarray</em>) – Indices of the tetrehedra where the outer volume is to be determined (default: all
-tetrahedra)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>faces</strong> – List of nodes in faces, in arbitrary order</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tetrahedra_indexes</strong> (<em>np.ndarray</em>) – Indices of the tetrehedra where the outer volume is to be determined (default: all
+tetrahedra)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>faces</strong> – List of nodes in faces, in arbitrary order</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -292,18 +263,17 @@ tetrahedra)</td>
 <code class="descname">nodes_with_tag</code><span class="sig-paren">(</span><em>tags</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Elements.nodes_with_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets all nodes indexes that are part of at least one element with the given
 tags</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tags</strong> (<em>list</em>) – Integer tags to search</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>nodes</strong> – Indexes of nodes with given tag</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray of integer</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tags</strong> (<em>list</em>) – Integer tags to search</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>nodes</strong> – Indexes of nodes with given tag</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray of integer</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -385,8 +355,6 @@ tags</p>
     <form class="search" action="../../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -407,7 +375,7 @@ tags</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>TDCSLIST &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -40,7 +38,7 @@
 <div class="section" id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first"><strong>Python</strong></p>
+<li><p><strong>Python</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
 <span class="n">tdcs_list</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
@@ -48,7 +46,7 @@
 </div>
 <p></p>
 </li>
-<li><p class="first"><strong>MATLAB</strong></p>
+<li><p><strong>MATLAB</strong></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
 <span class="n">tdcs_list</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
 <span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">tdcs_list</span><span class="p">;</span>
@@ -61,36 +59,34 @@
 <div class="section" id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first"><strong>currents</strong> <em>list/array of floats (Python/MATLAB)</em></p>
+<li><p><strong>currents</strong> <em>list/array of floats (Python/MATLAB)</em></p>
 <ul class="simple">
-<li><strong>Description</strong>: Current values (in <strong>Ampere</strong>), must sum to zero</li>
-<li><strong>Example</strong>: <em>Python/MATLAB</em></li>
+<li><p><strong>Description</strong>: Current values (in <strong>Ampere</strong>), must sum to zero</p></li>
+<li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_list</span><span class="o">.</span><span class="n">currents</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">1e-3</span><span class="p">]</span>
 </pre></div>
 </div>
 <p></p>
 <ul class="simple">
-<li><strong>Note</strong>: Currents are given per channel, not per electrode. Please see the <a class="reference internal" href="electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE structure documentation</span></a> for more information</li>
+<li><p><strong>Note</strong>: Currents are given per channel, not per electrode. Please see the <a class="reference internal" href="electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE structure documentation</span></a> for more information</p></li>
 </ul>
 </li>
-<li><p class="first"><strong>electrode</strong>: <em>list/array of ELECTRODE structures (Python/MATLAB)</em></p>
+<li><p><strong>electrode</strong>: <em>list/array of ELECTRODE structures (Python/MATLAB)</em></p>
 <ul class="simple">
-<li><strong>Description</strong>: List containing the electrodes to be used for the simulations.</li>
-<li><strong>Note</strong>: Please see the <a class="reference internal" href="electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE structure documentation</span></a> for more information</li>
+<li><p><strong>Description</strong>: List containing the electrodes to be used for the simulations.</p></li>
+<li><p><strong>Note</strong>: Please see the <a class="reference internal" href="electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE structure documentation</span></a> for more information</p></li>
 </ul>
 </li>
 </ul>
 <ul id="cond-attribute-doc">
-<li><p class="first"><strong>cond</strong>: <em>list/array of COND structures (Python/MATLAB), optional</em></p>
+<li><p><strong>cond</strong>: <em>list/array of COND structures (Python/MATLAB), optional</em></p>
 <ul>
-<li><p class="first"><strong>Description</strong>: List containing the tissue names and conductivities</p>
-</li>
-<li><p class="first"><strong>Default</strong>: <a class="reference internal" href="../conductivity.html#conductivity"><span class="std std-ref">Standard conductivity values</span></a></p>
-</li>
-<li><p class="first"><strong>Example</strong>:</p>
+<li><p><strong>Description</strong>: List containing the tissue names and conductivities</p></li>
+<li><p><strong>Default</strong>: <a class="reference internal" href="../conductivity.html#conductivity"><span class="std std-ref">Standard conductivity values</span></a></p></li>
+<li><p><strong>Example</strong>:</p>
 <ul class="simple">
-<li><em>Python</em></li>
+<li><p><em>Python</em></p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change White Matter conductivity to 0.1 S/m</span>
 <span class="c1"># Notice, we need to reduce the tissue number by 1</span>
@@ -101,7 +97,7 @@
 </div>
 <p></p>
 <ul class="simple">
-<li><em>MATLAB</em></li>
+<li><p><em>MATLAB</em></p></li>
 </ul>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Change White Matter conductivity to 0.1 S/m</span>
 <span class="n">tdcs_list</span><span class="p">.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">value</span> <span class="p">=</span> <span class="mf">0.1</span><span class="p">;</span>
@@ -109,41 +105,44 @@
 </div>
 <p></p>
 </li>
-<li><p class="first"><strong>Note</strong>: Please see the <a class="reference internal" href="cond.html#cond-struct-doc"><span class="std std-ref">COND structure documentation</span></a> for more information. All electrodes will get their conductivities from the tissues 100 and 500.</p>
-</li>
+<li><p><strong>Note</strong>: Please see the <a class="reference internal" href="cond.html#cond-struct-doc"><span class="std std-ref">COND structure documentation</span></a> for more information. All electrodes will get their conductivities from the tissues 100 and 500.</p></li>
 </ul>
 </li>
 </ul>
 <ul class="simple" id="anisotropy-type-attribute-doc">
-<li><strong>anisotropy_type</strong>: <em>‘scalar’, ‘vn’, ‘dir’ or ‘mc’, optional</em><ul>
-<li><strong>Description</strong>: Type of conductivity values to use in gray and white matter.<ul>
-<li>‘scalar’: Isotropic, piecewise-constant conductivity values (default)</li>
-<li>‘vn’: Volume normalized anisotropic conductivities. In the volume normalization process, tensors are normalized to have the same trace and re-scaled according to their respective tissue conductivitiy (recommended for simulations with anisotropic conductivities, see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>)</li>
-<li>‘dir’: Direct anisotropic conductivity. Does not normalize individual tensors, but re-scales them accordingly to the mean gray and white matter conductivities (see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>).</li>
-<li>‘mc’: Isotropic, varying conductivities. Assigns to each voxel a conductivity value related to the volume of the tensors obtained from the direct approach (see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>).</li>
+<li><p><strong>anisotropy_type</strong>: <em>‘scalar’, ‘vn’, ‘dir’ or ‘mc’, optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: Type of conductivity values to use in gray and white matter.</p>
+<ul>
+<li><p>‘scalar’: Isotropic, piecewise-constant conductivity values (default)</p></li>
+<li><p>‘vn’: Volume normalized anisotropic conductivities. In the volume normalization process, tensors are normalized to have the same trace and re-scaled according to their respective tissue conductivitiy (recommended for simulations with anisotropic conductivities, see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>)</p></li>
+<li><p>‘dir’: Direct anisotropic conductivity. Does not normalize individual tensors, but re-scales them accordingly to the mean gray and white matter conductivities (see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>).</p></li>
+<li><p>‘mc’: Isotropic, varying conductivities. Assigns to each voxel a conductivity value related to the volume of the tensors obtained from the direct approach (see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a>).</p></li>
 </ul>
 </li>
-<li><strong>Default</strong>: ‘scalar’</li>
-<li><strong>Note</strong>: All options other than ‘scalar’ require conductivity tensors acquired from diffusion weighted images and processed with <a class="reference internal" href="../command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a>.</li>
-<li><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1073/pnas.171473898">Tuch et al., 2001</a>, <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></li>
+<li><p><strong>Default</strong>: ‘scalar’</p></li>
+<li><p><strong>Note</strong>: All options other than ‘scalar’ require conductivity tensors acquired from diffusion weighted images and processed with <a class="reference internal" href="../command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a>.</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1073/pnas.171473898">Tuch et al., 2001</a>, <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></p></li>
 </ul>
 </li>
 </ul>
 <ul class="simple" id="aniso-maxratio-doc">
-<li><strong>aniso_maxratio</strong>: <em>float, optional</em><ul>
-<li><strong>Description</strong>: Maximum ratio between minimum an maximum eigenvalue in conductivity tensors</li>
-<li><strong>Default</strong>: 10</li>
-<li><strong>Note</strong>: Only taken into account when <strong>anisotropy_type</strong> is set to ‘vn’ and ‘dir’</li>
-<li><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></li>
+<li><p><strong>aniso_maxratio</strong>: <em>float, optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: Maximum ratio between minimum an maximum eigenvalue in conductivity tensors</p></li>
+<li><p><strong>Default</strong>: 10</p></li>
+<li><p><strong>Note</strong>: Only taken into account when <strong>anisotropy_type</strong> is set to ‘vn’ and ‘dir’</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></p></li>
 </ul>
 </li>
 </ul>
 <ul class="simple" id="aniso-maxcond-doc">
-<li><strong>aniso_maxcond</strong>: <em>float, optional</em><ul>
-<li><strong>Description</strong>: Maximum mean conductivity value.</li>
-<li><strong>Default</strong>: 2 S/m</li>
-<li><strong>Note</strong>: Only taken into account when <strong>anisotropy_type</strong> is set to ‘dir’ or ‘mc’</li>
-<li><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></li>
+<li><p><strong>aniso_maxcond</strong>: <em>float, optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: Maximum mean conductivity value.</p></li>
+<li><p><strong>Default</strong>: 2 S/m</p></li>
+<li><p><strong>Note</strong>: Only taken into account when <strong>anisotropy_type</strong> is set to ‘dir’ or ‘mc’</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2011.06.069">Opitz et al., 2011</a></p></li>
 </ul>
 </li>
 </ul>
@@ -205,8 +204,6 @@
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -227,7 +224,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

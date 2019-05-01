@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>mri2mesh &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -40,15 +38,15 @@
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>mri2mesh reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but will create better skull segmentations when also a T2w image is available.</p>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">mri2mesh needs FreeSurfer (5.3.0 or newer) and FSL (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see the <a class="reference internal" href="../../installation.html#installation"><span class="std std-ref">Installation</span></a> page for more information.</p>
+<p class="admonition-title">Attention</p>
+<p>mri2mesh needs FreeSurfer (5.3.0 or newer) and FSL (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see the <a class="reference internal" href="../../installation.html#installation"><span class="std std-ref">Installation</span></a> page for more information.</p>
 </div>
 </div>
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Open a terminal and go to the directory of the “Ernie” example data set.</li>
-<li>Run the reconstruction:</li>
+<li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
+<li><p>Run the reconstruction:</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mri2mesh --all ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
 </pre></div>
@@ -63,26 +61,26 @@
 </div>
 <p></p>
 <ol class="arabic simple" start="3">
-<li>Check the results:</li>
+<li><p>Check the results:</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>mri2mesh -c ernie
 </pre></div>
 </div>
-<dl class="docutils">
-<dt></dt>
-<dd>This will show the reconstructed surfaces overlaid over the MR images using freeview. The red lines indicate the final surfaces used for volume meshing, the yellow indicate the GM and WM surfaces created by FreeSurfer. A second freeview will show the subject T1 overlaid on the MNI template for a visual check of the registration accuracy. In addition, you should have a look at the tetrahedral head mesh by loading it into gmsh.</dd>
+<dl class="simple">
+<dt></dt><dd><p>This will show the reconstructed surfaces overlaid over the MR images using freeview. The red lines indicate the final surfaces used for volume meshing, the yellow indicate the GM and WM surfaces created by FreeSurfer. A second freeview will show the subject T1 overlaid on the MNI template for a visual check of the registration accuracy. In addition, you should have a look at the tetrahedral head mesh by loading it into gmsh.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>A quick check can be performed by looking at the final volume masks overlaid over the structural images in fslview: <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">--qc</span> <span class="pre">ernie</span></code></li>
-<li>As a standard, <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> uses 60000 triangles for each white matter surface, and the number of triangles for the other surfaces are scaled relative to this number. This results in a volume mesh of ~3.5 million tetrahedra. Alternatively, you can adjust the mesh resolution by setting <code class="code docutils literal notranslate"><span class="pre">--numvertices=&lt;mynumber&gt;</span></code>.</li>
-<li>After the head mesh creation, temporary files are deleted to save disk-space. Adding <code class="code docutils literal notranslate"><span class="pre">--nocleanup</span></code> prevents this.</li>
-<li>When setting <code class="code docutils literal notranslate"><span class="pre">--t2pial</span></code>, FreeSurfer will use the T2 image to improve the estimate of the pial surfaces (recommended only for high-res with T2 images 1mm iso voxel).</li>
-<li>Manual editing: For improving the GM and WM surfaces after the first run of <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code>, edit the FreeSurfer results as described on the FreeSurfer wiki. Then run <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> again with the <code class="code docutils literal notranslate"><span class="pre">--all</span></code> option, as stated above. <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> will use the edited FreeSurfer results to create a new head mesh. For improving the ventricles, cerebellum, csf, skull or skin surfaces, manually edit one or more of the binary masks stored in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mask_prep/</span></code>. Then run <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> again wit the <code class="code docutils literal notranslate"><span class="pre">--all</span></code> and <code class="code docutils literal notranslate"><span class="pre">--keep_masks</span></code> options. The latter option will prevent <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> from overwriting the edited masks.</li>
-<li>Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template, using FSL’s fnirt command. Even though fnirt was developed for registering the brain, usually acceptable results are achieved by <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> for the whole head. When a T1 without fat suppression is used as input, the bright skull might be warped into the skin or brain. Using the option <code class="code docutils literal notranslate"><span class="pre">–mnimaskskull</span></code> can prevent this. A skull mask will then be applied to down-weight the skull intensity. The transformations are stored in the <em>toMNI</em> subdirectory of the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/</span></code> folder. Subject space is defined by the qform set in the <code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">_T1fs_conform.nii.gz</span></code>, which can be found in the same folder as the head mesh.</li>
-<li>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mri2mesh_log.html</span></code> file.</li>
+<li><p>A quick check can be performed by looking at the final volume masks overlaid over the structural images in fslview: <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">--qc</span> <span class="pre">ernie</span></code></p></li>
+<li><p>As a standard, <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> uses 60000 triangles for each white matter surface, and the number of triangles for the other surfaces are scaled relative to this number. This results in a volume mesh of ~3.5 million tetrahedra. Alternatively, you can adjust the mesh resolution by setting <code class="code docutils literal notranslate"><span class="pre">--numvertices=&lt;mynumber&gt;</span></code>.</p></li>
+<li><p>After the head mesh creation, temporary files are deleted to save disk-space. Adding <code class="code docutils literal notranslate"><span class="pre">--nocleanup</span></code> prevents this.</p></li>
+<li><p>When setting <code class="code docutils literal notranslate"><span class="pre">--t2pial</span></code>, FreeSurfer will use the T2 image to improve the estimate of the pial surfaces (recommended only for high-res with T2 images 1mm iso voxel).</p></li>
+<li><p>Manual editing: For improving the GM and WM surfaces after the first run of <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code>, edit the FreeSurfer results as described on the FreeSurfer wiki. Then run <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> again with the <code class="code docutils literal notranslate"><span class="pre">--all</span></code> option, as stated above. <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> will use the edited FreeSurfer results to create a new head mesh. For improving the ventricles, cerebellum, csf, skull or skin surfaces, manually edit one or more of the binary masks stored in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mask_prep/</span></code>. Then run <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> again wit the <code class="code docutils literal notranslate"><span class="pre">--all</span></code> and <code class="code docutils literal notranslate"><span class="pre">--keep_masks</span></code> options. The latter option will prevent <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> from overwriting the edited masks.</p></li>
+<li><p>Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template, using FSL’s fnirt command. Even though fnirt was developed for registering the brain, usually acceptable results are achieved by <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> for the whole head. When a T1 without fat suppression is used as input, the bright skull might be warped into the skin or brain. Using the option <code class="code docutils literal notranslate"><span class="pre">–mnimaskskull</span></code> can prevent this. A skull mask will then be applied to down-weight the skull intensity. The transformations are stored in the <em>toMNI</em> subdirectory of the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/</span></code> folder. Subject space is defined by the qform set in the <code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">_T1fs_conform.nii.gz</span></code>, which can be found in the same folder as the head mesh.</p></li>
+<li><p>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mri2mesh_log.html</span></code> file.</p></li>
 </ul>
 </div>
 <div class="section" id="references">
@@ -146,8 +144,6 @@
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -168,7 +164,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

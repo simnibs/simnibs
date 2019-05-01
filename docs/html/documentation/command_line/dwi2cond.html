@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>dwi2cond &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -40,15 +38,15 @@
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>This optional tool prepares diffusion tensors for GM and WM from diffusion MRI (dMRI) data. The prepared tensors can then be used by SimNIBS to estimate anisotropic conductivities for GM and WM during the FEM calculations. Only single shell data (i.e., with a single b-value in addition to some b=0 images) with a single phase encoding direction for the EPI readout is supported. All processing steps are based on FSL tools.</p>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">dwi2cond requires FSL (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see the <a class="reference internal" href="../../installation.html#installation"><span class="std std-ref">Installation</span></a> page for more information as to how to install FSL.</p>
+<p class="admonition-title">Attention</p>
+<p>dwi2cond requires FSL (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see the <a class="reference internal" href="../../installation.html#installation"><span class="std std-ref">Installation</span></a> page for more information as to how to install FSL.</p>
 </div>
 </div>
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Open a terminal and go to the directory of the “Ernie” example data set.</li>
-<li>Run:</li>
+<li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
+<li><p>Run:</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>dwi2cond --all --eddy --phasedir=-y --readout=0.05 ernie org/ernie_dMRI.nii.gz org/ernie_dMRI.bval org/ernie_dMRI.bvec org/ernie_dMRI_rev.nii.gz
 </pre></div>
@@ -61,37 +59,39 @@
 <p>A dataset of b=0 images acquired with reversed phase encoding direction is given as last parameter. In this case, FSL topup will be used for static distortion correction.</p>
 </div></blockquote>
 <ol class="arabic simple" start="3">
-<li>Check the results:</li>
+<li><p>Check the results:</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>dwi2cond –check ernie
 </pre></div>
 </div>
 <p></p>
 <blockquote>
-<div>This shows the fractional anisotropy (FA) image superimposed on the structural T1 of the subject in fslview or fsleyes for visual control of the coregistration accuracy. In a second viewer, FA images determined from the dMRI data before and after preprocessing are shown to allow for controlling the effects of the preprocessing. These FA images are registered to the T1 using a rigid body (6DoF) transformation, so that spatial distortions remain visible. Finally, also sum-of-squared-error (SSE) images of the tensor fitting        procedure are shown. The SSE images are in arbitrary units, but are helpful to check the effectiveness of the preprocessing steps and to identify putative artifacts in the dMRI data. Finally, the first eigenvectors of the tensors are shown in gmsh for checking their orientation.</div></blockquote>
+<div><p>This shows the fractional anisotropy (FA) image superimposed on the structural T1 of the subject in fslview or fsleyes for visual control of the coregistration accuracy. In a second viewer, FA images determined from the dMRI data before and after preprocessing are shown to allow for controlling the effects of the preprocessing. These FA images are registered to the T1 using a rigid body (6DoF) transformation, so that spatial distortions remain visible. Finally, also sum-of-squared-error (SSE) images of the tensor fitting        procedure are shown. The SSE images are in arbitrary units, but are helpful to check the effectiveness of the preprocessing steps and to identify putative artifacts in the dMRI data. Finally, the first eigenvectors of the tensors are shown in gmsh for checking their orientation.</p>
+</div></blockquote>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Dwi2cond uses a non-linear registration based on FSL fnirt to transform the diffusion tensors to the space of the structural T1 image. In case the distortion correction during preprocessing is good enough, 12 or 6 DoF affine registrations can be used instead (controlled by the argument <code class="code docutils literal notranslate"><span class="pre">–regmthd</span></code>).</li>
-<li>dwi2cond also supports distortion correction based on fieldmaps:
-<code class="code docutils literal notranslate"><span class="pre">dwi2cond</span> <span class="pre">--all</span> <span class="pre">--dwidwell=&lt;dwell_time_in_ms&gt;</span> <span class="pre">--udir=&lt;warping_direction&gt;</span> <span class="pre">&lt;subjectID&gt;</span> <span class="pre">&lt;dMRI_dataset&gt;</span> <span class="pre">&lt;bvalue_file&gt;</span> <span class="pre">&lt;bvector_file&gt;</span> <span class="pre">&lt;field_map_magnitude_image&gt;</span> <span class="pre">&lt;field_map_phase_image&gt;</span></code></li>
-<li>The argument <code class="code docutils literal notranslate"><span class="pre">--dwidwell</span></code> is used to specify the dwell-time (or echo-spacing) of the dMRI sequence in [ms]. The standard warping direction is set to “y-”, otherwise state it using <code class="code docutils literal notranslate"><span class="pre">--udir</span></code>. A standard Siemens gre fieldmap with a TE difference of 2.46 ms is assumed. For other fieldmaps, additional parameters have to be defined on the command line (see <code class="code docutils literal notranslate"><span class="pre">dwi2cond</span> <span class="pre">–help</span></code>).</li>
-<li>Alternatively, you can use your own preprocessed DTI data as input</li>
+<li><p>Dwi2cond uses a non-linear registration based on FSL fnirt to transform the diffusion tensors to the space of the structural T1 image. In case the distortion correction during preprocessing is good enough, 12 or 6 DoF affine registrations can be used instead (controlled by the argument <code class="code docutils literal notranslate"><span class="pre">–regmthd</span></code>).</p></li>
+<li><p>dwi2cond also supports distortion correction based on fieldmaps:
+<code class="code docutils literal notranslate"><span class="pre">dwi2cond</span> <span class="pre">--all</span> <span class="pre">--dwidwell=&lt;dwell_time_in_ms&gt;</span> <span class="pre">--udir=&lt;warping_direction&gt;</span> <span class="pre">&lt;subjectID&gt;</span> <span class="pre">&lt;dMRI_dataset&gt;</span> <span class="pre">&lt;bvalue_file&gt;</span> <span class="pre">&lt;bvector_file&gt;</span> <span class="pre">&lt;field_map_magnitude_image&gt;</span> <span class="pre">&lt;field_map_phase_image&gt;</span></code></p></li>
+<li><p>The argument <code class="code docutils literal notranslate"><span class="pre">--dwidwell</span></code> is used to specify the dwell-time (or echo-spacing) of the dMRI sequence in [ms]. The standard warping direction is set to “y-”, otherwise state it using <code class="code docutils literal notranslate"><span class="pre">--udir</span></code>. A standard Siemens gre fieldmap with a TE difference of 2.46 ms is assumed. For other fieldmaps, additional parameters have to be defined on the command line (see <code class="code docutils literal notranslate"><span class="pre">dwi2cond</span> <span class="pre">–help</span></code>).</p></li>
+<li><p>Alternatively, you can use your own preprocessed DTI data as input</p></li>
 </ul>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>dwi2cond --all &lt;subjectID&gt; &lt;DTI-tensor&gt;
 </pre></div>
 </div>
 <p></p>
 <blockquote>
-<div>Dwi2cond will coregister the tensor image with the structural T1 of the subject for further use with SimNIBS.</div></blockquote>
+<div><p>Dwi2cond will coregister the tensor image with the structural T1 of the subject for further use with SimNIBS.</p>
+</div></blockquote>
 <ul class="simple">
-<li>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">dwi2cond_log.html</span></code> which is saved in the <code class="file docutils literal notranslate"><span class="pre">d2c_</span><em><span class="pre">subID</span></em></code> subdirectory.</li>
-<li>SimNIBS will use the coregistered diffusion tensors (stored in <code class="file docutils literal notranslate"><span class="pre">d2c_</span><em><span class="pre">subID</span></em><span class="pre">/dti_results_T1space/DTI_conf_tensor.nii.gz</span></code>) to estimate conductivity tensors for GM and WM. The following mappings from diffusion to conductivity tensors are supported:</li>
-<li>Direct mapping based on linear rescaling of the diffusion tensors (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2008.09.009">Rullmann et al., 2009</a>; <a class="reference external" href="https://doi.org/10.1073/pnas.171473898">Tuch et al., 2001</a>).</li>
-<li>Inhomogeneous, isotropic conductivities,  calculated as the mean conductivities of tensors of the direct mapping approach.</li>
-<li>Volume normalized mapping (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2010.02.014">Güllmar et al., 2010</a>) that keeps the geometric mean of the eigenvalues identical to the standard isotropic conductivity.</li>
-<li>SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the <strong>simnibs_gui</strong>.</li>
+<li><p>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">dwi2cond_log.html</span></code> which is saved in the <code class="file docutils literal notranslate"><span class="pre">d2c_</span><em><span class="pre">subID</span></em></code> subdirectory.</p></li>
+<li><p>SimNIBS will use the coregistered diffusion tensors (stored in <code class="file docutils literal notranslate"><span class="pre">d2c_</span><em><span class="pre">subID</span></em><span class="pre">/dti_results_T1space/DTI_conf_tensor.nii.gz</span></code>) to estimate conductivity tensors for GM and WM. The following mappings from diffusion to conductivity tensors are supported:</p></li>
+<li><p>Direct mapping based on linear rescaling of the diffusion tensors (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2008.09.009">Rullmann et al., 2009</a>; <a class="reference external" href="https://doi.org/10.1073/pnas.171473898">Tuch et al., 2001</a>).</p></li>
+<li><p>Inhomogeneous, isotropic conductivities,  calculated as the mean conductivities of tensors of the direct mapping approach.</p></li>
+<li><p>Volume normalized mapping (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2010.02.014">Güllmar et al., 2010</a>) that keeps the geometric mean of the eigenvalues identical to the standard isotropic conductivity.</p></li>
+<li><p>SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the <strong>simnibs_gui</strong>.</p></li>
 </ul>
 </div>
 </div>
@@ -151,8 +151,6 @@
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -173,7 +171,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

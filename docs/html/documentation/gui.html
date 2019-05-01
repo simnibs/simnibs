@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Graphical User Interface Documentation &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -40,99 +38,99 @@
 <h2>Main GUI<a class="headerlink" href="#main-gui" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guimain.png" src="../_images/doc_guimain.png" />
 <ol class="arabic simple">
-<li>Path to the <em>m2m_subid</em> folder, created during the head segmentation. It is filled out automatically if the Head Mesh (2) is correctly specified. For the <em>ernie</em> head model in the example dataset, it is <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/m2m_ernie/</span></code></li>
-<li>Name of head mesh file. It is filled out automatically if m2m folder is correctly specified. For the <em>ernie</em> head model, this is <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/ernie.msh</span></code></li>
-<li>Folder where the simulations will be saved. Only one simulation can be stored per folder and SimNIBS will raise an error when it find results from another simulation already stored in this folder. A folder name is automatically created if either Head Mesh or m2m folder are specified. For ernie, this would default to <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/simnibs_simulation/</span></code></li>
-<li>The tabs are used to specify the details of the TMS and tDCS simulations.</li>
-<li>Add a new tDCS <strong>Poslist</strong> to set up a tDCS simulation.</li>
-<li>Adds a new TMS <strong>Poslist</strong> to set up a simulation with one ore more TMS coil positions.</li>
-<li>Copy an existing <strong>Poslist</strong>. This is efficient when the aim is to vary only a few simulation parameters (e.g. electrode positions).</li>
-<li>Run the simulations.</li>
-<li>Select to view either the scalp surface or the gray matter surface.</li>
-<li>Window for visualizing the 3D Head Model.</li>
+<li><p>Path to the <em>m2m_subid</em> folder, created during the head segmentation. It is filled out automatically if the Head Mesh (2) is correctly specified. For the <em>ernie</em> head model in the example dataset, it is <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/m2m_ernie/</span></code></p></li>
+<li><p>Name of head mesh file. It is filled out automatically if m2m folder is correctly specified. For the <em>ernie</em> head model, this is <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/ernie.msh</span></code></p></li>
+<li><p>Folder where the simulations will be saved. Only one simulation can be stored per folder and SimNIBS will raise an error when it find results from another simulation already stored in this folder. A folder name is automatically created if either Head Mesh or m2m folder are specified. For ernie, this would default to <code class="file docutils literal notranslate"><span class="pre">simnibs2.1_examples/ernie/simnibs_simulation/</span></code></p></li>
+<li><p>The tabs are used to specify the details of the TMS and tDCS simulations.</p></li>
+<li><p>Add a new tDCS <strong>Poslist</strong> to set up a tDCS simulation.</p></li>
+<li><p>Adds a new TMS <strong>Poslist</strong> to set up a simulation with one ore more TMS coil positions.</p></li>
+<li><p>Copy an existing <strong>Poslist</strong>. This is efficient when the aim is to vary only a few simulation parameters (e.g. electrode positions).</p></li>
+<li><p>Run the simulations.</p></li>
+<li><p>Select to view either the scalp surface or the gray matter surface.</p></li>
+<li><p>Window for visualizing the 3D Head Model.</p></li>
 </ol>
 </div>
 <div class="section" id="tms-tab">
 <h2>TMS Tab<a class="headerlink" href="#tms-tab" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guitms.png" src="../_images/doc_guitms.png" />
 <ol class="arabic simple">
-<li>Name of the coil definition file. Clicking on <em>Browse</em> will bring you to the <code class="file docutils literal notranslate"><span class="pre">ccd-files/</span></code> folder, where the SimNIBS coil files are stored.</li>
-<li>Rate of change of the coil current <em>dI/dt</em>, in A/s. Usually, the maximal rate of change at the beginning of a pulse is used here. For example, this value is directly reported on the display of MagVenture stimulators.</li>
-<li>Distance between the coil and the skin. A value of 4 mm is set as default, in order to roughly account for the additional distance caused by the hair. Please change in case more accurate information is available for your specific case.</li>
-<li>Position and direction of the coil. Click twice to open a selection window and then click on the mesh to determine the position of the coil center and an additional position specifying the coil orientation. See the TMS tutorial for more information.</li>
-<li>Name of the coil position (optional)</li>
-<li>Adds a new coil position (that is, a new row) to the current <strong>Poslist</strong></li>
-<li>Removes a coil position to the current <strong>Poslist</strong></li>
-<li>Previews the current row <em>dA/dt</em> field in the head mesh. This only works for coil files with the ending <em>.nii.gz.</em></li>
-<li>Change the tissue conductivities for this TMS <strong>Poslist</strong> from the predefined standard conductivities.</li>
+<li><p>Name of the coil definition file. Clicking on <em>Browse</em> will bring you to the <code class="file docutils literal notranslate"><span class="pre">ccd-files/</span></code> folder, where the SimNIBS coil files are stored.</p></li>
+<li><p>Rate of change of the coil current <em>dI/dt</em>, in A/s. Usually, the maximal rate of change at the beginning of a pulse is used here. For example, this value is directly reported on the display of MagVenture stimulators.</p></li>
+<li><p>Distance between the coil and the skin. A value of 4 mm is set as default, in order to roughly account for the additional distance caused by the hair. Please change in case more accurate information is available for your specific case.</p></li>
+<li><p>Position and direction of the coil. Click twice to open a selection window and then click on the mesh to determine the position of the coil center and an additional position specifying the coil orientation. See the TMS tutorial for more information.</p></li>
+<li><p>Name of the coil position (optional)</p></li>
+<li><p>Adds a new coil position (that is, a new row) to the current <strong>Poslist</strong></p></li>
+<li><p>Removes a coil position to the current <strong>Poslist</strong></p></li>
+<li><p>Previews the current row <em>dA/dt</em> field in the head mesh. This only works for coil files with the ending <em>.nii.gz.</em></p></li>
+<li><p>Change the tissue conductivities for this TMS <strong>Poslist</strong> from the predefined standard conductivities.</p></li>
 </ol>
 </div>
 <div class="section" id="tdcs-tab">
 <h2>tDCS Tab<a class="headerlink" href="#tdcs-tab" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guitdcs.png" src="../_images/doc_guitdcs.png" />
 <ol class="arabic simple">
-<li>Current value through each electrode, in mA. Positive values for anodes, negative for Cathodes. The currents of all electrodes have to add up to zero.</li>
-<li>Electrode position and direction.  Click twice to open a selection window and then click on the mesh to define the electrode center and a further position for setting the electrode orientation. An (arbitrary) orientation has also to be set in case of round electrodes. See the tDCS Tutorial for more information.</li>
-<li>Electrode shape. Click twice to open the window to define the electrode shape.</li>
-<li>Name of Electrode (optional)</li>
-<li>Add a new electrode</li>
-<li>Remove the current electrode</li>
-<li>Preview the electrode shapes in the mesh. The shapes are only an approximation as to how the electrode will look like.</li>
-<li>Change the conductivities for this tDCS simulation from the predefined standard values.</li>
-<li>Hide the electrode shapes.</li>
+<li><p>Current value through each electrode, in mA. Positive values for anodes, negative for Cathodes. The currents of all electrodes have to add up to zero.</p></li>
+<li><p>Electrode position and direction.  Click twice to open a selection window and then click on the mesh to define the electrode center and a further position for setting the electrode orientation. An (arbitrary) orientation has also to be set in case of round electrodes. See the tDCS Tutorial for more information.</p></li>
+<li><p>Electrode shape. Click twice to open the window to define the electrode shape.</p></li>
+<li><p>Name of Electrode (optional)</p></li>
+<li><p>Add a new electrode</p></li>
+<li><p>Remove the current electrode</p></li>
+<li><p>Preview the electrode shapes in the mesh. The shapes are only an approximation as to how the electrode will look like.</p></li>
+<li><p>Change the conductivities for this tDCS simulation from the predefined standard values.</p></li>
+<li><p>Hide the electrode shapes.</p></li>
 </ol>
 </div>
 <div class="section" id="position-window">
 <h2>Position Window<a class="headerlink" href="#position-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guipos.png" src="../_images/doc_guipos.png" />
 <ol class="arabic simple">
-<li>Drop-down menu to select a position from an EEG cap</li>
-<li>Coordinates of the TMS coil or tDCS electrode center</li>
-<li>The status of his box determines which coordinates are set when clicking on the head model. Unchecked:  Position of the coil or electrode center; Checked: Reference position to determine the coil or electrode orientation.</li>
-<li>Coordinates of the reference position, used to determine the orientation of the electrode (tDCS) or coil (TMS). Specifically, the “y” axis is defined to be oriented according to the line from the center position to the reference position. Please note that the coil or electrode orientation relative to the scalp surface will be automatically determined (the “z” axis of the coil or electrode is automatically oriented to be orthogonal to the local scalp surface).</li>
-<li>Projects the current position on the scalp. This can be used if, for example, you have a set of coordinates in the brain and want to find the closest positions on the scalp.</li>
+<li><p>Drop-down menu to select a position from an EEG cap</p></li>
+<li><p>Coordinates of the TMS coil or tDCS electrode center</p></li>
+<li><p>The status of his box determines which coordinates are set when clicking on the head model. Unchecked:  Position of the coil or electrode center; Checked: Reference position to determine the coil or electrode orientation.</p></li>
+<li><p>Coordinates of the reference position, used to determine the orientation of the electrode (tDCS) or coil (TMS). Specifically, the “y” axis is defined to be oriented according to the line from the center position to the reference position. Please note that the coil or electrode orientation relative to the scalp surface will be automatically determined (the “z” axis of the coil or electrode is automatically oriented to be orthogonal to the local scalp surface).</p></li>
+<li><p>Projects the current position on the scalp. This can be used if, for example, you have a set of coordinates in the brain and want to find the closest positions on the scalp.</p></li>
 </ol>
 </div>
 <div class="section" id="electrode-window">
 <h2>Electrode Window<a class="headerlink" href="#electrode-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guielec.png" src="../_images/doc_guielec.png" />
 <ol class="arabic simple">
-<li>Dimensions and shape of the electrode.</li>
+<li><p>Dimensions and shape of the electrode.</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li>Rectangular: The values correspond to the sides of a rectangle</li>
-<li>Elliptical: The values correspond to the diameters of the axes of an ellipse</li>
+<li><p>Rectangular: The values correspond to the sides of a rectangle</p></li>
+<li><p>Elliptical: The values correspond to the diameters of the axes of an ellipse</p></li>
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="2">
-<li>Type of electrode.</li>
+<li><p>Type of electrode.</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li>Simple: Only a gel layer is modeled.</li>
-<li>Electrode + Gel: A silicon rubber layer and a gel layer are modeled. The   thickness of each layer can be set independently.</li>
-<li>Electrode + Sponge: A silicon rubber layer is modeled inside a sponge   soaked in a saline solution. The silicon rubber is placed in the middle of the   sponge. The dimensions of the sponge cannot be smaller than those of the   electrode.</li>
+<li><p>Simple: Only a gel layer is modeled.</p></li>
+<li><p>Electrode + Gel: A silicon rubber layer and a gel layer are modeled. The   thickness of each layer can be set independently.</p></li>
+<li><p>Electrode + Sponge: A silicon rubber layer is modeled inside a sponge   soaked in a saline solution. The silicon rubber is placed in the middle of the   sponge. The dimensions of the sponge cannot be smaller than those of the   electrode.</p></li>
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="3">
-<li>Electrode connector (or plug). The user has a choice on whether or not to model the area where the  electrode is connected to the cable. If it is modeled, its position in relation  to the surface as well as its shape can be set.</li>
+<li><p>Electrode connector (or plug). The user has a choice on whether or not to model the area where the  electrode is connected to the cable. If it is modeled, its position in relation  to the surface as well as its shape can be set.</p></li>
 </ol>
 </div>
 <div class="section" id="conductivities-window">
 <h2>Conductivities Window<a class="headerlink" href="#conductivities-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guicond.png" src="../_images/doc_guicond.png" />
 <ol class="arabic simple">
-<li>Name of tissue</li>
-<li>Conductivity (in S/m)</li>
-<li>Settings for anisotropic conductivities in gray and white matter, informed by diffusion MRI data. There are 4 options (see Opitz et al. 2011 for more information):</li>
+<li><p>Name of tissue</p></li>
+<li><p>Conductivity (in S/m)</p></li>
+<li><p>Settings for anisotropic conductivities in gray and white matter, informed by diffusion MRI data. There are 4 options (see Opitz et al. 2011 for more information):</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li>Scalar: Uses isotropic conductivities (standard setting, no diffusion MRI data required). An uniform value is assigned for each tissue.</li>
-<li>Volume normalized: Uses tensor information to set the directional information of the tensors. The tensor volumes are set to match the volume of the conductivity tensors for the isotropic (scalar) case.</li>
-<li>Direct mapping: Uses tensor information to set both direction and sizes of the tensors by linearly rescaling the diffusion tensors. The rescaling factor is determined so that the average conductivity across overall GM and WM fits best to the isotropic conductivities of GM and WM.</li>
-<li>Mean conductivity: Spatially varying isotropic conductivities. The sizes of the conductivity tensors are determined using the rescaling factor for the  direct mapping.</li>
+<li><p>Scalar: Uses isotropic conductivities (standard setting, no diffusion MRI data required). An uniform value is assigned for each tissue.</p></li>
+<li><p>Volume normalized: Uses tensor information to set the directional information of the tensors. The tensor volumes are set to match the volume of the conductivity tensors for the isotropic (scalar) case.</p></li>
+<li><p>Direct mapping: Uses tensor information to set both direction and sizes of the tensors by linearly rescaling the diffusion tensors. The rescaling factor is determined so that the average conductivity across overall GM and WM fits best to the isotropic conductivities of GM and WM.</p></li>
+<li><p>Mean conductivity: Spatially varying isotropic conductivities. The sizes of the conductivity tensors are determined using the rescaling factor for the  direct mapping.</p></li>
 </ul>
 </div></blockquote>
 </div>
@@ -140,28 +138,28 @@
 <span id="sim-opt"></span><h2>Simulation Options Window<a class="headerlink" href="#simulation-options-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guiopt.png" src="../_images/doc_guiopt.png" />
 <ol class="arabic simple">
-<li>Fields to be calculated.</li>
+<li><p>Fields to be calculated.</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><strong>v</strong>: Electric Potential (V)</li>
-<li><strong>vector E</strong>: Electric field vector (V/m)</li>
-<li><strong>norm E</strong>: Norm of the electric field (V/m)</li>
-<li><strong>vector J</strong>: Current density Vector (A/m2)</li>
-<li><strong>norm J</strong>: Norm of the current density  (A/m2)</li>
-<li><strong>conductivities</strong>: Scalar field with conductivity files, if conductivity is of the  type “scalar”, else the principal eigenvector of the conductivity tensor (S/m)</li>
-<li><strong>dA/dt</strong>: Peak temporal change of the vector potential. This output is only available for TMS simulations (V/m)</li>
+<li><p><strong>v</strong>: Electric Potential (V)</p></li>
+<li><p><strong>vector E</strong>: Electric field vector (V/m)</p></li>
+<li><p><strong>norm E</strong>: Norm of the electric field (V/m)</p></li>
+<li><p><strong>vector J</strong>: Current density Vector (A/m2)</p></li>
+<li><p><strong>norm J</strong>: Norm of the current density  (A/m2)</p></li>
+<li><p><strong>conductivities</strong>: Scalar field with conductivity files, if conductivity is of the  type “scalar”, else the principal eigenvector of the conductivity tensor (S/m)</p></li>
+<li><p><strong>dA/dt</strong>: Peak temporal change of the vector potential. This output is only available for TMS simulations (V/m)</p></li>
 </ul>
 </div></blockquote>
 <ol class="arabic simple" start="2">
-<li>Transformations to be performed after the field calculations.</li>
+<li><p>Transformations to be performed after the field calculations.</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><strong>Interpolate to cortical surface</strong>: Interpolates the fields along the middle gray matter layer obtained from FreeSurfer/CAT12 segmentations. Not available for head meshes generated with headreco and SPM12 only.</li>
-<li><strong>Transform to fsaverage space</strong>: Interpolates the field along the middle gray matter layer, and subsequently transforms the fields to FsAverage space. Not available for head meshes generated with only SPM</li>
-<li><strong>Interpolate to a nifti volume</strong>: Interpolates the field to a NifTi file</li>
-<li><strong>Transform to MNI space</strong>: Interpolates the field to a grid, and subsequently transform it to MNI space.</li>
+<li><p><strong>Interpolate to cortical surface</strong>: Interpolates the fields along the middle gray matter layer obtained from FreeSurfer/CAT12 segmentations. Not available for head meshes generated with headreco and SPM12 only.</p></li>
+<li><p><strong>Transform to fsaverage space</strong>: Interpolates the field along the middle gray matter layer, and subsequently transforms the fields to FsAverage space. Not available for head meshes generated with only SPM</p></li>
+<li><p><strong>Interpolate to a nifti volume</strong>: Interpolates the field to a NifTi file</p></li>
+<li><p><strong>Transform to MNI space</strong>: Interpolates the field to a grid, and subsequently transform it to MNI space.</p></li>
 </ul>
 </div></blockquote>
 </div>
@@ -220,8 +218,6 @@
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -242,7 +238,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

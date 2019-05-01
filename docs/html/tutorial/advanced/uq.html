@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Uncertainty Quantification &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -53,12 +51,12 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Permalink to this headline">¶</a></h2>
 <p>It is simple to set-up a simulation with UQ. All you need to do is to set-up the  <strong>distribution_type</strong> and <strong>distribution_parameters</strong> parameters in the <a class="reference internal" href="../../documentation/sim_struct/cond.html#cond-struct-doc"><span class="std std-ref">COND</span></a> structures.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">As of now, UQ is only supported through scripting. For more information on scipts, please see <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a>.</p>
+<p class="admonition-title">Note</p>
+<p>As of now, UQ is only supported through scripting. For more information on scipts, please see <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a>.</p>
 </div>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.</p>
+<p class="admonition-title">Warning</p>
+<p>Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.</p>
 </div>
 <div class="section" id="python">
 <h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
@@ -71,26 +69,25 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
 <p>In the output folder of the examples above (the <code class="file docutils literal notranslate"><span class="pre">tdcs_uq/</span></code> folder) we have the output files</p>
 <ul>
-<li><p class="first"><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_electrodes.msh</span></code>: Head mesh (<em>Gmsh</em> format) with the electrodes</p>
-</li>
-<li><p class="first"><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.msh</span></code>: Uncertainty quantification result in <em>Gmsh</em> format. There we have the data sets:</p>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_electrodes.msh</span></code>: Head mesh (<em>Gmsh</em> format) with the electrodes</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.msh</span></code>: Uncertainty quantification result in <em>Gmsh</em> format. There we have the data sets:</p>
 <ul class="simple">
-<li><em>{Field Name}_mean</em>: Mean of the probability distribution describing the uncertainty of the given field</li>
-<li><em>{Field Name}_std</em>: Standard Deviation of the probability distribution describing the uncertainty of the given field</li>
-<li><em>{Field Name}_sensitivity_{N}</em>: Derivative-based sensitivity for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></li>
-<li><em>{Field Name}_sobol_{N}</em>: Sobol coefficient for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></li>
+<li><p><em>{Field Name}_mean</em>: Mean of the probability distribution describing the uncertainty of the given field</p></li>
+<li><p><em>{Field Name}_std</em>: Standard Deviation of the probability distribution describing the uncertainty of the given field</p></li>
+<li><p><em>{Field Name}_sensitivity_{N}</em>: Derivative-based sensitivity for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p></li>
+<li><p><em>{Field Name}_sobol_{N}</em>: Sobol coefficient for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p></li>
 </ul>
 </li>
-<li><p class="first"><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.hdf5</span></code>: <em>HDF5</em> file containing partial information on the gPC expansion and partial results. The main datasets there are:</p>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.hdf5</span></code>: <em>HDF5</em> file containing partial information on the gPC expansion and partial results. The main datasets there are:</p>
 <ul class="simple">
-<li><code class="file docutils literal notranslate"><span class="pre">gpc_object</span></code>: Information to reconstruct the gPC regressions</li>
-<li><code class="file docutils literal notranslate"><span class="pre">cond</span></code>: Conductivity information</li>
-<li><code class="file docutils literal notranslate"><span class="pre">mesh</span></code>: Original mesh (or with electrodes for tDCS simulations). Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/v_samples</span></code> data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.</li>
-<li><code class="file docutils literal notranslate"><span class="pre">mesh_roi</span></code>: Mesh cropped to the ROI. Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/</span><em><span class="pre">Field</span> <span class="pre">Name</span></em><span class="pre">_samples</span></code> data sets with the field values (at nodes for <em>v</em> or elements for other quantities) for all iterations of the adaptive algorithm.</li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">gpc_object</span></code>: Information to reconstruct the gPC regressions</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">cond</span></code>: Conductivity information</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mesh</span></code>: Original mesh (or with electrodes for tDCS simulations). Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/v_samples</span></code> data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_roi</span></code>: Mesh cropped to the ROI. Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/</span><em><span class="pre">Field</span> <span class="pre">Name</span></em><span class="pre">_samples</span></code> data sets with the field values (at nodes for <em>v</em> or elements for other quantities) for all iterations of the adaptive algorithm.</p></li>
 </ul>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.mesh_io.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+<p class="admonition-title">Note</p>
+<p>meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.mesh_io.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
 </div>
 </li>
 </ul>
@@ -167,8 +164,6 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -189,7 +184,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

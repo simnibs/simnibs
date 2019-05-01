@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>SimNIBS: Simulation of Non Invasive Brain Stimulation &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -36,12 +34,11 @@
   <div class="section" id="simnibs-simulation-of-non-invasive-brain-stimulation">
 <h1>SimNIBS: Simulation of Non Invasive Brain Stimulation<a class="headerlink" href="#simnibs-simulation-of-non-invasive-brain-stimulation" title="Permalink to this headline">¶</a></h1>
 <p><strong>SimNIBS</strong> is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).</p>
-<dl class="docutils">
-<dt>A SimNIBS workflow consists of three main parts:</dt>
-<dd><ul class="first last simple">
-<li>Use <a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">command line scripts</span></a> to generate high-quality meshes of the head from MR images, or use our <strong>example data set</strong>.</li>
-<li>Use the <a class="reference internal" href="tutorial/gui.html#gui-tutorial"><span class="std std-ref">graphical user interface</span></a> or <a class="reference internal" href="tutorial/scripting.html#scripting-tutorial"><span class="std std-ref">scripts</span></a> to set up and run simulations.</li>
-<li><a class="reference internal" href="tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">Visualize simulation results</span></a> in <em>gmsh</em> or <em>MATLAB</em>, transform them to <em>FsAverage</em> or <em>MNI</em> space, or load them in <em>MATLAB</em> or <em>Python</em>.</li>
+<dl class="simple">
+<dt>A SimNIBS workflow consists of three main parts:</dt><dd><ul class="simple">
+<li><p>Use <a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">command line scripts</span></a> to generate high-quality meshes of the head from MR images, or use our <strong>example data set</strong>.</p></li>
+<li><p>Use the <a class="reference internal" href="tutorial/gui.html#gui-tutorial"><span class="std std-ref">graphical user interface</span></a> or <a class="reference internal" href="tutorial/scripting.html#scripting-tutorial"><span class="std std-ref">scripts</span></a> to set up and run simulations.</p></li>
+<li><p><a class="reference internal" href="tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">Visualize simulation results</span></a> in <em>gmsh</em> or <em>MATLAB</em>, transform them to <em>FsAverage</em> or <em>MNI</em> space, or load them in <em>MATLAB</em> or <em>Python</em>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -49,19 +46,19 @@
 <p><a class="reference internal" href="installation.html#installation"><span class="std std-ref">INSTALL SIMNIBS</span></a></p>
 <p><a class="reference internal" href="tutorial/tutorial.html#tutorial"><span class="std std-ref">TUTORIAL</span></a></p>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition</p>
+<p class="admonition-title">Warning</p>
+<p>SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">When you publish results based on SimNIBS 2.0 or 2.1, or parts of it, please cite: <a class="reference external" href="http://dx.doi.org/10.1109/EMBC.2015.7318340">Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy</a></p>
+<p class="admonition-title">Note</p>
+<p>When you publish results based on SimNIBS 2.0 or 2.1, or parts of it, please cite: <a class="reference external" href="http://dx.doi.org/10.1109/EMBC.2015.7318340">Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy</a></p>
 </div>
 </div>
 <div class="section" id="news">
 <h1>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h1>
 <blockquote>
 <div><ul class="simple">
-<li><strong>Version 3.0 is now available</strong>. It is a major update of SimNIBS</li>
+<li><p><strong>Version 3.0 is now available</strong>. It is a major update of SimNIBS</p></li>
 </ul>
 </div></blockquote>
 <div class="toctree-wrapper compound">
@@ -108,8 +105,6 @@
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -130,7 +125,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

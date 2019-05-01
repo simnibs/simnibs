@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>msh2nii &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -43,24 +41,24 @@
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Open a simulation results folder, for example <em>ernie/simu</em> if you ran <em>ernie_simu.mat</em></li>
-<li>Run</li>
+<li><p>Open a simulation results folder, for example <em>ernie/simu</em> if you ran <em>ernie_simu.mat</em></p></li>
+<li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>msh2nii ernie_TDCS_1_scalar.msh ../m2m_ernie/T1fs_conform.nii.gz ernie_TDCS_1
 </pre></div>
 </div>
 <p></p>
 <ol class="arabic simple" start="3">
-<li>This will create the <em>ernie_TDCS_1_E.nii.gz</em>, <em>ernie_TDCS_1_J.nii.gz</em>, <em>ernie_TDCS_1_normE.nii.gz</em>, and <em>ernie_TDCS_1_normJ.nii.gz</em> files.</li>
-<li>The files are in the same space as the <em>../m2m_ernie/T1fs_conform.nii.gz</em> file</li>
+<li><p>This will create the <em>ernie_TDCS_1_E.nii.gz</em>, <em>ernie_TDCS_1_J.nii.gz</em>, <em>ernie_TDCS_1_normE.nii.gz</em>, and <em>ernie_TDCS_1_normJ.nii.gz</em> files.</p></li>
+<li><p>The files are in the same space as the <em>../m2m_ernie/T1fs_conform.nii.gz</em> file</p></li>
 </ol>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Type <code class="code docutils literal notranslate"><span class="pre">msh2nii</span> <span class="pre">-h</span></code> for more information and options.</li>
-<li>This tool equivalent to selecting the <strong>Interpolate to a nifti volume</strong> option in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or set <strong>map_to_vol</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</li>
-<li>Can also be used to create tissue masks with the <code class="code docutils literal notranslate"><span class="pre">--create_masks</span></code> argument.</li>
+<li><p>Type <code class="code docutils literal notranslate"><span class="pre">msh2nii</span> <span class="pre">-h</span></code> for more information and options.</p></li>
+<li><p>This tool equivalent to selecting the <strong>Interpolate to a nifti volume</strong> option in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or set <strong>map_to_vol</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</p></li>
+<li><p>Can also be used to create tissue masks with the <code class="code docutils literal notranslate"><span class="pre">--create_masks</span></code> argument.</p></li>
 </ul>
 </div>
 </div>
@@ -120,8 +118,6 @@
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -142,7 +138,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

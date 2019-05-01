@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>get_fields_at_coordinates &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -43,22 +41,23 @@
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Suppose you want to accurately determine the electric field at a set of positions. The electric fields are in a mesh called <em>ernie_TDCS_1_scalar.msh</em></li>
-<li>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/004dcca567ac5daf7f12c9a618c0347b/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></li>
-<li>Run</li>
+<li><p>Suppose you want to accurately determine the electric field at a set of positions. The electric fields are in a mesh called <em>ernie_TDCS_1_scalar.msh</em></p></li>
+<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/004dcca567ac5daf7f12c9a618c0347b/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
+<li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_fields_at_coordinates -s positions.csv -m ernie_TDCS_1_scalar.msh
 </pre></div>
 </div>
 <p></p>
 <blockquote>
-<div>This will output one file CSV for each field in the mesh, named for example <em>positions_E.csv</em>, <em>positions_normE.csv</em>, …
-These files contain the fields (or field vectors) at each sampling position.</div></blockquote>
+<div><p>This will output one file CSV for each field in the mesh, named for example <em>positions_E.csv</em>, <em>positions_normE.csv</em>, …
+These files contain the fields (or field vectors) at each sampling position.</p>
+</div></blockquote>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Type <code class="code docutils literal notranslate"><span class="pre">get_fields_at_coordinates</span> <span class="pre">-h</span></code> for more information and options</li>
+<li><p>Type <code class="code docutils literal notranslate"><span class="pre">get_fields_at_coordinates</span> <span class="pre">-h</span></code> for more information and options</p></li>
 </ul>
 </div>
 </div>
@@ -118,8 +117,6 @@ These files contain the fields (or field vectors) at each sampling position.</di
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -140,7 +137,7 @@ These files contain the fields (or field vectors) at each sampling position.</di
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

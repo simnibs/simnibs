@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>Setting up and Running Simulations &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -40,98 +38,98 @@
 <div class="section" id="starting-the-gui">
 <h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window</li>
+<li><p>Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>simnibs_gui
 </pre></div>
 </div>
-<dl class="docutils">
-<dt></dt>
-<dd>A window such as the following should appear</dd>
+<dl class="simple">
+<dt></dt><dd><p>A window such as the following should appear</p>
+</dd>
 </dl>
 <img alt="../_images/tutorial_emptygui.png" src="../_images/tutorial_emptygui.png" />
 <ol class="arabic simple" start="2">
-<li>Click on the <em>Browse</em> button next to the <em>Head Mesh</em> box</li>
+<li><p>Click on the <em>Browse</em> button next to the <em>Head Mesh</em> box</p></li>
 </ol>
 <img alt="../_images/tutorial_bowse.png" src="../_images/tutorial_bowse.png" />
 <ol class="arabic simple" start="3">
-<li>Navigate to the example dataset folder and select the <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code> file, in the
-example data set</li>
+<li><p>Navigate to the example dataset folder and select the <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code> file, in the
+example data set</p></li>
 </ol>
 <img alt="../_images/tutorial_selectmsh.png" src="../_images/tutorial_selectmsh.png" />
 <ol class="arabic simple" start="4">
-<li>The head mesh will be loaded and the <strong>m2m Folder</strong> and <strong>Output Folder</strong> boxes filled</li>
+<li><p>The head mesh will be loaded and the <strong>m2m Folder</strong> and <strong>Output Folder</strong> boxes filled</p></li>
 </ol>
 <img alt="../_images/tutorial_guihead.png" src="../_images/tutorial_guihead.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>You can change the <strong>Output Folder</strong> by clicking on the <em>Browse</em> button close to it, and visualize the gray matter surface by clicking on the <em>Gray Matter</em> button above the head model.</dd>
+<dl class="simple">
+<dt></dt><dd><p>You can change the <strong>Output Folder</strong> by clicking on the <em>Browse</em> button close to it, and visualize the gray matter surface by clicking on the <em>Gray Matter</em> button above the head model.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="setting-up-a-tdcs-simulation">
 <h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li>Click on <em>Add tDCS Poslist</em> at the bottom left of the window</li>
+<li><p>Click on <em>Add tDCS Poslist</em> at the bottom left of the window</p></li>
 </ol>
 <img alt="../_images/tutorial_addtdcs.png" src="../_images/tutorial_addtdcs.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>A new tab will show up.</dd>
+<dl class="simple">
+<dt></dt><dd><p>A new tab will show up.</p>
+</dd>
 </dl>
 <ol class="arabic simple" start="2">
-<li>Click on <em>Add Electrode</em></li>
+<li><p>Click on <em>Add Electrode</em></p></li>
 </ol>
 <img alt="../_images/tutorial_addelectrode.png" src="../_images/tutorial_addelectrode.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>A new row will be shown in the table</dd>
+<dl class="simple">
+<dt></dt><dd><p>A new row will be shown in the table</p>
+</dd>
 </dl>
 <ol class="arabic simple" start="3">
-<li>Click twice in the <em>Shape</em> cell</li>
+<li><p>Click twice in the <em>Shape</em> cell</p></li>
 </ol>
 <img alt="../_images/tutorial_shapecell.png" src="../_images/tutorial_shapecell.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>A new window will open where you can configure the electrode size and shape.</dd>
+<dl class="simple">
+<dt></dt><dd><p>A new window will open where you can configure the electrode size and shape.</p>
+</dd>
 </dl>
 <ol class="arabic simple" start="4">
-<li>Let’s suppose we have a <img class="math" src="../_images/math/9b0de8db0d43256c4ae03cb541d94050ea4f3d58.png" alt="7.0 \times 5.5 \text{cm}^2"/> electrode, composed of a single gel layer of 5 mm thickness</li>
+<li><p>Let’s suppose we have a <img class="math" src="../_images/math/9b0de8db0d43256c4ae03cb541d94050ea4f3d58.png" alt="7.0 \times 5.5 \text{cm}^2"/> electrode, composed of a single gel layer of 5 mm thickness</p></li>
 </ol>
 <img alt="../_images/tutorial_electrodegui.png" src="../_images/tutorial_electrodegui.png" />
-<dl class="docutils">
-<dt></dt>
-<dd>Please refer to the <a class="reference internal" href="../documentation/gui.html#gui-docs"><span class="std std-ref">GUI documentation</span></a> for a more detailed explanation of this window. You can also copy/paste electrode definitions by right clicking in the shape cell</dd>
+<dl class="simple">
+<dt></dt><dd><p>Please refer to the <a class="reference internal" href="../documentation/gui.html#gui-docs"><span class="std std-ref">GUI documentation</span></a> for a more detailed explanation of this window. You can also copy/paste electrode definitions by right clicking in the shape cell</p>
+</dd>
 </dl>
 <ol class="arabic simple" start="5">
-<li>Now double click in the <em>Position</em> cell. A new window will appear. You can either select an EEG position from the drop-down menu in the left or click twice in the model to get a position.</li>
+<li><p>Now double click in the <em>Position</em> cell. A new window will appear. You can either select an EEG position from the drop-down menu in the left or click twice in the model to get a position.</p></li>
 </ol>
 <img alt="../_images/tutorial_position1.png" src="../_images/tutorial_position1.png" />
 <p></p>
 <ol class="arabic simple" start="6">
-<li>Choose the C3 electrode from the drop-down menu. A black sphere appears in the electrode position, with a green axis indicating the electrode’s “y” axis</li>
+<li><p>Choose the C3 electrode from the drop-down menu. A black sphere appears in the electrode position, with a green axis indicating the electrode’s “y” axis</p></li>
 </ol>
 <img alt="../_images/tutorial_position2.png" src="../_images/tutorial_position2.png" />
 <p></p>
 <ol class="arabic simple" start="7">
-<li>Select the electrode <em>current</em> in the first column of the electrode tables. <strong>Positive</strong> values designate <strong>anodes</strong>, and <strong>negative</strong> values <strong>cathodes</strong>. The sum of all current values has to be zero.</li>
+<li><p>Select the electrode <em>current</em> in the first column of the electrode tables. <strong>Positive</strong> values designate <strong>anodes</strong>, and <strong>negative</strong> values <strong>cathodes</strong>. The sum of all current values has to be zero.</p></li>
 </ol>
 <img alt="../_images/tutorial_elcurrent.png" src="../_images/tutorial_elcurrent.png" />
 <p></p>
 <ol class="arabic" start="8">
-<li><p class="first">Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.</p>
+<li><p>Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.</p>
 <img alt="../_images/tutorial_position3.png" src="../_images/tutorial_position3.png" />
 </li>
 </ol>
-<dl class="docutils">
-<dt></dt>
-<dd>Select a shape and a current of -1.000 mA for this second electrode.
-You can see a simple preview of the electrode shapes by clicking on <em>Preview Shapes</em> at the bottom of the screen</dd>
+<dl class="simple">
+<dt></dt><dd><p>Select a shape and a current of -1.000 mA for this second electrode.
+You can see a simple preview of the electrode shapes by clicking on <em>Preview Shapes</em> at the bottom of the screen</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="setting-up-a-tms-simulation">
 <h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p class="first">Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p>
+<li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p>
 <img alt="../_images/tutorial_addtms.png" src="../_images/tutorial_addtms.png" />
 </li>
 </ol>
@@ -153,59 +151,58 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </div></blockquote>
 <p></p>
 <ol class="arabic" start="6">
-<li><p class="first">Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.</p>
-</li>
-<li><p class="first">When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p>
+<li><p>Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.</p></li>
+<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p>
 <img alt="../_images/tutorial_dadt.png" src="../_images/tutorial_dadt.png" />
 </li>
 </ol>
 <p></p>
 <div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">This is <strong>NOT the electric field</strong>, but it can be interpreted as a very smooth approximation of it.</p>
+<p class="admonition-title">Attention</p>
+<p>This is <strong>NOT the electric field</strong>, but it can be interpreted as a very smooth approximation of it.</p>
 </div>
 </div>
 <div class="section" id="setting-simulation-options">
 <h2>Setting Simulation Options<a class="headerlink" href="#setting-simulation-options" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p class="first">Go to <em>Edit</em> → <em>Simulation Options</em></p>
+<li><p>Go to <em>Edit</em> → <em>Simulation Options</em></p>
 <img alt="../_images/tutorial_simoptions.png" src="../_images/tutorial_simoptions.png" />
 </li>
 </ol>
-<dl class="docutils">
-<dt></dt>
-<dd><p class="first">The following window will appear</p>
-<blockquote class="last">
+<dl>
+<dt></dt><dd><p>The following window will appear</p>
+<blockquote>
 <div><img alt="../_images/tutorial_simoptions2.png" src="../_images/tutorial_simoptions2.png" />
 </div></blockquote>
 </dd>
 </dl>
 <p></p>
 <ol class="arabic simple" start="2">
-<li>We can select the <em>fields</em> to be output from the simulation</li>
+<li><p>We can select the <em>fields</em> to be output from the simulation</p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><strong>v</strong>: Electrical Potential (Voltage)</li>
-<li><strong>vector E</strong>: Electric field vector</li>
-<li><strong>norm E</strong>: Norm of the electric field</li>
-<li><strong>vector J</strong>: Current density vector</li>
-<li><strong>norm J</strong>: Norm of the current density</li>
-<li><strong>Conductivities</strong>: Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.</li>
-<li><strong>dA/dt</strong>: Primary field caused by the coil. TMS only. This is a vector field</li>
+<li><p><strong>v</strong>: Electrical Potential (Voltage)</p></li>
+<li><p><strong>vector E</strong>: Electric field vector</p></li>
+<li><p><strong>norm E</strong>: Norm of the electric field</p></li>
+<li><p><strong>vector J</strong>: Current density vector</p></li>
+<li><p><strong>norm J</strong>: Norm of the current density</p></li>
+<li><p><strong>Conductivities</strong>: Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.</p></li>
+<li><p><strong>dA/dt</strong>: Primary field caused by the coil. TMS only. This is a vector field</p></li>
 </ul>
 <blockquote>
-<div>Select <strong>vector E</strong> and <strong>norm E</strong>.</div></blockquote>
+<div><p>Select <strong>vector E</strong> and <strong>norm E</strong>.</p>
+</div></blockquote>
 </div></blockquote>
 <ol class="arabic simple" start="3">
-<li>And the  <em>Additional Options</em></li>
+<li><p>And the  <em>Additional Options</em></p></li>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><strong>Interpolate to cortical surface</strong>: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for headreco with SPM-only segmentations.</li>
-<li><strong>Transform to fsaverage space</strong>: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for headreco with SPM-only segmentations.</li>
-<li><strong>Interpolate to a nifiti volume</strong>: Interpolates the fields to a nifti volume.</li>
-<li><strong>Transform to MNI space</strong>: Interpolates the fields to a nifti volume and applies a transformation to MNI space.</li>
+<li><p><strong>Interpolate to cortical surface</strong>: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for headreco with SPM-only segmentations.</p></li>
+<li><p><strong>Transform to fsaverage space</strong>: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for headreco with SPM-only segmentations.</p></li>
+<li><p><strong>Interpolate to a nifiti volume</strong>: Interpolates the fields to a nifti volume.</p></li>
+<li><p><strong>Transform to MNI space</strong>: Interpolates the fields to a nifti volume and applies a transformation to MNI space.</p></li>
 </ul>
 <p>For the example run, we will select all of the above.</p>
 </div></blockquote>
@@ -213,7 +210,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <div class="section" id="running-a-simulation">
 <h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p class="first">Click on Run at the bottom of the screen</p>
+<li><p>Click on Run at the bottom of the screen</p>
 <img alt="../_images/tutorial_runsim.png" src="../_images/tutorial_runsim.png" />
 </li>
 </ol>
@@ -281,8 +278,6 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -303,7 +298,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

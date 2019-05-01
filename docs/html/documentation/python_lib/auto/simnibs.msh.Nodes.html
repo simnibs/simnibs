@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>simnibs.msh.Nodes &#8212; SimNIBS 3.0.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -41,40 +39,31 @@
 <em class="property">class </em><code class="descclassname">simnibs.msh.</code><code class="descname">Nodes</code><span class="sig-paren">(</span><em>node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>class to handle the node information:</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>node_coord</em>) – Coordinates of the nodes</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>node_coord</em>) – Coordinates of the nodes</p>
+</dd>
+</dl>
 <dl class="attribute">
 <dt id="simnibs.msh.Nodes.node_coord">
 <code class="descname">node_coord</code><a class="headerlink" href="#simnibs.msh.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coordinates of the nodes</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">(Nx3) ndarray</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx3) ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="simnibs.msh.Nodes.nr">
 <code class="descname">nr</code><a class="headerlink" href="#simnibs.msh.Nodes.nr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of nodes</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">property</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>property</p>
+</dd>
+</dl>
 </dd></dl>
 
 <p class="rubric">Examples</p>
@@ -95,32 +84,32 @@
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table border="1" class="longtable docutils">
+<table class="longtable docutils align-center">
 <colgroup>
-<col width="10%" />
-<col width="90%" />
+<col style="width: 10%" />
+<col style="width: 90%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Nodes.__init__" title="simnibs.msh.Nodes.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([node_coord])</td>
-<td>Initialize self.</td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Nodes.__init__" title="simnibs.msh.Nodes.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([node_coord])</p></td>
+<td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Nodes.find_closest_node" title="simnibs.msh.Nodes.find_closest_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_node</span></code></a>(querry_points[,&nbsp;return_index])</td>
-<td>Finds the closest node to each point in p</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Nodes.find_closest_node" title="simnibs.msh.Nodes.find_closest_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_node</span></code></a>(querry_points[, return_index])</p></td>
+<td><p>Finds the closest node to each point in p</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table border="1" class="longtable docutils">
+<table class="longtable docutils align-center">
 <colgroup>
-<col width="10%" />
-<col width="90%" />
+<col style="width: 10%" />
+<col style="width: 90%" />
 </colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#simnibs.msh.Nodes.node_number" title="simnibs.msh.Nodes.node_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_number</span></code></a></td>
-<td>Node numbers (1, …, nr)</td>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Nodes.node_number" title="simnibs.msh.Nodes.node_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_number</span></code></a></p></td>
+<td><p>Node numbers (1, …, nr)</p></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#simnibs.msh.Nodes.nr" title="simnibs.msh.Nodes.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></td>
-<td>Number of nodes</td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Nodes.nr" title="simnibs.msh.Nodes.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></p></td>
+<td><p>Number of nodes</p></td>
 </tr>
 </tbody>
 </table>
@@ -128,28 +117,24 @@
 <dt id="simnibs.msh.Nodes.find_closest_node">
 <code class="descname">find_closest_node</code><span class="sig-paren">(</span><em>querry_points</em>, <em>return_index=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Nodes.find_closest_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the closest node to each point in p</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>querry_points</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of points (x,y,z) to which the closes node in the mesh should be found</li>
-<li><strong>return_index</strong> (<em>(</em><em>optional</em><em>) </em><em>bool</em>) – </li>
-<li><strong>to return the index of the closes nodes</strong><strong>, </strong><strong>default</strong> (<em>Whether</em>) – </li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>querry_points</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of points (x,y,z) to which the closes node in the mesh should be found</p></li>
+<li><p><strong>return_index</strong> (<em>(</em><em>optional</em><em>) </em><em>bool</em>) – </p></li>
+<li><p><strong>to return the index of the closes nodes</strong><strong>, </strong><strong>default</strong> (<em>Whether</em>) – </p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><strong>coords</strong> (<em>Nx3 array of floats</em>) – coordinates of the closest points</li>
-<li><strong>indexes</strong> (<em>Nx1 array of ints</em>) – Indices of the nodes in the mesh</li>
-<li><em>————————————–</em></li>
-<li><em>The indices are in the mesh listing, that starts at one!</em></li>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>coords</strong> (<em>Nx3 array of floats</em>) – coordinates of the closest points</p></li>
+<li><p><strong>indexes</strong> (<em>Nx1 array of ints</em>) – Indices of the nodes in the mesh</p></li>
+<li><p><em>————————————–</em></p></li>
+<li><p><em>The indices are in the mesh listing, that starts at one!</em></p></li>
 </ul>
 </p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="attribute">
@@ -225,8 +210,6 @@
     <form class="search" action="../../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -247,7 +230,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
