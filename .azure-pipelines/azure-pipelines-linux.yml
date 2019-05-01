@@ -67,7 +67,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-testRunTitle: 'Publish test results'
+      testRunTitle: 'Publish test results'
   
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
