@@ -116,7 +116,7 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
         pass
     else:
         raise NameError('Failed to parse input volume (not string or nibabel nifti1 volume)')
-    iM = np.dot(np.linalg.pinv(nifti_image.get_affine()),
+    iM = np.dot(np.linalg.pinv(nifti_image.affine),
                 np.linalg.pinv(coil_matrix))
 
     # gets the coordinates in voxel space

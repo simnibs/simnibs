@@ -177,7 +177,7 @@ class TestDirichlet:
         A = sparse.diags(1 + np.arange(6)).tocsc()
         b = -np.arange(6)
         A, b, dof_map = bc.apply(A, b, dof_map)
-        A = A.todense()
+        A = A.toarray()
         assert A.shape == (3, 3)
         assert b.shape == (3, 1)
         assert A[0, 0] == 2
@@ -290,11 +290,11 @@ class TestFEMSystem:
         s = fem.FEMSystem(msh, cond)
         assert np.allclose(s.A.dot(np.ones(s.A.shape[0])), 0)
         assert np.allclose(s.A.dot(np.pi*np.ones(s.A.shape[0])), 0)
-        assert np.allclose(s.A.T.todense(), s.A.todense())
+        assert np.allclose(s.A.T.toarray(), s.A.toarray())
         cond = np.tile(np.eye(3), (msh.elm.nr, 1, 1))
         s = fem.FEMSystem(msh, cond)
         assert np.allclose(s.A.dot(np.pi*np.ones(s.A.shape[0])), 0)
-        assert np.allclose(s.A.T.todense(), s.A.todense())
+        assert np.allclose(s.A.T.toarray(), s.A.toarray())
 
     def test_set_up_tms(self, tms_sphere):
         m, cond, dAdt, E_analytical = tms_sphere

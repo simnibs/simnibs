@@ -1345,7 +1345,7 @@ class COND(object):
         self._distribution_type = None
         self.distribution_parameters = []
 
-        if matlab_struct:
+        if matlab_struct is not None:
             self.read_mat_struct(matlab_struct)
 
     @property

@@ -4170,7 +4170,7 @@ def read_res_file(fn_res, fn_pre=None):
                 else:
                     s += line
             s = s.strip()
-            cols = np.fromstring(s, dtype=np.float)
+            cols = np.frombuffer(s, dtype=np.float)
             v = cols[::2]
 
         else:

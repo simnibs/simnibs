@@ -13,18 +13,18 @@ The pipeline is divided in three parts:
 ## Build Status
 <table>
   <tr>
-  <td>Windows</td>
+  <td>Linux</td>
     <td>
-    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=771&branchName=test_release">
-      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Tests%20Windows?branchName=test_release" alt="variant">
+    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4">
+      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master" alt="variant">
     </a>
     </td>
   </tr>
   <tr>
-  <td>Linux</td>
+  <td>Windows</td>
     <td>
-    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=771&branchName=test_release">
-      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Tests%20Linux?branchName=test_release" alt="variant">
+    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5">
+      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master" alt="variant">
       </a>
     </td>
   </tr>

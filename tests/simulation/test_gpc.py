@@ -42,7 +42,7 @@ class TestHDF5:
         if os.path.isfile('test.hdf5'): os.remove('test.hdf5')
         simnibs_gpc.write_data_hdf5(np.ones((10, 1)), 'ones', 'test.hdf5', 'path/to/')
         with h5py.File('test.hdf5', 'r') as f:
-            data = f['path/to/ones'].value
+            data = f['path/to/ones'][()]
         os.remove('test.hdf5')
         assert np.all(data == 1)
 
@@ -74,9 +74,9 @@ class TestgPC_Regression:
 
         gpc_regression_instance.save_hdf5('test.hdf5')
         with h5py.File('test.hdf5', 'r') as f:
-            assert np.all(f['gpc_object/random_vars'].value == [b"1", b"2"])
-            assert np.all(f['gpc_object/pdftype'].value == [b"beta", b"normal"])
-            assert np.allclose(f['gpc_object/pdfshape'].value, np.array([[1, 0],[1, 2]]))
+            assert np.all(f['gpc_object/random_vars'][()] == [b"1", b"2"])
+            assert np.all(f['gpc_object/pdftype'][()] == [b"beta", b"normal"])
+            assert np.allclose(f['gpc_object/pdfshape'][()], np.array([[1, 0],[1, 2]]))
             assert np.allclose(f['gpc_object/limits'], np.array([[-2, -1e10], [2, 1e10]]))
             assert np.allclose(f['gpc_object/poly_idx'],
                                np.array(np.array([[0, 0], [1, 0], [0, 1]])))
@@ -137,13 +137,13 @@ class TestgPC_Regression:
         with h5py.File(fn, 'r') as f:
             # Linear relationship between random variable and potential, uniform
             # distribution
-            mean_E = f['mesh_roi/elmdata/E_mean'].value
+            mean_E = f['mesh_roi/elmdata/E_mean'][()]
             mean_E_expected = -np.array([5, 0, 0]) * 1e3
             assert np.allclose(mean_E, mean_E_expected)
-            mean_e = f['mesh_roi/elmdata/normE_mean'].value
+            mean_e = f['mesh_roi/elmdata/normE_mean'][()]
             assert np.allclose(mean_e, 5e3)
             # J is a bit more complicated
-            mean_J = f['mesh_roi/elmdata/J_mean'].value
+            mean_J = f['mesh_roi/elmdata/J_mean'][()]
             assert np.allclose(mean_J[msh.elm.tag1==4],
                                mean_E_expected)
             assert np.allclose(mean_J[msh.elm.tag1==5],
@@ -154,7 +154,7 @@ class TestgPC_Regression:
                                mean * -np.array([1, 0, 0]) * 1e3)
             dsets = f['mesh_roi/elmdata/'].keys()
 
-            std_E = f['mesh_roi/elmdata/E_std'].value
+            std_E = f['mesh_roi/elmdata/E_std'][()]
             assert np.allclose(std_E, np.array([np.sqrt(1e8 / 12), 0., 0.]))
             assert 'normE_std' in dsets
             assert 'J_std' in dsets
@@ -307,7 +307,7 @@ class TestSampler:
 
         S.run_simulation([2])
         with h5py.File(fn_hdf5) as f:
-            assert np.allclose(f['random_var_samples'].value, [[1], [2]])
+            assert np.allclose(f['random_var_samples'][()], [[1], [2]])
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][0, :], v_roi)
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][1, :],-v_roi)
             assert np.allclose(f['mesh_roi/data_matrices/E_samples'][0, :],[-1e3, 0., 0.])
