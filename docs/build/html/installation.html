@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Installation &#8212; SimNIBS 3.0b0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial" href="tutorial/tutorial.html" />
+    <link rel="prev" title="SimNIBS: Simulation of Non Invasive Brain Stimulation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
+<li><p>Download the example data set <strong>LINK TO EXAMPLE</strong>.</p></li>
+<li><p>Installation requires an internet connection.</p></li>
+<li><p>SimNIBS now has two programs to create individual head models from MRI data</p>
+<ul>
+<li><p><a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> is an older program. It is not available on Windows and requires
+FreeSurfer (version 5.3.0 or newer) and FSL (version 5.0.9 or newer).</p></li>
+<li><p><a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> is the new head modelling pipeline. It is available for all major
+operating systems and requires MATLAB to run.</p></li>
+</ul>
+</li>
+<li><p>SimNIBS 3.0 has been tested in Ubuntu 18.04, Ubuntu 16.04, CentOS 6, CentOS 7, MacOS 10.13, Windows 7 and Windows 10. A 64-bit computer and 8 GB memory are recommended.</p></li>
+<li><p>In case of problems during the installation, contact <a class="reference external" href="mailto:support&#37;&#52;&#48;simnibs&#46;org">support<span>&#64;</span>simnibs<span>&#46;</span>org</a></p></li>
+<li><p>SimNIBS is copyrighted © by its <a class="reference internal" href="contributors.html#contributors"><span class="std std-ref">authors</span></a> and licensed under <a class="reference download internal" download="" href="_downloads/7d62c575653476e0a3c352e41841b54d/LICENSE.txt"><code class="xref download docutils literal notranslate"><span class="pre">GPL</span> <span class="pre">v3</span></code></a>.</p></li>
+</ul>
+</div>
+<div class="section" id="windows">
+<h2>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
+<li><p>Double click in the auto-installer.</p></li>
+<li><p>SimNIBS will unpack the files and afterwards start a PowerShell window. <strong>Do not
+click on this window</strong>. This step can take between 10 and 30 minutes, depending on
+your computer and internet connection.</p></li>
+</ol>
+<div class="section" id="uninstall">
+<h3>Uninstall<a class="headerlink" href="#uninstall" title="Permalink to this headline">¶</a></h3>
+<p>To uninstall SimNIBS on Windows, double click on the <strong>Uninstall SimNIBS</strong> in the SimNIBS directory</p>
+</div>
+</div>
+<div class="section" id="linux-and-macosx">
+<h2>Linux and MacOSX<a class="headerlink" href="#linux-and-macosx" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
+<li><p>Start a terminal window and navigate to the download folder</p></li>
+<li><p>Uncompress the SimNIBS folder</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tar -zxvf simnibs-3.*.tar.gz
+</pre></div>
+</div>
+<p>4. Go to simnibs-3.X.X-Linux64 folder</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> simnibs-3.*
+</pre></div>
+</div>
+<p>5. Execute the automated installation script</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./install_simnibs.sh
+</pre></div>
+</div>
+<p>6. Open a new terminal window or tab, a message should appear</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Setting up paths for SimNIBS 3.X.X
+SIMNIBSDIR /path/to/simnibs
+</pre></div>
+</div>
+<p></p>
+<ol class="arabic simple" start="7">
+<li><p>(MacOSX only) Download and install <a class="reference external" href="http://gmsh.info/">Gmsh</a>.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The installation script will also modify the ~/.bashrc file (on Linux) or the ~/.bash_profile file (on MacOSX) to set-up the SimNIBS environment whenever a new terminal window starts.</p>
+</div>
+<div class="section" id="optional-configuring-matlab-for-headreco">
+<span id="matlab-headreco"></span><h3>(Optional) Configuring MATLAB for <strong>headreco</strong><a class="headerlink" href="#optional-configuring-matlab-for-headreco" title="Permalink to this headline">¶</a></h3>
+<p>In order to use the <strong>headreco</strong> head meshing script, MATLAB needs to be configured such that typing <strong>matlab</strong> on a terminal window will start it.
+To configure it, type in a terminal window</p>
+<p>On Linux:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sudo ln -s /usr/local/MATLAB/R&lt;VERSION&gt;/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p>On MacOSX:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sudo ln -s /Applications/MATLAB_R&lt;VERSION&gt;.app/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p>Substitute &lt;VERSION&gt; with your MATLAB version.</p>
+<p>If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>matlabroot
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional-installing-fsl-for-mri2mesh-and-dwi2cond">
+<h3>(Optional) installing FSL for <strong>mri2mesh</strong> and <strong>dwi2cond</strong><a class="headerlink" href="#optional-installing-fsl-for-mri2mesh-and-dwi2cond" title="Permalink to this headline">¶</a></h3>
+<p>FSL is needed to run the head segmentation script <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> and the DWI to conductivity tensors script <a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a></p>
+<ol class="arabic simple">
+<li><p>Follow the instructions on <a class="reference external" href="http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation">this link</a></p></li>
+<li><p>Add</p></li>
+</ol>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>source /etc/fsl/5.0/fsl.sh
+</pre></div>
+</div>
+<dl class="simple">
+<dt></dt><dd><p>in the end of the <code class="file docutils literal notranslate"><span class="pre">~/.bashrc</span></code> (Linux) or <code class="file docutils literal notranslate"><span class="pre">~/.bash_profile</span></code> (MacOSX) file (assuming that fsl is installed as usually into <code class="file docutils literal notranslate"><span class="pre">/etc/fsl/5.0</span></code>).</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="optional-installing-freesurfer-for-mri2mesh">
+<h3>(Optional) installing FreeSurfer for <strong>mri2mesh</strong><a class="headerlink" href="#optional-installing-freesurfer-for-mri2mesh" title="Permalink to this headline">¶</a></h3>
+<p>FreeSurfer is needed to run the head segmentation script <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a></p>
+<ol class="arabic simple">
+<li><p>Follow the instructions <a class="reference external" href="http://freesurfer.net/fswiki/DownloadAndInstall">here</a></p></li>
+<li><p>Make sure that you have a registration file, and set the path in the <code class="file docutils literal notranslate"><span class="pre">~/.bashrc</span></code> (Linux) or <code class="file docutils literal notranslate"><span class="pre">~/.bash_profile</span></code> (MacOSX).</p></li>
+</ol>
+</div>
+<div class="section" id="troubleshooting">
+<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>If the message</p></li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Setting up paths for SimNIBS 3.X.X
+SIMNIBSDIR /path/to/simnibs
+</pre></div>
+</div>
+<p></p>
+<blockquote>
+<div><p>does not show up when starting a new terminal, please ensure you are using a <strong>bash</strong> terminal (and <strong>not tcsh</strong>)</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>If you are having problems installing with <strong>sudo</strong>, try adding the <strong>-E</strong> option</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo -E ./install_simnibs.sh
+</pre></div>
+</div>
+<p></p>
+<ul class="simple">
+<li><p>When installing on older Linux distribution such as <strong>CentOS 6</strong>, you might need to
+download an <a class="reference external" href="gmsh.info/bin/Linux/gmsh-2.16.0-Linux64.tgz">older Gmsh binary</a> and
+substitute in the <code class="file docutils literal notranslate"><span class="pre">$SIMNIBSDIR/bin</span></code> folder.</p></li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h3>Uninstall<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="linux">
+<h4>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r <span class="nv">$SIMNIBSDIR</span>
+sed -i.bak <span class="s1">&#39;/SIMNIBS/d&#39;</span> ~/.bashrc
+</pre></div>
+</div>
+<p></p>
+</div>
+<div class="section" id="macosx">
+<h4>MacOSX<a class="headerlink" href="#macosx" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r <span class="nv">$SIMNIBSDIR</span>
+sed -i.bak <span class="s1">&#39;/SIMNIBS/d&#39;</span> ~/.bash_profile
+</pre></div>
+</div>
+<p></p>
+</div>
+</div>
+</div>
+<div class="section" id="optional-matlab-functions">
+<h2>(Optional) MATLAB Functions<a class="headerlink" href="#optional-matlab-functions" title="Permalink to this headline">¶</a></h2>
+<p>MATLAB functions for interacting with SimNIBS are available in the <code class="file docutils literal notranslate"><span class="pre">matlab/</span></code> subfolder of the SimNIBS installation directory.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#windows">Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#linux-and-macosx">Linux and MacOSX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-matlab-functions">(Optional) MATLAB Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">SimNIBS: Simulation of Non Invasive Brain Stimulation</a></li>
+      <li>Next: <a href="tutorial/tutorial.html" title="next chapter">Tutorial</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

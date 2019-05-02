@@ -1,21 +1,6 @@
-###############################################################
-# The setup here is a bit different from normal                #
-# We have two .gitignore files                                 #
-# .gitignore.internal                                          #
-# .gitignore.release                                           #
-# These ".gitignore" files are copied with the name .gitignore"#
-# whenever you check-out a new branch if the hooks are set-up. #
-# So do NOT modify the ".gitigonre" file directly, modify the  #
-# two files above instead.                                     #
-# For more information on the hooks, please see the            #
-# CONTRIBUTING.md file                                         #
-################################################################
-# For the reason stated above, we ignore the .gitignore file itself
-.gitignore
-
 # spm12 folder
 simnibs/resources/spm12/
-
+#
 # Object files
 *.o
 
@@ -52,7 +37,6 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-build/
 develop-eggs/
 dist/
 downloads/
@@ -82,9 +66,6 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
-
-# Sphinx documentation
-_build/
 
 # Spyder project settings
 .spyderproject

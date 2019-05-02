@@ -8,11 +8,11 @@ set -e
 ########################################################
 
 
-repo_root=$(git rev-parse --show-toplevel)
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-
-if [ "$current_branch" = "release" ]; then
-	cp "$repo_root/.gitignore.release" "$repo_root/.gitignore"
-else
-	cp "$repo_root/.gitignore.internal" "$repo_root/.gitignore"
-fi
+#repo_root=$(git rev-parse --show-toplevel)
+#current_branch=$(git rev-parse --abbrev-ref HEAD)
+#
+#if [ "$current_branch" = "release" ]; then
+#	cp "$repo_root/.gitignore.release" "$repo_root/.gitignore"
+#else
+#	cp "$repo_root/.gitignore.internal" "$repo_root/.gitignore"
+#fi

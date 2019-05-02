@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>msh2cortex &#8212; SimNIBS 3.0b0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="msh2nii" href="msh2nii.html" />
+    <link rel="prev" title="eeg_positions" href="eeg_positions.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="msh2cortex">
+<span id="msh2cortex-docs"></span><h1>msh2cortex<a class="headerlink" href="#msh2cortex" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Interpolates fields to a surface in the middle of the cortex, and optinally transforms the fields to the FsAverage template. This only works for head models created with <a class="reference internal" href="mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> or <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> with the <code class="code docutils literal notranslate"><span class="pre">--cat</span></code> option. Not available for head models created using <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> with SPM12 only.</p>
+</div>
+<div class="section" id="usage-example">
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Open a simulation results folder, for example <code class="file docutils literal notranslate"><span class="pre">ernie/simu/</span></code> if you ran <code class="file docutils literal notranslate"><span class="pre">ernie_simu.mat</span></code></p></li>
+<li><p>Run</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>msh2cortex -i ernie_TDCS_1_scalar.msh -m ../m2m_ernie/ -o subject_overlays -f fsavg_overlays
+</pre></div>
+</div>
+<p></p>
+<ol class="arabic simple" start="3">
+<li><p>Freesufer overlays for the subject files will be created in the <code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code> folder and for the average template in the <code class="file docutils literal notranslate"><span class="pre">fsavg_overlays</span> <span class="pre">folder/</span></code>.</p></li>
+</ol>
+</div>
+<div class="section" id="further-notes">
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Type <code class="code docutils literal notranslate"><span class="pre">msh2cortex</span> <span class="pre">-h</span></code> for more information and options</p></li>
+<li><p>This tool equivalent to selecting the <strong>interpolate to cortical surface</strong> or the  <strong>tranform to fsaverage space</strong> options in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or selecting the <strong>map_to_surf</strong> or the <strong>map_to_fsavg</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</p></li>
+<li><p>The <code class="code docutils literal notranslate"><span class="pre">--load_freeview</span></code> option automaticaly loads a FreeView window with the cortical surfaces and overlays calculated using <code class="code docutils literal notranslate"><span class="pre">msh2cortex</span></code> only works with FreeSurfer installed.</p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="command_line.html">Command Line Tools</a><ul>
+      <li>Previous: <a href="eeg_positions.html" title="previous chapter">eeg_positions</a></li>
+      <li>Next: <a href="msh2nii.html" title="next chapter">msh2nii</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/documentation/command_line/msh2cortex.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

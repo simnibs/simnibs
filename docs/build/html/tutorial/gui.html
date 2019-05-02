@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Setting up and Running Simulations &#8212; SimNIBS 3.0b0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Accessing the Command Prompt on Windows" href="win_prompt.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="setting-up-and-running-simulations">
+<span id="gui-tutorial"></span><h1>Setting up and Running Simulations<a class="headerlink" href="#setting-up-and-running-simulations" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial is based on the example data set. Please download it before continue.</p>
+<div class="section" id="starting-the-gui">
+<h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window</p></li>
+</ol>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>simnibs_gui
+</pre></div>
+</div>
+<dl class="simple">
+<dt></dt><dd><p>A window such as the following should appear</p>
+</dd>
+</dl>
+<img alt="../_images/tutorial_emptygui.png" src="../_images/tutorial_emptygui.png" />
+<ol class="arabic simple" start="2">
+<li><p>Click on the <em>Browse</em> button next to the <em>Head Mesh</em> box</p></li>
+</ol>
+<img alt="../_images/tutorial_bowse.png" src="../_images/tutorial_bowse.png" />
+<ol class="arabic simple" start="3">
+<li><p>Navigate to the example dataset folder and select the <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code> file, in the
+example data set</p></li>
+</ol>
+<img alt="../_images/tutorial_selectmsh.png" src="../_images/tutorial_selectmsh.png" />
+<ol class="arabic simple" start="4">
+<li><p>The head mesh will be loaded and the <strong>m2m Folder</strong> and <strong>Output Folder</strong> boxes filled</p></li>
+</ol>
+<img alt="../_images/tutorial_guihead.png" src="../_images/tutorial_guihead.png" />
+<dl class="simple">
+<dt></dt><dd><p>You can change the <strong>Output Folder</strong> by clicking on the <em>Browse</em> button close to it, and visualize the gray matter surface by clicking on the <em>Gray Matter</em> button above the head model.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="setting-up-a-tdcs-simulation">
+<h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Click on <em>Add tDCS Poslist</em> at the bottom left of the window</p></li>
+</ol>
+<img alt="../_images/tutorial_addtdcs.png" src="../_images/tutorial_addtdcs.png" />
+<dl class="simple">
+<dt></dt><dd><p>A new tab will show up.</p>
+</dd>
+</dl>
+<ol class="arabic simple" start="2">
+<li><p>Click on <em>Add Electrode</em></p></li>
+</ol>
+<img alt="../_images/tutorial_addelectrode.png" src="../_images/tutorial_addelectrode.png" />
+<dl class="simple">
+<dt></dt><dd><p>A new row will be shown in the table</p>
+</dd>
+</dl>
+<ol class="arabic simple" start="3">
+<li><p>Click twice in the <em>Shape</em> cell</p></li>
+</ol>
+<img alt="../_images/tutorial_shapecell.png" src="../_images/tutorial_shapecell.png" />
+<dl class="simple">
+<dt></dt><dd><p>A new window will open where you can configure the electrode size and shape.</p>
+</dd>
+</dl>
+<ol class="arabic simple" start="4">
+<li><p>Let’s suppose we have a <img class="math" src="../_images/math/9b0de8db0d43256c4ae03cb541d94050ea4f3d58.png" alt="7.0 \times 5.5 \text{cm}^2"/> electrode, composed of a single gel layer of 5 mm thickness</p></li>
+</ol>
+<img alt="../_images/tutorial_electrodegui.png" src="../_images/tutorial_electrodegui.png" />
+<dl class="simple">
+<dt></dt><dd><p>Please refer to the <a class="reference internal" href="../documentation/gui.html#gui-docs"><span class="std std-ref">GUI documentation</span></a> for a more detailed explanation of this window. You can also copy/paste electrode definitions by right clicking in the shape cell</p>
+</dd>
+</dl>
+<ol class="arabic simple" start="5">
+<li><p>Now double click in the <em>Position</em> cell. A new window will appear. You can either select an EEG position from the drop-down menu in the left or click twice in the model to get a position.</p></li>
+</ol>
+<img alt="../_images/tutorial_position1.png" src="../_images/tutorial_position1.png" />
+<p></p>
+<ol class="arabic simple" start="6">
+<li><p>Choose the C3 electrode from the drop-down menu. A black sphere appears in the electrode position, with a green axis indicating the electrode’s “y” axis</p></li>
+</ol>
+<img alt="../_images/tutorial_position2.png" src="../_images/tutorial_position2.png" />
+<p></p>
+<ol class="arabic simple" start="7">
+<li><p>Select the electrode <em>current</em> in the first column of the electrode tables. <strong>Positive</strong> values designate <strong>anodes</strong>, and <strong>negative</strong> values <strong>cathodes</strong>. The sum of all current values has to be zero.</p></li>
+</ol>
+<img alt="../_images/tutorial_elcurrent.png" src="../_images/tutorial_elcurrent.png" />
+<p></p>
+<ol class="arabic" start="8">
+<li><p>Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.</p>
+<img alt="../_images/tutorial_position3.png" src="../_images/tutorial_position3.png" />
+</li>
+</ol>
+<dl class="simple">
+<dt></dt><dd><p>Select a shape and a current of -1.000 mA for this second electrode.
+You can see a simple preview of the electrode shapes by clicking on <em>Preview Shapes</em> at the bottom of the screen</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="setting-up-a-tms-simulation">
+<h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p>
+<img alt="../_images/tutorial_addtms.png" src="../_images/tutorial_addtms.png" />
+</li>
+</ol>
+<p>2. Click on <em>Browse</em> and select the <em>Magstim_70mm_Fig8.nii.gz</em> coil file</p>
+<blockquote>
+<div><img alt="../_images/tutorial_addcoil.png" src="../_images/tutorial_addcoil.png" />
+</div></blockquote>
+<p>3. Click on <em>Add Position</em></p>
+<blockquote>
+<div><img alt="../_images/tutorial_addposition.png" src="../_images/tutorial_addposition.png" />
+</div></blockquote>
+<p>4. Double click in the <em>Position</em> cell</p>
+<blockquote>
+<div><img alt="../_images/tutorial_positioncell.png" src="../_images/tutorial_positioncell.png" />
+</div></blockquote>
+<p>5. You can select the coil position the same way as an electrode position, or alternatively by double clicking in the head model. In the TMS case, the Y axis where the coil is pointing. Here, we will click on the <em>Gray Matter</em> button above the model window and place the coil above the motor cortex, with the green axis pointing anteriorly. This means that the coil handle points posteriorly. <a class="reference download internal" download="" href="../_downloads/a842c229ca3b490f09e9f3f8d701447c/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">See</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">more</span> <span class="pre">information</span> <span class="pre">on</span> <span class="pre">coil</span> <span class="pre">coordinates</span></code></a></p>
+<blockquote>
+<div><img alt="../_images/tutorial_coilpos.png" src="../_images/tutorial_coilpos.png" />
+</div></blockquote>
+<p></p>
+<ol class="arabic" start="6">
+<li><p>Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.</p></li>
+<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p>
+<img alt="../_images/tutorial_dadt.png" src="../_images/tutorial_dadt.png" />
+</li>
+</ol>
+<p></p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This is <strong>NOT the electric field</strong>, but it can be interpreted as a very smooth approximation of it.</p>
+</div>
+</div>
+<div class="section" id="setting-simulation-options">
+<h2>Setting Simulation Options<a class="headerlink" href="#setting-simulation-options" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Go to <em>Edit</em> → <em>Simulation Options</em></p>
+<img alt="../_images/tutorial_simoptions.png" src="../_images/tutorial_simoptions.png" />
+</li>
+</ol>
+<dl>
+<dt></dt><dd><p>The following window will appear</p>
+<blockquote>
+<div><img alt="../_images/tutorial_simoptions2.png" src="../_images/tutorial_simoptions2.png" />
+</div></blockquote>
+</dd>
+</dl>
+<p></p>
+<ol class="arabic simple" start="2">
+<li><p>We can select the <em>fields</em> to be output from the simulation</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>v</strong>: Electrical Potential (Voltage)</p></li>
+<li><p><strong>vector E</strong>: Electric field vector</p></li>
+<li><p><strong>norm E</strong>: Norm of the electric field</p></li>
+<li><p><strong>vector J</strong>: Current density vector</p></li>
+<li><p><strong>norm J</strong>: Norm of the current density</p></li>
+<li><p><strong>Conductivities</strong>: Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.</p></li>
+<li><p><strong>dA/dt</strong>: Primary field caused by the coil. TMS only. This is a vector field</p></li>
+</ul>
+<blockquote>
+<div><p>Select <strong>vector E</strong> and <strong>norm E</strong>.</p>
+</div></blockquote>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>And the  <em>Additional Options</em></p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Interpolate to cortical surface</strong>: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for headreco with SPM-only segmentations.</p></li>
+<li><p><strong>Transform to fsaverage space</strong>: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for headreco with SPM-only segmentations.</p></li>
+<li><p><strong>Interpolate to a nifiti volume</strong>: Interpolates the fields to a nifti volume.</p></li>
+<li><p><strong>Transform to MNI space</strong>: Interpolates the fields to a nifti volume and applies a transformation to MNI space.</p></li>
+</ul>
+<p>For the example run, we will select all of the above.</p>
+</div></blockquote>
+</div>
+<div class="section" id="running-a-simulation">
+<h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Click on Run at the bottom of the screen</p>
+<img alt="../_images/tutorial_runsim.png" src="../_images/tutorial_runsim.png" />
+</li>
+</ol>
+<p>2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and after finished the bar in the bottom of the window changes from <em>Teminate</em> to <em>Close</em>.</p>
+<blockquote>
+<div><img alt="../_images/tutorial_simrunning.png" src="../_images/tutorial_simrunning.png" />
+</div></blockquote>
+<p></p>
+<p>Now, please go on to our tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p>
+</div>
+<div class="section" id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<p>For more information on the GUI, please see the <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="tutorial.html">Tutorial</a><ul>
+      <li>Previous: <a href="tutorial.html" title="previous chapter">Tutorial</a></li>
+      <li>Next: <a href="win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/tutorial/gui.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

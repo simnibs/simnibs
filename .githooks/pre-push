@@ -10,7 +10,7 @@ set -e
 
 repo_root=$(git rev-parse --show-toplevel)
 current_branch=$(git rev-parse --abbrev-ref HEAD)
-# prevents the code from braking if no upstream is ter
+# prevents the code from breaking if no upstream is set
 if master_upstream=$(git rev-parse --abbrev-ref $current_branch@{u} 2>/dev/null); then
 	master_has_upstream=true
 else
@@ -18,7 +18,7 @@ else
 fi
 files_in_push=$(git diff --name-only "origin/$current_branch" 2>/dev/null);
 
-if [ "$current_branch" = "release" ]; then
+if [ "$current_branch" = "master" ]; then
 	has_internal=false
 	for f in $files_in_push
 	do

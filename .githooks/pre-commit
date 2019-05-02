@@ -11,7 +11,7 @@ set -e
 repo_root=$(git rev-parse --show-toplevel)
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 files_staged=$(git diff --name-only --cached)
-if [ "$current_branch" = "release" ]; then
+if [ "$current_branch" = "master" ]; then
 	has_internal=false
 	for f in $files_staged
 	do
