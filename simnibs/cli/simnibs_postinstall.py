@@ -490,7 +490,7 @@ def uninstaller_setup(install_dir):
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'simnibs_postinstall.py'),
             uninstaller, commands='-u')
-        with open(uninstaller + '.cmd', 'a') as f:
+        with open(uninstaller, 'a') as f:
             f.write('\n')
             f.write(f'rm -rf {install_dir}')
 
