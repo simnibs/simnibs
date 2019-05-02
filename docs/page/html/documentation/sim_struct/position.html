@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>POSITION &#8212; SimNIBS 3.0b0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="File Formats in SimNIBS" href="../file_formats.html" />
+    <link rel="prev" title="ELECTRODE" href="electrode.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="position">
+<span id="position-doc"></span><h1>POSITION<a class="headerlink" href="#position" title="Permalink to this headline">¶</a></h1>
+<p>Describes a coil position for a TMS simulation</p>
+<div class="section" id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p><strong>Python</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="n">tms_list</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">()</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">tmslist</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><strong>MATLAB</strong></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">pos</span><span class="p">;</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+</div>
+<div class="section" id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p><strong>centre</strong>: <em>list/array of floats or string/character array (Python/MATLAB)</em></p>
+<ul>
+<li><p><strong>Description</strong>: Center of the coil. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position</p></li>
+<li><p><strong>Example</strong> <em>Python/MATLAB</em></p>
+<p>Center the coil in Cz</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">coil</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;Cz&#39;</span>
+</pre></div>
+</div>
+<p></p>
+<p>Center the coil using the coordinates</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">coil</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.8</span><span class="p">,</span> <span class="mf">116.0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Note</strong>: <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>. Coordinates will be projected to the surface and then added the <strong>distance</strong>. Ignored if <strong>matsimnibs</strong> is set.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><strong>pos_ydir</strong>: <em>list/array of floats or string/character array (Python/MATLAB)</em></p>
+<ul>
+<li><p><strong>Description</strong>: Position along the coil’s y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (<a class="reference download internal" download="" href="../../_downloads/b03a71f9518eaf3eb6fbc3a24ec266f2/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>).</p></li>
+<li><p><strong>Example</strong>: <em>Python/MATLAB</em></p>
+<p>Set-up a coil centered in C3 and pointing posteriorly</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="s1">&#39;CP3&#39;</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Note</strong>: <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>. Coordinates will be projected to the surface. Ignored if <strong>matsimnibs</strong> is set.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><strong>distance</strong>: <em>float, optional</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Distance from the coil to the scalp, in mm.</p></li>
+<li><p><strong>Default</strong>: 4mm</p></li>
+<li><p><strong>Note</strong>: Ignored if <strong>matsimnibs</strong> is set.</p></li>
+</ul>
+</li>
+<li><p><strong>didt</strong>: <em>float, optional</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Rate of change of current in the coil, in A/s. In some stimulators, this value is given in the screen short after a pulse is give.</p></li>
+<li><p><strong>Default</strong>: 1e6 A/s</p></li>
+</ul>
+</li>
+<li><p><strong>matsimnibs</strong>: <em>4x4 list/array of floats (Python/MATLAB)</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Affine transformation matrix defining coil position and directions. The matrix has the form</p></li>
+</ul>
+<div class="math">
+<p><img src="../../_images/math/6684ff746e9bf77abda544c0bbdaaf0f96470ab0.png" alt="\left[\begin{array}{cccc}
+p^x_1 &amp; p^y_1 &amp; p^z_1 &amp; p^c_1\\
+p^x_2 &amp; p^y_2 &amp; p^z_2 &amp; p^c_3\\
+p^x_3 &amp; p^y_3 &amp; p^z_3 &amp; p^c_2\\
+0 &amp; 0 &amp; 0 &amp; 1
+\end{array}\right]."/></p>
+</div></li>
+</ul>
+<p></p>
+<blockquote>
+<div><blockquote>
+<div><p>Where <img class="math" src="../../_images/math/662d6fe3784f45c7e3d604568e3a34275e4d58eb.png" alt="\mathbf{p}^x"/>, <img class="math" src="../../_images/math/418bba3bd19f2de8b2b75c920a3e2db5d244df3d.png" alt="\mathbf{p}^y"/> and <img class="math" src="../../_images/math/8c39977e67161a16dbb3b9a9d44a002985f4982c.png" alt="\mathbf{p}^z"/> are the x, y and z coil axes (<a class="reference download internal" download="" href="../../_downloads/b03a71f9518eaf3eb6fbc3a24ec266f2/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>). Those should be mutually orthogonal and span a right-handed coordinate system. <img class="math" src="../../_images/math/3d48bed8239fd576e0454ea7f014027b22d74f2a.png" alt="\mathbf{p}^c"/> is the center of the coil. <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p><strong>note</strong>: Be careful when setting up simulations this way. If the directions are set
+wrongly, the coil might end up inside the head.</p></li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>Set up a simulation with a coil centered in C3, pointing posteriorly (towards CP3), with a distance of 5mm from the cortex and a <img class="math" src="../../_images/math/86fc2b0ab4a75d621c06bf0a9afd5b15797ed8b9.png" alt="dI/dt = 20 \times 10^6"/> A/s.</p>
+<p><em>Python/MATLAB</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="s1">&#39;CP3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">didt</span> <span class="o">=</span> <span class="mf">20e6</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p>Run a simulation with the coil placed at (-1.2, -15.8, 120.0), pointing anteriorly and facing downwards.</p>
+<p>By default, in the head models <em>+y</em> indicates the anterior direction. Therefore, the coil <em>y</em> axis is to be aligned with the model’s. Also by default, <em>+z</em> indicats the superior directio. Therefore, given the <a class="reference download internal" download="" href="../../_downloads/b03a71f9518eaf3eb6fbc3a24ec266f2/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">definitions</span></code></a>, the coil <em>z</em> axis need to point towards the <em>-z</em> direction. Finally, for the coordinates to be right-handed <img class="math" src="../../_images/math/a6899979ae8883d1c57bd8e7ec2b1be86af01633.png" alt="\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z"/>.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">matsimnibs</span> <span class="o">=</span> <span class="p">[</span>
+  <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">],</span>
+  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.8</span><span class="p">],</span>
+  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">120.0</span><span class="p">],</span>
+  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="p">.</span><span class="n">matsimnibs</span> <span class="p">=</span> <span class="p">[</span><span class="c">...</span>
+  <span class="o">-</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">;</span><span class="c">...</span>
+  <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="o">-</span><span class="mf">15.8</span><span class="p">;</span><span class="c">...</span>
+  <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="mf">120.0</span><span class="p">;</span><span class="c">...</span>
+  <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">];</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="sim_struct.html">Simulation Data Structures</a><ul>
+      <li>Previous: <a href="electrode.html" title="previous chapter">ELECTRODE</a></li>
+      <li>Next: <a href="../file_formats.html" title="next chapter">File Formats in SimNIBS</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/documentation/sim_struct/position.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

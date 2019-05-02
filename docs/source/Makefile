@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = simnibs
 SOURCEDIR     = .
 #BUILDDIR      = _build
-BUILDDIR      = ..
+BUILDDIR      = ../page
 
 # Put it first so that "make" without argument is like "make help".
 help:

@@ -8,7 +8,7 @@ if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
 set SOURCEDIR=.
-set BUILDDIR=..
+set BUILDDIR=..\page
 set SPHINXPROJ=simnibs
 
 if "%1" == "" goto help
