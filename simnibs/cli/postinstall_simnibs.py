@@ -316,11 +316,11 @@ def links_setup(install_dir):
         lnk = os.path.join(install_dir, 'examples')
         if os.path.islink(lnk):
             os.remove(lnk)
-        os.symlink(os.path.join(install_dir, 'examples'), lnk)
+        os.symlink(os.path.join(SIMNIBSDIR, 'examples'), lnk)
         lnk = os.path.join(install_dir, 'simnibs')
         if os.path.islink(lnk):
             os.remove(lnk)
-        os.symlink(os.path.join(install_dir, 'simnibs'), lnk)
+        os.symlink(SIMNIBSDIR, lnk)
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
