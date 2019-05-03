@@ -107,9 +107,9 @@ def _write_windows_cmd(python_cli, bash_cli, gui=False, commands='%*'):
         f.write("@echo off\n")
         f.write(f'call "{activate_bin}" simnibs_env\n')
         if python_cli is None:
-            f.write(f'{python_interpreter} %*')
+            f.write(f'call {python_interpreter} %*')
         else:
-            f.write(f'{python_interpreter} -E -u "{python_cli}"  {commands}')
+            f.write(f'call {python_interpreter} -E -u "{python_cli}"  {commands}')
 
 def setup_gmsh_options(force=False, silent=False):
     ''' Copies the gmsh_options file to the appropriate place '''
@@ -302,6 +302,26 @@ def matlab_setup(install_dir):
     for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab', '*')):
         _copy_and_log(m, destdir)
 
+def links_setup(install_dir):
+    if sys.platform == 'win32':
+        _create_shortcut(
+            os.path.join(install_dir, 'examples'),
+            os.path.join(SIMNIBSDIR, 'examples')
+        )
+        _create_shortcut(
+            os.path.join(install_dir, 'simnibs'),
+            os.path.join(SIMNIBSDIR)
+        )
+    else:
+        lnk = os.path.join(install_dir, 'examples')
+        if os.path.islink(lnk):
+            os.remove(lnk)
+        os.symlink(os.path.join(install_dir, 'examples'), lnk)
+        lnk = os.path.join(install_dir, 'simnibs')
+        if os.path.islink(lnk):
+            os.remove(lnk)
+        os.symlink(os.path.join(install_dir, 'simnibs'), lnk)
+
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
     if sys.platform == 'win32':
@@ -339,6 +359,11 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         os.path.join(scripts_dir, 'simnibs_gui'),
         icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.bmp')
     )
+    if sys.platform == 'win32':
+        _create_shortcut(
+            os.path.join(shortcut_folder, 'SimNIBS Directory'),
+            os.path.abspath(os.path.join(scripts_dir, '..')),
+        )
     if sys.platform == 'linux':
         subprocess.run(
             ['update-desktop-database',
@@ -411,8 +436,8 @@ def setup_file_association(force=False, silent=False):
         # We need to run with admin privileges
         # So a write a .cmd script and run it with administrative privileges
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'assoc {ext}=gmsh.simnibs\n') for ext, val in associate.items() if val]
-            f.write(f'ftype gmsh.simnibs="{gmsh_bin}" "%%1"')
+            [f.write(f'call assoc {ext}=gmsh.simnibs\n') for ext, val in associate.items() if val]
+            f.write(f'call ftype gmsh.simnibs="{gmsh_bin}" "%%1"')
             temp_fn = f.name
         # I need to run as shell for some reason
         ret = subprocess.run(
@@ -452,8 +477,8 @@ def file_associations_cleanup():
     
     if sys.platform == 'win32':
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'assoc {ext}=\n') for ext, val in associate.items() if val]
-            f.write(f'ftype gmsh.simnibs=')
+            [f.write(f'call assoc {ext}=\n') for ext, val in associate.items() if val]
+            f.write(f'call ftype gmsh.simnibs=')
             temp_fn = f.name
 
         # I need to run as shell for some reason
@@ -473,7 +498,8 @@ def uninstaller_setup(install_dir, force, silent):
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-d {install_dir} -u %*')
+            uninstaller, commands=f'-d {install_dir} -u %*',
+            gui=True)
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
@@ -620,7 +646,7 @@ if GUI:
             if not new_value:
                 QtWidgets.QMessageBox.warning(
                     self, 'SimNIBS',
-                    'Visualization of models and simulations will be affected')
+                    'Visualization of head models and simulation results will be affected')
 
         def set_add_to_path(self, new_value):
             self.add_to_path = new_value
@@ -641,7 +667,7 @@ if GUI:
             if not new_value:
                 QtWidgets.QMessageBox.warning(
                     self, 'SimNIBS',
-                    'Models and Simulation results will not automatically open in Gmsh')
+                    'Models and simulation results will not automatically open in Gmsh')
 
 
     def start_gui(simnibsdir):
@@ -704,6 +730,7 @@ def install(install_dir, force, silent,
     if associate_files:
         setup_file_association(force, silent)
     matlab_setup(install_dir)
+    links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
 
@@ -719,7 +746,7 @@ def uninstall(install_dir):
              install_dir,'miniconda3',
             'Uninstall-Miniconda3.exe')
         try:
-            subprocess.call(f'"{conda_uninstaller}"" /S')
+            subprocess.run(f'"{conda_uninstaller}"" /S', shell=True)
         except:
             pass
     shutil.rmtree(install_dir)
