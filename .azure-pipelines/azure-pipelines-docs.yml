@@ -1,0 +1,29 @@
+# This job only publishes the documentations
+trigger:
+- master
+
+jobs:
+- job: Build
+  pool:
+    vmImage: 'ubuntu-16.04'
+    maxParallel: 4
+
+  steps:
+  - bash: |
+      cd docs/build/html/
+      zip -r documentation.zip *
+    displayName: Create Zip
+
+  - task: GithubRelease@0
+    displayName: Edit GitHub Release
+    inputs: 
+      gitHubConnection: guilhermebs
+      repositoryName: simnibs/simnibs
+      action: edit
+      tag: dev
+      assets: $(System.ArtifactsDirectory)/docs/build/html/documentation.zip
+      assetUploadMode: 'replace'
+      isDraft: true
+
+
+
