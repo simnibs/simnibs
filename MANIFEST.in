@@ -10,3 +10,4 @@ graft simnibs/bin
 graft simnibs/lib
 graft simnibs/include
 graft simnibs/resources
+graft simnibs/examples
