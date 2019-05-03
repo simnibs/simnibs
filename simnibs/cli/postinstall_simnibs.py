@@ -313,10 +313,12 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
 
     if os.path.isdir(shortcut_folder):
-        overwrite = _get_input(
-            'Found other SimNIBS menu icons, overwrite them?',
-            silent)
-
+        if force:
+            overwrite = True
+        else:
+            overwrite = _get_input(
+                'Found other SimNIBS menu icons, overwrite them?',
+                silent)
         if not overwrite:
             print('Not adding shortucts to the current SimNIBS install')
             return
@@ -377,13 +379,12 @@ def shortcut_icons_clenup():
             os.environ['APPDATA'],
             "Microsoft\Windows\Start Menu\Programs\SimNIBS"
         )
-        shutil.rmtree(shortcut_folder)
-        # wait
-        while os.path.exists(shortcut_folder):
-            pass
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
+    if os.path.isdir(shortcut_folder):
         shutil.rmtree(shortcut_folder)
+        while os.path.exists(shortcut_folder):
+            pass
 
 def setup_file_association(force=False, silent=False):
     # Linux file associations are done together with desktop items
@@ -394,9 +395,12 @@ def setup_file_association(force=False, silent=False):
     associate = dict.fromkeys(extensions)
     for ext in extensions:
         if _is_associated(ext):
-            associate[ext] = _get_input(
-                f'Found other association for "{ext}" files, overwrite it?',
-                silent)
+            if force:
+                associate[ext] = True
+            else:
+                associate[ext] = _get_input(
+                    f'Found other association for "{ext}" files, overwrite it?',
+                    silent)
         else:
             associate[ext] = True
     # If all rejected, return
@@ -464,42 +468,68 @@ def file_associations_cleanup():
         finally:
             os.remove(temp_fn)
 
-def uninstaller_setup(install_dir):
+def uninstaller_setup(install_dir, force, silent):
     uninstaller = os.path.join(install_dir, 'uninstall_simnibs')
     if sys.platform == 'win32':
         _write_windows_cmd(
-            os.path.join(SIMNIBSDIR, 'cli', 'simnibs_postinstall.py'),
-            uninstaller, commands='-u')
-
-        conda_uninstaller = os.path.join(
-            install_dir,'miniconda3',
-            'Uninstall-Miniconda3.exe')
-
-
-        with open(uninstaller + '.cmd', 'a') as f:
-            f.write('\n')
-            f.write(f'"{conda_uninstaller}"" /S\n')
-            f.write(f'rd /s /q "{install_dir}"\n')
-
+            os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
+            uninstaller, commands=f'-d {install_dir} -u %*')
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
             os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.bmp')
         )
+        uninstall_registry = r'HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS'
+        res = subprocess.run(
+            f'reg query {uninstall_registry}',
+            shell=True, capture_output=True)
+        try:
+            res.check_returncode()
+        # NOt found in gegistry
+        except subprocess.CalledProcessError:
+            answ = True
+        else:
+            if force:
+                answ = True
+            else:
+                answ = _get_input(
+                    'Found other SimNIBS uninstaller overwrite it?',
+                    silent)
+        if answ:
+            uninstaller_cleanup()
+            res = subprocess.run(
+                f'reg add {uninstall_registry} '
+                f'/v UninstallString /t REG_SZ /d "{uninstaller}.cmd" /f',
+                shell=True)
+            res = subprocess.run(
+                f'reg add {uninstall_registry} '
+                f'/v DisplayIcon /t REG_SZ /d {os.path.join(SIMNIBSDIR, "resources", "gui_icon.ico")} /f',
+                shell=True)
+            res = subprocess.run(
+                f'reg add {uninstall_registry} '
+                f'/v DisplayName /t REG_SZ /d SimNIBS /f',
+                shell=True)
+            res = subprocess.run(
+                f'reg add {uninstall_registry} '
+                f'/v DisplayVersion /t REG_SZ /d {__version__} /f',
+                shell=True)
     else:
         _write_unix_sh(
-            os.path.join(SIMNIBSDIR, 'cli', 'simnibs_postinstall.py'),
-            uninstaller, commands='-u')
-        with open(uninstaller, 'a') as f:
-            f.write('\n')
-            f.write(f'rm -rf {install_dir}')
+            os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
+            uninstaller, commands=f'-d {install_dir} -u "$@"')
 
+def uninstaller_cleanup():
+    if sys.platform == 'win32':
+        uninstall_registry = r'HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS'
+        res = subprocess.run(
+            f'reg delete {uninstall_registry} /f',
+            shell=True)
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')
     if sys.platform == 'win32':
         _write_windows_cmd(
-            os.path.join(SIMNIBSDIR, 'cli', 'simnibs_postinstall.py'),
+            os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             activator, gui=True, commands=f'-d {install_dir}')
 
         _create_shortcut(
@@ -509,7 +539,7 @@ def activator_setup(install_dir):
         )
     else:
         _write_unix_sh(
-            os.path.join(SIMNIBSDIR, 'cli', 'simnibs_postinstall.py'),
+            os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             activator, commands=f'-d {install_dir}')
 
 
@@ -629,6 +659,33 @@ if GUI:
         else:
             raise Exception('Post-installation cancelled by user')
 
+    class UnintallerGUI(QtWidgets.QDialog):
+        def __init__(self):
+            super().__init__()
+            button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok|QtWidgets.QDialogButtonBox.Cancel)
+            button_box.accepted.connect(self.accept)
+            button_box.rejected.connect(self.reject)
+            mainLayout = QtWidgets.QVBoxLayout()
+            mainLayout.addWidget(
+                QtWidgets.QLabel(
+                    f'SimNIBS version {__version__} will be uninstalled. '
+                    'Are you sure?'))
+            mainLayout.addWidget(button_box)
+            self.setLayout(mainLayout)
+            self.setWindowTitle('SimNIBS Uninstaller')
+            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
+            self.setWindowIcon(QtGui.QIcon(gui_icon))
+
+    def start_uninstall_gui(target_dir):
+        app = QtWidgets.QApplication(sys.argv)
+        ex = UnintallerGUI()
+        ex.show()
+        app.exec_()
+        if ex.result():
+            uninstall(target_dir)
+        else:
+            raise Exception('uninstall cancelled by user')
 
 def install(install_dir, force, silent,
             copy_gmsh_options=True,
@@ -648,12 +705,24 @@ def install(install_dir, force, silent,
         setup_file_association(force, silent)
     matlab_setup(install_dir)
     activator_setup(install_dir)
-    uninstaller_setup(install_dir)
+    uninstaller_setup(install_dir, force, silent)
 
-def uninstall():
+
+
+def uninstall(install_dir):
     path_cleanup()
     shortcut_icons_clenup()
     file_associations_cleanup()
+    uninstaller_cleanup()
+    if sys.platform == 'win32':
+        conda_uninstaller = os.path.join(
+             install_dir,'miniconda3',
+            'Uninstall-Miniconda3.exe')
+        try:
+            subprocess.call(f'"{conda_uninstaller}"" /S')
+        except:
+            pass
+    shutil.rmtree(install_dir)
 
 
 def _get_default_dir():
@@ -663,7 +732,7 @@ def _get_default_dir():
         return os.path.join(os.environ['HOME'], 'SimNIBS')
 
 def main():
-    parser = argparse.ArgumentParser(prog="simnibs_postinstall",
+    parser = argparse.ArgumentParser(prog="postinstall_simnibs",
                                      description="Optional post-installation procedures "
                                      "for SimNIBS ")
     parser.add_argument('-d', "--target_dir", required=False,
@@ -677,14 +746,17 @@ def main():
                         help="Ignores all other arguments and uninstall SimNIBS")
     args = parser.parse_args(sys.argv[1:])
     if args.uninstall:
-        uninstall()
+        if args.silent:
+            uninstall(args.target_dir)
+        else:
+            start_uninstall_gui(args.target_dir)
         return
     install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if not args.silent:
         if not GUI:
             raise ImportError(
                 'Trying to run post-install script without PyQt istalled, '
-                'please use the silent mode (simnibs_postinstall --help for '
+                'please use the silent mode (postinstall_simnibs --help for '
                 'more information')
         start_gui(install_dir)
 
