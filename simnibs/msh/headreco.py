@@ -789,13 +789,10 @@ def headmodel(argv):
         # test if freeview is installed
         usefreeview=True
         try:
-             # suppress output by piping it to os.devnull
-             call("freeview -h".split(), stdout=open(os.devnull, 'wb'))
+            # suppress output by piping it to os.devnull
+            call("freeview -h".split(), stdout=open(os.devnull, 'wb'))
         except OSError as e:
-             if e.errno == os.errno.ENOENT:
-                usefreeview=False
-             else:
-                raise e # Something else went wrong, raise
+            usefreeview=False
 
         if usefreeview:                 
              visualize(args.subject_id, surfaces, T1, mask_initial, mask_final,
@@ -2072,10 +2069,7 @@ def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False):
         p = hmu.spawn_process(cmd, new_process=True)
     
     if show_mni:
-        ref_mni = os.path.abspath(os.path.realpath(
-                        os.path.join(__file__, '..', '..', '..', '..', '..',
-                        'resources', 'templates',
-                        'MNI152_T1_1mm.nii.gz')))
+        ref_mni = file_finder.templates.mni_volume
         if not os.path.isfile(ref_mni):
                 raise IOError('Could not find reference volume in mni space at: {0}'.format(
                         ref_mni))
