@@ -37,6 +37,7 @@ import h5py
 from . import cond
 from ..msh import transformations
 from ..msh import mesh_io
+from ..utils import simnibs_logger
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
@@ -454,12 +455,15 @@ class SESSION(object):
         fh_s.setLevel(25)
         logger.addHandler(fh_s)
         self._log_handlers += [fh_s]
+        simnibs_logger.register_excepthook(logger)
+
 
 
     def _finish_logger(self):
         logger = logging.getLogger("simnibs")
         [logger.removeHandler(lh) for lh in self._log_handlers]
         self._log_handlers = []
+        simnibs_logger.unregister_excepthook()
 
     def __str__(self):
         string = 'Subject Folder: %s\n' % self.subpath
@@ -835,11 +839,8 @@ class SimuList(object):
             g.attrs['anisotropic_tissues'] = self.anisotropic_tissues
             g.attrs['anisotropy_type'] = self.anisotropy_type
             aniso = False
-            if self.fn_tensor_nifti or self.anisotropy_vol is not None:
+            if self.anisotropy_type in ['dir', 'vn', 'mc']:
                 image, affine = self._get_vol_info()
-                aniso = True
-
-            if aniso:
                 g.create_dataset('anisotropy_vol', data=image)
                 g.create_dataset('anisotropy_affine', data=affine)
 
@@ -1453,10 +1454,10 @@ class TDCSLIST(SimuList):
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
-            if not self.cond[99 + i].name:
+            if self.cond[99 + i].value is None:
                 self.cond[99 + i].name = 'el' + str(i)
                 self.cond[99 + i].value = self.cond[99].value
-            if not self.cond[499 + i].name:
+            if self.cond[499 + i].value is None:
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
 
