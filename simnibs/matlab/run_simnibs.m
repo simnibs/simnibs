@@ -29,4 +29,6 @@ path_to_simnibs = fullfile(fileparts(mfilename('fullpath')), 'simnibs');
 
 result = system([path_to_simnibs ' ' name_mat]);
 
-
+if result ~= 0
+    error('There was an error running SimNIBS')
+end

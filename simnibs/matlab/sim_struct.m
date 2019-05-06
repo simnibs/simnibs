@@ -29,7 +29,7 @@ function S = sim_struct(type)
 
 
 validtypes={'SESSION', 'VOLUME', 'TMSLIST', 'TDCSLIST', 'POSITION', ...
-    'ELECTRODE', 'COND', 'LIST','FIDUCIALS', 'LEADFIELD', 'TDCSLEADFIELD'gt};
+    'ELECTRODE', 'COND', 'LIST','FIDUCIALS', 'LEADFIELD', 'TDCSLEADFIELD'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
