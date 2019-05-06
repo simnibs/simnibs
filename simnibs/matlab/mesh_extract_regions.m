@@ -78,7 +78,7 @@ idx_kept_nodes=false(size(m.nodes,1),1);
 idx_kept_tri=false(size(m.triangles,1),1);
 idx_kept_tet=false(size(m.tetrahedra,1),1);
 
-if keepTri
+if keepTri && size(m.triangles,1) > 0
     if isempty(s.region_idx)
         idx_kept_tri(:)=true;
     else
@@ -100,7 +100,7 @@ if keepTri
     end
 end
 
-if keepTet
+if keepTet && size(m.tetrahedra,1) > 0
     if isempty(s.region_idx)
         idx_kept_tet(:)=true;
     else
