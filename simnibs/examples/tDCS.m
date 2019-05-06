@@ -29,8 +29,8 @@ S.poslist{1}.electrode(2).dimensions = [50, 70];
 S.poslist{1}.electrode(2).thickness = 4;
 
 %% Run Simulation
-run_simnibs(S)
+run_simnibs(S);
 
 %% Visualize Simulations
-m = mesh_load_gmsh4(fullfile('tdcs_minimal', 'ernie_TDCS_1_scalar.msh'));
+m = mesh_load_gmsh4(fullfile(S.pathfem, 'ernie_TDCS_1_scalar.msh'));
 mesh_show_surface(m);

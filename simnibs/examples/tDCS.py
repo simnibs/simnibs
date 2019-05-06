@@ -1,7 +1,7 @@
-''' Example for running a SimNIBS Uncertainty Quantification
+''' Example for running a SimNIBS tDCS simulation in Python
     Run with:
 
-    simnibs_python example_gpc.py
+    simnibs_python tDCS.py
 
     Copyright (C) 2018 Guilherme B Saturnino
 '''
@@ -9,7 +9,7 @@ from simnibs import sim_struct, run_simnibs
 
 S = sim_struct.SESSION()
 S.fnamehead = 'ernie.msh'  # head mesh
-S.pathfem = 'tdcs_gpc'  # Directory for the simulation
+S.pathfem = 'tdcs'  # Directory for the simulation
 
 tdcs = S.add_tdcslist()
 tdcs.currents = [0.001, -0.001]  # Current flow though each channel (mA)
@@ -28,11 +28,4 @@ so_electrode.shape = 'rect'
 so_electrode.dimensions = [50, 70]
 so_electrode.thickness = 4
 
-# WM
-tdcs.cond[0].distribution_type = 'beta'
-tdcs.cond[0].distribution_parameters = [3, 3, .1, .4]
-# GM
-tdcs.cond[1].distribution_type = 'beta'
-tdcs.cond[1].distribution_parameters = [3, 3, .1, .6]
-
-run_simnibs(S, cpus=2)
+run_simnibs(S)

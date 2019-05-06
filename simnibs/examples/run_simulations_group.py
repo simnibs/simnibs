@@ -1,3 +1,8 @@
+'''
+    This example runs tDCS simulations with a bipolar montage for five subjects
+    The dataset with the five head models is avaliable at https://osf.io/ah5eu/
+    please look at the "group_average" for how to do a simple analysis of the group data
+'''
 import os
 from simnibs import sim_struct, run_simnibs
 
@@ -33,6 +38,8 @@ for sub in subjects:
     s.map_to_fsavg = True
     s.fnamehead = os.path.join(sub, sub + '.msh')
     s.pathfem = os.path.join(sub, 'bipolar')
+    # Don't open in gmsh
+    s.open_in_gmsh = False
     # Add the tdcslist we defined above
     s.add_poslist(tdcslist)
     # Run the sumulation

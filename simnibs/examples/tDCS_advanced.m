@@ -2,11 +2,11 @@
 %% Input and Output Names
 S = sim_struct('SESSION');
 % file name oh head mesh
-S.fnamehead = './ernie.msh';
+S.fnamehead = 'ernie.msh';
 % name of "m2m_sub_id"
-S.subpath = './m2m_ernie';
+S.subpath = 'm2m_ernie';
 % Output Folder
-S.pathfem = './tdcs_simulation';
+S.pathfem = 'tdcs_simulation';
 
 % Output Options:
 %    Fields: e: Electric field norm
@@ -111,5 +111,11 @@ S.poslist{2}.electrode(2).definition = 'plane';
 S.poslist{2}.electrode(2).holes.shape = 'ellipse';
 S.poslist{2}.electrode(2).holes.dimensions = [75, 75];
 
-%% Save Simulation
-save('simulate_tdcs.mat','S');
+%% Run Simulation
+run_simnibs(S);
+
+%% Visualize Simulations
+m = mesh_load_gmsh4(fullfile('tdcs_simulation', 'ernie_TDCS_1_scalar.msh'));
+mesh_show_surface(m);
+m = mesh_load_gmsh4(fullfile('tdcs_simulation', 'ernie_TDCS_2_scalar.msh'));
+mesh_show_surface(m);

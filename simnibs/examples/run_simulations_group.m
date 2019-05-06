@@ -1,9 +1,14 @@
+%  This example runs tDCS simulations with a bipolar montage for five subjects
+%  The dataset with the five head models is avaliable at https://osf.io/ah5eu/
+%  please look at the "group_average" for how to do a simple analysis of the group data
+
 % Set the subjects
 subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
 
 % Start a SESSION
 S = sim_struct('SESSION');
 S.map_to_fsavg = true;
+S.open_in_gmsh = false;
 
 % Set a TDCSLIST with the simulation set-up
 S.poslist{1} = sim_struct('TDCSLIST');
@@ -21,12 +26,12 @@ S.poslist{1}.electrode(2).centre = 'AF4';
 S.poslist{1}.electrode(2).pos_ydir = 'F6';
 S.poslist{1}.electrode(2).shape = 'rect';
 S.poslist{1}.electrode(2).dimensions = [50, 70];
-S.poslist{1}.electrode(2).thickness = 4
+S.poslist{1}.electrode(2).thickness = 4;
 
 % Run the simulation in each subject
 for i = 1:length(subjects)
      sub = subjects{i};
      S.fnamehead = fullfile(sub, [sub '.msh']);  % head mesh
      S.pathfem = fullfile(sub, 'bipolar'); % Output directory
-     run_simnibs(S)
+     run_simnibs(S);
 end

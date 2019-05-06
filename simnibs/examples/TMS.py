@@ -1,7 +1,7 @@
 ''' Example of how to run a SimNIBS TMS simulation in Python
     Run with:
 
-    simnibs_python example_tDCS_ernie_ring.py
+    simnibs_python TMS.py
 
     Copyright (C) 2018 Guilherme B Saturnino
 '''
@@ -10,7 +10,7 @@ from simnibs import sim_struct, run_simnibs
 ### General Infoarmation
 S = sim_struct.SESSION()
 S.fnamehead = 'ernie.msh'  # head mesh
-S.pathfem = 'tms_minimal'  # Directory for the simulation
+S.pathfem = 'tms'  # Directory for the simulation
 
 ## Define the TMS simulation
 tms = S.add_tmslist()

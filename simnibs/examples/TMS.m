@@ -8,7 +8,7 @@
 
 S = sim_struct('SESSION');
 S.fnamehead = 'ernie.msh'; % head mesh
-S.pathfem = 'tms_minimal'; %Folder for the simulation output
+S.pathfem = 'tms'; %Folder for the simulation output
 
 %% Define TMS simulation
 S.poslist{1} = sim_struct('TMSLIST');
@@ -21,8 +21,8 @@ S.poslist{1}.pos(1).distance = 4; % 4 mm distance from coil surface to head surf
 
 
 %% Run Simulation
-run_simnibs(S)
+run_simnibs(S);
 
 %% Visualize Simulations
-m = mesh_load_gmsh4(fullfile('tms_minimal', 'ernie_TMS_1-0001_Magstim_70mm_Fig8_nii_scalar.msh'));
+m = mesh_load_gmsh4(fullfile(S.pathfem, 'ernie_TMS_1-0001_Magstim_70mm_Fig8_nii_scalar.msh'));
 mesh_show_surface(m);
