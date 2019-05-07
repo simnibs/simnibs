@@ -51,7 +51,7 @@ switch S.type
        S.pathfem='';   % path to save the results (OPTIONAL, filled from fnamehead)
        S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
        S.eeg_cap = ''; % file name of the CSV file with electrode positions; (OPTIONAL, filled from fnamehead)
-       S.open_in_gmsh=true; % Open result in gmsh when done
+       S.open_in_gmsh=false; % Open result in gmsh when done
        S.map_to_surf=false; % map results on individual surface (read out in middle of GM sheet)
        S.map_to_fsavg=false; % map results further onto fsaverage template
        S.map_to_vol=false; % write fields as nifti

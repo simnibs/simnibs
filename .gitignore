@@ -1,5 +1,10 @@
-# spm12 folder
+# SimNIBS specific
+bin/
+simnibs/matlab/path_to_spm12.m
+simnibs/matlab/simnibs
+simnibs/matlab/simnibs.cmd
 simnibs/resources/spm12/
+
 #
 # Object files
 *.o

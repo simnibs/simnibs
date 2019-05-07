@@ -1527,6 +1527,7 @@ class TDCSLIST(SimuList):
             electrode_surfaces[i] = n
 
         if fix_th:
+            logger.info('Improving mesh quality')
             w_elec.fix_thin_tetrahedra()
         gc.collect()
         return w_elec, electrode_surfaces

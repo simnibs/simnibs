@@ -27,7 +27,7 @@ function [m, varargout]=mesh_load_fssurf(fnameIn, varargin)
 %           Human Brain Mapping (HBM) Congress 2009, Poster #541
 %
 %           'DK40': Desikan-Killiany atlas (FreeSurfer, aparc.a2005s)
-%           Cite: Desikan RS, Ségonne F, Fischl B, Quinn BT, Dickerson BC,
+%           Cite: Desikan RS, Sï¿½gonne F, Fischl B, Quinn BT, Dickerson BC,
 %           Blacker D, Buckner RL, Dale AM, Maguire RP, Hyman BT, Albert MS,
 %           Killiany RJ. An automated labeling system for subdividing the
 %           human cerebral cortex on MRI scans into gyral based regions of
@@ -73,7 +73,6 @@ if nargin<1; error('file or path name needed as input'); end
 s=parse_input(s,varargin{:});
 
 % determine what to load
-path_to_spm12 = fullfile(fileparts(mfilename('fullpath')), '..', '..','resources','spm12');
 path_to_cat12 = fullfile(path_to_spm12, 'toolbox','cat12','templates_surfaces');
 path_to_labels = fullfile(path_to_spm12, 'toolbox','cat12','atlases_surfaces');
 addpath(path_to_spm12);

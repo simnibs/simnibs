@@ -68,6 +68,11 @@ def copy_scripts(dest_dir):
     else:
         _write_unix_sh(os.path.join(SIMNIBSDIR, 'cli', 'run_simnibs.py'),
                        os.path.join(SIMNIBSDIR, 'matlab', 'simnibs'))
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'path_to_spm12.m'), 'w') as f:
+        f.write("function path=path_to_spm12\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"path='{os.path.join(SIMNIBSDIR, 'resources', 'spm12')}';\n")
+        f.write("end\n")
 
     # simnibs_python interpreter
     if sys.platform == 'win32':
@@ -569,6 +574,12 @@ def activator_setup(install_dir):
             activator, commands=f'-d {install_dir}')
 
 
+def run_tests(args):
+    ''' run tests on pytest '''
+    import pytest
+    exitcode = pytest.main(args)
+    return exitcode
+
 if GUI:
     class PostInstallGUI(QtWidgets.QDialog):
         def __init__(self,
@@ -637,7 +648,7 @@ if GUI:
 
             self.setLayout(mainLayout)
 
-            self.setWindowTitle('Post-Install Options')
+            self.setWindowTitle(f'SimNIBS {__version__} Post-Install Options')
             gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
@@ -670,7 +681,7 @@ if GUI:
                     'Models and simulation results will not automatically open in Gmsh')
 
 
-    def start_gui(simnibsdir):
+    def start_gui(simnibsdir, copy_matlab, setup_links):
         app = QtWidgets.QApplication(sys.argv)
         ex = PostInstallGUI(simnibsdir)
         ex.show()
@@ -681,7 +692,9 @@ if GUI:
                     ex.copy_gmsh_options,
                     ex.add_to_path,
                     ex.add_shortcut_icons,
-                    ex.associate_files)
+                    ex.associate_files,
+                    copy_matlab,
+                    setup_links)
         else:
             raise Exception('Post-installation cancelled by user')
 
@@ -717,7 +730,9 @@ def install(install_dir, force, silent,
             copy_gmsh_options=True,
             add_to_path=True,
             add_shortcut_icons=False,
-            associate_files=False):
+            associate_files=False,
+            copy_matlab=False,
+            setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     scripts_dir = os.path.join(install_dir, 'bin')
     copy_scripts(scripts_dir)
@@ -729,10 +744,16 @@ def install(install_dir, force, silent,
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:
         setup_file_association(force, silent)
-    matlab_setup(install_dir)
-    links_setup(install_dir)
+    if copy_matlab:
+        matlab_setup(install_dir)
+    if setup_links:
+        links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
+    run_tests([
+        os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
+        '-k', 'TestSolve', '-q', '-W', 'ignore'
+    ])
 
 
 
@@ -752,23 +773,22 @@ def uninstall(install_dir):
     shutil.rmtree(install_dir)
 
 
-def _get_default_dir():
-    if sys.platform == 'win32':
-        return os.path.join(os.environ['LOCALAPPDATA'], 'SimNIBS')
-    elif sys.platform == 'linux':
-        return os.path.join(os.environ['HOME'], 'SimNIBS')
-
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
                                      description="Optional post-installation procedures "
                                      "for SimNIBS ")
-    parser.add_argument('-d', "--target_dir", required=False,
-                        help="SimNIBS install directory",
-                        default=_get_default_dir())
+    parser.add_argument('-d', "--target_dir", required=True,
+                        help="SimNIBS install directory")
     parser.add_argument('-f', "--force", required=False, action='store_true',
                         help="Perform all install steps")
     parser.add_argument('-s', "--silent", required=False, action='store_true',
                         help="Silent mode, will install without the GUI")
+    parser.add_argument('--copy-matlab', action='store_true',
+                        help='Copies the matlab folder from the simnibs package to'
+                       ' the target directory')
+    parser.add_argument('--setup-links', action='store_true',
+                        help='Setups links or shortcuts (on windows) to the simnibs '
+                        'and example folders')
     parser.add_argument('-u', "--uninstall", required=False, action='store_true',
                         help="Ignores all other arguments and uninstall SimNIBS")
     args = parser.parse_args(sys.argv[1:])
@@ -785,10 +805,11 @@ def main():
                 'Trying to run post-install script without PyQt istalled, '
                 'please use the silent mode (postinstall_simnibs --help for '
                 'more information')
-        start_gui(install_dir)
+        start_gui(install_dir, args.copy_matlab, args.setup_links)
 
     else:
-        install(install_dir, args.force, args.silent)
+        install(install_dir, args.force, args.silent,
+                copy_matlab=args.copy_matlab, setup_links=args.setup_links)
 
 if __name__ == '__main__':
     main()
