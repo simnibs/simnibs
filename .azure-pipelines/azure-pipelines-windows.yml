@@ -72,7 +72,7 @@ jobs:
   - script: |
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
       pip install -f file://$(System.ArtifactsDirectory)\windows_wheel simnibs
-      pytest tests --junit-xml=test-results.xml
+      pytest simnibs\tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
 
   - task: PublishTestResults@2

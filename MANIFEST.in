@@ -11,3 +11,4 @@ graft simnibs/lib
 graft simnibs/include
 graft simnibs/resources
 graft simnibs/examples
+graft simnibs/tests
