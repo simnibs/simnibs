@@ -73,6 +73,7 @@ if nargin<1; error('file or path name needed as input'); end
 s=parse_input(s,varargin{:});
 
 % determine what to load
+path_to_spm12 = fullfile(SIMNIBSDIR, 'resources', 'spm12');
 path_to_cat12 = fullfile(path_to_spm12, 'toolbox','cat12','templates_surfaces');
 path_to_labels = fullfile(path_to_spm12, 'toolbox','cat12','atlases_surfaces');
 addpath(path_to_spm12);

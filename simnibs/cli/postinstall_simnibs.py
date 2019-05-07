@@ -68,10 +68,10 @@ def copy_scripts(dest_dir):
     else:
         _write_unix_sh(os.path.join(SIMNIBSDIR, 'cli', 'run_simnibs.py'),
                        os.path.join(SIMNIBSDIR, 'matlab', 'simnibs'))
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'path_to_spm12.m'), 'w') as f:
-        f.write("function path=path_to_spm12\n")
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+        f.write("function path=SIMNIBSDIR\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
-        f.write(f"path='{os.path.join(SIMNIBSDIR, 'resources', 'spm12')}';\n")
+        f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
         f.write("end\n")
 
     # simnibs_python interpreter
