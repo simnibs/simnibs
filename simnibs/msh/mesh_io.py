@@ -3500,7 +3500,6 @@ def _read_msh_2(fn, m):
             node_number = np.empty(node_nr, dtype='int32')
             # array Nx3 for (x,y,z) coordinates of the nodes
             node_coord = np.empty(3 * node_nr, dtype='float64')
-
             for ii in range(node_nr):
                 line = f.readline().decode().strip().split()
                 node_number[ii] = line[0]
@@ -3508,10 +3507,12 @@ def _read_msh_2(fn, m):
                 node_coord[3 * ii] = line[1]
                 node_coord[3 * ii + 1] = line[2]
                 node_coord[3 * ii + 2] = line[3]
-            node_coord = m.nodes.node_coord.reshape((node_nr, 3))
+            node_coord = node_coord.reshape((node_nr, 3))
 
-        order_nodes = np.argsort(node_number)
-        m.nodes.node_coord = node_coord[order_nodes]
+        if not np.all(node_number == np.arange(1, node_nr + 1)):
+            warnings.warn("Mesh file with discontinuos nodes, things can fail"
+                          " unexpectedly")
+        m.nodes.node_coord = node_coord
 
         if f.readline() != b'$EndNodes\n':
             raise IOError(fn + " expected $EndNodes after reading " +
