@@ -71,8 +71,8 @@ def parse_arguments(argv):
                         default=None)
     parser.add_argument('--quantities', type=allowed_fields, required=False,
                         help=q_help, default='Nnta')
-    parser.add_argument('--load_freeview', action='store_true',
-                        help="(Optional) If set, opens freeview with the overlays after"
+    parser.add_argument('--open-in-gmsh', action='store_true',
+                        help="(Optional) If set, opens a gmsh window with the overlays after"
                         " performing the transformations")
     parser.add_argument('--version', action='version', version=__version__)
     return parser.parse_args(argv)
@@ -95,7 +95,8 @@ def main():
         out_fsaverage=args.fsaverage_folder,
         depth=args.depth,
         quantities=quantities,
-        fields=None, load_freeview=args.load_freeview)
+        fields=None,
+        open_in_gmsh=args.open_in_gmsh)
 
 
 if __name__ == '__main__':

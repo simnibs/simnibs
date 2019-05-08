@@ -277,7 +277,8 @@ class SESSION(object):
                 if f.endswith('.msh'):
                     transformations.middle_gm_interpolation(
                         f, self.subpath, out_folder,
-                        out_fsaverage=out_fsavg, depth=0.5)
+                        out_fsaverage=out_fsavg, depth=0.5,
+                        open_in_gmsh=self.open_in_gmsh)
 
         if self.map_to_vol:
             logger.info('Mapping to volume')

@@ -1271,7 +1271,7 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
 
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             depth=0.5, quantities=['norm', 'normal', 'tangent','angle'],
-                            fields=None, load_freeview=False):
+                            fields=None, open_in_gmsh=False):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
     Parameters
@@ -1292,6 +1292,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         Quantites to be calculated from vector field
     fields: list of strings (optional)
         Fields to be transformed. Default: all fields
+    open_in_gmsh: bool
+        If true, opens a Gmsh window with the interpolated fields
     '''
     #from .mesh_io import read_freesurfer_surface, read_gifti_surface, _middle_surface
     from . import mesh_io
@@ -1323,7 +1325,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     m = mesh_io.read_msh(mesh_fn)
     subdir, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
-    # Only Gray matter
+    # Crio out GM
     m = m.crop_mesh(2)
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
@@ -1334,49 +1336,28 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     if out_fsaverage is not None:
         out_fsaverage = os.path.abspath(os.path.normpath(out_fsaverage))
 
-    def run_mris_preproc(subid, hemi, out_fsavg, out_subj, subdir):
-        if not os.path.exists(os.path.join(subdir, 'fsaverage')):
-            os.symlink(
-                os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage'),
-                os.path.join(subdir, 'fsaverage'))
-        os.environ['SUBJECTS_DIR'] = subdir
-        cmd = ['mris_preproc']
-        cmd += ['--target', 'fsaverage']
-        cmd += ['--s', 'fs_' + subid]
-        cmd += ['--hemi', hemi]
-        cmd += ['--out', out_fsavg + '.mgh']
-        cmd += ['--is', out_subj]
-        cmd += ['--srcfmt', 'curv']
-        run_command(cmd)
-        # We run mris_convert to transfom the weird mgh format to curv
-        cmd = ['mris_convert']
-        cmd += ['-c']
-        cmd += [out_fsavg + '.mgh']
-        cmd += [
-            os.path.join(os.environ['FREESURFER_HOME'], 'subjects',
-                         'fsaverage', 'surf', hemi + '.pial')]
-        cmd += [out_fsavg]
-        run_command(cmd)
-        os.remove(out_fsavg + '.mgh')
-
     middle_surf = {}
     reg_surf = {}
     ref_surf = {}
     avg_surf = {}
+    # Load and write furfaces
     if segtype == 'mri2mesh':
         for hemi in ['lh', 'rh']:
             wm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_wm'])
             gm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_gm'])
             middle_surf[hemi] = mesh_io._middle_surface(wm_surface, gm_surface, depth)
-            mesh_io.write_freesurfer_surface(middle_surf[hemi],
-                                          os.path.join(out_folder, hemi + '.central'),
-                                          names['ref_fs'])
+            mesh_io.write_freesurfer_surface(
+                middle_surf[hemi],
+                os.path.join(out_folder, hemi + '.central'),
+                names['ref_fs'])
     elif segtype == 'headreco':
         for hemi in ['lh', 'rh']:
             middle_surf[hemi] = mesh_io.read_gifti_surface(names[hemi + '_midgm'])
-            mesh_io.write_freesurfer_surface(middle_surf[hemi],
-                                          os.path.join(out_folder, hemi + '.central'),
-                                          names['ref_fs'])
+            mesh_io.write_freesurfer_surface(
+                middle_surf[hemi],
+                os.path.join(out_folder, hemi + '.central'),
+                names['ref_fs'])
+    # Load average space things
     if out_fsaverage:
         for hemi in ['lh', 'rh']:
             if segtype == 'headreco':
@@ -1401,8 +1382,10 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     for name, data in m.field.items():
         for hemi in ['lh', 'rh']:
             if fields is None or name in fields:
+                # Interpolate to middle gm
                 data = data.as_nodedata()
                 interpolated = data.interpolate_to_surface(middle_surf[hemi])
+                # For vector quantities, calculate quantities (normal, norm, ...)
                 if data.nr_comp == 3:
                     q = calc_quantities(interpolated, quantities)
                     for q_name, q_data in q.items():
@@ -1415,6 +1398,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                         names_subj.append(out_subj)
                         middle_surf[hemi].add_node_field(q_data, name + '_' + q_name)
                         h.append(hemi)
+                        # Interpolate to fsavg
                         if out_fsaverage is not None:
                             q_transformed, kdtree[hemi] = _surf2surf(
                                 q_data.value,
@@ -1431,11 +1415,12 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             avg_surf[hemi].add_node_field(q_transformed, name + '_' + q_name)
                             names_fsavg.append(out_avg)
 
+                # For scalar quantities
                 elif data.nr_comp == 1:
                     field_name = name[-1]
                     q_name = name[:-1]
                     if field_name in m.field.keys() and q_name in quantities:
-                        # If we have an equivalent quantity being calculated
+                        # If we have an equivalent quantity being calculated, skip
                         pass
                     else:
                         out_subj = os.path.join(
@@ -1462,7 +1447,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             avg_surf[hemi].add_node_field(f_transformed, name)
 
 
-    def join_and_write(surfs, fn_out):
+    # Join surfaces, fields and open in gmsh
+    def join_and_write(surfs, fn_out, open_in_gmsh):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
         mesh.nodedata = []
         mesh.elmdata = []
@@ -1471,30 +1457,18 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                 np.append(surfs['lh'].field[k].value,
                           surfs['rh'].field[k].value),
                 k)
-        v = mesh.view(visible_fields='all')
+        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
         v.write_opt(fn_out)
         mesh_io.write_msh(mesh, fn_out)
+        if open_in_gmsh:
+            mesh_io.open_in_gmsh(fn_out, True)
 
-    join_and_write(middle_surf, os.path.join(out_folder, sim_name[1:] + '_central.msh'))
+    join_and_write(
+        middle_surf,
+        os.path.join(out_folder, sim_name[1:] + '_central.msh'),
+        open_in_gmsh)
     if out_fsaverage:
-        join_and_write(avg_surf, os.path.join(out_fsaverage, sim_name[1:] + '_fsavg.msh'))
-
-    if load_freeview:
-        cmd = ['freeview', '-f']
-        cmd += ['{0}:overlay={1}'.format(
-            os.path.join(out_folder, 'lh.central'),
-            ':overlay='.join([n for hemi, n in zip(h, names_subj) if hemi == 'lh']))]
-        cmd += ['{0}:overlay={1}'.format(
-            os.path.join(out_folder, 'rh.central'),
-            ':overlay='.join([n for hemi, n in zip(h, names_subj) if hemi == 'rh']))]
-        run_command_new_thread(cmd)
-        if out_fsaverage is not None:
-            fshome = os.environ['FREESURFER_HOME']
-            cmd = ['freeview', '-f']
-            cmd += ['{0}:overlay={1}'.format(
-                os.path.join(fshome, 'subjects', 'fsaverage', 'surf', 'lh.pial'),
-                ':overlay='.join([n for hemi, n in zip(h, names_fsavg) if hemi == 'lh']))]
-            cmd += ['{0}:overlay={1}'.format(
-                os.path.join(fshome, 'subjects', 'fsaverage', 'surf', 'rh.pial'),
-                ':overlay='.join([n for hemi, n in zip(h, names_fsavg) if hemi == 'rh']))]
-            run_command_new_thread(cmd)
+        join_and_write(
+            avg_surf,
+            os.path.join(out_fsaverage, sim_name[1:] + '_fsavg.msh'),
+            open_in_gmsh)
