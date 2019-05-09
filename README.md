@@ -11,9 +11,9 @@ The pipeline is divided in three parts:
 3. Post-processing of results for further analysis.
 
 ## Build Status
-| Linux                                                                                                                                                                                             | Windows                                                                                                                                                                                           | OSX |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|
-| [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Documentation?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=8&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Documentation?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=8&branchName=master) |     |
+| Linux   | Windows    | OSX |
+|---------|------------|-----|
+| [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5&branchName=master) |     |
 
 ## Getting Started
  
