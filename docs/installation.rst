@@ -3,122 +3,136 @@
 Installation
 =============
 
-Overview
----------
+Requirements
+-------------
 
-* `Download SimNIBS <http://simnibs.drcmr.dk/>`_
+* SimNIBS requires a 64bit system. Approximately 8GB of memory are required to run smoothly.
+ 
+* SimNIBS takes approximately 3GB disk space
 
-* Download the example data set **LINK TO EXAMPLE**. 
-
-* Installation requires an internet connection.
-
-* SimNIBS now has two programs to create individual head models from MRI data
-
-  * :ref:`mri2mesh_docs` is an older program. It is not available on Windows and requires
-    FreeSurfer (version 5.3.0 or newer) and FSL (version 5.0.9 or newer).
-  * :ref:`headreco_docs` is the new head modelling pipeline. It is available for all major
-    operating systems and requires MATLAB to run.
-
-* SimNIBS 3.0 has been tested in Ubuntu 18.04, Ubuntu 16.04, CentOS 6, CentOS 7, MacOS 10.13, Windows 7 and Windows 10. A 64-bit computer and 8 GB memory are recommended.
-
-* In case of problems during the installation, contact support@simnibs.org
+* **Running simulations on existing head models LINK TO EXAMPLE DATASET does not require any external dependencies.**
 
 
-* SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed under :download:`GPL v3 <../LICENSE.txt>`.
+Using the SimNIBS Installer
+----------------------------
 
-.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
 
 Windows
---------
-1. `Download SimNIBS <http://simnibs.drcmr.dk/>`_
-2. Double click in the auto-installer.
-3. SimNIBS will unpack the files and afterwards start a PowerShell window. **Do not
-   click on this window**. This step can take between 10 and 30 minutes, depending on
-   your computer and internet connection.
+''''''''
+SimNIBS has been tested on Windows 7 and Windows 10.
 
-Uninstall
-'''''''''''
+1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
 
-To uninstall SimNIBS on Windows, double click on the **Uninstall SimNIBS** in the SimNIBS directory
+2. Double click the :file:`install_simnibs` file
 
-Linux and MacOSX
-------------------
+3. Select the desired version, accept the license and click *next*
+ 
+4. By default, SimNIBS is installed to :file:`C:\\Users\\<name>\\AppData\\Local\\SimNIBS`
 
-1. `Download SimNIBS <http://simnibs.drcmr.dk/>`_
-2. Start a terminal window and navigate to the download folder
-3. Uncompress the SimNIBS folder
+5. Log out
 
-.. code-block:: bash
-
-      tar -zxvf simnibs-3.*.tar.gz
-
-\
-4. Go to simnibs-3.X.X-Linux64 folder
-
-.. code-block:: bash
-
-      cd simnibs-3.*
-
-\
-5. Execute the automated installation script
-
-.. code-block:: bash
-
-      ./install_simnibs.sh
-
-\
-6. Open a new terminal window or tab, a message should appear
-
-.. code-block:: text
-
-      Setting up paths for SimNIBS 3.X.X
-      SIMNIBSDIR /path/to/simnibs
-
-\
-
-7. (MacOSX only) Download and install `Gmsh <http://gmsh.info/>`_.
-
-.. note:: The installation script will also modify the ~/.bashrc file (on Linux) or the ~/.bash_profile file (on MacOSX) to set-up the SimNIBS environment whenever a new terminal window starts.
+6. You should now find shortcuts to SimNIBS in your Start Menu
 
 
-.. _matlab_headreco:
+Linux
+'''''''
 
-(Optional) Configuring MATLAB for **headreco**
-'''''''''''''''''''''''''''''''''''''''''''''''''
+SimNIBS has been tested on Ubuntu 16.04 and 18.04, as well as CentOS 6 and 7.
 
-In order to use the **headreco** head meshing script, MATLAB needs to be configured such that typing **matlab** on a terminal window will start it.
-To configure it, type in a terminal window
+1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
 
-On Linux:
+2. Extract the :file:`install_simnibs.tar.gz` file
 
-.. code-block:: text
+3. Double click the :file:`install_simnibs` file
 
-   sudo ln -s /usr/local/MATLAB/R<VERSION>/bin/matlab /usr/local/bin/matlab
+4. Select the desired version, accept the license and click on *next*
 
-On MacOSX:
+5. By default, SimNIBS is installed to :file:`/home/<name>/SimNIBS`
 
-.. code-block:: text
+6. Start a new terminal window
 
-   sudo ln -s /Applications/MATLAB_R<VERSION>.app/bin/matlab /usr/local/bin/matlab
+7. You should be able to start the GUI by typing :code:`simnibs_gui`
 
-Substitute <VERSION> with your MATLAB version.
+
+The installer also has a silent mode, type :code:`./install_simnibs -h` for more information
+
+
+Using Conda (Advanced)
+-----------------------
+
+It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/en/latest/>`_ package manager.
+
+
+1. Go to out releases page `releases page <https://github.com/simnibs/simnibs/releases>`_ and find the version you want to install
+
+2. Download the corresponding :file:`environment_win.yml` file (Windows) :file:`environment_unix.yml` file (Linux and OSX)
+
+3. Create and activate the environment
+
+  .. code-block:: bash
+  
+     conda env create -f environment_[win|unix].yml
+     conda activate simnibs_env
+  
+  \
+
+4. Install SimNIBS using :code:`pip`
+
+  .. code-block:: bash
+  
+     pip install -f https://github.com/simnibs/simnibs/releases/tag/v<VERSION> simnibs
+
+  \
+
+5. (Optional) to install Menu icons and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script. Type :code:`postinstall_simnibs -h` for help
+
+
+Optional Dependencies
+----------------------
+
+
+MATLAB
+'''''''
+**Required by:** :ref:`headreco_docs` head segmentation pipeline
+
+For :ref:`headreco_docs`, MATLAB needs to be configured such that typing :code:`matlab` on a terminal window will start it.
+
+This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the matlab executable somewhere in your system :code:`$PATH`
+
+* Linux
+
+  .. code-block:: bash
+  
+     sudo ln -s /usr/local/MATLAB/R<VERSION>/bin/matlab /usr/local/bin/matlab
+  
+  \
+
+* MacOSX
+
+  .. code-block:: bash
+  
+     sudo ln -s /Applications/MATLAB_R<VERSION>.app/bin/matlab /usr/local/bin/matlab
+  
+  \
 
 If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal
 
-.. code-block:: text
+.. code-block:: matlab
 
    matlabroot
 
-(Optional) installing FSL for **mri2mesh** and **dwi2cond**
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-FSL is needed to run the head segmentation script :ref:`mri2mesh_docs` and the DWI to conductivity tensors script :ref:`dwi2cond_docs`
+SimNIBS also has a MATLAB API, available in the :file:`matlab/` subfolder of the SimNIBS installation directory.
+
+FSL
+'''
+**Required by:** :ref:`mri2mesh_docs` head segmentation pipeline and :ref:`dwi2cond_docs` conductivity tensor reconstruction pipeline
 
 1. Follow the instructions on `this link <http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation>`_
 
 2. Add
 
-.. code-block:: text
+.. code-block:: bash
 
    source /etc/fsl/5.0/fsl.sh
 
@@ -126,10 +140,9 @@ FSL is needed to run the head segmentation script :ref:`mri2mesh_docs` and the D
   in the end of the :file:`~/.bashrc` (Linux) or :file:`~/.bash_profile` (MacOSX) file (assuming that fsl is installed as usually into :file:`/etc/fsl/5.0`).
 
 
-(Optional) installing FreeSurfer for **mri2mesh**
-''''''''''''''''''''''''''''''''''''''''''''''''''
-
-FreeSurfer is needed to run the head segmentation script :ref:`mri2mesh_docs`
+FreeSurfer
+''''''''''
+**Required by:** :ref:`mri2mesh_docs` head segmentation pipeline
 
 1. Follow the instructions `here <http://freesurfer.net/fswiki/DownloadAndInstall>`_
 
@@ -137,58 +150,23 @@ FreeSurfer is needed to run the head segmentation script :ref:`mri2mesh_docs`
 
 
 
+Uninstall SimNIBS
+--------------------
 
-Troubleshooting
-''''''''''''''''
+Windows
+'''''''
+You can find the uninstaller in :code:`Add or Remove Programs`
 
-* If the message
-
-.. code-block:: text
-
-      Setting up paths for SimNIBS 3.X.X
-      SIMNIBSDIR /path/to/simnibs
-
-\
-
-  does not show up when starting a new terminal, please ensure you are using a **bash** terminal (and **not tcsh**)  
-
-* If you are having problems installing with **sudo**, try adding the **-E** option
-
-.. code-block:: bash
-
-      sudo -E ./install_simnibs.sh
-
-\
-
-* When installing on older Linux distribution such as **CentOS 6**, you might need to
-  download an `older Gmsh binary <gmsh.info/bin/Linux/gmsh-2.16.0-Linux64.tgz>`_ and
-  substitute in the :file:`$SIMNIBSDIR/bin` folder.
-
-Uninstall
-'''''''''
 
 Linux
-^^^^^^
-.. code-block:: bash
-
-  rm -r $SIMNIBSDIR
-  sed -i.bak '/SIMNIBS/d' ~/.bashrc
-
-\
+'''''''
+Run the :code:`uninstall simnibs`, located in the SimNIBS installation directory
 
 
-MacOSX
-^^^^^^^
-.. code-block:: bash
 
-  rm -r $SIMNIBSDIR
-  sed -i.bak '/SIMNIBS/d' ~/.bash_profile
+Troubleshooting
+-----------------
 
-\
+Please send an email to support@simnibs.org including the :file:`simnibs_install_log.txt` file, which can be found in your SimNIBS installation directory
 
-
-(Optional) MATLAB Functions
------------------------------
-
-MATLAB functions for interacting with SimNIBS are available in the :file:`matlab/` subfolder of the SimNIBS installation directory.
 

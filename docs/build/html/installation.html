@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Installation &#8212; SimNIBS 3.0b0 documentation</title>
+    <title>Installation &#8212; SimNIBS 3.0b3 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -34,96 +34,106 @@
             
   <div class="section" id="installation">
 <span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
-<li><p>Download the example data set <strong>LINK TO EXAMPLE</strong>.</p></li>
-<li><p>Installation requires an internet connection.</p></li>
-<li><p>SimNIBS now has two programs to create individual head models from MRI data</p>
-<ul>
-<li><p><a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> is an older program. It is not available on Windows and requires
-FreeSurfer (version 5.3.0 or newer) and FSL (version 5.0.9 or newer).</p></li>
-<li><p><a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> is the new head modelling pipeline. It is available for all major
-operating systems and requires MATLAB to run.</p></li>
-</ul>
-</li>
-<li><p>SimNIBS 3.0 has been tested in Ubuntu 18.04, Ubuntu 16.04, CentOS 6, CentOS 7, MacOS 10.13, Windows 7 and Windows 10. A 64-bit computer and 8 GB memory are recommended.</p></li>
-<li><p>In case of problems during the installation, contact <a class="reference external" href="mailto:support&#37;&#52;&#48;simnibs&#46;org">support<span>&#64;</span>simnibs<span>&#46;</span>org</a></p></li>
-<li><p>SimNIBS is copyrighted © by its <a class="reference internal" href="contributors.html#contributors"><span class="std std-ref">authors</span></a> and licensed under <a class="reference download internal" download="" href="_downloads/7d62c575653476e0a3c352e41841b54d/LICENSE.txt"><code class="xref download docutils literal notranslate"><span class="pre">GPL</span> <span class="pre">v3</span></code></a>.</p></li>
+<li><p>SimNIBS requires a 64bit system. Approximately 8GB of memory are required to run smoothly.</p></li>
+<li><p>SimNIBS takes approximately 3GB disk space</p></li>
+<li><p><strong>Running simulations on existing head models LINK TO EXAMPLE DATASET does not require any external dependencies.</strong></p></li>
 </ul>
 </div>
+<div class="section" id="using-the-simnibs-installer">
+<h2>Using the SimNIBS Installer<a class="headerlink" href="#using-the-simnibs-installer" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="windows">
-<h2>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h2>
+<h3>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<p>SimNIBS has been tested on Windows 7 and Windows 10.</p>
 <ol class="arabic simple">
-<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
-<li><p>Double click in the auto-installer.</p></li>
-<li><p>SimNIBS will unpack the files and afterwards start a PowerShell window. <strong>Do not
-click on this window</strong>. This step can take between 10 and 30 minutes, depending on
-your computer and internet connection.</p></li>
+<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download the SimNIBS installer</a></p></li>
+<li><p>Double click the <code class="file docutils literal notranslate"><span class="pre">install_simnibs</span></code> file</p></li>
+<li><p>Select the desired version, accept the license and click <em>next</em></p></li>
+<li><p>By default, SimNIBS is installed to <code class="file docutils literal notranslate"><span class="pre">C:\Users\&lt;name&gt;\AppData\Local\SimNIBS</span></code></p></li>
+<li><p>Log out</p></li>
+<li><p>You should now find shortcuts to SimNIBS in your Start Menu</p></li>
 </ol>
-<div class="section" id="uninstall">
-<h3>Uninstall<a class="headerlink" href="#uninstall" title="Permalink to this headline">¶</a></h3>
-<p>To uninstall SimNIBS on Windows, double click on the <strong>Uninstall SimNIBS</strong> in the SimNIBS directory</p>
 </div>
-</div>
-<div class="section" id="linux-and-macosx">
-<h2>Linux and MacOSX<a class="headerlink" href="#linux-and-macosx" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="linux">
+<h3>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h3>
+<p>SimNIBS has been tested on Ubuntu 16.04 and 18.04, as well as CentOS 6 and 7.</p>
 <ol class="arabic simple">
-<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download SimNIBS</a></p></li>
-<li><p>Start a terminal window and navigate to the download folder</p></li>
-<li><p>Uncompress the SimNIBS folder</p></li>
+<li><p><a class="reference external" href="http://simnibs.drcmr.dk/">Download the SimNIBS installer</a></p></li>
+<li><p>Extract the <code class="file docutils literal notranslate"><span class="pre">install_simnibs.tar.gz</span></code> file</p></li>
+<li><p>Double click the <code class="file docutils literal notranslate"><span class="pre">install_simnibs</span></code> file</p></li>
+<li><p>Select the desired version, accept the license and click on <em>next</em></p></li>
+<li><p>By default, SimNIBS is installed to <code class="file docutils literal notranslate"><span class="pre">/home/&lt;name&gt;/SimNIBS</span></code></p></li>
+<li><p>Start a new terminal window</p></li>
+<li><p>You should be able to start the GUI by typing <code class="code docutils literal notranslate"><span class="pre">simnibs_gui</span></code></p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tar -zxvf simnibs-3.*.tar.gz
-</pre></div>
+<p>The installer also has a silent mode, type <code class="code docutils literal notranslate"><span class="pre">./install_simnibs</span> <span class="pre">-h</span></code> for more information</p>
 </div>
-<p>4. Go to simnibs-3.X.X-Linux64 folder</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> simnibs-3.*
-</pre></div>
 </div>
-<p>5. Execute the automated installation script</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./install_simnibs.sh
-</pre></div>
-</div>
-<p>6. Open a new terminal window or tab, a message should appear</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Setting up paths for SimNIBS 3.X.X
-SIMNIBSDIR /path/to/simnibs
+<div class="section" id="using-conda-advanced">
+<h2>Using Conda (Advanced)<a class="headerlink" href="#using-conda-advanced" title="Permalink to this headline">¶</a></h2>
+<p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager.</p>
+<ol class="arabic simple">
+<li><p>Go to out releases page <a class="reference external" href="https://github.com/simnibs/simnibs/releases">releases page</a> and find the version you want to install</p></li>
+<li><p>Download the corresponding <code class="file docutils literal notranslate"><span class="pre">environment_win.yml</span></code> file (Windows) <code class="file docutils literal notranslate"><span class="pre">environment_unix.yml</span></code> file (Linux and OSX)</p></li>
+<li><p>Create and activate the environment</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment_<span class="o">[</span>win<span class="p">|</span>unix<span class="o">]</span>.yml
+conda activate simnibs_env
 </pre></div>
 </div>
 <p></p>
-<ol class="arabic simple" start="7">
-<li><p>(MacOSX only) Download and install <a class="reference external" href="http://gmsh.info/">Gmsh</a>.</p></li>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Install SimNIBS using <code class="code docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The installation script will also modify the ~/.bashrc file (on Linux) or the ~/.bash_profile file (on MacOSX) to set-up the SimNIBS environment whenever a new terminal window starts.</p>
-</div>
-<div class="section" id="optional-configuring-matlab-for-headreco">
-<span id="matlab-headreco"></span><h3>(Optional) Configuring MATLAB for <strong>headreco</strong><a class="headerlink" href="#optional-configuring-matlab-for-headreco" title="Permalink to this headline">¶</a></h3>
-<p>In order to use the <strong>headreco</strong> head meshing script, MATLAB needs to be configured such that typing <strong>matlab</strong> on a terminal window will start it.
-To configure it, type in a terminal window</p>
-<p>On Linux:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sudo ln -s /usr/local/MATLAB/R&lt;VERSION&gt;/bin/matlab /usr/local/bin/matlab
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -f https://github.com/simnibs/simnibs/releases/tag/v&lt;VERSION&gt; simnibs
 </pre></div>
 </div>
-<p>On MacOSX:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sudo ln -s /Applications/MATLAB_R&lt;VERSION&gt;.app/bin/matlab /usr/local/bin/matlab
+<p></p>
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>(Optional) to install Menu icons and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script. Type <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span> <span class="pre">-h</span></code> for help</p></li>
+</ol>
+</div>
+<div class="section" id="optional-dependencies">
+<h2>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="matlab">
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
+<p><strong>Required by:</strong> <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> head segmentation pipeline</p>
+<p>For running <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> MATLAB needs to be configured such that typing <code class="code docutils literal notranslate"><span class="pre">matlab</span></code> on a terminal window will start it.</p>
+<p>This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the matlab executable somewhere in your system <code class="code docutils literal notranslate"><span class="pre">$PATH</span></code></p>
+<ul>
+<li><p>Linux</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /usr/local/MATLAB/R&lt;VERSION&gt;/bin/matlab /usr/local/bin/matlab
 </pre></div>
 </div>
-<p>Substitute &lt;VERSION&gt; with your MATLAB version.</p>
+<p></p>
+</li>
+<li><p>MacOSX</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /Applications/MATLAB_R&lt;VERSION&gt;.app/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
 <p>If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>matlabroot
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">matlabroot</span>
 </pre></div>
 </div>
+<p>SimNIBS also has a MATLAB API, available in the <code class="file docutils literal notranslate"><span class="pre">matlab/</span></code> subfolder of the SimNIBS installation directory.</p>
 </div>
-<div class="section" id="optional-installing-fsl-for-mri2mesh-and-dwi2cond">
-<h3>(Optional) installing FSL for <strong>mri2mesh</strong> and <strong>dwi2cond</strong><a class="headerlink" href="#optional-installing-fsl-for-mri2mesh-and-dwi2cond" title="Permalink to this headline">¶</a></h3>
-<p>FSL is needed to run the head segmentation script <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> and the DWI to conductivity tensors script <a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a></p>
+<div class="section" id="fsl">
+<h3>FSL<a class="headerlink" href="#fsl" title="Permalink to this headline">¶</a></h3>
+<p><strong>Required by:</strong> <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> head segmentation pipeline and <a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> conductivity tensor reconstruction pipeline</p>
 <ol class="arabic simple">
 <li><p>Follow the instructions on <a class="reference external" href="http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation">this link</a></p></li>
 <li><p>Add</p></li>
 </ol>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>source /etc/fsl/5.0/fsl.sh
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /etc/fsl/5.0/fsl.sh
 </pre></div>
 </div>
 <dl class="simple">
@@ -131,63 +141,29 @@ To configure it, type in a terminal window</p>
 </dd>
 </dl>
 </div>
-<div class="section" id="optional-installing-freesurfer-for-mri2mesh">
-<h3>(Optional) installing FreeSurfer for <strong>mri2mesh</strong><a class="headerlink" href="#optional-installing-freesurfer-for-mri2mesh" title="Permalink to this headline">¶</a></h3>
-<p>FreeSurfer is needed to run the head segmentation script <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a></p>
+<div class="section" id="freesurfer">
+<h3>FreeSurfer<a class="headerlink" href="#freesurfer" title="Permalink to this headline">¶</a></h3>
+<p><strong>Required by:</strong> <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> head segmentation pipeline</p>
 <ol class="arabic simple">
 <li><p>Follow the instructions <a class="reference external" href="http://freesurfer.net/fswiki/DownloadAndInstall">here</a></p></li>
 <li><p>Make sure that you have a registration file, and set the path in the <code class="file docutils literal notranslate"><span class="pre">~/.bashrc</span></code> (Linux) or <code class="file docutils literal notranslate"><span class="pre">~/.bash_profile</span></code> (MacOSX).</p></li>
 </ol>
 </div>
-<div class="section" id="troubleshooting">
-<h3>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li><p>If the message</p></li>
-</ul>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Setting up paths for SimNIBS 3.X.X
-SIMNIBSDIR /path/to/simnibs
-</pre></div>
 </div>
-<p></p>
-<blockquote>
-<div><p>does not show up when starting a new terminal, please ensure you are using a <strong>bash</strong> terminal (and <strong>not tcsh</strong>)</p>
-</div></blockquote>
-<ul class="simple">
-<li><p>If you are having problems installing with <strong>sudo</strong>, try adding the <strong>-E</strong> option</p></li>
-</ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo -E ./install_simnibs.sh
-</pre></div>
-</div>
-<p></p>
-<ul class="simple">
-<li><p>When installing on older Linux distribution such as <strong>CentOS 6</strong>, you might need to
-download an <a class="reference external" href="gmsh.info/bin/Linux/gmsh-2.16.0-Linux64.tgz">older Gmsh binary</a> and
-substitute in the <code class="file docutils literal notranslate"><span class="pre">$SIMNIBSDIR/bin</span></code> folder.</p></li>
-</ul>
+<div class="section" id="uninstall-simnibs">
+<h2>Uninstall SimNIBS<a class="headerlink" href="#uninstall-simnibs" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>Windows<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>You can find the uninstaller in <code class="code docutils literal notranslate"><span class="pre">Add</span> <span class="pre">or</span> <span class="pre">Remove</span> <span class="pre">Programs</span></code></p>
 </div>
 <div class="section" id="id4">
-<h3>Uninstall<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="linux">
-<h4>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r <span class="nv">$SIMNIBSDIR</span>
-sed -i.bak <span class="s1">&#39;/SIMNIBS/d&#39;</span> ~/.bashrc
-</pre></div>
-</div>
-<p></p>
-</div>
-<div class="section" id="macosx">
-<h4>MacOSX<a class="headerlink" href="#macosx" title="Permalink to this headline">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rm -r <span class="nv">$SIMNIBSDIR</span>
-sed -i.bak <span class="s1">&#39;/SIMNIBS/d&#39;</span> ~/.bash_profile
-</pre></div>
-</div>
-<p></p>
+<h3>Linux<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>Run the <code class="code docutils literal notranslate"><span class="pre">uninstall</span> <span class="pre">simnibs</span></code>, located in the SimNIBS installation directory</p>
 </div>
 </div>
-</div>
-<div class="section" id="optional-matlab-functions">
-<h2>(Optional) MATLAB Functions<a class="headerlink" href="#optional-matlab-functions" title="Permalink to this headline">¶</a></h2>
-<p>MATLAB functions for interacting with SimNIBS are available in the <code class="file docutils literal notranslate"><span class="pre">matlab/</span></code> subfolder of the SimNIBS installation directory.</p>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<p>Please send an email to <a class="reference external" href="mailto:support&#37;&#52;&#48;simnibs&#46;org">support<span>&#64;</span>simnibs<span>&#46;</span>org</a> including the <code class="file docutils literal notranslate"><span class="pre">simnibs_install_log.txt</span></code> file, which can be found in your SimNIBS installation directory</p>
 </div>
 </div>
 
@@ -215,10 +191,12 @@ sed -i.bak <span class="s1">&#39;/SIMNIBS/d&#39;</span> ~/.bash_profile
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#windows">Windows</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#linux-and-macosx">Linux and MacOSX</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#optional-matlab-functions">(Optional) MATLAB Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-simnibs-installer">Using the SimNIBS Installer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-conda-advanced">Using Conda (Advanced)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-dependencies">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#uninstall-simnibs">Uninstall SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/tutorial.html">Tutorial</a></li>

@@ -23,6 +23,10 @@ A SimNIBS workflow consists of three main parts:
 
 :ref:`TUTORIAL <tutorial>`
 
+SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed under :download:`GPL v3 <../LICENSE.txt>`.
+
+.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
+
 
 .. warning:: SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition
 
