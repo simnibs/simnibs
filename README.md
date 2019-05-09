@@ -11,30 +11,9 @@ The pipeline is divided in three parts:
 3. Post-processing of results for further analysis.
 
 ## Build Status
-<table>
-  <tr>
-  <td>Linux</td>
-    <td>
-    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4">
-      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master" alt="variant">
-    </a>
-    </td>
-  </tr>
-  <tr>
-  <td>Windows</td>
-    <td>
-    <a href="https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5">
-      <img src="https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master" alt="variant">
-      </a>
-    </td>
-  </tr>
-  <td>OSX</td>
-    <td>
-    <img src="https://img.shields.io/badge/OSX-disabled-lightgrey.svg" alt="OSX disabled">
-    </td>
-  </tr>
-</table>
-
+| Linux                                                                                                                                                                                             | Windows                                                                                                                                                                                           | OSX |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|
+| [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Documentation?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=8&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Documentation?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=8&branchName=master) |     |
 
 ## Getting Started
  
