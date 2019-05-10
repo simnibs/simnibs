@@ -97,7 +97,8 @@ html_theme = 'alabaster'
 # documentation.
 #
 html_theme_options = {
-    'logo': 'logo.png'
+    'logo': 'logo.png',
+    'show_relbars': True 
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

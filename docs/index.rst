@@ -41,7 +41,7 @@ News
    :maxdepth: 2
    :hidden:
 
-   installation
+   installation/installation
    tutorial/tutorial
    documentation/documentation
    contributors

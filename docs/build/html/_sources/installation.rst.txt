@@ -95,7 +95,7 @@ MATLAB
 '''''''
 **Required by:** :ref:`headreco_docs` head segmentation pipeline
 
-For running :ref:`headreco_docs` MATLAB needs to be configured such that typing :code:`matlab` on a terminal window will start it.
+For :ref:`headreco_docs`, MATLAB needs to be configured such that typing :code:`matlab` on a terminal window will start it.
 
 This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the matlab executable somewhere in your system :code:`$PATH`
 
