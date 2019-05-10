@@ -14,7 +14,7 @@
     <script type="text/javascript" src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Accessing the Command Prompt on Windows" href="win_prompt.html" />
+    <link rel="next" title="Visualizing Results" href="visualization.html" />
     <link rel="prev" title="Tutorial" href="tutorial.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -37,7 +37,7 @@
           <a href="tutorial.html" title="Previous document">Tutorial</a>
         </li>
         <li>
-          <a href="win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          <a href="visualization.html" title="Next document">Visualizing Results</a>
           &rarr;
         </li>
     </ul>
@@ -50,32 +50,32 @@
   <div class="section" id="setting-up-and-running-simulations">
 <span id="gui-tutorial"></span><h1>Setting up and Running Simulations<a class="headerlink" href="#setting-up-and-running-simulations" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial is based on the example data set. Please download it before continue.</p>
-<div class="section" id="starting-the-gui">
-<h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="starting-the-gui-and-selecting-a-head-model">
+<h2>Starting the GUI and selecting a Head Model<a class="headerlink" href="#starting-the-gui-and-selecting-a-head-model" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window</p></li>
 </ol>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>simnibs_gui
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>simnibs_gui
 </pre></div>
 </div>
-<dl class="simple">
-<dt></dt><dd><p>A window such as the following should appear</p>
-</dd>
-</dl>
-<img alt="../_images/tutorial_emptygui.png" src="../_images/tutorial_emptygui.png" />
+<p></p>
+<p>A window such as the following should appear</p>
+</div></blockquote>
+<img alt="../_images/tutorial_emptygui.png" class="align-center" src="../_images/tutorial_emptygui.png" />
 <ol class="arabic simple" start="2">
 <li><p>Click on the <em>Browse</em> button next to the <em>Head Mesh</em> box</p></li>
 </ol>
-<img alt="../_images/tutorial_bowse.png" src="../_images/tutorial_bowse.png" />
+<img alt="../_images/tutorial_bowse.png" class="align-center" src="../_images/tutorial_bowse.png" />
 <ol class="arabic simple" start="3">
 <li><p>Navigate to the example dataset folder and select the <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code> file, in the
 example data set</p></li>
 </ol>
-<img alt="../_images/tutorial_selectmsh.png" src="../_images/tutorial_selectmsh.png" />
+<img alt="../_images/tutorial_selectmsh.png" class="align-center" src="../_images/tutorial_selectmsh.png" />
 <ol class="arabic simple" start="4">
 <li><p>The head mesh will be loaded and the <strong>m2m Folder</strong> and <strong>Output Folder</strong> boxes filled</p></li>
 </ol>
-<img alt="../_images/tutorial_guihead.png" src="../_images/tutorial_guihead.png" />
+<img alt="../_images/tutorial_guihead.png" class="align-center" src="../_images/tutorial_guihead.png" />
 <dl class="simple">
 <dt></dt><dd><p>You can change the <strong>Output Folder</strong> by clicking on the <em>Browse</em> button close to it, and visualize the gray matter surface by clicking on the <em>Gray Matter</em> button above the head model.</p>
 </dd>
@@ -86,7 +86,7 @@ example data set</p></li>
 <ol class="arabic simple">
 <li><p>Click on <em>Add tDCS Poslist</em> at the bottom left of the window</p></li>
 </ol>
-<img alt="../_images/tutorial_addtdcs.png" src="../_images/tutorial_addtdcs.png" />
+<img alt="../_images/tutorial_addtdcs.png" class="align-center" src="../_images/tutorial_addtdcs.png" />
 <dl class="simple">
 <dt></dt><dd><p>A new tab will show up.</p>
 </dd>
@@ -94,7 +94,7 @@ example data set</p></li>
 <ol class="arabic simple" start="2">
 <li><p>Click on <em>Add Electrode</em></p></li>
 </ol>
-<img alt="../_images/tutorial_addelectrode.png" src="../_images/tutorial_addelectrode.png" />
+<img alt="../_images/tutorial_addelectrode.png" class="align-center" src="../_images/tutorial_addelectrode.png" />
 <dl class="simple">
 <dt></dt><dd><p>A new row will be shown in the table</p>
 </dd>
@@ -102,7 +102,7 @@ example data set</p></li>
 <ol class="arabic simple" start="3">
 <li><p>Click twice in the <em>Shape</em> cell</p></li>
 </ol>
-<img alt="../_images/tutorial_shapecell.png" src="../_images/tutorial_shapecell.png" />
+<img alt="../_images/tutorial_shapecell.png" class="align-center" src="../_images/tutorial_shapecell.png" />
 <dl class="simple">
 <dt></dt><dd><p>A new window will open where you can configure the electrode size and shape.</p>
 </dd>
@@ -110,7 +110,7 @@ example data set</p></li>
 <ol class="arabic simple" start="4">
 <li><p>Let’s suppose we have a <img class="math" src="../_images/math/9b0de8db0d43256c4ae03cb541d94050ea4f3d58.png" alt="7.0 \times 5.5 \text{cm}^2"/> electrode, composed of a single gel layer of 5 mm thickness</p></li>
 </ol>
-<img alt="../_images/tutorial_electrodegui.png" src="../_images/tutorial_electrodegui.png" />
+<img alt="../_images/tutorial_electrodegui.png" class="align-center" src="../_images/tutorial_electrodegui.png" />
 <dl class="simple">
 <dt></dt><dd><p>Please refer to the <a class="reference internal" href="../documentation/gui.html#gui-docs"><span class="std std-ref">GUI documentation</span></a> for a more detailed explanation of this window. You can also copy/paste electrode definitions by right clicking in the shape cell</p>
 </dd>
@@ -118,59 +118,48 @@ example data set</p></li>
 <ol class="arabic simple" start="5">
 <li><p>Now double click in the <em>Position</em> cell. A new window will appear. You can either select an EEG position from the drop-down menu in the left or click twice in the model to get a position.</p></li>
 </ol>
-<img alt="../_images/tutorial_position1.png" src="../_images/tutorial_position1.png" />
+<img alt="../_images/tutorial_position1.png" class="align-center" src="../_images/tutorial_position1.png" />
 <p></p>
 <ol class="arabic simple" start="6">
 <li><p>Choose the C3 electrode from the drop-down menu. A black sphere appears in the electrode position, with a green axis indicating the electrode’s “y” axis</p></li>
 </ol>
-<img alt="../_images/tutorial_position2.png" src="../_images/tutorial_position2.png" />
+<img alt="../_images/tutorial_position2.png" class="align-center" src="../_images/tutorial_position2.png" />
 <p></p>
 <ol class="arabic simple" start="7">
 <li><p>Select the electrode <em>current</em> in the first column of the electrode tables. <strong>Positive</strong> values designate <strong>anodes</strong>, and <strong>negative</strong> values <strong>cathodes</strong>. The sum of all current values has to be zero.</p></li>
 </ol>
-<img alt="../_images/tutorial_elcurrent.png" src="../_images/tutorial_elcurrent.png" />
+<img alt="../_images/tutorial_elcurrent.png" class="align-center" src="../_images/tutorial_elcurrent.png" />
 <p></p>
-<ol class="arabic" start="8">
-<li><p>Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.</p>
-<img alt="../_images/tutorial_position3.png" src="../_images/tutorial_position3.png" />
-</li>
+<ol class="arabic simple" start="8">
+<li><p>Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.</p></li>
 </ol>
+<img alt="../_images/tutorial_position3.png" class="align-center" src="../_images/tutorial_position3.png" />
 <dl class="simple">
-<dt></dt><dd><p>Select a shape and a current of -1.000 mA for this second electrode.
+<dt></dt><dd><p>Select a shape and a current of <img class="math" src="../_images/math/66c3e66c04b7bf1d41a1530f0ff3358f954d8401.png" alt="-1.000 \text{mA}"/> for this second electrode.
 You can see a simple preview of the electrode shapes by clicking on <em>Preview Shapes</em> at the bottom of the screen</p>
 </dd>
 </dl>
 </div>
 <div class="section" id="setting-up-a-tms-simulation">
 <h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p>
-<img alt="../_images/tutorial_addtms.png" src="../_images/tutorial_addtms.png" />
-</li>
+<ol class="arabic simple">
+<li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p></li>
 </ol>
+<img alt="../_images/tutorial_addtms.png" class="align-center" src="../_images/tutorial_addtms.png" />
 <p>2. Click on <em>Browse</em> and select the <em>Magstim_70mm_Fig8.nii.gz</em> coil file</p>
-<blockquote>
-<div><img alt="../_images/tutorial_addcoil.png" src="../_images/tutorial_addcoil.png" />
-</div></blockquote>
+<img alt="../_images/tutorial_addcoil.png" class="align-center" src="../_images/tutorial_addcoil.png" />
 <p>3. Click on <em>Add Position</em></p>
-<blockquote>
-<div><img alt="../_images/tutorial_addposition.png" src="../_images/tutorial_addposition.png" />
-</div></blockquote>
+<img alt="../_images/tutorial_addposition.png" class="align-center" src="../_images/tutorial_addposition.png" />
 <p>4. Double click in the <em>Position</em> cell</p>
-<blockquote>
-<div><img alt="../_images/tutorial_positioncell.png" src="../_images/tutorial_positioncell.png" />
-</div></blockquote>
+<img alt="../_images/tutorial_positioncell.png" class="align-center" src="../_images/tutorial_positioncell.png" />
 <p>5. You can select the coil position the same way as an electrode position, or alternatively by double clicking in the head model. In the TMS case, the Y axis where the coil is pointing. Here, we will click on the <em>Gray Matter</em> button above the model window and place the coil above the motor cortex, with the green axis pointing anteriorly. This means that the coil handle points posteriorly. <a class="reference download internal" download="" href="../_downloads/a842c229ca3b490f09e9f3f8d701447c/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">See</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">more</span> <span class="pre">information</span> <span class="pre">on</span> <span class="pre">coil</span> <span class="pre">coordinates</span></code></a></p>
-<blockquote>
-<div><img alt="../_images/tutorial_coilpos.png" src="../_images/tutorial_coilpos.png" />
-</div></blockquote>
+<img alt="../_images/tutorial_coilpos.png" class="align-center" src="../_images/tutorial_coilpos.png" />
 <p></p>
-<ol class="arabic" start="6">
+<ol class="arabic simple" start="6">
 <li><p>Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.</p></li>
-<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p>
-<img alt="../_images/tutorial_dadt.png" src="../_images/tutorial_dadt.png" />
-</li>
+<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p></li>
 </ol>
+<img alt="../_images/tutorial_dadt.png" class="align-center" src="../_images/tutorial_dadt.png" />
 <p></p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -179,18 +168,15 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </div>
 <div class="section" id="setting-simulation-options">
 <h2>Setting Simulation Options<a class="headerlink" href="#setting-simulation-options" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p>Go to <em>Edit</em> → <em>Simulation Options</em></p>
-<img alt="../_images/tutorial_simoptions.png" src="../_images/tutorial_simoptions.png" />
-</li>
+<ol class="arabic simple">
+<li><p>Go to <em>Edit</em> → <em>Simulation Options</em></p></li>
 </ol>
-<dl>
+<img alt="../_images/tutorial_simoptions.png" class="align-center" src="../_images/tutorial_simoptions.png" />
+<dl class="simple">
 <dt></dt><dd><p>The following window will appear</p>
-<blockquote>
-<div><img alt="../_images/tutorial_simoptions2.png" src="../_images/tutorial_simoptions2.png" />
-</div></blockquote>
 </dd>
 </dl>
+<img alt="../_images/tutorial_simoptions2.png" class="align-center" src="../_images/tutorial_simoptions2.png" />
 <p></p>
 <ol class="arabic simple" start="2">
 <li><p>We can select the <em>fields</em> to be output from the simulation</p></li>
@@ -214,8 +200,9 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p><strong>Interpolate to cortical surface</strong>: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for headreco with SPM-only segmentations.</p></li>
-<li><p><strong>Transform to fsaverage space</strong>: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for headreco with SPM-only segmentations.</p></li>
+<li><p><strong>Open in Gmsh</strong>: Opens the simulation results in <em>Gmsh</em></p></li>
+<li><p><strong>Interpolate to cortical surface</strong>: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code>.</p></li>
+<li><p><strong>Transform to fsaverage space</strong>: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code>.</p></li>
 <li><p><strong>Interpolate to a nifiti volume</strong>: Interpolates the fields to a nifti volume.</p></li>
 <li><p><strong>Transform to MNI space</strong>: Interpolates the fields to a nifti volume and applies a transformation to MNI space.</p></li>
 </ul>
@@ -224,17 +211,68 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </div>
 <div class="section" id="running-a-simulation">
 <h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p>Click on Run at the bottom of the screen</p>
-<img alt="../_images/tutorial_runsim.png" src="../_images/tutorial_runsim.png" />
-</li>
+<ol class="arabic simple">
+<li><p>Click on Run at the bottom of the screen</p></li>
 </ol>
+<img alt="../_images/tutorial_runsim.png" class="align-center" src="../_images/tutorial_runsim.png" />
 <p>2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and after finished the bar in the bottom of the window changes from <em>Teminate</em> to <em>Close</em>.</p>
-<blockquote>
-<div><img alt="../_images/tutorial_simrunning.png" src="../_images/tutorial_simrunning.png" />
-</div></blockquote>
+<img alt="../_images/tutorial_simrunning.png" class="align-center" src="../_images/tutorial_simrunning.png" />
 <p></p>
 <p>Now, please go on to our tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p>
+</div>
+<div class="section" id="output">
+<h2>Output<a class="headerlink" href="#output" title="Permalink to this headline">¶</a></h2>
+<p>The final simulation results are in the <em>Output Folder</em>, which can be set in the GUI. By default, this folder is called <code class="file docutils literal notranslate"><span class="pre">simnibs_simulation/</span></code>, and is located in the same folder as the mesh file. For the current example, the output folder contains the following files and folders:</p>
+<table class="colwidths-given docutils align-center">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code></p></td>
+<td><p>Mesh with tDCS simulation results</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh.opt</span></code></p></td>
+<td><p>Options for visualizing the file above</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_el_currents.geo</span></code></p></td>
+<td><p>Simplified tDCS electrode model</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh</span></code></p></td>
+<td><p>Mesh with TMS simulation results</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh.opt</span></code></p></td>
+<td><p>Options for visualizing the file above</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo</span></code></p></td>
+<td><p>Contains a simplified coil model showing it’s center and axes. For <em>.ccd</em> coil models, this is a more detail model showing dipoles.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.log</span></code></p></td>
+<td><p>Simulation log</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.mat</span></code></p></td>
+<td><p>Simulation configuration file, can be used to re-run the simulation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code></p></td>
+<td><p>Surface overlays with fields in FsAverage space</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code></p></td>
+<td><p>NIfTI volumes with fields in MNI space</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code></p></td>
+<td><p>Surface overlays with fields in the subject specific space</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">subject_volumes/</span></code></p></td>
+<td><p>NIfTI volumes with fields in a subject specific space</p></td>
+</tr>
+</tbody>
+</table>
+<p></p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
@@ -253,7 +291,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
           <a href="tutorial.html" title="Previous document">Tutorial</a>
         </li>
         <li>
-          <a href="win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          <a href="visualization.html" title="Next document">Visualizing Results</a>
           &rarr;
         </li>
     </ul>
@@ -283,11 +321,11 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Setting up and Running Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
@@ -302,7 +340,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="tutorial.html">Tutorial</a><ul>
       <li>Previous: <a href="tutorial.html" title="previous chapter">Tutorial</a></li>
-      <li>Next: <a href="win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
+      <li>Next: <a href="visualization.html" title="next chapter">Visualizing Results</a></li>
   </ul></li>
   </ul></li>
 </ul>

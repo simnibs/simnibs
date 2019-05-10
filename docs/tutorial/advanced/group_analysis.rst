@@ -15,7 +15,7 @@ Example Dataset
 
 `Click here to download the example dataset for group analysis <https://osf.io/egshq/download>`_.
 
-This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed in SimNIBS 2.1 using :ref:`headreco_docs` with the :code:`--cat` option. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
+This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed in SimNIBS 2.1 using :ref:`headreco_docs`. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
 
 
 In this example, we have five subjects, named :file:`sub01`, :file:`sub09`,
@@ -43,7 +43,7 @@ Python
 '''''''
 Write a *Python* script. In this case, remember to set *map_to_fsavg* to *True* in the :ref:`session_doc` structure. See :ref:`scripting_tutorial` for more information.
 
-.. literalinclude:: ../../../python_examples/run_simulations_group.py
+.. literalinclude:: ../../../simnibs/examples/run_simulations_group.py
    :language: python
 
 MATLAB
@@ -51,7 +51,7 @@ MATLAB
 Write a *MATLAB* script. In this case, remember to set *map_to_fsavg* to *True* in the :ref:`session_doc` structure. See :ref:`scripting_tutorial` for more information.
 
 
-.. literalinclude:: ../../../matlab/examples/run_simulations_group.m
+.. literalinclude:: ../../../simnibs/examples/run_simulations_group.m
    :language: matlab
 
 
@@ -66,13 +66,13 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 Python
 ''''''''
 
-.. literalinclude:: ../../../python_examples/group_average.py
+.. literalinclude:: ../../../simnibs/examples/group_average.py
    :language: python
 
 
 MATLAB
 '''''''
-.. literalinclude:: ../../../matlab/examples/group_average.m
+.. literalinclude:: ../../../simnibs/examples/group_average.m
    :language: matlab
 
 

@@ -1,3 +1,5 @@
+.. _publications:
+
 Publications
 =============
 The main publications documenting SimNIBS development are, in reverse chronological order

@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Install Using Conda (Advanced) &#8212; SimNIBS 3.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Troubleshooting" href="throubleshooting.html" />
+    <link rel="prev" title="Uninstall SimNIBS" href="uninstall.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="uninstall.html" title="Previous document">Uninstall SimNIBS</a>
+        </li>
+        <li>
+          <a href="throubleshooting.html" title="Next document">Troubleshooting</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="install-using-conda-advanced">
+<span id="conda-install"></span><h1>Install Using Conda (Advanced)<a class="headerlink" href="#install-using-conda-advanced" title="Permalink to this headline">¶</a></h1>
+<p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager, present for example in the <a class="reference external" href="https://www.anaconda.com/">Anaconda</a> and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> Python distributions.</p>
+<ol class="arabic simple">
+<li><p>Go to the latest <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest">release page</a></p></li>
+<li><p>Download the <code class="file docutils literal notranslate"><span class="pre">environment_win.yml</span></code> file if you are on Windows or the <code class="file docutils literal notranslate"><span class="pre">environment_unix.yml</span></code> file if you are on Linux or OSX.</p></li>
+<li><p>Create and activate the <code class="code docutils literal notranslate"><span class="pre">simnibs_env</span></code> conda environment</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment_<span class="o">[</span>win<span class="p">|</span>unix<span class="o">]</span>.yml
+conda activate simnibs_env
+</pre></div>
+</div>
+<p></p>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Install SimNIBS using <code class="code docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
+</pre></div>
+</div>
+<p></p>
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>(Optional) to install the Menu icons, set-up file associations, the matlab library and add SimNIBS binaries to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script. Type <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span> <span class="pre">-h</span></code> for help</p></li>
+</ol>
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="uninstall.html" title="Previous document">Uninstall SimNIBS</a>
+        </li>
+        <li>
+          <a href="throubleshooting.html" title="Next document">Troubleshooting</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="requirements.html">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simnibs_installer.html">Install SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optional.html">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uninstall.html">Uninstall SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Install Using Conda (Advanced)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="throubleshooting.html">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="installation.html">Installation</a><ul>
+      <li>Previous: <a href="uninstall.html" title="previous chapter">Uninstall SimNIBS</a></li>
+      <li>Next: <a href="throubleshooting.html" title="next chapter">Troubleshooting</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/installation/conda.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

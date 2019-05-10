@@ -14,7 +14,7 @@
     <script type="text/javascript" src="../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Documentation" href="../../documentation/documentation.html" />
+    <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
     <link rel="prev" title="Group Analysis" href="group_analysis.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -37,7 +37,7 @@
           <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
-          <a href="../../documentation/documentation.html" title="Next document">Documentation</a>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
           &rarr;
         </li>
     </ul>
@@ -111,14 +111,80 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <h2>More Options<a class="headerlink" href="#more-options" title="Permalink to this headline">¶</a></h2>
 <p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and post-process results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">mesh_io</span><span class="p">,</span> <span class="n">file_finder</span>
+<span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
+
+<span class="c1">## Define the TMS simulation</span>
+<span class="n">tms</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+
+<span class="c1"># We need to set the EEG cap as we are giving the coil</span>
+<span class="c1"># Coordinates as EEG positions</span>
+<span class="n">sub_files</span> <span class="o">=</span> <span class="n">file_finder</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">eeg_cap</span> <span class="o">=</span> <span class="n">sub_files</span><span class="o">.</span><span class="n">eeg_cap_1010</span>
+
+<span class="c1"># Define the coil position</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="s1">&#39;CP3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Define the uncertain conductivities</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">4</span><span class="p">]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+
+<span class="c1"># Run the UQ calling with White and Gray matter as an ROI and tolerance of 1e-2</span>
+<span class="n">gpc</span><span class="o">.</span><span class="n">run_tms_gpc</span><span class="p">(</span><span class="n">tms</span><span class="p">,</span> <span class="s1">&#39;tms_gpc/TMS_UQ&#39;</span><span class="p">,</span> <span class="n">tissues</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="secondary-quantities">
 <h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Permalink to this headline">¶</a></h2>
 <p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">mesh_io</span>
+<span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
+
+
+<span class="n">fn_hdf5</span> <span class="o">=</span> <span class="s1">&#39;tdcs_gpc/ernie_TDCS_1_gpc.hdf5&#39;</span>
+<span class="c1"># Read the regression object from the HDF5 file</span>
+<span class="n">regression</span> <span class="o">=</span> <span class="n">gpc</span><span class="o">.</span><span class="n">gPC_regression</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">)</span>
+<span class="c1"># Read the mesh ROI from the HDF5 file</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
+<span class="c1"># Define the function to be used for the expansion</span>
+
+<span class="k">def</span> <span class="nf">percentile_99</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
+    <span class="c1"># The function will receive the electric field in a format</span>
+    <span class="c1"># N_sims x N_elm x 3</span>
+    <span class="c1"># for each simulation, we calculate the 99th percentile</span>
+    <span class="c1"># using mesh_io</span>
+    <span class="n">prc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Es</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">E</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
+        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">prc</span>
+
+<span class="c1"># Calculate the gPC coefficients</span>
+<span class="n">gpc_coeffs</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">expand_quantity</span><span class="p">(</span><span class="n">percentile_99</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;99th Percentile&quot;</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Mean Value: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Standard Deviation: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+
+<span class="c1"># Draw 1000 samples for the 99th percentile</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">MC_sampling</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="acknolowedgements">
 <h2>Acknolowedgements<a class="headerlink" href="#acknolowedgements" title="Permalink to this headline">¶</a></h2>
-<p>We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the pygpc library.</p>
+<p>We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc library</a>.</p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
@@ -137,7 +203,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
           <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
-          <a href="../../documentation/documentation.html" title="Next document">Documentation</a>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
           &rarr;
         </li>
     </ul>
@@ -167,11 +233,11 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Setting up and Running Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../visualization.html">Visualizing Results</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
@@ -187,7 +253,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
   <li><a href="../tutorial.html">Tutorial</a><ul>
   <li><a href="advanced.html">Advanced Features</a><ul>
       <li>Previous: <a href="group_analysis.html" title="previous chapter">Group Analysis</a></li>
-      <li>Next: <a href="../../documentation/documentation.html" title="next chapter">Documentation</a></li>
+      <li>Next: <a href="../win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
   </ul></li>
   </ul></li>
   </ul></li>

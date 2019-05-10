@@ -5,31 +5,36 @@ Setting up and Running Simulations
 
 This tutorial is based on the example data set. Please download it before continue.
 
-Starting the GUI
------------------
+Starting the GUI and selecting a Head Model
+--------------------------------------------
 1. Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window
 
-.. code-block:: text
+  .. code-block:: bash
+  
+     simnibs_gui
+  
+  \
 
-      simnibs_gui
-
-\
   A window such as the following should appear
 
 .. image:: ../images/tutorial_emptygui.png
+   :align: center
 
 2. Click on the *Browse* button next to the *Head Mesh* box
 
 .. image:: ../images/tutorial_bowse.png
+   :align: center
 
 3. Navigate to the example dataset folder and select the :file:`ernie.msh` file, in the
    example data set
 
 .. image:: ../images/tutorial_selectmsh.png
+   :align: center
 
 4. The head mesh will be loaded and the **m2m Folder** and **Output Folder** boxes filled
 
 .. image:: ../images/tutorial_guihead.png
+   :align: center
 
 \
   You can change the **Output Folder** by clicking on the *Browse* button close to it, and visualize the gray matter surface by clicking on the *Gray Matter* button above the head model. 
@@ -40,6 +45,7 @@ Setting up a tDCS Simulation
 1. Click on *Add tDCS Poslist* at the bottom left of the window
 
 .. image:: ../images/tutorial_addtdcs.png
+   :align: center
 
 \
   A new tab will show up.
@@ -47,6 +53,7 @@ Setting up a tDCS Simulation
 2. Click on *Add Electrode*
 
 .. image:: ../images/tutorial_addelectrode.png
+   :align: center
 
 \
   A new row will be shown in the table
@@ -54,6 +61,7 @@ Setting up a tDCS Simulation
 3. Click twice in the *Shape* cell
 
 .. image:: ../images/tutorial_shapecell.png
+   :align: center
 
 \
   A new window will open where you can configure the electrode size and shape.
@@ -61,6 +69,7 @@ Setting up a tDCS Simulation
 4. Let’s suppose we have a :math:`7.0 \times 5.5 \text{cm}^2` electrode, composed of a single gel layer of 5 mm thickness
 
 .. image:: ../images/tutorial_electrodegui.png
+   :align: center
 
 \
   Please refer to the :ref:`GUI documentation <gui_docs>` for a more detailed explanation of this window. You can also copy/paste electrode definitions by right clicking in the shape cell
@@ -68,12 +77,14 @@ Setting up a tDCS Simulation
 5. Now double click in the *Position* cell. A new window will appear. You can either select an EEG position from the drop-down menu in the left or click twice in the model to get a position.
 
 .. image:: ../images/tutorial_position1.png
+   :align: center
 
 \
 
 6. Choose the C3 electrode from the drop-down menu. A black sphere appears in the electrode position, with a green axis indicating the electrode's “y” axis
 
 .. image:: ../images/tutorial_position2.png
+   :align: center
 
 \
 
@@ -81,42 +92,49 @@ Setting up a tDCS Simulation
 7. Select the electrode *current* in the first column of the electrode tables. **Positive** values designate **anodes**, and **negative** values **cathodes**. The sum of all current values has to be zero.
 
 .. image:: ../images/tutorial_elcurrent.png
+   :align: center
 
 \
 
 8. Now add a second electrode, place it at AF4 and double click on a nearby position to rotate it, aligning the green axis with the top/down direction.
 
-   .. image:: ../images/tutorial_position3.png
+.. image:: ../images/tutorial_position3.png
+   :align: center
 
 \
-  Select a shape and a current of -1.000 mA for this second electrode.
+  Select a shape and a current of :math:`-1.000 \text{mA}` for this second electrode.
   You can see a simple preview of the electrode shapes by clicking on *Preview Shapes* at the bottom of the screen
 
 Setting up a TMS Simulation
 ----------------------------
 1. Click on *Add TMS Poslist* in the bottom of the window. A new TMS tab will be created
 
-   .. image:: ../images/tutorial_addtms.png
+.. image:: ../images/tutorial_addtms.png
+   :align: center
 
 \
 2. Click on *Browse* and select the *Magstim_70mm_Fig8.nii.gz* coil file
 
-   .. image:: ../images/tutorial_addcoil.png
+.. image:: ../images/tutorial_addcoil.png
+   :align: center
 
 \
 3. Click on *Add Position*
 
-   .. image:: ../images/tutorial_addposition.png
+.. image:: ../images/tutorial_addposition.png
+   :align: center
 
 \
 4. Double click in the *Position* cell
 
-   .. image:: ../images/tutorial_positioncell.png
+.. image:: ../images/tutorial_positioncell.png
+   :align: center
 
 \
 5. You can select the coil position the same way as an electrode position, or alternatively by double clicking in the head model. In the TMS case, the Y axis where the coil is pointing. Here, we will click on the *Gray Matter* button above the model window and place the coil above the motor cortex, with the green axis pointing anteriorly. This means that the coil handle points posteriorly. :download:`See here for more information on coil coordinates <../data/coil_axesorientation.pdf>` 
 
-   .. image:: ../images/tutorial_coilpos.png
+.. image:: ../images/tutorial_coilpos.png
+   :align: center
 
 \
 
@@ -124,7 +142,9 @@ Setting up a TMS Simulation
 
 7. When using a *.nii.gz* coil file, click on *Show dA/dt field* to see the norm of the primary electric field.
 
-   .. image:: ../images/tutorial_dadt.png
+.. image:: ../images/tutorial_dadt.png
+   :align: center
+
 
 \
 
@@ -134,16 +154,20 @@ Setting Simulation Options
 ---------------------------
 1. Go to *Edit* → *Simulation Options*
 
-   .. image:: ../images/tutorial_simoptions.png
+.. image:: ../images/tutorial_simoptions.png
+   :align: center
+
 
 \
   The following window will appear
 
-   .. image:: ../images/tutorial_simoptions2.png
+.. image:: ../images/tutorial_simoptions2.png
+   :align: center
 
 \
 
 2. We can select the *fields* to be output from the simulation
+
 
   * **v**: Electrical Potential (Voltage)
   * **vector E**: Electric field vector
@@ -157,8 +181,9 @@ Setting Simulation Options
 
 3. And the  *Additional Options*
 
-  * **Interpolate to cortical surface**: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for headreco with SPM-only segmentations.
-  * **Transform to fsaverage space**: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for headreco with SPM-only segmentations.
+  * **Open in Gmsh**: Opens the simulation results in *Gmsh*
+  * **Interpolate to cortical surface**: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
+  * **Transform to fsaverage space**: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
   * **Interpolate to a nifiti volume**: Interpolates the fields to a nifti volume.
   * **Transform to MNI space**: Interpolates the fields to a nifti volume and applies a transformation to MNI space.
 
@@ -169,16 +194,55 @@ Running a Simulation
 ---------------------
 1. Click on Run at the bottom of the screen
 
-   .. image:: ../images/tutorial_runsim.png
+.. image:: ../images/tutorial_runsim.png
+   :align: center
 
 \
 2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and after finished the bar in the bottom of the window changes from *Teminate* to *Close*.
 
-   .. image:: ../images/tutorial_simrunning.png
+.. image:: ../images/tutorial_simrunning.png
+   :align: center
 
 \
 
 Now, please go on to our tutorial on :ref:`visualization_tutorial`.
+
+Output
+-------
+The final simulation results are in the *Output Folder*, which can be set in the GUI. By default, this folder is called :file:`simnibs_simulation/`, and is located in the same folder as the mesh file. For the current example, the output folder contains the following files and folders:
+
+.. list-table::
+   :widths: 30 30
+   :header-rows: 1
+
+   * - File Name
+     - Description
+   * - :file:`ernie_TDCS_1_scalar.msh`
+     - Mesh with tDCS simulation results
+   * - :file:`ernie_TDCS_1_scalar.msh.opt`
+     - Options for visualizing the file above
+   * - :file:`ernie_TDCS_1_el_currents.geo`
+     - Simplified tDCS electrode model
+   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh`
+     - Mesh with TMS simulation results
+   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh.opt`
+     - Options for visualizing the file above
+   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo`
+     - Contains a simplified coil model showing it’s center and axes. For *.ccd* coil models, this is a more detail model showing dipoles.
+   * - :file:`simnibs_simulation_yyyymmdd.log`
+     - Simulation log
+   * - :file:`simnibs_simulation_yyyymmdd.mat`
+     - Simulation configuration file, can be used to re-run the simulation
+   * - :file:`fsavg_overlays/`
+     - Surface overlays with fields in FsAverage space
+   * - :file:`mni_volumes/`
+     - NIfTI volumes with fields in MNI space
+   * - :file:`subject_overlays/`
+     - Surface overlays with fields in the subject specific space
+   * - :file:`subject_volumes/`
+     - NIfTI volumes with fields in a subject specific space
+
+\
 
 Further Reading
 ----------------

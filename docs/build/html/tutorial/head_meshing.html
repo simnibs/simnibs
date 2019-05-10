@@ -144,8 +144,14 @@
 </div>
 <p></p>
 <ol class="arabic simple" start="5">
-<li><p>Load the head model in <em>Gmsh</em> and check the head mesh to ensure that head meshing went fine. First go to <em>Tools -&gt; Options -&gt; Mesh</em> and select <em>3D element faces</em>.  Then go to <em>Tools -&gt; Visibility</em> and select the volumes one by one.</p></li>
+<li><p>Load the head model in <em>Gmsh</em> and check the head mesh to ensure that head meshing went fine. First go to <em>Tools -&gt; Options -&gt; Mesh</em> and select <em>Volume faces</em>.  Then go to <em>Tools -&gt; Visibility</em> and select the volumes one by one.</p></li>
 </ol>
+</div>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Sometimes, Gmsh fails to mesh one on more tissue compartments. When this happens, running the whole pipeline again and increasing the mesh density with the <code class="code docutils literal notranslate"><span class="pre">-v</span></code> argument in <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> or the <code class="code docutils literal notranslate"><span class="pre">--numvertices</span></code> argument in <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>.</p></li>
+</ul>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
@@ -194,11 +200,11 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Setting up and Running Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>

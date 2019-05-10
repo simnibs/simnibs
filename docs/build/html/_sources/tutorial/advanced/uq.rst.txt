@@ -83,7 +83,7 @@ In *Python*, it is also possible to call lower-level functions to set more optio
 
 In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.
 
-.. literalinclude:: ../../../python_examples/uq_setup_advanced.py
+.. literalinclude:: ../../../simnibs/examples/uq_setup_advanced.py
    :language: python
 
 
@@ -92,13 +92,13 @@ Secondary Quantities
 
 It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm
 
-.. literalinclude:: ../../../python_examples/uq_secondary_quantities.py
+.. literalinclude:: ../../../simnibs/examples/uq_secondary_quantities.py
    :language: python
 
 Acknolowedgements
 ------------------
 
-We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the pygpc library.
+We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the `pygpc library <https://github.com/konstantinweise/pygpc>`_.
 
 Further Reading
 ----------------

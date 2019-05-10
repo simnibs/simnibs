@@ -96,7 +96,13 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
 
 \
 
-5. Load the head model in *Gmsh* and check the head mesh to ensure that head meshing went fine. First go to *Tools -> Options -> Mesh* and select *3D element faces*.  Then go to *Tools -> Visibility* and select the volumes one by one.
+5. Load the head model in *Gmsh* and check the head mesh to ensure that head meshing went fine. First go to *Tools -> Options -> Mesh* and select *Volume faces*.  Then go to *Tools -> Visibility* and select the volumes one by one.
+
+Troubleshooting
+----------------
+
+* Sometimes, Gmsh fails to mesh one on more tissue compartments. When this happens, running the whole pipeline again and increasing the mesh density with the :code:`-v` argument in :ref:`headreco_docs` or the :code:`--numvertices` argument in :ref:`mri2mesh_docs`.
+
 
 Further Reading
 ---------------

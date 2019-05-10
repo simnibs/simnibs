@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Optional Dependencies &#8212; SimNIBS 3.0b3 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Uninstall SimNIBS" href="uninstall.html" />
+    <link rel="prev" title="Install SimNIBS" href="simnibs_installer.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs_installer.html" title="Previous document">Install SimNIBS</a>
+        </li>
+        <li>
+          <a href="uninstall.html" title="Next document">Uninstall SimNIBS</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="optional-dependencies">
+<span id="optional-deps"></span><h1>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="matlab">
+<span id="matlab-setup"></span><h2>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h2>
+<p><strong>Required by:</strong> <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> head segmentation pipeline</p>
+<p>For <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>, MATLAB needs to be configured such that typing <code class="code docutils literal notranslate"><span class="pre">matlab</span></code> on a terminal window will start it.</p>
+<p>This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the <code class="code docutils literal notranslate"><span class="pre">matlab</span></code> executable somewhere in your system <code class="code docutils literal notranslate"><span class="pre">$PATH</span></code>. This can be done with the commands</p>
+<ul>
+<li><p>Linux</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /usr/local/MATLAB/R&lt;VERSION&gt;/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p>MacOSX</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /Applications/MATLAB_R&lt;VERSION&gt;.app/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+<p>If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">matlabroot</span>
+</pre></div>
+</div>
+<p>SimNIBS also has a MATLAB API, available in the <code class="file docutils literal notranslate"><span class="pre">matlab/</span></code> subfolder of the SimNIBS installation directory.</p>
+</div>
+<div class="section" id="fsl">
+<h2>FSL<a class="headerlink" href="#fsl" title="Permalink to this headline">¶</a></h2>
+<p><strong>Required by:</strong> <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> head segmentation pipeline and <a class="reference internal" href="../documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> conductivity tensor reconstruction pipeline</p>
+<ol class="arabic simple">
+<li><p>Follow the instructions on <a class="reference external" href="http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation">this link</a></p></li>
+<li><p>Add</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /etc/fsl/5.0/fsl.sh
+</pre></div>
+</div>
+<dl class="simple">
+<dt></dt><dd><p>in the end of the <code class="file docutils literal notranslate"><span class="pre">~/.bashrc</span></code> (Linux) or <code class="file docutils literal notranslate"><span class="pre">~/.bash_profile</span></code> (MacOSX) file (assuming that fsl is installed as usually into <code class="file docutils literal notranslate"><span class="pre">/etc/fsl/5.0</span></code>).</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="freesurfer">
+<h2>FreeSurfer<a class="headerlink" href="#freesurfer" title="Permalink to this headline">¶</a></h2>
+<p><strong>Required by:</strong> <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> head segmentation pipeline</p>
+<ol class="arabic simple">
+<li><p>Follow the instructions <a class="reference external" href="http://freesurfer.net/fswiki/DownloadAndInstall">here</a></p></li>
+<li><p>Make sure that you have a registration file, and set the path in the <code class="file docutils literal notranslate"><span class="pre">~/.bashrc</span></code> (Linux) or <code class="file docutils literal notranslate"><span class="pre">~/.bash_profile</span></code> (MacOSX).</p></li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs_installer.html" title="Previous document">Install SimNIBS</a>
+        </li>
+        <li>
+          <a href="uninstall.html" title="Next document">Uninstall SimNIBS</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="requirements.html">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simnibs_installer.html">Install SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uninstall.html">Uninstall SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conda.html">Install Using Conda (Advanced)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="throubleshooting.html">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="installation.html">Installation</a><ul>
+      <li>Previous: <a href="simnibs_installer.html" title="previous chapter">Install SimNIBS</a></li>
+      <li>Next: <a href="uninstall.html" title="next chapter">Uninstall SimNIBS</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/installation/optional.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
