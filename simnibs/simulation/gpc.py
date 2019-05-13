@@ -469,8 +469,8 @@ def prep_gpc(simlist):
     return random_vars, pdf_type, pdfshape, limits
 
 
-def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
-                max_iter=1000, data_poly_ratio=2):
+def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
+                max_iter=1000, min_iter=2, data_poly_ratio=2):
     ''' Runs one TMS gPC for each position in the current TMSLIST
 
     Parameters
@@ -484,9 +484,11 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
     tissues: list (Optional)
         List of tissue tags where to evaluate the electric field. Default: [2]
     eps: float (optional)
-        Tolerance for gPC expansions. Default:1e-3
+        Tolerance for gPC expansions. Default:1e-2
     max_iter: int (optinal)
         Maximum number of adaptive gPC expansion. Defaut:1000
+    min_iter: int (optinal)
+        Minimum number of adaptive gPC expansion interations. Defaut:2
     data_poly_ratio: int
         Ratio of number of new simulation per new polynomial. Default:2
 
@@ -527,7 +529,8 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
             max_iter=max_iter,
             eps=eps,
             n_cpus=cpus,
-            print_function=logger.info)
+            print_function=logger.info,
+            min_iter=min_iter)
         gpc_reg = gPC_regression(random_vars,
                                  pdf_type, pdfshape, limits, reg.poly_idx,
                                  reg.grid.coords_norm, 'TMS',
@@ -540,8 +543,8 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
     return fns
 
 
-def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
-                max_iter=1000, data_poly_ratio=2):
+def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
+                max_iter=1000, min_iter=2, data_poly_ratio=2):
     ''' Runs a tDCS gPC expansion
 
     Parameters
@@ -555,10 +558,12 @@ def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
     tissues: list (Optional)
         List of tissue tags where to evaluate the electric field. Default: [2]
     eps: float (optional)
-        Tolerance for gPC expansions. Default:1e-3
+        Tolerance for gPC expansions. Default:1e-2
     max_iter: int (optinal)
-        Maximum number of adaptive gPC expansion. Defaut:1000
-    data_poly_ratio: int
+        Maximum number of adaptive gPC expansion iterations. Defaut:1000
+    min_iter: int (optinal)
+        Minimum number of adaptive gPC expansion interations. Defaut:2
+    data_poly_ratio(optional): int
         Ratio of number of new simulation per new polynomial. Default:2
 
     Returns
@@ -597,7 +602,8 @@ def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-3,
         max_iter=max_iter,
         eps=eps,
         n_cpus=cpus,
-        print_function=logger.info)
+        print_function=logger.info,
+        min_iter=min_iter)
     gpc_reg = gPC_regression(random_vars,
                              pdf_type, pdfshape, limits, reg.poly_idx,
                              reg.grid.coords_norm, 'TCS',

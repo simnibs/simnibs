@@ -170,7 +170,7 @@ class RegularizedRegression(reg):
 def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
                           data_poly_ratio=2, max_iter=1000,
                           order_max=None, interaction_max=None,
-                          eps=1E-3, n_cpus=1, print_function=None):
+                          eps=1E-3, min_iter=0, n_cpus=1, print_function=None):
     """  
     Adaptive regression approach based on leave one out cross validation error
     estimation
@@ -205,6 +205,8 @@ def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
         Maximum interaction order. Default: no maximum
     eps: float, optional
         Relative mean error of leave one out cross validation
+    min_iter: int, optinal
+        Minimum number of iterations
     n_cpus: int, optional
         Number of cpus to evaluate "func". Default: 1
     print_function : function
@@ -295,11 +297,12 @@ def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
         coeffs, eps_gpc = regobj.expand(RES)
         if print_function:
             print_function("gPC Error Estimate: {0:1e}".format(eps_gpc))
-        if (eps_gpc > eps):
+        if eps_gpc <= eps and i_iter >= min_iter:
+            break
+
+        else:
             to_expand = _choose_to_expand(
                 regobj.poly_idx, active_set, old_set, coeffs, order_max, interaction_max)
-        else:
-            break
 
     if i_iter >= max_iter:
         raise ValueError('Maximum number of iterations reached')

@@ -1106,7 +1106,7 @@ class TMSLIST(SimuList):
         gc.collect()
         return output_names
 
-    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-3):
+    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
         from .gpc import run_tms_gpc
         gPC_regression = run_tms_gpc(self, fn_simu, cpus=cpus, tissues=tissues, eps=eps)
         return gPC_regression
@@ -1603,7 +1603,7 @@ class TDCSLIST(SimuList):
         gc.collect()
         return [final_name]
 
-    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-3):
+    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
         from .gpc import run_tcs_gpc
         gPC_regression = run_tcs_gpc(
             self, fn_simu, cpus=cpus, tissues=tissues, eps=eps)
