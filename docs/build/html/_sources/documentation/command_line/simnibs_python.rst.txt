@@ -12,16 +12,15 @@ Python interpreter used in SimNIBS. Whenever scripting simulations for SimNIBS (
 
 This interpreter is from a `Miniconda <https://conda.io/miniconda.html>`_ instance that
 is downloaded and installed during the SimNIBS installation process. It already contains
-a few important packages such as NumPy and SciPy. :download:`see here for a complete list
-of packages in the interpreter <../../../environment.yml>`.
+a few important packages such as NumPy and SciPy.
 
 
 Usage Example
 --------------
 
-* Run the :file:`example_tDCS_ernie_minimal.py` script
+* Run the :file:`tDCS.py` example script
 
   .. code-block:: bash
 
-    simnibs_python example_tDCS_ernie_minimal.py
+    simnibs_python tDCS.py
 

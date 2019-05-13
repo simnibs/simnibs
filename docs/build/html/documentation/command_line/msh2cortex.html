@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>msh2cortex &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>msh2cortex &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="msh2nii" href="msh2nii.html" />
@@ -51,7 +52,11 @@
 <span id="msh2cortex-docs"></span><h1>msh2cortex<a class="headerlink" href="#msh2cortex" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Interpolates fields to a surface in the middle of the cortex, and optinally transforms the fields to the FsAverage template. This only works for head models created with <a class="reference internal" href="mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> or <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> with the <code class="code docutils literal notranslate"><span class="pre">--cat</span></code> option. Not available for head models created using <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> with SPM12 only.</p>
+<p>Interpolates fields to a surface in the middle of the cortex, and optinally transforms the fields to the FsAverage template.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Not available for <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with the <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> option</p>
+</div>
 </div>
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
@@ -72,7 +77,6 @@
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">msh2cortex</span> <span class="pre">-h</span></code> for more information and options</p></li>
 <li><p>This tool equivalent to selecting the <strong>interpolate to cortical surface</strong> or the  <strong>tranform to fsaverage space</strong> options in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or selecting the <strong>map_to_surf</strong> or the <strong>map_to_fsavg</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</p></li>
-<li><p>The <code class="code docutils literal notranslate"><span class="pre">--load_freeview</span></code> option automaticaly loads a FreeView window with the cortical surfaces and overlays calculated using <code class="code docutils literal notranslate"><span class="pre">msh2cortex</span></code> only works with FreeSurfer installed.</p></li>
 </ul>
 </div>
 </div>
@@ -121,6 +125,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>

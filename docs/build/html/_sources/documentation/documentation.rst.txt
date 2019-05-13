@@ -7,6 +7,7 @@ Documentation
    gui
    command_line/command_line
    sim_struct/sim_struct
+   output_files
    file_formats
    coordinates
    conductivity

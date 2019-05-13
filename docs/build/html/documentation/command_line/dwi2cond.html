@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>dwi2cond &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>dwi2cond &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="simnibs" href="simnibs.html" />
@@ -54,7 +55,7 @@
 <p>This optional tool prepares diffusion tensors for GM and WM from diffusion MRI (dMRI) data. The prepared tensors can then be used by SimNIBS to estimate anisotropic conductivities for GM and WM during the FEM calculations. Only single shell data (i.e., with a single b-value in addition to some b=0 images) with a single phase encoding direction for the EPI readout is supported. All processing steps are based on FSL tools.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
-<p>dwi2cond requires FSL (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see the <span class="xref std std-ref">installation</span> page for more information as to how to install FSL.</p>
+<p>dwi2cond depends on <a class="reference external" href="https://fsl.fmrib.ox.ac.uk/fsl/fslwiki">FSL</a> (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see <a class="reference internal" href="../../installation/optional.html#optional-deps"><span class="std std-ref">Optional Dependencies</span></a> for instructions on how to set-up FSL</p>
 </div>
 </div>
 <div class="section" id="usage-example">
@@ -106,7 +107,7 @@
 <li><p>Direct mapping based on linear rescaling of the diffusion tensors (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2008.09.009">Rullmann et al., 2009</a>; <a class="reference external" href="https://doi.org/10.1073/pnas.171473898">Tuch et al., 2001</a>).</p></li>
 <li><p>Inhomogeneous, isotropic conductivities,  calculated as the mean conductivities of tensors of the direct mapping approach.</p></li>
 <li><p>Volume normalized mapping (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2010.02.014">Güllmar et al., 2010</a>) that keeps the geometric mean of the eigenvalues identical to the standard isotropic conductivity.</p></li>
-<li><p>SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the <strong>simnibs_gui</strong>.</p></li>
+<li><p>SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the GUI or scripts.</p></li>
 </ul>
 </div>
 </div>
@@ -155,6 +156,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>

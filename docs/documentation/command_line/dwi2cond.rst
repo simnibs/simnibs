@@ -8,7 +8,7 @@ Description
 
 This optional tool prepares diffusion tensors for GM and WM from diffusion MRI (dMRI) data. The prepared tensors can then be used by SimNIBS to estimate anisotropic conductivities for GM and WM during the FEM calculations. Only single shell data (i.e., with a single b-value in addition to some b=0 images) with a single phase encoding direction for the EPI readout is supported. All processing steps are based on FSL tools.
 
-.. attention:: dwi2cond requires FSL (5.0.5 or newer), and is therefore *not* compatible with Windows. Please see the :ref:`installation` page for more information as to how to install FSL.
+.. attention:: dwi2cond depends on `FSL <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki>`_ (5.0.5 or newer), and is therefore *not* compatible with Windows. Please see :ref:`optional_deps` for instructions on how to set-up FSL
 
 Usage example
 --------------
@@ -62,4 +62,4 @@ Further notes
 * Direct mapping based on linear rescaling of the diffusion tensors (`Rullmann et al., 2009 <https://doi.org/10.1016/j.neuroimage.2008.09.009>`_; `Tuch et al., 2001 <https://doi.org/10.1073/pnas.171473898>`_).
 * Inhomogeneous, isotropic conductivities,  calculated as the mean conductivities of tensors of the direct mapping approach.
 * Volume normalized mapping (`Güllmar et al., 2010 <https://doi.org/10.1016/j.neuroimage.2010.02.014>`_) that keeps the geometric mean of the eigenvalues identical to the standard isotropic conductivity.
-* SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the **simnibs_gui**.
+* SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the GUI or scripts.

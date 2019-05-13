@@ -207,42 +207,6 @@ Running a Simulation
 
 Now, please go on to our tutorial on :ref:`visualization_tutorial`.
 
-Output
--------
-The final simulation results are in the *Output Folder*, which can be set in the GUI. By default, this folder is called :file:`simnibs_simulation/`, and is located in the same folder as the mesh file. For the current example, the output folder contains the following files and folders:
-
-.. list-table::
-   :widths: 30 30
-   :header-rows: 1
-
-   * - File Name
-     - Description
-   * - :file:`ernie_TDCS_1_scalar.msh`
-     - Mesh with tDCS simulation results
-   * - :file:`ernie_TDCS_1_scalar.msh.opt`
-     - Options for visualizing the file above
-   * - :file:`ernie_TDCS_1_el_currents.geo`
-     - Simplified tDCS electrode model
-   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh`
-     - Mesh with TMS simulation results
-   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh.opt`
-     - Options for visualizing the file above
-   * - :file:`ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo`
-     - Contains a simplified coil model showing it’s center and axes. For *.ccd* coil models, this is a more detail model showing dipoles.
-   * - :file:`simnibs_simulation_yyyymmdd.log`
-     - Simulation log
-   * - :file:`simnibs_simulation_yyyymmdd.mat`
-     - Simulation configuration file, can be used to re-run the simulation
-   * - :file:`fsavg_overlays/`
-     - Surface overlays with fields in FsAverage space
-   * - :file:`mni_volumes/`
-     - NIfTI volumes with fields in MNI space
-   * - :file:`subject_overlays/`
-     - Surface overlays with fields in the subject specific space
-   * - :file:`subject_volumes/`
-     - NIfTI volumes with fields in a subject specific space
-
-\
 
 Further Reading
 ----------------

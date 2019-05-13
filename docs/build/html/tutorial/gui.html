@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Setting up and Running Simulations &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>Setting up and Running Simulations &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Visualizing Results" href="visualization.html" />
@@ -219,60 +220,6 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <img alt="../_images/tutorial_simrunning.png" class="align-center" src="../_images/tutorial_simrunning.png" />
 <p></p>
 <p>Now, please go on to our tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p>
-</div>
-<div class="section" id="output">
-<h2>Output<a class="headerlink" href="#output" title="Permalink to this headline">¶</a></h2>
-<p>The final simulation results are in the <em>Output Folder</em>, which can be set in the GUI. By default, this folder is called <code class="file docutils literal notranslate"><span class="pre">simnibs_simulation/</span></code>, and is located in the same folder as the mesh file. For the current example, the output folder contains the following files and folders:</p>
-<table class="colwidths-given docutils align-center">
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>File Name</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code></p></td>
-<td><p>Mesh with tDCS simulation results</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh.opt</span></code></p></td>
-<td><p>Options for visualizing the file above</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_el_currents.geo</span></code></p></td>
-<td><p>Simplified tDCS electrode model</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh</span></code></p></td>
-<td><p>Mesh with TMS simulation results</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_scalar.msh.opt</span></code></p></td>
-<td><p>Options for visualizing the file above</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_MagStim_70mm_Fig8_nii_coil_pos.geo</span></code></p></td>
-<td><p>Contains a simplified coil model showing it’s center and axes. For <em>.ccd</em> coil models, this is a more detail model showing dipoles.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.log</span></code></p></td>
-<td><p>Simulation log</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">simnibs_simulation_yyyymmdd.mat</span></code></p></td>
-<td><p>Simulation configuration file, can be used to re-run the simulation</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">fsavg_overlays/</span></code></p></td>
-<td><p>Surface overlays with fields in FsAverage space</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">mni_volumes/</span></code></p></td>
-<td><p>NIfTI volumes with fields in MNI space</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">subject_overlays/</span></code></p></td>
-<td><p>Surface overlays with fields in the subject specific space</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">subject_volumes/</span></code></p></td>
-<td><p>NIfTI volumes with fields in a subject specific space</p></td>
-</tr>
-</tbody>
-</table>
-<p></p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>

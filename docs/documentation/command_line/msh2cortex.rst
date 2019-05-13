@@ -6,7 +6,9 @@ msh2cortex
 Description
 -------------
 
-Interpolates fields to a surface in the middle of the cortex, and optinally transforms the fields to the FsAverage template. This only works for head models created with :ref:`mri2mesh_docs` or :ref:`headreco_docs` with the :code:`--cat` option. Not available for head models created using :ref:`headreco_docs` with SPM12 only.
+Interpolates fields to a surface in the middle of the cortex, and optinally transforms the fields to the FsAverage template.
+
+.. attention:: Not available for :ref:`headreco_docs` models ran with the :code:`--no-cat` option
 
 Usage example
 --------------
@@ -28,7 +30,3 @@ Further notes
 
 * Type :code:`msh2cortex -h` for more information and options
 * This tool equivalent to selecting the **interpolate to cortical surface** or the  **tranform to fsaverage space** options in the :ref:`GUI <sim_opt>` or selecting the **map_to_surf** or the **map_to_fsavg** to *true* in the :ref:`SESSION structure <session_doc>`.
-* The :code:`--load_freeview` option automaticaly loads a FreeView window with the cortical surfaces and overlays calculated using :code:`msh2cortex` only works with FreeSurfer installed.
-
-
-

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>SESSION &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>SESSION &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="TDCSLIST" href="tdcslist.html" />
@@ -109,21 +110,30 @@ It contains information about the head mesh, the simulations to be performed, th
 </div>
 <p></p>
 </li>
+</ul>
+<ul id="session-poslist">
 <li><p><strong>poslist</strong>: <em>list (Python)/cell array (MATLAB)</em></p>
 <ul class="simple">
 <li><p><strong>Description</strong>: List or either <a class="reference internal" href="tdcslist.html#tdcslist-doc"><span class="std std-ref">TDCSLIST</span></a> or <a class="reference internal" href="tmslist.html#tmslist-doc"><span class="std std-ref">TMSLIST</span></a> data structures</p></li>
 <li><p><strong>Note</strong>: In Python, this attribute does not need to be accessed directly. The user can use the <em>add_tdcslist</em> and <em>add_tmslist</em> methods instead.</p></li>
 </ul>
 </li>
+<li><p><strong>open_in_gmsh</strong>: <em>bool, optional</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Whether to open the simulation results in <em>Gmsh</em> after finishing the simulation</p></li>
+<li><p><strong>Default</strong>: True (Python)/ False (MATLAB)</p></li>
+<li><p><strong>Reference</strong>: <a class="reference internal" href="../../tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">Visualization tutorial</span></a></p></li>
+</ul>
+</li>
 <li><p><strong>map_to_surf</strong>: <em>bool, optional</em></p>
 <ul class="simple">
 <li><p><strong>Description</strong>: Whether to map the fields to the middle gray matter surface.</p></li>
 <li><p><strong>Default</strong>: False</p></li>
-<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a> and the <a class="reference internal" href="../../tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">visualization tutorial</span></a>.</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Only works for <em>mri2mesh</em> models and <em>headreco</em> models ran with the <code class="code docutils literal notranslate"><span class="pre">--cat</span></code> option.</p>
+<p>Does not work in <a class="reference internal" href="../command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with the <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> option.</p>
 </div>
 </li>
 </ul>
@@ -133,11 +143,11 @@ It contains information about the head mesh, the simulations to be performed, th
 <ul class="simple">
 <li><p><strong>Description</strong>: Whether to map the fields to the FsAverage template.</p></li>
 <li><p><strong>Default</strong>: False</p></li>
-<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a> and the <a class="reference internal" href="../../tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">visualization tutorial</span></a>.</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Only works for <em>mri2mesh</em> models and <em>headreco</em> models ran with the <code class="code docutils literal notranslate"><span class="pre">--cat</span></code> option.</p>
+<p>Does not work in <a class="reference internal" href="../command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with the <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> option.</p>
 </div>
 </li>
 </ul>
@@ -147,14 +157,14 @@ It contains information about the head mesh, the simulations to be performed, th
 <ul>
 <li><p><strong>Description</strong>: Whether to map the fields to a NifTi volume. The NifTI volume will in the same space as the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file.</p></li>
 <li><p><strong>Default</strong>: False</p></li>
-<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a> and the <a class="reference internal" href="../../tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">visualization tutorial</span></a>.</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
 </li>
 <li><p><strong>map_to_mni</strong>: <em>bool, optional</em></p>
 <ul>
 <li><p><strong>Description</strong>: Whether to map the fields to the MNI template using a non-linear transformation.</p></li>
 <li><p><strong>Default</strong>: False</p></li>
-<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a> and the <a class="reference internal" href="../../tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">visualization tutorial</span></a>.</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
 </li>
 <li><p><strong>subpath</strong>: <em>string (Python)/character array (MATLAB), optional</em></p>
@@ -226,6 +236,7 @@ It contains information about the head mesh, the simulations to be performed, th
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>

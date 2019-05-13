@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>File Formats in SimNIBS &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>File Formats in SimNIBS &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -12,10 +12,11 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Coordinates in SimNIBS" href="coordinates.html" />
-    <link rel="prev" title="POSITION" href="sim_struct/position.html" />
+    <link rel="prev" title="Output Files" href="output_files.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -34,7 +35,7 @@
     <ul>
         <li>
           &larr;
-          <a href="sim_struct/position.html" title="Previous document">POSITION</a>
+          <a href="output_files.html" title="Previous document">Output Files</a>
         </li>
         <li>
           <a href="coordinates.html" title="Next document">Coordinates in SimNIBS</a>
@@ -48,7 +49,7 @@
           <div class="body" role="main">
             
   <div class="section" id="file-formats-in-simnibs">
-<h1>File Formats in SimNIBS<a class="headerlink" href="#file-formats-in-simnibs" title="Permalink to this headline">¶</a></h1>
+<span id="file-formats"></span><h1>File Formats in SimNIBS<a class="headerlink" href="#file-formats-in-simnibs" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="head-models">
 <h2>Head Models<a class="headerlink" href="#head-models" title="Permalink to this headline">¶</a></h2>
 <p>SimNIBS’ head models are <strong>meshes</strong> (<em>.msh</em> files).
@@ -58,15 +59,15 @@ This means that the head head is represented as a set of <em>Nodes</em> and <em>
 <li><p>The <em>Elements</em> are triangles and tetrahedra. They are defined using 3 nodes (triangles) or 4 nodes(tetrahedra).</p></li>
 </ul>
 <p>This type of format is highly advantageous for Finite Element (FEM) calculations, especially for complex geometries such as the human head.</p>
-<p>Head Meshes are stored in <strong>binary gmsh version 2 format</strong>, as described in the <a class="reference external" href="http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2">gmsh documentation</a>.
+<p>Head Meshes are stored in <strong>binary gmsh version 2 format</strong>, as described in the <a class="reference external" href="http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2">Gmsh documentation</a>.
 SimNIBS can read arbitrary mesh files.
 But it can’t write files with elements other then first order triangles and tetrahedra.</p>
 <p>SimNIBS offers the <em>Python</em> <a class="reference internal" href="python_lib/auto/simnibs.msh.read_msh.html#simnibs.msh.read_msh" title="simnibs.msh.read_msh"><code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_msh()</span></code></a> function and the
-<em>MATLAB</em> function <em>msh_load_gmsh4</em> to read <em>.msh</em> files.</p>
+<em>MATLAB</em> function <em>mesh_load_gmsh4</em> to read <em>.msh</em> files.</p>
 </div>
 <div class="section" id="simulation-results">
 <h2>Simulation Results<a class="headerlink" href="#simulation-results" title="Permalink to this headline">¶</a></h2>
-<p>By default, Simulation results are also stored in <em>gmsh</em> format.
+<p>By default, Simulation results are also stored in <em>Gmsh</em> format.
 There are 2 types of fields used in SimNIBS:</p>
 <ul class="simple">
 <li><p><em>NodeData</em> is defined at each nodes. By default, only the electric potential “v” is stored as <em>NodeData</em></p></li>
@@ -76,6 +77,7 @@ There are 2 types of fields used in SimNIBS:</p>
 After the FEM calculations, we obtain values of “v” at each node.
 To obtain the electric field and the current density, we take the gradient of the potential.
 However, the gradient operation is defined element-wise, and not node-wise.</p>
+<p>Together with the <em>.msh</em> files, we often also save <em>.opt</em> files to facilitate visualization.</p>
 </div>
 <div class="section" id="surface-fields">
 <h2>Surface Fields<a class="headerlink" href="#surface-fields" title="Permalink to this headline">¶</a></h2>
@@ -130,7 +132,7 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
     <ul>
         <li>
           &larr;
-          <a href="sim_struct/position.html" title="Previous document">POSITION</a>
+          <a href="output_files.html" title="Previous document">Output Files</a>
         </li>
         <li>
           <a href="coordinates.html" title="Next document">Coordinates in SimNIBS</a>
@@ -166,6 +168,7 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_files.html">Output Files</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="coordinates.html">Coordinates in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="conductivity.html">Standard Conductivity Values</a></li>
@@ -183,7 +186,7 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="documentation.html">Documentation</a><ul>
-      <li>Previous: <a href="sim_struct/position.html" title="previous chapter">POSITION</a></li>
+      <li>Previous: <a href="output_files.html" title="previous chapter">Output Files</a></li>
       <li>Next: <a href="coordinates.html" title="next chapter">Coordinates in SimNIBS</a></li>
   </ul></li>
   </ul></li>

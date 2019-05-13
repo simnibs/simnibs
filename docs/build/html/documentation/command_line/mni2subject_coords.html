@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>mni2subject_coords &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>mni2subject_coords &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="subject2mni" href="subject2mni.html" />
@@ -55,15 +56,11 @@
 </div>
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic simple">
-<li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
-<li><p>Run</p></li>
-</ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mni2subject_coords -m m2m_ernie/ -s <span class="nv">$SIMNIBSDIR</span>/resources/ElectrodeCaps_MNI/EEG10-10_UI_Jurak_2007.csv -o ernie_10_10.csv
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mni2subject_coords -m m2m_ernie/ -s list.csv -o ernie_10_10.csv
 </pre></div>
 </div>
 <dl class="simple">
-<dt></dt><dd><p>This will transform a list of electrode positions that were defined in MNI space according to the EEG 10/10 system (using the “UI” convention as defined in <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2006.09.024">Jurcak et al., 2007</a>) to subject space. The transformed positions are stored in the file <em>ernie_10_10.csv</em>.</p>
+<dt></dt><dd><p>This will transform a list of defined in MNI space saved in the <code class="file docutils literal notranslate"><span class="pre">list.csv</span></code> file to subject space.</p>
 </dd>
 </dl>
 </div>
@@ -71,7 +68,7 @@
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">mni2subject_coords</span> <span class="pre">-h</span></code> for more information and options, including on the format of the <em>.csv</em> files.</p></li>
-<li><p>There are many different behaviors of this script depending on specifications of the <em>.csv</em> file</p></li>
+<li><p>There are many different behaviors of this script depending on specifications of the <em>.csv</em> file. Type <code class="code docutils literal notranslate"><span class="pre">mni2subject_coords</span> <span class="pre">-h</span></code> for a full description</p></li>
 <li><p>This script is used to determine the electrode positions in the <em>m2m_{subID}/eeg_positions/EEG10-10_UI_Jurak_2007.csv</em></p></li>
 <li><p>When transforming electrode positions, the results are always projected to the skin after the transformation.</p></li>
 </ul>
@@ -122,6 +119,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>

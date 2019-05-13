@@ -52,6 +52,8 @@ Attributes
   * **Note**: When using a :ref:`coil provided by SimNIBS <coil_fies>` you only need to use the file name. If using some other coil file, please use the full path.
   * **References**: `Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_, `Thielscher and Kammer, 2004 <https://doi.org/10.1016/j.clinph.2004.02.019>`_
 
+.. _tmslist_pos:
+
 * **pos**: *list/array of POSITION structures (Python/MATLAB)*
 
   * **Description**: List of coil positions for the simulations

@@ -40,14 +40,14 @@ It is simple to set-up a simulation with UQ. All you need to do is to set-up the
 Python
 ''''''
 
-.. literalinclude:: ../../../python_examples/uncertainty_quantification.py
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../matlab/examples/uncertainty_quantification.m
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification.m
    :language: matlab
 
 
@@ -57,23 +57,32 @@ Output Files
 -------------
 In the output folder of the examples above (the :file:`tdcs_uq/` folder) we have the output files
 
-* :file:`ernie_TDCS_1_electrodes.msh`: Head mesh (*Gmsh* format) with the electrodes
+* :file:`ernie_TDCS_1_electrodes.msh`
+    Head mesh (*Gmsh* format) with the electrodes
+* :file:`ernie_TDCS_1_gpc.msh`
+    Uncertainty quantification result in *Gmsh* format. There we have the data sets:
 
-* :file:`ernie_TDCS_1_gpc.msh`: Uncertainty quantification result in *Gmsh* format. There we have the data sets:
-
-  * *{Field Name}_mean*: Mean of the probability distribution describing the uncertainty of the given field
-  * *{Field Name}_std*: Standard Deviation of the probability distribution describing the uncertainty of the given field
-  * *{Field Name}_sensitivity_{N}*: Derivative-based sensitivity for the tissue number *N*. See `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
-  * *{Field Name}_sobol_{N}*: Sobol coefficient for the tissue number *N*. See `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+  * *{Field Name}_mean*
+      Mean of the probability distribution describing the uncertainty of the given field
+  * *{Field Name}_std*
+      Standard Deviation of the probability distribution describing the uncertainty of the given field
+  * *{Field Name}_sensitivity_{N}*
+      Derivative-based sensitivity for the tissue number *N*. See `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+  * *{Field Name}_sobol_{N}*
+      Sobol coefficient for the tissue number *N*. See `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
 
 * :file:`ernie_TDCS_1_gpc.hdf5`: *HDF5* file containing partial information on the gPC expansion and partial results. The main datasets there are:
 
-  * :file:`gpc_object`: Information to reconstruct the gPC regressions
-  * :file:`cond`: Conductivity information
-  * :file:`mesh`: Original mesh (or with electrodes for tDCS simulations). Has the :file:`mesh/data_matrices/v_samples` data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.
-  * :file:`mesh_roi`: Mesh cropped to the ROI. Has the :file:`mesh/data_matrices/{Field Name}_samples` data sets with the field values (at nodes for *v* or elements for other quantities) for all iterations of the adaptive algorithm.
+  * :file:`gpc_object`
+      Information to reconstruct the gPC regressions
+  * :file:`cond`
+      Conductivity information
+  * :file:`mesh`
+      Original mesh (or with electrodes for tDCS simulations). Has the :file:`mesh/data_matrices/v_samples` data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.
+  * :file:`mesh_roi`
+      Mesh cropped to the ROI. Has the :file:`mesh/data_matrices/{Field Name}_samples` data sets with the field values (at nodes for *v* or elements for other quantities) for all iterations of the adaptive algorithm.
 
-  .. note:: meshes stored in HDF5 files can be red with the :meth:`simnibs.msh.mesh_io.Msh.read_hdf5` class of with the *mesh_load_hdf5* function in MATLAB 
+  .. note:: meshes stored in HDF5 files can be red with the :meth:`simnibs.msh.Msh.read_hdf5` class of with the *mesh_load_hdf5* function in MATLAB 
 
 
 More Options

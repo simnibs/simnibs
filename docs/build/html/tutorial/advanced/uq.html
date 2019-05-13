@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Uncertainty Quantification &#8212; SimNIBS 3.0b3 documentation</title>
+    <title>Uncertainty Quantification &#8212; SimNIBS 3.0b4 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +12,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
@@ -75,34 +76,162 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </div>
 <div class="section" id="python">
 <h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS simulation in Python</span>
+<span class="sd">    Run with:</span>
+
+<span class="sd">    simnibs_python uncertainty_quantification.py</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="n">S</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="n">S</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="n">S</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tdcs_uq&#39;</span>
+
+<span class="n">tdcs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">currents</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">]</span>
+
+<span class="c1"># Set-up the electrodes</span>
+<span class="n">mc_electrode</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;rect&#39;</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">so_electrode</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;AF4&#39;</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;rect&#39;</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">70</span><span class="p">]</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Set-up the uncertain conductivities</span>
+<span class="c1"># White Matter</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">4</span><span class="p">]</span>
+<span class="c1"># Gray Matter</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">]</span>
+<span class="c1"># Skull</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="matlab">
 <h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% example script that runs an Uncertainty Quantification analysis</span>
+<span class="c">% </span>
+<span class="c">% G. Saturnino, 2019</span>
+<span class="c">%</span>
+
+<span class="c">%% General information</span>
+
+<span class="n">S</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span> <span class="c">% head mesh</span>
+<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tdcs_uq&#39;</span><span class="p">;</span> <span class="c">%Folder for the simulation output</span>
+
+<span class="c">%% Define tDCS simulation</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span> <span class="p">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">];</span> <span class="c">% Current flow though each channel (mA)</span>
+
+<span class="c">%First Electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span> <span class="p">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c">% Connect the electrode to the first channel</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span> <span class="p">=</span> <span class="s">&#39;C3&#39;</span><span class="p">;</span> <span class="c">% Place it over C3</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span> <span class="p">=</span> <span class="s">&#39;rect&#39;</span><span class="p">;</span> <span class="c">%Rectangular electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span> <span class="p">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">];</span> <span class="c">% Dimension in mm</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span> <span class="p">=</span> <span class="mi">4</span><span class="p">;</span> <span class="c">% 4 mm thickness</span>
+
+<span class="c">%Second Electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span> <span class="p">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span> <span class="p">=</span> <span class="s">&#39;AF4&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span> <span class="p">=</span> <span class="s">&#39;rect&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span> <span class="p">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">70</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span> <span class="p">=</span> <span class="mi">4</span><span class="p">;</span>
+
+<span class="c">% Set-up the uncertain conductivities</span>
+<span class="c">% White Matter</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="p">.</span><span class="mi">4</span><span class="p">];</span>
+<span class="c">% Gray Matter</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="p">.</span><span class="mi">6</span><span class="p">];</span>
+<span class="c">% Skull</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">];</span>
+
+<span class="c">%% Run Simulation</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
 <p>In the output folder of the examples above (the <code class="file docutils literal notranslate"><span class="pre">tdcs_uq/</span></code> folder) we have the output files</p>
 <ul>
-<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_electrodes.msh</span></code>: Head mesh (<em>Gmsh</em> format) with the electrodes</p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.msh</span></code>: Uncertainty quantification result in <em>Gmsh</em> format. There we have the data sets:</p>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_electrodes.msh</span></code></dt><dd><p>Head mesh (<em>Gmsh</em> format) with the electrodes</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.msh</span></code></dt><dd><p>Uncertainty quantification result in <em>Gmsh</em> format. There we have the data sets:</p>
+</dd>
+</dl>
 <ul class="simple">
-<li><p><em>{Field Name}_mean</em>: Mean of the probability distribution describing the uncertainty of the given field</p></li>
-<li><p><em>{Field Name}_std</em>: Standard Deviation of the probability distribution describing the uncertainty of the given field</p></li>
-<li><p><em>{Field Name}_sensitivity_{N}</em>: Derivative-based sensitivity for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p></li>
-<li><p><em>{Field Name}_sobol_{N}</em>: Sobol coefficient for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p></li>
+<li><dl class="simple">
+<dt><em>{Field Name}_mean</em></dt><dd><p>Mean of the probability distribution describing the uncertainty of the given field</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_std</em></dt><dd><p>Standard Deviation of the probability distribution describing the uncertainty of the given field</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_sensitivity_{N}</em></dt><dd><p>Derivative-based sensitivity for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_sobol_{N}</em></dt><dd><p>Sobol coefficient for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+</dd>
+</dl>
+</li>
 </ul>
 </li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.hdf5</span></code>: <em>HDF5</em> file containing partial information on the gPC expansion and partial results. The main datasets there are:</p>
 <ul class="simple">
-<li><p><code class="file docutils literal notranslate"><span class="pre">gpc_object</span></code>: Information to reconstruct the gPC regressions</p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">cond</span></code>: Conductivity information</p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">mesh</span></code>: Original mesh (or with electrodes for tDCS simulations). Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/v_samples</span></code> data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.</p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_roi</span></code>: Mesh cropped to the ROI. Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/</span><em><span class="pre">Field</span> <span class="pre">Name</span></em><span class="pre">_samples</span></code> data sets with the field values (at nodes for <em>v</em> or elements for other quantities) for all iterations of the adaptive algorithm.</p></li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">gpc_object</span></code></dt><dd><p>Information to reconstruct the gPC regressions</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">cond</span></code></dt><dd><p>Conductivity information</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">mesh</span></code></dt><dd><p>Original mesh (or with electrodes for tDCS simulations). Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/v_samples</span></code> data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">mesh_roi</span></code></dt><dd><p>Mesh cropped to the ROI. Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/</span><em><span class="pre">Field</span> <span class="pre">Name</span></em><span class="pre">_samples</span></code> data sets with the field values (at nodes for <em>v</em> or elements for other quantities) for all iterations of the adaptive algorithm.</p>
+</dd>
+</dl>
+</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.mesh_io.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+<p>meshes stored in HDF5 files can be red with the <a class="reference internal" href="../../documentation/python_lib/auto/simnibs.msh.Msh.html#simnibs.msh.Msh.read_hdf5" title="simnibs.msh.Msh.read_hdf5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code></a> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
 </div>
 </li>
 </ul>
@@ -112,13 +241,13 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and post-process results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">mesh_io</span><span class="p">,</span> <span class="n">file_finder</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">msh</span><span class="p">,</span> <span class="n">file_finder</span>
 <span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
 
 <span class="c1">## Define the TMS simulation</span>
 <span class="n">tms</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
 
 <span class="c1"># We need to set the EEG cap as we are giving the coil</span>
 <span class="c1"># Coordinates as EEG positions</span>
@@ -148,25 +277,24 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Permalink to this headline">¶</a></h2>
 <p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">mesh_io</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">msh</span>
 <span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
 
 
-<span class="n">fn_hdf5</span> <span class="o">=</span> <span class="s1">&#39;tdcs_gpc/ernie_TDCS_1_gpc.hdf5&#39;</span>
+<span class="n">fn_hdf5</span> <span class="o">=</span> <span class="s1">&#39;tdcs_uq/ernie_TDCS_1_gpc.hdf5&#39;</span>
 <span class="c1"># Read the regression object from the HDF5 file</span>
 <span class="n">regression</span> <span class="o">=</span> <span class="n">gpc</span><span class="o">.</span><span class="n">gPC_regression</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">)</span>
 <span class="c1"># Read the mesh ROI from the HDF5 file</span>
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
 <span class="c1"># Define the function to be used for the expansion</span>
 
 <span class="k">def</span> <span class="nf">percentile_99</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
     <span class="c1"># The function will receive the electric field in a format</span>
     <span class="c1"># N_sims x N_elm x 3</span>
     <span class="c1"># for each simulation, we calculate the 99th percentile</span>
-    <span class="c1"># using mesh_io</span>
     <span class="n">prc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Es</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">E</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
-        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mesh_io</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">prc</span>
 
@@ -178,7 +306,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Standard Deviation: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
 
 <span class="c1"># Draw 1000 samples for the 99th percentile</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">MC_sampling</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">MC_sampling</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">breakpoint</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>

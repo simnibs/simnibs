@@ -1,5 +1,7 @@
+.. _file_formats:
+
 File Formats in SimNIBS
-===================================
+=========================
 
 Head Models
 ------------
@@ -12,18 +14,18 @@ This means that the head head is represented as a set of *Nodes* and *Elements*.
 
 This type of format is highly advantageous for Finite Element (FEM) calculations, especially for complex geometries such as the human head.
 
-Head Meshes are stored in **binary gmsh version 2 format**, as described in the `gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2>`_.
+Head Meshes are stored in **binary gmsh version 2 format**, as described in the `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2>`_.
 SimNIBS can read arbitrary mesh files.
 But it can't write files with elements other then first order triangles and tetrahedra.
 
 SimNIBS offers the *Python* :func:`simnibs.msh.read_msh` function and the
-*MATLAB* function *msh_load_gmsh4* to read *.msh* files.
+*MATLAB* function *mesh_load_gmsh4* to read *.msh* files.
 
 
 Simulation Results
 ----------------------
 
-By default, Simulation results are also stored in *gmsh* format.
+By default, Simulation results are also stored in *Gmsh* format.
 There are 2 types of fields used in SimNIBS:
 
 * *NodeData* is defined at each nodes. By default, only the electric potential "v" is stored as *NodeData*
@@ -35,6 +37,7 @@ After the FEM calculations, we obtain values of "v" at each node.
 To obtain the electric field and the current density, we take the gradient of the potential.
 However, the gradient operation is defined element-wise, and not node-wise.
 
+Together with the *.msh* files, we often also save *.opt* files to facilitate visualization.
 
 Surface Fields
 ---------------

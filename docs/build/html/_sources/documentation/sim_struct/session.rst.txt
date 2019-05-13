@@ -69,18 +69,27 @@ Attributes
 
   \ 
 
+.. _session_poslist:
+
 * **poslist**: *list (Python)/cell array (MATLAB)*
 
   * **Description**: List or either :ref:`TDCSLIST <tdcslist_doc>` or :ref:`TMSLIST <tmslist_doc>` data structures
   * **Note**: In Python, this attribute does not need to be accessed directly. The user can use the *add_tdcslist* and *add_tmslist* methods instead.
 
+* **open_in_gmsh**: *bool, optional*
+
+  * **Description**: Whether to open the simulation results in *Gmsh* after finishing the simulation
+  * **Default**: True (Python)/ False (MATLAB)
+  * **Reference**: :ref:`Visualization tutorial <visualization_tutorial>`
+
+
 * **map_to_surf**: *bool, optional*
 
   * **Description**: Whether to map the fields to the middle gray matter surface. 
   * **Default**: False
-  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_ and the :ref:`visualization tutorial <visualization_tutorial>`.
+  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
-  .. warning:: Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
+  .. warning:: Does not work in :ref:`headreco_docs` models ran with the :code:`--no-cat` option.
 
 \
 
@@ -88,9 +97,9 @@ Attributes
 
   * **Description**: Whether to map the fields to the FsAverage template.
   * **Default**: False
-  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_ and the :ref:`visualization tutorial <visualization_tutorial>`.
+  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
-  .. warning:: Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
+  .. warning:: Does not work in :ref:`headreco_docs` models ran with the :code:`--no-cat` option.
 
 \
 
@@ -98,13 +107,13 @@ Attributes
 
   * **Description**: Whether to map the fields to a NifTi volume. The NifTI volume will in the same space as the :file:`m2m_{subID}/T1fs_conform.nii.gz` file.
   * **Default**: False
-  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_ and the :ref:`visualization tutorial <visualization_tutorial>`.
+  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
 * **map_to_mni**: *bool, optional*
 
   * **Description**: Whether to map the fields to the MNI template using a non-linear transformation.
   * **Default**: False
-  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_ and the :ref:`visualization tutorial <visualization_tutorial>`.
+  * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
 * **subpath**: *string (Python)/character array (MATLAB), optional*
 

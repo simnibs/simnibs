@@ -8,7 +8,7 @@ Description
 
 mri2mesh reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but will create better skull segmentations when also a T2w image is available.
 
-.. attention:: mri2mesh needs FreeSurfer (5.3.0 or newer) and FSL (5.0.5 or newer), and is therefore *not* compatible with Windows. Please see the :ref:`installation` page for more information.
+.. attention:: mri2mesh depends on `FreeSurfer <https://surfer.nmr.mgh.harvard.edu/>`_ (5.3.0 or newer) and `FSL <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki>`_ (5.0.5 or newer), and is therefore *not* compatible with Windows. Please see :ref:`optional_deps` for instructions on how to set-up FreeSurfer and FSL
 
 Usage example
 --------------
@@ -16,30 +16,31 @@ Usage example
 1. Open a terminal and go to the directory of the “Ernie” example data set.
 2. Run the reconstruction: 
 
-.. code-block:: text
-
-   mri2mesh --all ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
-
-\
+  .. code-block:: text
+  
+     mri2mesh --all ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
+  
+  \
 
   The argument :code:`--all` tells :code:`mri2mesh` to run all reconstruction steps including volume meshing. The subject ID (subID) **ernie** is given next. Mri2mesh will create a mesh named :file:`ernie.msh`, a folder :file:`fs_ernie/` that contains the FreeSurfer results, and a folder :file:`m2m_ernie/` that contains the files that are needed for volume meshing. The input images are given as final arguments (first the T1, then the T2). When calling :code:`mri2mesh --all` the first time for a dataset, it will run FreeSurfer on it using the T1 as input. This is quite time-consuming. When re-running :code:`mri2mesh --all` it will use the existing FreeSurfer results, shortening the time required to ~3-4 hours.
 
   Alternatively, the reconstruction can be run with only the T1w image as input, but this will result in a less accurate skull region:
 
-.. code-block:: text
-
-  mri2mesh --all ernie org/ernie_T1fs.nii.gz
-
-\
+  .. code-block:: text
+  
+    mri2mesh --all ernie org/ernie_T1fs.nii.gz
+  
+  \
 
 3. Check the results:
 
-.. code-block:: text
+ .. code-block:: text
+ 
+   mri2mesh -c ernie
+ 
+ \
 
-  mri2mesh -c ernie
-
-\
-   This will show the reconstructed surfaces overlaid over the MR images using freeview. The red lines indicate the final surfaces used for volume meshing, the yellow indicate the GM and WM surfaces created by FreeSurfer. A second freeview will show the subject T1 overlaid on the MNI template for a visual check of the registration accuracy. In addition, you should have a look at the tetrahedral head mesh by loading it into gmsh.
+  This will show the reconstructed surfaces overlaid over the MR images using freeview. The red lines indicate the final surfaces used for volume meshing, the yellow indicate the GM and WM surfaces created by FreeSurfer. A second freeview will show the subject T1 overlaid on the MNI template for a visual check of the registration accuracy. In addition, you should have a look at the tetrahedral head mesh by loading it into gmsh.
 
 Further notes
 --------------

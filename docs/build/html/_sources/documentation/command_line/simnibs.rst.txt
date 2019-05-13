@@ -20,7 +20,7 @@ Usage example
 
 \
 
-  You can run multiple TMS simulations at once by setting the –-cpus argument
+  You can run multiple TMS simulations at once by setting the :code:`--cpus` argument
 
 .. code-block:: bash
 

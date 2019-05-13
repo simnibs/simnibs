@@ -2,15 +2,39 @@
 
 Publications
 =============
-The main publications documenting SimNIBS development are, in reverse chronological order
+The main publications documenting SimNIBS development are
+
+Version 3.0
+-----------
+
+New solver
+'''''''''''
+
+*  `Saturnino, Guilherme Bicalho, Kristoffer Hougaard Madsen, and Axel Thielscher. "Efficient Electric Field Simulations for Transcranial Brain Stimulation." bioRxiv (2019): 541409. <https://doi.org/10.1101/541409>`_
+
+
+Uncertainty Quantification
+''''''''''''''''''''''''''
+
+* `Saturnino, G. B., Thielscher, A., Madsen, K. H., Knösche, T. R., & Weise, K. (2019). A principled approach to conductivity uncertainty analysis in electric field calculations. NeuroImage, 188, 821-834. <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+
+
 
 Version 2.1
 -------------
+
+Validation 
+''''''''''
+
+* `Puonti, O., Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2019). Comparing and Validating Automated Tools for Individualized Electric Field Simulations in the Human Head. bioRxiv, 611962. <https://doi.org/10.1101/611962>`_ 
+
+Tutorial paper
+''''''''''''''
 * `Saturnino, G. B., Puonti, O., Nielsen, J. D., Antonenko, D., Madsen, K. H. H., and
   Thielscher, A. (2018), SimNIBS 2.1: A Comprehensive Pipeline for Individualized Electric Field Modelling for Transcranial Brain Stimulation. bioRxiv, 500314. <https://doi.org/10.1101/500314>`_
 
-headreco pipeline
--------------------
+:ref:`headreco_docs` pipeline
+'''''''''''''''''''''''''''''''
 * `Nielsen, J. D., Madsen, K. H., Puonti, O., Siebner, H. R., Bauer, C., Madsen, C. G., ..., and Thielscher, A. (2018). Automatic skull segmentation from MR images for realistic volume conductor models of the head: Assessment of the state-of-the-art. NeuroImage, 174, 587-598. <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_
 
 Version 2.0
