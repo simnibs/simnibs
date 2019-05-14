@@ -10,6 +10,10 @@ jobs:
 
   steps:
   - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - bash: |
       conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
     displayName: Create Conda environment
   - bash: |
