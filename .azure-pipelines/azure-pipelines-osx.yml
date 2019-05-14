@@ -5,10 +5,9 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'macOS-10.14'
     maxParallel: 4
 
-  container: simnibs/simnibs-testing:centos6
   steps:
   - bash: |
       conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
@@ -16,50 +15,43 @@ jobs:
   - bash: |
       source activate simnibs_build
       python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
-      cp environment_linux.yml $(Build.ArtifactStagingDirectory)
+      cp environment_osx.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: linux_wheel
+      artifactName: osx_wheel
     displayName: Publish Artifact
 
-# Test SimNIBS in a series of containers
-- job: 'Test'
+- job: Test
   dependsOn: Build
   strategy:
     matrix:
-      centos6:
-        containerImage: simnibs/simnibs-testing:centos6
-      centos7:
-        containerImage: simnibs/simnibs-testing:centos7
-      ubuntu16:
-        containerImage: simnibs/simnibs-testing:ubuntu16
-      ubuntu18:
-        containerImage: simnibs/simnibs-testing:ubuntu18
+      MacOSX-10.13:
+        vmImage: 'macOS-10.13'
+      MacOSX-10.14:
+        vmImage: 'macOS-10.14'
+
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: $(vmImage)
     maxParallel: 4
 
-  container:  $[ variables['containerImage'] ]
-
   steps:
-
   - bash: |
-      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
+      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_osx.yml  > env.yml
       conda env create -f env.yml
     displayName: Create conda environment
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'linux_wheel'
+      artifactName: 'osx_wheel'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
   - bash: |
       source activate simnibs_env
-      pip install -f file://$(System.ArtifactsDirectory)/linux_wheel simnibs
+      pip install -f file://$(System.ArtifactsDirectory)/osx_wheel simnibs
       pytest simnibs/tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
   
@@ -68,7 +60,7 @@ jobs:
     inputs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
-  
+      
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
   dependsOn: Test
@@ -81,7 +73,7 @@ jobs:
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'linux_wheel'
+      artifactName: 'osx_wheel'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
@@ -92,8 +84,6 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(System.ArtifactsDirectory)/linux_wheel/*
+      assets: $(System.ArtifactsDirectory)/osx_wheel/*
       assetUploadMode: 'replace'
       isDraft: true
-
-
