@@ -6,6 +6,7 @@ include simnibs/msh/*.m
 include simnibs/cython_code/*.pyx
 # We add all binaries here and remove the ones we don't need in the setup.py script
 include simnibs/cython_code/*.dll
+include simnibs/cython_code/*.dylib
 graft simnibs/bin
 graft simnibs/lib
 graft simnibs/include

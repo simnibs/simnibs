@@ -32,7 +32,10 @@ elif sys.platform == 'linux':
     petsc_runtime = ['$ORIGIN/../lib/linux']
 
 elif sys.platform == 'darwin':
-    raise NotImplementedError()
+    petsc_include = [np.get_include(), 'simnibs/include/osx/petsc']
+    petsc_libs = ['petsc']
+    petsc_dirs = ['simnibs/lib/osx']
+    petsc_runtime = None
 
 else:
     raise OSError('OS not supported!')
@@ -49,7 +52,8 @@ extension = [
               include_dirs=petsc_include,
               library_dirs=petsc_dirs,
               libraries=petsc_libs,
-              runtime_library_dirs=petsc_runtime)]
+              runtime_library_dirs=petsc_runtime,
+    )]
 
 if ext == '.pyx':
     extension = cythonize(extension)
@@ -109,10 +113,14 @@ class build_ext_(build_ext):
             [shutil.rmtree(f, True) for f in osx_folders]
             [shutil.rmtree(f, True) for f in win_folders]
 
-        if sys.platform == 'osx':
+        if sys.platform == 'darwin':
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in win_folders]
-
+            for f in glob.glob(os.path.join(self.build_lib, 'simnibs', 'lib', 'osx', '*')):
+                shutil.move(
+                            f,
+                            os.path.join(self.build_lib, 'simnibs', 'cython_code', os.path.basename(f)))
+        
         if sys.platform == 'win32':
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in osx_folders]
@@ -127,6 +135,11 @@ class develop_(develop):
         develop.run(self)
         if sys.platform == 'win32':
             for f in glob.glob(os.path.join('simnibs', 'lib', 'win', '*')):
+                shutil.copy(
+                    f,
+                    os.path.join('simnibs', 'cython_code', os.path.basename(f)))
+        if sys.platform == 'darwin':
+            for f in glob.glob(os.path.join('simnibs', 'lib', 'osx', '*')):
                 shutil.copy(
                     f,
                     os.path.join('simnibs', 'cython_code', os.path.basename(f)))
