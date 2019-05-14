@@ -6,6 +6,9 @@ simnibs/matlab/simnibs.cmd
 simnibs/resources/spm12/
 activate_simnibs
 uninstall_simnibs
+simnibs/cython_code/_marching_cubes_lewiner_cy.c
+simnibs/cython_code/cython_msh.c
+simnibs/cython_code/petsc_solver.c
 
 #
 # Object files
@@ -16,6 +19,7 @@ uninstall_simnibs
 *.a
 *.la
 *.lo
+*.dylib
 
 # Shared objects (inc. Windows DLLs)
 *.dll
