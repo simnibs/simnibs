@@ -42,6 +42,10 @@ jobs:
 
   steps:
   - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - bash: |
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_osx.yml  > env.yml
       conda env create -f env.yml
     displayName: Create conda environment
