@@ -31,8 +31,6 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-10.13:
-        vmImage: 'macOS-10.13'
       MacOSX-10.14:
         vmImage: 'macOS-10.14'
 
