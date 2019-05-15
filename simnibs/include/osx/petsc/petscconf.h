@@ -70,11 +70,7 @@
 #endif
 
 #ifndef PETSC_DIR
-#define PETSC_DIR "/Users/guilherme/Downloads/petsc-3.9.4"
-#endif
-
-#ifndef PETSC_HAVE_X
-#define PETSC_HAVE_X 1
+#define PETSC_DIR "/Users/gbs/Downloads/petsc-3.9.4"
 #endif
 
 #ifndef PETSC_HAVE_HYPRE
@@ -118,7 +114,7 @@
 #endif
 
 #ifndef PETSC_MPICC_SHOW
-#define PETSC_MPICC_SHOW "gcc -fPIC -O2 -Wl,-flat_namespace -I/Users/guilherme/Downloads/petsc-3.9.4/simnibs_petsc_arch/include -L/Users/guilherme/Downloads/petsc-3.9.4/simnibs_petsc_arch/lib -lmpi -lpmpi"
+#define PETSC_MPICC_SHOW "gcc -fPIC -O2 -Wl,-flat_namespace -I/Users/gbs/Downloads/petsc-3.9.4/simnibs_petsc_arch/include -L/Users/gbs/Downloads/petsc-3.9.4/simnibs_petsc_arch/lib -lmpi -lpmpi"
 #endif
 
 #ifndef PETSC_FUNCTION_NAME_C
@@ -166,7 +162,7 @@
 #endif
 
 #ifndef PETSC_LIB_DIR
-#define PETSC_LIB_DIR "/Users/guilherme/Downloads/petsc-3.9.4/simnibs_petsc_arch/lib"
+#define PETSC_LIB_DIR "/Users/gbs/Downloads/petsc-3.9.4/simnibs_petsc_arch/lib"
 #endif
 
 #ifndef PETSC_HAVE_GZIP
@@ -363,10 +359,6 @@
 
 #ifndef PETSC_HAVE_ERF
 #define PETSC_HAVE_ERF 1
-#endif
-
-#ifndef PETSC_HAVE_LIBX11
-#define PETSC_HAVE_LIBX11 1
 #endif
 
 #ifndef PETSC_HAVE_TGAMMA
