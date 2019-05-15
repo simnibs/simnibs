@@ -10,6 +10,10 @@ jobs:
 
   steps:
   - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - bash: |
       conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
     displayName: Create Conda environment
   - bash: |
@@ -27,8 +31,6 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-10.13:
-        vmImage: 'macOS-10.13'
       MacOSX-10.14:
         vmImage: 'macOS-10.14'
 
@@ -37,6 +39,10 @@ jobs:
     maxParallel: 4
 
   steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
   - bash: |
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_osx.yml  > env.yml
       conda env create -f env.yml
