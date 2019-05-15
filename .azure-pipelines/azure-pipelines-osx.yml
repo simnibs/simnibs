@@ -19,7 +19,7 @@ jobs:
   - bash: |
       source activate simnibs_build
       python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
-      cp environment_osx.yml $(Build.ArtifactStagingDirectory)
+      cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
   - task: PublishBuildArtifacts@1
     inputs:
@@ -44,7 +44,7 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - bash: |
-      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_osx.yml  > env.yml
+      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_macOS.yml  > env.yml
       conda env create -f env.yml
     displayName: Create conda environment
   - task: DownloadBuildArtifacts@0
