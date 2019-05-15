@@ -37,6 +37,9 @@ simnibs/cython_code/petsc_solver.c
 #Ubuntu backup files
 *~
 
+# Mac stuff
+.DS_store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

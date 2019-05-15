@@ -329,7 +329,10 @@ def links_setup(install_dir):
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
-    if sys.platform == 'win32':
+    if sys.platform == 'darwin':
+        _create_app_structure(os.path.abspath(os.path.join(scripts_dir, '..')))
+        return
+    elif sys.platform == 'win32':
         shortcut_folder = os.path.join(
             os.environ['APPDATA'],
             "Microsoft\Windows\Start Menu\Programs\SimNIBS"
@@ -401,7 +404,69 @@ def _create_shortcut(shortcut_name, target_path, icon=None, mime_type=None):
             f.write('Terminal=false\n')
             f.write('Type=Application\n')
 
-    # TODO: Mac version
+
+def _create_app_structure(install_dir):
+    """ Creates an app structure for MacOS
+    https://stackoverflow.com/questions/1596945/building-osx-app-bundle
+    https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW16
+    Only works if install_dir finishes in ".app"
+    """
+    import plistlib 
+    contents_dir = os.path.join(install_dir, 'Contents')
+    resouces_dir = os.path.join(contents_dir, 'Resources')
+    macos_dir = os.path.join(contents_dir, 'MacOS')
+    if not os.path.isdir(contents_dir):
+        os.mkdir(contents_dir)
+    if not os.path.isdir(resouces_dir):
+        os.mkdir(resouces_dir)
+    if not os.path.isdir(macos_dir):
+        os.mkdir(macos_dir)
+    _copy_and_log(
+        os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.icns'),
+        os.path.join(resouces_dir))
+    # Write a simnibs_gui and a gmsh executable
+    _write_unix_sh(
+        os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
+        os.path.join(macos_dir, 'simnibs_gui'))
+    plist = dict(
+        CFBundleDisplayName="SimNIBS",
+        CFBundleName="SimNIBS",
+        CFBundleIdentifier="org.simnibs",
+        CFBundleShortVersionString=__version__,
+        CFBundleGetInfoString=f'SimNIBS {__version__}',
+        CFBundleIconFile="gui_icon.icns",
+        CFBundleExecutable="simnibs_gui",
+        CFBundleInfoDictionaryVersion='6.0'
+    ) 
+    with open(os.path.join(contents_dir, 'Info.plist'), 'wb') as fp:
+        plistlib.dump(plist, fp)
+    try:
+        download_gmsh_osx()
+    except:
+        print('There was a problem installing Gmsh')
+
+def download_gmsh_osx():
+    import urllib.request
+    target_dir = os.path.expanduser('~/Applications/Gmsh.app')
+    if os.path.isdir('/Applications/Gmsh.app') or os.path.isdir(target_dir):
+        #_get_input('Gmsh is already installed, overwrite it?')
+        print('Gmsh already installed, skiping step')
+        return
+    print('Installing Gmsh')
+    url = 'http://gmsh.info/bin/MacOSX/gmsh-3.0.6-MacOSX.dmg' 
+    with urllib.request.urlopen(url) as response:
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            shutil.copyfileobj(response, tmp_file)
+            subprocess.run(
+                ['hdiutil', 'attach', tmp_file.name],
+                stdout=subprocess.DEVNULL)
+            shutil.copytree(
+                '/Volumes/gmsh-3.0.6-MacOSX/Gmsh.app',
+                target_dir)
+            subprocess.run(
+                ['hdiutil', 'unmount', '/Volumes/gmsh-3.0.6-MacOSX'],
+                stdout=subprocess.DEVNULL)
+
 
 def shortcut_icons_clenup():
     if sys.platform == 'win32':
@@ -411,14 +476,16 @@ def shortcut_icons_clenup():
         )
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
+    else:
+        return
     if os.path.isdir(shortcut_folder):
         shutil.rmtree(shortcut_folder)
         while os.path.exists(shortcut_folder):
             pass
 
 def setup_file_association(force=False, silent=False):
-    # Linux file associations are done together with desktop items
-    if sys.platform == 'linux':
+    # Linux and OSX file associations are done together with desktop items
+    if sys.platform != 'win32':
         return
     gmsh_bin = file_finder.path2bin('gmsh')
     extensions = ['.msh', '.geo', '.stl']
