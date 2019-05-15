@@ -11,13 +11,13 @@ The pipeline is divided in three parts:
 3. Post-processing of results for further analysis.
 
 ## Build Status
-| Linux   | Windows    | OSX |
+| Linux   | Windows    | MacOS |
 |---------|------------|-----|
-| [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5&branchName=master) |     |
+| [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5&branchName=master) |  [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/MacOS?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=9&branchName=master)   |
 
 ## Getting Started
  
-SimNIBS runs on 64bit Windows, Linux and OSX machines.
+SimNIBS runs on 64bit Windows, Linux and MacOS machines.
 Please visit [the SimNIBS website](http://www.simnibs.org) for instructions into how to download and install SimNIBS.
 
 
