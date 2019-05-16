@@ -359,13 +359,17 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     _create_shortcut(
         os.path.join(shortcut_folder, 'Gmsh'),
         file_finder.path2bin('gmsh'),
-        mime_type='model/x.stl-binary'
+        'Gmsh is a free 3D finite element mesh generator with a built-in CAD engine and'
+        ' post-processor',
+        mime_type='model/x.stl-binary',
+        icon=os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.png')
     )
 
     _create_shortcut(
         os.path.join(shortcut_folder, 'SimNIBS GUI'),
         os.path.join(scripts_dir, 'simnibs_gui'),
-        icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.bmp')
+        'SimNIBS is software for simulating electric fields caused by NIBS',
+        icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.png')
     )
     if sys.platform == 'win32':
         _create_shortcut(
@@ -377,7 +381,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             ['update-desktop-database',
              os.path.expanduser('~/.local/share/applications')])
 
-def _create_shortcut(shortcut_name, target_path, icon=None, mime_type=None):
+def _create_shortcut(shortcut_name, target_path, comment, icon=None, mime_type=None):
     if sys.platform == 'win32':
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.ps1') as f:
             f.write(f'$objShell = New-Object -ComObject ("WScript.Shell")\n')
@@ -394,14 +398,14 @@ def _create_shortcut(shortcut_name, target_path, icon=None, mime_type=None):
         with open(shortcut_name + '.desktop', 'w') as f:
             f.write('[Desktop Entry]\n')
             f.write(f'Name={os.path.basename(shortcut_name)}\n')
-            f.write('Comment=SimNIBS is software '
-                    'for simulating electric fields caused by NIBS\n')
+            f.write('Comment={comment}\n')
             f.write(f'Exec={target_path} %f\n')
             if icon:
                 f.write(f'Icon={icon}\n')
             if mime_type:
                 f.write(f'MimeType={mime_type}\n')
             f.write('Terminal=false\n')
+            f.write('Encoding=UTF-8\n')
             f.write('Type=Application\n')
 
 
@@ -412,6 +416,7 @@ def _create_app_structure(install_dir):
     Only works if install_dir finishes in ".app"
     """
     import plistlib 
+    # SimNIBS app setup
     contents_dir = os.path.join(install_dir, 'Contents')
     resouces_dir = os.path.join(contents_dir, 'Resources')
     macos_dir = os.path.join(contents_dir, 'MacOS')
@@ -440,32 +445,30 @@ def _create_app_structure(install_dir):
     ) 
     with open(os.path.join(contents_dir, 'Info.plist'), 'wb') as fp:
         plistlib.dump(plist, fp)
-    try:
-        download_gmsh_osx()
-    except:
-        print('There was a problem installing Gmsh')
-
-def download_gmsh_osx():
-    import urllib.request
+    # Gmsh app setup
     target_dir = os.path.expanduser('~/Applications/Gmsh.app')
     if os.path.isdir('/Applications/Gmsh.app') or os.path.isdir(target_dir):
-        #_get_input('Gmsh is already installed, overwrite it?')
-        print('Gmsh already installed, skiping step')
-        return
+        answ = _get_input('Gmsh is already installed, overwrite it?')
+        if not answ:
+            return
+        elif os.path.isdir(target_dir):
+            shutil.rmtree(target_dir)
     print('Installing Gmsh')
-    url = 'http://gmsh.info/bin/MacOSX/gmsh-3.0.6-MacOSX.dmg' 
-    with urllib.request.urlopen(url) as response:
-        with tempfile.NamedTemporaryFile() as tmp_file:
-            shutil.copyfileobj(response, tmp_file)
-            subprocess.run(
-                ['hdiutil', 'attach', tmp_file.name],
-                stdout=subprocess.DEVNULL)
-            shutil.copytree(
-                '/Volumes/gmsh-3.0.6-MacOSX/Gmsh.app',
-                target_dir)
-            subprocess.run(
-                ['hdiutil', 'unmount', '/Volumes/gmsh-3.0.6-MacOSX'],
-                stdout=subprocess.DEVNULL)
+    contents_dir = os.path.join(target_dir, 'Contents')
+    resouces_dir = os.path.join(contents_dir, 'Resources')
+    macos_dir = os.path.join(contents_dir, 'MacOS')
+
+    _copy_and_log(
+        os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'Info.plist'),
+        os.path.join(contents_dir))
+
+    _copy_and_log(
+        os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.icns'),
+        os.path.join(resouces_dir))
+
+    _copy_and_log(
+        file_finder.path2bin('gmsh'),
+        os.path.join(macos_dir))
 
 
 def shortcut_icons_clenup():
