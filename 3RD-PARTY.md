@@ -6,6 +6,7 @@ Files
 * simnibs/bin/win/gmsh.exe
 * simnibs/bin/linux/gmsh
 * simnibs/bin/osx/gmsh
+* simnibs/resources/gmsh
 
 License
 ----------
@@ -97,10 +98,13 @@ PETSC
 
 Files
 ------
-* simnibs/lib/win/libpetsc.*
+* simnibs/lib/win/libpetsc*
 * simnibs/include/win/petsc
-* simnibs/lib/linux/libpetsc.so*
+* simnibs/lib/linux/libpetsc*
 * simnibs/include/linux/petsc (some files)
+* simnibs/lib/osx/libpetsc*
+* simnibs/include/osx/petsc (some files)
+
 
 Copyright
 ----------
@@ -135,11 +139,12 @@ HYPRE
 
 Files
 ------
-* simnibs/lib/win/libpetsc.*
+* simnibs/lib/win/libpetsc*
 * simnibs/include/win/hypre
-* simnibs/lib/linux/libpetsc.so*
-* simnibs/lib/osx/libpetsc.so*
+* simnibs/lib/linux/libpetsc*
 * simnibs/include/linux/petsc (some files)
+* simnibs/lib/osx/libpetsc*
+* simnibs/include/osx/petsc (some files)
 
 Copyright
 ----------
@@ -160,6 +165,7 @@ Files
 * simnibs/lib/linux/libmpi.*
 * simnibs/lib/osx/libmpi.*
 * simnibs/include/linux/petsc (some files)
+* simnibs/include/osx/petsc (some files)
 
 Copyright
 ----------

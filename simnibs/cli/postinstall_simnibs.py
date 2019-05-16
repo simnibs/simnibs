@@ -330,7 +330,7 @@ def links_setup(install_dir):
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
     if sys.platform == 'darwin':
-        _create_app_structure(os.path.abspath(os.path.join(scripts_dir, '..')))
+        _create_app_structure(os.path.abspath(os.path.join(scripts_dir, '..')), force, silent)
         return
     elif sys.platform == 'win32':
         shortcut_folder = os.path.join(
@@ -381,7 +381,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             ['update-desktop-database',
              os.path.expanduser('~/.local/share/applications')])
 
-def _create_shortcut(shortcut_name, target_path, comment, icon=None, mime_type=None):
+def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_type=None):
     if sys.platform == 'win32':
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.ps1') as f:
             f.write(f'$objShell = New-Object -ComObject ("WScript.Shell")\n')
@@ -409,7 +409,7 @@ def _create_shortcut(shortcut_name, target_path, comment, icon=None, mime_type=N
             f.write('Type=Application\n')
 
 
-def _create_app_structure(install_dir):
+def _create_app_structure(install_dir, force, silent):
     """ Creates an app structure for MacOS
     https://stackoverflow.com/questions/1596945/building-osx-app-bundle
     https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW16
@@ -448,7 +448,10 @@ def _create_app_structure(install_dir):
     # Gmsh app setup
     target_dir = os.path.expanduser('~/Applications/Gmsh.app')
     if os.path.isdir('/Applications/Gmsh.app') or os.path.isdir(target_dir):
-        answ = _get_input('Gmsh is already installed, overwrite it?')
+        if force:
+            answ = True
+        else:
+            answ = _get_input('Gmsh is already installed, overwrite it?', silent)
         if not answ:
             return
         elif os.path.isdir(target_dir):
@@ -457,14 +460,18 @@ def _create_app_structure(install_dir):
     contents_dir = os.path.join(target_dir, 'Contents')
     resouces_dir = os.path.join(contents_dir, 'Resources')
     macos_dir = os.path.join(contents_dir, 'MacOS')
+    os.mkdir(target_dir)
+    os.mkdir(contents_dir)
+    os.mkdir(resouces_dir)
+    os.mkdir(macos_dir)
+
 
     _copy_and_log(
         os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'Info.plist'),
         os.path.join(contents_dir))
 
-    _copy_and_log(
-        os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.icns'),
-        os.path.join(resouces_dir))
+    for icns in glob.glob(os.path.join(SIMNIBSDIR, 'resources', 'gmsh', '*.icns')):
+        _copy_and_log(icns, resouces_dir)
 
     _copy_and_log(
         file_finder.path2bin('gmsh'),

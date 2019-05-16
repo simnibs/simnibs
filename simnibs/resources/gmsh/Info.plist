@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleName</key><string>Gmsh</string>
+    <key>CFBundleExecutable</key><string>gmsh</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleVersion</key><string>3.0.6</string>
+    <key>CFBundleShortVersionString</key><string>3.0.6</string>
+    <key>CFBundleIconFile</key><string>Gmsh.icns</string>
+    <key>CFBundleSignature</key><string>GMSH</string>
+    <key>CFBundleGetInfoString</key><string>Gmsh 3.0.6, Copyright 1997-2017 C. Geuzaine and J.-F. Remacle</string>
+    <key>CFBundleIdentifier</key><string>org.geuz.Gmsh</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleTypeExtensions</key><array>
+          <string>geo</string>
+          <string>brep</string><string>brp</string><string>rle</string>
+          <string>igs</string><string>iges</string>
+          <string>stp</string><string>step</string></array>
+        <key>CFBundleTypeIconFile</key><string>GmshGeo.icns</string>
+        <key>CFBundleTypeName</key><string>Gmsh Geometry File</string>
+        <key>CFBundleTypeOSTypes</key><array><string>GGEO</string></array>
+        <key>CFBundleTypeRole</key><string>Editor</string>
+      </dict>
+      <dict>
+        <key>CFBundleTypeExtensions</key><array>
+          <string>msh</string>
+          <string>unv</string>
+          <string>stl</string>
+          <string>vrml</string><string>wrl</string><string>iv</string>
+          <string>bdf</string><string>nas</string>
+          <string>mesh</string>
+          <string>mmed</string></array>
+        <key>CFBundleTypeIconFile</key><string>GmshMsh.icns</string>
+        <key>CFBundleTypeName</key><string>Gmsh Mesh File</string>
+        <key>CFBundleTypeOSTypes</key><array><string>GMSH</string></array>
+        <key>CFBundleTypeRole</key><string>Viewer</string>
+      </dict>
+      <dict>
+        <key>CFBundleTypeExtensions</key><array>
+          <string>pro</string>
+          <string>ol</string></array>
+        <key>CFBundleTypeIconFile</key><string>GmshSol.icns</string>
+        <key>CFBundleTypeName</key><string>Gmsh Solver File</string>
+        <key>CFBundleTypeOSTypes</key><array><string>GSOL</string></array>
+        <key>CFBundleTypeRole</key><string>Viewer</string>
+      </dict>
+      <dict>
+        <key>CFBundleTypeExtensions</key><array>
+          <string>pos</string>
+          <string>med</string><string>rmed</string></array>
+        <key>CFBundleTypeIconFile</key><string>GmshPos.icns</string>
+        <key>CFBundleTypeName</key><string>Gmsh Post-Processing File</string>
+        <key>CFBundleTypeOSTypes</key><array><string>GPOS</string></array>
+        <key>CFBundleTypeRole</key><string>Viewer</string>
+      </dict>
+    </array>
+  </dict>
+</plist>
