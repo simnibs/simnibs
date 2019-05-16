@@ -91,7 +91,7 @@ def _write_unix_sh(python_cli, bash_cli, commands='"$@"'):
     print(f'Writing {bash_cli}')
     with open(bash_cli, 'w') as f:
         f.write('#! /bin/bash -e\n')
-        f.write(f'{sys.executable} -E -u {python_cli} {commands}')
+        f.write(f'"{sys.executable}" -E -u "{python_cli}" {commands}')
     os.chmod(bash_cli,
              os.stat(bash_cli).st_mode |
              stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -392,7 +392,7 @@ def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_typ
                 f.write(f'$objShortCut.IconLocation="{icon}"\n')
             f.write(f'$objShortCut.Save()')
             temp_fn = f.name
-        subprocess.run(f'powershell.exe {temp_fn}', shell=True).check_returncode()
+        subprocess.run(f'powershell.exe "{temp_fn}"', shell=True).check_returncode()
         os.remove(temp_fn)
     elif sys.platform == 'linux':
         with open(shortcut_name + '.desktop', 'w') as f:
@@ -580,8 +580,11 @@ def uninstaller_setup(install_dir, force, silent):
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-d {install_dir} -u %*',
+            uninstaller, commands=f'-d "{install_dir}" -u %*',
             gui=True)
+        with open(uninstaller + '.cmd', 'a') as f:
+            f.write(f'& rd /S "{install_dir}"')
+
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
@@ -593,7 +596,7 @@ def uninstaller_setup(install_dir, force, silent):
             shell=True, capture_output=True)
         try:
             res.check_returncode()
-        # NOt found in gegistry
+        # Not found in registry
         except subprocess.CalledProcessError:
             answ = True
         else:
@@ -624,7 +627,9 @@ def uninstaller_setup(install_dir, force, silent):
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-d {install_dir} -u "$@"')
+            uninstaller, commands=f'-d "{install_dir}" -u "$@"')
+        with open(uninstaller, 'a') as f:
+            f.write(f'; rm -rf "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
