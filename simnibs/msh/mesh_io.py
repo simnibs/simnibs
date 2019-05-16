@@ -4524,6 +4524,7 @@ def read_stl(fn):
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
+
     return msh
 
 def open_in_gmsh(fn, new_thread=False):
@@ -4539,9 +4540,9 @@ def open_in_gmsh(fn, new_thread=False):
     '''
     gmsh_bin = path2bin('gmsh')
     if new_thread:
-        run_command_new_thread([gmsh_bin, fn])
+        run_command_new_thread(f'{gmsh_bin} "fn"')
     else:
-        run_command([gmsh_bin, fn])
+        run_command(f'{gmsh_bin} "fn"')
 
 
 def _hash_rows(array, mult=1000003, dtype=np.uint64):

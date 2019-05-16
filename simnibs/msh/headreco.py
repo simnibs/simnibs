@@ -282,13 +282,13 @@ def headmodel(argv):
 
         # move MNI-to-subject-space coregistrations to toMNI-subfolder
         hmu.log("Moving forward deformation field")
-        f = glob(os.path.join(spm,"y*.nii"));
+        f = glob(os.path.join(spm,"y*.nii"))
         if len(f)>1:
               raise IOError("more than one forward deformation field found ... I do not know which one to move")
         shutil.move(f[0], os.path.join(toMNI, 'MNI2Conform_nonl.nii'))
         # note: naming of warp fields according to warping of coordinates --> use opposite field for warping images
 
-        f = glob(os.path.join(spm,"iy*.nii"));
+        f = glob(os.path.join(spm,"iy*.nii"))
         if len(f)>1:
               raise IOError("more than one reverse deformation field found ... I do not know which one to move")
         shutil.move(f[0], os.path.join(toMNI, 'Conform2MNI_nonl.nii'))
@@ -704,7 +704,6 @@ def headmodel(argv):
                 "increasing the '-v' option "
                 "(eg. -v 1.0). "
                 "Type 'headreco all -h' for more informaion")
-            print("")
 
         vmsh = vmsh.crop_mesh(elm_type=4)
         mask_names = [os.path.join(subject_dir, "wm_fromMesh.nii.gz"),
@@ -791,7 +790,7 @@ def headmodel(argv):
         try:
             # suppress output by piping it to os.devnull
             call("freeview -h".split(), stdout=open(os.devnull, 'wb'))
-        except OSError as e:
+        except OSError:
             usefreeview=False
 
         if usefreeview:                 
@@ -842,9 +841,9 @@ def expand_cat_surface(central, thickness, outname, vertex_density=0.5):
     
     # meshfix setup    
     meshfix = hmu.path2bin("meshfix")
-    resample = meshfix+" {0} -a 2.0 -u 5 -q --vertexDensity "+str(vertex_density)+" -o {0}"
-    clean    = meshfix+" {0} -a 2.0 -q -o {0}"
-    uniformremesh = meshfix+" {0} -a 2.0 -u 1 -q -o {0}" 
+    resample = meshfix+' "{0}" -a 2.0 -u 5 -q --vertexDensity '+str(vertex_density)+' -o "{0}"'
+    clean    = meshfix+' "{0}" -a 2.0 -q -o "{0}"'
+    uniformremesh = meshfix+' "{0}" -a 2.0 -u 1 -q -o "{0}"' 
     
     outdir = os.path.dirname(central)
     central = nib.load(central)
@@ -1038,7 +1037,7 @@ def make_surface_and_shrink(volume, nshells=1, min_shell_area=1,
     """Wrapper to make surface mesh and shrink it by some (small) amount
     """
     meshfix = hmu.path2bin("meshfix")
-    clean = meshfix+" {0} -a 2.0 -q -o {0}"
+    clean = meshfix+' "{0}" -a 2.0 -q -o "{0}"'
     
     surfaces = hmu.make_surface_mesh(volume, os.path.splitext(volume)[0] , nshells,
                                      min_shell_area, vertex_density, nsmooth)
@@ -1060,13 +1059,13 @@ def join_hemispheres(gm, join, outdir):
     
     fgmx = os.path.join(outdir, "gmx"+".off")
     # join hemispheres...
-    join = "{0} {1} {2} -a 2.0 --shells 2 -j -o {3}".format(meshfix, gm["left"], join, fgmx)
+    join = '{0} "{1}" "{2}" -a 2.0 --shells 2 -j -o "{3}"'.format(meshfix, gm["left"], join, fgmx)
     hmu.spawn_process(join)
-    join = "{0} {1} {2} -a 2.0 --shells 2 -j -o {1}".format(meshfix, fgmx, gm["right"])
+    join = '{0} "{1}" "{2}" -a 2.0 --shells 2 -j -o "{1}"'.format(meshfix, fgmx, gm["right"])
     hmu.spawn_process(join)
     
     # cleaning to get rid of putatively remaining intersections
-    clean = "{0} {1} -a 2.0 -o {1}".format(meshfix, fgmx)
+    clean = '{0} "{1}" -a 2.0 -o "{1}"'.format(meshfix, fgmx)
     hmu.spawn_process(clean)
 
     return fgmx
@@ -1079,7 +1078,7 @@ def decouple_wm_gm_ventricles(wm, gm, ventricles):
     meshfix = hmu.path2bin("meshfix")
     
     # check intersections
-    check_intersect = meshfix+" {0} {1} --shells 2 --no-clean -q --intersect"
+    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean -q --intersect'
     # check if any intersections with the first surface                                
     any_intersect = \
         lambda s: any([hmu.spawn_process(check_intersect.format(s1,s2), return_exit_status=True)==0 for s1,s2 in combinations(s,2)])
@@ -1104,7 +1103,7 @@ def decouple_wm_gm_ventricles(wm, gm, ventricles):
                 hmu.decouple_surfaces(f, gm, "inner-from-outer", min_distance=md)
                 hmu.log("Decoupling WM from {}".format(fb))
                 hmu.decouple_surfaces(wm, f, "neighbor", min_distance=md)
-                hmu.log("Decoupling GM from WM".format(fb))
+                hmu.log("Decoupling GM from WM")
                 hmu.decouple_surfaces(wm, gm, "outer-from-inner", cut_inner=True)
     
                 firstpass = False
@@ -1298,7 +1297,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     dtype = np.uint8 # data type
     
     # check intersections
-    check_intersect = meshfix+" {0} {1} --shells 2 --no-clean -q --intersect"
+    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean -q --intersect'
     # check if any intersections with the first surface                                
     any_intersect_1st = \
         lambda s: any([hmu.spawn_process(check_intersect.format(s1,s2),return_exit_status=True)==0 for s1,s2 in combinations(s,2) if s[0] in (s1,s2)])
@@ -1480,7 +1479,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     
     hmu.log("Ensuring that the previously created surfaces are still "+
             "decoupled")
-    check_intersect = meshfix+" {0} {1} --shells 2 --no-clean --intersect"
+    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean --intersect'
     if hmu.spawn_process(check_intersect.format(off["gm"], off["csf"]), True) == 0:
         hmu.log("Decoupling GM from CSF")
         hmu.decouple_surfaces(off["gm"], off["csf"], "inner-from-outer",
@@ -1832,7 +1831,7 @@ def make_volume_mesh(subject_id,input_files,out_dir):
     
     msh = os.path.join(out_dir, subject_id+".msh")
     geo = os.path.join(out_dir, subject_id+".geo")
-    make_vol_mesh = "{0} -3 -bin -o {1} {2}".format(gmsh, msh, geo)
+    make_vol_mesh = '{0} -3 -bin -o "{1}" "{2}"'.format(gmsh, msh, geo)
     
     # first try Frontal meshing
     # zero is exit code for succes
@@ -1848,7 +1847,7 @@ def make_volume_mesh(subject_id,input_files,out_dir):
             # this helps
             if attempts is 1:
                 meshfix = hmu.path2bin("meshfix")
-                uniformremesh_surface  = "{0} {1} -a 2.0 -u 1 -q --shells 9 --stl -o {1}".format(meshfix,"{0}")
+                uniformremesh_surface  = '{0} "{1}" -a 2.0 -u 1 -q --shells 9 --stl -o "{1}"'.format(meshfix,"{0}")
                 print("")
                 hmu.log("Gmsh failed meshing one or more surfaces. Doing uniform remeshing and retrying")
                 for f in files.values():
@@ -1879,9 +1878,7 @@ def make_volume_mesh(subject_id,input_files,out_dir):
             
             # if gmsh still fails
             elif attempts is 3:
-                print("")
                 raise RuntimeError("Gmsh failed meshing one or more surfaces in {} attempts.".format(attempts))
-                print("")
         else:
             print("")
             hmu.log("Meshing successful in {} attempt(s)",attempts)
@@ -1926,16 +1923,6 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
     (opens FreeView to show results)
     """
     
-    # test if freeview is installed
-    try:
-        # suppress output by piping it to os.devnull
-        call("freeview -h".split(), stdout=open(os.devnull, 'wb'))
-    except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            raise OSError("freeview not found. Cannot show results.") 
-        else:
-            raise e # Something else went wrong, raise
-          
     if type(T1)==str:
         T1 = nib.load(T1)
         
@@ -1949,7 +1936,7 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
     meshfix = hmu.path2bin("meshfix")
     
     # meshfix commands
-    combine_meshes = meshfix+" {0} {1} -q --no-clean --shells {2} -o {3}"
+    combine_meshes = meshfix+' "{0}" "{1}" -q --no-clean --shells {2} -o "{3}"'
     def combine_meshes_fsmesh(surf_a, surf_b, out):
         s_a = mesh_io.read_stl(surf_a)
         s_b = mesh_io.read_stl(surf_b)
@@ -1957,12 +1944,12 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
         mesh_io.write_freesurfer_surface(c, out, ref_fs=ref_fs)
 
     visualize_with_freeview = "freeview -v "+\
-          "{0}:colormap=grayscale:grayscale=0,{1} "\
-          "{2}:colormap=nih:colorscale=0.1,6.1:opacity=0 "\
-          "{3}:colormap=nih:colorscale=0.1,6.1:opacity=0.3 "\
-          "-f "\
-          "{4}:color=128,128,128:edgecolor=white "\
-          "{5}:color=255,166,133:edgecolor=gray".format(
+          '"{0}":colormap=grayscale:grayscale=0,{1} '\
+          '"{2}":colormap=nih:colorscale=0.1,6.1:opacity=0 '\
+          '"{3}":colormap=nih:colorscale=0.1,6.1:opacity=0.3 '\
+          '-f '\
+          '"{4}":color=128,128,128:edgecolor=white '\
+          '"{5}":color=255,166,133:edgecolor=gray'.format(
                                       T1.get_filename(), T1_max_val,
                                       control_mask_initial, control_mask_final,
                                       fmesh_brain, fmesh_head)
@@ -2016,8 +2003,8 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
 
         T1 = nib.load(T1_mni_nonlin)
         T1_max_val = np.max(T1.get_data())
-        visualize_MNI_with_freeview = "freeview -v {0} {1}:visible=0:colormap=grayscale:grayscale=0,{2} "\
-                                      "{3}:colormap=grayscale:grayscale=0,{2}".format(ref_mni, T1_mni_12dof,
+        visualize_MNI_with_freeview = 'freeview -v "{0}" "{1}":visible=0:colormap=grayscale:grayscale=0,{2} '\
+                                      '"{3}":colormap=grayscale:grayscale=0,{2}'.format(ref_mni, T1_mni_12dof,
                                       T1_max_val,T1_mni_nonlin)
         hmu.spawn_process(visualize_MNI_with_freeview, new_thread=True)
 

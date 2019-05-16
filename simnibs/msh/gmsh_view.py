@@ -75,7 +75,8 @@ class Visualization:
         self.mesh.write(mesh_fn)
         geo_fn = mesh_fn + '.opt'
         self._write(geo_fn)
-        command = [path2bin('gmsh'), mesh_fn]
+        gmsh = path2bin('gmsh')
+        command = f'{gmsh} "mesh_fn"'
         if new_thread:
             t = threading.Thread(
                 target=_run, args=(command, [mesh_fn, geo_fn]))
@@ -454,6 +455,6 @@ class View(object):
 
 def _run(command, remove=[]):
     try:
-        subprocess.call(command)
+        subprocess.call(command, shell=True)
     finally:
         [os.remove(r) for r in remove]

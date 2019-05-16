@@ -33,16 +33,11 @@ def run_command(command, realtime_output=False):
     OSError
         if there was a problem running the comand
     """
-    if isinstance(command, str):
-        args = shlex.split(command)
-    else:
-        args = command
-
-    logger.info('Executing: \n' + ' '.join(args))
+    logger.info('Executing: \n' + command)
 
     try:
         command_line_process = subprocess.Popen(
-            ' '.join(args),
+            command,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -66,35 +61,29 @@ def run_command(command, realtime_output=False):
 
     except OSError:
         logger.error('Could not execute command')
-        raise OSError('Could not execute command:\n' + ' '.join(args))
+        raise OSError('Could not execute command:\n' + command)
 
     if rc == 0:
         logger.info('Execution finished')
 
     else:
-        logger.error('Error while executing command:\n' + ' '.join(args))
+        logger.error('Error while executing command:\n' + command)
         logger.error('Command Output:\n' + process_output)
-        raise OSError('Error executing command:\n' + ' '.join(args))
+        raise OSError('Error executing command:\n' + command)
 
     return process_output
 
 def run_command_new_thread(command, daemon=False):
-    if isinstance(command, str):
-        args = shlex.split(command)
-    else:
-        args = command
-
-    logger.info('Executing: \n' + ' '.join(args))
+    logger.info('Executing: \n' + command)
     ON_POSIX = "posix" in sys.builtin_module_names
 
     def enqueue_output(out, queue):
         for line in iter(out.readline, b''):
             queue.put(line)
         out.close()
-
     p = subprocess.Popen(
         command,
-        stdout=subprocess.PIPE,
+        stdout=subprocess.PIPE, shell=True,
         bufsize=1, close_fds=ON_POSIX)
     q = Queue()
     t = Thread(target=enqueue_output, args=(p.stdout, q))
