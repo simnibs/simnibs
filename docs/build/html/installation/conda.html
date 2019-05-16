@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Install Using Conda (Advanced) &#8212; SimNIBS 3.0b4 documentation</title>
+    <title>Install Using Conda (Advanced) &#8212; SimNIBS 3.0b5 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -53,11 +53,11 @@
 <p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager, present for example in the <a class="reference external" href="https://www.anaconda.com/">Anaconda</a> and <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> Python distributions.</p>
 <ol class="arabic simple">
 <li><p>Go to the latest <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest">release page</a></p></li>
-<li><p>Download the <code class="file docutils literal notranslate"><span class="pre">environment_win.yml</span></code> file if you are on Windows or the <code class="file docutils literal notranslate"><span class="pre">environment_unix.yml</span></code> file if you are on Linux or OSX.</p></li>
+<li><p>Download the <code class="file docutils literal notranslate"><span class="pre">environment_*.yml</span></code> file for your operating system</p></li>
 <li><p>Create and activate the <code class="code docutils literal notranslate"><span class="pre">simnibs_env</span></code> conda environment</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment_<span class="o">[</span>win<span class="p">|</span>unix<span class="o">]</span>.yml
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment_*.yml
 conda activate simnibs_env
 </pre></div>
 </div>

@@ -22,6 +22,11 @@ Linux
 
 SimNIBS has been tested on Ubuntu 16.04 and 18.04 as well as CentOS 6 and 7.
 
+
+MacOS
+''''''
+SimNIBS has been tested on MacOS 10.14 (Mojave)
+
 Software Dependencies
 -----------------------
 SimNIBS does not require any external dependencies for running simulations and post-processing operations on existing head models.

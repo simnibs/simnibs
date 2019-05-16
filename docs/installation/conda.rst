@@ -8,13 +8,13 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
 1. Go to the latest `release page <https://github.com/simnibs/simnibs/releases/latest>`_ 
 
-2. Download the :file:`environment_win.yml` file if you are on Windows or the :file:`environment_unix.yml` file if you are on Linux or OSX.
+2. Download the :file:`environment_*.yml` file for your operating system
 
 3. Create and activate the :code:`simnibs_env` conda environment
 
   .. code-block:: bash
   
-     conda env create -f environment_[win|unix].yml
+     conda env create -f environment_*.yml
      conda activate simnibs_env
   
   \
@@ -28,6 +28,3 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
   \
 
 5. (Optional) to install the Menu icons, set-up file associations, the matlab library and add SimNIBS binaries to the system path, run the :code:`postinstall_simnibs` script. Type :code:`postinstall_simnibs -h` for help
-
-
-

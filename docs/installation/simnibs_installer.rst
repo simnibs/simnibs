@@ -10,7 +10,7 @@ Windows
 -------
 1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
 
-2. Double click the :file:`install_simnibs` file
+2. Double click the :file:`install_simnibs_windows.exe` file
 
 3. Select the desired version, accept the license and click *next*
 
@@ -30,7 +30,7 @@ Linux
 -----
 1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
 
-2. Extract the :file:`install_simnibs.tar.gz` file
+2. Extract the :file:`install_simnibs_linux.tar.gz` file
 
 3. Double click the :file:`install_simnibs` file
 
@@ -48,10 +48,40 @@ Testing the Installation
 Start a new terminal window and type :code:`simnibs_gui`
 
 
+
+MacOS
+------
+1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
+
+2. Run in a terminal (use :code:`Cmd` + :code:`Space` and search for :code:`terminal`)
+
+
+  .. code-block:: bash
+  
+    ~/Downloads/install_simnibs
+
+  \
+
+3. Select the desired version, accept the license and click on *next*
+
+4. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
+
+
+Testing the Installation
+'''''''''''''''''''''''''
+Open Spotlight and search for :code:`SimNIBS`
+
+
 Updating SimNIBS
 -----------------
 
 If you already have SimNIBS >= 3.0 installed, it is possible to upgrade your
 installation.
 
-Just start a command prompt or a terminal and type :code:`update_simnibs`
+Just start a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and type
+
+.. code-block:: bash
+
+    update_simnibs
+
+\
