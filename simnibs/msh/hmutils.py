@@ -3367,7 +3367,11 @@ def spawn_process(cmd, return_exit_status=False, new_thread=False,
         for line in iter(p.stdout.readline, b''):
             # to prevent massive output to the logfile retain only the last
             # line starting with \r
-            line = line.decode().split("\r")[-1]
+            try:
+                line = line.decode().split("\r")[-1]
+            except UnicodeDecodeError:
+                log('Could not print line', level=logging.DEBUG)
+                continue
             
             # remove one \n since logger.log adds one itself
             if line[-1]=="\n":

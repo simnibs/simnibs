@@ -55,7 +55,6 @@ def headmodel(argv):
     
     """
     args = parse_args(argv[1:]) # get command line arguments
-
     # set paths and if they do not exist, create them
     pwd = os.getcwd()
     subject_dir = os.path.join(pwd, "m2m_"+args.subject_id)
