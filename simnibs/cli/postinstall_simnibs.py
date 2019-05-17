@@ -392,7 +392,7 @@ def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_typ
                 f.write(f'$objShortCut.IconLocation="{icon}"\n')
             f.write(f'$objShortCut.Save()')
             temp_fn = f.name
-        subprocess.run(f'powershell.exe "{temp_fn}"', shell=True).check_returncode()
+        subprocess.run(f'powershell.exe -noprofile -executionpolicy bypass -file "{temp_fn}"', shell=True).check_returncode()
         os.remove(temp_fn)
     elif sys.platform == 'linux':
         with open(shortcut_name + '.desktop', 'w') as f:
@@ -524,7 +524,7 @@ def setup_file_association(force=False, silent=False):
             temp_fn = f.name
         # I need to run as shell for some reason
         ret = subprocess.run(
-            'powershell.exe -Command '
+            'powershell.exe -noprofile -executionpolicy bypass -Command '
             f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"',
             shell=True)
         try:
@@ -566,7 +566,7 @@ def file_associations_cleanup():
 
         # I need to run as shell for some reason
         ret = subprocess.run(
-        'powershell.exe -Command '
+        'powershell.exe -noprofile -executionpolicy bypass -Command '
             f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"',
             shell=True)
         try:
