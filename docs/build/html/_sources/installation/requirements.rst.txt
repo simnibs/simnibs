@@ -27,6 +27,7 @@ MacOS
 ''''''
 SimNIBS has been tested on MacOS 10.14 (Mojave)
 
+
 Software Dependencies
 -----------------------
 SimNIBS does not require any external dependencies for running simulations and post-processing operations on existing head models.

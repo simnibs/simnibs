@@ -60,7 +60,7 @@ FreeSurfer
 
 1. Follow the instructions `here <http://freesurfer.net/fswiki/DownloadAndInstall>`_
 
-2. Make sure that you have a registration file, and set the path in the :file:`~/.bashrc` (Linux) or :file:`~/.bash_profile` (MacOSX).
+2. Make sure that you have a registration file, and set the path in the :file:`~/.bashrc` (Linux) or :file:`~/.bash_profile` (MacOS).
 
 
 

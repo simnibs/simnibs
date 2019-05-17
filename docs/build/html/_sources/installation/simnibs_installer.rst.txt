@@ -30,13 +30,20 @@ Linux
 -----
 1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
 
-2. Extract the :file:`install_simnibs_linux.tar.gz` file
+2. Run in a terminal 
 
-3. Double click the :file:`install_simnibs` file
 
-4. Select the desired version, accept the license and click on *next*
+  .. code-block:: bash
+  
+    cd ~/Downloads
+    tar -xzf install_simnibs_linux.tar.gz
+    install_simnibs/install_simnibs
 
-5. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
+  \
+
+3. Select the desired version, accept the license and click on *next*
+
+4. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
 
 .. warning:: The SimNIBS Installer does not support CentOS 6. However, it is possible to :ref:`install it using conda <conda-install>`
 

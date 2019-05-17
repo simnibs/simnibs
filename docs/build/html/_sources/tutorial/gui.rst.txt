@@ -169,23 +169,35 @@ Setting Simulation Options
 2. We can select the *fields* to be output from the simulation
 
 
-  * **v**: Electrical Potential (Voltage)
-  * **vector E**: Electric field vector
-  * **norm E**: Norm of the electric field
-  * **vector J**: Current density vector
-  * **norm J**: Norm of the current density
-  * **Conductivities**: Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
-  * **dA/dt**: Primary field caused by the coil. TMS only. This is a vector field
+  * **v**:
+      Electrical Potential (Voltage)
+  * **vector E**:
+      Electric field vector
+  * **norm E**:
+      Norm of the electric field
+  * **vector J**:
+      Current density vector
+  * **norm J**:
+      Norm of the current density
+  * **Conductivities**:
+      Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
+  * **dA/dt**:
+      Primary field caused by the coil. TMS only. This is a vector field
 
    Select **vector E** and **norm E**.
 
 3. And the  *Additional Options*
 
-  * **Open in Gmsh**: Opens the simulation results in *Gmsh*
-  * **Interpolate to cortical surface**: Interpolates the fields along a surface at the center of the gray matter sheet. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
-  * **Transform to fsaverage space**: Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
-  * **Interpolate to a nifiti volume**: Interpolates the fields to a nifti volume.
-  * **Transform to MNI space**: Interpolates the fields to a nifti volume and applies a transformation to MNI space.
+  * **Open in Gmsh**:
+      Opens the simulation results in *Gmsh*
+  * **Interpolate to cortical surface**:
+      Interpolates the fields along a surface at the center of the gray matter sheet. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
+  * **Transform to fsaverage space**:
+      Interpolates to the middle of gray matter and transforms it to FsAverage space. Not available for :ref:`headreco_docs` models ran with :code:`--no-cat`.
+  * **Interpolate to a nifiti volume**:
+      Interpolates the fields to a nifti volume.
+  * **Transform to MNI space**:
+      Interpolates the fields to a nifti volume and applies a transformation to MNI space.
 
   For the example run, we will select all of the above.
 
