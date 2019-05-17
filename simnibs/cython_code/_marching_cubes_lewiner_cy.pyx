@@ -4,6 +4,7 @@
 #cython: boundscheck=False
 #cython: nonecheck=False
 #cython: wraparound=False
+#cython: language_level=2
 
 """  
 Copyright (C) 2011, the scikit-image team All rights reserved.
