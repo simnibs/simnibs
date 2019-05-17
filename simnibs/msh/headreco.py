@@ -841,9 +841,9 @@ def expand_cat_surface(central, thickness, outname, vertex_density=0.5):
     
     # meshfix setup    
     meshfix = hmu.path2bin("meshfix")
-    resample = meshfix+' "{0}" -a 2.0 -u 5 -q --vertexDensity '+str(vertex_density)+' -o "{0}"'
-    clean    = meshfix+' "{0}" -a 2.0 -q -o "{0}"'
-    uniformremesh = meshfix+' "{0}" -a 2.0 -u 1 -q -o "{0}"' 
+    resample = '"{0}" "{1}" -a 2.0 -u 5 -q --vertexDensity {2} -o "{1}"'.format(meshfix, "{0}", vertex_density)
+    clean    = '"{0}" "{1}" -a 2.0 -q -o "{1}"'.format(meshfix, "{0}")
+    uniformremesh = '"{0}" "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix, "{0}")
     
     outdir = os.path.dirname(central)
     central = nib.load(central)
@@ -1037,7 +1037,7 @@ def make_surface_and_shrink(volume, nshells=1, min_shell_area=1,
     """Wrapper to make surface mesh and shrink it by some (small) amount
     """
     meshfix = hmu.path2bin("meshfix")
-    clean = meshfix+' "{0}" -a 2.0 -q -o "{0}"'
+    clean = '"{0}" "{1}" -a 2.0 -q -o "{1}"'.format(meshfix, "{0}")
     
     surfaces = hmu.make_surface_mesh(volume, os.path.splitext(volume)[0] , nshells,
                                      min_shell_area, vertex_density, nsmooth)
@@ -1059,13 +1059,13 @@ def join_hemispheres(gm, join, outdir):
     
     fgmx = os.path.join(outdir, "gmx"+".off")
     # join hemispheres...
-    join = '{0} "{1}" "{2}" -a 2.0 --shells 2 -j -o "{3}"'.format(meshfix, gm["left"], join, fgmx)
+    join = '"{0}" "{1}" "{2}" -a 2.0 --shells 2 -j -o "{3}"'.format(meshfix, gm["left"], join, fgmx)
     hmu.spawn_process(join)
-    join = '{0} "{1}" "{2}" -a 2.0 --shells 2 -j -o "{1}"'.format(meshfix, fgmx, gm["right"])
+    join = '"{0}" "{1}" "{2}" -a 2.0 --shells 2 -j -o "{1}"'.format(meshfix, fgmx, gm["right"])
     hmu.spawn_process(join)
     
     # cleaning to get rid of putatively remaining intersections
-    clean = '{0} "{1}" -a 2.0 -o "{1}"'.format(meshfix, fgmx)
+    clean = '"{0}" "{1}" -a 2.0 -o "{1}"'.format(meshfix, fgmx)
     hmu.spawn_process(clean)
 
     return fgmx
@@ -1078,7 +1078,7 @@ def decouple_wm_gm_ventricles(wm, gm, ventricles):
     meshfix = hmu.path2bin("meshfix")
     
     # check intersections
-    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean -q --intersect'
+    check_intersect = '"{0}" "{1}" "{2}" --shells 2 --no-clean -q --intersect'.format(meshfix, "{0}", "{1}")
     # check if any intersections with the first surface                                
     any_intersect = \
         lambda s: any([hmu.spawn_process(check_intersect.format(s1,s2), return_exit_status=True)==0 for s1,s2 in combinations(s,2)])
@@ -1168,9 +1168,9 @@ def convert2stl(files, stlname=None, merge=False):
     
     """
     meshfix = hmu.path2bin("meshfix")
-    write_stl = meshfix+" {0} --no-clean -q --stl -o {1}"
+    write_stl = '"{0}" "{1}" --no-clean -q --stl -o {2}"'.format(meshfix, "{0}", "{1}")
     if merge:
-        add2stl = meshfix+" {0} {1} -jc --shells "+str(len(files))+" -q --no-clean --stl -o {0}"
+        add2stl = '"{0}" "{1}" "{2}" -jc --shells {3} -q --no-clean --stl -o "{1}"'.format(meshfix, "{0}", "{1}", len(files))
     
     # check inputs
     if isinstance(files, str):
@@ -1297,7 +1297,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     dtype = np.uint8 # data type
     
     # check intersections
-    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean -q --intersect'
+    check_intersect = '"{0}" "{1}" "{2}" --shells 2 --no-clean -q --intersect'.format(meshfix, "{0}", "{1}")
     # check if any intersections with the first surface                                
     any_intersect_1st = \
         lambda s: any([hmu.spawn_process(check_intersect.format(s1,s2),return_exit_status=True)==0 for s1,s2 in combinations(s,2) if s[0] in (s1,s2)])
@@ -1479,7 +1479,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     
     hmu.log("Ensuring that the previously created surfaces are still "+
             "decoupled")
-    check_intersect = meshfix+' "{0}" "{1}" --shells 2 --no-clean --intersect'
+    check_intersect = '"{0}" "{1}" "{2}" --shells 2 --no-clean --intersect'.format(meshfix, "{0}", "{1}")
     if hmu.spawn_process(check_intersect.format(off["gm"], off["csf"]), True) == 0:
         hmu.log("Decoupling GM from CSF")
         hmu.decouple_surfaces(off["gm"], off["csf"], "inner-from-outer",
@@ -1831,7 +1831,7 @@ def make_volume_mesh(subject_id,input_files,out_dir):
     
     msh = os.path.join(out_dir, subject_id+".msh")
     geo = os.path.join(out_dir, subject_id+".geo")
-    make_vol_mesh = '{0} -3 -bin -o "{1}" "{2}"'.format(gmsh, msh, geo)
+    make_vol_mesh = '"{0}" -3 -bin -o "{1}" "{2}"'.format(gmsh, msh, geo)
     
     # first try Frontal meshing
     # zero is exit code for succes
@@ -1847,7 +1847,7 @@ def make_volume_mesh(subject_id,input_files,out_dir):
             # this helps
             if attempts is 1:
                 meshfix = hmu.path2bin("meshfix")
-                uniformremesh_surface  = '{0} "{1}" -a 2.0 -u 1 -q --shells 9 --stl -o "{1}"'.format(meshfix,"{0}")
+                uniformremesh_surface  = '"{0}" "{1}" -a 2.0 -u 1 -q --shells 9 --stl -o "{1}"'.format(meshfix,"{0}")
                 print("")
                 hmu.log("Gmsh failed meshing one or more surfaces. Doing uniform remeshing and retrying")
                 for f in files.values():
@@ -1936,7 +1936,7 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
     meshfix = hmu.path2bin("meshfix")
     
     # meshfix commands
-    combine_meshes = meshfix+' "{0}" "{1}" -q --no-clean --shells {2} -o "{3}"'
+    combine_meshes = '"{0}" "{1}" "{2}" -q --no-clean --shells {3} -o "{4}"'.format(meshfix, "{0}", "{1}", "{2}", "{3}")
     def combine_meshes_fsmesh(surf_a, surf_b, out):
         s_a = mesh_io.read_stl(surf_a)
         s_b = mesh_io.read_stl(surf_b)

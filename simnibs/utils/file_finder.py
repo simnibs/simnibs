@@ -329,6 +329,7 @@ def path2bin(program):
         raise OSError('OS not supported!')
 
     path_to_binary = os.path.join(SIMNIBSDIR, 'bin', p, program)
-    return f'"{path_to_binary}"'
+
+    return path_to_binary
 
 

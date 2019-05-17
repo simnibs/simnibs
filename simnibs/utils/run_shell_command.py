@@ -40,6 +40,7 @@ def run_command(command, realtime_output=False):
             command,
             shell=True,
             stdout=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
             stderr=subprocess.STDOUT)
 
         if realtime_output:
@@ -83,8 +84,12 @@ def run_command_new_thread(command, daemon=False):
         out.close()
     p = subprocess.Popen(
         command,
-        stdout=subprocess.PIPE, shell=True,
-        bufsize=1, close_fds=ON_POSIX)
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        shell=True,
+        bufsize=1,
+        close_fds=ON_POSIX)
     q = Queue()
     t = Thread(target=enqueue_output, args=(p.stdout, q))
     t.daemon = daemon  # thread dies with the program

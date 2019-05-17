@@ -1826,13 +1826,13 @@ def make_surface_mesh(fname_vol, fname_mesh, n_shells=1, min_shell_area=1,
     meshfix = path2bin("meshfix")
     
     # meshfix commands
-    split_shells     = '{0} "{1}" -a 2.0 --no-clean -q --shells {2} --splitShells --shellMinArea {3} -o "{4}"'.format(meshfix,"{0}",n_shells,min_shell_area,fname_mesh)
-    smooth_surface   = '{0} "{1}" -a 2.0 --taubin {2} --no-clean -o "{1}"'.format(meshfix,"{0}", n_smooth)
-    remove_spikes    = '{0} "{1}" -a 2.0 --removeSpikes {2} -o {1}'.format(meshfix,"{0}", remove_spikes_curv)
-    resample_surface = '{0} "{1}" -a 2.0 -u 5 -q --vertexDensity {2} -o "{1}"'.format(meshfix,"{0}",vertex_density)
-    clean_surface    = '{0} "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,"{0}")
-    uniformremesh_surface  = '{0} "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,"{0}")
-    save_stl = '{0} "{1}" --no-clean --stl -o "{2}"'.format(meshfix,"{0}", "{1}")
+    split_shells     = '"{0}" "{1}" -a 2.0 --no-clean -q --shells {2} --splitShells --shellMinArea {3} -o "{4}"'.format(meshfix,"{0}",n_shells,min_shell_area,fname_mesh)
+    smooth_surface   = '"{0}" "{1}" -a 2.0 --taubin {2} --no-clean -o "{1}"'.format(meshfix,"{0}", n_smooth)
+    remove_spikes    = '"{0}" "{1}" -a 2.0 --removeSpikes {2} -o {1}'.format(meshfix,"{0}", remove_spikes_curv)
+    resample_surface = '"{0}" "{1}" -a 2.0 -u 5 -q --vertexDensity {2} -o "{1}"'.format(meshfix,"{0}",vertex_density)
+    clean_surface    = '"{0}" "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,"{0}")
+    uniformremesh_surface  = '"{0}" "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,"{0}")
+    save_stl = '"{0}" "{1}" --no-clean --stl -o "{2}"'.format(meshfix,"{0}", "{1}")
     #taubin_smooth_surface   = "{0} {1} -a 2.0 --smooth {2} --no-clean -o {1}".format(meshfix,"{0}", n_smooth)
 
     log("Generating surface mesh from {0}",os.path.basename(fname_vol), level=lvl)
@@ -2061,11 +2061,11 @@ def decouple_surfaces(surf1, surf2, mode, cut_inner=False, min_distance=0,
     surf2_file = os.path.basename(surf2.upper())
     
     # meshfix commands
-    check_intersect = '{0} "{1}" "{2}" --shells 2 --no-clean --intersect'.format(meshfix,surf1,surf2)
-    decouple        = '{0} "{1}" "{2}" -a 2.0 --shells 2 --decouple-{3} 0 -o "{1}"'.format(meshfix,surf1,surf2,which_decouple)
-    cut_surf1       = '{0} "{1}" "{2}" -a 2.0 --shells 2 --cut-{3} 0 -o "{1}"'.format(meshfix,surf1,surf2,which_cut)
-    clean1_surf1    = '{0} "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,surf1)
-    clean2_surf1    = '{0} "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,surf1)
+    check_intersect = '"{0}" "{1}" "{2}" --shells 2 --no-clean --intersect'.format(meshfix,surf1,surf2)
+    decouple        = '"{0}" "{1}" "{2}" -a 2.0 --shells 2 --decouple-{3} 0 -o "{1}"'.format(meshfix,surf1,surf2,which_decouple)
+    cut_surf1       = '"{0}" "{1}" "{2}" -a 2.0 --shells 2 --cut-{3} 0 -o "{1}"'.format(meshfix,surf1,surf2,which_cut)
+    clean1_surf1    = '"{0}" "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,surf1)
+    clean2_surf1    = '"{0}" "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,surf1)
     addstl = " --stl"
     if surf1.endswith("stl"):
         decouple += addstl
@@ -2074,9 +2074,9 @@ def decouple_surfaces(surf1, surf2, mode, cut_inner=False, min_distance=0,
         clean2_surf1 += addstl
         
     if mode == "outer-from-inner" and cut_inner:
-        cut_surf2    = '{0} "{1}" "{2}" -a 2.0 --shells 2 --cut-outer 0 -o "{1}"'.format(meshfix,surf2,surf1)
-        clean1_surf2 = '{0} "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,surf2)
-        clean2_surf2 = '{0} "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,surf2)
+        cut_surf2    = '"{0}" "{1}" "{2}" -a 2.0 --shells 2 --cut-outer 0 -o "{1}"'.format(meshfix,surf2,surf1)
+        clean1_surf2 = '"{0}" "{1}" -a 2.0 -u 1 -q -o "{1}"'.format(meshfix,surf2)
+        clean2_surf2 = '"{0}" "{1}" -a 2.0 -q -o "{1}"'.format(meshfix,surf2)
         if surf2.endswith("stl"):
             cut_surf2 += addstl
             clean1_surf2 += addstl
