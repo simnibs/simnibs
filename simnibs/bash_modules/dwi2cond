@@ -36,7 +36,6 @@ case `uname` in
 		BINDIR=${SIMNIBSDIR}/bin/osx
 	;;
 esac
-export LD_LIBRARY_PATH=$BINDIR${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
 # ======================================
 # STANDARD SETTINGS
