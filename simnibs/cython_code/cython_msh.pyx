@@ -1,3 +1,5 @@
+# cython: language_level=2
+
 from __future__ import division
 import numpy as np
 import cython
