@@ -78,7 +78,10 @@ def headmodel(argv):
         docat = True
     if args.mode == "preparecat":
         docat = True
-
+    if docat and " " in SIMNIBSDIR:
+        raise IOError(
+            f'Unable to run CAT12: Found a space in the path to the SimNIBS installation: {SIMNIBSDIR} '
+            f'To fix it, please reinstall SimNIBS on a path without spaces or run with headreco with --no-cat')
     # subdirectories in m2m_{subid} folder
     segment   = os.path.join(subject_dir,"segment")
     spm       = os.path.join(segment,"spm")
