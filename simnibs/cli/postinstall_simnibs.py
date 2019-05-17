@@ -618,7 +618,7 @@ def uninstaller_setup(install_dir, force, silent):
                 f'/v DisplayIcon /t REG_SZ /d "{os.path.join(SIMNIBSDIR, "resources", "gui_icon.ico")}" /f',
                 shell=True)
             res = subprocess.run(
-                f'reg add "{uninstall_registry}"" '
+                f'reg add "{uninstall_registry}" '
                 f'/v DisplayName /t REG_SZ /d SimNIBS /f',
                 shell=True)
             res = subprocess.run(
