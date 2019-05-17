@@ -1168,7 +1168,7 @@ def convert2stl(files, stlname=None, merge=False):
     
     """
     meshfix = hmu.path2bin("meshfix")
-    write_stl = '"{0}" "{1}" --no-clean -q --stl -o {2}"'.format(meshfix, "{0}", "{1}")
+    write_stl = '"{0}" "{1}" --no-clean -q --stl -o "{2}"'.format(meshfix, "{0}", "{1}")
     if merge:
         add2stl = '"{0}" "{1}" "{2}" -jc --shells {3} -q --no-clean --stl -o "{1}"'.format(meshfix, "{0}", "{1}", len(files))
     
