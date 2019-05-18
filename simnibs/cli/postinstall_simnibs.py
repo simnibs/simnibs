@@ -111,9 +111,9 @@ def _write_windows_cmd(python_cli, bash_cli, gui=False, commands='%*'):
         f.write("@echo off\n")
         f.write(f'call "{activate_bin}" simnibs_env\n')
         if python_cli is None:
-            f.write(f'call {python_interpreter} %*')
+            f.write(f'{python_interpreter} %*')
         else:
-            f.write(f'call {python_interpreter} -E -u "{python_cli}"  {commands}')
+            f.write(f'{python_interpreter} -E -u "{python_cli}"  {commands}')
 
 def setup_gmsh_options(force=False, silent=False):
     ''' Copies the gmsh_options file to the appropriate place '''
@@ -337,8 +337,14 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             "Microsoft", "Windows", "Start Menu",
             "Programs", "SimNIBS"
         )
+        gmsh_icon = None
+        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
+
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
+        gmsh_icon = os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.png')
+        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.png')
+
 
     if os.path.isdir(shortcut_folder):
         if force:
@@ -362,14 +368,14 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         'Gmsh is a free 3D finite element mesh generator with a built-in CAD engine and'
         ' post-processor',
         mime_type='model/x.stl-binary',
-        icon=os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.png')
+        icon=gmsh_icon
     )
 
     _create_shortcut(
         os.path.join(shortcut_folder, 'SimNIBS GUI'),
         os.path.join(scripts_dir, 'simnibs_gui'),
         'SimNIBS is software for simulating electric fields caused by NIBS',
-        icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.png')
+        icon=simnibs_icon
     )
     if sys.platform == 'win32':
         _create_shortcut(
@@ -590,8 +596,8 @@ def uninstaller_setup(install_dir, force, silent):
 
         with open(uninstaller + '.cmd', 'a') as f:
             if os.path.isfile(conda_uninstaller):
-                f.write(f' & "{conda_uninstaller}" /S')
-            f.write(f' & rd /Q /S "{install_dir}"')
+                f.write(f' && "{conda_uninstaller}" /S')
+            f.write(f' && rd /Q /S "{install_dir}"')
 
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
