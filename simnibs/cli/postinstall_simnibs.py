@@ -581,9 +581,16 @@ def uninstaller_setup(install_dir, force, silent):
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-d "{install_dir}" -u %*',
+            uninstaller, commands=f'-u %* -d placeholder',
             gui=True)
+
+        conda_uninstaller = os.path.join(
+             install_dir,'miniconda3',
+            'Uninstall-Miniconda3.exe')
+
         with open(uninstaller + '.cmd', 'a') as f:
+            if os.path.isfile(conda_uninstaller):
+                f.write(f' & "{conda_uninstaller}" /S')
             f.write(f' & rd /Q /S "{install_dir}"')
 
         _create_shortcut(
@@ -628,9 +635,9 @@ def uninstaller_setup(install_dir, force, silent):
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-d "{install_dir}" -u "$@"')
+            uninstaller, commands=f'-u "$@" -d placeholder')
         with open(uninstaller, 'a') as f:
-            f.write(f' ; rm -rf "{install_dir}"')
+            f.write(f' && rm -rf "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
@@ -799,13 +806,13 @@ if GUI:
             gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
-    def start_uninstall_gui(target_dir):
+    def start_uninstall_gui():
         app = QtWidgets.QApplication(sys.argv)
         ex = UnintallerGUI()
         ex.show()
         app.exec_()
         if ex.result():
-            uninstall(target_dir)
+            uninstall()
         else:
             raise Exception('uninstall cancelled by user')
 
@@ -840,21 +847,11 @@ def install(install_dir, force, silent,
 
 
 
-def uninstall(install_dir):
+def uninstall():
     path_cleanup()
     shortcut_icons_clenup()
     file_associations_cleanup()
     uninstaller_cleanup()
-    if sys.platform == 'win32':
-        conda_uninstaller = os.path.join(
-             install_dir,'miniconda3',
-            'Uninstall-Miniconda3.exe')
-        try:
-            subprocess.run(f'"{conda_uninstaller}" /S', shell=True)
-        except:
-            pass
-    shutil.rmtree(install_dir)
-
 
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
@@ -877,9 +874,9 @@ def main():
     args = parser.parse_args(sys.argv[1:])
     if args.uninstall:
         if args.silent:
-            uninstall(args.target_dir)
+            uninstall()
         else:
-            start_uninstall_gui(args.target_dir)
+            start_uninstall_gui()
         return
     install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if not args.silent:
