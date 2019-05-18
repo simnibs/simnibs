@@ -587,22 +587,16 @@ def uninstaller_setup(install_dir, force, silent):
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-u %* -d placeholder',
-            gui=True)
-
-        conda_uninstaller = os.path.join(
-             install_dir,'miniconda3',
-            'Uninstall-Miniconda3.exe')
+            uninstaller, commands=f'-u %* -d "{install_dir}"',
+            gui=False)
 
         with open(uninstaller + '.cmd', 'a') as f:
-            if os.path.isfile(conda_uninstaller):
-                f.write(f' && "{conda_uninstaller}" /S')
             f.write(f' && rd /Q /S "{install_dir}"')
 
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
-            os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.bmp')
+            icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
         )
         uninstall_registry = r'HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS'
         res = subprocess.run(
@@ -641,7 +635,7 @@ def uninstaller_setup(install_dir, force, silent):
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            uninstaller, commands=f'-u "$@" -d placeholder')
+            uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
             f.write(f' && rm -rf "{install_dir}"')
 
@@ -662,7 +656,7 @@ def activator_setup(install_dir):
         _create_shortcut(
             os.path.join(install_dir, 'Activate SimNIBS'),
             activator,
-            os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.bmp')
+            icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
         )
     else:
         _write_unix_sh(
@@ -812,13 +806,13 @@ if GUI:
             gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
-    def start_uninstall_gui():
+    def start_uninstall_gui(install_dir):
         app = QtWidgets.QApplication(sys.argv)
         ex = UnintallerGUI()
         ex.show()
         app.exec_()
         if ex.result():
-            uninstall()
+            uninstall(install_dir)
         else:
             raise Exception('uninstall cancelled by user')
 
@@ -853,11 +847,17 @@ def install(install_dir, force, silent,
 
 
 
-def uninstall():
+def uninstall(install_dir):
     path_cleanup()
     shortcut_icons_clenup()
     file_associations_cleanup()
     uninstaller_cleanup()
+    if sys.platform == 'win32':
+        conda_uninstaller = os.path.join(
+             install_dir,'miniconda3',
+            'Uninstall-Miniconda3.exe')
+        if os.path.isfile(conda_uninstaller):
+            subprocess.run(f'"{conda_uninstaller}" /S', shell=True)
 
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
@@ -878,13 +878,13 @@ def main():
     parser.add_argument('-u', "--uninstall", required=False, action='store_true',
                         help="Ignores all other arguments and uninstall SimNIBS")
     args = parser.parse_args(sys.argv[1:])
+    install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if args.uninstall:
         if args.silent:
-            uninstall()
+            uninstall(install_dir)
         else:
-            start_uninstall_gui()
+            start_uninstall_gui(install_dir)
         return
-    install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if not args.silent:
         if not GUI:
             raise ImportError(
