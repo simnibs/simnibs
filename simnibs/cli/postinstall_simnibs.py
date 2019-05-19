@@ -591,7 +591,7 @@ def uninstaller_setup(install_dir, force, silent):
             gui=False)
 
         with open(uninstaller + '.cmd', 'a') as f:
-            f.write(f' && rd /Q /S "{install_dir}"')
+            f.write(f' && rd /Q /S "{install_dir}" >NUL 2>&1')
 
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
