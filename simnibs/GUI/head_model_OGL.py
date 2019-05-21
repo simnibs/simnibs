@@ -20,13 +20,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import ctypes
 from PyQt5 import QtCore, QtGui, QtOpenGL, QtWidgets
 from OpenGL import GL, GLU, GLUT
 import OpenGL
 import math
 import sys
-import time
 import numpy
 
 from ..msh import mesh_io
@@ -841,16 +839,22 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         if bool(GLUT.glutBitmapString):
             GL.glColor3f(0.0, 0.0, 0.0)
             GL.glRasterPos2i(26,-58)
-            GLUT.glutBitmapString(GLUT.GLUT_BITMAP_HELVETICA_12, "%.2f" % max(field))
+            GLUT.glutBitmapString(
+                GLUT.GLUT_BITMAP_HELVETICA_12,
+                f"{max(field) : .2f}".encode())
 
-            GL.glRasterPos2i(-32,-58)  
-            GLUT.glutBitmapString(GLUT.GLUT_BITMAP_HELVETICA_12, "%.2f" % min(field))
+            GL.glRasterPos2i(-32,-58)
+            GLUT.glutBitmapString(
+                GLUT.GLUT_BITMAP_HELVETICA_12,
+                f"{min(field) : .2f}".encode())
 
             GL.glRasterPos2i(-5,-58)
-            GLUT.glutBitmapString(GLUT.GLUT_BITMAP_HELVETICA_12, "dA/dt (V/m)")
+            GLUT.glutBitmapString(
+                GLUT.GLUT_BITMAP_HELVETICA_12,
+                "dA/dt (V/m)".encode())
 
 
-        top = -45
+        top = -50
         bot = -55
 
         GL.glBegin(GL.GL_QUAD_STRIP)
