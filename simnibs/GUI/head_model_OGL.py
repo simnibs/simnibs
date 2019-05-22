@@ -300,10 +300,9 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
     #double clickng gets the position
     def mouseDoubleClickEvent(self, event):
         if isinstance(self.skin_surf,  surface.Surface):
-            r = self.devicePixelRatio()
             self.lastPos = QtCore.QPoint(event.pos())
-            x = float(r * self.lastPos.x())
-            y = float(self.view[3] - r * self.lastPos.y())
+            x = float(self.lastPos.x())
+            y = float(self.view[3] - self.lastPos.y())
             Near = GLU.gluUnProject(
                 x, y, 0.,
                 self.model_matrix, self.projection_matrix, self.view)
