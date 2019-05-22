@@ -20,7 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from PyQt5 import QtCore, QtGui, QtOpenGL, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from OpenGL import GL, GLU, GLUT
 import OpenGL
 import math
@@ -58,12 +58,12 @@ WHEAT = QtGui.QColor.fromCmykF(0., 0.09, 0.27, 0.04)
 
 @QtCore.pyqtSlot(int)
 @QtCore.pyqtSlot(int)
-class GLHeadModel(QtOpenGL.QGLWidget):
+class GLHeadModel(QtWidgets.QOpenGLWidget):
     windowClicked = QtCore.pyqtSignal(int)
     loadStage = QtCore.pyqtSignal(int)
 
     def __init__(self, parent=None):
-        QtOpenGL.QGLWidget.__init__(self, parent)
+        super(GLHeadModel, self).__init__(parent)
 
         self.mesh_fn = ''
 
@@ -184,32 +184,47 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         angle = self.normalizeAngle(angle)
         if angle != self.xRot:
             self.xRot = angle
-            self.updateGL()
+            self.update()
 
     def setYRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.yRot:
             self.yRot = angle
-            self.updateGL()
+            self.update()
 
     def setZRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.zRot:
             self.zRot = angle
-            self.updateGL()
+            self.update()
 
     def setXTranslation(self, distance):
         if distance != 0.0:
             self.xTran = distance
-            self.updateGL()
+            self.update()
 
     def setYTranslation(self, distance):
         if distance != 0.0:
             self.yTran = distance
-            self.updateGL()
+            self.update()
+
+    def getOpenglInfo(self):
+        info = """
+            Vendor: {0}
+            Renderer: {1}
+            OpenGL Version: {2}
+            Shader Version: {3}
+            """.format(
+            GL.glGetString(GL.GL_VENDOR).decode(),
+            GL.glGetString(GL.GL_RENDERER).decode(),
+            GL.glGetString(GL.GL_VERSION).decode(),
+            GL.glGetString(GL.GL_SHADING_LANGUAGE_VERSION).decode()
+        )
+        return info
 
     def initializeGL(self):
-        self.qglClearColor(WHITE)
+        print(self.getOpenglInfo())
+        self.setClearColor(WHITE)
         GL.glShadeModel(GL.GL_SMOOTH)
         light_ambient =  [0.0, 0.0, 0.0, 1.0]
         GL.glLightfv(GL.GL_LIGHT0, GL.GL_AMBIENT, light_ambient)
@@ -220,6 +235,8 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         GL.glEnable(GL.GL_NORMALIZE)
         GL.glColorMaterial(GL.GL_FRONT_AND_BACK, GL.GL_DIFFUSE)
 
+    def setClearColor(self, c):
+        GL.glClearColor(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
     def paintGL(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
@@ -269,9 +286,13 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         except:
             pass
 
+        self.model_matrix = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
+        self.projection_matrix = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
+
 
     def resizeGL(self, width, height):
         GL.glViewport(0, 0, width, height)
+        self.view = [0, 0, width, height]
 
 
     def getIntersectPoint(self):
@@ -281,19 +302,19 @@ class GLHeadModel(QtOpenGL.QGLWidget):
     def mouseDoubleClickEvent(self, event):
         if isinstance(self.skin_surf,  surface.Surface):
             r = self.devicePixelRatio()
-            #print "Ratio:", r
             self.lastPos = QtCore.QPoint(event.pos())
-            view = GL.glGetIntegerv(GL.GL_VIEWPORT)
-            #print "View port:", view
-            #print self.lastPos
+            x = float(r * self.lastPos.x())
+            y = float(self.view[3] - r * self.lastPos.y())
             Near = GLU.gluUnProject(
-                float(r * self.lastPos.x()), float(view[3] - r * self.lastPos.y()), 0.)
+                x, y, 0.,
+                self.model_matrix, self.projection_matrix, self.view)
             Far = GLU.gluUnProject(
-                float(r * self.lastPos.x()), float(view[3] - r * self.lastPos.y()), 1.)
+                x, y, 1.,
+                self.model_matrix, self.projection_matrix, self.view)
             self.intersect_point, self.intersect_normal = self.skin_surf.interceptRay(Near, Far)
             if self.intersect_point is not None:
                 self.indicator = self.drawIndicator(self.intersect_point, self.intersect_normal)
-                self.updateGL()
+                self.update()
             self.windowClicked.emit(1)
 
 
@@ -302,12 +323,11 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         zoom = self.zoom+delta/1200.0
         if zoom > 0.1 and zoom < 10:
             self.zoom = zoom
-            self.updateGL()
+            self.update()
 
     #gets a new mouse position, for a smoother rotation/translation
     def mousePressEvent(self,event):
         self.lastPos = QtCore.QPoint(event.pos())
-        #print self.lastPos
 
     #Rotates / translates model
     def mouseMoveEvent(self, event):
@@ -354,7 +374,7 @@ class GLHeadModel(QtOpenGL.QGLWidget):
             self.model = self.gm_model_field
             self.currenSurface = 'GM'
 
-        self.updateGL()
+        self.update()
 
 
     ##Renders the surface
@@ -471,7 +491,8 @@ class GLHeadModel(QtOpenGL.QGLWidget):
 
             return genList
 
-
+    def qglColor(self, c):
+        GL.glColor3f(c.redF(), c.greenF(), c.blueF())
 
 
     #Draws an "indicator" showing the clicked position
@@ -598,7 +619,7 @@ class GLHeadModel(QtOpenGL.QGLWidget):
             self.eeg_coordinates = None
             self.eeg_names = None
             self.eeg_cap = None
-            self.updateGL()
+            self.update()
             return
         try:
             type_, coordinates, _, name, _, _ = transformations._read_csv(cap_fn)
@@ -635,7 +656,7 @@ class GLHeadModel(QtOpenGL.QGLWidget):
 
         GL.glEndList()
         self.eegPositions = genList
-        self.updateGL()
+        self.update()
 
     def clear_eeg_positions(self):
         self.eegPositions = 0
@@ -730,15 +751,15 @@ class GLHeadModel(QtOpenGL.QGLWidget):
         self.stimulator_objects = objects
         #for obj in objects:
         #    self.coil_objects.append(obj)
-        self.updateGL()
+        self.update()
 
     def tmpObjectList(self, objects):
         self.tmp_objects = objects
-        self.updateGL()
+        self.update()
 
     def clearTmpObjects(self):
         self.tmp_objects = []
-        self.updateGL()
+        self.update()
 
 
     #Gets the dAdt for the point in gray matter surface in the position defined by matsimnibs using the data from fn_coil
@@ -759,7 +780,7 @@ class GLHeadModel(QtOpenGL.QGLWidget):
                 self.gm_model_field = self.drawModel('GM', field_gm)
             QtWidgets.QApplication.processEvents()
             self.selectRenderSurface(self.currenSurface)
-            self.updateGL()
+            self.update()
 
         else:
             return None
@@ -776,7 +797,6 @@ class GLHeadModel(QtOpenGL.QGLWidget):
     #Y = Green
     #Z = Blue
     def drawAxis(self):
-
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glPushMatrix()
         GL.glLoadIdentity()
@@ -822,8 +842,6 @@ class GLHeadModel(QtOpenGL.QGLWidget):
 
     #Scale for HeatMap
     def drawHeatMapScale(self, field):
-
-
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glPushMatrix()
         GL.glLoadIdentity()
@@ -912,7 +930,7 @@ class GLHeadModel(QtOpenGL.QGLWidget):
             print("ERROR in head_model_OGL: Invalid surface name:", surf_name)
 
         self.selectRenderSurface(self.currenSurface)
-        self.updateGL()
+        self.update()
 
 
 class HEADMODEL_UI(QtWidgets.QWidget):
@@ -969,7 +987,7 @@ class HEADMODEL_UI(QtWidgets.QWidget):
         else:
             self.glHeadModel.selectRenderSurface('Skin')
 
-        self.glHeadModel.updateGL()
+        self.glHeadModel.update()
 
     def writePosition(self):
         if self.glHeadModel.intersect_point is not None:
@@ -1017,5 +1035,5 @@ if __name__ == '__main__':
      #ex.glHeadModel.loadMesh('almi5-binary.msh')
      #ex.glHeadModel.selectRenderSurface('Scalp')
      ex.glHeadModel.drawAxis()
-     ex.glHeadModel.updateGL()
+     ex.glHeadModel.update()
      sys.exit(app.exec_())

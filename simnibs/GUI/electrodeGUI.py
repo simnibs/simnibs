@@ -23,7 +23,7 @@
 '''
 
 
-from PyQt5 import QtCore, QtGui, QtOpenGL, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from OpenGL import GL, GLU
 import math
 import copy
@@ -60,7 +60,7 @@ class Ui_Electrode(QtWidgets.QDialog):
         self.update_electrode()
         self.glElectrode.electrode_object, self.glElectrode.plug_object = self.glElectrode.drawElectrode(self.electrode_struct)
         self.glElectrode.electrode_struct = self.electrode_struct
-        self.glElectrode.updateGL()
+        self.glElectrode.update()
 
         self.setLayout(mainLayout)
         self.resize(900,450)
@@ -336,7 +336,7 @@ class Ui_Electrode(QtWidgets.QDialog):
 
         self.glElectrode.electrode_object, self.glElectrode.plug_object= self.glElectrode.drawElectrode(self.electrode_struct)
         self.glElectrode.electrode_struct = self.electrode_struct
-        self.glElectrode.updateGL()
+        self.glElectrode.update()
         QtWidgets.QApplication.processEvents()
 
 
@@ -445,9 +445,9 @@ class Ui_Electrode(QtWidgets.QDialog):
 #####################################################################
 ############Electrode OpenGL Model###################################
 #####################################################################
-class GLElectrode(QtOpenGL.QGLWidget):
+class GLElectrode(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
-        QtOpenGL.QGLWidget.__init__(self, parent)
+        super(GLElectrode, self).__init__(parent)
 
         self.electrode_object = 0
         self.plug_object = 0
@@ -475,24 +475,27 @@ class GLElectrode(QtOpenGL.QGLWidget):
         if angle != self.xRot:
             self.xRot = angle
             #self.emit(QtCore.SIGNAL("xRotationChanged(int)"), angle)
-            self.updateGL()
+            self.update()
 
     def setYRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.yRot:
             self.yRot = angle
             #self.emit(QtCore.SIGNAL("yRotationChanged(int)"), angle)
-            self.updateGL()
+            self.update()
 
     def setZRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.zRot:
             self.zRot = angle
             #self.emit(QtCore.SIGNAL("zRotationChanged(int)"), angle)
-            self.updateGL()
+            self.update()
+
+    def setClearColor(self, c):
+        GL.glClearColor(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
     def initializeGL(self):
-        self.qglClearColor(QtGui.QColor.fromCmykF(0.1, .0, 0.2, 1.0))
+        self.setClearColor(QtGui.QColor.fromCmykF(0.1, .0, 0.2, 1.0))
         self.electrode_object, self.plug_object = \
             self.drawElectrode(self.electrode_struct)
         self.center_dir = self.drawPointAndDirs()
@@ -544,7 +547,7 @@ class GLElectrode(QtOpenGL.QGLWidget):
         zoom = self.zoom+delta/1200.0
         if zoom > 0.1 and zoom < 10:
             self.zoom = zoom
-            self.updateGL()
+            self.update()
 
 
     def drawElectrode(self, electrode_struct):
@@ -630,6 +633,8 @@ class GLElectrode(QtOpenGL.QGLWidget):
 
         return electrode_list, plug_list
 
+    def qglColor(self, c):
+        GL.glColor3f(c.redF(), c.greenF(), c.blueF())
 
 
     def cuboid(self, center_x, center_y,center_z, size_x, size_y, size_z, color, wireframe):
@@ -688,7 +693,7 @@ class GLElectrode(QtOpenGL.QGLWidget):
     def cylinder(self, center_x,center_y, center_z, x_axis, y_axis, size_z, color, wireframe) :
         Pi = 3.14159265358979323846
         if wireframe:
-            nbr_sides = 15
+            nbr_sides = 18
         else:
             nbr_sides = 100
 
@@ -738,7 +743,7 @@ class GLElectrode(QtOpenGL.QGLWidget):
         if wireframe:
             GL.glBegin(GL.GL_LINES)
             self.qglColor(color)
-            for i in range(nbr_sides/2):
+            for i in range(nbr_sides//2):
                 angle1 = (i * 2 * Pi) / nbr_sides
                 angle2 = (i * 2 * Pi) / nbr_sides + Pi
                 x1 = center_x + x_axis/2 * math.sin(angle1)

@@ -36,7 +36,7 @@ from . import head_model_OGL
 from . import simulation_menu
 from .. import __version__
 from ..utils.simnibs_logger import logger
-from ..utils.file_finder import SubjectFiles
+from ..utils.file_finder import SubjectFiles, path2bin
 from ..utils.matlab_read import read_mat
 
 
@@ -234,7 +234,6 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         self.headModelWidget.glHeadModel.drawSkinAndGm()
         self.headModelWidget.glHeadModel.setEEG(self.session.eeg_cap)
         #self.headModelWidget.glHeadModel.selectRenderSurface('Scalp')
-        #self.headModelWidget.glHeadModel.updateGL()
 
     #Defines the tabs
     def poslistTabs(self):
@@ -975,7 +974,7 @@ class ElcTable(QtWidgets.QWidget):
             i += 1
 
         self.glHeadModel.stimulatorList(objects)
-        self.glHeadModel.updateGL()
+        self.glHeadModel.update()
 
     def showShapes(self):
         self.shapesOn = True
@@ -1290,7 +1289,7 @@ class CoilTable (QtWidgets.QWidget):
         self.glHeadModel.get_dAdtField(row.calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
                                        str(self.coil_line_edit.text()))
         #self.glHeadModel.drawModel()
-        self.glHeadModel.updateGL()
+        self.glHeadModel.update()
 
 
 #GUI where the user clicks and chooses the position
@@ -1505,7 +1504,7 @@ class Position_GUI(QtWidgets.QDialog):
         ogl_object = self.glHeadModel.drawPointAndDirs(
             transf_matrix, QtGui.QColor.fromCmykF(0., 0., 0., 0.74))
         self.glHeadModel.tmpObjectList([ogl_object])
-        self.glHeadModel.updateGL()
+        self.glHeadModel.update()
 
     def GetPositions(self):
         result = self.exec_()
@@ -1748,13 +1747,20 @@ class openGmshThread(QtCore.QThread):
         self.fn = fn
 
     def run(self):
-        gmsh_return = os.system('gmsh '+self.fn)
-        self.exit(gmsh_return)
+        gmsh = path2bin('gmsh')
+        gmsh_return = subprocess.run([gmsh, self.fn])
+        self.exit(gmsh_return.returncode)
         self.exec_()
 
+def except_hook(cls, exception, traceback):
+    app = QtWidgets.QApplication(sys.argv)
+    QtWidgets.QMessageBox.critical(None, 'SimNIBS GUI Error', str(exception))
+    sys.__excepthook__(cls, exception, traceback)
+    #sys.exit(app.exec_())
 
 def start_gui(args):
     app = QtWidgets.QApplication(args)
+    sys.excepthook = except_hook
     ex = TDCS_GUI()
     ex.show()
     if len(args) > 1:
@@ -1766,3 +1772,5 @@ def start_gui(args):
             raise IOError('simnibs_gui can only load .mat and .msh files')
     sys.exit(app.exec_())
 
+
+        
