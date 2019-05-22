@@ -1753,13 +1753,15 @@ class openGmshThread(QtCore.QThread):
         self.exec_()
 
 def except_hook(cls, exception, traceback):
-    app = QtWidgets.QApplication(sys.argv)
     QtWidgets.QMessageBox.critical(None, 'SimNIBS GUI Error', str(exception))
     sys.__excepthook__(cls, exception, traceback)
     #sys.exit(app.exec_())
 
 def start_gui(args):
     app = QtWidgets.QApplication(args)
+    #app.setAttribute(QtCore.Qt.AA_UseDesktopOpenGL)
+    #app.setAttribute(QtCore.Qt.AA_UseSoftwareOpenGL)
+    #app.setAttribute(QtCore.Qt.AA_UseOpenGLES)
     sys.excepthook = except_hook
     ex = TDCS_GUI()
     ex.show()

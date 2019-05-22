@@ -66,7 +66,6 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         super(GLHeadModel, self).__init__(parent)
 
         self.mesh_fn = ''
-
         #Objects
         self.model = 0
         self.indicator = 0
