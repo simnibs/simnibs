@@ -1,4 +1,7 @@
 # This job only publishes the documentations
+variables:
+  Agent.Source.Git.ShallowFetchDepth: 1
+
 trigger:
 - master
 

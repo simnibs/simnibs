@@ -1,3 +1,6 @@
+variables:
+  Agent.Source.Git.ShallowFetchDepth: 1
+
 trigger:
 - master
 
