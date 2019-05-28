@@ -663,6 +663,12 @@ def activator_setup(install_dir):
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             activator, commands=f'-d {install_dir}')
 
+def download_gmsh_osx():
+    import urllib.request
+    url = 'http://gmsh.info/bin/MacOSX/gmsh-3.0.6-MacOSX.dmg' 
+    with urllib.request.urlopen(url) as response:
+        print(response)
+    #    with tempfile.TemporaryDirectory() as tmpdir:
 
 def run_tests(args):
     ''' run tests on pytest '''
