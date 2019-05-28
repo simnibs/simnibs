@@ -8,7 +8,7 @@ As of version 3.0, SimNIBS is now distributed through the SimNIBS installer.
 
 Windows
 -------
-1. `Download the SimNIBS installer <http://simnibs.drcmr.dk/>`_
+1. :ref:`Download the SimNIBS installer <download>`
 
 2. Double click the :file:`install_simnibs_windows.exe` file
 

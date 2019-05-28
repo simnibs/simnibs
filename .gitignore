@@ -10,6 +10,8 @@ simnibs/cython_code/_marching_cubes_lewiner_cy.c
 simnibs/cython_code/cython_msh.c
 simnibs/cython_code/petsc_solver.c
 Contents/
+simnibs/ccd-files/LICENSE
+simnibs/ccd-files/README.md
 
 #
 # Object files

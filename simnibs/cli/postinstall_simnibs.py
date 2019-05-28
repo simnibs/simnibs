@@ -663,12 +663,45 @@ def activator_setup(install_dir):
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             activator, commands=f'-d {install_dir}')
 
-def download_gmsh_osx():
+
+def reporthook(blocknum, blocksize, totalsize):
+    # from https://stackoverflow.com/questions/13881092/download-progressbar-for-python-3
+    readsofar = blocknum * blocksize
+    if totalsize > 0:
+        percent = readsofar * 1e2 / totalsize
+        s = "\r%5.1f%% %*d / %d" % (
+            percent, len(str(totalsize)), readsofar, totalsize)
+        sys.stdout.write(s)
+        if readsofar >= totalsize: # near the end
+            sys.stdout.write("\n")
+    else: # total size is unknown
+        sys.stdout.write("read %d\n" % (readsofar,))
+
+def download_extra_coils():
     import urllib.request
-    url = 'http://gmsh.info/bin/MacOSX/gmsh-3.0.6-MacOSX.dmg' 
-    with urllib.request.urlopen(url) as response:
-        print(response)
-    #    with tempfile.TemporaryDirectory() as tmpdir:
+    import zipfile
+    version = '1.0'
+    url = f'https://github.com/simnibs/simnibs-coils/archive/v{version}.zip'
+    # NOTICE: We can replace "v1.0" by whichever
+    print('Donwloading extra coil files, this might take some time')
+    with tempfile.NamedTemporaryFile() as tmpf:
+        urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
+        with zipfile.ZipFile(tmpf) as z:
+            z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
+
+        src = os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}')
+        dest = os.path.join(SIMNIBSDIR, 'ccd-files')
+        #TODO: Fix this
+        for f in glob.glob(os.path.join(src, '*')):
+            d = os.path.join(dest, os.path.basename(f))
+            if os.path.isdir(d):
+                shutil.rmtree(d)
+            if os.path.isfile(d):
+                os.remove(d)
+            shutil.move(f, d)
+
+        shutil.rmtree(
+            os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
 
 def run_tests(args):
     ''' run tests on pytest '''
@@ -682,12 +715,14 @@ if GUI:
                      install_dir,
                      copy_gmsh_options=True,
                      add_to_path=True,
+                     extra_coils=True,
                      add_shortcut_icons=True,
                      associate_files=True):
             super().__init__()
             self.install_dir = os.path.abspath(os.path.expanduser(install_dir))
             self.copy_gmsh_options = copy_gmsh_options
             self.add_to_path = add_to_path
+            self.extra_coils = extra_coils
             self.add_shortcut_icons = add_shortcut_icons
             self.associate_files = associate_files
 
@@ -712,6 +747,13 @@ if GUI:
             if self.add_to_path: path_cb.toggle()
             path_cb.toggled.connect(self.set_add_to_path)
             layout.addWidget(path_cb, 0, QtCore.Qt.Alignment(1))
+
+            # extra coils options
+            coils_cb = QtWidgets.QCheckBox('Download additional coil files')
+            if self.extra_coils: coils_cb.toggle()
+            coils_cb.toggled.connect(self.set_extra_coils)
+            layout.addWidget(coils_cb, 0, QtCore.Qt.Alignment(1))
+
 
             # shortcut options
             shortcut_cb = QtWidgets.QCheckBox('Add SimNIBS shortcut icons')
@@ -774,7 +816,14 @@ if GUI:
             if not new_value:
                 QtWidgets.QMessageBox.warning(
                     self, 'SimNIBS',
-                    'Models and simulation results will not automatically open in Gmsh')
+                    'Models and simulation results will not be associated with Gmsh')
+
+        def set_extra_coils(self, new_value):
+            self.extra_coils = new_value
+            if not new_value:
+                QtWidgets.QMessageBox.warning(
+                    self, 'SimNIBS',
+                    'Less coil files will be availiable')
 
 
     def start_gui(simnibsdir, copy_matlab, setup_links):
@@ -787,6 +836,7 @@ if GUI:
                     False, False,
                     ex.copy_gmsh_options,
                     ex.add_to_path,
+                    ex.extra_coils,
                     ex.add_shortcut_icons,
                     ex.associate_files,
                     copy_matlab,
@@ -825,6 +875,7 @@ if GUI:
 def install(install_dir, force, silent,
             copy_gmsh_options=True,
             add_to_path=True,
+            extra_coils=True,
             add_shortcut_icons=False,
             associate_files=False,
             copy_matlab=False,
@@ -836,6 +887,8 @@ def install(install_dir, force, silent,
         setup_gmsh_options(force, silent)
     if add_to_path:
         path_setup(scripts_dir, force, silent)
+    if extra_coils:
+        download_extra_coils()
     if add_shortcut_icons:
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:

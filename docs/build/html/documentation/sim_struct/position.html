@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>POSITION &#8212; SimNIBS 3.0b5 documentation</title>
+    <title>POSITION &#8212; SimNIBS 3.0b7 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -100,7 +100,7 @@
 </li>
 <li><p><strong>pos_ydir</strong>: <em>list/array of floats or string/character array (Python/MATLAB)</em></p>
 <ul>
-<li><p><strong>Description</strong>: Position along the coil’s y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (<a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>).</p></li>
+<li><p><strong>Description</strong>: Position along the coil’s y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (<a class="reference download internal" download="" href="../../_downloads/a842c229ca3b490f09e9f3f8d701447c/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>).</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p>
 <p>Set-up a coil centered in C3 and pointing posteriorly</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
@@ -145,7 +145,7 @@ p^x_3 &amp; p^y_3 &amp; p^z_3 &amp; p^c_2\\
 <p></p>
 <blockquote>
 <div><blockquote>
-<div><p>Where <img class="math" src="../../_images/math/662d6fe3784f45c7e3d604568e3a34275e4d58eb.png" alt="\mathbf{p}^x"/>, <img class="math" src="../../_images/math/418bba3bd19f2de8b2b75c920a3e2db5d244df3d.png" alt="\mathbf{p}^y"/> and <img class="math" src="../../_images/math/8c39977e67161a16dbb3b9a9d44a002985f4982c.png" alt="\mathbf{p}^z"/> are the x, y and z coil axes (<a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>). Those should be mutually orthogonal and span a right-handed coordinate system. <img class="math" src="../../_images/math/3d48bed8239fd576e0454ea7f014027b22d74f2a.png" alt="\mathbf{p}^c"/> is the center of the coil. <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>.</p>
+<div><p>Where <img class="math" src="../../_images/math/662d6fe3784f45c7e3d604568e3a34275e4d58eb.png" alt="\mathbf{p}^x"/>, <img class="math" src="../../_images/math/418bba3bd19f2de8b2b75c920a3e2db5d244df3d.png" alt="\mathbf{p}^y"/> and <img class="math" src="../../_images/math/8c39977e67161a16dbb3b9a9d44a002985f4982c.png" alt="\mathbf{p}^z"/> are the x, y and z coil axes (<a class="reference download internal" download="" href="../../_downloads/a842c229ca3b490f09e9f3f8d701447c/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>). Those should be mutually orthogonal and span a right-handed coordinate system. <img class="math" src="../../_images/math/3d48bed8239fd576e0454ea7f014027b22d74f2a.png" alt="\mathbf{p}^c"/> is the center of the coil. <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>.</p>
 </div></blockquote>
 <ul class="simple">
 <li><p><strong>note</strong>: Be careful when setting up simulations this way. If the directions are set
@@ -167,7 +167,7 @@ wrongly, the coil might end up inside the head.</p></li>
 <p></p>
 </li>
 <li><p>Run a simulation with the coil placed at (-1.2, -15.8, 120.0), pointing anteriorly and facing downwards.</p>
-<p>By default, in the head models <em>+y</em> indicates the anterior direction. Therefore, the coil <em>y</em> axis is to be aligned with the model’s. Also by default, <em>+z</em> indicats the superior directio. Therefore, given the <a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">definitions</span></code></a>, the coil <em>z</em> axis need to point towards the <em>-z</em> direction. Finally, for the coordinates to be right-handed <img class="math" src="../../_images/math/a6899979ae8883d1c57bd8e7ec2b1be86af01633.png" alt="\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z"/>.</p>
+<p>By default, in the head models <em>+y</em> indicates the anterior direction. Therefore, the coil <em>y</em> axis is to be aligned with the model’s. Also by default, <em>+z</em> indicats the superior directio. Therefore, given the <a class="reference download internal" download="" href="../../_downloads/a842c229ca3b490f09e9f3f8d701447c/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">definitions</span></code></a>, the coil <em>z</em> axis need to point towards the <em>-z</em> direction. Finally, for the coordinates to be right-handed <img class="math" src="../../_images/math/a6899979ae8883d1c57bd8e7ec2b1be86af01633.png" alt="\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z"/>.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">matsimnibs</span> <span class="o">=</span> <span class="p">[</span>
