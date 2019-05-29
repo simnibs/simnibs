@@ -7,8 +7,7 @@ simnibs_python
 Description
 ------------
 
-Python interpreter used in SimNIBS. Whenever scripting simulations for SimNIBS (see
-:ref:`here <scripting_tutorial>` please use this interpreter to run your Python scripts.
+Python interpreter used in SimNIBS. Used for running :ref:`SimNIBS python scripts <scripting_tutorial>`
 
 This interpreter is from a `Miniconda <https://conda.io/miniconda.html>`_ instance that
 is downloaded and installed during the SimNIBS installation process. It already contains

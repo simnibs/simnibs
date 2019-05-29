@@ -9,14 +9,14 @@ Visualizing Results in Gmsh
 ----------------------------
 `Gmsh <http://gmsh.info/>`_ is a powerful program for 3D visualization. However, it has somewhat steep learning curve.
 For this reason, in SimNIBS 3.0 we now write the *.opt* files with basic visualization configurations.
-Here we will give a walk-through of a few useful features in `Gmsh <http://gmsh.info/>`_.
+Here we will give a walk-through of a few useful features in Gmsh.
 
-.. attention:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS.
+.. note:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS, you don't need to install it separately
 
 Starting `Gmsh <http://gmsh.info/>`_
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Start `Gmsh <http://gmsh.info/>`_ by double clicking in the :file:`ernie_TDCS_1_scalar.msh` file or typing in the terminal
+Start Gmsh by double clicking in the :file:`ernie_TDCS_1_scalar.msh` file or typing in the terminal
 
   .. code-block:: bash
   

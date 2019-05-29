@@ -3,14 +3,37 @@
 Scripting Simulations
 ======================
 
+This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_.
+Please download it before continuing
+
 SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running simulations.
 In both, we use a set of nested structures to create to define the simulation, and then
 use the *run_simnibs* function to run the simulation.
 
 
-.. attention:: Be sure to run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the SimNIBS *Python* interpreter.
+Running Scripts
+-----------------
 
-.. attention:: Please add the SimNBIS *MATLAB* library, in the :file:`matlab/` subdirectory of the SimNIBS installation directory, to your *MATLAB* path.
+* *Python*
+
+  Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the correct *Python* interpreter.
+
+
+* *MATLAB*
+
+  Add The SimNIBS *MATLAB* functions to the *MATLAB* path. In default installations, the folder can be found in
+    
+    * **Windows:**
+
+      :file:`C:\\Users\\<USER_NAME>\\AppData\\Local\\SimNIBS\\matlab`
+
+    * **Linux:**
+
+      :file:`/home/<USER_NAME>/SimNIBS/matlab`
+
+    * **MacOS**
+
+      :file:`/Users/<USER_NAME>/Applications/SimNIBS.app/matlab`
 
 
 Starting a SESSION and Selecting a Head Mesh
@@ -20,6 +43,9 @@ The base structure for SimNIBS scripts is the :ref:`session_doc`. It may contain
 simulations of different types (TMS or tDCS), sharing the same head model.
 
 We always start our scripts by initializing a :ref:`session_doc` *class* (*Python*) or *struct* (*MATLAB*), selecting a head mesh and the output folder.
+Here, we will assume that the scripts are placed together with the :file:`ernie.msh` file of the example dataset.
+If the scripts are not in the same folder as the head mesh, you should also give the path to the head mesh.
+
 
 * *Python*
 
@@ -45,9 +71,6 @@ We always start our scripts by initializing a :ref:`session_doc` *class* (*Pytho
     % Output folder
     s.pathfem = 'tutorial/';
 
-In this case, we are assuming that the head mesh *ernie.msh* is in the same folder as our
-script. If it is not, you should give the relative path from the script to the head mesh,
-or the full path to the head mesh.
 
 .. seealso:: Output and post-processing options are also configured in the :ref:`session_doc` structure. Please see the :ref:`documentation <session_doc>` for more details.
 
@@ -253,6 +276,24 @@ After the simulations are finished running the results can be found in the newly
 :file:`tutorial/` folder.
 
 * Download the full :download:`Python <../data/tutorial_python.py>` and :download:`MATLAB <../data/tutorial_matlab.m>` scripts.
+
+
+More Examples
+----------------
+
+More examples can be found in the :file:`examples/` folder in your SimNIBS installation directory. In default installations, it can be found at
+
+* **Windows:**
+
+  :file:`C:\\Users\\<USER_NAME>\\AppData\\Local\\SimNIBS\\examples`
+
+* **Linux:**
+
+  :file:`/home/<USER_NAME>/SimNIBS/examples`
+
+* **MacOS:**
+
+  :file:`/Users/<USER_NAME>/Applications/SimNIBS.app/examples`
 
 Further Reading
 ----------------
