@@ -687,9 +687,8 @@ def reporthook(blocknum, blocksize, totalsize):
 def download_extra_coils():
     import urllib.request
     import zipfile
-    version = '1.0'
-    url = f'https://github.com/simnibs/simnibs-coils/archive/v{version}.zip'
-    # NOTICE: We can replace "v1.0" by whichever
+    version = 'master'
+    url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
     print('Donwloading extra coil files, this might take some time')
     with tempfile.NamedTemporaryFile() as tmpf:
         urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
