@@ -690,24 +690,24 @@ def download_extra_coils():
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
     print('Donwloading extra coil files, this might take some time')
-    with tempfile.NamedTemporaryFile() as tmpf:
-        urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
-        with zipfile.ZipFile(tmpf) as z:
-            z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
-
-        src = os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}')
-        dest = os.path.join(SIMNIBSDIR, 'ccd-files')
-        #TODO: Fix this
-        for f in glob.glob(os.path.join(src, '*')):
-            d = os.path.join(dest, os.path.basename(f))
-            if os.path.isdir(d):
-                shutil.rmtree(d)
-            if os.path.isfile(d):
-                os.remove(d)
-            shutil.move(f, d)
-
-        shutil.rmtree(
-            os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
+    with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
+        tmpname = tmpf.name
+    
+    urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
+    with zipfile.ZipFile(tmpname) as z:
+        z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
+    os.remove(tmpname)
+    src = os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}')
+    dest = os.path.join(SIMNIBSDIR, 'ccd-files')
+    for f in glob.glob(os.path.join(src, '*')):
+        d = os.path.join(dest, os.path.basename(f))
+        if os.path.isdir(d):
+            shutil.rmtree(d)
+        if os.path.isfile(d):
+            os.remove(d)
+        shutil.move(f, d)
+    shutil.rmtree(
+        os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
 
 def run_tests(args):
     ''' run tests on pytest '''
