@@ -665,24 +665,16 @@ def activator_setup(install_dir):
 
 
 def reporthook(blocknum, blocksize, totalsize):
-    # from https://stackoverflow.com/questions/13881092/download-progressbar-for-python-3
     if totalsize > 0:
         nblocks = totalsize // blocksize
         frac = nblocks // 10
         if blocknum % frac == 0:
-            print(f'{blocknum/nblocks:.0%}')
-    '''
-    readsofar = blocknum * blocksize
-    if totalsize > 0:
-        percent = readsofar * 1e2 / totalsize
-        s = "\r%5.1f%% %*d / %d" % (
-            percent, len(str(totalsize)), readsofar, totalsize)
-        sys.stdout.write(s)
-        if readsofar >= totalsize: # near the end
-            sys.stdout.write("\n")
-    else: # total size is unknown
-        sys.stdout.write("read %d\n" % (readsofar,))
-    '''
+            print(f'{blocknum/nblocks:.0%}', flush=True)
+    else:
+        b30 = int(30e6/blocksize)
+        if blocknum % b30 == 0:
+            read = (blocknum * blocksize) / 1e6
+            print(f'{read:.1f} MB', flush=True)
 
 def download_extra_coils():
     import urllib.request
