@@ -16,7 +16,9 @@ A SimNIBS workflow consists of three main parts:
 
 .. centered:: :ref:`Install SimNIBS <simnibs_installer>`
 
-.. centered:: :ref:`Tutorial <tutorial>`
+.. centered:: `Download the Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_
+
+.. centered:: :ref:`Follow the Tutorial <tutorial>`
 
 .. image:: images/simnibs_frontpage.png
 
@@ -27,6 +29,7 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
 
 .. note:: When you publish results based on SimNIBS, please :ref:`cite our papers <publications>`
 .. warning:: SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition
+
 
 News
 ======

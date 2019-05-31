@@ -3,11 +3,12 @@
 Setting up and Running Simulations
 ===================================
 
-This tutorial is based on the example data set. Please download it before continue.
+This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_.
+Please download it before continuing
 
 Starting the GUI and selecting a Head Model
 --------------------------------------------
-1. Launch the Graphical User Interface (GUI) from the Start Menu (Windows) or by typing on a terminal window
+1. Launch the Graphical User Interface (GUI) from the Start Menu or by typing on a terminal window
 
   .. code-block:: bash
   
