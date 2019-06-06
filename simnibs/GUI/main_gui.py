@@ -1338,11 +1338,11 @@ class Position_GUI(QtWidgets.QDialog):
             self.eeg_pos_selector.setCurrentIndex(0)
             self.eeg_pos_selector.setEnabled(False)
         else:
-            # Sort using the Y parameters
             coords = np.array(self.glHeadModel.eeg_coordinates)
-            order = np.argsort(coords[:, 1])[::-1]
-            self.glHeadModel.eeg_names = [self.glHeadModel.eeg_names[i] for i in order]
-            self.glHeadModel.eeg_coordinates = [self.glHeadModel.eeg_coordinates[i] for i in order]
+            eeg_names = np.array(self.glHeadModel.eeg_names)
+            order = np.argsort(eeg_names)
+            self.glHeadModel.eeg_names = eeg_names[order].tolist()
+            self.glHeadModel.eeg_coordinates = coords[order].tolist()
             self.el_coords = [None] + list(self.glHeadModel.eeg_coordinates)
             self.eeg_pos_selector.clear()
             self.eeg_pos_selector.addItems([None] + self.glHeadModel.eeg_names)
