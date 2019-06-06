@@ -1591,7 +1591,7 @@ class ConductivitiesGui (QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
 
         cond_type_CBox = QtWidgets.QComboBox()
-        cond_type_CBox.addItems(['scalar','volume normalized','direct maping','mean conductivity'])
+        cond_type_CBox.addItems(['scalar','volume normalized','direct mapping','mean conductivity'])
         cond_type_CBox.currentIndexChanged.connect(self.changeCondType)
         if self.simulist.anisotropy_type == 'vn':
             cond_type_CBox.setCurrentIndex(1)
