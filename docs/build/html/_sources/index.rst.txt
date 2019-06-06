@@ -48,5 +48,3 @@ News
    contributors
    publications
    changelog
-   internal/internal.rst
-
