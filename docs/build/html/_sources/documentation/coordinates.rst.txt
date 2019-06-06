@@ -9,21 +9,21 @@ Definitions
 
 Coordinates in SimNIBS are **always world coordinates in subject space**. Coordinates are given in **millimiters** and along *x*, *y* and *z* axis.
 
-The origin and the alignment of the axes can vary in head models ran with :ref:`headreco <headreco_docs>`. In head models ran with :ref:`mri2mesh <mri2mesh_docs>`, the coordinates are based on the conform coordinate system.
+The origin and the alignment of the axes can vary in head models ran with :ref:`headreco <headreco_docs>`. In head models ran with :ref:`mri2mesh <mri2mesh_docs>`, the coordinates are based on the conform coordinate system based on FreeSurfer.
 
 
 Voxel to SimNIBS Coordinates
 -----------------------------
 
-The head meshing procedures create a NifTI file called :file:`m2m_{subID}/T1fs_conform.nii.gz`. This file contains the input T1 image of the subject with a changed header such that the world coordinates reflect those used by SimNIBS.
+The head meshing procedures create a NifTI file called :file:`m2m_{subID}/T1fs_conform.nii.gz`. This file contains the input T1 image of the subject with a  header such that the world coordinates reflect those used by SimNIBS.
 
-In :ref:`headreco <headreco_docs>`, you can avoid re-sampling to conformed space by setting the :code:`-d no-conform` option. This way, SimNIBS will use the same coordinate system as the input NifTI file.
+Please notice that :ref:`mri2mesh <mri2mesh_docs>` changes the header compared to the original T1 input image, while :ref:`headreco <headreco_docs>` does not change it by default.
 
 
 MNI Transformations
 ----------------------
 
-During head meshing, SimNIBS calculates, 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the :file:`m2m_{subID}/toMNI/` folder.
+During head meshing, SimNIBS calculates 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the :file:`m2m_{subID}/toMNI/` folder.
 SimNIBS uses these transformations when transforming simulation results to MNI space (see the :ref:`sim_opt` and :ref:`map_to_mni attribute <session_doc>`) as well as in the command line utilities
 
 * :ref:`mni2subject<mni2subject_docs>`, to transform data in MNI space to subject space.

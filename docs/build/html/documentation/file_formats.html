@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>File Formats in SimNIBS &#8212; SimNIBS 3.0b8 documentation</title>
+    <title>File Formats in SimNIBS &#8212; SimNIBS 3.0b9 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -56,7 +56,7 @@
 This means that the head head is represented as a set of <em>Nodes</em> and <em>Elements</em>.</p>
 <ul class="simple">
 <li><p>The <em>Nodes</em> are points located in the 3-dimensional volume.</p></li>
-<li><p>The <em>Elements</em> are triangles and tetrahedra. They are defined using 3 nodes (triangles) or 4 nodes(tetrahedra).</p></li>
+<li><p>The <em>Elements</em> are triangles and tetrahedra. They are defined using 3 nodes (triangles) or 4 nodes (tetrahedra).</p></li>
 </ul>
 <p>This type of format is highly advantageous for Finite Element (FEM) calculations, especially for complex geometries such as the human head.</p>
 <p>Head Meshes are stored in <strong>binary gmsh version 2 format</strong>, as described in the <a class="reference external" href="http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2">Gmsh documentation</a>.
@@ -85,10 +85,10 @@ However, the gradient operation is defined element-wise, and not node-wise.</p>
 <p>The surfaces themselves are stored in different places depend on how the head model was
 created:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> with <code class="code docutils literal notranslate"><span class="pre">--cat</span></code> option (including the example dataset):</p>
+<li><p><a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>:</p>
 <ul>
 <li><p>Subject surfaces: <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/segment/cat/surf/</span></code></p></li>
-<li><p>FsAverage surfaces: <code class="file docutils literal notranslate"><span class="pre">$SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/</span></code></p></li>
+<li><p>FsAverage surfaces: <code class="file docutils literal notranslate"><span class="pre">SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/</span></code></p></li>
 <li><p>Format: gifti</p></li>
 <li><p>Functions:</p>
 <ul>

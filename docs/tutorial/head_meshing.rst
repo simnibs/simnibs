@@ -69,14 +69,11 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
    * - Reference
      - `Nielsen et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_
      - `Windhoff et al., 2013 <https://doi.org/10.1002/hbm.21479>`_
-   * - Documentation
-     - :ref:`headreco_docs`
-     - :ref:`mri2mesh_docs`
 
 \
   Before running, please read the documentation of the tool of your choice.
 
-4. Check the segmentation. This can be done with :code:`headreco check` for models ran with *headreco* or :code:`mri2mesh -c` for models ran with *mri2mesh*. Please see the documentation for your tool of choice for more information. With *FreeSurfer* installed, this command opens two *freeview* windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For *headreco*, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.
+4. Check the segmentation. This can be done with :code:`headreco check <SUB_ID>` for models ran with *headreco* or :code:`mri2mesh -c <SUB_ID>` for models ran with *mri2mesh*. Please see the documentation for your tool of choice for more information. With *FreeSurfer* installed, this command opens two *freeview* windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For *headreco*, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.
 
 .. figure:: ../images/check_segmentation_good.png
 

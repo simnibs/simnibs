@@ -4,36 +4,48 @@ Scripting Simulations
 ======================
 
 This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_.
-Please download it before continuing
+Please download it before continuing.
 
 SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running simulations.
-In both, we use a set of nested structures to create to define the simulation, and then
-use the *run_simnibs* function to run the simulation.
+In both, we use a set of nested structures to define the simulation, and then use the *run_simnibs* function to run the simulation.
 
 
 Running Scripts
 -----------------
 
-* *Python*
+Python
+''''''
 
-  Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the correct *Python* interpreter.
+Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the correct *Python* interpreter.
 
+MATLAB
+''''''
 
-* *MATLAB*
-
-  Add The SimNIBS *MATLAB* functions to the *MATLAB* path. In default installations, the folder can be found in
+Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installations, you can call
     
-    * **Windows:**
+* **Windows:**
 
-      :file:`C:\\Users\\<USER_NAME>\\AppData\\Local\\SimNIBS\\matlab`
+  .. code-block:: matlab
 
-    * **Linux:**
+    addpath('C:\Users\<USER_NAME>\AppData\Local\SimNIBS\matlab')
 
-      :file:`/home/<USER_NAME>/SimNIBS/matlab`
+\
 
-    * **MacOS**
+* **Linux:**
 
-      :file:`/Users/<USER_NAME>/Applications/SimNIBS.app/matlab`
+  .. code-block:: matlab
+
+    addpath('~/SimNIBS/matlab')`
+
+\
+
+* **MacOS**
+
+  .. code-block:: matlab
+
+    addpath('~/Applications/SimNIBS.app/matlab')`
+
+\
 
 
 Starting a SESSION and Selecting a Head Mesh
@@ -154,7 +166,7 @@ more coil position, now with the coil pointing towards Cz.
 
 
 
-.. seealso:: Coil positions are set through the  :ref:`position_doc` structure. It also allows you to set stimulator intensity (dI/dt values) an define coil positions in other ways. Please see the :ref:`documentation <position_doc>` for more information.
+.. seealso:: Coil positions are set through the  :ref:`position_doc` structure. It also allows you to set stimulator intensity (dI/dt values) and define coil positions in other ways. Please see the :ref:`documentation <position_doc>` for more information.
 
 
 Setting up a tDCS Simulation
@@ -258,7 +270,7 @@ Now we need to configure the anode. Let's set a 30x30mm circular electrode over 
      s.poslist{2}.electrode(2).centre = 'C4';
 
 
-.. seealso:: Electrodes are defined through the highly flexible :ref:`electrode_struct_doc` structure. Please see the :ref:`documntation <electrode_struct_doc>` for more information. 
+.. seealso:: Electrodes are defined through the highly flexible :ref:`electrode_struct_doc` structure. Please see the :ref:`documentation <electrode_struct_doc>` for more information. Please note that it is also possible to connect multiple electrodes to a single channel, which is not possible to do in the GUI.
 
 Running Simulations
 ---------------------

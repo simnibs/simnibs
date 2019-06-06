@@ -32,6 +32,10 @@ Current Contributors
    * Help with :ref:`headreco_docs` (2.1)
    * Creation of the new MNI head mesh (2.1)
 
+
+* Konstantin Weise and Thomas Knoesche
+   * Implementation (together with G. B. Saturnino) of the UQ functionality (3.0)
+
 Former Contributors
 ---------------------
 * Mirko Windhoff
@@ -39,7 +43,7 @@ Former Contributors
 
 * Alex Opitz
    * Implementation of first diffusion-to-conductivity mapping approach
-   * Co-contributor to many other parts of the first version
+   * Co-contributor to many other parts in SimNIBS 1.0
    * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
 
 * Andre Antunes

@@ -4,10 +4,10 @@
 SimNIBS 
 =======
 
-**DOCUMENTATION FOR THE 3.0 BETA VERSION**
 
 **SimNIBS** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
+SimNIBS is being developed at ... logos here with support of our international collaborators
 
 A SimNIBS workflow consists of three main parts:
    * :ref:`Generate high-quality head models <head_modeling_tutorial>` from MR images
@@ -24,6 +24,8 @@ A SimNIBS workflow consists of three main parts:
 
 
 SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed under :download:`GPL v3 <../LICENSE.txt>`.
+
+funding info...
 
 .. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
 

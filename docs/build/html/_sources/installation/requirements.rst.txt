@@ -3,12 +3,6 @@
 Requirements
 ============
 
-Hardware
---------
-
-  * 3 GB disk space
-  * 6GB of memory (8GB are recommended)
-
 Operating Systems
 -----------------
 
@@ -28,10 +22,9 @@ MacOS
 SimNIBS has been tested on MacOS 10.14 (Mojave)
 
 
-Software Dependencies
------------------------
-SimNIBS does not require any external dependencies for running simulations and post-processing operations on existing head models.
+Hardware
+--------
 
-However, both of our pipelines for building head models (:ref:`headreco_docs` and
-:ref:`mri2mesh_docs`) require external dependencies. Please see :ref:`optional_deps` for
-more information.
+  * 3 GB disk space
+  * 6GB of memory (8GB are recommended)
+

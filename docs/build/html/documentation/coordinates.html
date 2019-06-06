@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Coordinates in SimNIBS &#8212; SimNIBS 3.0b8 documentation</title>
+    <title>Coordinates in SimNIBS &#8212; SimNIBS 3.0b9 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -53,16 +53,16 @@
 <div class="section" id="definitions">
 <h2>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h2>
 <p>Coordinates in SimNIBS are <strong>always world coordinates in subject space</strong>. Coordinates are given in <strong>millimiters</strong> and along <em>x</em>, <em>y</em> and <em>z</em> axis.</p>
-<p>The origin and the alignment of the axes can vary in head models ran with <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. In head models ran with <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, the coordinates are based on the conform coordinate system.</p>
+<p>The origin and the alignment of the axes can vary in head models ran with <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. In head models ran with <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, the coordinates are based on the conform coordinate system based on FreeSurfer.</p>
 </div>
 <div class="section" id="voxel-to-simnibs-coordinates">
 <h2>Voxel to SimNIBS Coordinates<a class="headerlink" href="#voxel-to-simnibs-coordinates" title="Permalink to this headline">¶</a></h2>
-<p>The head meshing procedures create a NifTI file called <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code>. This file contains the input T1 image of the subject with a changed header such that the world coordinates reflect those used by SimNIBS.</p>
-<p>In <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>, you can avoid re-sampling to conformed space by setting the <code class="code docutils literal notranslate"><span class="pre">-d</span> <span class="pre">no-conform</span></code> option. This way, SimNIBS will use the same coordinate system as the input NifTI file.</p>
+<p>The head meshing procedures create a NifTI file called <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code>. This file contains the input T1 image of the subject with a  header such that the world coordinates reflect those used by SimNIBS.</p>
+<p>Please notice that <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> changes the header compared to the original T1 input image, while <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> does not change it by default.</p>
 </div>
 <div class="section" id="mni-transformations">
 <h2>MNI Transformations<a class="headerlink" href="#mni-transformations" title="Permalink to this headline">¶</a></h2>
-<p>During head meshing, SimNIBS calculates, 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> folder.
+<p>During head meshing, SimNIBS calculates 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> folder.
 SimNIBS uses these transformations when transforming simulation results to MNI space (see the <a class="reference internal" href="gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a> and <a class="reference internal" href="sim_struct/session.html#session-doc"><span class="std std-ref">map_to_mni attribute</span></a>) as well as in the command line utilities</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="command_line/mni2subject.html#mni2subject-docs"><span class="std std-ref">mni2subject</span></a>, to transform data in MNI space to subject space.</p></li>

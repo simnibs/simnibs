@@ -4,8 +4,8 @@ Installation
 .. toctree::
    :maxdepth: 2
 
-   requirements
    simnibs_installer
+   requirements
    optional
    uninstall
    conda

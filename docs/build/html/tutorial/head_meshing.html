@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Creating Head Models &#8212; SimNIBS 3.0b8 documentation</title>
+    <title>Creating Head Models &#8212; SimNIBS 3.0b9 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -116,10 +116,6 @@
 <td><p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., 2018</a></p></td>
 <td><p><a class="reference external" href="https://doi.org/10.1002/hbm.21479">Windhoff et al., 2013</a></p></td>
 </tr>
-<tr class="row-odd"><td><p>Documentation</p></td>
-<td><p><a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a></p></td>
-<td><p><a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a></p></td>
-</tr>
 </tbody>
 </table>
 <dl class="simple">
@@ -127,7 +123,7 @@
 </dd>
 </dl>
 <ol class="arabic simple" start="4">
-<li><p>Check the segmentation. This can be done with <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">check</span></code> for models ran with <em>headreco</em> or <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">-c</span></code> for models ran with <em>mri2mesh</em>. Please see the documentation for your tool of choice for more information. With <em>FreeSurfer</em> installed, this command opens two <em>freeview</em> windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For <em>headreco</em>, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.</p></li>
+<li><p>Check the segmentation. This can be done with <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">check</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>headreco</em> or <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">-c</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>mri2mesh</em>. Please see the documentation for your tool of choice for more information. With <em>FreeSurfer</em> installed, this command opens two <em>freeview</em> windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For <em>headreco</em>, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.</p></li>
 </ol>
 <div class="figure align-center" id="id6">
 <img alt="../_images/check_segmentation_good.png" src="../_images/check_segmentation_good.png" />

@@ -175,7 +175,7 @@ Setting Simulation Options
   * **vector E**:
       Electric field vector
   * **norm E**:
-      Norm of the electric field
+      Norm (or strength) of the electric field
   * **vector J**:
       Current density vector
   * **norm J**:

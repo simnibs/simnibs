@@ -133,6 +133,17 @@ To visualize results in MATLAB, add the :file:`<SIMNIBS_INSTALL_DIR>/matlab/` fo
 
 \
 
+
+or use
+
+.. code-block:: matlab
+
+   mesh_show_surface
+
+\
+
+to have more control over the visualization.
+
 Further Reading
 ----------------
 For more information on visualization and simulation output, please see the `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_.

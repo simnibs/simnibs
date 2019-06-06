@@ -10,7 +10,7 @@ SimNIBS' head models are **meshes** (*.msh* files).
 This means that the head head is represented as a set of *Nodes* and *Elements*.
 
 * The *Nodes* are points located in the 3-dimensional volume.
-* The *Elements* are triangles and tetrahedra. They are defined using 3 nodes (triangles) or 4 nodes(tetrahedra).
+* The *Elements* are triangles and tetrahedra. They are defined using 3 nodes (triangles) or 4 nodes (tetrahedra).
 
 This type of format is highly advantageous for Finite Element (FEM) calculations, especially for complex geometries such as the human head.
 
@@ -47,10 +47,10 @@ When fields are mapped to the middle gray matter surface, either on the subject 
 The surfaces themselves are stored in different places depend on how the head model was
 created:
 
-* :ref:`headreco_docs` with :code:`--cat` option (including the example dataset):
+* :ref:`headreco_docs`:
 
   * Subject surfaces: :file:`m2m_{subID}/segment/cat/surf/`
-  * FsAverage surfaces: :file:`$SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/`
+  * FsAverage surfaces: :file:`SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/`
   * Format: gifti
   * Functions:
 

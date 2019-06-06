@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Scripting Simulations &#8212; SimNIBS 3.0b8 documentation</title>
+    <title>Scripting Simulations &#8212; SimNIBS 3.0b9 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -51,33 +51,43 @@
   <div class="section" id="scripting-simulations">
 <span id="scripting-tutorial"></span><h1>Scripting Simulations<a class="headerlink" href="#scripting-simulations" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial is based on the <a class="reference external" href="https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip">Example Dataset</a>.
-Please download it before continuing</p>
+Please download it before continuing.</p>
 <p>SimNIBS offers both <em>Python</em> and <em>MATLAB</em> interfaces for setting up and running simulations.
-In both, we use a set of nested structures to create to define the simulation, and then
-use the <em>run_simnibs</em> function to run the simulation.</p>
+In both, we use a set of nested structures to define the simulation, and then use the <em>run_simnibs</em> function to run the simulation.</p>
 <div class="section" id="running-scripts">
 <h2>Running Scripts<a class="headerlink" href="#running-scripts" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p><em>Python</em></p>
+<div class="section" id="python">
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
 <p>Run SimNIBS <em>Python</em> scripts using the <a class="reference internal" href="../documentation/command_line/simnibs_python.html#simnibs-python-cli"><span class="std std-ref">simnibs_python</span></a> command so that your scripts run in the correct <em>Python</em> interpreter.</p>
-</li>
-<li><p><em>MATLAB</em></p>
-<p>Add The SimNIBS <em>MATLAB</em> functions to the <em>MATLAB</em> path. In default installations, the folder can be found in</p>
-<blockquote>
-<div><ul>
+</div>
+<div class="section" id="matlab">
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
+<p>Add the SimNIBS <em>MATLAB</em> functions to the <em>MATLAB</em> path. In default installations, you can call</p>
+<ul>
 <li><p><strong>Windows:</strong></p>
-<p><code class="file docutils literal notranslate"><span class="pre">C:\Users\&lt;USER_NAME&gt;\AppData\Local\SimNIBS\matlab</span></code></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">addpath</span><span class="p">(</span><span class="s">&#39;C:\Users\&lt;USER_NAME&gt;\AppData\Local\SimNIBS\matlab&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </li>
+</ul>
+<p></p>
+<ul>
 <li><p><strong>Linux:</strong></p>
-<p><code class="file docutils literal notranslate"><span class="pre">/home/&lt;USER_NAME&gt;/SimNIBS/matlab</span></code></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">addpath</span><span class="p">(</span><span class="s">&#39;~/SimNIBS/matlab&#39;</span><span class="p">)</span>`
+</pre></div>
+</div>
 </li>
+</ul>
+<p></p>
+<ul>
 <li><p><strong>MacOS</strong></p>
-<p><code class="file docutils literal notranslate"><span class="pre">/Users/&lt;USER_NAME&gt;/Applications/SimNIBS.app/matlab</span></code></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">addpath</span><span class="p">(</span><span class="s">&#39;~/Applications/SimNIBS.app/matlab&#39;</span><span class="p">)</span>`
+</pre></div>
+</div>
 </li>
 </ul>
-</div></blockquote>
-</li>
-</ul>
+<p></p>
+</div>
 </div>
 <div class="section" id="starting-a-session-and-selecting-a-head-mesh">
 <h2>Starting a SESSION and Selecting a Head Mesh<a class="headerlink" href="#starting-a-session-and-selecting-a-head-mesh" title="Permalink to this headline">¶</a></h2>
@@ -183,7 +193,7 @@ more coil position, now with the coil pointing towards Cz.</p>
 </ul>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Coil positions are set through the  <a class="reference internal" href="../documentation/sim_struct/position.html#position-doc"><span class="std std-ref">POSITION</span></a> structure. It also allows you to set stimulator intensity (dI/dt values) an define coil positions in other ways. Please see the <a class="reference internal" href="../documentation/sim_struct/position.html#position-doc"><span class="std std-ref">documentation</span></a> for more information.</p>
+<p>Coil positions are set through the  <a class="reference internal" href="../documentation/sim_struct/position.html#position-doc"><span class="std std-ref">POSITION</span></a> structure. It also allows you to set stimulator intensity (dI/dt values) and define coil positions in other ways. Please see the <a class="reference internal" href="../documentation/sim_struct/position.html#position-doc"><span class="std std-ref">documentation</span></a> for more information.</p>
 </div>
 </div>
 <div class="section" id="setting-up-a-tdcs-simulation">
@@ -279,7 +289,7 @@ more coil position, now with the coil pointing towards Cz.</p>
 </ul>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Electrodes are defined through the highly flexible <a class="reference internal" href="../documentation/sim_struct/electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE</span></a> structure. Please see the <a class="reference internal" href="../documentation/sim_struct/electrode.html#electrode-struct-doc"><span class="std std-ref">documntation</span></a> for more information.</p>
+<p>Electrodes are defined through the highly flexible <a class="reference internal" href="../documentation/sim_struct/electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE</span></a> structure. Please see the <a class="reference internal" href="../documentation/sim_struct/electrode.html#electrode-struct-doc"><span class="std std-ref">documentation</span></a> for more information. Please note that it is also possible to connect multiple electrodes to a single channel, which is not possible to do in the GUI.</p>
 </div>
 </div>
 <div class="section" id="running-simulations">
@@ -293,7 +303,7 @@ simulations</p>
 After the simulations are finished running the results can be found in the newly created
 <code class="file docutils literal notranslate"><span class="pre">tutorial/</span></code> folder.</p>
 <ul class="simple">
-<li><p>Download the full <a class="reference download internal" download="" href="../_downloads/4b4a7159690c6ec4fae46edded7ddc25/tutorial_python.py"><code class="xref download docutils literal notranslate"><span class="pre">Python</span></code></a> and <a class="reference download internal" download="" href="../_downloads/bcd767317cd01f67b8809250baf901ec/tutorial_matlab.m"><code class="xref download docutils literal notranslate"><span class="pre">MATLAB</span></code></a> scripts.</p></li>
+<li><p>Download the full <a class="reference download internal" download="" href="../_downloads/0f76ed3067a3e6e9c122f58ec2a53d22/tutorial_python.py"><code class="xref download docutils literal notranslate"><span class="pre">Python</span></code></a> and <a class="reference download internal" download="" href="../_downloads/d466e9226875feb519b904019bfb9a0e/tutorial_matlab.m"><code class="xref download docutils literal notranslate"><span class="pre">MATLAB</span></code></a> scripts.</p></li>
 </ul>
 </div>
 <div class="section" id="more-examples">

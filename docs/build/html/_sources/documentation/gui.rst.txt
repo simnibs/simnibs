@@ -8,9 +8,9 @@ Main GUI
 
 .. image:: ../images/doc_guimain.png
 
-1. Path to the *m2m_subid* folder, created during the head segmentation. It is filled out automatically if the Head Mesh (2) is correctly specified. For the *ernie* head model in the example dataset, it is :file:`simnibs2.1_examples/ernie/m2m_ernie/`
-2. Name of head mesh file. It is filled out automatically if m2m folder is correctly specified. For the *ernie* head model, this is :file:`simnibs2.1_examples/ernie/ernie.msh`
-3. Folder where the simulations will be saved. Only one simulation can be stored per folder and SimNIBS will raise an error when it find results from another simulation already stored in this folder. A folder name is automatically created if either Head Mesh or m2m folder are specified. For ernie, this would default to :file:`simnibs2.1_examples/ernie/simnibs_simulation/`
+1. Path to the *m2m_<subid>* folder, created during the head segmentation. It is filled out automatically if the Head Mesh (2) is correctly specified. For the *ernie* head model in the example dataset, it is :file:`simnibs_examples/ernie/m2m_ernie/`
+2. Name of the head mesh file. It is filled out automatically if the m2m Folder is correctly specified. For the *ernie* head model, this is :file:`simnibs_examples/ernie/ernie.msh`
+3. Folder where the simulations will be saved. Only one simulation can be stored per folder and SimNIBS will raise an error when it find results from another simulation already stored in this folder. A folder name is automatically created if either Head Mesh or m2m Folder are specified. For ernie, this would default to :file:`simnibs_examples/ernie/simnibs_simulation/`
 4. The tabs are used to specify the details of the TMS and tDCS simulations.
 5. Add a new tDCS **Poslist** to set up a tDCS simulation.
 6. Adds a new TMS **Poslist** to set up a simulation with one ore more TMS coil positions.
@@ -41,7 +41,7 @@ tDCS Tab
 
 .. image:: ../images/doc_guitdcs.png
 
-1. Current value through each electrode, in mA. Positive values for anodes, negative for Cathodes. The currents of all electrodes have to add up to zero.
+1. Current value through each electrode, in mA. Positive values for anodes, negative for cathodes. The currents of all electrodes have to add up to zero.
 2. Electrode position and direction.  Click twice to open a selection window and then click on the mesh to define the electrode center and a further position for setting the electrode orientation. An (arbitrary) orientation has also to be set in case of round electrodes. See the tDCS Tutorial for more information.
 3. Electrode shape. Click twice to open the window to define the electrode shape.
 4. Name of Electrode (optional)
@@ -59,7 +59,7 @@ Position Window
 
 1. Drop-down menu to select a position from an EEG cap
 2. Coordinates of the TMS coil or tDCS electrode center
-3. The status of his box determines which coordinates are set when clicking on the head model. Unchecked:  Position of the coil or electrode center; Checked: Reference position to determine the coil or electrode orientation.
+3. The status of this box determines which coordinates are set when clicking on the head model. Unchecked:  Position of the coil or electrode center; Checked: Reference position to determine the coil or electrode orientation.
 4.  Coordinates of the reference position, used to determine the orientation of the electrode (tDCS) or coil (TMS). Specifically, the “y” axis is defined to be oriented according to the line from the center position to the reference position. Please note that the coil or electrode orientation relative to the scalp surface will be automatically determined (the “z” axis of the coil or electrode is automatically oriented to be orthogonal to the local scalp surface).
 5. Projects the current position on the scalp. This can be used if, for example, you have a set of coordinates in the brain and want to find the closest positions on the scalp.
 
@@ -81,6 +81,8 @@ Electrode Window
   * Simple: Only a gel layer is modeled.
   * Electrode + Gel: A silicon rubber layer and a gel layer are modeled. The   thickness of each layer can be set independently.
   * Electrode + Sponge: A silicon rubber layer is modeled inside a sponge   soaked in a saline solution. The silicon rubber is placed in the middle of the   sponge. The dimensions of the sponge cannot be smaller than those of the   electrode.
+
+  See `Saturnino et al. 2015 <https://doi.org/10.1016/j.neuroimage.2015.06.067>`_ for more details
 
 3. Electrode connector (or plug). The user has a choice on whether or not to model the area where the  electrode is connected to the cable. If it is modeled, its position in relation  to the surface as well as its shape can be set.
 

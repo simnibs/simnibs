@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Group Analysis &#8212; SimNIBS 3.0b8 documentation</title>
+    <title>Group Analysis &#8212; SimNIBS 3.0b9 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -51,19 +51,23 @@
   <div class="section" id="group-analysis">
 <span id="group-tutorial"></span><h1>Group Analysis<a class="headerlink" href="#group-analysis" title="Permalink to this headline">¶</a></h1>
 <p>SimNIBS supports group analysis of electric fields in both <em>FsAverage</em> and <em>MNI</em> spaces.</p>
-<p>In this example, we will simulate the average electric field for a simple tDCS montage
-across five subjects using the <em>FsAverage</em> space</p>
+<p>In this example, we will simulate the average electric field for a simple tDCS montage across five subjects using the <em>FsAverage</em> space.</p>
 <div class="section" id="example-dataset">
 <h2>Example Dataset<a class="headerlink" href="#example-dataset" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://osf.io/egshq/download">Click here to download the example dataset for group analysis</a>.</p>
+<p><a class="reference external" href="https://osf.io/egshq/download">Click here to download the example dataset for group analyses</a>.</p>
 <p>This example dataset is composed of a subgroup of a cohort available at <a class="reference external" href="https://openneuro.org/datasets/ds000171">OpenfMRI</a>. The data was processed in SimNIBS 2.1 using <a class="reference internal" href="../../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. For more information, please see the <a class="reference external" href="https://osf.io/ah5eu/">OSF repository</a> and <a class="reference external" href="https://doi.org/10.1101/500314">Saturnino et al., 2018</a>.</p>
 <p>In this example, we have five subjects, named <code class="file docutils literal notranslate"><span class="pre">sub01</span></code>, <code class="file docutils literal notranslate"><span class="pre">sub09</span></code>,
 <code class="file docutils literal notranslate"><span class="pre">sub10</span></code>, <code class="file docutils literal notranslate"><span class="pre">sub12</span></code>, and <code class="file docutils literal notranslate"><span class="pre">sub15</span></code>.</p>
 </div>
 <div class="section" id="objective">
 <h2>Objective<a class="headerlink" href="#objective" title="Permalink to this headline">¶</a></h2>
-<p>Supposed we applied tDCS on the five subjects using an anode over C3 and a cathode over AF4.
-We want to obtain the mean and standard deviation of the normal component of the electric field (that the incoming or outgoing electric field component) across all subjects, in all positions of the <em>FsAverage</em> template.</p>
+<p>Suppose we apply tDCS on the five subjects using an anode over C3 and a cathode over AF4.
+We want to obtain the mean and standard deviation of the normal component of the electric field (that is, the incoming or outgoing electric field component) in the middle gray matter surface across all subjects.</p>
+<div class="figure align-center" id="id3">
+<img alt="../../_images/tutorial_normal.png" src="../../_images/tutorial_normal.png" />
+<p class="caption"><span class="caption-text">Norm (top) and Norma (bottom) of the electric field, from <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et al. 2019</a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</div>
+<p></p>
 </div>
 <div class="section" id="set-up-and-run-simulations">
 <h2>Set up and Run Simulations<a class="headerlink" href="#set-up-and-run-simulations" title="Permalink to this headline">¶</a></h2>
@@ -168,8 +172,8 @@ We want to obtain the mean and standard deviation of the normal component of the
 </div>
 </div>
 </div>
-<div class="section" id="calculate-statistics">
-<h2>Calculate Statistics<a class="headerlink" href="#calculate-statistics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="calculate-mean">
+<h2>Calculate Mean<a class="headerlink" href="#calculate-mean" title="Permalink to this headline">¶</a></h2>
 <p>When the simulations are over, we need to collect their results to calculate an average. In SimNIBS, we can do it either in Python or MATLAB.
 Please notice that, while for setting up simulations Python and MATLAB share a similar interface, in post-processing the interfaces can be very different.</p>
 <div class="section" id="id1">
