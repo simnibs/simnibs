@@ -884,7 +884,6 @@ def install(install_dir, force, silent,
             setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     scripts_dir = os.path.join(install_dir, 'bin')
-    copy_scripts(scripts_dir)
     if copy_gmsh_options:
         setup_gmsh_options(force, silent)
     if add_to_path:
@@ -909,7 +908,7 @@ def install(install_dir, force, silent,
     if sys.platform == 'win32':
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
-
+    copy_scripts(scripts_dir)
 
 
 def uninstall(install_dir):
