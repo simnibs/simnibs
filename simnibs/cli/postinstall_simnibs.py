@@ -901,10 +901,14 @@ def install(install_dir, force, silent,
         links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
-    run_tests([
+    test_call = [
         os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
         '-k', 'TestSolve', '-q', '-W', 'ignore'
-    ])
+    ]
+    run_tests(test_call)
+    if sys.platform == 'win32':
+        pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
+        subprocess.run([pythonw, '-m', 'pytest'] + test_call)
 
 
 
