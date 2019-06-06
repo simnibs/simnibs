@@ -382,6 +382,10 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             os.path.join(shortcut_folder, 'SimNIBS Directory'),
             os.path.abspath(os.path.join(scripts_dir, '..')),
         )
+        _create_shortcut(
+            os.path.join(shortcut_folder, 'SimNIBS Documentation'),
+            os.path.abspath(os.path.join(scripts_dir, '..', 'documentation', 'index.html')),
+        )
     if sys.platform == 'linux':
         subprocess.run(
             ['update-desktop-database',
