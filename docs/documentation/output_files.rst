@@ -1,3 +1,5 @@
+.. _output_files:
+
 Output Files
 =============
 

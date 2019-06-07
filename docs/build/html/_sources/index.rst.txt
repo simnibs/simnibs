@@ -42,11 +42,11 @@ A SimNIBS workflow consists of three main parts:
   </style>
   <div class="row">
   <div class="column">
-  SimNIBS is being developed at the Danish Research Centre for Magnetic Resonance (DRCMR) and the Technical University of Denmark (DTU), in collaboration with external partners
+  SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research Centre for Magnetic Resonance (DRCMR)</a> and the <a href="https://www.dtu.dk/english">Technical University of Denmark (DTU)</a>, in collaboration with external partners
   </div>
   <div class="column">
-  <img src="_static/DRCMR_logo.png" alt="DRCMR", height="70">
-  <img src="_static/DTU_logo.png" alt="DTU", height="70">
+  <a href="https://www.drcmr.dk"><img src="_static/DRCMR_logo.png" alt="DRCMR", height="70"></a>
+  <a href="https://www.dtu.dk/english"><img src="_static/DTU_logo.png" alt="DTU", height="70"></a>
   </div>
   </div>
 

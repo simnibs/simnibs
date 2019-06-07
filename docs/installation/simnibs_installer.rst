@@ -10,7 +10,7 @@ Windows
 -------
 1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
 
-2. Double click the :file:`install_simnibs_windows.exe` file
+2. Double click the :file:`install_simnibs_windows.exe` file. If a security warning shows up, click on *More info -> Run anyway*
 
 3. Select the desired version, accept the license and click *next*
 

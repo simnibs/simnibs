@@ -187,6 +187,8 @@ Setting Simulation Options
 
    Select **vector E** and **norm E**.
 
+.. _tutorial_aditional_options:
+
 3. And the  *Additional Options*
 
   * **Open in Gmsh**:
@@ -215,6 +217,34 @@ Running a Simulation
 
 Now, please go on to our tutorial on :ref:`visualization_tutorial`.
 
+Output Files
+-------------
+
+After the simulation is finished, the :file:`simnibs_simulation` directory will look like the following
+
+.. image:: ../images/tutorial_output_files.png
+   :align: center
+
+\
+
+The main files here are the :file:`.msh` files
+
+  * :file:`ernie_TDCS_1_scalar.msh`
+      With results of the tDCS simulation
+  * :file:`ernie_TMS_2-0001_Magstim_70mm_Fig8_nii_scalar.msh`
+      With results of the TMS simulation
+
+The folders
+   * :file:`fsavg_overlays`
+   * :file:`mni_volumes`
+   * :file:`subject_overlays`
+   * :file:`subject_volumes`
+
+Are only present if the corresponding :ref:`options <tutorial_aditional_options>` are
+selected.
+
+
+For a complete explanation of the output, please see :ref:`output_files`
 
 Further Reading
 ----------------

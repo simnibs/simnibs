@@ -225,7 +225,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <div><p>Select <strong>vector E</strong> and <strong>norm E</strong>.</p>
 </div></blockquote>
 </div></blockquote>
-<ol class="arabic simple" start="3">
+<ol class="arabic simple" id="tutorial-aditional-options" start="3">
 <li><p>And the  <em>Additional Options</em></p></li>
 </ol>
 <blockquote>
@@ -267,6 +267,39 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <img alt="../_images/tutorial_runsim.png" class="align-center" src="../_images/tutorial_runsim.png" />
 <p>2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and when finished a Gmsh window opens with the simulation results.</p>
 <p>Now, please go on to our tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p>
+</div>
+<div class="section" id="output-files">
+<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
+<p>After the simulation is finished, the <code class="file docutils literal notranslate"><span class="pre">simnibs_simulation</span></code> directory will look like the following</p>
+<img alt="../_images/tutorial_output_files.png" class="align-center" src="../_images/tutorial_output_files.png" />
+<p></p>
+<p>The main files here are the <code class="file docutils literal notranslate"><span class="pre">.msh</span></code> files</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code></dt><dd><p>With results of the tDCS simulation</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TMS_2-0001_Magstim_70mm_Fig8_nii_scalar.msh</span></code></dt><dd><p>With results of the TMS simulation</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>The folders</dt><dd><ul class="simple">
+<li><p><code class="file docutils literal notranslate"><span class="pre">fsavg_overlays</span></code></p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mni_volumes</span></code></p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">subject_overlays</span></code></p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">subject_volumes</span></code></p></li>
+</ul>
+</dd>
+</dl>
+<p>Are only present if the corresponding <a class="reference internal" href="#tutorial-aditional-options"><span class="std std-ref">options</span></a> are
+selected.</p>
+<p>For a complete explanation of the output, please see <a class="reference internal" href="../documentation/output_files.html#output-files"><span class="std std-ref">Output Files</span></a></p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>

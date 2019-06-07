@@ -13,10 +13,11 @@ Here we will give a walk-through of a few useful features in Gmsh.
 
 .. note:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS, you don't need to install it separately
 
-Starting `Gmsh <http://gmsh.info/>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Starting Gmsh
+~~~~~~~~~~~~~~
 
-Start Gmsh by double clicking in the :file:`ernie_TDCS_1_scalar.msh` file or typing in the terminal
+Gmsh automatically opens when a simulation is finished.
+Alternatively, you can start Gmsh by double clicking in the :file:`ernie_TDCS_1_scalar.msh` file or typing in the terminal
 
   .. code-block:: bash
   
