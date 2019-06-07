@@ -27,6 +27,7 @@ import stat
 import re
 import subprocess
 import tempfile
+import multiprocessing
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -685,7 +686,7 @@ def download_extra_coils():
     import zipfile
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
-    print('Donwloading extra coil files, this might take some time')
+    print('Donwloading extra coil files', flush=True)
     with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
         tmpname = tmpf.name
     
@@ -884,12 +885,13 @@ def install(install_dir, force, silent,
             setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     scripts_dir = os.path.join(install_dir, 'bin')
+    if extra_coils:
+        dl_coils_process = multiprocessing.Process(target=download_extra_coils)
+        dl_coils_process.start()
     if copy_gmsh_options:
         setup_gmsh_options(force, silent)
     if add_to_path:
         path_setup(scripts_dir, force, silent)
-    if extra_coils:
-        download_extra_coils()
     if add_shortcut_icons:
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:
@@ -908,6 +910,12 @@ def install(install_dir, force, silent,
     if sys.platform == 'win32':
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
+    if extra_coils:
+        dl_coils_process.join(timeout=20*60)
+        if dl_coils_process.is_alive():
+            dl_coils_process.terminate()
+            raise RuntimeError('Could not finish donwload coil files: timed out')
+
     copy_scripts(scripts_dir)
 
 
