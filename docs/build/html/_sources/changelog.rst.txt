@@ -1,6 +1,20 @@
 Changelog
 ===========
 
+3.0
+-----
+ * Major update to SimNIBS
+ * New integrated solver based on PETSc and Hypre with huge speed ups!
+ * New installation procedure
+ * Changed headreco call (:code:`-d no-conform` and CAT12 now standard)
+ * New coil models
+ * Moved to Python 3.7
+ * Updated documentation
+ * Uncertainty quantification support
+ * Improved results visualizations
+ * SimNIBS is now installable as a python package
+
+
 2.1.2 
 ---------
   * This upgrade focused on the MATLAB library for SimNIBS

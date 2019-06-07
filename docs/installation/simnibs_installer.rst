@@ -76,7 +76,7 @@ MacOS
 
 Testing the Installation
 '''''''''''''''''''''''''
-Open Spotlight and search for :code:`SimNIBS`
+Open the Launcher and search for :code:`SimNIBS`
 
 
 Updating SimNIBS

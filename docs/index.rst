@@ -7,44 +7,75 @@ SimNIBS
 
 **SimNIBS** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
-SimNIBS is being developed at ... logos here with support of our international collaborators
-
 A SimNIBS workflow consists of three main parts:
    * :ref:`Generate high-quality head models <head_modeling_tutorial>` from MR images
    * Set up and run simulation in the :ref:`graphical user interface <gui_tutorial>`, :ref:`MATLAB or Python<scripting_tutorial>`
    * :ref:`Visualize simulation results <visualization_tutorial>`, and transform them to *FsAverage* or *MNI* space.
 
-.. centered:: :ref:`Install SimNIBS <simnibs_installer>`
-
-.. centered:: `Download the Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_
-
-.. centered:: :ref:`Follow the Tutorial <tutorial>`
+|
 
 .. image:: images/simnibs_frontpage.png
+
+|
+
+.. raw:: html
+
+  <style>
+  * {
+    box-sizing: border-box;
+  }
+  div {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+  .column {
+    float: left;
+    width: 50%;
+    padding: 10px;
+  }
+  
+  .row:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  </style>
+  <div class="row">
+  <div class="column">
+  SimNIBS is being developed at the Danish Research Centre for Magnetic Resonance (DRCMR) and the Technical University of Denmark (DTU), in collaboration with external partners
+  </div>
+  <div class="column">
+  <img src="_static/DRCMR_logo.png" alt="DRCMR", height="70">
+  <img src="_static/DTU_logo.png" alt="DTU", height="70">
+  </div>
+  </div>
 
 
 SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed under :download:`GPL v3 <../LICENSE.txt>`.
 
-funding info...
 
-.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
+.. note:: When you publish results based on SimNIBS, please cite `Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy <http://dx.doi.org/10.1109/EMBC.2015.7318340>`_ 
 
-.. note:: When you publish results based on SimNIBS, please :ref:`cite our papers <publications>`
+  Please see :ref:`our publications <publications>` for details about the SimNIBS modules.
+
 .. warning:: SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition
 
+.. |copy| unicode:: U+000A9
 
 News
 ======
 
-  * **Version 3.0 beta is now available**. It is a major update of SimNIBS 
+  * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!
     
 .. toctree::
    :maxdepth: 2
    :hidden:
 
    installation/installation
+   dataset
    tutorial/tutorial
    documentation/documentation
    contributors
    publications
    changelog
+   contact

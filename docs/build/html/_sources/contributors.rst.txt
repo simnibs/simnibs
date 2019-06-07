@@ -1,7 +1,7 @@
 .. _contributors:
 
-Contributors
-===============
+Contributors and Funding
+=========================
 
 Current Contributors
 ---------------------
@@ -76,3 +76,34 @@ Institutions
 * Versions 2.1 and 3.0 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark).
 * Version 1.0 was created at the `Max-Planck Institute for Biological Cybernetics <http://www.kyb.tuebingen.mpg.de>`_ (Tübingen, Germany).
 * Version 2.0 was developed in all three institutions
+
+Funding Sources
+-----------------
+
+We would like to thank our funding sources
+
+.. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_
+
+
+.. |lundbeck| image:: ./images/lundbeckfonden.png
+   :height: 50
+.. _lundbeck: https://www.lundbeckfonden.com/en/
+
+.. |novo| image:: ./images/novonordiskfonden.png
+   :height: 50
+.. _novo: https://novonordiskfonden.dk/en/
+
+.. |sdc| image:: ./images/sdc.png
+   :height: 50
+.. _sdc: http://sdc.university/
+
+.. |stiped| image:: ./images/stiped.png
+   :height: 50
+.. _stiped: http://www.stiped.eu/home/
+
+.. |if| image:: ./images/innovationsfonden.png
+   :height: 50
+.. _if: https://innovationsfonden.dk/en
+
+
+

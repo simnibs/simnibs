@@ -3,7 +3,7 @@
 Setting up and Running Simulations
 ===================================
 
-This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_.
+This tutorial is based on the :ref:`Example Dataset <dataset>`.
 Please download it before continuing
 
 Starting the GUI and selecting a Head Model
@@ -211,12 +211,7 @@ Running a Simulation
    :align: center
 
 \
-2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and after finished the bar in the bottom of the window changes from *Teminate* to *Close*.
-
-.. image:: ../images/tutorial_simrunning.png
-   :align: center
-
-\
+2. If there are no errors in the problem set-up, a new window will appear and show the simulation progress. The simulation takes a few minutes, and when finished a Gmsh window opens with the simulation results.
 
 Now, please go on to our tutorial on :ref:`visualization_tutorial`.
 

@@ -80,11 +80,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'internal']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'internal', 'build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -98,7 +97,7 @@ html_theme = 'alabaster'
 #
 html_theme_options = {
     'logo': 'logo.png',
-    'show_relbars': True 
+    'show_relbars': True,
 }
 html_favicon = '_static/favicon.ico'
 
@@ -126,7 +125,6 @@ html_sidebars = {
                     'donate.html',
                 ]
 }
-
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
