@@ -27,7 +27,10 @@ import stat
 import re
 import subprocess
 import tempfile
-import multiprocessing
+import time
+import functools
+import zipfile
+import urllib.request
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -669,7 +672,11 @@ def activator_setup(install_dir):
             activator, commands=f'-d {install_dir}')
 
 
-def reporthook(blocknum, blocksize, totalsize):
+def _download_manager(blocknum, blocksize, totalsize, start_time=None, timeout=None):
+    if timeout is not None:
+        if time.time() - start_time > timeout:
+            raise TimeoutError('Download timed out')
+
     if totalsize > 0:
         nblocks = totalsize // blocksize
         frac = nblocks // 10
@@ -681,15 +688,13 @@ def reporthook(blocknum, blocksize, totalsize):
             read = (blocknum * blocksize) / 1e6
             print(f'{read:.1f} MB', flush=True)
 
-def download_extra_coils():
-    import urllib.request
-    import zipfile
+def download_extra_coils(timeout=None):
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
     print('Donwloading extra coil files', flush=True)
     with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
         tmpname = tmpf.name
-    
+    reporthook = functools.partial(_download_manager, start_time=time.time(), timeout=timeout)
     urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
     with zipfile.ZipFile(tmpname) as z:
         z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
@@ -886,8 +891,7 @@ def install(install_dir, force, silent,
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     scripts_dir = os.path.join(install_dir, 'bin')
     if extra_coils:
-        dl_coils_process = multiprocessing.Process(target=download_extra_coils)
-        dl_coils_process.start()
+        download_extra_coils(timeout=30*60)
     if copy_gmsh_options:
         setup_gmsh_options(force, silent)
     if add_to_path:
@@ -910,11 +914,6 @@ def install(install_dir, force, silent,
     if sys.platform == 'win32':
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
-    if extra_coils:
-        dl_coils_process.join(timeout=20*60)
-        if dl_coils_process.is_alive():
-            dl_coils_process.terminate()
-            raise RuntimeError('Could not finish donwload coil files: timed out')
 
     copy_scripts(scripts_dir)
 
