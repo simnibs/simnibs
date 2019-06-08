@@ -477,7 +477,7 @@ def _create_app(app_name, executable, icon, plist):
     # SimNIBS app setup
     if os.path.isdir(app_name):
         shutil.rmtree(app_name)
-    os.mkdir(app_name)
+    os.makedirs(app_name)
     contents_dir = os.path.join(app_name, 'Contents')
     resouces_dir = os.path.join(contents_dir, 'Resources')
     macos_dir = os.path.join(contents_dir, 'MacOS')
