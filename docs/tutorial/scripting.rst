@@ -35,7 +35,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('~/SimNIBS/matlab')`
+    addpath('/home/<USER_NAME>/SimNIBS/matlab')`
 
 \
 
@@ -43,7 +43,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('~/Applications/SimNIBS.app/matlab')`
+    addpath('/Users/<USER_NAME>/Applications/SimNIBS/matlab')`
 
 \
 

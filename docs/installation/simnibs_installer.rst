@@ -76,7 +76,7 @@ MacOS
 
 Testing the Installation
 '''''''''''''''''''''''''
-Open the Launcher and search for :code:`SimNIBS`
+Open the Launcher and search for :code:`SimNIBS GUI`
 
 
 Updating SimNIBS
