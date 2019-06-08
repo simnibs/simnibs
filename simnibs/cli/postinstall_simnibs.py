@@ -333,7 +333,7 @@ def links_setup(install_dir):
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
     if sys.platform == 'darwin':
-        _create_app_structure(os.path.abspath(os.path.join(scripts_dir, '..')), force, silent)
+        _create_apps(os.path.abspath(os.path.join(scripts_dir, '..')))
         return
     elif sys.platform == 'win32':
         shortcut_folder = os.path.join(
@@ -423,53 +423,30 @@ def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_typ
             f.write('Type=Application\n')
 
 
-def _create_app_structure(install_dir, force, silent):
-    """ Creates an app structure for MacOS
-    https://stackoverflow.com/questions/1596945/building-osx-app-bundle
-    https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW16
-    Only works if install_dir finishes in ".app"
+def _create_apps(install_dir):
+    """ Creates an apps for MacOS
     """
-    import plistlib 
-    # SimNIBS app setup
-    contents_dir = os.path.join(install_dir, 'Contents')
-    resouces_dir = os.path.join(contents_dir, 'Resources')
-    macos_dir = os.path.join(contents_dir, 'MacOS')
-    if not os.path.isdir(contents_dir):
-        os.mkdir(contents_dir)
-    if not os.path.isdir(resouces_dir):
-        os.mkdir(resouces_dir)
-    if not os.path.isdir(macos_dir):
-        os.mkdir(macos_dir)
-    _copy_and_log(
-        os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.icns'),
-        os.path.join(resouces_dir))
-    # Write a simnibs_gui and a gmsh executable
-    _write_unix_sh(
-        os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
-        os.path.join(macos_dir, 'simnibs_gui'))
+
     plist = dict(
-        CFBundleDisplayName="SimNIBS",
-        CFBundleName="SimNIBS",
+        CFBundleDisplayName="SimNIBS GUI",
+        CFBundleName="SimNIBS GUI",
         CFBundleIdentifier="org.simnibs",
         CFBundleShortVersionString=__version__,
-        CFBundleGetInfoString=f'SimNIBS {__version__}',
+        CFBundleGetInfoString=f'SimNIBS GUI {__version__}',
         CFBundleIconFile="gui_icon.icns",
         CFBundleExecutable="simnibs_gui",
         CFBundleInfoDictionaryVersion='6.0'
     ) 
-    with open(os.path.join(contents_dir, 'Info.plist'), 'wb') as fp:
-        plistlib.dump(plist, fp)
+    _create_app(
+        os.path.join(install_dir, 'SimNIBS GUI.app'),
+        os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
+        os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.icns'),
+        plist)
+
     # Gmsh app setup
-    target_dir = os.path.expanduser('~/Applications/Gmsh.app')
-    if os.path.isdir('/Applications/Gmsh.app') or os.path.isdir(target_dir):
-        if force:
-            answ = True
-        else:
-            answ = _get_input('Gmsh is already installed, overwrite it?', silent)
-        if not answ:
-            return
-        elif os.path.isdir(target_dir):
-            shutil.rmtree(target_dir)
+    target_dir = os.path.join(install_dir, 'Gmsh.app')
+    if os.path.isdir(target_dir):
+        shutil.rmtree(target_dir)
     print('Installing Gmsh')
     contents_dir = os.path.join(target_dir, 'Contents')
     resouces_dir = os.path.join(contents_dir, 'Resources')
@@ -478,7 +455,6 @@ def _create_app_structure(install_dir, force, silent):
     os.mkdir(contents_dir)
     os.mkdir(resouces_dir)
     os.mkdir(macos_dir)
-
 
     _copy_and_log(
         os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'Info.plist'),
@@ -491,6 +467,35 @@ def _create_app_structure(install_dir, force, silent):
         file_finder.path2bin('gmsh'),
         os.path.join(macos_dir))
 
+def _create_app(app_name, executable, icon, plist):
+    '''
+    https://stackoverflow.com/questions/1596945/building-osx-app-bundle
+    https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW16
+    Only works if app_name finishes in ".app"
+    '''
+    import plistlib 
+    # SimNIBS app setup
+    if os.path.isdir(app_name):
+        shutil.rmtree(app_name)
+    os.mkdir(app_name)
+    contents_dir = os.path.join(app_name, 'Contents')
+    resouces_dir = os.path.join(contents_dir, 'Resources')
+    macos_dir = os.path.join(contents_dir, 'MacOS')
+    if not os.path.isdir(contents_dir):
+        os.mkdir(contents_dir)
+    if not os.path.isdir(resouces_dir):
+        os.mkdir(resouces_dir)
+    if not os.path.isdir(macos_dir):
+        os.mkdir(macos_dir)
+    _copy_and_log(
+        icon,
+        os.path.join(resouces_dir))
+    # Write a simnibs_gui and a gmsh executable
+    _write_unix_sh(
+        executable,
+        os.path.join(macos_dir, 'simnibs_gui'))
+    with open(os.path.join(contents_dir, 'Info.plist'), 'wb') as fp:
+        plistlib.dump(plist, fp)
 
 def shortcut_icons_clenup():
     if sys.platform == 'win32':
