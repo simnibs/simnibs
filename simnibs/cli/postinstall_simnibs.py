@@ -183,7 +183,11 @@ def _get_win_simnibs_env_vars():
         r'reg query HKEY_CURRENT_USER\Environment',
         capture_output=True, shell=True)
     res.check_returncode()
-    simnibs_env_vars = re.findall(r'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', res.stdout.decode())
+    try:
+        out = res.stdout.decode()
+    except UnicodeDecodeError:
+        return {}
+    simnibs_env_vars = re.findall(r'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
     simnibs_env_vars = {s[0]: s[1] for s in simnibs_env_vars}
     return simnibs_env_vars
 
@@ -195,9 +199,12 @@ def _get_win_path():
         res.check_returncode()
     except subprocess.CalledProcessError:
         return ''
-    path = re.findall(r'REG\S+\s+(.*)\r', res.stdout.decode())
+    try:
+        path = re.findall(r'REG\S+\s+(.*)\r', res.stdout.decode())
+    except UnicodeDecodeError:
+        return ''
     if len(path) == 0:
-        raise OSError('Could not derermine the system PATH')
+        raise OSError('Could not determine the system PATH')
     return path[0]
 
 def path_setup(scripts_dir, force=False, silent=False):
@@ -558,7 +565,10 @@ def _is_associated(ext):
         # Also needs to be run as shell
         ret = subprocess.run('assoc '+ ext, shell=True, capture_output=True)
         if ret.returncode == 0:
-            assoc = re.findall(f'{ext}=(.*)\r', ret.stdout.decode())
+            try:
+                assoc = re.findall(f'{ext}=(.*)\r', ret.stdout.decode())
+            except UnicodeDecodeError:
+                return False
             if len(assoc) == 0:
                 return False
             return assoc[0]
