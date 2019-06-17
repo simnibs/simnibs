@@ -3346,7 +3346,10 @@ def spawn_process(cmd, return_exit_status=False, new_thread=False,
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
-                queue.put(line.decode())
+                try:
+                    queue.put(line.decode())
+                except UnicodeDecodeError:
+                    queue.put('Could not print line')
             out.close()
 
         p = Popen(cmd, stdout=PIPE,
@@ -3584,7 +3587,11 @@ def log(msg, args=None, level=logging.INFO, width=72):
     if type(args) not in [list,tuple]:
         args = [args]
         
-    logger.log(level, msg.format(*args))
+    try:
+        logger.log(level, msg.format(*args))
+    # If there is an error in the message formating, logs the raw message
+    except ValueError:
+        logger.log(level, msg)
 
 
 def add2filename(filename, text, where="end", useext=None):
