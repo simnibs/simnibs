@@ -181,12 +181,9 @@ def _get_win_simnibs_env_vars():
     ''' 'Creates a disctionary with environment names and values '''
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment',
-        capture_output=True, shell=True)
+        capture_output=True, shell=True, text=True)
     res.check_returncode()
-    try:
-        out = res.stdout.decode()
-    except UnicodeDecodeError:
-        return {}
+    out = res.stdout
     simnibs_env_vars = re.findall(r'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
     simnibs_env_vars = {s[0]: s[1] for s in simnibs_env_vars}
     return simnibs_env_vars
@@ -194,15 +191,12 @@ def _get_win_simnibs_env_vars():
 def _get_win_path():
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment '
-        '/f Path', capture_output=True, shell=True)
+        '/f Path', capture_output=True, shell=True, text=True)
     try:
         res.check_returncode()
     except subprocess.CalledProcessError:
         return ''
-    try:
-        path = re.findall(r'REG\S+\s+(.*)\r', res.stdout.decode())
-    except UnicodeDecodeError:
-        return ''
+    path = re.findall(r'REG\S+\s+(.*)\n', res.stdout)
     if len(path) == 0:
         raise OSError('Could not determine the system PATH')
     return path[0]
@@ -563,12 +557,9 @@ def setup_file_association(force=False, silent=False):
 def _is_associated(ext):
     if sys.platform == 'win32':
         # Also needs to be run as shell
-        ret = subprocess.run('assoc '+ ext, shell=True, capture_output=True)
+        ret = subprocess.run('assoc '+ ext, shell=True, capture_output=True, text=True)
         if ret.returncode == 0:
-            try:
-                assoc = re.findall(f'{ext}=(.*)\r', ret.stdout.decode())
-            except UnicodeDecodeError:
-                return False
+            assoc = re.findall(f'{ext}=(.*)\n', ret.stdout)
             if len(assoc) == 0:
                 return False
             return assoc[0]
