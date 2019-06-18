@@ -31,6 +31,7 @@ import time
 import functools
 import zipfile
 import urllib.request
+import locale
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -181,22 +182,22 @@ def _get_win_simnibs_env_vars():
     ''' 'Creates a disctionary with environment names and values '''
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment',
-        capture_output=True, shell=True, text=True, errors='replace')
+        capture_output=True, shell=True)
     res.check_returncode()
     out = res.stdout
-    simnibs_env_vars = re.findall(r'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
+    simnibs_env_vars = re.findall(b'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
     simnibs_env_vars = {s[0]: s[1] for s in simnibs_env_vars}
     return simnibs_env_vars
 
 def _get_win_path():
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment '
-        '/f Path', capture_output=True, shell=True, text=True, errors='replace')
+        '/f Path', capture_output=True, shell=True)
     try:
         res.check_returncode()
     except subprocess.CalledProcessError:
         return ''
-    path = re.findall(r'REG\S+\s+(.*)\n', res.stdout)
+    path = re.findall(b'REG\S+\s+(.*)\r\n', res.stdout)
     if len(path) == 0:
         raise OSError('Could not determine the system PATH')
     return path[0]
@@ -244,18 +245,18 @@ def path_setup(scripts_dir, force=False, silent=False):
         subprocess.run(
             r'reg add HKEY_CURRENT_USER\Environment '
             f'/v SIMNIBS_BIN /d "{scripts_dir}" /f',
-            shell=True)
-        path = _get_win_path()
-        path = scripts_dir + ';' + path
-        subprocess.run(
-            r'reg add HKEY_CURRENT_USER\Environment '
-            f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
             shell=True).check_returncode()
-        # Signal that the variables changed
-        #subprocess.run('setx simnibs_throwaway "trash"', shell=True)
-        #subprocess.run(
-        #    'reg delete HKEY_CURRENT_USER\Environment',
-        #    f'/v simnibs_throwaway /f', shell=True)
+        path = _get_win_path()
+        try:
+            path = path.decode('mbcs')
+        except ValueError:
+            print('Could not modify system PATH')
+        else:
+            path = scripts_dir + ';' + path
+            subprocess.run(
+                r'reg add HKEY_CURRENT_USER\Environment '
+                f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
+                shell=True).check_returncode()
 
 def path_cleanup():
     ''' Removes SIMNIBS from PATH '''
@@ -284,7 +285,7 @@ def path_cleanup():
         #res.check_returncode()
         simnibs_env_vars = _get_win_simnibs_env_vars()
         path = _get_win_path()
-        path = path.split(';')
+        path = path.split(b';')
         path = [p for p in path if len(p) > 0]
         for key, value in simnibs_env_vars.items():
             # If the directory is in the PATH variable, remove it
@@ -292,17 +293,25 @@ def path_cleanup():
                 os.path.normpath(p) for p in path if not (
                 os.path.normpath(value) in os.path.normpath(p))]
             # Remove environment variable
-            res = subprocess.run(
-                r'reg delete HKEY_CURRENT_USER\Environment '
-                f'/v  "{key}" /f', shell=True)
-            res.check_returncode()
-        path = ';'.join(path) + ';'
+            try:
+                key = key.decode('mbcs')
+            except ValueError:
+                print('Could not remove registry variable')
+            else:
+                res = subprocess.run(
+                    r'reg delete HKEY_CURRENT_USER\Environment '
+                    f'/v  "{key}" /f')
         # write out the PATH with SimNIBS removed
-        res = subprocess.run(
-            r'reg add HKEY_CURRENT_USER\Environment '
-            f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
-            shell=True)
-        res.check_returncode()
+        path = b';'.join(path) + b';'
+        try:
+            path = path.decode('mbcs')
+        except ValueError:
+            print('Could not cleanup system PATH')
+        else:
+            res = subprocess.run(
+                r'reg add HKEY_CURRENT_USER\Environment '
+                f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
+                shell=True)
 
 def matlab_setup(install_dir):
     destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
