@@ -181,7 +181,7 @@ def _get_win_simnibs_env_vars():
     ''' 'Creates a disctionary with environment names and values '''
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment',
-        capture_output=True, shell=True, text=True)
+        capture_output=True, shell=True, text=True, errors='replace')
     res.check_returncode()
     out = res.stdout
     simnibs_env_vars = re.findall(r'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
@@ -191,7 +191,7 @@ def _get_win_simnibs_env_vars():
 def _get_win_path():
     res = subprocess.run(
         r'reg query HKEY_CURRENT_USER\Environment '
-        '/f Path', capture_output=True, shell=True, text=True)
+        '/f Path', capture_output=True, shell=True, text=True, errors='replace')
     try:
         res.check_returncode()
     except subprocess.CalledProcessError:
@@ -557,7 +557,8 @@ def setup_file_association(force=False, silent=False):
 def _is_associated(ext):
     if sys.platform == 'win32':
         # Also needs to be run as shell
-        ret = subprocess.run('assoc '+ ext, shell=True, capture_output=True, text=True)
+        ret = subprocess.run('assoc '+ ext, shell=True, capture_output=True, text=True,
+                             errors='replace')
         if ret.returncode == 0:
             assoc = re.findall(f'{ext}=(.*)\n', ret.stdout)
             if len(assoc) == 0:
