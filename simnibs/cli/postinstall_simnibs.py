@@ -608,6 +608,7 @@ def file_associations_cleanup():
 
 def uninstaller_setup(install_dir, force, silent):
     uninstaller = os.path.join(install_dir, 'uninstall_simnibs')
+    miniconda_dir = os.path.join(install_dir, 'miniconda3')
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
@@ -615,8 +616,11 @@ def uninstaller_setup(install_dir, force, silent):
             gui=False)
 
         with open(uninstaller + '.cmd', 'a') as f:
-            f.write(f' && del "{uninstaller}.cmd" && rd /Q "{install_dir}" >NUL 2>&1')
-
+            f.write(
+                f' && del "{uninstaller}.cmd" '
+                f'&& rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
+                f'& rd /Q "{install_dir}"'
+            )
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
@@ -661,7 +665,10 @@ def uninstaller_setup(install_dir, force, silent):
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
-            f.write(f' && rm "{uninstaller}" && rmdir "{install_dir}"')
+            f.write(
+                f' && rm "{uninstaller}" '
+                f'&& rm -rf {miniconda_dir} '
+                f'; rmdir "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
