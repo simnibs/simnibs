@@ -615,7 +615,7 @@ def uninstaller_setup(install_dir, force, silent):
             gui=False)
 
         with open(uninstaller + '.cmd', 'a') as f:
-            f.write(f' && rd /Q /S "{install_dir}" >NUL 2>&1')
+            f.write(f' && del "{uninstaller}.cmd" && rd /Q "{install_dir}" >NUL 2>&1')
 
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
@@ -661,7 +661,7 @@ def uninstaller_setup(install_dir, force, silent):
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
-            f.write(f' && rm -rf "{install_dir}"')
+            f.write(f' && rm "{uninstaller}" && rmdir "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
@@ -939,12 +939,40 @@ def uninstall(install_dir):
     shortcut_icons_clenup()
     file_associations_cleanup()
     uninstaller_cleanup()
+    shutil.rmtree(os.path.join(install_dir, 'documentation'), True)
+    shutil.rmtree(os.path.join(install_dir, 'matlab'), True)
+    shutil.rmtree(os.path.join(install_dir, 'bin'), True)
+    def try_remove(f):
+        try:
+            os.remove(f)
+        except OSError:
+            pass
+
+    for f in glob.glob(os.path.join(install_dir, 'environment*.yml')):
+        try_remove(f)
+
     if sys.platform == 'win32':
+        try_remove(os.path.join(install_dir, 'activate_simnibs.cmd'))
+        try_remove(os.path.join(install_dir, 'examples.lnk'))
+        try_remove(os.path.join(install_dir, 'simnibs.lnk'))
+        try_remove(os.path.join(install_dir, 'Activate SimNIBS.lnk'))
+        try_remove(os.path.join(install_dir, 'Uninstall SimNIBS.lnk'))
         conda_uninstaller = os.path.join(
-             install_dir,'miniconda3',
-            'Uninstall-Miniconda3.exe')
+             install_dir, 'miniconda3',
+             'Uninstall-Miniconda3.exe')
         if os.path.isfile(conda_uninstaller):
             subprocess.run(f'"{conda_uninstaller}" /S', shell=True)
+
+    else:
+        try_remove(os.path.join(install_dir, 'activate_simnibs'))
+        try_remove(os.path.join(install_dir, 'simnibs'))
+        try_remove(os.path.join(install_dir, 'examples'))
+        if sys.platform == 'darwin':
+            shutil.rmtree(os.path.join(install_dir, 'SimNIBS GUI.app'), True)
+            shutil.rmtree(os.path.join(install_dir, 'Gmsh.app'), True)
+
+    try_remove(os.path.join(install_dir, 'simnibs_install_log.txt'))
+
 
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
