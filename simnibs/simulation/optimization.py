@@ -19,60 +19,34 @@ brain_target = np.mean(np.array([[-27.17, -17.94, 69.94],
                                  [-27.72, -18.95, 69.82]]), axis=0).tolist()
 # brain_target = [-29.2, -20.4, 95.]
 
-# def calc_coil_pos_from_matsimnibs(matsimnibs):
-#     """ Calculate the matsimnibs matrix for TMS simulations
-#
-#     Parameters
-#     -----------
-#     center: np.ndarray
-#         Position of the center of the coil, will be projected to the skin surface
-#     pos_ydir: np.ndarray
-#         Position of the y axis in relation to the coil center
-#     distance: float
-#         Distance from the center
-#     skin_surface: list
-#         Possible tags for the skin surface (Default: [5, 1005])
-#
-#     Returns
-#     -------
-#     matsimnibs: 2d np.ndarray
-#         Matrix of the format
-#         x' y' z' c
-#         0  0  0  1
-#         y' is the direction of the coil
-#         z' is a direction normal to the coil, points inside the head
-#
-#     """
-#     x = matsimnibs[:3, 0]
-#     y = matsimnibs[:3, 1]
-#     z = matsimnibs[:3, 2]
-#     c = matsimnibs[:3, 3]
-#
-#
-#     msh_surf = self.crop_mesh(elm_type=2)
-#     msh_skin = msh_surf.crop_mesh(skin_surface)
-#     closest = np.argmin(np.linalg.norm(msh_skin.nodes.node_coord - center, axis=1))
-#     center = msh_skin.nodes.node_coord[closest]
-#     # Y axis
-#     y = pos_ydir - center
-#     if np.isclose(np.linalg.norm(y), 0.):
-#         raise ValueError('The coil Y axis reference is too close to the coil center! ')
-#     y /= np.linalg.norm(y)
-#     # Normal
-#     normal = msh_skin.nodes_normals().value[closest]
-#     if np.isclose(np.abs(y.dot(normal)), 1.):
-#         raise ValueError('The coil Y axis normal to the surface! ')
-#     z = -normal
-#     # Orthogonalize y
-#     y -= z * y.dot(z)
-#     y /= np.linalg.norm(y)
-#     # Determine x
-#     x = np.cross(y, z)
 
+def read_msh_from_pckl(fn, m=None):
+    ''' Reads a gmsh '.msh' file
+
+    Parameters
+    ------------
+    fn: str
+        File name
+    m: simnibs.msh.Msh (optional)
+        Mesh structure to be overwritten. If unset, will create a new structure
+
+    Returns
+    --------
+    msh: simnibs.msh.Msh
+        Mesh structure
+    '''
+    print("This is the monkey-patched version.")
+    assert fn.endswith('.msh')
+    fn = fn[:-3] + "pckl"
+    return pickle.load(open(fn, 'rb'))
+
+
+from ..msh import mesh_io
+mesh_io.read_msh = read_msh_from_pckl
 
 # General Information
 S = sim_struct.SESSION()
-mesh = '/data/pt_01756/tmp/optim/15484.08_fixed.msh'
+mesh = '/data/pt_01756/tmp/optim/mesh.pckl'
 S.fnamehead = mesh  # head mesh
 S.pathfem = '/data/pt_01756/tmp/optim'  # Directory for the simulation
 

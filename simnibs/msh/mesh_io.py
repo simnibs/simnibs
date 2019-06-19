@@ -1399,12 +1399,14 @@ class Msh:
         if np.isclose(np.linalg.norm(y), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
         y /= np.linalg.norm(y)
-        #Normal
+
+        # Normal
         normal = msh_skin.nodes_normals().value[closest]
         if np.isclose(np.abs(y.dot(normal)), 1.):
             raise ValueError('The coil Y axis normal to the surface! ')
         z = -normal
-        #Orthogonalize y
+
+        # Orthogonalize y
         y -= z * y.dot(z)
         y /= np.linalg.norm(y)
         # Determine x
@@ -4010,7 +4012,7 @@ def _read_msh_4(fn, m):
 
 # write msh to mesh file
 def write_msh(msh, file_name=None, mode='binary'):
-    ''' Writes a gmsh 'msh' file
+    """ Writes a gmsh 'msh' file
 
     Parameters
     ------------
@@ -4020,7 +4022,7 @@ def write_msh(msh, file_name=None, mode='binary'):
         Name of file to be writte. Default: msh.fn
     mode: 'binary' or 'ascii':
         The mode in which the file should be read
-    '''
+    """
     if file_name is not None:
         msh.fn = file_name
 

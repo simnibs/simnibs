@@ -1282,13 +1282,14 @@ class POSITION(object):
         else:
             return False
 
-    def calc_matsimnibs(self, msh, cap=None):
+    def calc_matsimnibs(self, msh, cap=None, log=True):
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
             return self.matsimnibs
         else:
-            logger.info('Calculating Coil position from (centre, pos_y, distance)')
+            if log:
+                logger.info('Calculating Coil position from (centre, pos_y, distance)')
             if not self.centre:
                 raise ValueError('Coil centre not set!')
             if not self.pos_ydir:
@@ -1298,7 +1299,8 @@ class POSITION(object):
             self.substitute_positions_from_cap(cap=cap)
             self.matsimnibs = msh.calc_matsimnibs(
                 self.centre, self.pos_ydir, self.distance)
-            logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
+            if log:
+                logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
             return self.matsimnibs
 
     def __eq__(self, other):
