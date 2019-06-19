@@ -8,16 +8,17 @@ from simnibs.msh import mesh_io
 from simnibs import sim_struct, run_simnibs
 import numpy as np
 import pickle
-
+from simnibs.simulation.opt import get_opt_grid
 
 n_cpu = 10
-angles = [22.5, 45, 67.5]
-radius = 50
-resolution = 10
-brain_target = np.mean(np.array([[-27.17, -17.94, 69.94],
-                                 [-28.15, -18.02, 69.24],
-                                 [-27.72, -18.95, 69.82]]), axis=0).tolist()
-# brain_target = [-29.2, -20.4, 95.]
+handle_direction_ref = [22.5, 45, 67.5]
+radius = 20
+resolution_pos = 3
+resolution_angle = 10
+angle_limits = [-30, 30]
+target = np.mean(np.array([[-27.17, -17.94, 69.94],
+                           [-28.15, -18.02, 69.24],
+                           [-27.72, -18.95, 69.82]]), axis=0).tolist()
 
 
 def read_msh_from_pckl(fn, m=None):
@@ -41,7 +42,7 @@ def read_msh_from_pckl(fn, m=None):
     return pickle.load(open(fn, 'rb'))
 
 
-from ..msh import mesh_io
+from simnibs.msh import mesh_io
 mesh_io.read_msh = read_msh_from_pckl
 
 # General Information
@@ -54,29 +55,18 @@ S.pathfem = '/data/pt_01756/tmp/optim'  # Directory for the simulation
 tms = S.add_tmslist()
 tms.fnamecoil = '/data/pt_01756/coils/ccd/MagVenture_MC_B60_1233.nii.gz'  # Choose a coil from the ccd-files folder
 
-# get coil position at start position
-
-pos = tms.add_position()
-pos.centre = brain_target
-pos.pos_ydir = angles[1]
-pos.distance = 1
-
 print("prepare")
 # mesh = mesh_io.read_msh(mesh)
 # mesh.fix_surface_labels()
-mesh = pickle.load(open("/data/pt_01756/tmp/optim/mesh.pckl", 'rb'))
+mesh = pickle.load(open("/data/pt_01756/tmp/optim/15484.08_fixed.pckl", 'rb'))
 
-print("calc matsimnibs")
-mat = pos.calc_matsimnibs(mesh)  # get skull coil position for cortex target
-# TODO: magic here to get coil positions
-positions = dict()
-
-# # Define the coil position
-for key, val in positions.items():
-    pos = tms.add_position()
-    pos.centre = val['centre']
-    pos.pos_ydir = val['ydir']
-    pos.distance = val['dist']
+print("determine coil positions and orientations for optimization")
+tms = get_opt_grid(tms=tms,
+                   msh=mesh,
+                   target=target,
+                   handle_direction_ref=handle_direction_ref,
+                   radius=radius,
+                   resolution_pos=resolution_pos)
 
 # Run Simulation
 run_simnibs(S, n_cpu)
