@@ -1367,7 +1367,7 @@ class Msh:
             self.nodes.node_coord = nodes_bk
 
     def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=[5, 1005]):
-        ''' Calculate the matsimnibs matrix for TMS simulations
+        """ Calculate the matsimnibs matrix for TMS simulations
 
         Parameters
         -----------
@@ -1389,7 +1389,7 @@ class Msh:
             y' is the direction of the coil
             z' is a direction normal to the coil, points inside the head
 
-        '''
+        """
         msh_surf = self.crop_mesh(elm_type=2)
         msh_skin = msh_surf.crop_mesh(skin_surface)
         closest = np.argmin(np.linalg.norm(msh_skin.nodes.node_coord - center, axis=1))

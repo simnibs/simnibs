@@ -197,14 +197,14 @@ class SESSION(object):
         self._prepared = True
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
-        ''' Run simulations in the current session
+        """ Run simulations in the current session
 
         Parameters
         -----------
         cpus: int (optional)
-            Number of cpus to use. Not nescessaraly will use all cpus. Default: 1
+            Number of cpus to use. Not necessarily will use all cpus. Default: 1
         allow_multiple_runs: bool (optinal)
-            Wether to allow multiple runs in one folder. Default: False
+            Whether to allow multiple runs in one folder. Default: False
         save_mat: bool (optional)
             Whether to save the ".mat" file of this structure
 
@@ -212,7 +212,7 @@ class SESSION(object):
         ---------
         Writes the simulations
 
-        '''
+        """
         self._set_logger()
         self._prepare()
         dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
@@ -1112,7 +1112,7 @@ class TMSLIST(SimuList):
         return gPC_regression
 
     def add_position(self, position=None):
-        ''' Adds a position to the current TMSLIST
+        """ Adds a position to the current TMSLIST
 
         Parameters
         -----
@@ -1123,7 +1123,7 @@ class TMSLIST(SimuList):
         ------
         position: POSITION
             POSITION structure defining the coil position
-        '''
+        """
         if position is None:
             position = POSITION()
 
