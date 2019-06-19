@@ -1572,7 +1572,7 @@ class TDCSLIST(SimuList):
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
-                     electrode_surfaces, n_workers=cpus)
+                     np.unique(electrode_surfaces), n_workers=cpus)
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)
