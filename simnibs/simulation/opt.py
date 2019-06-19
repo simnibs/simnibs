@@ -114,6 +114,7 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
 
     return tms
 
+
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
     # ax.scatter(nodes_roi[:, 0], nodes_roi[:, 1], nodes_roi[:, 2])
