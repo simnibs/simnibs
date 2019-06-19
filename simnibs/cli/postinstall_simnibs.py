@@ -31,7 +31,7 @@ import time
 import functools
 import zipfile
 import urllib.request
-import winreg
+
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -40,6 +40,9 @@ try:
     GUI = True
 except ImportError:
     GUI = False
+
+if sys.platform == 'win32':
+    import winreg
 
 def copy_scripts(dest_dir):
     ''' Create scripts to call SimNIBS
