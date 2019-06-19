@@ -1,16 +1,15 @@
 import logging
 import sys
 import warnings
-import traceback
-from multiprocessing import Lock
 
 global logger
 logger = logging.getLogger('simnibs')
 sh = logging.StreamHandler()
 formatter = logging.Formatter('[ %(name)s ]%(levelname)s: %(message)s')
 sh.setFormatter(formatter)
+sh.setLevel(logging.INFO)
 logger.addHandler(sh)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logging.addLevelName(25, 'SUMMARY')
 
 
@@ -26,11 +25,16 @@ def register_excepthook(logger):
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
-        logger.critical("Uncaught exception",
-                     exc_info=(exc_type, exc_value, None))
-        logger.debug("Traceback",
-                     exc_info=(exc_type, exc_value, exc_traceback))
+        logger.debug(
+            "Traceback",
+            exc_info=(exc_type, exc_value, exc_traceback)
+        )
+        logger.critical(
+            "Uncaught exception",
+            exc_info=(exc_type, exc_value, None)
+        )
     sys.excepthook = log_excep
+
 
 def unregister_excepthook():
     sys.excepthook = sys.__excepthook__
