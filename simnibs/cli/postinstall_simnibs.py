@@ -925,7 +925,7 @@ def install(install_dir, force, silent,
     if sys.platform == 'win32':
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
-
+    shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     copy_scripts(scripts_dir)
 
 
