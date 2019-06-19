@@ -31,7 +31,6 @@ import time
 import functools
 import zipfile
 import urllib.request
-import locale
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -400,12 +399,18 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             os.path.join(shortcut_folder, 'SimNIBS Documentation'),
             os.path.abspath(os.path.join(scripts_dir, '..', 'documentation', 'index.html')),
         )
+        activate_bin = os.path.abspath(os.path.join(
+            os.path.dirname(sys.executable), '..', '..', 'Scripts', 'activate'))
+        _create_shortcut(
+             os.path.join(shortcut_folder, 'SimNIBS Prompt'),
+             '%windir%\System32\cmd.exe',
+             arguments=f'/K {activate_bin} simnibs_env')
     if sys.platform == 'linux':
         subprocess.run(
             ['update-desktop-database',
              os.path.expanduser('~/.local/share/applications')])
 
-def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_type=None):
+def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_type=None, arguments=None):
     if sys.platform == 'win32':
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.ps1') as f:
             f.write(f'$objShell = New-Object -ComObject ("WScript.Shell")\n')
@@ -414,6 +419,8 @@ def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_typ
             f.write(f'$objShortCut.WorkingDirectory="%HOMEPATH%"\n')
             if icon:
                 f.write(f'$objShortCut.IconLocation="{icon}"\n')
+            if arguments:
+                f.write(f'$objShortCut.Arguments="{arguments}"\n')
             f.write(f'$objShortCut.Save()')
             temp_fn = f.name
         subprocess.run(f'powershell.exe -noprofile -executionpolicy bypass -file "{temp_fn}"', shell=True).check_returncode()
@@ -910,8 +917,6 @@ def install(install_dir, force, silent,
         download_extra_coils(timeout=30*60)
     if copy_gmsh_options:
         setup_gmsh_options(force, silent)
-    if add_to_path:
-        path_setup(scripts_dir, force, silent)
     if add_shortcut_icons:
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:
@@ -922,6 +927,8 @@ def install(install_dir, force, silent,
         links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
+    if add_to_path:
+        path_setup(scripts_dir, force, silent)
     test_call = [
         os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
         '-k', 'TestSolve', '-q', '-W', 'ignore'
