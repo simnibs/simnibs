@@ -404,7 +404,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         _create_shortcut(
              os.path.join(shortcut_folder, 'SimNIBS Prompt'),
              '%windir%\System32\cmd.exe',
-             arguments=f'/K {activate_bin} simnibs_env')
+             arguments=f'/K ""{activate_bin}"" simnibs_env')
     if sys.platform == 'linux':
         subprocess.run(
             ['update-desktop-database',
