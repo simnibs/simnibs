@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import itertools
 
 
 def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_pos=1, resolution_angle=10,
@@ -37,7 +38,8 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     pos_target.centre = target
     pos_target.pos_ydir = [0, 0, 0]
     pos_target.distance = .1
-    target_skin = pos_target.calc_matsimnibs(msh)[0:3, 3]
+    target_matsimnibs = pos_target.calc_matsimnibs(msh)
+    target_skin = target_matsimnibs[0:3, 3]
 
     # extract ROI
     msh_surf = msh.crop_mesh(elm_type=2)
@@ -56,10 +58,10 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     vh = vh.transpose()
 
     # define regular grid and rotate it to head space
-    coords = np.array(np.meshgrid(np.linspace(-radius, radius, 2*radius/resolution_pos + 1),
+    coords_plane = np.array(np.meshgrid(np.linspace(-radius, radius, 2*radius/resolution_pos + 1),
                                   np.linspace(-radius, radius, 2*radius/resolution_pos + 1))).T.reshape(-1, 2)
-    coords = coords[np.linalg.norm(coords, axis=1) <= radius]
-    coords = np.dot(coords, vh[:, :2].transpose()) + target_skin
+    coords_plane = coords_plane[np.linalg.norm(coords_plane, axis=1) <= radius]
+    coords_plane = np.dot(coords_plane, vh[:, :2].transpose()) + target_skin
 
     # project grid-points to skin-surface
     P1 = msh_skin.nodes.node_coord[node_number_list_roi[:, 0], ]
@@ -67,9 +69,9 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     P3 = msh_skin.nodes.node_coord[node_number_list_roi[:, 2], ]
 
     normals = np.cross(P2 - P1, P3 - P1)
-    coords_mapped = np.zeros(coords.shape)
+    coords_mapped = np.zeros(coords_plane.shape)
 
-    for i, c in enumerate(coords):
+    for i, c in enumerate(coords_plane):
         Q1 = c + 1e2 * vh[:, 2]
         Q2 = c - 1e2 * vh[:, 2]
 
@@ -86,16 +88,28 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
         coords_mapped[i, ] = P0[inside, ]
 
     # determine handle directions
-    # project handle_direction_ref to tangential plane
-    # angle_limits
-    # handle_direction_ref
-    handle_directions = np.tile(np.array(handle_direction_ref), (coords_mapped.shape[0], 1))
+    # project handle_direction_ref to reference plane
+    # handle_direction_ref_proj = np.dot(handle_direction_ref, vh[:,:2])
+    # handle_directions = np.tile(np.array(handle_direction_ref), (coords_mapped.shape[0], 1))
+
+    # determine rotation matrices around z-axis of coil and rotate
+    angles = np.linspace(angle_limits[0], angle_limits[1], (angle_limits[1] - angle_limits[0])/resolution_angle + 1)
+    handle_directions = np.zeros((len(angles), 3))
+
+    for i, a in enumerate(angles):
+        mat_rot = np.array([[np.cos(a/180.*np.pi), -np.sin(a/180.*np.pi), 0],
+                            [np.sin(a/180.*np.pi), np.cos(a/180.*np.pi), 0],
+                            [0, 0, 1]])
+        handle_directions[i, ] = np.dot(handle_direction_ref, mat_rot)
+
+    # combine coil positions and orientations
+    po = list(itertools.product(coords_mapped, handle_directions))
 
     # write coordinates in TMS object
-    for c, h in zip(coords_mapped, handle_directions):
+    for c, h in po:
         pos = tms.add_position()
-        pos.centre = c
-        pos.pos_ydir = h
+        pos.centre = c.tolist()
+        pos.pos_ydir = h.tolist()
         pos.distance = 0.
 
     return tms

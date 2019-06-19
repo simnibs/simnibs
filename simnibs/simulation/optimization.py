@@ -13,7 +13,7 @@ from simnibs.simulation.opt import get_opt_grid
 n_cpu = 10
 handle_direction_ref = [22.5, 45, 67.5]
 radius = 20
-resolution_pos = 3
+resolution_pos = 5
 resolution_angle = 10
 angle_limits = [-30, 30]
 target = np.mean(np.array([[-27.17, -17.94, 69.94],
@@ -66,6 +66,7 @@ tms = get_opt_grid(tms=tms,
                    target=target,
                    handle_direction_ref=handle_direction_ref,
                    radius=radius,
+                   angle_limits=angle_limits,
                    resolution_pos=resolution_pos)
 
 # Run Simulation
