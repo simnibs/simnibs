@@ -31,6 +31,7 @@ import time
 import functools
 import zipfile
 import urllib.request
+import winreg
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -179,27 +180,19 @@ def _get_bashrc():
 
 def _get_win_simnibs_env_vars():
     ''' 'Creates a disctionary with environment names and values '''
-    res = subprocess.run(
-        r'reg query HKEY_CURRENT_USER\Environment',
-        capture_output=True, shell=True)
-    res.check_returncode()
-    out = res.stdout
-    simnibs_env_vars = re.findall(b'\s+(SIMNIBS\w+)\s+REG_SZ\s+(\S+)', out)
-    simnibs_env_vars = {s[0]: s[1] for s in simnibs_env_vars}
+    simnibs_env_vars = {}
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
+        _, num_values, _ = winreg.QueryInfoKey(reg)
+        for i in range(num_values):
+            var_name, value, _ = winreg.EnumValue(reg, i)
+            if 'SIMNIBS' in var_name:
+                simnibs_env_vars[var_name] = value
     return simnibs_env_vars
 
 def _get_win_path():
-    res = subprocess.run(
-        r'reg query HKEY_CURRENT_USER\Environment '
-        '/f Path', capture_output=True, shell=True)
-    try:
-        res.check_returncode()
-    except subprocess.CalledProcessError:
-        return ''
-    path = re.findall(b'REG\S+\s+(.*)\r\n', res.stdout)
-    if len(path) == 0:
-        raise OSError('Could not determine the system PATH')
-    return path[0]
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
+        path = winreg.QueryValueEx(reg, 'Path')[0]
+    return path
 
 def path_setup(scripts_dir, force=False, silent=False):
     ''' Modifies the bash startup path and postpends SimNIBS to the PATH '''
@@ -241,21 +234,10 @@ def path_setup(scripts_dir, force=False, silent=False):
             f.write('export PATH=${PATH}:${SIMNIBS_BIN}')
 
     else:
-        subprocess.run(
-            r'reg add HKEY_CURRENT_USER\Environment '
-            f'/v SIMNIBS_BIN /d "{scripts_dir}" /f',
-            shell=True).check_returncode()
-        path = _get_win_path()
-        try:
-            path = path.decode('mbcs')
-        except ValueError:
-            print('Could not modify system PATH')
-        else:
-            path = scripts_dir + ';' + path
-            subprocess.run(
-                r'reg add HKEY_CURRENT_USER\Environment '
-                f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
-                shell=True).check_returncode()
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
+            winreg.SetValueEx(reg,'SIMNIBS_BIN', 0, winreg.REG_SZ, scripts_dir)
+            path = scripts_dir + ';' + _get_win_path()
+            winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
 
 def path_cleanup():
     ''' Removes SIMNIBS from PATH '''
@@ -275,16 +257,9 @@ def path_cleanup():
                     if not re.search('simnibs', line, re.IGNORECASE):
                         fout.write(line)
     else:
-        # Requires admin privileges
-        #registry_bk = os.path.abspath('registry_bk.hiv')
-        #print(f'Backing up registry at {registry_bk}')
-        #res = subprocess.run(
-        #    ['reg', 'save', 'HKEY_CURRENT_USER\Environment',
-        #     registry_bk, '/y'])
-        #res.check_returncode()
         simnibs_env_vars = _get_win_simnibs_env_vars()
         path = _get_win_path()
-        path = path.split(b';')
+        path = path.split(';')
         path = [p for p in path if len(p) > 0]
         for key, value in simnibs_env_vars.items():
             # If the directory is in the PATH variable, remove it
@@ -292,25 +267,14 @@ def path_cleanup():
                 os.path.normpath(p) for p in path if not (
                 os.path.normpath(value) in os.path.normpath(p))]
             # Remove environment variable
-            try:
-                key = key.decode('mbcs')
-            except ValueError:
-                print('Could not remove registry variable')
-            else:
-                res = subprocess.run(
-                    r'reg delete HKEY_CURRENT_USER\Environment '
-                    f'/v  "{key}" /f')
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
+                winreg.DeleteValue(reg, key)
+
         # write out the PATH with SimNIBS removed
-        path = b';'.join(path) + b';'
-        try:
-            path = path.decode('mbcs')
-        except ValueError:
-            print('Could not cleanup system PATH')
-        else:
-            res = subprocess.run(
-                r'reg add HKEY_CURRENT_USER\Environment '
-                f'/v Path /t REG_EXPAND_SZ /d "{path}" /f',
-                shell=True)
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
+            path = ';'.join(path) + ';'
+            winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
+
 
 def matlab_setup(install_dir):
     destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
@@ -633,14 +597,16 @@ def uninstaller_setup(install_dir, force, silent):
             uninstaller,
             icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
         )
-        uninstall_registry = r'HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS'
-        res = subprocess.run(
-            f'reg query "{uninstall_registry}"',
-            shell=True, capture_output=True)
-        try:
-            res.check_returncode()
-        # Not found in registry
-        except subprocess.CalledProcessError:
+        with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall') as reg:
+            try:
+                winreg.QueryValue(reg, 'SimNIBS')
+                has_uninstaller = True
+            except FileNotFoundError:
+                has_uninstaller = False
+
+        if not has_uninstaller:
             answ = True
         else:
             if force:
@@ -650,23 +616,34 @@ def uninstaller_setup(install_dir, force, silent):
                     'Found other SimNIBS uninstaller overwrite it?',
                     silent)
         if answ:
-            uninstaller_cleanup()
-            res = subprocess.run(
-                f'reg add "{uninstall_registry}" '
-                f'/v UninstallString /t REG_SZ /d "{uninstaller}.cmd" /f',
-                shell=True)
-            res = subprocess.run(
-                f'reg add "{uninstall_registry}" '
-                f'/v DisplayIcon /t REG_SZ /d "{os.path.join(SIMNIBSDIR, "resources", "gui_icon.ico")}" /f',
-                shell=True)
-            res = subprocess.run(
-                f'reg add "{uninstall_registry}" '
-                f'/v DisplayName /t REG_SZ /d SimNIBS /f',
-                shell=True)
-            res = subprocess.run(
-                f'reg add "{uninstall_registry}" '
-                f'/v DisplayVersion /t REG_SZ /d {__version__} /f',
-                shell=True)
+            if has_uninstaller:
+                uninstaller_cleanup()
+            with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+                    access=winreg.KEY_WRITE) as reg:
+                winreg.CreateKey(reg, 'SimNIBS')
+            with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS',
+                    access=winreg.KEY_WRITE) as reg:
+                winreg.SetValueEx(
+                    reg, 'UninstallString', 0, winreg.REG_SZ,
+                    f"{uninstaller}.cmd"
+                )
+                winreg.SetValueEx(
+                    reg, 'DisplayIcon', 0, winreg.REG_SZ,
+                    os.path.join(SIMNIBSDIR, "resources", "gui_icon.ico")
+                )
+                winreg.SetValueEx(
+                    reg, 'DisplayName', 0, winreg.REG_SZ,
+                    'SimNIBS'
+                )
+                winreg.SetValueEx(
+                    reg, 'DisplayVersion', 0, winreg.REG_SZ,
+                    __version__
+                )
+
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
@@ -679,10 +656,11 @@ def uninstaller_setup(install_dir, force, silent):
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
-        uninstall_registry = r'HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS'
-        subprocess.run(
-            f'reg delete "{uninstall_registry}" /f',
-            shell=True)
+        with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+                access=winreg.KEY_WRITE) as reg:
+            winreg.DeleteKey(reg, 'SimNIBS')
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')
