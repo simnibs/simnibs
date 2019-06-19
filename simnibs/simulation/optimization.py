@@ -4,8 +4,10 @@ TMS coil position/orientation optimizations functions.
 
 Authors: Ole Numssen, Konstantin Weise
 """
+from simnibs.msh import mesh_io
 from simnibs import sim_struct, run_simnibs
 import numpy as np
+import pickle
 
 
 n_cpu = 10
@@ -68,23 +70,29 @@ def calc_coil_pos_from_matsimnibs(matsimnibs):
 
 # ### General Information
 S = sim_struct.SESSION()
-S.fnamehead = 'ernie.msh'  # head mesh
-S.pathfem = 'tms'  # Directory for the simulation
+mesh = '/data/pt_01756/tmp/optim/15484.08_fixed.msh'
+S.fnamehead = mesh  # head mesh
+S.pathfem = '/data/pt_01756/tmp/optim'  # Directory for the simulation
 
 # ## Define the TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'  # Choose a coil from the ccd-files folder
+tms.fnamecoil = '/data/pt_01756/coils/ccd/MagVenture_MC_B60_1233.nii.gz'  # Choose a coil from the ccd-files folder
 
 # get coil position at start position
 
 pos = tms.add_position()
 pos.centre = brain_target
 pos.pos_ydir = angles[1]
-pos.distance = 0
+pos.distance = 1
 
+print("prepare")
+# mesh = mesh_io.read_msh(mesh)
+# mesh.fix_surface_labels()
+mesh = pickle.load(open("/data/pt_01756/tmp/optim/mesh.pckl",'rb'))
 
+print("calc matsimnibs")
+mat = pos.calc_matsimnibs(mesh)  # get skull coil position for cortex target
 # TODO: magic here to get coil positions
-pos.calc_matsimnibs(tms.mesh)
 positions = dict()
 
 # # Define the coil position
