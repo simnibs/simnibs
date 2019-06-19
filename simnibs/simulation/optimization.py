@@ -4,6 +4,10 @@ TMS coil position/orientation optimizations functions.
 
 Authors: Ole Numssen, Konstantin Weise
 """
+import logging
+
+import pyfempp
+
 from simnibs.msh import mesh_io
 from simnibs import sim_struct, run_simnibs
 import numpy as np
@@ -42,12 +46,12 @@ def read_msh_from_pckl(fn, m=None):
     return pickle.load(open(fn, 'rb'))
 
 
-from simnibs.msh import mesh_io
+# replace mesh_io.read_msh with own version to load pickled mesh
 mesh_io.read_msh = read_msh_from_pckl
 
 # General Information
 S = sim_struct.SESSION()
-mesh = '/data/pt_01756/tmp/optim/mesh.pckl'
+mesh = '/data/pt_01756/tmp/optim/15484.08_fixed.msh'
 S.fnamehead = mesh  # head mesh
 S.pathfem = '/data/pt_01756/tmp/optim'  # Directory for the simulation
 
@@ -67,6 +71,24 @@ tms = get_opt_grid(tms=tms,
                    handle_direction_ref=handle_direction_ref,
                    radius=radius,
                    resolution_pos=resolution_pos)
+tms.pos
+for i, pos in enumerate(tms.pos):  # pos = tms.pos[0]
+    print(i)
+    try:
+        pos.pos_ydir = pos.pos_ydir.tolist()
+    except Exception:
+        pass
+    try:
+        pos.centre = pos.centre.tolist()
 
+    except Exception:
+        pass
+
+    pos.matsimnibs = None
+    pos.distance = .1
+    pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False)
+
+pyfempp.create_stimsite_from_poslist("/data/pt_01756/tmp/optim/coil.hdf5", tms)
 # Run Simulation
-run_simnibs(S, n_cpu)
+out = S.run(allow_multiple_runs=True, cpus=10)
+logging.shutdown()

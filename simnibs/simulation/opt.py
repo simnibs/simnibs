@@ -94,9 +94,9 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     # write coordinates in TMS object
     for c, h in zip(coords_mapped, handle_directions):
         pos = tms.add_position()
-        pos.centre = c
-        pos.pos_ydir = h
-        pos.distance = 0.
+        pos.centre = c.tolist()
+        pos.pos_ydir = h.tolist()
+        pos.distance = .1
 
     return tms
 
