@@ -1,9 +1,37 @@
 import copy
+import pickle
+
+import h5py
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 from mpl_toolkits.mplot3d import Axes3D
 import itertools
 
+from simnibs.msh import Msh, struct
+
+
+def read_msh_from_pckl(fn, m=None):
+    ''' Reads a gmsh '.msh' file
+
+    Parameters
+    ------------
+    fn: str
+        File name
+    m: simnibs.msh.Msh (optional)
+        Mesh structure to be overwritten. If unset, will create a new structure
+
+    Returns
+    --------
+    msh: simnibs.msh.Msh
+        Mesh structure
+    '''
+    print("This is the monkey-patched version.")
+    assert fn.endswith('.msh')
+    fn = fn[:-3] + "pckl"
+    return pickle.load(open(fn, 'rb'))
 
 def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_pos=1, resolution_angle=10,
                  angle_limits=[-30, 30]):
