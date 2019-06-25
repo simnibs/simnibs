@@ -797,9 +797,10 @@ class ElcTable(QtWidgets.QWidget):
     def definePosition(self, row):
          pos_gui = Position_GUI(self.table_rows[row].electrode.centre,
                                 self.table_rows[row].electrode.pos_ydir,
+                                str(self.table_rows[row].name_item.text()),
                                 self.glHeadModel)
          pos_gui.show()
-         centre, pos_ydir,ok = pos_gui.GetPositions()
+         centre, pos_ydir, name, ok = pos_gui.GetPositions()
 
          if ok and pos_ydir == [0.0,0.0,0.0]:
             QtWidgets.QMessageBox.critical(self, "Warning",
@@ -809,6 +810,7 @@ class ElcTable(QtWidgets.QWidget):
 
          elif ok:
              self.table_rows[row].centre = centre
+             self.table_rows[row].name = name
              self.table_rows[row].pos_ydir = pos_ydir
              self.table_rows[row].electrode.centre = centre
              self.table_rows[row].electrode.pos_ydir = pos_ydir
@@ -816,6 +818,8 @@ class ElcTable(QtWidgets.QWidget):
 
              scalp_surf = self.glHeadModel.getSurface('Scalp')
              self.table_rows[row].transf_matrix = scalp_surf.calculateMatSimnibs(centre, pos_ydir)
+
+             self.table_rows[row].name_item.setText(name)
              self.updateStimulatorModels()
 
 
@@ -1189,21 +1193,23 @@ class CoilTable (QtWidgets.QWidget):
 
     def definePosition(self, row):
          pos_gui = Position_GUI(self.table_rows[row].p1, self.table_rows[row].p2,
+                                str(self.table_rows[row].name_item.text()),
                                 self.glHeadModel)
          pos_gui.show()
-         p1, p2,ok = pos_gui.GetPositions()
+         p1, p2, name, ok = pos_gui.GetPositions()
 
          #to make sure the reference is given
          while ok and p2 == [0.0,0.0,0.0]:
             QtWidgets.QMessageBox.critical(self, "Warning",
                 'You must select a direction by checking the box and clicking the head model')
-            p1, p2,ok = pos_gui.GetPositions()
+            p1, p2, name, ok = pos_gui.GetPositions()
 
          if ok:
              self.table_rows[row].p1 = p1
              self.table_rows[row].p2 = p2
              scalp_surf = self.glHeadModel.getSurface('Scalp')
              self.writeOnPosColumn(row, p1)
+             self.table_rows[row].name_item.setText(name)
              self.updateStimulatorModels()
 
     def writeOnPosColumn(self, row, pos):
@@ -1294,13 +1300,14 @@ class CoilTable (QtWidgets.QWidget):
 
 #GUI where the user clicks and chooses the position
 class Position_GUI(QtWidgets.QDialog):
-    def __init__(self, centre, reference, glHeadModel):
+    def __init__(self, centre, reference, name, glHeadModel):
         super(Position_GUI, self).__init__()
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.centre = centre
         self.reference = reference
         self.glHeadModel = glHeadModel
         self.ogl_object = None
+        self.name = name
         glHeadModel.windowClicked.connect(self.getClickedPosition)
 
         mainLayout = QtWidgets.QGridLayout()
@@ -1344,9 +1351,14 @@ class Position_GUI(QtWidgets.QDialog):
             self.glHeadModel.eeg_names = eeg_names[order].tolist()
             self.glHeadModel.eeg_coordinates = coords[order].tolist()
             self.el_coords = [None] + list(self.glHeadModel.eeg_coordinates)
+            self.el_name = [None] + self.glHeadModel.eeg_names
+            if self.name in self.el_name:
+                curr_idx = self.el_name.index(self.name)
+            else:
+                curr_idx = 0
             self.eeg_pos_selector.clear()
-            self.eeg_pos_selector.addItems([None] + self.glHeadModel.eeg_names)
-            self.eeg_pos_selector.setCurrentIndex(0)
+            self.eeg_pos_selector.addItems(self.el_name)
+            self.eeg_pos_selector.setCurrentIndex(curr_idx)
             self.eeg_pos_selector.setEnabled(True)
 
 
@@ -1393,6 +1405,7 @@ class Position_GUI(QtWidgets.QDialog):
             self.pos_x.setValue(c[0])
             self.pos_y.setValue(c[1])
             self.pos_z.setValue(c[2])
+            self.name = self.el_name[i]
             if not self.check.isChecked():
                 self.check.toggle()
         self.update_center()
@@ -1462,6 +1475,7 @@ class Position_GUI(QtWidgets.QDialog):
             self.pos_y.setValue(Position[1])
             self.pos_z.setValue(Position[2])
             #if self.mode == 'TMS':
+            self.name = ''
             self.check.toggle()
             self.update_center()
         if Position is not None and get_ref:
@@ -1510,7 +1524,7 @@ class Position_GUI(QtWidgets.QDialog):
         result = self.exec_()
         self.glHeadModel.clearTmpObjects()
         centre, reference = self.getPositions()
-        return (centre, reference, result == QtWidgets.QDialog.Accepted)
+        return (centre, reference, self.name, result == QtWidgets.QDialog.Accepted)
 
 
 def _get_posy(centre, surf):
