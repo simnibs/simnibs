@@ -1398,7 +1398,7 @@ class Msh:
         center = msh_skin.nodes.node_coord[closest]
 
         # Y axis
-        y = pos_ydir - center
+        y = pos_ydir  # -center  #  bugfix here
         if np.isclose(np.linalg.norm(y), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
         y /= np.linalg.norm(y)
