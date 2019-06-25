@@ -140,10 +140,10 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
         conducted
     resolution_pos: float
         Resolution in mm of the coil positions in the region of interest
-    resolution_angle: int or float
+    resolution_angle: float (Default: 20)
         Resolution in deg of the coil positions in the region of interest
-    angle_limits: list of int
-        Range of angles to get coil rotations for. Default: [-30, 30]
+    angle_limits: list of float (Default: [-30, 30])
+        Range of angles to get coil rotations for.
 
     Returns
     -------
@@ -157,7 +157,7 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     tms_tmp = copy.deepcopy(tms)
     pos_target = tms_tmp.add_position()
     pos_target.centre = target
-    pos_target.pos_ydir = [0, 0, 0]
+    pos_target.pos_ydir = handle_direction_ref
     pos_target.distance = .1
     target_matsimnibs = pos_target.calc_matsimnibs(msh, log=False)
     target_skin = target_matsimnibs[0:3, 3]
@@ -221,10 +221,14 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     handle_directions = np.zeros((len(angles), 3))
 
     for i, a in enumerate(angles):
-        mat_rot = np.array([[np.cos(a / 180. * np.pi), -np.sin(a / 180. * np.pi), 0],
-                            [np.sin(a / 180. * np.pi), np.cos(a / 180. * np.pi), 0],
-                            [0, 0, 1]])
-        handle_directions[i, ] = np.dot(handle_direction_ref, mat_rot)
+        # mat_rot = np.array([[np.cos(a / 180. * np.pi), -np.sin(a / 180. * np.pi), 0],
+        #                     [np.sin(a / 180. * np.pi), np.cos(a / 180. * np.pi), 0],
+        #                     [0, 0, 1]])
+        # handle_directions[i, ] = np.dot(target_matsimnibs[0:3,0:3], mat_rot)[:,1]
+        # same as below
+        x = target_matsimnibs[0:3, 0]
+        y = target_matsimnibs[0:3, 1]
+        handle_directions[i, ] = np.cos(a/180. * np.pi) * y + np.sin(a/180.*np.pi)*-x
 
     # combine coil positions and orientations
     po = list(itertools.product(coords_mapped, handle_directions))
@@ -232,13 +236,29 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     # write coordinates in TMS object
     for c, h in po:
         pos = tms.add_position()
+        # print(c)
         pos.centre = c.tolist()
+        # print(h)
         pos.pos_ydir = h.tolist()
         pos.distance = 0.
 
     return tms
 
-    # fig = plt.figure()
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import axes3d
+    fig = plt.figure()
+    ax = fig.add_subplot(111,  projection='3d')
+
+    for i in range(9):
+        ax.quiver(po[i][0][0], po[i][0][1], po[i][0][2],
+                  po[i][1][0], po[i][1][1], po[i][1][2])
+    ax.set_aspect('equal')
+
+    ax = fig.add_subplot(111, projection='3d')
+    for i in range(9):
+        ax.scatter(
+                  po[i][1][0], po[i][1][1], po[i][1][2])
+
     # ax = fig.add_subplot(111, projection='3d')
     # ax.scatter(nodes_roi[:, 0], nodes_roi[:, 1], nodes_roi[:, 2])
     # ax.quiver(target_skin[0], target_skin[1], target_skin[2],
@@ -272,16 +292,15 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     #                                  target_skin_nodes[2, ] - target_skin_nodes[0, ]]).transpose()
 
 
-def optimize_tms_coil_pos(session,
-                          target=None, coil_fn=None, tms_list=None,
+def optimize_tms_coil_pos(session, tms_list=None, target=None,
                           handle_direction_ref=None, radius=20, angle_limits=None,
                           resolution_pos=1.5, resolution_angle=15, distance=1.,
                           n_cpu=8):
     """Compute optimal TMS coil position/rotation for maximum field at cortical target.
 
     This implements a brute-force approach to find the optimal coil position & rotation to maximize normE
-    at given target. The cortical target is projected to the nearest position at the skin surface and candidate coil
-    positions/rotations are then distributed equally in a circular plance around that location.
+    at a given cortical target. The target is projected to the nearest position at the skin surface and candidate coil
+    positions/rotations are then distributed equally in a circular plane around that location.
     The number of candiate coil positions/rotations is defined by the two resolution parameters (_pos and
     angle), the radius of the circular plane, and angle_limits.
 
@@ -295,10 +314,8 @@ def optimize_tms_coil_pos(session,
         Session object
     tms_list: simnibs.stimulation.sim_struct.TMSLIST (optional)
         Filled tmslist to simulate. If provided, arguments below are ignored.
-    coil_fn: basestring
-        Location of coil nifti-file
-    handle_direction_ref: list of num or np.ndarray
-        Vector of handle prolongation direction
+    handle_direction_ref: list of num or np.ndarray (Default: [-2.8, 7, 8.1])
+        Vector of coil handle prolongation direction. Defaults to left M1 45°.
     radius: float (Default: 20)
         Radius of region of interest around skin-projected cortical target, where the bruteforce simulations are
         conducted
@@ -335,7 +352,7 @@ def optimize_tms_coil_pos(session,
     if angle_limits is None:
         angle_limits = [-60, 60]
     if handle_direction_ref is None:
-        handle_direction_ref = [22.5, 45, 67.5]
+        handle_direction_ref = [-2.8, 7, 8.1]
 
     if type(target) == np.ndarray:
         target = target.tolist()
@@ -346,12 +363,12 @@ def optimize_tms_coil_pos(session,
     if type(angle_limits) == np.ndarray:
         angle_limits = angle_limits.tolist()
 
-    if tms_list is not None and (
-            target or coil_fn or handle_direction_ref or resolution_angle or angle_limits or distance):
-        logger.warn("tms_list provided. Ignoring other provided arguments!")
+    if tms_list.pos and (
+            target or handle_direction_ref or resolution_angle or angle_limits or distance):
+        logger.warn("tms_list positions provided. Ignoring other provided arguments!")
 
-    if not tms_list and not (target and coil_fn):
-        raise ValueError("Provide either tms_list or (target, coil_fn, and handle_direction_ref).")
+    if not tms_list.pos and not (target):
+        raise ValueError("Provide either target or tms_list.pos.")
 
     opt_folder = session.pathfem
     sim_folder = opt_folder + "/simulations/"
@@ -370,15 +387,14 @@ def optimize_tms_coil_pos(session,
         # mesh.fix_surface_labels()
         mesh = pickle.load(open(session.fnamehead[:-3] + "pckl", 'rb'))
 
-        logger.info("Determining coil positions and orientations for optimization.")
-
         tms_list = get_opt_grid(tms=tms_list,
                                 msh=mesh,
                                 target=target,
                                 handle_direction_ref=handle_direction_ref,
                                 radius=radius,
                                 angle_limits=angle_limits,
-                                resolution_pos=resolution_pos)
+                                resolution_pos=resolution_pos,
+                                resolution_angle=resolution_angle)
 
         # get msh_surf to speed up things a bit
         msh_surf = mesh.crop_mesh(elm_type=2)
@@ -401,14 +417,14 @@ def optimize_tms_coil_pos(session,
                     logger.info("Creating matsimnibs {0:0>4}/{1}.".format(i, n_pos))
                 starttime = datetime.datetime.now()
 
-            pos.pos_ydir = pos.pos_ydir
-            pos.centre = pos.centre
+            # pos.pos_ydir = pos.pos_ydir
+            # pos.centre = pos.centre
             pos.matsimnibs = None
             pos.distance = distance
             pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False, msh_surf=msh_surf)
 
         # store poslist as matfile
-        save_matlab_sim_struct(opt_folder + '/tms_poslist.mat')
+        save_matlab_sim_struct(tms_list, opt_folder + '/tms_poslist.mat')
         # pickle.dump(tms_list, open(opt_folder + '/tms_poslist.pckl', 'wb'))
     else:
         logger.info("Optimization: Calculation positions from provided TMSLIST.pos.")
