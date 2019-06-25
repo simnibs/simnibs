@@ -4,6 +4,7 @@
 '''
 
 import multiprocessing
+import os
 import time
 import copy
 import warnings
@@ -1100,7 +1101,7 @@ def tms_dadt(mesh, cond, dAdt):
 
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
-             output_names, geo_names=None, n_workers=1):
+             output_names, geo_names=None, n_workers=1, write_hdf5=False, remove_msh=False):
     ''' Simulates TMS fields using a coild + matsimnibs + dIdt definition
 
     Parameters
@@ -1109,7 +1110,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         Mesh structure
     cond: simnibs.msh.mesh_io.ElementData
         Conductivity field
-    fields: str
+    fields: str or list of str
         Fields to be calculated for each position
     fn_coil: string
         Name of coil file
@@ -1123,6 +1124,10 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         List of output mesh file names, one per position
     n_workers: int
         Number of workers to use
+    write_hdf5: bool (Default: False)
+        Write .hdf5 version of .msh to disk for each simulation.
+    remove_msh: bool (Default: False)
+        Remove .msh after simulation
 
     Returns
     --------
@@ -1143,7 +1148,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                 matsimnibs_list, didt_list, output_names, geo_names):
             _run_tms(
                 mesh, cond, fn_coil, fields,
-                matsimnibs, didt, fn_out, fn_geo)
+                matsimnibs, didt, fn_out, fn_geo, write_hdf5, remove_msh)
         _finalize_global_solver()
     else:
         with multiprocessing.Pool(processes=n_workers,
@@ -1156,15 +1161,27 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                     pool.apply_async(
                         _run_tms,
                         (mesh, cond, fn_coil, fields,
-                         matsimnibs, didt, fn_out, fn_geo)))
+                         matsimnibs, didt, fn_out, fn_geo, write_hdf5, remove_msh)))
             pool.close()
             pool.join()
+
 
 def _set_up_global_solver(S):
     global tms_global_solver
     tms_global_solver = S
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
+
+def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
+             write_hdf5=False, remove_msh=False):
+    """
+    Parameters
+    ----------
+    write_hdf5: bool (Default: False)
+        Save .hdf5 version of final mesh to disk.
+    remove_msh: bool (Default: False)
+        Remove .msh after simulation
+
+    """
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt, fn_geo=fn_geo)
@@ -1174,6 +1191,18 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
     mesh_io.write_msh(out, fn_out)
+
+    # save hdf5 version to disk
+    if write_hdf5:
+        fn_hdf5 = fn_out[:-3] + "hdf5"
+        if os.path.exists(fn_hdf5):
+            logger.warn(fn_hdf5 + " already exists. Removing file.")
+            os.remove(fn_hdf5)
+        logger.info("Writing .hdf5")
+        out.write_hdf5(fn_hdf5)
+    if remove_msh:
+        os.remove(fn_out)
+
 
 def _finalize_global_solver():
     global tms_global_solver

@@ -577,7 +577,7 @@ class Msh:
         return cropped
 
     def join_mesh(self, other):
-        ''' Join the current mesh with another
+        """ Join the current mesh with another
 
         Parameters
         -----------
@@ -588,7 +588,7 @@ class Msh:
         --------
         joined: simnibs.msh.Msh
             Mesh with joined nodes and elements
-        '''
+        """
         joined = copy.deepcopy(self)
         joined.elmdata = []
         joined.nodedata = []
@@ -609,7 +609,6 @@ class Msh:
         joined.elm.tag1 = joined.elm.tag1[new_elm_order]
         joined.elm.tag2 = joined.elm.tag2[new_elm_order]
         joined.elm.elm_type = joined.elm.elm_type[new_elm_order]
-
 
         for nd in self.nodedata:
             assert len(nd.value) == self.nodes.nr
@@ -1366,7 +1365,7 @@ class Msh:
         if not np.isclose(vol_before, vol_after):
             self.nodes.node_coord = nodes_bk
 
-    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=[5, 1005]):
+    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=[5, 1005], msh_surf=None):
         """ Calculate the matsimnibs matrix for TMS simulations
 
         Parameters
@@ -1379,6 +1378,8 @@ class Msh:
             Distance from the center
         skin_surface: list
             Possible tags for the skin surface (Default: [5, 1005])
+        msh_surf: bool (Default: False)
+            Surface cropped mesh. If not provided, this is computed from self.
 
         Returns
         -------
@@ -1390,10 +1391,12 @@ class Msh:
             z' is a direction normal to the coil, points inside the head
 
         """
-        msh_surf = self.crop_mesh(elm_type=2)
+        if not msh_surf:
+            msh_surf = self.crop_mesh(elm_type=2)
         msh_skin = msh_surf.crop_mesh(skin_surface)
         closest = np.argmin(np.linalg.norm(msh_skin.nodes.node_coord - center, axis=1))
         center = msh_skin.nodes.node_coord[closest]
+
         # Y axis
         y = pos_ydir - center
         if np.isclose(np.linalg.norm(y), 0.):

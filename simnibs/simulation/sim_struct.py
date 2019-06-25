@@ -879,6 +879,7 @@ class SimuList(object):
             except KeyError:
                 self.anisotropy_vol = None
 
+
 class TMSLIST(SimuList):
     """List of TMS coil position
 
@@ -892,8 +893,14 @@ class TMSLIST(SimuList):
     -------------------------
     fnamecoil: str
         Name of coil file
-    poscoil: list of simnibs.simulation.sim_struct.POSCOIL() structures
+    pos: list of simnibs.simulation.sim_struct.POSITION() structures
         Definition of coil positions
+    create_visuals: bool (Default: True)
+        Create summary file after simulation.
+    remove_msh: bool (Default: False)
+        Remove .msh files after simulation.
+    write_hdf5: bool (Default: False)
+        Write .hdf5 version of mesh file.
     """
 
     def __init__(self, matlab_struct=None):
@@ -901,6 +908,9 @@ class TMSLIST(SimuList):
         self.fnamecoil = ''
         self.pos = []
         self.postprocess = ['E', 'e', 'J', 'j']
+        self.create_visuals = True
+        self.write_hdf5 = False
+        self.remove_msh = False
 
         if matlab_struct is not None:
             self.read_mat_struct(matlab_struct)
@@ -1043,6 +1053,11 @@ class TMSLIST(SimuList):
           We return a list for consistency with the TMS version
 
         """
+        if not hasattr(self, 'write_hdf5'):
+            self.write_hdf5 = False
+        if not hasattr(self, 'remove_msh'):
+            self.remove_msh = False
+
         if len(self.pos) == 0:
             raise ValueError('There are no positions defined for this poslist!')
         fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
@@ -1079,28 +1094,29 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     cpus)
+                     cpus, self.write_hdf5, self.remove_msh)
 
-        logger.info('Creating visualizations')
-        summary = ''
-        for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
-            p.fnamefem = n
-            m = mesh_io.read_msh(n)
-            v = m.view(
-                visible_tags=_surf_preferences(m),
-                visible_fields=_field_preferences(self.postprocess))
-            v.add_merge(g)
-            v.write_opt(n)
+        if not hasattr(self, 'create_visuals') or self.create_visuals:
+            logger.info('Creating visualizations')
+            summary = ''
+            for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
+                p.fnamefem = n
+                m = mesh_io.read_msh(n)
+                v = m.view(
+                    visible_tags=_surf_preferences(m),
+                    visible_fields=_field_preferences(self.postprocess))
+                v.add_merge(g)
+                v.write_opt(n)
 
-            if view:
-                mesh_io.open_in_gmsh(n, True)
+                if view:
+                    mesh_io.open_in_gmsh(n, True)
 
-            summary += f'\n{os.path.split(s)[1][:-1]}\n'
-            summary += len(os.path.split(s)[1][:-1]) * '=' + '\n'
-            summary += 'Gray Matter\n\n'
-            summary += m.fields_summary(roi=2)
+                summary += f'\n{os.path.split(s)[1][:-1]}\n'
+                summary += len(os.path.split(s)[1][:-1]) * '=' + '\n'
+                summary += 'Gray Matter\n\n'
+                summary += m.fields_summary(roi=2)
 
-        logger.log(25, summary)
+            logger.log(25, summary)
 
         del cond
         gc.collect()
@@ -1282,7 +1298,7 @@ class POSITION(object):
         else:
             return False
 
-    def calc_matsimnibs(self, msh, cap=None, log=True):
+    def calc_matsimnibs(self, msh, cap=None, log=True, msh_surf=None):
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
@@ -1298,7 +1314,7 @@ class POSITION(object):
                 raise ValueError('Coil distance not set!')
             self.substitute_positions_from_cap(cap=cap)
             self.matsimnibs = msh.calc_matsimnibs(
-                self.centre, self.pos_ydir, self.distance)
+                self.centre, self.pos_ydir, self.distance, msh_surf=msh_surf)
             if log:
                 logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
             return self.matsimnibs
@@ -1413,7 +1429,7 @@ class TDCSLIST(SimuList):
 
     Attributes
     ------------------------------------------
-    currets: list of floats
+    currents: list of floats
         current in each channel
     electrode: list of sim_struct.ELECTRODE structures
         electrodes
