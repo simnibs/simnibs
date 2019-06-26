@@ -1743,6 +1743,7 @@ class runSimThread(QtCore.QThread):
             self.output_signal, self.get_stop)
         w2b_handler.setFormatter(
             logging.Formatter('%(levelname)s: %(message)s'))
+        w2b_handler.setLevel(logging.INFO)
         logger.addHandler(w2b_handler)
         run_simnibs(self.session)
         logger.removeHandler(w2b_handler)
