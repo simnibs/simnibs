@@ -43,7 +43,7 @@ from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from . import fem
 from . import electrode_placement
-from .. import SIMNIBSDIR
+from .. import SIMNIBSDIR, __version__
 
 class SESSION(object):
     """Class that defines a set of simnibs simulations
@@ -443,7 +443,7 @@ class SESSION(object):
             'simnibs_simulation_{0}.log'.format(self.time_str))
         fh = logging.FileHandler(log_fn, mode='w')
         formatter = logging.Formatter(
-            '[ %(name)s - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
+            f'[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
         fh.setFormatter(formatter)
         fh.setLevel(logging.DEBUG)
         logger = logging.getLogger("simnibs")
