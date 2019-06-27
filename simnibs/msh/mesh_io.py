@@ -25,7 +25,6 @@ import struct
 import copy
 import datetime
 import warnings
-import multiprocessing
 import gc
 import hashlib
 import tempfile
@@ -2807,13 +2806,8 @@ class ElementData(Data):
             output=data_grid.dtype, **kwargs)
         if len(data_grid.shape) == 4:
             indim = data_grid.shape[3]
-            n = multiprocessing.cpu_count()
-            n = np.min((n, indim))
-            p = multiprocessing.Pool(processes=n)
             outdata = np.array(
-                p.map(f, [data_grid[..., i] for i in range(indim)])).T
-            p.close()
-            p.join()
+                [f(data_grid[..., i]) for i in range(indim)]).T
         elif len(data_grid.shape) == 3:
             outdata = f(data_grid)
 

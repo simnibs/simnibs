@@ -24,7 +24,6 @@ from __future__ import division
 from __future__ import print_function
 import warnings
 import os
-import multiprocessing
 from functools import partial
 import csv
 import re
@@ -81,11 +80,6 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
     if len(df_data.shape) > 4:
         df_data = df_data.squeeze()
 
-    # Set-up multiprocessing
-    n = multiprocessing.cpu_count()
-    n = np.min((n, cpus))
-    p = multiprocessing.Pool(processes=n)
-
     # If the resolution is to be changed
     if target_dimensions is None:
         target_dimensions = df_data.shape[:3]
@@ -106,13 +100,11 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         f = partial(scipy.ndimage.map_coordinates,
                     coordinates=t,
                     output=np.float32, order=1,
-                    mode='constant', cval=np.nan, prefilter=False)
-        voxvals = np.array(p.map(f, [df_data[..., i] for i in range(3)]))
+                    mode='constant', cval=np.nan)
+        voxvals = np.array([f(df_data[..., i]) for i in range(3)])
         # Figure out the voxel coordinates in original space
         iM = np.linalg.inv(im_affine)
         coords = iM[:3, :3].dot(voxvals) + iM[:3, 3, None]
-        p.close()
-        p.join()
         del t
         del xyzvox
         del voxvals
@@ -227,7 +219,6 @@ def volumetric_affine(image, affine, target_space_affine,
 
 
 def _interpolate(im_data, coords, intorder, outdim, cpus=1):
-    # Set-up multiprocessing
     if len(im_data.shape) > 3:
         indim = im_data.shape[3]
         squeeze = False
@@ -235,17 +226,12 @@ def _interpolate(im_data, coords, intorder, outdim, cpus=1):
         indim = 1
         im_data = im_data[..., None]
         squeeze = True
-    n = multiprocessing.cpu_count()
-    n = min(n, indim, cpus)
-    p = multiprocessing.Pool(processes=n)
     f = partial(
         scipy.ndimage.map_coordinates, coordinates=coords,
         output=im_data.dtype, order=intorder, mode='constant',
-        cval=0.0, prefilter=True)
-    outdata = np.array(p.map(f, [im_data[..., i] for i in range(indim)])).T
+        cval=0.0)
+    outdata = np.array([f(im_data[..., i]) for i in range(indim)]).T
     outdata = outdata.reshape(tuple(outdim)+(indim,))
-    p.close()
-    p.join()
     if squeeze:
         outdata = outdata.squeeze()
     return outdata
@@ -673,19 +659,14 @@ def coordinates_nonlinear(coordinates, deformation, intorder=1, vectors=None,
     df_data, df_affine = deformation
     df_data = df_data.squeeze()
 
-    # Set-up multiprocessing
-    n = multiprocessing.cpu_count()
-    n = np.min((n, 3))
-    p = multiprocessing.Pool(processes=n)
-
     iM = np.linalg.inv(df_affine)
     t = iM[:3, :3].dot(coordinates.T) + iM[:3, 3, None]
     # Figure out the x, y, z coordinates in the original space
     f = partial(scipy.ndimage.map_coordinates,
                 coordinates=t,
                 output=np.float32, order=intorder,
-                mode='nearest', prefilter=False)
-    coords = np.array(p.map(f, [df_data[..., i] for i in range(3)]))
+                mode='nearest')
+    coords = np.array([f(df_data[..., i]) for i in range(3)])
 
     if vectors is not None:
         original_l = np.linalg.norm(vectors, axis=1)
@@ -694,16 +675,14 @@ def coordinates_nonlinear(coordinates, deformation, intorder=1, vectors=None,
         f = partial(scipy.ndimage.map_coordinates,
                     coordinates=t,
                     output=np.float32, order=intorder,
-                    mode='nearest', prefilter=False)
-        v_trafo = np.array(p.map(f, [df_data[..., i] for i in range(3)]))
+                    mode='nearest')
+        v_trafo = np.array([f(df_data[..., i]) for i in range(3)])
         vec_transf = (v_trafo - coords) / .1
         if keep_length:
             vec_transf /= np.linalg.norm(vec_transf, axis=0)[None, :]
         vec_transf *= original_l[None, :]
 
         return coords.T, vec_transf.T
-    p.close()
-    p.join()
     return coords.T
 
 

@@ -25,7 +25,6 @@ import os
 
 import h5py
 import numpy as np
-import multiprocessing
 import copy
 from collections import OrderedDict
 
@@ -660,7 +659,6 @@ class gPCSampler(object):
         self._gpc_vars = prep_gpc(poslist)
         self.identifiers = self._gpc_vars[0]
         self.qoi_function = OrderedDict([('E', self._calc_E)])
-        self._file_lock = multiprocessing.Manager().Lock()
 
     def create_hdf5(self):
         '''Creates an HDF5 file to store the data '''
@@ -829,16 +827,12 @@ class TDCSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             qois.append(qoi_f(v_c))
 
-        # We should write everything in one block to avoid input from different
-        # processes getting mixed up
-        self._file_lock.acquire()
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples', 'mesh_roi/data_matrices')
         for qoi_name, qoi_f in self.qoi_function.items():
             self.record_data_matrix(
                 qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
-        self._file_lock.release()
 
         del cropped
         del cond
@@ -956,7 +950,6 @@ class TMSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             qois.append(qoi_f(v_c, dAdt_roi))
 
-        self._file_lock.acquire()
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples',
@@ -964,7 +957,6 @@ class TMSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             self.record_data_matrix(
                 qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
-        self._file_lock.release()
 
         del cropped
         del cond
