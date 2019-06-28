@@ -5,21 +5,80 @@ import glob
 import logging
 import h5py
 import os
-import time
-from functools import partial
-from multiprocessing.pool import Pool
 import pandas as pd
 import pickle
 import numpy as np
 import itertools
 import pyfempp
 from simnibs import msh
-from ..simulation import TMSLIST, sim_struct, save_matlab_sim_struct
+from ..simulation import TMSLIST, sim_struct
 from ..utils.simnibs_logger import logger
 from simnibs.msh.mesh_io import _find_mesh_version, _read_msh_2, _read_msh_4, Msh, read_msh
 
 
-def get_target_e_from_mesh(mesh_fn, target, verbose=False):
+def eval_optim(simulations, target, tms_list, res_fn):
+
+    # load tms_list if filename
+    if type(tms_list) == str:
+        tms_list_new = TMSLIST()
+        tms_list_new.read_mat_struct(tms_list)
+        tms_list = tms_list_new
+
+    # get coil distance
+    assert all(pos.distance == tms_list.pos[0].distance for pos in tms_list.pos), "Different coil distances found."
+    distance = tms_list.pos[0].distance
+
+    assert len(simulations) == len(tms_list.pos), \
+        'Simulation number ({}) does not fit to TMSLIST positions ({})'.format(len(simulations), len(tms_list.pos))
+
+    # read first mesh to get index of target element
+    first_res_mesh = Msh()
+    first_res_mesh = first_res_mesh.read_hdf5(simulations[0])
+    _, idx = first_res_mesh.find_closest_element(target, return_index=True)
+
+    # read normE at from target element from each simulation
+    # p = Pool(n_cpu)
+    # f = partial(get_target_e_from_mesh, target=target)
+    # f = partial(get_target_e_from_hdf5, idx=idx - 1, verbose=True)  # .hdf5 indexing is +1 to .msh
+
+    # read fields in a pooled manner
+    # target_e = p.map(f, simulations)
+
+    # read data
+    target_e = [get_target_e_from_hdf5(sim, idx=idx-1, verbose=False) for sim in simulations]
+
+    # build dictionary to easily create pandas afterwards
+    d = dict()
+    for i, simulation in enumerate(simulations):
+        d[i] = [target_e[i]] + tms_list.pos[i].centre + tms_list.pos[i].pos_ydir + [simulation, idx-1] + target
+    data = pd.DataFrame.from_dict(d)
+    data = data.transpose()
+    data.columns = ['normE', 'x', 'y', 'z',
+                    'handle_x', 'handle_y', 'handle_z',
+                    'fn', 'idx_hdf5',
+                    'target_x', 'target_y', 'target_z']
+    data.to_csv(res_fn)  # save normE from all simulations at target elm to .csv
+
+    # get best coil position/orientation from the results
+    data['normE'] = data['normE'].astype(float)
+    best_cond = data.iloc[[data['normE'].idxmax()]]
+    tms_list = copy.copy(tms_list)
+    tms_list.pos = []  # use original tms_list and replace pos with best conditions
+    if not (best_cond.count(0) == 1).all():
+        logger.warn("Multiple optimal coil pos/rot found!")
+
+    for _, row in best_cond.iterrows():
+        best_pos = sim_struct.POSITION()
+        best_pos.distance = distance
+        best_pos.centre = row[['x', 'y', 'z']].values.tolist()
+        best_pos.pos_ydir = row[['handle_x', 'handle_y', 'handle_z']].values.tolist()
+
+        tms_list.add_position(best_pos)
+
+    return tms_list
+
+
+def get_target_e_from_mesh(mesh_fn, target, na_val=-1, verbose=False):
     """
     Worker function to pool.map() .msh reading.
 
@@ -38,11 +97,16 @@ def get_target_e_from_mesh(mesh_fn, target, verbose=False):
         normE from element nearest to target location
 
     """
-    print("Reading target E from {}".format(os.path.basename(mesh_fn)))
-    t = datetime.datetime.now()
-    sim_msh = read_msh(mesh_fn)
-    elm, idx = sim_msh.find_closest_element(target, return_index=True)
-    e = sim_msh.field['normE'][idx]
+    if verbose:
+        print("Reading target E from {}".format(os.path.basename(mesh_fn)))
+        t = datetime.datetime.now()
+    try:
+        sim_msh = read_msh(mesh_fn)
+        elm, idx = sim_msh.find_closest_element(target, return_index=True)
+        e = sim_msh.field['normE'][idx]
+    except (OSError, IOError):
+        logger.warn("Cannot read {}".format(mesh_fn))
+        e = na_val
     gc.collect()
     if verbose:
         logger.info("Reading target E from {} done ({}s).".format(os.path.basename(mesh_fn),
@@ -50,7 +114,7 @@ def get_target_e_from_mesh(mesh_fn, target, verbose=False):
     return e
 
 
-def get_target_e_from_hdf5(mesh_fn, idx, verbose=False):
+def get_target_e_from_hdf5(mesh_fn, idx, na_val=np.float64(-1), verbose=False):
     """
     Worker function to pool.map() .hdf5 reading.
 
@@ -70,7 +134,11 @@ def get_target_e_from_hdf5(mesh_fn, idx, verbose=False):
     float:
         normE from idx element
     """
-    e = h5py.File(mesh_fn, 'r')['/elmdata/normE'][idx]
+    try:
+        e = h5py.File(mesh_fn, 'r')['/elmdata/normE'][idx]
+    except (OSError, IOError):
+        logger.warn("Cannot read {}".format(mesh_fn))
+        e = na_val
     if verbose:
         logger.info("Reading target E from {} done.".format(os.path.basename(mesh_fn)))
     return e
@@ -209,11 +277,6 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
 
         coords_mapped[i, ] = p0[inside, ]
 
-    # determine handle directions
-    # project handle_direction_ref to reference plane
-    # handle_direction_ref_proj = np.dot(handle_direction_ref, vh[:,:2])
-    # handle_directions = np.tile(np.array(handle_direction_ref), (coords_mapped.shape[0], 1))
-
     # determine rotation matrices around z-axis of coil and rotate
     angles = np.linspace(angle_limits[0],
                          angle_limits[1],
@@ -221,11 +284,6 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     handle_directions = np.zeros((len(angles), 3))
 
     for i, a in enumerate(angles):
-        # mat_rot = np.array([[np.cos(a / 180. * np.pi), -np.sin(a / 180. * np.pi), 0],
-        #                     [np.sin(a / 180. * np.pi), np.cos(a / 180. * np.pi), 0],
-        #                     [0, 0, 1]])
-        # handle_directions[i, ] = np.dot(target_matsimnibs[0:3,0:3], mat_rot)[:,1]
-        # same as below
         x = target_matsimnibs[0:3, 0]
         y = target_matsimnibs[0:3, 1]
         handle_directions[i, ] = np.cos(a/180. * np.pi) * y + np.sin(a/180.*np.pi)*-x
@@ -236,63 +294,14 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     # write coordinates in TMS object
     for c, h in po:
         pos = tms.add_position()
-        # print(c)
         pos.centre = c.tolist()
-        # print(h)
         pos.pos_ydir = h.tolist()
         pos.distance = 0.
 
     return tms
 
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import axes3d
-    fig = plt.figure()
-    ax = fig.add_subplot(111,  projection='3d')
 
-    for i in range(9):
-        ax.quiver(po[i][0][0], po[i][0][1], po[i][0][2],
-                  po[i][1][0], po[i][1][1], po[i][1][2])
-    ax.set_aspect('equal')
-
-    ax = fig.add_subplot(111, projection='3d')
-    for i in range(9):
-        ax.scatter(
-                  po[i][1][0], po[i][1][1], po[i][1][2])
-
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(nodes_roi[:, 0], nodes_roi[:, 1], nodes_roi[:, 2])
-    # ax.quiver(target_skin[0], target_skin[1], target_skin[2],
-    #           5*vh[0, 0], 5*vh[1, 0], 5*vh[2, 0], color='k')
-    # ax.quiver(target_skin[0], target_skin[1], target_skin[2],
-    #           5*vh[0, 1], 5*vh[1, 1], 5*vh[2, 1], color='r')
-    # ax.quiver(target_skin[0], target_skin[1], target_skin[2],
-    #           5 * vh[0, 2], 5 * vh[1, 2], 5 * vh[2, 2], color='g')
-    #
-    # ax.quiver(c[0], c[1], c[2], Q1[0], Q1[1], Q1[2], color='k')
-    # ax.quiver(c[0], c[1], c[2], Q2[0], Q2[1], Q2[2], color='g')
-    #
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-
-    # ax.quiver(c[0], c[1], c[2], 1e2 * vh[0, 2], 1e2 * vh[1, 2], 1e2 * vh[2, 2], color='k')
-    # ax.quiver(c[0], c[1], c[2], -1e2 * vh[0, 2], -1e2 * vh[1, 2], -1e2 * vh[2, 2], color='kk')
-    # ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2], color="r")
-    # ax.scatter(coords_mapped[:, 0], coords_mapped[:, 1], coords_mapped[:, 2], color="g")
-    #
-    #
-    #
-    # ax.scatter(P0[inside, ][:, 0], P0[inside, ][:, 1], P0[inside, ][:, 2], color="g")
-    # ax.scatter(elm_center_roi[inside, ][:, 0],
-    #            elm_center_roi[inside, ][:, 1], elm_center_roi[inside, ][:, 2], color="g")
-    # ax.scatter(nodes_roi[:, 0], nodes_roi[:, 1], nodes_roi[:, 2])
-
-    # target_skin_center, target_skin_elm_idx = msh_skin.find_closest_element(target_skin, return_index=True)
-    # target_skin_nodes = msh_skin.nodes.node_coord[msh_skin.elm.node_number_list[target_skin_elm_idx][0:3]-1, ]
-    # target_skin_tangents = np.array([target_skin_nodes[1, ] - target_skin_nodes[0, ],
-    #                                  target_skin_nodes[2, ] - target_skin_nodes[0, ]]).transpose()
-
-
-def optimize_tms_coil_pos(session, tms_list=None, target=None,
+def optimize_tms_coil_pos(session, target=None,
                           handle_direction_ref=None, radius=20, angle_limits=None,
                           resolution_pos=1.5, resolution_angle=15, distance=1.,
                           n_cpu=8):
@@ -311,9 +320,8 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
     target: np.ndarray or list of float
         XYZ coordinates to optimize coil position/rotation for
     session: simnibs.simulation.stim_struct.SESSION
-        Session object
-    tms_list: simnibs.stimulation.sim_struct.TMSLIST (optional)
-        Filled tmslist to simulate. If provided, arguments below are ignored.
+        Session object with 1 TMSLIST() as poslist.
+        If session.poslists[0].pos is empty, is is filled according to parameters below.
     handle_direction_ref: list of num or np.ndarray (Default: [-2.8, 7, 8.1])
         Vector of coil handle prolongation direction. Defaults to left M1 45°.
     radius: float (Default: 20)
@@ -333,19 +341,21 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
     Returns
     -------
     files
-        all simulations are stored in opt_folder/simulations/ (.hdf, .geo)
+        all simulations are stored in session.pathfem/simulations/ (.hdf, .geo)
 
     file
         normE at target element for all simulations is saved to opt_folder/optim.csv
 
     file
-        tms_poslist.pckl in opt_folder/
+        session object used for simulation in opt_folder/optim_session.mat
 
     file
-        tmslist for best coil position/orientation(s) is saved to opt_folder/optim.mat
+        tmslist object with optimal coil positions
 
-    simnibs.sim_struct.TMSLIST
-        tmslist for best coil position(s)
+    dict
+        'best_conds': simnibs.sim_struct.TMSLIST for optimal coil position(s)
+        'simulations': simulation filenames,
+        'session': simnibs.sim_struct.SESSION object used for simulation
     """
 
     # some argument checks, defaults, type handling
@@ -353,6 +363,8 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
         angle_limits = [-60, 60]
     if handle_direction_ref is None:
         handle_direction_ref = [-2.8, 7, 8.1]
+
+    assert len(session.poslists) == 1, "Please provide session with 1 TMS poslist."
 
     if type(target) == np.ndarray:
         target = target.tolist()
@@ -363,12 +375,13 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
     if type(angle_limits) == np.ndarray:
         angle_limits = angle_limits.tolist()
 
+    tms_list = session.poslists[0]
     if tms_list.pos and (
             target or handle_direction_ref or resolution_angle or angle_limits or distance):
         logger.warn("tms_list positions provided. Ignoring other provided arguments!")
 
     if not tms_list.pos and not (target):
-        raise ValueError("Provide either target or tms_list.pos.")
+        raise ValueError("Provide either target or tms_list.pos .")
 
     opt_folder = session.pathfem
     sim_folder = opt_folder + "/simulations/"
@@ -423,11 +436,8 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
             pos.distance = distance
             pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False, msh_surf=msh_surf)
 
-        # store poslist as matfile
-        save_matlab_sim_struct(tms_list, opt_folder + '/tms_poslist.mat')
-        # pickle.dump(tms_list, open(opt_folder + '/tms_poslist.pckl', 'wb'))
     else:
-        logger.info("Optimization: Calculation positions from provided TMSLIST.pos.")
+        logger.info("Optimization: using positions from provided TMSLIST.pos .")
 
     # TODO: remove pyfempp
     pyfempp.create_stimsite_from_tmslist(opt_folder + "/coil_positions.hdf5",
@@ -436,7 +446,12 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
     tms_list.remove_msh = True
     tms_list.open_in_gmsh = False
 
-    session.add_poslist(tms_list)
+    # update session poslist with changed tms_list
+    session.poslists[0] = tms_list
+
+    # save session with positions to disk
+    tmslist_optim_all = opt_folder + "/optim_session.mat"
+    sim_struct.save_matlab_sim_struct(session, tmslist_optim_all)
 
     # run simulations
     logger.info("Starting optimization: {} FEMs on {} cpus".format(len(tms_list.pos), n_cpu))
@@ -444,46 +459,17 @@ def optimize_tms_coil_pos(session, tms_list=None, target=None,
 
     simulations = [fn[:-3] + 'hdf5' for fn in out]
 
-    # read first mesh to get index of target element
-    first_res_mesh = Msh()
-    first_res_mesh = first_res_mesh.read_hdf5(simulations[0])
-    _, idx = first_res_mesh.find_closest_element(target, return_index=True)
+    # evaluate all simulations
+    tms_list_optim = eval_optim(simulations, target, tms_list, opt_folder + '/optim.csv')
 
-    # read normE at from target element from each simulation
-    p = Pool(n_cpu)
-    # f = partial(get_target_e_from_mesh, target=target)
-    f = partial(get_target_e_from_hdf5, idx=idx-1, verbose=True)  # .hdf5 indexing is +1 to .msh
-
-    # read fields in a pooled manner
-    target_e = p.map(f, simulations)
-
-    # build dictionary to easily create pandas afterwards
-    d = dict()
-    for i, simulation in enumerate(simulations):
-        d[i] = [target_e[i]] + tms_list.pos[i].centre + tms_list.pos[i].pos_ydir
-    data = pd.DataFrame.from_dict(d)
-    data = data.transpose()
-    data.columns = ['normE', 'x', 'y', 'z', 'handle_x', 'handle_y', 'handle_z']
-    data.to_csv(opt_folder + '/optim.csv')  # save normE from all simulations at target elm to .csv
-
-    # get best coil position/orientation from the results
-    best_cond = data.iloc[[data['normE'].idxmax()]]
-    tms_list.pos = []  # use original tms_list and replace pos with best conditions
-    if not (best_cond.count(0) == 1).all():
-        logger.warn("Multiple optimal coil pos/rot found!")
-
-    for _, row in best_cond.iterrows():
-        best_pos = sim_struct.POSITION()
-        best_pos.distance = distance
-        best_pos.centre = row[['x', 'y', 'z']].values.tolist()
-        best_pos.pos_ydir = row[['handle_x', 'handle_y', 'handle_z']].values.tolist()
-
-        tms_list.add_position(best_pos)
-
-    # save results TMSLIST to disk
-    sim_struct.save_matlab_sim_struct(tms_list, opt_folder + "/optim.mat")
+    # save session with positions to disk
+    tmslist_optim_all = opt_folder + "/optim_best_conds_tmslist.mat"
+    sim_struct.save_matlab_sim_struct(tms_list_optim, tmslist_optim_all)
 
     # return best position
     logging.shutdown()
 
-    return tms_list
+    return {'best_conds': tms_list_optim,
+            'simulations': simulations,
+            'session': session}
+

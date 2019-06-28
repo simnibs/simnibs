@@ -325,9 +325,12 @@ class SESSION(object):
         """ Reads form matlab structure
         Parameters
         ------------------
-        mat: scipy.io.loadmat
+        mat: scipy.io.loadmat of str
             Loaded matlab structure
         """
+        if type(mat) == str:
+            mat = scipy.io.loadmat(mat)
+
         self.date = try_to_read_matlab_field(mat, 'date', str, self.date)
         self.volfn = try_to_read_matlab_field(mat, 'volfn', str, self.volfn)
         self.vol = try_to_read_matlab_field(mat, 'volfn', VOLUME, VOLUME())
@@ -932,9 +935,11 @@ class TMSLIST(SimuList):
 
         Parameters:
         ------------------------------
-        PL: scipy.io.loadmat structure
-            Putput of loading a mat structure with scipy
+        PL: scipy.io.loadmat object or str
+            Output of scipy.io.loadmat() or path to scipy.io.savemat() file.
         """
+        if type(PL) == str:
+            PL = scipy.io.loadmat(PL)
         self.read_cond_mat_struct(PL)
 
         try:

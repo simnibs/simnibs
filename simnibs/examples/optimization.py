@@ -13,6 +13,7 @@ Authors: Ole Numssen, Konstantin Weise, 2019
 from simnibs.simulation.opt import optimize_tms_coil_pos
 from simnibs.simulation.sim_struct import SESSION, TMSLIST
 
+
 # define cortical target where normE should be maximal
 target = [-27.17, -17.94, 69.94]
 handle_direction_ref = [-2.8, 7, 8.1]  # ~45° towards fiss. long.
@@ -36,15 +37,16 @@ tms_list.remove_msh = True  # remove .msh after simulation to save storage space
 tms_list.create_visuals = False  # don't create summary after simulation to speed up processing
 tms_list.anisotropy_type = "vn"  # for isotropic: 'scalar'
 
+session.add_poslist(tms_list)
+
 # call optimization procedure with default arguments
 best_positions_right = optimize_tms_coil_pos(session=session,
                                              target=target,
-                                             n_cpu=n_cpu,
-                                             tms_list=tms_list)
+                                             n_cpu=n_cpu)
 
-# right side example
+"""Full argument example"""
 target = [27.17, -17.94, 69.94]  # x-coord in right hemisphere
-handle_direction_ref = [-2.8, 7, 8.1]  # adapt coil handle to right hemisphere
+handle_direction_ref = [2.8, 7, 8.1]  # adapt coil handle to right hemisphere
 
 # these are the default values
 radius = 20
@@ -60,10 +62,18 @@ session.pathfem = '/data/project/optimization_right/'
 session.fname_tensor = tensor_fn  # not needed for isotropic
 session.open_in_gmsh = False
 
+# setup tmslist with options
+tms_list = TMSLIST()
+tms_list.fnamecoil = coil_fn
+tms_list.write_hdf5 = True  # write .hdf5 files to speed up read in
+tms_list.remove_msh = True  # remove .msh after simulation to save storage space
+tms_list.create_visuals = False  # don't create summary after simulation to speed up processing
+tms_list.anisotropy_type = "vn"  # for isotropic: 'scalar'
+
+session.add_poslist(tms_list)
 best_positions_left = optimize_tms_coil_pos(session=session,
                                             target=target,
                                             n_cpu=n_cpu,
-                                            tms_list=tms_list,
                                             handle_direction_ref=handle_direction_ref,
                                             radius=radius,
                                             resolution_angle=resolution_angle,

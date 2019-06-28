@@ -815,7 +815,7 @@ class Msh:
 
         return elm_node_coords
 
-    def write_hdf5(self, hdf5_fn, path='./'):
+    def write_hdf5(self, hdf5_fn, path='./', compression=None):
         """ Writes a HDF5 file with mesh information
 
         Parameters
@@ -824,6 +824,9 @@ class Msh:
             file name of hdf5 file
         path: str
             path in the hdf5 file where the mesh should be saved
+        compression: str or int (Default: None)
+            compression strategy: "gzip", "lzf", "szip", None
+
         """
         with h5py.File(hdf5_fn, 'a') as f:
             try:
@@ -842,13 +845,13 @@ class Msh:
                 elm.create_dataset(key, data=value)
             node = g.create_group('nodes')
             for key, value in vars(self.nodes).items():
-                node.create_dataset(key, data=value)
+                node.create_dataset(key, data=value, compression=compression)
             elmdata = g.create_group('elmdata')
             for d in self.elmdata:
-                elmdata.create_dataset(d.field_name, data=d.value)
+                elmdata.create_dataset(d.field_name, data=d.value, compression=compression)
             nodedata = g.create_group('nodedata')
             for d in self.nodedata:
-                nodedata.create_dataset(d.field_name, data=d.value)
+                nodedata.create_dataset(d.field_name, data=d.value, compression=compression)
 
     @classmethod
     def read_hdf5(self, hdf5_fn, path='./'):
