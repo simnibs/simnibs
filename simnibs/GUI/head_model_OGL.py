@@ -358,19 +358,18 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
 
     #Selects if GM or Skin will be rendered
     def selectRenderSurface(self, surf_name):
-
-        if surf_name == 'Skin' and not self.hasField:
-            self.model = self.skin_model
+        if surf_name == 'Skin':
             self.currenSurface = 'Skin'
-        if surf_name == 'Skin' and self.hasField:
-            self.model = self.skin_model_field 
-            self.currenSurface = 'Skin'
-        if surf_name == 'GM' and not self.hasField:
-            self.model = self.gm_model
+            if not self.hasField:
+                self.model = self.skin_model
+            else:
+                self.model = self.skin_model_field
+        if surf_name == 'GM':
             self.currenSurface = 'GM'
-        if surf_name == 'GM' and self.hasField:
-            self.model = self.gm_model_field
-            self.currenSurface = 'GM'
+            if not self.hasField:
+                self.model = self.gm_model
+            if self.hasField:
+                self.model = self.gm_model_field
 
         self.update()
 
@@ -951,7 +950,6 @@ class HEADMODEL_UI(QtWidgets.QWidget):
         radio_buttons_layout.addWidget(self.view_scalp)
 
         self.view_gm = QtWidgets.QRadioButton("Gray Matter")
-        self.view_gm.toggled.connect(self.changeSurface)
         radio_buttons_layout.addWidget(self.view_gm)
 
         self.radio_buttons_box.setLayout(radio_buttons_layout)
@@ -981,9 +979,20 @@ class HEADMODEL_UI(QtWidgets.QWidget):
 
     def changeSurface(self):
         if self.view_gm.isChecked():
-            self.glHeadModel.selectRenderSurface('GM')
+            if self.glHeadModel.gm_surf is None:
+                QtWidgets.QMessageBox.critical(
+                    self, 'warning',  'No GM surface found in model')
+                return
+            else:
+                self.glHeadModel.selectRenderSurface('GM')
         else:
-            self.glHeadModel.selectRenderSurface('Skin')
+            if self.glHeadModel.skin_model is None:
+                QtWidgets.QMessageBox.critical(
+                    self, 'warning',  'No skin surface found in model')
+                return
+            else:
+                self.glHeadModel.selectRenderSurface('Skin')
+
 
         self.glHeadModel.update()
 
