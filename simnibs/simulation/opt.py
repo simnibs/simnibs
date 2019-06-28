@@ -9,15 +9,35 @@ import pandas as pd
 import pickle
 import numpy as np
 import itertools
-import pyfempp
 from simnibs import msh
 from ..simulation import TMSLIST, sim_struct
 from ..utils.simnibs_logger import logger
 from simnibs.msh.mesh_io import _find_mesh_version, _read_msh_2, _read_msh_4, Msh, read_msh
+try:
+    import pyfempp
+except ImportError:
+    print("pyfempp not found")
+    pyfempp = False
 
 
 def eval_optim(simulations, target, tms_list, res_fn):
+    """
+    Evaluation of optimization results.
 
+    Parameters
+    ----------
+    simulations: list of str
+        list of filenames of simulations (.hdf5 files)
+
+    target: list of float [3]
+        cortical target position in subject space [x,y,z]
+
+    tms_list: simnibs.sim_struct.TMSLIST object
+        TMS simulation object
+
+    res_fn: str
+        filename for results .csv file
+    """
     # load tms_list if filename
     if type(tms_list) == str:
         tms_list_new = TMSLIST()
@@ -439,9 +459,10 @@ def optimize_tms_coil_pos(session, target=None,
     else:
         logger.info("Optimization: using positions from provided TMSLIST.pos .")
 
-    # TODO: remove pyfempp
-    pyfempp.create_stimsite_from_tmslist(opt_folder + "/coil_positions.hdf5",
-                                         tms_list, overwrite=True)
+    if pyfempp:
+        pyfempp.create_stimsite_from_tmslist(opt_folder + "/coil_positions.hdf5",
+                                             tms_list, overwrite=True)
+
     tms_list.create_visuals = False
     tms_list.remove_msh = True
     tms_list.open_in_gmsh = False
