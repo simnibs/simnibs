@@ -309,20 +309,21 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
     for i, a in enumerate(angles):
         x = target_matsimnibs[0:3, 0]
         y = target_matsimnibs[0:3, 1]
-        handle_directions[is] = np.cos(a / 180. * np.pi) * y + np.sin(a / 180. * np.pi) * -x
+        handle_directions[i] = np.cos(a / 180. * np.pi) * y + np.sin(a / 180. * np.pi) * -x
 
     # combine coil positions and orientations
     po = list(itertools.product(coords_mapped, handle_directions))
-    n_pos = len(tms_list.pos)
-    logger.info("Determining {} coil positions/rotations for optimization.".format(n_pos))
-
+    n_pos, starttime = len(po), 0
+    assert n_pos, "Cannot create any positions from given arguments. "
+    # logger.info("Determining {} coil positions/rotations for optimization.".format(n_pos))
+    n_zeros = len(str(n_pos))
     # write coordinates in TMS object
     for i, val in enumerate(po):
         c, h = val
         pos = tms_list.add_position()
         pos.centre = c.tolist()
-        pos.pos_ydir = h.tolist() + c.tolist()
-        pos.distance = 0.
+        pos.pos_ydir = (h + c).tolist()
+        # pos.distance = 0.
 
         if not i % 100:  # on every 100th interation print status
             if i:
@@ -332,9 +333,12 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
                     time_left = datetime.timedelta(seconds=time_left.seconds)
                 except OverflowError:
                     time_left = 'unknown'
-                logger.info("Creating matsimnibs {0:0>4}/{1} (time left: {2}).".format(i, n_pos, time_left))
+                logger.info("Determining coil position {0:0>{3}}/{1} (time left: {2}).".format(i,
+                                                                                               n_pos,
+                                                                                               time_left,
+                                                                                               n_zeros))
             else:
-                logger.info("Creating matsimnibs {0:0>4}/{1}.".format(i, n_pos))
+                logger.info("Determining coil position {0:0>{2}}/{1}.".format(i, n_pos, n_zeros))
             starttime = datetime.datetime.now()
 
         # pos.pos_ydir = pos.pos_ydir
@@ -411,7 +415,7 @@ def optimize_tms_coil_pos(session, target=None,
     if handle_direction_ref is None:
         handle_direction_ref = [-2.8, 7, 8.1]
 
-    assert len(session.poslists) == 1, "Please provide session with 1 TMS poslist."
+    assert session.optimlist, "Please provide session with TMSLIST optimlist."
 
     if type(target) == np.ndarray:
         target = target.tolist()
@@ -422,12 +426,12 @@ def optimize_tms_coil_pos(session, target=None,
     if type(angle_limits) == np.ndarray:
         angle_limits = angle_limits.tolist()
 
-    tms_list = session.poslists[0]
-    if tms_list.pos and (
+    # tms_list = session.poslists[0]
+    if session.optimlist.pos and (
             target or handle_direction_ref or resolution_angle or angle_limits or distance):
         logger.warn("tms_list positions provided. Ignoring other provided arguments!")
 
-    if not tms_list.pos and not (target):
+    if not session.optimlist.pos and not target:
         raise ValueError("Provide either target or tms_list.pos .")
 
     opt_folder = session.pathfem
@@ -441,13 +445,13 @@ def optimize_tms_coil_pos(session, target=None,
         raise FileExistsError(".msh files present in {}. Quitting.".format(sim_folder))
 
     # setup tmslist if not provided
-    if not tms_list.pos:
+    if not session.optimlist.pos:
 
         # mesh = mesh_io.read_msh(mesh)  # TODO: remove this
         # mesh.fix_surface_labels()
         mesh = pickle.load(open(session.fnamehead[:-3] + "pckl", 'rb'))
 
-        tms_list = get_opt_grid(tms_list=tms_list,
+        tms_list = get_opt_grid(tms_list=session.optimlist,
                                 mesh=mesh,
                                 target=target,
                                 handle_direction_ref=handle_direction_ref,
@@ -456,9 +460,6 @@ def optimize_tms_coil_pos(session, target=None,
                                 resolution_pos=resolution_pos,
                                 resolution_angle=resolution_angle)
 
-        # get msh_surf to speed up things a bit
-
-
     else:
         logger.info("Optimization: using positions from provided TMSLIST.pos .")
 
@@ -466,16 +467,12 @@ def optimize_tms_coil_pos(session, target=None,
         pyfempp.create_stimsite_from_tmslist(opt_folder + "/coil_positions.hdf5",
                                              tms_list, overwrite=True)
 
-    tms_list.create_visuals = False
-    tms_list.remove_msh = True
-    tms_list.open_in_gmsh = False
-
     # update session poslist with changed tms_list
-    session.poslists[0] = tms_list
+    session.add_poslist(tms_list)
 
     # save session with positions to disk
-    tmslist_optim_all = opt_folder + "/optim_session.mat"
-    sim_struct.save_matlab_sim_struct(session, tmslist_optim_all)
+    # tmslist_optim_all = opt_folder + "/optim_session.mat"
+    # sim_struct.save_matlab_sim_struct(session, tmslist_optim_all)
 
     # run simulations
     logger.info("Starting optimization: {} FEMs on {} cpus".format(len(tms_list.pos), n_cpu))

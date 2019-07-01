@@ -54,6 +54,7 @@ def read_ccd(fn):
 
     return ccd_file[:, 0:3], ccd_file[:, 3:]
 
+
 def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
     """ auxiliary function to calculate the dA/dt field from a ccd file """
     # read ccd file

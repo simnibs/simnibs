@@ -282,7 +282,7 @@ def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
             for s in range(i_samples, regobj.grid.coords.shape[0]):
                 if print_function:
                     print_function("Performing simulation #{}".format(s+1))
-                # read radom variables from grid
+                # read random variables from grid
                 x = regobj.grid.coords[s, :]
                 # evaluate function at grid points
                 res = func(x, *(args))

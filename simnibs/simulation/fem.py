@@ -1342,7 +1342,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
             pool.close()
             pool.join()
 
-#### Functions for running tDCS leadfields in parallel ####
+
+# ### Functions for running tDCS leadfields in parallel ####
 def _set_up_tdcs_global_solver(S, n, D, post_pro, cond, field):
     global tdcs_global_solver
     global tdcs_global_nsims

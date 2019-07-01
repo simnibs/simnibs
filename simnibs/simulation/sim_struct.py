@@ -29,11 +29,13 @@ import gc
 import logging
 import functools
 
+import multiprocessing
 import numpy as np
 import scipy.io
 import nibabel
 import h5py
 
+from .fem import calc_fields, FEMSystem
 from . import cond
 from ..msh import transformations
 from ..msh import mesh_io
@@ -43,7 +45,9 @@ from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from . import fem
 from . import electrode_placement
+from . import coil_numpy as coil
 from .. import SIMNIBSDIR
+
 
 class SESSION(object):
     """Class that defines a set of simnibs simulations
@@ -152,7 +156,7 @@ class SESSION(object):
         empty fields are set to default values,
         check if required fields exist
         """
-        #if self._prepared:
+        # if self._prepared:
         #    raise Exception('Re-using a Python SESSION '
         #                    'structure can cause bugs!'
         #                    ' Please initialize a new SESSION')
@@ -226,7 +230,7 @@ class SESSION(object):
                               ' the simnibs_simulation*.mat files from the folder : {0}'.format(dir_name))
             logger.info('Running simulations in the directory: {0}'.format(dir_name))
         else:
-            logger.info('Running simulations on new directory: {0}'.dir_name)
+            logger.info('Running simulations on new directory: {0}'.format(dir_name))
             os.makedirs(dir_name)
 
         if save_mat:
@@ -239,20 +243,20 @@ class SESSION(object):
         name = os.path.split(self.fnamehead)[1]
         name = os.path.splitext(name)[0]
         for i, PL in enumerate(self.poslists):
-            logger.info('Running Poslist Number: {0}'.format(i+1))
+            logger.info('Running Poslist Number: {0}'.format(i + 1))
             if PL.name:
                 simu_name = os.path.join(dir_name, PL.name)
             else:
                 if PL.type == 'TMSLIST':
-                    simu_name = os.path.join(dir_name, '{0}_TMS_{1}'.format(name, i+1))
+                    simu_name = os.path.join(dir_name, '{0}_TMS_{1}'.format(name, i + 1))
                 elif PL.type == 'TDCSLIST':
-                    simu_name = os.path.join(dir_name, '{0}_TDCS_{1}'.format(name, i+1))
+                    simu_name = os.path.join(dir_name, '{0}_TDCS_{1}'.format(name, i + 1))
                 else:
-                    simu_name = os.path.join(dir_name, '{0}'.format(i+1))
+                    simu_name = os.path.join(dir_name, '{0}'.format(i + 1))
             fn = PL.run_simulation(simu_name, cpus=cpus, view=self.open_in_gmsh)
             PL.mesh = None
             final_names += fn
-            logger.info('Finished Running Poslist Number: {0}'.format(i+1))
+            logger.info('Finished Running Poslist Number: {0}'.format(i + 1))
             logger.info('Result Files:\n{0}'.format('\n'.join(fn)))
             gc.collect()
 
@@ -335,7 +339,7 @@ class SESSION(object):
         self.volfn = try_to_read_matlab_field(mat, 'volfn', str, self.volfn)
         self.vol = try_to_read_matlab_field(mat, 'volfn', VOLUME, VOLUME())
         self.subpath = try_to_read_matlab_field(mat, 'subpath', str,
-                                                     self.subpath)
+                                                self.subpath)
         self.fnamehead = try_to_read_matlab_field(mat, 'fnamehead', str, self.fnamehead)
         self.pathfem = try_to_read_matlab_field(mat, 'pathfem', str, self.pathfem)
         self.fname_tensor = try_to_read_matlab_field(mat, 'fname_tensor', str,
@@ -461,8 +465,6 @@ class SESSION(object):
         self._log_handlers += [fh_s]
         simnibs_logger.register_excepthook(logger)
 
-
-
     def _finish_logger(self):
         logger = logging.getLogger("simnibs")
         [logger.removeHandler(lh) for lh in self._log_handlers]
@@ -536,7 +538,7 @@ class FIDUCIALS(object):
                     logger.warning(
                         'Unrecognized Fiducial: {0} '
                         'Acceptable fiducuals are: {1}'
-                        .format(n, ['Nz', 'Iz', 'LPA', 'RPA']))
+                            .format(n, ['Nz', 'Iz', 'LPA', 'RPA']))
 
 
 class SimuList(object):
@@ -568,15 +570,15 @@ class SimuList(object):
     def __init__(self, mesh=None):
         # list of conductivities (using COND class)
         self.cond = cond.standard_cond()
-        self.mesh = mesh # The mesh where the simulation will be performed
-        self.fn_tensor_nifti = None # File name with anisotropy information
+        self.mesh = mesh  # The mesh where the simulation will be performed
+        self.fn_tensor_nifti = None  # File name with anisotropy information
         # The 2 variables bellow are set when the _get_vol() method is called
         # If set, they have priority over fn_tensor_nifti
-        self.anisotropy_vol = None # 4-d data with anisotropy information
-        self.anisotropy_affine = None # 4x4 affine transformation from the regular grid
+        self.anisotropy_vol = None  # 4-d data with anisotropy information
+        self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         self.anisotropic_tissues = [1, 2]  # if an anisotropic conductivity is to be used,
         self.suppl = []
-        self.name = None # Name to be given by simulations
+        self.name = None  # Name to be given by simulations
         self.eeg_cap = None
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
@@ -697,7 +699,6 @@ class SimuList(object):
         self.aniso_maxratio = try_to_read_matlab_field(
             mat_struct, 'aniso_maxratio', float, self.aniso_maxratio)
 
-
     def compare_conductivities(self, other):
         if self.anisotropy_type != other.anisotropy_type:
             return False
@@ -762,7 +763,7 @@ class SimuList(object):
 
         elif self.anisotropy_type == 'vn':
             logger.log(level, 'Using anisotropic volume normalized conductivities based on the file:'
-                        ' {0}'.format(self.fn_tensor_nifti))
+                              ' {0}'.format(self.fn_tensor_nifti))
             image, affine = self._get_vol_info()
             return cond.cond2elmdata(mesh, cond_list,
                                      anisotropy_volume=image,
@@ -775,7 +776,7 @@ class SimuList(object):
 
         elif self.anisotropy_type == 'mc':
             logger.log(level, 'Using isotropic mean conductivities based on the file:'
-                        ' {0}'.format(self.fn_tensor_nifti))
+                              ' {0}'.format(self.fn_tensor_nifti))
             image, affine = self._get_vol_info()
             return cond.cond2elmdata(mesh, cond_list,
                                      anisotropy_volume=image,
@@ -872,7 +873,7 @@ class SimuList(object):
                     self.cond[i].distribution_type = dist_array[i].decode()
                 self.cond[i].distribution_parameters = \
                     dist_p_array[i][~np.isnan(dist_p_array[i])].tolist()
-                                         
+
             try:
                 self.anisotropy_affine = g['anisotropy_affine'][:]
             except KeyError:
@@ -911,9 +912,6 @@ class TMSLIST(SimuList):
         self.fnamecoil = ''
         self.pos = []
         self.postprocess = ['E', 'e', 'J', 'j']
-        self.create_visuals = True
-        self.write_hdf5 = False
-        self.remove_msh = False
 
         if matlab_struct is not None:
             self.read_mat_struct(matlab_struct)
@@ -1091,7 +1089,7 @@ class TMSLIST(SimuList):
         coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
         if coil_name.endswith('.nii'):
             coil_name = coil_name[:-4] + '_nii'
-        fn_simu = ["{0}-{1:0=4d}_{2}_".format(fn_simu, i+1, coil_name)
+        fn_simu = ["{0}-{1:0=4d}_{2}_".format(fn_simu, i + 1, coil_name)
                    for i in range(len(self.pos))]
         output_names = [f + self.anisotropy_type + '.msh' for f in fn_simu]
         geo_names = [f + 'coil_pos.geo' for f in fn_simu]
@@ -1151,12 +1149,11 @@ class TMSLIST(SimuList):
         self.pos.append(position)
         return position
 
-
     def __str__(self):
         string = "type: {0} \n" \
                  " fnamecoil: {1}, \n" \
-                 " nr coil positions: {2} \n"\
-                 " anisotropy: {3}"\
+                 " nr coil positions: {2} \n" \
+                 " anisotropy: {3}" \
                  "".format(self.type,
                            self.fnamecoil,
                            len(self.pos),
@@ -1293,12 +1290,12 @@ class POSITION(object):
 
     def matsimnibs_is_defined(self):
         if isinstance(self.matsimnibs, np.ndarray):
-            if self.matsimnibs.ndim == 2 and\
-               self.matsimnibs.shape == (4,4):
+            if self.matsimnibs.ndim == 2 and \
+                    self.matsimnibs.shape == (4, 4):
                 return True
         elif self.matsimnibs and \
-           np.array(self.matsimnibs).ndim == 2 and\
-           np.array(self.matsimnibs).shape == (4, 4):
+                np.array(self.matsimnibs).ndim == 2 and \
+                np.array(self.matsimnibs).shape == (4, 4):
             return True
         else:
             return False
@@ -1326,8 +1323,8 @@ class POSITION(object):
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
-           self.mat != other.mat or self.orient != other.orient or \
-           self.matsimnibs != other.matsimnibs or self.didt != other.didt:
+                self.mat != other.mat or self.orient != other.orient or \
+                self.matsimnibs != other.matsimnibs or self.didt != other.didt:
             return False
 
         else:
@@ -1364,8 +1361,8 @@ class COND(object):
     """
 
     def __init__(self, matlab_struct=None):
-        self.name = None      # e.g. WM, GM
-        self.value = None     # in S/m
+        self.name = None  # e.g. WM, GM
+        self.value = None  # in S/m
         self.descrip = ''
         self._distribution_type = None
         self.distribution_parameters = []
@@ -1445,6 +1442,7 @@ class TDCSLIST(SimuList):
     postprocess: property
         fields to be calculated. valid fields are: 'v' , 'E', 'e', 'J', 'j', 'g', 's', 'D', 'q'
     """
+
     def __init__(self, matlab_struct=None):
         SimuList.__init__(self)
         # currents in A (not mA!; given per stimulator channel)
@@ -1473,7 +1471,7 @@ class TDCSLIST(SimuList):
             raise ValueError("Number of channels should correspond to" +
                              "the size of the currents array:\n" +
                              "unique channels:" + str(self.unique_channels) + " "
-                             "Currents:" + str(self.currents))
+                                                                              "Currents:" + str(self.currents))
 
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
@@ -1667,7 +1665,6 @@ class TDCSLIST(SimuList):
             fn_out, values, 'electrode_currents')
 
 
-
 class ELECTRODE(object):
     """ Class defining tDCS electrodes
 
@@ -1724,7 +1721,7 @@ class ELECTRODE(object):
         self.holes = []
         self.plug = []
         self.dimensions_sponge = None
-        self.eeg_cap = None # is overwitten by TDCSLIST._prepare()
+        self.eeg_cap = None  # is overwitten by TDCSLIST._prepare()
 
         if matlab_struct is not None:
             self.read_mat_struct(matlab_struct)
@@ -1752,7 +1749,6 @@ class ELECTRODE(object):
 
         if self.channelnr is None:
             logger.warning('Please connect the electrode to a channel')
-
 
     def read_mat_struct(self, el):
         self.name = try_to_read_matlab_field(el, 'name', str, self.name)
@@ -1787,7 +1783,7 @@ class ELECTRODE(object):
         except ValueError:
             pass
 
-        if not self.definition or self.definition == '[]': # simplify matlab synthax
+        if not self.definition or self.definition == '[]':  # simplify matlab synthax
             self.definition = 'plane'
 
         # Parse string values for centre and pos_ydir
@@ -1890,17 +1886,17 @@ class ELECTRODE(object):
 
 class VOLUME:
     def __init__(self, matlab_struct=None):
-        self.org = []  #used for parsing neuronavigation data; not stored permanently; optional
-        self.fname=''  #string; points towards neuronavigation file specifying details of structural MRI; optional
-        self.ftype=''  #string; file-type of the T1 used by the sim_struct-system ('NIFTI' or 'DICOM')
-        self.manufacturer='unknown'  #string; currently, only 'LOCALITE' is supported
-        self.volfiles=[]  #list of files of the T1 (one file for NIFTI; many for DICOM)
-        self.img=[]  #used to temporarily store the T1; can be deleted after coregistration to simnibs T1
-        self.voxsize=[]  #voxel size of the T1
-        self.dim=[]  #dimensions of the T1
-        self.m_qform=[]  #qform of the T1
-        self.fname_conf=''  #path and filename of the simnibs T1 of the subject
-        self.m_toconform=[]  #4x4 transformation matrix from sim_struct T1 to simnibs T1 (for mm-to-mm mapping of real world coordinates)
+        self.org = []  # used for parsing neuronavigation data; not stored permanently; optional
+        self.fname = ''  # string; points towards neuronavigation file specifying details of structural MRI; optional
+        self.ftype = ''  # string; file-type of the T1 used by the sim_struct-system ('NIFTI' or 'DICOM')
+        self.manufacturer = 'unknown'  # string; currently, only 'LOCALITE' is supported
+        self.volfiles = []  # list of files of the T1 (one file for NIFTI; many for DICOM)
+        self.img = []  # used to temporarily store the T1; can be deleted after coregistration to simnibs T1
+        self.voxsize = []  # voxel size of the T1
+        self.dim = []  # dimensions of the T1
+        self.m_qform = []  # qform of the T1
+        self.fname_conf = ''  # path and filename of the simnibs T1 of the subject
+        self.m_toconform = []  # 4x4 transformation matrix from sim_struct T1 to simnibs T1 (for mm-to-mm mapping of real world coordinates)
 
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
@@ -1972,6 +1968,7 @@ class LEADFIELD():
     matlab_struct: (optional) scipy.io.loadmat()
         matlab structure
     '''
+
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
         self.date = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -2070,7 +2067,312 @@ class LEADFIELD():
         return mat
 
 
+class TMSOPTIMIZATION(SESSION):
+    """This class defines the structure to optimize the TMS coil position/rotation for a given cortical target.
 
+    Use one TMSOPTIMIZATION per optimization target. That means:
+    - only one TMSLIST is accepted, with
+        - same mesh & anisotropy file for all positions
+        - same coil for all positions
+        - same intensity for all positions
+    """
+
+    def __init__(self, matlab_struct=None):
+        SESSION.__init__(self, matlab_struct)
+        self.path_results = None
+
+        # SESSION fields
+        del self.poslists
+        self.open_in_gmsh = False
+
+        # new fields
+        self.optimlist = None
+        self.fnamecoil = None
+        self.didt = None
+        self.dAdt = None
+        self.mesh = None
+        self.distance = None
+        self.cond = None
+
+    def add_poslist(self, pl):
+        """ Adds a SimList object to the poslist variable
+
+        Parameters:
+        ----------------
+        pl: sim_struct.SimuList
+            SimuList object
+        """
+        if not isinstance(pl, SimuList):
+            raise TypeError('Elements in poslist must be subclasses of SimuList')
+
+        # we only want one poslist for the optimization
+        self.optimlist = pl
+        self._prepared = False
+
+    def remove_poslist(self, number=None):
+        """Removes the specified poslist
+
+        Parameters:
+        ------------------------------
+        number: int
+        indice of postist to be removed
+        """
+
+        if number:
+            logger.warn("TMSOPTIMISATION.remove_poslist() does not eat number= argument.")
+        self.optimlist = None
+        self._prepared = False
+
+    def clear_poslist(self):
+        """ Removes all poslists
+        """
+        self.remove_poslist()
+        self._prepared = False
+
+    def sim_struct2mat(self):
+        """ Creates a dictionary to save a matlab structure with scipy.io.savemat()
+
+        Returns
+        --------------------
+        dict
+            Dictionaty for usage with scipy.io.savemat
+        """
+        mat = {}
+        mat['type'] = 'SESSION'
+        mat['date'] = remove_None(self.date)
+        mat['volfn'] = remove_None(self.volfn)
+        mat['subpath'] = remove_None(self.subpath)
+        mat['eeg_cap'] = remove_None(self.eeg_cap)
+        mat['fnamehead'] = remove_None(self.fnamehead)
+        mat['pathfem'] = remove_None(self.pathfem)
+        mat['fname_tensor'] = remove_None(self.fname_tensor)
+        mat['vol'] = self.vol.sim_struct2mat()
+        mat['map_to_vol'] = remove_None(self.map_to_vol)
+        mat['map_to_MNI'] = remove_None(self.map_to_MNI)
+        mat['map_to_fsavg'] = remove_None(self.map_to_fsavg)
+        mat['map_to_surf'] = remove_None(self.map_to_surf)
+        mat['fields'] = remove_None(self.fields)
+        mat['fiducials'] = self.fiducials.sim_struct2mat()
+        mat['poslist'] = []
+        if self.optimlist:
+            mat['optimlist'] = self.optimlist.sim_struct2mat()
+
+        return mat
+
+    def _prepare(self):
+        """
+        Prepares session for optimizations.
+
+        - relative paths are made absolute,
+        - empty fields are set to default values,
+        - check if required fields exist
+        - check if TMSLIST parameters are set correctly (e.g. no different diDt within poslist, ...)
+        - non-changing fields from the single poslist are stored in self
+
+
+        """
+        if self._prepared:
+            logger.warn('TMSOPTIMIZATION already was prepared. Repeating all steps now.')
+            self._prepared = False
+        self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
+        if not os.path.isfile(self.fnamehead):
+            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+
+        sub_files = SubjectFiles(self.fnamehead, self.subpath)
+        self.fnamehead = sub_files.fnamehead
+        self.subpath = sub_files.subpath
+
+        if not os.path.isdir(self.subpath):
+            logger.warning('Cannot locate subjects m2m folder')
+            logger.warning('some postprocessing options might fail')
+            self.subpath = None
+
+        if not self.fname_tensor:
+            self.fname_tensor = sub_files.tensor_file
+
+        # if not self.eeg_cap:
+        #     self.eeg_cap = sub_files.eeg_cap_1010
+
+        if self.eeg_cap:
+            raise NotImplementedError('eeg_cap is not tested for TMS optimization.')
+
+        logger.info('Head Mesh: {0}'.format(self.fnamehead))
+        logger.info('Subject Path: {0}'.format(self.subpath))
+        self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
+        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+
+        assert self.optimlist, "No TMSLIST as optimlist provided."
+        if os.path.isfile(self.fnamehead):
+            mesh = mesh_io.read_msh(self.fnamehead)
+            mesh.fix_surface_labels()
+            self.optimlist.postprocess = self.fields
+            self.optimlist.fn_tensor_nifti = self.fname_tensor
+            self.optimlist.eeg_cap = self.eeg_cap
+            self.optimlist._prepare()
+            if not self.optimlist.mesh:
+                self.optimlist.mesh = mesh
+
+            # do some checks
+            assert len(self.optimlist.pos)
+            assert np.all([pos.didt == self.optimlist.pos[0].didt for pos in self.optimlist.pos]), \
+                "For TMSOPTIMIZATION, use the same didt for all positions."
+
+            assert np.all([pos.distance == self.optimlist.pos[0].distance for pos in self.optimlist.pos]), \
+                "For TMSOPTIMMIZATION, use the same coil distance for all positions."
+
+            # store some fields in self as they don't change over the optimization positions
+            self.didt = self.optimlist.pos[0].didt
+            self.distance = self.optimlist.pos[0].distance
+            self.mesh = self.optimlist.mesh
+            self.fnamecoil = self.optimlist.fnamecoil
+
+        else:
+            raise IOError(
+                'Could not find head mesh file: {0}'.format(self.fnamehead))
+
+        self._prepared = True
+
+    def run(self, cpus=1, allow_multiple_runs=True, save_mat=True):
+        """ Run simulations in the current optimization.
+
+        Parameters
+        -----------
+        cpus: int (optional)
+            Number of cpus to use. Not necessarily will use all cpus. Default: 1
+        allow_multiple_runs: bool (optinal)
+            Whether to allow multiple runs in one folder. Default: False
+        save_mat: bool (optional)
+            Whether to save the ".mat" file of this structure
+
+        Returns
+        ---------
+        Writes the optimization results.
+
+        """
+        self._set_logger()
+        if not self._prepared:
+            self._prepare()
+        dir_name_sim = os.path.abspath(os.path.expanduser(self.pathfem))
+
+        if os.path.isdir(dir_name_sim):
+            g = glob.glob(os.path.join(dir_name_sim, 'simnibs_simulation*.mat'))
+            if g and not allow_multiple_runs:
+                raise IOError('Found already existing simulation results in directory.'
+                              ' Please run the simulation in a new directory or delete'
+                              ' the simnibs_simulation*.mat files from the folder : {0}'.format(dir_name_sim))
+
+            g = glob.glob(os.path.join(dir_name_sim, '*.hdf5'))
+            if g and not allow_multiple_runs:
+                logger.warn('Found existing simulations in ({}*.hdf5).'.format(dir_name_sim))
+            logger.info('Saving optimization results in {0}'.format(dir_name_sim))
+        else:
+            logger.info('Running optimization results in new directory {0}'.format(dir_name_sim))
+            os.makedirs(dir_name_sim)
+
+        if save_mat:
+            save_matlab_sim_struct(
+                self,
+                os.path.join(
+                    dir_name_sim,
+                    'simnibs_optimization_{0}.mat'.format(self.time_str)))
+
+        self.cond2elmdata()
+
+        for pos in self.optimlist.pos:
+            # todo: multicore this
+            # print(pos)
+            dadt = coil.set_up_tms_dAdt(
+                self.mesh,
+                self.fnamecoil,
+                pos.matsimnibs,
+                didt=self.didt)
+
+            if isinstance(dadt, mesh_io.NodeData):
+                dadt = dadt.node_data2elm_data()
+            dadt.field_name = 'dAdt'
+
+            dadt.write_hdf5(self.fn_hdf5, 'mesh/elmdata/')
+            # self.dAdt = dadt
+            self.mesh.elmdata = [dadt]
+            # cropped = self.mesh.crop_mesh(self.roi)
+            # dAdt_roi = cropped.elmdata[0]
+            # dAdt_roi.write_hdf5(self.fn_hdf5, 'mesh_roi/elmdata/')
+            # self.mesh.elmdata = []
+            # self.dAdt_roi = dAdt_roi
+
+            S = FEMSystem.tms(self.mesh, self.cond)
+            S.lock = multiprocessing.Lock()
+            b = S.assemble_tms_rhs(dadt)
+            v = S.solve(b)
+            # v = mesh_io.NodeData(v, name='v', mesh=self.mesh)
+            self.mesh.nodedata = [v]
+
+            # cropped = self.mesh.crop_mesh(self.roi)
+            # v_c = cropped.nodedata[0]
+            v_c = v
+            # self.mesh.nodedata = []
+
+            v.mesh = self.mesh
+            out = calc_fields(v, self.fields, cond=self.cond, dadt=dadt)
+            S.lock.acquire()
+
+            self.append_optim_data_to_hdf5(out, hdf5_fn=self.hdf5_fn, fields=self.fields)
+            S.release.acquire()
+            qois = []
+            for qoi_name, qoi_f in self.qoi_function.items():
+                qois.append(qoi_f(v_c, dadt))
+
+        self._file_lock.acquire()
+        self.record_data_matrix(random_vars, 'random_var_samples', '/')
+        self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
+        self.record_data_matrix(v_c.value, 'v_samples',
+                                'mesh_roi/data_matrices')
+        for qoi_name, qoi_f in self.qoi_function.items():
+            self.record_data_matrix(
+                qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
+        self._file_lock.release()
+
+        # del cropped
+        del cond
+        del v
+
+    def append_optim_data_to_hdf5(self, i, data, hdf5_fn=None, fields=None):
+        """
+        Adds a single simulation from optimization in hdf5 file.
+
+        Parameters:
+        -----------
+        i: int
+            Which simulation number, should be the TMSOPTIMIZATION.optlist.pos.num[i]
+        data: simnibs.msh.mesh_io.Msh
+            Msh with simnibs.msh.mesh_io.ElementData in data.fields[]
+        hdf5_fn: string
+            Filename of .hdf5 file. Defaults to self.hdf5_fn
+        fields: list of string
+            Fields to pick from data.fields
+        """
+        if not hdf5_fn:
+            hdf5_fn = self.hdf5_fn
+
+        if not fields:
+            fields = self.fields
+
+        # TODO: finish this function
+
+    def cond2elmdata(self, force=False):
+        """
+        Wrapper method for optimlist.cond2elmdata().
+
+        Parameters:
+        -----------
+        force: bool (false)
+            Set force to recompute conductivity information, even if already present.
+        """
+        assert isinstance(self.optimlist, TMSLIST), "No poslist present."
+        if not self.cond or force:
+            self.cond = self.optimlist.cond2elmdata()
+        else:
+            logger.info("Reusing already processed conductivity information.")
 
 
 class TDCSLEADFIELD(LEADFIELD):
@@ -2109,6 +2411,7 @@ class TDCSLEADFIELD(LEADFIELD):
         matlab structure
 
     """
+
     def __init__(self, matlab_struct=None):
         super().__init__()
         # : Date when the session was initiated
@@ -2158,7 +2461,7 @@ class TDCSLEADFIELD(LEADFIELD):
             count_struct = len(self.electrode)
         except TypeError:
             self.electrode = \
-                    [copy.deepcopy(self.electrode) for i in range(count_csv)]
+                [copy.deepcopy(self.electrode) for i in range(count_csv)]
             count_struct = len(self.electrode)
 
         if count_struct != count_csv:
@@ -2185,7 +2488,7 @@ class TDCSLEADFIELD(LEADFIELD):
                 self.electrode[ref_idx], self.electrode[0]
 
         for i, el in enumerate(self.electrode):
-                el.channelnr = i + 1
+            el.channelnr = i + 1
 
     def _add_el_conductivities(self):
         if None in self.unique_channels:
@@ -2243,7 +2546,6 @@ class TDCSLEADFIELD(LEADFIELD):
 
         name = '{0}ROI.msh'.format(subid)
         return name
-
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
         ''' Runs the calculations for the leadfield
@@ -2349,9 +2651,11 @@ class TDCSLEADFIELD(LEADFIELD):
                 mesh_lf.nodes.node_coord,
                 out_fill='nearest',
                 element_wise=True)
+
             # Define postprocessing operation
             def post(out_field, M):
                 return M.dot(out_field)
+
             post_pro = functools.partial(post, M=M)
 
         else:
@@ -2401,7 +2705,6 @@ class TDCSLEADFIELD(LEADFIELD):
         logger.info('=====================================')
         self._finish_logger()
 
-
     def read_mat_struct(self, mat):
         """ Reads form matlab structure
         Parameters
@@ -2432,13 +2735,16 @@ class TDCSLEADFIELD(LEADFIELD):
         mat['eeg_cap'] = remove_None(self.eeg_cap)
         return mat
 
+
 """
     EXPORT FUNCTIONS
 """
 
+
 def save_matlab_sim_struct(struct, fn):
     mat = struct.sim_struct2mat()
     scipy.io.savemat(fn, mat)
+
 
 def save_electrode_mat(electrode_list):
     elec_dt = np.dtype([('type', 'O'),
