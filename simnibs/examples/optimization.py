@@ -10,7 +10,7 @@ angle), the radius of the circular plane, and angle_limits.
 Authors: Ole Numssen, Konstantin Weise, 2019
 """
 
-from simnibs.simulation.opt import optimize_tms_coil_pos
+from simnibs.simulation.optim_tms import optimize_tms_coil_pos
 from simnibs.simulation.sim_struct import SESSION, TMSLIST
 
 

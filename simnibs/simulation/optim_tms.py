@@ -13,6 +13,7 @@ from simnibs import msh
 from ..simulation import TMSLIST, sim_struct
 from ..utils.simnibs_logger import logger
 from simnibs.msh.mesh_io import _find_mesh_version, _read_msh_2, _read_msh_4, Msh, read_msh
+
 try:
     import pyfempp
 except ImportError:
@@ -65,12 +66,12 @@ def eval_optim(simulations, target, tms_list, res_fn):
     # target_e = p.map(f, simulations)
 
     # read data
-    target_e = [get_target_e_from_hdf5(sim, idx=idx-1, verbose=False) for sim in simulations]
+    target_e = [get_target_e_from_hdf5(sim, idx=idx - 1, verbose=False) for sim in simulations]
 
     # build dictionary to easily create pandas afterwards
     d = dict()
     for i, simulation in enumerate(simulations):
-        d[i] = [target_e[i]] + tms_list.pos[i].centre + tms_list.pos[i].pos_ydir + [simulation, idx-1] + target
+        d[i] = [target_e[i]] + tms_list.pos[i].centre + tms_list.pos[i].pos_ydir + [simulation, idx - 1] + target
     data = pd.DataFrame.from_dict(d)
     data = data.transpose()
     data.columns = ['normE', 'x', 'y', 'z',
@@ -208,21 +209,23 @@ def read_msh_from_pckl(fn, m=None):
         return m
 
 
-def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_pos=1, resolution_angle=10,
+def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radius=20, resolution_pos=1, resolution_angle=10,
                  angle_limits=None):
     """
     Determine the coil positions and orientations for bruteforce TMS optimization
 
     Parameters
     ----------
-    tms: simnibs.simulation.sim_struct.TMSLIST object
+    tms_list: simnibs.simulation.sim_struct.TMSLIST object
         TMS simulation object instance
-    msh: simnibs.msh.mesh_io.Msh object
+    mesh: simnibs.msh.mesh_io.Msh object
         Simnibs mesh object
     target: np.ndarray or list of float
         Coordinates (x, y, z) of cortical target
     handle_direction_ref: list of float or np.ndarray
         Vector of handle prolongation direction
+    distance: float (Default: 1.)
+        Coil distance to skin surface [mm].
     radius: float
         Radius of region of interest around skin-projected cortical target, where the bruteforce simulations are
         conducted
@@ -242,16 +245,16 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
         angle_limits = [-30, 30]
 
     # project cortical target to skin surface
-    tms_tmp = copy.deepcopy(tms)
+    tms_tmp = copy.deepcopy(tms_list)
     pos_target = tms_tmp.add_position()
     pos_target.centre = target
     pos_target.pos_ydir = handle_direction_ref
     pos_target.distance = .1
-    target_matsimnibs = pos_target.calc_matsimnibs(msh, log=False)
+    target_matsimnibs = pos_target.calc_matsimnibs(mesh, log=False)
     target_skin = target_matsimnibs[0:3, 3]
 
     # extract ROI
-    msh_surf = msh.crop_mesh(elm_type=2)
+    msh_surf = mesh.crop_mesh(elm_type=2)
     msh_skin = msh_surf.crop_mesh([5, 1005])
     elm_center = np.mean(msh_skin.nodes.node_coord[msh_skin.elm.node_number_list[:, 0:3] - 1], axis=1)
     elm_mask_roi = np.linalg.norm(elm_center - target_skin, axis=1) < 1.2 * radius
@@ -274,9 +277,9 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     coords_plane = np.dot(coords_plane, vh[:, :2].transpose()) + target_skin
 
     # project grid-points to skin-surface
-    p1 = msh_skin.nodes.node_coord[node_number_list_roi[:, 0], ]
-    p2 = msh_skin.nodes.node_coord[node_number_list_roi[:, 1], ]
-    p3 = msh_skin.nodes.node_coord[node_number_list_roi[:, 2], ]
+    p1 = msh_skin.nodes.node_coord[node_number_list_roi[:, 0],]
+    p2 = msh_skin.nodes.node_coord[node_number_list_roi[:, 1],]
+    p3 = msh_skin.nodes.node_coord[node_number_list_roi[:, 2],]
 
     normals = np.cross(p2 - p1, p3 - p1)
     coords_mapped = np.zeros(coords_plane.shape)
@@ -295,7 +298,7 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
                            np.sum(np.cross(p3 - p2, p0 - p2) * normals, axis=1) >= 0),
             np.sum(np.cross(p1 - p3, p0 - p3) * normals, axis=1) >= 0)
 
-        coords_mapped[i, ] = p0[inside, ]
+        coords_mapped[i,] = p0[inside,]
 
     # determine rotation matrices around z-axis of coil and rotate
     angles = np.linspace(angle_limits[0],
@@ -306,19 +309,43 @@ def get_opt_grid(tms, msh, target, handle_direction_ref, radius=20, resolution_p
     for i, a in enumerate(angles):
         x = target_matsimnibs[0:3, 0]
         y = target_matsimnibs[0:3, 1]
-        handle_directions[i, ] = np.cos(a/180. * np.pi) * y + np.sin(a/180.*np.pi)*-x
+        handle_directions[is] = np.cos(a / 180. * np.pi) * y + np.sin(a / 180. * np.pi) * -x
 
     # combine coil positions and orientations
     po = list(itertools.product(coords_mapped, handle_directions))
+    n_pos = len(tms_list.pos)
+    logger.info("Determining {} coil positions/rotations for optimization.".format(n_pos))
 
     # write coordinates in TMS object
-    for c, h in po:
-        pos = tms.add_position()
+    for i, val in enumerate(po):
+        c, h = val
+        pos = tms_list.add_position()
         pos.centre = c.tolist()
-        pos.pos_ydir = h.tolist()
+        pos.pos_ydir = h.tolist() + c.tolist()
         pos.distance = 0.
 
-    return tms
+        if not i % 100:  # on every 100th interation print status
+            if i:
+                duration = datetime.datetime.now() - starttime
+                try:
+                    time_left = ((n_pos - i) / 100.) * duration
+                    time_left = datetime.timedelta(seconds=time_left.seconds)
+                except OverflowError:
+                    time_left = 'unknown'
+                logger.info("Creating matsimnibs {0:0>4}/{1} (time left: {2}).".format(i, n_pos, time_left))
+            else:
+                logger.info("Creating matsimnibs {0:0>4}/{1}.".format(i, n_pos))
+            starttime = datetime.datetime.now()
+
+        # pos.pos_ydir = pos.pos_ydir
+        # pos.centre = pos.centre
+        pos.matsimnibs = None
+        pos.distance = distance
+        pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False, msh_surf=msh_surf)
+
+    # get matsimnibs for each position
+
+    return tms_list
 
 
 def optimize_tms_coil_pos(session, target=None,
@@ -420,8 +447,8 @@ def optimize_tms_coil_pos(session, target=None,
         # mesh.fix_surface_labels()
         mesh = pickle.load(open(session.fnamehead[:-3] + "pckl", 'rb'))
 
-        tms_list = get_opt_grid(tms=tms_list,
-                                msh=mesh,
+        tms_list = get_opt_grid(tms_list=tms_list,
+                                mesh=mesh,
                                 target=target,
                                 handle_direction_ref=handle_direction_ref,
                                 radius=radius,
@@ -430,31 +457,7 @@ def optimize_tms_coil_pos(session, target=None,
                                 resolution_angle=resolution_angle)
 
         # get msh_surf to speed up things a bit
-        msh_surf = mesh.crop_mesh(elm_type=2)
 
-        # get matsimnibs for each position
-        n_pos = len(tms_list.pos)
-        logger.info("Determining {} coil positions/rotations for optimization.".format(n_pos))
-        for i, pos in enumerate(tms_list.pos):  # pos = tms.pos[0]
-
-            if not i % 100:  # on every 100th interation print status
-                if i:
-                    duration = datetime.datetime.now() - starttime
-                    try:
-                        time_left = ((n_pos - i) / 100.) * duration
-                        time_left = datetime.timedelta(seconds=time_left.seconds)
-                    except OverflowError:
-                        time_left = 'unknown'
-                    logger.info("Creating matsimnibs {0:0>4}/{1} (time left: {2}).".format(i, n_pos, time_left))
-                else:
-                    logger.info("Creating matsimnibs {0:0>4}/{1}.".format(i, n_pos))
-                starttime = datetime.datetime.now()
-
-            # pos.pos_ydir = pos.pos_ydir
-            # pos.centre = pos.centre
-            pos.matsimnibs = None
-            pos.distance = distance
-            pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False, msh_surf=msh_surf)
 
     else:
         logger.info("Optimization: using positions from provided TMSLIST.pos .")
@@ -493,4 +496,3 @@ def optimize_tms_coil_pos(session, target=None,
     return {'best_conds': tms_list_optim,
             'simulations': simulations,
             'session': session}
-
