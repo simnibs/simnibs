@@ -40,7 +40,7 @@ tms_list.anisotropy_type = "vn"  # for isotropic: 'scalar'
 session.add_poslist(tms_list)
 
 # call optimization procedure with default arguments
-best_positions_right = optimize_tms_coil_pos(session=session,
+best_positions_right = optimize_tms_coil_pos(tms_optim=session,
                                              target=target,
                                              n_cpu=n_cpu)
 
@@ -71,7 +71,7 @@ tms_list.create_visuals = False  # don't create summary after simulation to spee
 tms_list.anisotropy_type = "vn"  # for isotropic: 'scalar'
 
 session.add_poslist(tms_list)
-best_positions_left = optimize_tms_coil_pos(session=session,
+best_positions_left = optimize_tms_coil_pos(tms_optim=session,
                                             target=target,
                                             n_cpu=n_cpu,
                                             handle_direction_ref=handle_direction_ref,

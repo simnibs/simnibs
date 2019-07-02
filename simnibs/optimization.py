@@ -58,7 +58,7 @@ session.add_poslist(poslist)
 # session.read_mat_struct("/data/pt_01756/tmp/optim/15484.08/optim_session.mat")
 # session.poslists[0].pos = session.poslists[0].pos[3059:]
 
-results = optimize_tms_coil_pos(session=session,
+results = optimize_tms_coil_pos(tms_optim=session,
                                 target=targets[subject],
                                 n_cpu=n_cpu,
                                 resolution_pos=resolution_pos,

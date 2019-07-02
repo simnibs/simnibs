@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-
+import datetime
 import os
 from collections import OrderedDict
 import time
@@ -35,7 +35,7 @@ import scipy.io
 import nibabel
 import h5py
 
-from .fem import calc_fields, FEMSystem
+from .fem import calc_fields, FEMSystem  # , _set_up_global_solver, _finalize_global_solver
 from . import cond
 from ..msh import transformations
 from ..msh import mesh_io
@@ -47,6 +47,9 @@ from . import fem
 from . import electrode_placement
 from . import coil_numpy as coil
 from .. import SIMNIBSDIR
+
+
+# from .optim_tms import test, run_optim_sim, _set_up_global_solver, _finalize_global_solver
 
 
 class SESSION(object):
@@ -685,8 +688,11 @@ class SimuList(object):
 
         """
         self.cond = []
-        for c in mat_struct['cond'][0]:
-            self.cond.append(COND(c))
+        try:
+            for c in mat_struct['cond'][0]:
+                self.cond.append(COND(c))
+        except (KeyError, ValueError):
+            pass
 
         self.anisotropy_type = try_to_read_matlab_field(
             mat_struct, 'anisotropy_type', str, self.anisotropy_type)
@@ -2079,20 +2085,25 @@ class TMSOPTIMIZATION(SESSION):
 
     def __init__(self, matlab_struct=None):
         SESSION.__init__(self, matlab_struct)
-        self.path_results = None
 
         # SESSION fields
         del self.poslists
         self.open_in_gmsh = False
 
         # new fields
-        self.optimlist = None
-        self.fnamecoil = None
+        self.cond = None
+        self.hdf5_fn = None
         self.didt = None
         self.dAdt = None
-        self.mesh = None
         self.distance = None
-        self.cond = None
+        self.fnamecoil = None
+        self.mesh = None
+        self.optimlist = None
+        self.qoi = 'normE'
+        self.save_fields = None  # 'normE', 'E', both
+        self.n_sim = None
+        self.write_mesh_geom = False  # add mesh geomietry information to .hdf5
+        self.compress_hdf5 = None  # None | 'gzip'
 
     def add_poslist(self, pl):
         """ Adds a SimList object to the poslist variable
@@ -2108,6 +2119,36 @@ class TMSOPTIMIZATION(SESSION):
         # we only want one poslist for the optimization
         self.optimlist = pl
         self._prepared = False
+
+    def read_mat_struct(self, mat):
+        if type(mat) == str:
+            mat = scipy.io.loadmat(mat)
+
+        super().read_mat_struct(mat)
+
+        self.cond = try_to_read_matlab_field(mat, 'cond', str, self.date)
+        self.hdf5_fn = try_to_read_matlab_field(mat, 'hdf5_fn', str)
+        self.didt = try_to_read_matlab_field(mat, 'didt', float)
+        self.distance = try_to_read_matlab_field(mat, 'distance', float)
+        self.fnamecoil = try_to_read_matlab_field(mat, 'fnamecoil', str)
+        if len(mat['optimlist']) > 0:
+            for PL in mat['optimlist'][0]:
+                if PL['type'][0] == 'TMSLIST':
+                    self.add_poslist(TMSLIST(PL))
+                elif PL['type'][0] == 'TDCSLIST':
+                    raise NotImplementedError
+                    # self.add_poslist(TDCSLIST(PL[0][0]))
+
+                else:
+                    raise IOError(
+                        "poslist type is not of type TMSLIST or TDCSLIST")
+        self.qoi = try_to_read_matlab_field(mat, 'qoi', str)
+        self.save_fields = try_to_read_matlab_field(mat, 'save_fields', list)  # 'normE', 'E', both
+        self.n_sim = try_to_read_matlab_field(mat, 'n_sim', int)
+        self.write_mesh_geom = try_to_read_matlab_field(mat, 'write_mesh_geom', bool)
+        self.compress_hdf5 = try_to_read_matlab_field(mat, 'compress_hdf5', str)
+        if self.compress_hdf5 == '':
+            self.compress_hdf5 = None
 
     def remove_poslist(self, number=None):
         """Removes the specified poslist
@@ -2153,10 +2194,21 @@ class TMSOPTIMIZATION(SESSION):
         mat['map_to_surf'] = remove_None(self.map_to_surf)
         mat['fields'] = remove_None(self.fields)
         mat['fiducials'] = self.fiducials.sim_struct2mat()
+
         mat['poslist'] = []
+        mat['cond'] = remove_None(self.cond)
+        mat['hdf5_fn'] = remove_None(self.hdf5_fn)
+        mat['didt'] = remove_None(self.didt)
+        mat['distance'] = remove_None(self.distance)
+        mat['fnamecoil'] = remove_None(self.fnamecoil)
+        mat['qoi'] = remove_None(self.qoi)
+        mat['save_fields'] = remove_None(self.save_fields)
+        mat['n_sim'] = remove_None(self.n_sim)
+        mat['write_mesh_geom'] = remove_None(self.write_mesh_geom)
+        mat['compress_hdf5'] = remove_None(self.compress_hdf5)
+
         if self.optimlist:
             mat['optimlist'] = self.optimlist.sim_struct2mat()
-
         return mat
 
     def _prepare(self):
@@ -2207,7 +2259,7 @@ class TMSOPTIMIZATION(SESSION):
             mesh.fix_surface_labels()
             self.optimlist.postprocess = self.fields
             self.optimlist.fn_tensor_nifti = self.fname_tensor
-            self.optimlist.eeg_cap = self.eeg_cap
+            # self.optimlist.eeg_cap = self.eeg_cap
             self.optimlist._prepare()
             if not self.optimlist.mesh:
                 self.optimlist.mesh = mesh
@@ -2217,6 +2269,14 @@ class TMSOPTIMIZATION(SESSION):
             assert np.all([pos.didt == self.optimlist.pos[0].didt for pos in self.optimlist.pos]), \
                 "For TMSOPTIMIZATION, use the same didt for all positions."
 
+            assert np.all([not pos.name or type(pos.name) == int for pos in self.optimlist.pos]), \
+                "Provide no positions names or integer vales"
+
+            # if no pos names are given, use index
+            if not self.optimlist.pos[0].name:
+                for i, pos in enumerate(self.optimlist.pos):
+                    pos.name = str(i)
+
             assert np.all([pos.distance == self.optimlist.pos[0].distance for pos in self.optimlist.pos]), \
                 "For TMSOPTIMMIZATION, use the same coil distance for all positions."
 
@@ -2225,11 +2285,38 @@ class TMSOPTIMIZATION(SESSION):
             self.distance = self.optimlist.pos[0].distance
             self.mesh = self.optimlist.mesh
             self.fnamecoil = self.optimlist.fnamecoil
+            self.n_sim = len(self.optimlist.pos)
 
         else:
             raise IOError(
                 'Could not find head mesh file: {0}'.format(self.fnamehead))
 
+        if not self.hdf5_fn:
+            self.hdf5_fn = 'optim_results_{}.hdf5'.format(self.time_str)
+        if not os.path.isabs(self.hdf5_fn):
+            self.hdf5_fn = os.path.join(self.pathfem, self.hdf5_fn)
+        if not self.hdf5_fn.endswith('.hdf5'):
+            self.hdf5_fn += '.hdf5'
+
+        # build list of fields to save from self.fields value
+        if not self.save_fields:
+            if self.fields != 'eE':
+                logger.warn("Only 'eE' (that is normE and E) are tested for optimization.")
+            self.save_fields = [field for field in self.fields]
+
+            # replace e by normE
+            try:
+                idx = self.save_fields.index('e')
+                self.save_fields[idx] = 'normE'
+            except ValueError:
+                pass
+
+        if os.path.exists(self.hdf5_fn):
+            backup_fn = self.hdf5_fn[:-5] + '_' + self.time_str + '_backup' + '.hdf5'
+            logger.warn("{} already exists. Moving to {}.".format(self.hdf5_fn, backup_fn))
+            os.rename(self.hdf5_fn, backup_fn)
+        if self.write_mesh_geom:
+            self.mesh.write_hdf5(self.hdf5_fn, compression='gzip')
         self._prepared = True
 
     def run(self, cpus=1, allow_multiple_runs=True, save_mat=True):
@@ -2242,7 +2329,7 @@ class TMSOPTIMIZATION(SESSION):
         allow_multiple_runs: bool (optinal)
             Whether to allow multiple runs in one folder. Default: False
         save_mat: bool (optional)
-            Whether to save the ".mat" file of this structure
+            Whether to save the .mat file of this structure
 
         Returns
         ---------
@@ -2254,6 +2341,7 @@ class TMSOPTIMIZATION(SESSION):
             self._prepare()
         dir_name_sim = os.path.abspath(os.path.expanduser(self.pathfem))
 
+        # some directory checks
         if os.path.isdir(dir_name_sim):
             g = glob.glob(os.path.join(dir_name_sim, 'simnibs_simulation*.mat'))
             if g and not allow_multiple_runs:
@@ -2270,94 +2358,68 @@ class TMSOPTIMIZATION(SESSION):
             os.makedirs(dir_name_sim)
 
         if save_mat:
-            save_matlab_sim_struct(
-                self,
-                os.path.join(
-                    dir_name_sim,
-                    'simnibs_optimization_{0}.mat'.format(self.time_str)))
+            save_matlab_sim_struct(self,
+                                   os.path.join(dir_name_sim, 'simnibs_optimization_{0}.mat'.format(self.time_str)))
 
         self.cond2elmdata()
 
-        for pos in self.optimlist.pos:
-            # todo: multicore this
-            # print(pos)
-            dadt = coil.set_up_tms_dAdt(
-                self.mesh,
-                self.fnamecoil,
-                pos.matsimnibs,
-                didt=self.didt)
+        cpus = np.min((cpus, self.n_sim))
 
-            if isinstance(dadt, mesh_io.NodeData):
-                dadt = dadt.node_data2elm_data()
-            dadt.field_name = 'dAdt'
+        # set up solver
+        solver = FEMSystem.tms(self.mesh, self.cond)
+        solver.lock = multiprocessing.Lock()  # for the thread-save .hdf5 writes
 
-            dadt.write_hdf5(self.fn_hdf5, 'mesh/elmdata/')
-            # self.dAdt = dadt
-            self.mesh.elmdata = [dadt]
-            # cropped = self.mesh.crop_mesh(self.roi)
-            # dAdt_roi = cropped.elmdata[0]
-            # dAdt_roi.write_hdf5(self.fn_hdf5, 'mesh_roi/elmdata/')
-            # self.mesh.elmdata = []
-            # self.dAdt_roi = dAdt_roi
+        if cpus > multiprocessing.cpu_count():
+            logger.warn(
+                "{} parallel jobs requested, but only {} cores found.".format(cpus, multiprocessing.cpu_count()))
 
-            S = FEMSystem.tms(self.mesh, self.cond)
-            S.lock = multiprocessing.Lock()
-            b = S.assemble_tms_rhs(dadt)
-            v = S.solve(b)
-            # v = mesh_io.NodeData(v, name='v', mesh=self.mesh)
-            self.mesh.nodedata = [v]
+        def ec(e):
+            """Error callback for pool.apply_async()"""
+            raise e
 
-            # cropped = self.mesh.crop_mesh(self.roi)
-            # v_c = cropped.nodedata[0]
-            v_c = v
-            # self.mesh.nodedata = []
+        starttime = datetime.datetime.now()
+        if cpus == 1:
+            _set_up_global_solver(solver)
+            # simulate each position
+            for pos in self.optimlist.pos:
+                run_optim_sim(pos,
+                              self.mesh,
+                              self.fnamecoil,
+                              self.didt,
+                              self.hdf5_fn,
+                              self.fields,
+                              self.cond,
+                              self.save_fields,
+                              self.n_sim,
+                              self.compress_hdf5)
+            _finalize_global_solver()
 
-            v.mesh = self.mesh
-            out = calc_fields(v, self.fields, cond=self.cond, dadt=dadt)
-            S.lock.acquire()
+        else:
+            with multiprocessing.Pool(processes=cpus,
+                                      initializer=_set_up_global_solver,
+                                      initargs=(solver,)) as pool:
+                sims = []
+                for pos in self.optimlist.pos:
+                    sims.append(pool.apply_async(run_optim_sim, (pos,
+                                                                 self.mesh,
+                                                                 self.fnamecoil,
+                                                                 self.didt,
+                                                                 self.hdf5_fn,
+                                                                 self.fields,
+                                                                 self.cond,
+                                                                 self.save_fields,
+                                                                 self.n_sim,
+                                                                 self.compress_hdf5), error_callback=ec))
+                pool.close()
+                pool.join()
 
-            self.append_optim_data_to_hdf5(out, hdf5_fn=self.hdf5_fn, fields=self.fields)
-            S.release.acquire()
-            qois = []
-            for qoi_name, qoi_f in self.qoi_function.items():
-                qois.append(qoi_f(v_c, dadt))
+        duration = datetime.datetime.now() - starttime
+        logger.info('=====================================')
+        logger.info("SimNIBS finished running simulations: #{}, {} ({}/simulation)".format(self.n_sim, duration,
+                                                                                           duration / self.n_sim))
 
-        self._file_lock.acquire()
-        self.record_data_matrix(random_vars, 'random_var_samples', '/')
-        self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
-        self.record_data_matrix(v_c.value, 'v_samples',
-                                'mesh_roi/data_matrices')
-        for qoi_name, qoi_f in self.qoi_function.items():
-            self.record_data_matrix(
-                qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
-        self._file_lock.release()
-
-        # del cropped
-        del cond
-        del v
-
-    def append_optim_data_to_hdf5(self, i, data, hdf5_fn=None, fields=None):
-        """
-        Adds a single simulation from optimization in hdf5 file.
-
-        Parameters:
-        -----------
-        i: int
-            Which simulation number, should be the TMSOPTIMIZATION.optlist.pos.num[i]
-        data: simnibs.msh.mesh_io.Msh
-            Msh with simnibs.msh.mesh_io.ElementData in data.fields[]
-        hdf5_fn: string
-            Filename of .hdf5 file. Defaults to self.hdf5_fn
-        fields: list of string
-            Fields to pick from data.fields
-        """
-        if not hdf5_fn:
-            hdf5_fn = self.hdf5_fn
-
-        if not fields:
-            fields = self.fields
-
-        # TODO: finish this function
+        logger.info('Simulation results stored in {}'.format(self.hdf5_fn))
+        return self.hdf5_fn
 
     def cond2elmdata(self, force=False):
         """
@@ -2389,7 +2451,7 @@ class TDCSLEADFIELD(LEADFIELD):
     fname_tensor: str
         name of DTI tensor file
     tissues: list
-        List of tags in the mesh corresponding to the region of interest. Default: 
+        List of tags in the mesh corresponding to the region of interest. Default:
     map_to_surf: bool
         Wether to map output to middle gray matter
     cond: list
@@ -2835,3 +2897,161 @@ def _volume_preferences(mesh):
         return [2]
     else:
         return None
+
+
+def run_optim_sim(pos, mesh, fnamecoil, didt, hdf5_fn, field_names, cond, fields_to_save, n_sim, compression=None):
+    """Runs a single simulation for TMSOPTIMIZATION
+
+    Parameters:
+    -----------
+    pos: simnibs.simulation.mesh_io.POSITION
+        Position object with matsimnibs.
+    mesh: simnibs.simulation.mesh_io.MSH
+        Head mesh.
+    fnamecoil: str
+        Coil filename. Endswith .ccd or .nii or .nii.gz
+    didt: int
+        Intensity used for simulation.
+    hdf5_fn: str
+        Filename of .hdf5 file. Path must exist, file may.
+    fields: list of str
+        Field types to be computed. E.g. ['eE']
+    cond
+    save_fields: list of str
+        Field names that shall be saved in hdf5. Subset of fields. E.g. ['eE']
+    n_sim: int
+        Number of simulations in total.
+    compression: str or None (Default: None)
+        Compression used for .hdf5. 'gzip' or None.
+    """
+    global tms_global_solver
+
+    # compute dadt
+    dadt = coil.set_up_tms_dAdt(
+        mesh,
+        fnamecoil,
+        pos.matsimnibs,
+        didt=didt)
+    if isinstance(dadt, mesh_io.NodeData):
+        dadt = dadt.node_data2elm_data()
+    dadt.field_name = 'dAdt'
+
+    # compute fields
+    b = tms_global_solver.assemble_tms_rhs(dadt)
+    v = tms_global_solver.solve(b)
+    v = mesh_io.NodeData(v, name='v', mesh=mesh)
+    mesh.nodedata = [v]
+    v.mesh = mesh
+    computed_fields = calc_fields(v, field_names, cond=cond, dadt=dadt)
+
+    # write results thread-save into hdf5
+    tms_global_solver.lock.acquire()
+    add_optim_fields_to_hdf5(computed_fields, pos,
+                             hdf5_fn=hdf5_fn, fields_to_save=fields_to_save, n_sim=n_sim, compression=compression)
+    tms_global_solver.lock.release()
+    del v
+
+
+def add_optim_fields_to_hdf5(data, pos, hdf5_fn, fields_to_save, n_sim, compression=None):
+    """
+    Adds a single simulation (fields and position information) from optimization to hdf5 file.
+
+    For each field in fields_to_save, one array is created with (field.shape,n_sim). The data of this simulation is
+    stored in field[::,pos.name], so pos.name should be the simulation's index number.
+
+    Parameters:
+    -----------
+    pos: simnibs.simulation.sim_struct.POSITION
+        Position object that according to simulation
+    data: simnibs.msh.mesh_io.Msh
+        Msh with simnibs.msh.mesh_io.ElementData in data.fields[]
+    hdf5_fn: string
+        Filename of .hdf5 file. Defaults to self.hdf5_fn
+    fields_to_save: list of string
+        Fields to pick from data.fields
+    compression: str or None (Default: None)
+        Compression used for .hdf5. 'gzip' or None.
+    """
+
+    sim_nr = int(pos.name)
+    logger.debug("Writing results of position {} to .hdf5 .".format(sim_nr))
+
+    with h5py.File(hdf5_fn, 'a') as f:
+        # write elmdata
+        for elmdata in data.elmdata:
+            field = elmdata.field_name
+
+            # only write out fields from fields_to_save
+            if field in fields_to_save:
+                try:
+                    g = f.create_group('/elmdata')
+                except ValueError:
+                    g = f['/elmdata']
+
+                if field not in g.keys():
+                    # create initial zero-filled dataset with the size field X n_optimizations
+                    try:
+                        shape = (elmdata.value.shape[0],
+                                 elmdata.value.shape[1],
+                                 n_sim)  # 3-dimensional data (E)
+                    except IndexError:
+                        shape = (elmdata.value.shape[0],
+                                 1,
+                                 n_sim)  # 1-dimensional data (normE)
+                    g.create_dataset(field, shape, compression=compression)
+
+                try:
+                    # add this simulation's field to the array
+                    g[field][:, :, sim_nr] = elmdata.value[:]
+                except TypeError:
+                    g[field][:, 0, sim_nr] = elmdata.value[:]
+
+        # write nodedata
+        for nodedata in data.nodedata:
+            field = nodedata.field_name
+            if field in fields_to_save:
+                try:
+                    g = f.create_group('/nodedata')
+                except ValueError:
+                    g = f['/nodedata']
+
+                if field not in g.keys():
+                    # create initial zero-filled dataset with the size field X n_optimizations
+                    try:
+                        shape = (nodedata.value.shape[0],
+                                 nodedata.value.shape[1],
+                                 n_sim)  # 3-dimensional data (E)
+                    except IndexError:
+                        shape = (nodedata.value.shape[0],
+                                 1,
+                                 n_sim)  # 1-dimensional data (normE)
+                    g.create_dataset(field, shape, compression=compression)
+
+                try:
+                    # add this simulation's field to the array
+                    g[field][:, :, sim_nr] = nodedata.value[:]
+                except TypeError:
+                    g[field][:, 0, sim_nr] = nodedata.value[:]
+
+        # add coil information
+        try:
+            g = f.create_group('/coil')
+        except ValueError:
+            g = f['/coil']
+        if not 'matsimnibs' in g.keys():
+            # create initial zero-filled dataset with the size field X n_optimizations
+            shape = (4, 4, n_sim)
+            g.create_dataset('matsimnibs', shape, compression="gzip")
+        g['matsimnibs'][:, :, sim_nr] = pos.matsimnibs
+
+        logger.debug("Writing results of position {} to .hdf5 done.".format(sim_nr))
+
+
+def _set_up_global_solver(S):
+    global tms_global_solver
+    tms_global_solver = S
+
+
+def _finalize_global_solver():
+    global tms_global_solver
+    del tms_global_solver
