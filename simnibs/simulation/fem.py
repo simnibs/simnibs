@@ -1171,17 +1171,7 @@ def _set_up_global_solver(S):
     tms_global_solver = S
 
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
-             write_hdf5=False, remove_msh=False):
-    """
-    Parameters
-    ----------
-    write_hdf5: bool (Default: False)
-        Save .hdf5 version of final mesh to disk.
-    remove_msh: bool (Default: False)
-        Remove .msh after simulation
-
-    """
+def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt, fn_geo=fn_geo)
@@ -1191,24 +1181,6 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
     mesh_io.write_msh(out, fn_out)
-    error = None
-
-    # save hdf5 version to disk
-    if write_hdf5:
-        try:
-            fn_hdf5 = fn_out[:-3] + "hdf5"
-            if os.path.exists(fn_hdf5):
-                logger.warn(fn_hdf5 + " already exists. Removing file.")
-                os.remove(fn_hdf5)
-            logger.info("Writing .hdf5")
-            out.write_hdf5(fn_hdf5)
-        except:
-            logger.warn("Could not write {}.".format(fn_out))
-            error = 1
-
-    if remove_msh:
-        if not error:
-            os.remove(fn_out)
 
 
 def _finalize_global_solver():
@@ -1399,3 +1371,4 @@ def _finalize_tdcs_global_solver():
     del tdcs_global_post_pro
 
 #### Finished functionr to tun tDCS leadfields in parallel ####
+

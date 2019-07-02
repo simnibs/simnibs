@@ -842,7 +842,7 @@ class Msh:
             g.attrs['fn'] = self.fn
             elm = g.create_group('elm')
             for key, value in vars(self.elm).items():
-                elm.create_dataset(key, data=value)
+                elm.create_dataset(key, data=value, compression=compression)
             node = g.create_group('nodes')
             for key, value in vars(self.nodes).items():
                 node.create_dataset(key, data=value, compression=compression)
@@ -854,7 +854,7 @@ class Msh:
                 nodedata.create_dataset(d.field_name, data=d.value, compression=compression)
 
     @classmethod
-    def read_hdf5(self, hdf5_fn, path='./'):
+    def read_hdf5(self, hdf5_fn, path='./', load_data=True):
         """ Reads mesh information from an hdf5 file
 
         Parameters
@@ -879,19 +879,20 @@ class Msh:
                     setattr(self.nodes, key, np.squeeze(np.array(g['nodes'][key])))
                 except KeyError:
                     pass
-            try:
-                for field_name, field in g['elmdata'].items():
-                    self.elmdata.append(
-                        ElementData(np.squeeze(np.array(field)), field_name, mesh=self))
-            except KeyError:
-                pass
+            if load_data:
+                try:
+                    for field_name, field in g['elmdata'].items():
+                        self.elmdata.append(
+                            ElementData(np.squeeze(np.array(field)), field_name, mesh=self))
+                except KeyError:
+                    pass
 
-            try:
-                for field_name, field in g['nodedata'].items():
-                    self.nodedata.append(
-                        NodeData(np.squeeze(np.array(field)), field_name, mesh=self))
-            except KeyError:
-                pass
+                try:
+                    for field_name, field in g['nodedata'].items():
+                        self.nodedata.append(
+                            NodeData(np.squeeze(np.array(field)), field_name, mesh=self))
+                except KeyError:
+                    pass
 
         return self
 
@@ -1368,7 +1369,7 @@ class Msh:
         if not np.isclose(vol_before, vol_after):
             self.nodes.node_coord = nodes_bk
 
-    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=[5, 1005], msh_surf=None):
+    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=None, msh_surf=None):
         """ Calculate the matsimnibs matrix for TMS simulations
 
         Parameters
@@ -1379,7 +1380,7 @@ class Msh:
             Position of the y axis in relation to the coil center
         distance: float
             Distance from the center
-        skin_surface: list
+        skin_surface: list of num
             Possible tags for the skin surface (Default: [5, 1005])
         msh_surf: bool (Default: False)
             Surface cropped mesh. If not provided, this is computed from self.
@@ -1394,6 +1395,8 @@ class Msh:
             z' is a direction normal to the coil, points inside the head
 
         """
+        if not skin_surface:
+            skin_surface = [5, 1005]
         if not msh_surf:
             msh_surf = self.crop_mesh(elm_type=2)
         msh_skin = msh_surf.crop_mesh(skin_surface)
@@ -1401,7 +1404,7 @@ class Msh:
         center = msh_skin.nodes.node_coord[closest]
 
         # Y axis
-        y = pos_ydir -center  #  bugfix here
+        y = pos_ydir - center
         if np.isclose(np.linalg.norm(y), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
         y /= np.linalg.norm(y)

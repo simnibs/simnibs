@@ -19,6 +19,16 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
     alternative (optional): any
         if the field could not be read, return alternative
     """
+    if field_type == list:
+        try:
+            res = field_type(matlab_structure[field_name])
+            try:
+                res =  [re.strip() for re in res]
+            except AttributeError:
+                pass
+            return res
+        except (TypeError, KeyError, IndexError, ValueError):
+            pass
     try:
         return field_type(matlab_structure[field_name][0])
     except (TypeError, KeyError, IndexError, ValueError):
