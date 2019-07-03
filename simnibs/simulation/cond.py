@@ -101,10 +101,11 @@ def standard_cond():
 def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
                  aniso_tissues=[1, 2], correct_FSL=True, normalize=False,
                  excentricity_scaling=None, max_ratio=10, max_cond=2, correct_intensity=True):
-    ''' Define conductivity ElementData from a conductivity list or anisotropy
+    """ Define conductivity ElementData from a conductivity list or anisotropy
     information
+
     Parameters
-    ------------
+    ----------
     mesh: simnibs.mesh_io.Msh
         Mesh with geometry information
     cond_list: list
@@ -136,11 +137,11 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
         Rullmann et. al. 2009). This procedure scales the entire tensor field with a
         single scalar. Does not run if normalize==True
 
-    Returns:
-    ------
+    Returns
+    -------
     cond: simnibs.mesh_io.ElementData
         ElementData field with conductivity information
-    '''
+    """
     try:
         aniso_tissues[0]
     except TypeError:

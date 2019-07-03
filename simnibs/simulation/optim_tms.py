@@ -47,7 +47,7 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
     elmtype: string
         Read field from 'nodes' or 'elms'.
 
-    Returns:
+    Returns
     --------
     simnibs.simulation.sim_struct.TMSOPTIMIZATION()
         TMSOPTIMIZATION() object with optimal conditions in TMSOPTIMIZATION.optimlist
@@ -89,7 +89,7 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
             mesh = mesh_io.read_msh(tms_optim.fnamehead)
             _, idx = mesh.find_closest_element(target, return_index=True)
 
-        qoi_in_target = np.mean(res[idx - 1], axis=0)
+        qoi_in_target = np.linalg.norm(res[idx - 1], axis=0)
         assert qoi_in_target.shape == (len(tms_optim.optimlist.pos),)
 
         # build dictionary to easily create pandas afterwards
@@ -317,8 +317,7 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
 
 def optimize_tms_coil_pos(tms_optim, target=None,
                           handle_direction_ref=None, radius=20, angle_limits=None,
-                          resolution_pos=1.5, resolution_angle=15, distance=1.,
-                          n_cpu=8):
+                          resolution_pos=1.5, resolution_angle=15, distance=1., n_cpu=8):
     """Compute optimal TMS coil position/rotation for maximum field at cortical target.
 
     This implements a brute-force approach to find the optimal coil position & rotation to maximize normE
