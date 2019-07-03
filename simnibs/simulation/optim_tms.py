@@ -1,25 +1,21 @@
+import os
 import copy
 import datetime
-import gc
-import glob
 import logging
 import h5py
-import os
-import pandas as pd
 import pickle
-import numpy as np
 import itertools
+import pandas as pd
+import numpy as np
 import simnibs
-from simnibs import msh
-# from ..simulation import TMSLIST, sim_struct
-# from simulation import sim_struct
+
+from .. import msh
 from ..utils.simnibs_logger import logger
-from simnibs.msh import mesh_io
 
 try:
     import pyfempp
 except ImportError:
-    print("pyfempp not found")
+    print("pyfempp not found. Some visualizations will not work.")
     pyfempp = False
 
 
@@ -82,11 +78,11 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
         # read first mesh to get index of target element
         try:
             # try to read mesh geom from .hdf5
-            mesh = mesh_io.Msh()
+            mesh = msh.mesh_io.Msh()
             mesh = mesh.read_hdf5(simulations, load_data=False)
             _, idx = mesh.find_closest_element(target, return_index=True)
         except (ValueError, KeyError):
-            mesh = mesh_io.read_msh(tms_optim.fnamehead)
+            mesh = msh.mesh_io.read_msh(tms_optim.fnamehead)
             _, idx = mesh.find_closest_element(target, return_index=True)
 
         qoi_in_target = np.linalg.norm(res[idx - 1], axis=0)
@@ -155,12 +151,12 @@ def read_msh_from_pckl(fn, m=None):
         if not os.path.isfile(fn):
             raise IOError(fn + ' not found')
 
-        version_number = simnibs.msh.mesh_io_find_mesh_version(fn)
+        version_number = simnibs.msh.msh.mesh_io_find_mesh_version(fn)
         if version_number == 2:
-            m = simnibs.msh.mesh_io_read_msh_2(fn, m)
+            m = simnibs.msh.msh.mesh_io_read_msh_2(fn, m)
 
         elif version_number == 4:
-            m = simnibs.msh.mesh_io_read_msh_4(fn, m)
+            m = simnibs.msh.msh.mesh_io_read_msh_4(fn, m)
 
         else:
             raise IOError('Unrecgnized Mesh file version : {}'.format(version_number))
@@ -399,7 +395,7 @@ def optimize_tms_coil_pos(tms_optim, target=None,
     # setup tmslist if not provided
     if not tms_optim.optimlist.pos:
 
-        # mesh = mesh_io.read_msh(mesh)  # TODO: remove this
+        # mesh = msh.mesh_io.read_msh(mesh)  # TODO: remove this
         # mesh.fix_surface_labels()
         mesh = pickle.load(open(tms_optim.fnamehead[:-3] + "pckl", 'rb'))
 

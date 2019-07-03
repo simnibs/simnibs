@@ -414,7 +414,7 @@ class SESSION(object):
         tdcslist: TDCSLIST (optional)
             tdcslist to be added. (Default: empty TDCSLIST)
 
-        Returns:
+        Returns
         -------
         tdcslist: TDCSLIST
             the tdcslist added to this SESSION
@@ -433,7 +433,7 @@ class SESSION(object):
         tmslist: TMSLIST (optional)
             tmslist to be added. (Default: empty TMSLIST)
 
-        Returns:
+        Returns
         -------
         tmslist: TMSLIST
             the tmslist added to this SESSION
@@ -906,12 +906,6 @@ class TMSLIST(SimuList):
         Name of coil file
     pos: list of simnibs.simulation.sim_struct.POSITION() structures
         Definition of coil positions
-    create_visuals: bool (Default: True)
-        Create summary file after simulation.
-    remove_msh: bool (Default: False)
-        Remove .msh files after simulation.
-    write_hdf5: bool (Default: False)
-        Write .hdf5 version of mesh file.
     """
 
     def __init__(self, matlab_struct=None):
@@ -964,7 +958,7 @@ class TMSLIST(SimuList):
     def sim_struct2mat(self):
         """ Dictionaty for saving as a matlab structure with scipy.io.savemat
 
-        Returns:
+        Returns
         ----------------------------
         dict
             Dictionary with poslist parameters for saving into a matlab structure
@@ -1308,6 +1302,8 @@ class POSITION(object):
             return False
 
     def calc_matsimnibs(self, msh, cap=None, log=True, msh_surf=None):
+        if type(msh) == str:
+            msh = mesh_io.read_msh(msh)
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
@@ -2335,7 +2331,7 @@ class TMSOPTIMIZATION(SESSION):
         """
         Searches through self.hdf5_fn to find not processed simulations.
 
-        Returns:
+        Returns
         --------
         TMSLIST
         """
