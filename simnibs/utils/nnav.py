@@ -2,6 +2,7 @@
 Neuronavigation functions. So far, only for Localite TMS Navigator software.
 """
 import copy
+import io
 import os
 import nibabel
 import numpy as np
@@ -79,7 +80,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
         simnibs_obj_mat = get_matsimnis_from_session(simnibs_obj, msh=msh)
 
     else:
-        raise NotImplementedError("{} unknown for simnibs2nnav().".format(type(simnibs_obj)))
+        raise NotImplementedError("{} not implemented in simnibs2nnav().".format(type(simnibs_obj)))
 
     if len(simnibs_obj_mat.shape) == 2:
         simnibs_obj_mat = simnibs_obj_mat[:, :, np.newaxis]
@@ -282,9 +283,9 @@ def get_m_2conf(exp_nii, fn_conform_nii, fn_exp_nii_ras, fsl_cmd):
     cmdstr[1] = fsl_cmd + ' fslorient -forceradiological ' + fn_flip
     cmdstr[2] = fsl_cmd + ' fslmaths ' + fn_conform_nii + ' -bin -s 1 ' + fn_out_fslmaths + '.nii.gz'
     cmdstr[3] = fsl_cmd + ' flirt -in ' + fn_flip + ' -ref ' + fn_conform_nii + ' -refweight ' + fn_out_fslmaths + \
-                          ' -searchrx -30 30 -searchry -30 30 -searchrz -30 30  -interp sinc -cost mutualinfo ' + \
-                          '-searchcost mutualinfo -dof ' + str(dof) + ' -omat ' + fn_mat_m_2conform + '.mat -out ' + \
-                          fn_mat_m_2conform + '.nii.gz'
+                ' -searchrx -30 30 -searchry -30 30 -searchrz -30 30  -interp sinc -cost mutualinfo ' + \
+                '-searchcost mutualinfo -dof ' + str(dof) + ' -omat ' + fn_mat_m_2conform + '.mat -out ' + \
+                fn_mat_m_2conform + '.nii.gz'
 
     # execute FSL commands
     logger.debug('Executing fsl coregistration:')
@@ -419,3 +420,54 @@ def splitext_niigz(fn):
         return os.path.join(path, file0), ext0
     else:
         raise ValueError('File extension is neither .nii or .nii.gz!')
+
+
+def write_tms_navigator_im(ims, xml_fn, overwrite=False):
+    """
+    Writes a instrument marker .xml file in the fashion of Localite TMS Navigator.
+
+    Parameters
+    ----------
+    ims: np.ndarray
+        Instrument markers with shape (4, 4, n_im).
+    xml_fn: str
+        Filename.
+    overwrite: bool (Default: True)
+        Overwrite existing file.
+
+    Returns
+    -------
+    file: fn_out.xml
+    """
+
+    assert ims.shape[:2] == (4, 4), 'Expecting array with shape (4, 4, N instrument marker).'
+    if not xml_fn.lower().endswith('.xml'):
+        xml_fn += '.xml'
+
+    assert not os.path.exists(xml_fn) or overwrite, '.xml file already exists. Remove or set overwrite=True.'
+
+    with io.open(xml_fn, 'w', newline='\r\n') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<InstrumentMarkerList coordinateSpace="RAS">\n')
+        f.write('<!-- This instrumentMarkerList was written by SimNIBS -->\n')
+
+        for idx in range(ims.shape[-1]):
+            im = ims[:, :, idx]
+            f.write('\t' + '<InstrumentMarker alwaysVisible="false" index="{}" selected="false">\n'.format(idx))
+            f.write('\t' * 2 + '<Marker additionalInformation="" color="#ff0000" description="" set="false">\n')
+            f.write('\t' * 3 + '<Matrix4D \n')
+            f.write('\t' * 4 + 'data00="{:+1.17f}" data01="{:+1.17f}" '
+                               'data02="{:+1.17f}" data03="{:+1.17f}"\n'.format(im[0, 0], im[0, 1], im[0, 2],
+                                                                                im[0, 3]))
+            f.write('\t' * 4 + 'data10="{:+1.17f}" data11="{:+1.17f}" '
+                               'data12="{:+1.17f}" data13="{:+1.17f}"\n'.format(im[1, 0], im[1, 1], im[1, 2],
+                                                                                im[1, 3]))
+            f.write('\t' * 4 + 'data20="{:+1.17f}" data21="{:+1.17f}" '
+                               'data22="{:+1.17f}" data23="{:+1.17f}"\n'.format(im[2, 0], im[2, 1], im[2, 2],
+                                                                                im[2, 3]))
+            f.write('\t' * 4 + 'data30="{:+1.17f}" data31="{:+1.17f}" '
+                               'data32="{:+1.17f}" data32="{:+1.17f}"\n'.format(0, 0, 0, 1))
+            f.write('\t' * 2 + '</Marker>\n')
+            f.write('\t' + '</InstrumentMarker>\n')
+
+        f.write('</InstrumentMarkerList>\n')

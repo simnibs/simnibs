@@ -153,10 +153,10 @@ def read_msh_from_pckl(fn, m=None):
 
         version_number = simnibs.msh.msh.mesh_io_find_mesh_version(fn)
         if version_number == 2:
-            m = simnibs.msh.msh.mesh_io_read_msh_2(fn, m)
+            m = simnibs.simulation.mesh_io._read_msh_2(fn, m)
 
         elif version_number == 4:
-            m = simnibs.msh.msh.mesh_io_read_msh_4(fn, m)
+            m = simnibs.simulation.mesh_io._read_msh_4(fn, m)
 
         else:
             raise IOError('Unrecgnized Mesh file version : {}'.format(version_number))
@@ -257,7 +257,7 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
                            np.sum(np.cross(p3 - p2, p0 - p2) * normals, axis=1) >= 0),
             np.sum(np.cross(p1 - p3, p0 - p3) * normals, axis=1) >= 0)
 
-        coords_mapped[i,] = p0[inside]
+        coords_mapped[i] = p0[inside]
 
     # determine rotation matrices around z-axis of coil and rotate
     angles = np.linspace(angle_limits[0],
