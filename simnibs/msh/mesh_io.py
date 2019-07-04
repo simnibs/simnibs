@@ -2790,8 +2790,6 @@ class ElementData(Data):
                              mesh=self.mesh)
         return ed
 
-
-
     @classmethod
     def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
         ''' Defines an ElementData field form a mesh and gridded data
@@ -2924,7 +2922,6 @@ class ElementData(Data):
             f.write(m.tostring())
 
             f.write(b'$EndElementData\n')
-
 
 
 class NodeData(Data):
