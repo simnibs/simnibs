@@ -444,14 +444,15 @@ class SESSION(object):
         self.poslists.append(tmslist)
         return tmslist
 
-    def _set_logger(self):
-        ''' Set-up loggger to write to a file
-        '''
+    def _set_logger(self, fname_prefix='simnibs_simulation', summary=True):
+        """
+        Set-up loggger to write to a file
+        """
         if not os.path.isdir(self.pathfem):
             os.mkdir(self.pathfem)
         log_fn = os.path.join(
             self.pathfem,
-            'simnibs_simulation_{0}.log'.format(self.time_str))
+            fname_prefix + '_{0}.log'.format(self.time_str))
         fh = logging.FileHandler(log_fn, mode='w')
         formatter = logging.Formatter(
             '[ %(name)s - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
@@ -461,12 +462,13 @@ class SESSION(object):
         logger.addHandler(fh)
         self._log_handlers += [fh]
 
-        fn_summary = os.path.join(self.pathfem, 'fields_summary.txt')
-        fh_s = logging.FileHandler(fn_summary, mode='w')
-        fh_s.setFormatter(logging.Formatter('%(message)s'))
-        fh_s.setLevel(25)
-        logger.addHandler(fh_s)
-        self._log_handlers += [fh_s]
+        if summary:
+            fn_summary = os.path.join(self.pathfem, 'fields_summary.txt')
+            fh_s = logging.FileHandler(fn_summary, mode='w')
+            fh_s.setFormatter(logging.Formatter('%(message)s'))
+            fh_s.setLevel(25)
+            logger.addHandler(fh_s)
+            self._log_handlers += [fh_s]
         simnibs_logger.register_excepthook(logger)
 
     def _finish_logger(self):
@@ -1100,27 +1102,26 @@ class TMSLIST(SimuList):
                      matsimnibs_list, didt_list, output_names, geo_names,
                      cpus, self.write_hdf5, self.remove_msh)
 
-        if not hasattr(self, 'create_visuals') or self.create_visuals:
-            logger.info('Creating visualizations')
-            summary = ''
-            for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
-                p.fnamefem = n
-                m = mesh_io.read_msh(n)
-                v = m.view(
-                    visible_tags=_surf_preferences(m),
-                    visible_fields=_field_preferences(self.postprocess))
-                v.add_merge(g)
-                v.write_opt(n)
+        logger.info('Creating visualizations')
+        summary = ''
+        for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
+            p.fnamefem = n
+            m = mesh_io.read_msh(n)
+            v = m.view(
+                visible_tags=_surf_preferences(m),
+                visible_fields=_field_preferences(self.postprocess))
+            v.add_merge(g)
+            v.write_opt(n)
 
-                if view:
-                    mesh_io.open_in_gmsh(n, True)
+            if view:
+                mesh_io.open_in_gmsh(n, True)
 
-                summary += f'\n{os.path.split(s)[1][:-1]}\n'
-                summary += len(os.path.split(s)[1][:-1]) * '=' + '\n'
-                summary += 'Gray Matter\n\n'
-                summary += m.fields_summary(roi=2)
+            summary += f'\n{os.path.split(s)[1][:-1]}\n'
+            summary += len(os.path.split(s)[1][:-1]) * '=' + '\n'
+            summary += 'Gray Matter\n\n'
+            summary += m.fields_summary(roi=2)
 
-            logger.log(25, summary)
+        logger.log(25, summary)
 
         del cond
         gc.collect()
@@ -2093,16 +2094,23 @@ class TMSOPTIMIZATION(SESSION):
         self.dAdt = None
         self.didt = None
         self.distance = None
-        self.hdf5_fn = None
+        self.fname_hdf5 = None
         self.fnamecoil = None
         self.mesh = None
         self.n_sim = None
+        self.optim_name = ''
         self.optimlist = None
         self.qoi = 'E'
         self.resume = False
         self.save_fields = None  # 'normE', 'E', both
         self.anisotropy_type = 'scalar'
         self.write_mesh_geom = False  # add mesh geomietry information to .hdf5
+
+    def _set_logger(self, fname_prefix=None, summary=False):
+        """Set logfile name to self.optim_name"""
+        if not fname_prefix:
+            fname_prefix = self.optim_name
+        super()._set_logger(fname_prefix=fname_prefix)
 
     def add_poslist(self, pl):
         """ Adds a SimList object to the poslist variable
@@ -2126,7 +2134,7 @@ class TMSOPTIMIZATION(SESSION):
         super().read_mat_struct(mat)
 
         self.cond = try_to_read_matlab_field(mat, 'cond', str, self.date)
-        self.hdf5_fn = try_to_read_matlab_field(mat, 'hdf5_fn', str)
+        self.fname_hdf5 = try_to_read_matlab_field(mat, 'hdf5_fn', str)
         self.didt = try_to_read_matlab_field(mat, 'didt', float)
         self.distance = try_to_read_matlab_field(mat, 'distance', float)
         self.fnamecoil = try_to_read_matlab_field(mat, 'fnamecoil', str)
@@ -2148,6 +2156,7 @@ class TMSOPTIMIZATION(SESSION):
         self.compress_hdf5 = try_to_read_matlab_field(mat, 'compress_hdf5', str)
         if self.compress_hdf5 == '':
             self.compress_hdf5 = None
+        self.optim_name = try_to_read_matlab_field(mat, 'optim_name', str, '')
 
     def remove_poslist(self, number=None):
         """Removes the specified poslist
@@ -2196,7 +2205,7 @@ class TMSOPTIMIZATION(SESSION):
 
         mat['poslist'] = []
         mat['cond'] = remove_None(self.cond)
-        mat['hdf5_fn'] = remove_None(self.hdf5_fn)
+        mat['hdf5_fn'] = remove_None(self.fname_hdf5)
         mat['didt'] = remove_None(self.didt)
         mat['distance'] = remove_None(self.distance)
         mat['fnamecoil'] = remove_None(self.fnamecoil)
@@ -2206,6 +2215,7 @@ class TMSOPTIMIZATION(SESSION):
         mat['write_mesh_geom'] = remove_None(self.write_mesh_geom)
         mat['compress_hdf5'] = remove_None(self.compress_hdf5)
         mat['anisotropy_type'] = remove_None(self.anisotropy_type)
+        mat['optim_name'] = remove_None(self.optim_name)
 
         if self.optimlist:
             mat['optimlist'] = self.optimlist.sim_struct2mat()
@@ -2243,6 +2253,10 @@ class TMSOPTIMIZATION(SESSION):
         if not self.fname_tensor:
             self.fname_tensor = sub_files.tensor_file
 
+        if not self.optim_name:
+            logger.warn("optim_name not set.")
+            self.optim_name = "optimization"
+        self.fname_hdf5 = self.optim_name + '.hdf5'
         # if not self.eeg_cap:
         #     self.eeg_cap = sub_files.eeg_cap_1010
 
@@ -2271,7 +2285,8 @@ class TMSOPTIMIZATION(SESSION):
                 "For TMSOPTIMIZATION, use the same didt for all positions."
 
             for pos in self.optimlist.pos:
-                pos.name = int(pos.name)
+                if pos.name:
+                    pos.name = int(pos.name)
             assert np.all([not pos.name or type(pos.name) == int for pos in self.optimlist.pos]), \
                 "Provide no positions names or integer vales"
 
@@ -2296,12 +2311,13 @@ class TMSOPTIMIZATION(SESSION):
             raise IOError(
                 'Could not find head mesh file: {0}'.format(self.fnamehead))
 
-        if not self.hdf5_fn:
-            self.hdf5_fn = 'optim_results_{}.hdf5'.format(self.time_str)
-        if not os.path.isabs(self.hdf5_fn):
-            self.hdf5_fn = os.path.join(self.pathfem, self.hdf5_fn)
-        if not self.hdf5_fn.endswith('.hdf5'):
-            self.hdf5_fn += '.hdf5'
+        # hdf5 fn stuff
+        if not self.fname_hdf5:
+            self.fname_hdf5 = 'optim_results_{}.hdf5'.format(self.time_str)
+        if not os.path.isabs(self.fname_hdf5):
+            self.fname_hdf5 = os.path.join(self.pathfem, self.fname_hdf5)
+        if not self.fname_hdf5.endswith('.hdf5'):
+            self.fname_hdf5 += '.hdf5'
 
         # build list of fields to save from self.fields value
         if not self.save_fields:
@@ -2316,35 +2332,29 @@ class TMSOPTIMIZATION(SESSION):
             except ValueError:
                 pass
 
-        if os.path.exists(self.hdf5_fn) and not self.resume:
-            backup_fn = self.hdf5_fn[:-5] + '_' + self.time_str + '_backup' + '.hdf5'
-            logger.warn("{} already exists. Moving to {}.".format(self.hdf5_fn, backup_fn))
-            os.rename(self.hdf5_fn, backup_fn)
+        # hdf5 file init
+        if os.path.exists(self.fname_hdf5) and not self.resume:
+            backup_fn = self.fname_hdf5[:-5] + '_' + self.time_str + '_backup' + '.hdf5'
+            logger.warn("{} already exists. Moving to {}.".format(self.fname_hdf5, backup_fn))
+            os.rename(self.fname_hdf5, backup_fn)
         if self.write_mesh_geom:
-            self.mesh.write_hdf5(self.hdf5_fn, compression='gzip')
+            self.mesh.write_hdf5(self.fname_hdf5, compression='gzip')
 
+        # resuming unfinished optimization tasks
         if self.resume:
             self.optimlist = self.get_resume_optimlist()
         self._prepared = True
 
     def get_resume_optimlist(self):
         """
-        Searches through self.hdf5_fn to find not processed simulations.
+        Build TMSLIST of unfinished simulations.
 
         Returns
         --------
         TMSLIST
         """
-        paths = ['/nodedata/', 'elmdata/']
-        unfinished = set()
-        with h5py.File(self.hdf5_fn,'r') as f:
-            for field, path in itertools.product(self.save_fields, paths):
-                try:
-                    g = f[path + field]
-                    unfinished = unfinished.union(np.where(g[-1, :, :] == 0)[1].tolist())
-                except KeyError:
-                    pass
-        logger.info("Found {} (out of {}) unfinished simulations.".format(len(unfinished), self.n_sim))
+        # get unfinished indices
+        unfinished = self.get_unfinished_sim_idx()
         if not unfinished:
             raise ValueError("No unfinished simulations found. Start with resume=False to start new optimization.")
         resume_tms_list = copy.copy(self.optimlist)
@@ -2353,6 +2363,34 @@ class TMSOPTIMIZATION(SESSION):
             resume_tms_list.add_position(self.optimlist.pos[i])
 
         return resume_tms_list
+
+    def get_unfinished_sim_idx(self):
+        """Checks self.hdf5_fn to find not processed simulations.
+
+        Returns
+        -------
+        set
+            Contains the .hdf5/data/field indices that are not processed.
+            May be empty.
+        """
+
+        paths = ['/nodedata/', 'elmdata/']
+        unfinished = set()
+        try:
+            with h5py.File(self.fname_hdf5, 'r') as f:
+                for field, path in itertools.product(self.save_fields, paths):
+                    try:
+                        g = f[path + field]
+                        unfinished = unfinished.union(np.where(g[-1, :, :] == 0)[1].tolist())
+                    except KeyError:
+                        pass
+        except OSError:
+            raise OSError("Cannot open {}. "
+                          "Start optimization with resume=False to start from scratch.".format(self.fname_hdf5))
+
+        if set:
+            logger.info("Found {} (out of {}) unfinished simulations.".format(len(unfinished), self.n_sim))
+        return unfinished
 
     def run(self, cpus=1, allow_multiple_runs=True, save_mat=True):
         """ Run simulations in the current optimization.
@@ -2378,7 +2416,7 @@ class TMSOPTIMIZATION(SESSION):
 
         # some directory checks
         if os.path.isdir(dir_name_sim):
-            g = glob.glob(os.path.join(dir_name_sim, 'simnibs_simulation*.mat'))
+            g = glob.glob(os.path.join(dir_name_sim, '*optimization*.mat'))
             if g and not allow_multiple_runs:
                 raise IOError('Found already existing simulation results in directory.'
                               ' Please run the simulation in a new directory or delete'
@@ -2394,7 +2432,8 @@ class TMSOPTIMIZATION(SESSION):
 
         if save_mat:
             save_matlab_sim_struct(self,
-                                   os.path.join(dir_name_sim, 'simnibs_optimization_{0}.mat'.format(self.time_str)))
+                                   os.path.join(dir_name_sim,
+                                                self.optim_name + '_{}.mat'.format(self.time_str)))
 
         self.cond2elmdata(force=True)
 
@@ -2421,7 +2460,7 @@ class TMSOPTIMIZATION(SESSION):
                               self.mesh,
                               self.fnamecoil,
                               self.didt,
-                              self.hdf5_fn,
+                              self.fname_hdf5,
                               self.fields,
                               self.cond,
                               self.save_fields,
@@ -2439,7 +2478,7 @@ class TMSOPTIMIZATION(SESSION):
                                                                  self.mesh,
                                                                  self.fnamecoil,
                                                                  self.didt,
-                                                                 self.hdf5_fn,
+                                                                 self.fname_hdf5,
                                                                  self.fields,
                                                                  self.cond,
                                                                  self.save_fields,
@@ -2453,8 +2492,8 @@ class TMSOPTIMIZATION(SESSION):
         logger.info("SimNIBS finished running simulations: #{}, {} ({}/simulation)".format(self.n_sim, duration,
                                                                                            duration / self.n_sim))
 
-        logger.info('Simulation results stored in {}'.format(self.hdf5_fn))
-        return self.hdf5_fn
+        logger.info('Simulation results stored in {}'.format(self.fname_hdf5))
+        return self.fname_hdf5
 
     def cond2elmdata(self, force=False):
         """

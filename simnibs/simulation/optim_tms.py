@@ -55,6 +55,13 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
         tms_list_new.read_mat_struct(tms_optim)
         tms_optim = tms_list_new
 
+    logger.info("Evaluating simulations to find optimal coil position")
+
+    # check if all simulations were completed
+    if tms_optim.get_unfinished_sim_idx():
+        logger.warn("Found unfinished simulations in {}. "
+                    "Set TMSOPTIMZATION.resume = True and run optimization again.".format(tms_optim.fname_hdf5))
+
     # get coil distance
     assert all(pos.distance == tms_optim.optimlist.pos[0].distance for pos in tms_optim.optimlist.pos), \
         "Different coil distances found."
@@ -72,7 +79,8 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
         res = f[path]
 
         assert res.shape[-1] == len(tms_optim.optimlist.pos), \
-            'Simulation number ({}) does not fit to TMSLIST positions ({})'.format(len(simulations), len(tms_optim.pos))
+            'Simulation number ({}) does not fit to TMSLIST positions ({})'.format(len(simulations),
+                                                                                   len(tms_optim.optimlist.pos))
         assert res.shape[-1] > 1, 'Only one simulation found. No optimization possible.'
 
         # read first mesh to get index of target element
@@ -91,14 +99,22 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
         # build dictionary to easily create pandas afterwards
         d = dict()
         for i in range(qoi_in_target.shape[-1]):
-            d[i] = [i, qoi_in_target[i]] + tms_optim.optimlist.pos[i].centre + tms_optim.optimlist.pos[i].pos_ydir + [
-                idx - 1] + target
+            centre = tms_optim.optimlist.pos[i].centre
+            if not centre:
+                centre = [np.nan, np.nan, np.nan]
+
+            ydir = tms_optim.optimlist.pos[i].pos_ydir
+            if not ydir:
+                ydir = [np.nan, np.nan, np.nan]
+
+            d[i] = [i, qoi_in_target[i]] + centre + ydir + [idx - 1] + target
         data = pd.DataFrame.from_dict(d)
         data = data.transpose()
         data.columns = ['sim_nr'] + [qoi] + ['x', 'y', 'z'] + \
                        ['handle_x', 'handle_y', 'handle_z',
                         'idx_hdf5',
                         'target_x', 'target_y', 'target_z']
+        logger.info("Saving {} for all simulations in target element {} to {}".format(qoi, idx, res_fn))
         data.to_csv(res_fn, index=False)  # save normE from all simulations at target elm to .csv
 
         # get best coil position/orientation from the results
@@ -111,10 +127,12 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
 
         for _, row in best_cond.iterrows():
             best_pos = simnibs.simulation.sim_struct.POSITION()
+
             best_pos.distance = distance
             best_pos.centre = row[['x', 'y', 'z']].values.tolist()
             best_pos.pos_ydir = row[['handle_x', 'handle_y', 'handle_z']].values.tolist()
-
+            best_pos.calc_matsimnibs(msh=tms_optim.fnamehead, log=False)
+            logger.info("Optimal coil position for target element {}: \n{}".format(idx, best_pos.matsimnibs))
             tms_optim.optimlist.add_position(best_pos)
 
     return tms_optim
@@ -415,19 +433,21 @@ def optimize_tms_coil_pos(tms_optim, target=None,
         simnibs.utils.simnibs_logger.logger.info("Optimization: using positions from provided TMSLIST.pos .")
 
     if pyfempp:
-        pyfempp.create_stimsite_from_tmslist(tms_optim.pathfem + "/coil_positions.hdf5",
+        pyfempp.create_stimsite_from_tmslist(os.path.join(tms_optim.pathfem,
+                                                          tms_optim.optim_name + "_coil_positions.hdf5"),
                                              tms_optim.optimlist, overwrite=True)
 
     # run simulations
     simnibs.utils.simnibs_logger.logger.info("Starting optimization: "
                                              "{} FEMs on {} cpus".format(len(tms_optim.optimlist.pos), n_cpu))
     simulations_fn = tms_optim.run(allow_multiple_runs=True, cpus=n_cpu)
-
+    simulations_fn = "/data/pt_01756/tmp/optim/15484.08/m1_l.hdf5"
     # evaluate all simulations
     tms_list_optim = eval_optim(simulations_fn,
                                 target,
                                 tms_optim,
-                                tms_optim.pathfem + '/optim_' + tms_optim.time_str + '.csv',
+                                os.path.join(tms_optim.pathfem,
+                                             tms_optim.optim_name + '_' + tms_optim.time_str + '.csv'),
                                 qoi=tms_optim.qoi)
 
     # return best position

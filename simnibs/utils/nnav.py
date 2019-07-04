@@ -97,7 +97,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
                            [0, 0, 0, 1]])
 
         # transform coil position from neuronavigation to simnibs space
-        m_simnibs = np.dot(np.dot(m_total,
+        m_nnav = np.dot(np.dot(m_total,
                                   simnibs_obj_mat.transpose([2, 0, 1])
                                   ).transpose([1, 0, 2]),
                            m_flip).transpose([1, 2, 0])
@@ -105,7 +105,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     else:
         raise NotImplementedError
 
-    return m_simnibs
+    return m_nnav
 
 
 def nnav2simnibs(fn_exp_nii, fn_conform_nii, m_nnav, orientation='RAS',
@@ -422,7 +422,7 @@ def splitext_niigz(fn):
         raise ValueError('File extension is neither .nii or .nii.gz!')
 
 
-def write_tms_navigator_im(ims, xml_fn, overwrite=False):
+def save_tms_navigator_im(ims, xml_fn, overwrite=False):
     """
     Writes a instrument marker .xml file in the fashion of Localite TMS Navigator.
 
@@ -449,7 +449,7 @@ def write_tms_navigator_im(ims, xml_fn, overwrite=False):
     with io.open(xml_fn, 'w', newline='\r\n') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<InstrumentMarkerList coordinateSpace="RAS">\n')
-        f.write('<!-- This instrumentMarkerList was written by SimNIBS -->\n')
+        f.write('<!-- This InstrumentMarkerList was written by SimNIBS -->\n')
 
         for idx in range(ims.shape[-1]):
             im = ims[:, :, idx]
