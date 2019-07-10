@@ -178,7 +178,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
                 cond.field_name = 'conductivity'
                 cond.mesh = out_mesh
                 if cond.nr_comp == 9:
-                    out_mesh.elmdata += cond_lib.TensorVisualization(cond)
+                    out_mesh.elmdata += cond_lib.TensorVisualization(cond, out_mesh)
                 else:
                     out_mesh.elmdata.append(cond)
 
