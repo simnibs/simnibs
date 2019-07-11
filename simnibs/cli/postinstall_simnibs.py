@@ -340,7 +340,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         else:
             shortcut_icons_clenup()
 
-    os.mkdir(shortcut_folder)
+    os.makedirs(shortcut_folder, exist_ok=True)
 
     _create_shortcut(
         os.path.join(shortcut_folder, 'Gmsh'),
