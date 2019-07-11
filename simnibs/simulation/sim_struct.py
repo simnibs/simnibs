@@ -2104,13 +2104,14 @@ class TMSOPTIMIZATION(SESSION):
         self.resume = False
         self.save_fields = None  # 'normE', 'E', both
         self.anisotropy_type = 'scalar'
-        self.write_mesh_geom = False  # add mesh geomietry information to .hdf5
+        self.write_mesh_geom = True  # add mesh geomietry information to .hdf5
 
     def _set_logger(self, fname_prefix=None, summary=False):
         """Set logfile name to self.optim_name"""
         if not fname_prefix:
             fname_prefix = self.optim_name
         super()._set_logger(fname_prefix=fname_prefix)
+
 
     def add_poslist(self, pl):
         """ Adds a SimList object to the poslist variable
@@ -2253,9 +2254,6 @@ class TMSOPTIMIZATION(SESSION):
         if not self.fname_tensor:
             self.fname_tensor = sub_files.tensor_file
 
-        if not self.optim_name:
-            logger.warn("optim_name not set.")
-            self.optim_name = "optimization"
         self.fname_hdf5 = self.optim_name + '.hdf5'
         # if not self.eeg_cap:
         #     self.eeg_cap = sub_files.eeg_cap_1010
@@ -2388,7 +2386,7 @@ class TMSOPTIMIZATION(SESSION):
             raise OSError("Cannot open {}. "
                           "Start optimization with resume=False to start from scratch.".format(self.fname_hdf5))
 
-        if set:
+        if unfinished:
             logger.info("Found {} (out of {}) unfinished simulations.".format(len(unfinished), self.n_sim))
         return unfinished
 
@@ -2409,6 +2407,10 @@ class TMSOPTIMIZATION(SESSION):
         Writes the optimization results.
 
         """
+        if not self.optim_name:
+            print("optim_name not set. Defaulting to 'optimization'")
+            self.optim_name = "optimization"
+
         self._set_logger()
         if not self._prepared:
             self._prepare()

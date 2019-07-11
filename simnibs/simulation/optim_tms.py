@@ -117,6 +117,13 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
         logger.info("Saving {} for all simulations in target element {} to {}".format(qoi, idx, res_fn))
         data.to_csv(res_fn, index=False)  # save normE from all simulations at target elm to .csv
 
+        if pyfempp:
+            # write stimsite xdmf with qoi
+            stimsite_vis_fn = os.path.splitext(res_fn)[0] + ".hdf5"
+            pyfempp.create_stimsite_from_tmslist(stimsite_vis_fn,
+                                                 tms_optim.optimlist, qoi,
+                                                 qoi_in_target, overwrite=False)
+
         # get best coil position/orientation from the results
         data[qoi] = data[qoi].astype(float)
         best_cond = data.iloc[[data[qoi].idxmax()]]
@@ -207,8 +214,8 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
         Resolution in mm of the coil positions in the region of interest
     resolution_angle: float (Default: 20)
         Resolution in deg of the coil positions in the region of interest
-    angle_limits: list of float (Default: [-30, 30])
-        Range of angles to get coil rotations for.
+    angle_limits: list of float
+        Range of angles to get coil rotations for (Default: [-60, 60]).
 
     Returns
     -------
@@ -216,7 +223,7 @@ def get_opt_grid(tms_list, mesh, target, handle_direction_ref, distance=1., radi
         TMS simulation object instance containing the coil positions and orientations to run bruteforce simulations
     """
     if not angle_limits:
-        angle_limits = [-30, 30]
+        angle_limits = [-60, 60]
 
     # project cortical target to skin surface
     tms_tmp = copy.deepcopy(tms_list)
@@ -358,8 +365,8 @@ def optimize_tms_coil_pos(tms_optim, target=None,
         Resolution in mm of the coil positions in the region of interest
     resolution_angle: float (Default: 15)
         Resolution in deg of the coil positions in the region of interest
-    angle_limits: list of int or np.ndarray (Default: [-60, 60])
-        Range of angles to get coil rotations for. Default: [-30, 30]
+    angle_limits: list of int or np.ndarray
+        Range of angles to get coil rotations for. Default: [-60, 60]
     distance: float (Default: 1.)
         Coil distance to scalp
     n_cpu: Int
@@ -413,9 +420,9 @@ def optimize_tms_coil_pos(tms_optim, target=None,
     # setup tmslist if not provided
     if not tms_optim.optimlist.pos:
 
-        # mesh = msh.mesh_io.read_msh(mesh)  # TODO: remove this
-        # mesh.fix_surface_labels()
-        mesh = pickle.load(open(tms_optim.fnamehead[:-3] + "pckl", 'rb'))
+        mesh = msh.mesh_io.read_msh(tms_optim.fnamehead)  # TODO: remove this
+        mesh.fix_surface_labels()
+        # mesh = pickle.load(open(tms_optim.fnamehead[:-3] + "pckl", 'rb'))
 
         tms_list = get_opt_grid(tms_list=tms_optim.optimlist,
                                 mesh=mesh,
@@ -441,7 +448,8 @@ def optimize_tms_coil_pos(tms_optim, target=None,
     simnibs.utils.simnibs_logger.logger.info("Starting optimization: "
                                              "{} FEMs on {} cpus".format(len(tms_optim.optimlist.pos), n_cpu))
     simulations_fn = tms_optim.run(allow_multiple_runs=True, cpus=n_cpu)
-    simulations_fn = "/data/pt_01756/tmp/optim/15484.08/m1_l.hdf5"
+    # simulations_fn = "/data/pt_01756/tmp/optim/15484.08/m1_l.hdf5"
+    # simulations_fn = "/data/pt_01756/tmp/optim/29965.48/m1_l.hdf5"
     # evaluate all simulations
     tms_list_optim = eval_optim(simulations_fn,
                                 target,

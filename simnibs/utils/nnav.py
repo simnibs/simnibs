@@ -466,7 +466,7 @@ def save_tms_navigator_im(ims, xml_fn, overwrite=False):
                                'data22="{:+1.17f}" data23="{:+1.17f}"\n'.format(im[2, 0], im[2, 1], im[2, 2],
                                                                                 im[2, 3]))
             f.write('\t' * 4 + 'data30="{:+1.17f}" data31="{:+1.17f}" '
-                               'data32="{:+1.17f}" data32="{:+1.17f}"\n'.format(0, 0, 0, 1))
+                               'data32="{:+1.17f}" data33="{:+1.17f}"/>\n'.format(0, 0, 0, 1))
             f.write('\t' * 2 + '</Marker>\n')
             f.write('\t' + '</InstrumentMarker>\n')
 
