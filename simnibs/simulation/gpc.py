@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7 -u
 # -*- coding: utf-8 -*-\
 '''
-Global Polynomial Chaos things for SimNIBS
+    Generalized Polynomial Chaos things for SimNIBS
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
     Copyright (C) 2017, 2018 Konstantin Weise, Guilherme B Saturnino
