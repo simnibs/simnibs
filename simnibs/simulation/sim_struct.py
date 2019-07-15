@@ -2103,15 +2103,26 @@ class TMSOPTIMIZATION(SESSION):
         self.qoi = 'E'
         self.resume = False
         self.save_fields = None  # 'normE', 'E', both
+        self.target = None
+        self.target_coil_matsim = None
+        self.target_idx = None
         self.anisotropy_type = 'scalar'
         self.write_mesh_geom = True  # add mesh geomietry information to .hdf5
+
+        # target information
+        self.target = None
+        self.target_coil_matsim = None
+        self.angle_limits = None
+        self.handle_direction_ref = None
+        self.radius = None
+        self.resolution_angle = None
+        self.resolution_pos = None
 
     def _set_logger(self, fname_prefix=None, summary=False):
         """Set logfile name to self.optim_name"""
         if not fname_prefix:
             fname_prefix = self.optim_name
         super()._set_logger(fname_prefix=fname_prefix)
-
 
     def add_poslist(self, pl):
         """ Adds a SimList object to the poslist variable
@@ -2134,11 +2145,13 @@ class TMSOPTIMIZATION(SESSION):
 
         super().read_mat_struct(mat)
 
+        self.anisotropy_type = try_to_read_matlab_field(mat, 'anisotropy_type', str, 'scalar')
         self.cond = try_to_read_matlab_field(mat, 'cond', str, self.date)
-        self.fname_hdf5 = try_to_read_matlab_field(mat, 'hdf5_fn', str)
+        self.compress_hdf5 = try_to_read_matlab_field(mat, 'compress_hdf5', str)
         self.didt = try_to_read_matlab_field(mat, 'didt', float)
         self.distance = try_to_read_matlab_field(mat, 'distance', float)
         self.fnamecoil = try_to_read_matlab_field(mat, 'fnamecoil', str)
+        self.fname_hdf5 = try_to_read_matlab_field(mat, 'hdf5_fn', str)
         if len(mat['optimlist']) > 0:
             for PL in mat['optimlist'][0]:
                 if PL['type'][0] == 'TMSLIST':
@@ -2150,11 +2163,22 @@ class TMSOPTIMIZATION(SESSION):
                 else:
                     raise IOError(
                         "poslist type is not of type TMSLIST or TDCSLIST")
-        self.qoi = try_to_read_matlab_field(mat, 'qoi', str)
-        self.save_fields = try_to_read_matlab_field(mat, 'save_fields', list)  # 'normE', 'E', both
         self.n_sim = try_to_read_matlab_field(mat, 'n_sim', int)
+        self.qoi = try_to_read_matlab_field(mat, 'qoi', str)
+
+        # target information
+        self.target = try_to_read_matlab_field(mat, 'target', np.array)
+        self.target_idx = try_to_read_matlab_field(mat, 'target_idx', int)
+        self.target_coil_matsim = try_to_read_matlab_field(mat, 'target_coil_matsim', np.array)
+        self.angle_limits = try_to_read_matlab_field(mat, 'angle_limits', list)
+        self.handle_direction_ref = try_to_read_matlab_field(mat, 'handle_direction_ref', list)
+        self.radius = try_to_read_matlab_field(mat, 'radius', float)
+        self.resolution_angle = try_to_read_matlab_field(mat, 'resolution_angle', float)
+        self.resolution_pos = try_to_read_matlab_field(mat, 'resolution_pos', float)
+
+        self.save_fields = try_to_read_matlab_field(mat, 'save_fields', list)  # 'normE', 'E', both
         self.write_mesh_geom = try_to_read_matlab_field(mat, 'write_mesh_geom', bool)
-        self.compress_hdf5 = try_to_read_matlab_field(mat, 'compress_hdf5', str)
+
         if self.compress_hdf5 == '':
             self.compress_hdf5 = None
         self.optim_name = try_to_read_matlab_field(mat, 'optim_name', str, '')
@@ -2205,7 +2229,7 @@ class TMSOPTIMIZATION(SESSION):
         mat['fiducials'] = self.fiducials.sim_struct2mat()
 
         mat['poslist'] = []
-        mat['cond'] = remove_None(self.cond)
+        # mat['cond'] = remove_None(self.cond)
         mat['hdf5_fn'] = remove_None(self.fname_hdf5)
         mat['didt'] = remove_None(self.didt)
         mat['distance'] = remove_None(self.distance)
@@ -2220,6 +2244,16 @@ class TMSOPTIMIZATION(SESSION):
 
         if self.optimlist:
             mat['optimlist'] = self.optimlist.sim_struct2mat()
+
+        # target information
+        mat['angle_limits'] = remove_None(self.angle_limits)
+        mat['handle_direction_ref'] = remove_None(self.handle_direction_ref)
+        mat['radius'] = remove_None(self.radius)
+        mat['resolution_angle'] = remove_None(self.resolution_angle)
+        mat['resolution_pos'] = remove_None(self.resolution_pos)
+        mat['target'] = remove_None(self.target)
+        mat['target_coil_matsim'] = remove_None(self.target_coil_matsim)
+        mat['target_idx'] = remove_None(self.target_idx)
 
         return mat
 
@@ -2335,7 +2369,7 @@ class TMSOPTIMIZATION(SESSION):
             backup_fn = self.fname_hdf5[:-5] + '_' + self.time_str + '_backup' + '.hdf5'
             logger.warn("{} already exists. Moving to {}.".format(self.fname_hdf5, backup_fn))
             os.rename(self.fname_hdf5, backup_fn)
-        if self.write_mesh_geom:
+        if self.write_mesh_geom and not self.resume:
             self.mesh.write_hdf5(self.fname_hdf5, compression='gzip')
 
         # resuming unfinished optimization tasks
