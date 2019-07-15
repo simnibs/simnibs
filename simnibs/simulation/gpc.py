@@ -36,8 +36,9 @@ from . import fem
 from . import coil_numpy as coil
 from ..utils.simnibs_logger import logger
 
+FIELD_NAME = {'v': 'v', 'E': 'E', 'e': 'normE', 'J': 'J', 'j': 'normJ'}
 
-def write_data_hdf5(data, data_name, hdf5_fn, path='data/'):
+def write_data_hdf5(data, data_name, hdf5_fn, path='data/', compression='gzip'):
     ''' Saves a field in an hdf5 file
 
     Parameters:
@@ -50,7 +51,7 @@ def write_data_hdf5(data, data_name, hdf5_fn, path='data/'):
         path inside hdf5 file (default: data/)
     '''
     with h5py.File(hdf5_fn, 'a') as f:
-        f.create_dataset(path + data_name, data=data)
+        f.create_dataset(path + data_name, data=data, compression=compression)
 
 
 def read_data_hdf5(data_name, hdf5_fn, path='data/'):
@@ -203,9 +204,14 @@ class gPC_regression(pygpc.RegularizedRegression):
 
         nr_simu = potentials.shape[0]
 
+        '''
         if 'v' in postprocessing_type:
-            self._postprocessing_core(potentials.T, 'v', False)
+            self._postprocessing_core(potentials, 'mesh_roi/nodedata', False)
+'mesh_roi/' + dtype + '/',
+                FIELD_NAME[p],
+                order_sobol_max
             postprocessing_type.remove('v')
+        '''
 
         # This will NOT work when changing positions
         if self.sim_type == 'TMS':
@@ -217,17 +223,18 @@ class gPC_regression(pygpc.RegularizedRegression):
         # See which fields have already been calculated
         fields_dict = dict.fromkeys(postprocessing_type)
         to_calc = []
-        field_name_dict = {'E': 'E', 'e': 'normE', 'J': 'J', 'j': 'normJ'}
         for postprocess in postprocessing_type:
             try:
                 fields_dict[postprocess] = read_data_hdf5(
-                    field_name_dict[postprocess] +
+                    FIELD_NAME[postprocess] +
                     '_samples', self.data_file, 'mesh_roi/data_matrices/')
             except:
                 if postprocess in ['e', 'j']:
-                    fields_dict[postprocess] = np.nan * np.ones((nr_simu,msh.elm.nr), dtype=float)
+                    fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.elm.nr), dtype=float)
                 elif postprocess in ['E', 'J']:
                     fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.elm.nr, 3), dtype=float)
+                elif postprocess in ['v']:
+                    fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.nodes.nr), dtype=float)
                 else:
                     raise ValueError('Unrecognized postprocessing option: ' + postprocess)
                 to_calc.append(postprocess)
@@ -256,22 +263,30 @@ class gPC_regression(pygpc.RegularizedRegression):
                     m = fem.calc_fields(pot, to_calc, cond=elmdata, dadt=dAdt)
 
                 for p in to_calc:
-                    fields_dict[p][i] = m.field[field_name_dict[p]].value
+                    fields_dict[p][i] = m.field[FIELD_NAME[p]].value
 
         for p, f in fields_dict.items():
-            logger.info('Expanding field: {0}'.format(field_name_dict[p]))
-            if f is 'v':
+            logger.info('Expanding field: {0}'.format(FIELD_NAME[p]))
+            if p == 'v':
                 dtype = 'nodedata'
             else:
                 dtype = 'elmdata'
             self._postprocessing_core(
                 f, 'mesh_roi/' + dtype + '/',
-                field_name_dict[p],
+                FIELD_NAME[p],
                 order_sobol_max)
 
 
     def _postprocessing_core(self, data, path, name, order_sobol_max):
         ''' Convinience function to calculate postprocessing output '''
+        with h5py.File(self.data_file, 'a') as f:
+            try:
+                f.create_dataset(
+                    'mesh_roi/data_matrices/' + name + '_samples',
+                    data=data, compression='gzip')
+            except RuntimeError:
+                pass
+
         data_dims = data.shape[1:]
         if data.ndim == 3:
             data = data.reshape(data.shape[0], -1)
@@ -391,18 +406,21 @@ class gPC_regression(pygpc.RegularizedRegression):
         mesh_io.write_msh(msh, self.mesh_file)
         return msh
 
-    def expand_quantity(self, func, field='E'):
+    def expand_quantity(self, func=None, field='E'):
         ''' Expand an arbitrary quantity
 
         Parameters
         --------......
-        func: function
+        func (optional): function
             Function which takes up a single argument and returns a single number or a
             vector to be expanded by gpc.
-            The arguments corresponds the the electric field in the format
-            [N_simulations x N_roi x 3]
-        field: {v, e, E, J, j}
-            field to be passed as an argument to the function
+            The arguments corresponds the the field samples in the format
+            [N_simulations x N_roi x 3] for vector fields
+            [N_simulations x N_roi] for scalar fields
+
+        field (Optinal): 'v', 'e', 'E', 'J' or 'j'
+            field to be passed as an argument to the function, must have been previously
+            calculated suing the postprocessing method. Default: E
 
         Returns
         --------
@@ -411,13 +429,26 @@ class gPC_regression(pygpc.RegularizedRegression):
             sobol, and globalsens to calculate the mean, standard deviation, sobol coefficients
             and sensitivity of you quantity of interest
         '''
-        if field != 'E':
-            raise NotImplementedError('For now, can only expand E')
-        E = read_data_hdf5('E_samples', self.data_file, 'mesh_roi/data_matrices/')
-        f = func(E)
+        try:
+            field = read_data_hdf5(
+                FIELD_NAME[field] + '_samples',
+                self.data_file, 'mesh_roi/data_matrices/'
+            )
+        except RuntimeError:
+            raise IOError(
+                f'Could not read field "{field}" in file "{self.data_file}"'
+            )
+        if func:
+            f = func(field)
+        else:
+            f = field.reshape(field.shape[0], -1)
         coeffs, cv = self.expand(f)
         logger.info('CV value: {0:1e}'.format(cv))
         return coeffs
+
+    def roi_mesh(self):
+        ''' Returns the mesh where the expansion is defined '''
+        return mesh_io.Msh.read_hdf5(self.data_file, 'mesh_roi/')
 
 
 def prep_gpc(simlist):
