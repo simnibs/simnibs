@@ -71,8 +71,7 @@ def main():
     else:
         logger.info('Interpolating data in NifTI file to mesh')
         ed = mesh_io.ElementData.from_data_grid(
-                mesh, vol, affine, 'from_volume',
-                bounds_error=False, fill_value=0)
+                mesh, vol, affine, 'from_volume')
         mesh.nodedata = []
         mesh.elmdata = [ed]
         mesh_io.write_msh(mesh, args.fn_out)
