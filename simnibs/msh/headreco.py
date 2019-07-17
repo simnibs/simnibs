@@ -48,6 +48,8 @@ logging.captureWarnings(True)
 logger = logging.getLogger("py.warnings")
 logger.setLevel(logging.DEBUG)
 
+# hack, using global variable
+# use_octave = True
 
 # ============================================================================
 def headmodel(argv):    
@@ -82,6 +84,11 @@ def headmodel(argv):
         raise IOError(
             f'Unable to run CAT12: Found a space in the path to the SimNIBS installation: {SIMNIBSDIR} '
             f'To fix it, please reinstall SimNIBS on a path without spaces or run with headreco with --no-cat')
+    try: 
+        use_octave = args.octave
+    except AttributeError:
+        use_octave = False
+
     # subdirectories in m2m_{subid} folder
     segment   = os.path.join(subject_dir,"segment")
     spm       = os.path.join(segment,"spm")
@@ -101,7 +108,7 @@ def headmodel(argv):
     
     if docat:
         tcat = {}.fromkeys([os.path.basename(f) for f in glob(os.path.join(etpm_dir,"cat*.nii"))])
-    path2mfiles = [os.path.dirname(__file__),os.path.join(SIMNIBSDIR,"resources","spm12")]
+    path2mfiles = [os.path.dirname(__file__),os.path.join(SIMNIBSDIR,"resources","spm12" if not use_octave else "spm12-octave")]
     
     # time the entire meshing process
     if args.mode == "all":
@@ -241,7 +248,9 @@ def headmodel(argv):
             spmcall +="; "+ catcall
         
         # -nosplash -nodesktop - CAT12 will stall on using -nodisplay due to the graphical report
-        if (sys.platform == 'win32'):
+        if use_octave:
+            cmd = "octave --no-gui   --no-history --no-window-system --eval "
+        elif (sys.platform == 'win32'):
             cmd = "matlab -nosplash -nodesktop -wait -logfile \""+segment+"\spmcat.log\" -r "
         else:
             cmd = "matlab -nosplash -nodesktop -r "
@@ -249,7 +258,9 @@ def headmodel(argv):
         cmd += "try,{};catch ME,rethrow(ME);end,exit;\"".format(spmcall)
         
         # Call MATLAB
-        hmu.log("Starting MATLAB")
+        hmu.log("Starting MATLAB/Octave")
+        hmu.log("="*width)
+        hmu.log(cmd)
         hmu.log("="*width)
         exitcode = hmu.spawn_process(cmd, verbose=True, return_exit_status=True)
         
@@ -799,7 +810,7 @@ def headmodel(argv):
              visualize(args.subject_id, surfaces, T1, mask_initial, mask_final,
                        subject_dir, args.force_remake, show_mni=True)
         else:
-             visualize_spm(args.subject_id,T1,mask_final,subject_dir,show_mni=True)
+             visualize_spm(args.subject_id,T1,mask_final,subject_dir,show_mni=True,use_octave=use_octave)
              args.noclean = True
 
 
@@ -2011,7 +2022,7 @@ def visualize(subject_id,surface_meshes,T1,control_mask_initial,
         hmu.spawn_process(visualize_MNI_with_freeview, new_thread=True)
 
 
-def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False):
+def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False,use_octave=False):
     """Visualize results of the segmentation using spm for basic quality check.
     
     PARAMETERS
@@ -2046,8 +2057,11 @@ def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False):
     nib.save(T1, T1spm_name)
     nib.save(nib.load(control_mask_final), maskspm_name)
 
-    cmd = "matlab -nosplash -nodesktop -r "
-    path2mfiles = os.path.join(SIMNIBSDIR,"resources","spm12")
+    if use_octave:
+        cmd = "octave --no-gui  --no-history --eval "
+    else:
+        cmd = "matlab -nosplash -nodesktop -r "
+    path2mfiles = os.path.join(SIMNIBSDIR,"resources","spm12" if not use_octave else "spm12-octave")
     cmd += "\"addpath('{}');".format(path2mfiles)
     cmd += "try,spm_check_registration(char('{0}','{1}')); uiwait(gcf);catch ME,rethrow(ME);end,exit;\"".format(
             T1spm_name,maskspm_name)
@@ -2072,7 +2086,10 @@ def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False):
         nib.save(nib.load(ref_mni), ref_mni_spm_name)
         nib.save(nib.load(T1_mni_nonlin), T1_mni_nonlin_spm_name)
 
-        cmd = "matlab -nosplash -nodesktop -r "
+        if use_octave:
+            cmd = "octave --no-gui   --no-history --no-window-system --eval "
+        else:
+            cmd = "matlab -nosplash -nodesktop -r "
         cmd += "\"addpath('{}');".format(path2mfiles)
         cmd += "try,spm_check_registration(char('{0}','{1}')); uiwait(gcf);catch ME,rethrow(ME);end,exit;\"".format(
                 ref_mni_spm_name,T1_mni_nonlin_spm_name)
@@ -2379,7 +2396,11 @@ def parse_args(argv):
         "help"   :"""Suppress pdf printing from CAT12 (default:
                   %(default)s)."""
         }
-         
+    octave = {
+        "action"  : "store_true",
+        "dest"    : "octave",
+        "help"    : """Try using octave onstead of matlab  ***EXPERIMENTAL***"""
+    }
    
     # setup argument parser
     parser = argparse.ArgumentParser(**program_headmodel)
@@ -2398,6 +2419,7 @@ def parse_args(argv):
     parser_all.add_argument("--noclean", **noclean)
     parser_all.add_argument("--skip_coreg", **skip_coreg)
     parser_all.add_argument("--cat_no_print", **cat_no_print)
+    parser_all.add_argument("--octave", **octave)
     # positional
     parser_all.add_argument("subject_id",**subject_id)
     parser_all.add_argument("input_files", **input_files)
@@ -2414,6 +2436,7 @@ def parse_args(argv):
     parser_prepvols.add_argument("--noclean", **noclean)
     parser_prepvols.add_argument("--skip_coreg", **skip_coreg)
     parser_prepvols.add_argument("--cat_no_print", **cat_no_print)
+    parser_prepvols.add_argument("--octave", **octave)
     # positional
     parser_prepvols.add_argument("subject_id",**subject_id)
     parser_prepvols.add_argument("input_files", **input_files)
@@ -2425,6 +2448,7 @@ def parse_args(argv):
     parser_prepcat.add_argument("-v","--vertex-density", **vertex_density)
     parser_prepcat.add_argument("--noclean", **noclean)
     parser_prepcat.add_argument("--no-cat", **cat)
+    parser_prepcat.add_argument("--octave", **octave)
     # positional
     parser_prepcat.add_argument("subject_id",**subject_id)
     
@@ -2444,6 +2468,8 @@ def parse_args(argv):
     parser_surfmesh.add_argument("--no-cat", **cat)
     parser_surfmesh.add_argument("-v","--vertex-density", **vertex_density)
     parser_surfmesh.add_argument("--noclean", **noclean)
+    parser_surfmesh.add_argument("--octave", **octave)
+    
     # positional
     parser_surfmesh.add_argument("subject_id",**subject_id)
     
@@ -2461,6 +2487,7 @@ def parse_args(argv):
     # optional
     parser_check.add_argument("--noclean", **noclean)
     parser_check.add_argument("-f","--force-remake", **force_remake)
+    parser_check.add_argument("--octave", **octave)
     # positional
     parser_check.add_argument("subject_id",**subject_id)
     
