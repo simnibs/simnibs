@@ -1,0 +1,124 @@
+ROIid;ROIabbr;ROIname;ROIbaseid;ROIbasename;Voxel;Volume;XYZ
+0;BG;Background;[0];Background;1712045;5778.15;-0.11,-16.82,19.73
+1;lPrc;Left Precentral;[ 2001 2002 ];Left/Right:Precentral-L.Precentral-R;   8163;  27.55;-39.00,-7.28,48.27
+2;rPrc;Right Precentral;[ 2001 2002 ];Left/Right:Precentral-L.Precentral-R;   7844;  26.47;38.44,-6.67,50.12
+3;lSupFro;Left Superior Frontal;[ 2101 2102 ];Left/Right:Frontal-Sup-L.Frontal-Sup-R;   7771;  26.23;-19.23,32.88,40.46
+4;rSupFro;Right Superior Frontal;[ 2101 2102 ];Left/Right:Frontal-Sup-L.Frontal-Sup-R;   8464;  28.57;18.52,31.47,41.93
+5;lSupFroOrb;Left Superior Frontal Orbital;[ 2111 2112 ];Left/Right:Frontal-Sup-Orb-L.Frontal-Sup-Orb-R;   2267;   7.65;-17.51,43.56,-14.96
+6;rSupFroOrb;Right Superior Frontal Orbital;[ 2111 2112 ];Left/Right:Frontal-Sup-Orb-L.Frontal-Sup-Orb-R;   2144;   7.24;15.03,44.50,-16.49
+7;lMidFro;Left Middle Frontal;[ 2201 2202 ];Left/Right:Frontal-Mid-L.Frontal-Mid-R;  10974;  37.04;-34.66,29.31,33.36
+8;rMidFro;Right Middle Frontal;[ 2201 2202 ];Left/Right:Frontal-Mid-L.Frontal-Mid-R;  11500;  38.81;35.57,32.25,33.51
+9;lMidFroOrb;Left Middle Frontal Orbital;[ 2211 2212 ];Left/Right:Frontal-Mid-Orb-L.Frontal-Mid-Orb-R;   1939;   6.54;-31.42,47.37,-10.96
+10;rMidFroOrb;Right Middle Frontal Orbital;[ 2211 2212 ];Left/Right:Frontal-Mid-Orb-L.Frontal-Mid-Orb-R;   2300;   7.76;29.21,51.73,-11.57
+11;lInfFroOpe;Left Inferior Frontal Operculum;[ 2301 2302 ];Left/Right:Frontal-Inf-Oper-L.Frontal-Inf-Oper-R;   2273;   7.67;-47.48,10.42,13.49
+12;rInfFroOpe;Right Inferior Frontal Operculum;[ 2301 2302 ];Left/Right:Frontal-Inf-Oper-L.Frontal-Inf-Oper-R;   2699;   9.11;47.57,14.44,18.11
+13;lInfFro;Left Inferior Frontal;[ 2311 2312 ];Left/Right:Frontal-Inf-Tri-L.Frontal-Inf-Tri-R;   5089;  17.18;-45.12,27.50,9.46
+14;rInfFro;Right Inferior Frontal;[ 2311 2312 ];Left/Right:Frontal-Inf-Tri-L.Frontal-Inf-Tri-R;   4560;  15.39;46.35,29.65,11.25
+15;lInfFroOrb;Left Inferior Frontal Orbital;[ 2321 2322 ];Left/Right:Frontal-Inf-Orb-L.Frontal-Inf-Orb-R;   3731;  12.59;-35.41,27.77,-15.26
+16;rInfFroOrb;Right Inferior Frontal Orbital;[ 2321 2322 ];Left/Right:Frontal-Inf-Orb-L.Frontal-Inf-Orb-R;   3879;  13.09;36.66,30.63,-13.51
+17;lRolOpe;Left Rolandic Operculum;[ 2331 2332 ];Left/Right:Rolandic-Oper-L.Rolandic-Oper-R;   2393;   8.08;-47.03,-12.20,13.42
+18;rRolOpe;Right Rolandic Operculum;[ 2331 2332 ];Left/Right:Rolandic-Oper-L.Rolandic-Oper-R;   3022;  10.20;49.30,-7.47,13.25
+19;lSupMot;Left Superior Motor;[ 2401 2402 ];Left/Right:Supp-Motor-Area-L.Supp-Motor-Area-R;   4810;  16.23;-6.56,4.45,59.02
+20;rSupMot;Right Superior Motor;[ 2401 2402 ];Left/Right:Supp-Motor-Area-L.Supp-Motor-Area-R;   5059;  17.07;6.55,0.85,57.99
+21;lOlf;Left Olfactory;[ 2501 2502 ];Left/Right:Olfactory-L.Olfactory-R;    617;   2.08;-9.17,12.11,-12.17
+22;rOlf;Right Olfactory;[ 2501 2502 ];Left/Right:Olfactory-L.Olfactory-R;    628;   2.12;7.38,12.38,-12.33
+23;lSupMedFro;Left Superior Medial Frontal;[ 2601 2602 ];Left/Right:Frontal-Sup-Medial-L.Frontal-Sup-Medial-R;   6320;  21.33;-6.83,46.61,28.66
+24;rSupMedFro;Right Superior Medial Frontal;[ 2601 2602 ];Left/Right:Frontal-Sup-Medial-L.Frontal-Sup-Medial-R;   4533;  15.30;6.22,48.69,28.05
+25;lMedFroOrb;Left Medial Frontal Orbital;[ 2611 2612 ];Left/Right:Frontal-Med-Orb-L.Frontal-Med-Orb-R;   1431;   4.83;-6.72,50.80,-10.56
+26;rMedFroOrb;Right Medial Frontal Orbital;[ 2611 2612 ];Left/Right:Frontal-Med-Orb-L.Frontal-Med-Orb-R;   1845;   6.23;5.08,48.69,-9.88
+27;lRec;Left Rectus;[ 2701 2702 ];Left/Right:Rectus-L.Rectus-R;   1674;   5.65;-6.58,32.55,-20.92
+28;rRec;Right Rectus;[ 2701 2702 ];Left/Right:Rectus-L.Rectus-R;   1590;   5.37;5.47,32.21,-20.70
+29;lIns;Left Insula;[ 3001 3002 ];Left/Right:Insula-L.Insula-R;   3764;  12.70;-36.03,2.30,1.40
+30;rIns;Right Insula;[ 3001 3002 ];Left/Right:Insula-L.Insula-R;   3613;  12.19;35.79,2.66,1.04
+31;lAntCin;Left Anterior Cingulum;[ 4001 4002 ];Left/Right:Cingulum-Ant-L.Cingulum-Ant-R;   3074;  10.37;-4.95,32.70,11.18
+32;rAntCin;Right Anterior Cingulum;[ 4001 4002 ];Left/Right:Cingulum-Ant-L.Cingulum-Ant-R;   2867;   9.68;6.52,35.33,14.50
+33;lMidCin;Left Middle Cingulum;[ 4011 4012 ];Left/Right:Cingulum-Mid-L.Cingulum-Mid-R;   4307;  14.54;-6.62,-15.69,38.33
+34;rMidCin;Right Middle Cingulum;[ 4011 4012 ];Left/Right:Cingulum-Mid-L.Cingulum-Mid-R;   5012;  16.92;6.76,-9.37,36.64
+35;lCin;Left Cingulum;[ 4021 4022 ];Left/Right:Cingulum-Post-L.Cingulum-Post-R;    829;   2.80;-5.61,-45.62,20.24
+36;rCin;Right Cingulum;[ 4021 4022 ];Left/Right:Cingulum-Post-L.Cingulum-Post-R;    661;   2.23;6.01,-44.77,17.08
+37;lHip;Left Hippocampus;[ 4101 4102 ];Left/Right:Hippocampus-L.Hippocampus-R;   2084;   7.03;-25.02,-24.05,-12.22
+38;rHip;Right Hippocampus;[ 4101 4102 ];Left/Right:Hippocampus-L.Hippocampus-R;   1997;   6.74;26.64,-23.08,-12.11
+39;lParHip;Left Parahippocampus;[ 4111 4112 ];Left/Right:ParaHippocampal-L.ParaHippocampal-R;   2619;   8.84;-23.50,-19.88,-23.32
+40;rParHip;Right Parahippocampus;[ 4111 4112 ];Left/Right:ParaHippocampal-L.ParaHippocampal-R;   2768;   9.34;23.56,-18.93,-22.99
+41;lAmy;Left Amygdala;[ 4201 4202 ];Left/Right:Amygdala-L.Amygdala-R;    463;   1.56;-24.67,-5.23,-18.58
+42;rAmy;Right Amygdala;[ 4201 4202 ];Left/Right:Amygdala-L.Amygdala-R;    485;   1.64;24.49,-3.70,-20.08
+43;lCal;Left Calcarine;[ 5001 5002 ];Left/Right:Calcarine-L.Calcarine-R;   4871;  16.44;-8.79,-80.50,3.11
+44;rCal;Right Calcarine;[ 5001 5002 ];Left/Right:Calcarine-L.Calcarine-R;   4197;  14.16;13.16,-75.55,6.63
+45;lCun;Left Cuneus;[ 5011 5012 ];Left/Right:Cuneus-L.Cuneus-R;   3361;  11.34;-8.50,-81.00,23.54
+46;rCun;Right Cuneus;[ 5011 5012 ];Left/Right:Cuneus-L.Cuneus-R;   3684;  12.43;10.40,-79.82,25.51
+47;lLin;Left Lingual;[ 5021 5022 ];Left/Right:Lingual-L.Lingual-R;   4778;  16.13;-15.61,-69.92,-7.67
+48;rLin;Right Lingual;[ 5021 5022 ];Left/Right:Lingual-L.Lingual-R;   5103;  17.22;14.83,-69.98,-6.74
+49;lSupOcc;Left Superior Occipital;[ 5101 5102 ];Left/Right:Occipital-Sup-L.Occipital-Sup-R;   3209;  10.83;-19.02,-84.64,25.45
+50;rSupOcc;Right Superior Occipital;[ 5101 5102 ];Left/Right:Occipital-Sup-L.Occipital-Sup-R;   3353;  11.32;21.02,-81.70,28.29
+51;lMidOcc;Left Middle Occipital;[ 5201 5202 ];Left/Right:Occipital-Mid-L.Occipital-Mid-R;   7378;  24.90;-34.32,-81.64,15.06
+52;rMidOcc;Right Middle Occipital;[ 5201 5202 ];Left/Right:Occipital-Mid-L.Occipital-Mid-R;   4835;  16.32;35.27,-80.21,18.62
+53;lInfOcc;Left Inferior Occipital;[ 5301 5302 ];Left/Right:Occipital-Inf-L.Occipital-Inf-R;   2094;   7.07;-38.47,-79.10,-9.54
+54;rInfOcc;Right Inferior Occipital;[ 5301 5302 ];Left/Right:Occipital-Inf-L.Occipital-Inf-R;   2275;   7.68;35.86,-82.97,-7.23
+55;lFus;Left Fusiform;[ 5401 5402 ];Left/Right:Fusiform-L.Fusiform-R;   5568;  18.79;-33.52,-43.85,-21.72
+56;rFus;Right Fusiform;[ 5401 5402 ];Left/Right:Fusiform-L.Fusiform-R;   5895;  19.90;33.06,-42.00,-21.10
+57;lPoC;Left Postcentral;[ 6001 6002 ];Left/Right:Postcentral-L.Postcentral-R;   8348;  28.17;-43.08,-23.88,48.07
+58;rPoC;Right Postcentral;[ 6001 6002 ];Left/Right:Postcentral-L.Postcentral-R;   8460;  28.55;40.39,-23.46,51.18
+59;lSupPar;Left Superior Parietal;[ 6101 6102 ];Left/Right:Parietal-Sup-L.Parietal-Sup-R;   5140;  17.35;-24.13,-58.41,57.18
+60;rSupPar;Right Superior Parietal;[ 6101 6102 ];Left/Right:Parietal-Sup-L.Parietal-Sup-R;   5597;  18.89;24.51,-56.97,59.49
+61;lInfPar;Left Inferior Parietal;[ 6201 6202 ];Left/Right:Parietal-Inf-L.Parietal-Inf-R;   5637;  19.02;-43.07,-48.25,45.27
+62;rInfPar;Right Inferior Parietal;[ 6201 6202 ];Left/Right:Parietal-Inf-L.Parietal-Inf-R;   3484;  11.76;44.79,-45.80,48.06
+63;lSupMar;Left Supramarginal;[ 6211 6212 ];Left/Right:SupraMarginal-L.SupraMarginal-R;   2696;   9.10;-57.24,-37.31,27.87
+64;rSupMar;Right Supramarginal;[ 6211 6212 ];Left/Right:SupraMarginal-L.SupraMarginal-R;   3724;  12.57;56.45,-31.49,34.58
+65;lAng;Left Angular;[ 6221 6222 ];Left/Right:Angular-L.Angular-R;   2603;   8.79;-44.42,-62.74,35.28
+66;rAng;Right Angular;[ 6221 6222 ];Left/Right:Angular-L.Angular-R;   4421;  14.92;42.85,-60.20,37.45
+67;lPCu;Left Precuneus;[ 6301 6302 ];Left/Right:Precuneus-L.Precuneus-R;   8331;  28.12;-8.37,-56.10,45.98
+68;rPCu;Right Precuneus;[ 6301 6302 ];Left/Right:Precuneus-L.Precuneus-R;   7179;  24.23;8.37,-55.26,40.74
+69;lCenPacLo;Left Central Paracentral Lobule;[ 6401 6402 ];Left/Right:Paracentral-Lobule-L.Paracentral-Lobule-R;   3166;  10.69;-7.61,-24.71,66.45
+70;rCenPacLo;Right Central Paracentral Lobule;[ 6401 6402 ];Left/Right:Paracentral-Lobule-L.Paracentral-Lobule-R;   1932;   6.52;6.86,-30.58,64.74
+71;lCau;Left Caudate;[ 7001 7002 ];Left/Right:Caudate-L.Caudate-R;   2103;   7.10;-13.26,8.72,7.96
+72;rCau;Right Caudate;[ 7001 7002 ];Left/Right:Caudate-L.Caudate-R;   2251;   7.60;13.38,9.55,8.50
+73;lPut;Left Putamen;[ 7011 7012 ];Left/Right:Putamen-L.Putamen-R;   1887;   6.37;-25.12,1.03,1.01
+74;rPut;Right Putamen;[ 7011 7012 ];Left/Right:Putamen-L.Putamen-R;   2097;   7.08;25.32,2.27,0.37
+75;lPal;Left Pallidum;[ 7021 7022 ];Left/Right:Pallidum-L.Pallidum-R;    617;   2.08;-20.30,-1.87,-1.65
+76;rPal;Right Pallidum;[ 7021 7022 ];Left/Right:Pallidum-L.Pallidum-R;    674;   2.27;19.72,-1.94,-2.46
+77;lTha;Left Thalamus;[ 7101 7102 ];Left/Right:Thalamus-L.Thalamus-R;   2181;   7.36;-12.21,-19.66,6.65
+78;rTha;Right Thalamus;[ 7101 7102 ];Left/Right:Thalamus-L.Thalamus-R;   2193;   7.40;12.33,-19.41,7.14
+79;lHes;Left Heschl;[ 8101 8102 ];Left/Right:Heschl-L.Heschl-R;    603;   2.04;-43.16,-22.13,8.30
+80;rHes;Right Heschl;[ 8101 8102 ];Left/Right:Heschl-L.Heschl-R;    452;   1.53;43.18,-20.21,9.36
+81;lSupTem;Left Superior Temporal;[ 8111 8112 ];Left/Right:Temporal-Sup-L.Temporal-Sup-R;   6587;  22.23;-54.26,-23.38,4.65
+82;rSupTem;Right Superior Temporal;[ 8111 8112 ];Left/Right:Temporal-Sup-L.Temporal-Sup-R;   7098;  23.96;55.19,-22.86,6.30
+83;lSupTemPo;Left Superior Temporal Pole;[ 8121 8122 ];Left/Right:Temporal-Pole-Sup-L.Temporal-Pole-Sup-R;   3228;  10.89;-40.82,11.22,-23.31
+84;rSupTemPo;Right Superior Temporal Pole;[ 8121 8122 ];Left/Right:Temporal-Pole-Sup-L.Temporal-Pole-Sup-R;   3358;  11.33;44.48,11.43,-18.82
+85;lMidTem;Left Middle Temporal;[ 8201 8202 ];Left/Right:Temporal-Mid-L.Temporal-Mid-R;  10252;  34.60;-55.89,-36.14,-4.72
+86;rMidTem;Right Middle Temporal;[ 8201 8202 ];Left/Right:Temporal-Mid-L.Temporal-Mid-R;   9993;  33.73;55.40,-38.09,-2.27
+87;lMidTemPo;Left Middle Temporal Pole;[ 8211 8212 ];Left/Right:Temporal-Pole-Mid-L.Temporal-Pole-Mid-R;   1696;   5.72;-38.50,9.19,-38.26
+88;rMidTemPo;Right Middle Temporal Pole;[ 8211 8212 ];Left/Right:Temporal-Pole-Mid-L.Temporal-Pole-Mid-R;   2645;   8.93;41.50,10.16,-34.88
+89;lInfTem;Left Inferior Temporal;[ 8301 8302 ];Left/Right:Temporal-Inf-L.Temporal-Inf-R;   6556;  22.13;-50.40,-30.47,-26.18
+90;rInfTem;Right Inferior Temporal;[ 8301 8302 ];Left/Right:Temporal-Inf-L.Temporal-Inf-R;   7604;  25.66;51.33,-33.22,-23.29
+91;lCbe;Left Cerebellum;[ 9001 9002 9011 9012 ];Left/Right:Cerebelum-Crus1-L.Cerebelum-Crus1-R.Cerebelum-Crus2-L.Cerebelum-Crus2-R;  10071;  33.99;-30.79,-71.02,-35.89
+92;rCbe;Right Cerebellum;[ 9001 9002 9011 9012 ];Left/Right:Cerebelum-Crus1-L.Cerebelum-Crus1-R.Cerebelum-Crus2-L.Cerebelum-Crus2-R;   9895;  33.40;32.19,-69.68,-35.22
+93;lCbe3;Left Cerebellum 3;[ 9021 9022 ];Left/Right:Cerebelum-3-L.Cerebelum-3-R;    284;   0.96;-8.92,-40.35,-21.23
+94;rCbe3;Right Cerebellum 3;[ 9021 9022 ];Left/Right:Cerebelum-3-L.Cerebelum-3-R;    474;   1.60;11.86,-38.75,-20.73
+95;lCbe4-5;Left Cerebellum 4-5;[ 9031 9032 ];Left/Right:Cerebelum-4-5-L.Cerebelum-4-5-R;   2487;   8.39;-15.40,-46.41,-19.89
+96;rCbe4-5;Right Cerebellum 4-5;[ 9031 9032 ];Left/Right:Cerebelum-4-5-L.Cerebelum-4-5-R;   1834;   6.19;16.87,-46.52,-20.33
+97;lCbe6;Left Cerebellum 6;[ 9041 9042 ];Left/Right:Cerebelum-6-L.Cerebelum-6-R;   3310;  11.17;-22.28,-60.11,-24.75
+98;rCbe6;Right Cerebellum 6;[ 9041 9042 ];Left/Right:Cerebelum-6-L.Cerebelum-6-R;   3455;  11.66;23.67,-59.04,-25.03
+99;lCbe7b;Left Cerebellum 7b;[ 9051 9052 ];Left/Right:Cerebelum-7b-L.Cerebelum-7b-R;   1240;   4.18;-27.77,-64.64,-49.49
+100;rCbe7b;Right Cerebellum 7b;[ 9051 9052 ];Left/Right:Cerebelum-7b-L.Cerebelum-7b-R;    980;   3.31;29.70,-66.72,-49.82
+101;lCbe8;Left Cerebellum 8;[ 9061 9062 ];Left/Right:Cerebelum-8-L.Cerebelum-8-R;   4105;  13.85;-22.87,-58.47,-52.00
+102;rCbe8;Right Cerebellum 8;[ 9061 9062 ];Left/Right:Cerebelum-8-L.Cerebelum-8-R;   4902;  16.54;21.88,-60.07,-51.82
+103;lCbe9;Left Cerebellum 9;[ 9071 9072 ];Left/Right:Cerebelum-9-L.Cerebelum-9-R;   2063;   6.96;-9.96,-52.62,-51.13
+104;rCbe9;Right Cerebellum 9;[ 9071 9072 ];Left/Right:Cerebelum-9-L.Cerebelum-9-R;   1828;   6.17;8.12,-52.81,-51.21
+105;lCbe10;Left Cerebellum 10;[ 9081 9082 ];Left/Right:Cerebelum-10-L.Cerebelum-10-R;    315;   1.06;-20.91,-37.40,-44.36
+106;rCbe10;Right Cerebellum 10;[ 9081 9082 ];Left/Right:Cerebelum-10-L.Cerebelum-10-R;    301;   1.02;22.89,-38.07,-44.30
+107;lVer1-2;Left Vermis 1-2;[ 9100 ];Both:Vermis-1-2;     48;   0.16;-1.38,-42.19,-22.34
+108;rVer1-2;Right Vermis 1-2;[ 9100 ];Both:Vermis-1-2;     30;   0.10;2.25,-41.60,-21.80
+109;lVer3;Left Vermis 3;[ 9110 ];Both:Vermis-3;    178;   0.60;-1.42,-44.03,-15.52
+110;rVer3;Right Vermis 3;[ 9110 ];Both:Vermis-3;    246;   0.83;3.54,-43.20,-14.12
+111;lVer4-5;Left Vermis 4-5;[ 9120 ];Both:Vermis-4-5;    641;   2.16;-1.87,-54.89,-10.82
+112;rVer4-5;Right Vermis 4-5;[ 9120 ];Both:Vermis-4-5;    651;   2.20;2.92,-54.79,-10.16
+113;lVer6;Left Vermis 6;[ 9130 ];Both:Vermis-6;    403;   1.36;-1.92,-69.33,-20.11
+114;rVer6;Right Vermis 6;[ 9130 ];Both:Vermis-6;    362;   1.22;2.94,-69.48,-18.76
+115;lVer;Left Vermis;[ 9140 ];Both:Vermis-7;    184;   0.62;-1.77,-73.61,-30.02
+116;rVer;Right Vermis;[ 9140 ];Both:Vermis-7;    176;   0.59;3.32,-73.29,-29.09
+117;lVer8;Left Vermis 8;[ 9150 ];Both:Vermis-8;    251;   0.85;-1.44,-67.40,-38.72
+118;rVer8;Right Vermis 8;[ 9150 ];Both:Vermis-8;    223;   0.75;2.71,-67.06,-39.14
+119;lVer9;Left Vermis 9;[ 9160 ];Both:Vermis-9;    195;   0.66;-1.44,-57.83,-39.72
+120;rVer9;Right Vermis 9;[ 9160 ];Both:Vermis-9;    171;   0.58;2.91,-57.67,-38.45
+121;lVer10;Left Vermis 10;[ 9170 ];Both:Vermis-10;     58;   0.20;-2.17,-48.85,-35.20
+122;rVer10;Right Vermis 10;[ 9170 ];Both:Vermis-10;     83;   0.28;1.30,-49.19,-33.22

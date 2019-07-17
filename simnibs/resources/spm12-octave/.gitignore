@@ -1,0 +1,4 @@
+# ignore compilation files and precompiled mex files
+*.o
+*.mex*
+

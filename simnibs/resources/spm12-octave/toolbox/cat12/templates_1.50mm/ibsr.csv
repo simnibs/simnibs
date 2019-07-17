@@ -1,0 +1,34 @@
+ROIid;ROIabbr;ROIname;ROIbaseid;ROIbasename;Voxel;Volume;XYZ
+0;BG;Background;[0];Background;1579337;5330.26;-0.31,-16.26,21.53
+1;lCbr;Left Cerebrum;[ 2 3 21 22 23 24 32 33 34 35 36 38 39 41 42 64 65 66 67 68 70 71 73 74 ];Left/Right/Both:Aorg.CSF.Cerebral-Cortex.Cerebral-White-Matter.F3orb.Line-1.Line-2.Line-3.Porg.Thin-Cerebral-White-Matter.aOg.lOg.mOg.pOg; 223769; 755.22;-28.87,-19.36,15.29
+2;rCbr;Right Cerebrum;[ 2 3 21 22 23 24 32 33 34 35 36 38 39 41 42 64 65 66 67 68 70 71 73 74 ];Left/Right/Both:Aorg.CSF.Cerebral-Cortex.Cerebral-White-Matter.F3orb.Line-1.Line-2.Line-3.Porg.Thin-Cerebral-White-Matter.aOg.lOg.mOg.pOg; 224305; 757.03;30.58,-17.38,15.36
+3;lLatVen;Left Lateral Ventricle;[ 4 43 ];Left/Right:Lateral-Ventricle;   3044;  10.27;-11.97,-14.66,12.32
+4;rLatVen;Right Lateral Ventricle;[ 4 43 ];Left/Right:Lateral-Ventricle;   3192;  10.77;14.24,-13.08,12.32
+5;lInfLatVen;Left Inferior Lateral Ventricle;[ 5 44 ];Left/Right:Inf-Lat-Vent;      5;   0.02;-28.50,-11.10,-22.50
+6;rInfLatVen;Right Inferior Lateral Ventricle;[ 5 44 ];Left/Right:Inf-Lat-Vent;     12;   0.04;24.38,-15.12,-13.75
+7;lCbe;Left Cerebellum;[ 7 8 46 47 ];Left/Right:Cerebellum-Cortex.Cerebellum-White-Matter;  29696; 100.22;-21.87,-61.55,-38.01
+8;rCbe;Right Cerebellum;[ 7 8 46 47 ];Left/Right:Cerebellum-Cortex.Cerebellum-White-Matter;  29929; 101.01;23.26,-61.28,-37.64
+9;lThaPro;Left Thalamus Proper;[ 10 49 ];Left/Right:Thalamus-Proper;   2212;   7.47;-8.74,-20.01,5.07
+10;rThaPro;Right Thalamus Proper;[ 10 49 ];Left/Right:Thalamus-Proper;   2205;   7.44;10.82,-19.06,5.12
+11;lCau;Left Caudate;[ 11 50 ];Left/Right:Caudate;    942;   3.18;-11.91,8.90,7.42
+12;rCau;Right Caudate;[ 11 50 ];Left/Right:Caudate;    890;   3.00;14.21,9.92,7.29
+13;lPut;Left Putamen;[ 12 51 ];Left/Right:Putamen;   1226;   4.14;-24.84,0.38,-3.14
+14;rPut;Right Putamen;[ 12 51 ];Left/Right:Putamen;   1238;   4.18;26.97,1.80,-2.68
+15;lPal;Left Pallidum;[ 13 52 ];Left/Right:Pallidum;    551;   1.86;-20.34,-4.94,-3.33
+16;rPal;Right Pallidum;[ 13 52 ];Left/Right:Pallidum;    534;   1.80;22.05,-3.17,-3.49
+17;l3thVen;Left Third Ventricle;[ 14 ];Both:3rd-Ventricle;    125;   0.42;-0.11,-9.66,-6.74
+18;r3thVen;Right Third Ventricle;[ 14 ];Both:3rd-Ventricle;    224;   0.76;2.10,-9.52,-6.47
+19;l4thVen;Left Fourth Ventricle;[ 15 ];Both:4th-Ventricle;    273;   0.92;-1.85,-45.46,-33.90
+20;r4thVen;Right Fourth Ventricle;[ 15 ];Both:4th-Ventricle;    298;   1.01;3.53,-45.21,-33.62
+21;lBst;Left Brainstem;[ 16 ];Both:Brain-Stem;   5854;  19.76;-5.10,-30.02,-34.96
+22;rBst;Right Brainstem;[ 16 ];Both:Brain-Stem;   5114;  17.26;7.85,-30.78,-33.13
+23;lHip;Left Hippocampus;[ 17 53 ];Left/Right:Hippocampus;   1115;   3.76;-25.04,-22.66,-15.53
+24;rHip;Right Hippocampus;[ 17 53 ];Left/Right:Hippocampus;   1103;   3.72;27.06,-20.54,-16.10
+25;lAmy;Left Amygdala;[ 18 54 ];Left/Right:Amygdala;    504;   1.70;-21.70,-6.86,-20.12
+26;rAmy;Right Amygdala;[ 18 54 ];Left/Right:Amygdala;    515;   1.74;23.75,-5.47,-20.07
+27;lAcc;Left Accumbens;[ 26 58 ];Left/Right:Accumbens-area;    148;   0.50;-1.89,-28.86,5.20
+28;rAcc;Right Accumbens;[ 26 58 ];Left/Right:Accumbens-area;    160;   0.54;3.34,-27.81,5.54
+29;lVenVen;Left Ventral Ventricle;[ 28 60 ];Left/Right:VentralDC;    107;   0.36;-8.75,10.56,-9.48
+30;rVenVen;Right Ventral Ventricle;[ 28 60 ];Left/Right:VentralDC;    109;   0.37;10.80,11.97,-8.83
+31;lBV;Left Blood-vessel;[ 30 62 ];Left/Right:vessel;   2052;   6.93;-8.25,-15.96,-12.41
+32;rBV;Right Blood-vessel;[ 30 62 ];Left/Right:vessel;   2157;   7.28;10.18,-15.02,-12.50

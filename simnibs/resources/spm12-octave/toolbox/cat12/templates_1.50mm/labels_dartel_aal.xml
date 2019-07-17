@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This is a temporary file format -->
+  <atlas version="2.0">
+    <header>
+      <name>aal</name>
+      <version>1.0</version>
+      <description></description>
+      <url></url>
+      <licence>CC BY-NC</licence>
+      <coordinate_system>MNI</coordinate_system>
+      <type>Label</type>
+      <images>
+        <imagefile>aal.nii</imagefile>
+      </images>
+    </header>
+  <data>
+    <!-- could also include short_name, RGBA, XYZmm -->
+    <label><index>0</index><short_name>BG</short_name><name>Background</name><RGBA></RGBA><XYZmm>-0.11,-16.82,19.73</XYZmm></label>
+    <label><index>1</index><short_name>lPrc</short_name><name>Left Precentral</name><RGBA></RGBA><XYZmm>-39.00,-7.28,48.27</XYZmm></label>
+    <label><index>2</index><short_name>rPrc</short_name><name>Right Precentral</name><RGBA></RGBA><XYZmm>38.44,-6.67,50.12</XYZmm></label>
+    <label><index>3</index><short_name>lSupFro</short_name><name>Left Superior Frontal</name><RGBA></RGBA><XYZmm>-19.23,32.88,40.46</XYZmm></label>
+    <label><index>4</index><short_name>rSupFro</short_name><name>Right Superior Frontal</name><RGBA></RGBA><XYZmm>18.52,31.47,41.93</XYZmm></label>
+    <label><index>5</index><short_name>lSupFroOrb</short_name><name>Left Superior Frontal Orbital</name><RGBA></RGBA><XYZmm>-17.51,43.56,-14.96</XYZmm></label>
+    <label><index>6</index><short_name>rSupFroOrb</short_name><name>Right Superior Frontal Orbital</name><RGBA></RGBA><XYZmm>15.03,44.50,-16.49</XYZmm></label>
+    <label><index>7</index><short_name>lMidFro</short_name><name>Left Middle Frontal</name><RGBA></RGBA><XYZmm>-34.66,29.31,33.36</XYZmm></label>
+    <label><index>8</index><short_name>rMidFro</short_name><name>Right Middle Frontal</name><RGBA></RGBA><XYZmm>35.57,32.25,33.51</XYZmm></label>
+    <label><index>9</index><short_name>lMidFroOrb</short_name><name>Left Middle Frontal Orbital</name><RGBA></RGBA><XYZmm>-31.42,47.37,-10.96</XYZmm></label>
+    <label><index>10</index><short_name>rMidFroOrb</short_name><name>Right Middle Frontal Orbital</name><RGBA></RGBA><XYZmm>29.21,51.73,-11.57</XYZmm></label>
+    <label><index>11</index><short_name>lInfFroOpe</short_name><name>Left Inferior Frontal Operculum</name><RGBA></RGBA><XYZmm>-47.48,10.42,13.49</XYZmm></label>
+    <label><index>12</index><short_name>rInfFroOpe</short_name><name>Right Inferior Frontal Operculum</name><RGBA></RGBA><XYZmm>47.57,14.44,18.11</XYZmm></label>
+    <label><index>13</index><short_name>lInfFro</short_name><name>Left Inferior Frontal</name><RGBA></RGBA><XYZmm>-45.12,27.50,9.46</XYZmm></label>
+    <label><index>14</index><short_name>rInfFro</short_name><name>Right Inferior Frontal</name><RGBA></RGBA><XYZmm>46.35,29.65,11.25</XYZmm></label>
+    <label><index>15</index><short_name>lInfFroOrb</short_name><name>Left Inferior Frontal Orbital</name><RGBA></RGBA><XYZmm>-35.41,27.77,-15.26</XYZmm></label>
+    <label><index>16</index><short_name>rInfFroOrb</short_name><name>Right Inferior Frontal Orbital</name><RGBA></RGBA><XYZmm>36.66,30.63,-13.51</XYZmm></label>
+    <label><index>17</index><short_name>lRolOpe</short_name><name>Left Rolandic Operculum</name><RGBA></RGBA><XYZmm>-47.03,-12.20,13.42</XYZmm></label>
+    <label><index>18</index><short_name>rRolOpe</short_name><name>Right Rolandic Operculum</name><RGBA></RGBA><XYZmm>49.30,-7.47,13.25</XYZmm></label>
+    <label><index>19</index><short_name>lSupMot</short_name><name>Left Superior Motor</name><RGBA></RGBA><XYZmm>-6.56,4.45,59.02</XYZmm></label>
+    <label><index>20</index><short_name>rSupMot</short_name><name>Right Superior Motor</name><RGBA></RGBA><XYZmm>6.55,0.85,57.99</XYZmm></label>
+    <label><index>21</index><short_name>lOlf</short_name><name>Left Olfactory</name><RGBA></RGBA><XYZmm>-9.17,12.11,-12.17</XYZmm></label>
+    <label><index>22</index><short_name>rOlf</short_name><name>Right Olfactory</name><RGBA></RGBA><XYZmm>7.38,12.38,-12.33</XYZmm></label>
+    <label><index>23</index><short_name>lSupMedFro</short_name><name>Left Superior Medial Frontal</name><RGBA></RGBA><XYZmm>-6.83,46.61,28.66</XYZmm></label>
+    <label><index>24</index><short_name>rSupMedFro</short_name><name>Right Superior Medial Frontal</name><RGBA></RGBA><XYZmm>6.22,48.69,28.05</XYZmm></label>
+    <label><index>25</index><short_name>lMedFroOrb</short_name><name>Left Medial Frontal Orbital</name><RGBA></RGBA><XYZmm>-6.72,50.80,-10.56</XYZmm></label>
+    <label><index>26</index><short_name>rMedFroOrb</short_name><name>Right Medial Frontal Orbital</name><RGBA></RGBA><XYZmm>5.08,48.69,-9.88</XYZmm></label>
+    <label><index>27</index><short_name>lRec</short_name><name>Left Rectus</name><RGBA></RGBA><XYZmm>-6.58,32.55,-20.92</XYZmm></label>
+    <label><index>28</index><short_name>rRec</short_name><name>Right Rectus</name><RGBA></RGBA><XYZmm>5.47,32.21,-20.70</XYZmm></label>
+    <label><index>29</index><short_name>lIns</short_name><name>Left Insula</name><RGBA></RGBA><XYZmm>-36.03,2.30,1.40</XYZmm></label>
+    <label><index>30</index><short_name>rIns</short_name><name>Right Insula</name><RGBA></RGBA><XYZmm>35.79,2.66,1.04</XYZmm></label>
+    <label><index>31</index><short_name>lAntCin</short_name><name>Left Anterior Cingulum</name><RGBA></RGBA><XYZmm>-4.95,32.70,11.18</XYZmm></label>
+    <label><index>32</index><short_name>rAntCin</short_name><name>Right Anterior Cingulum</name><RGBA></RGBA><XYZmm>6.52,35.33,14.50</XYZmm></label>
+    <label><index>33</index><short_name>lMidCin</short_name><name>Left Middle Cingulum</name><RGBA></RGBA><XYZmm>-6.62,-15.69,38.33</XYZmm></label>
+    <label><index>34</index><short_name>rMidCin</short_name><name>Right Middle Cingulum</name><RGBA></RGBA><XYZmm>6.76,-9.37,36.64</XYZmm></label>
+    <label><index>35</index><short_name>lCin</short_name><name>Left Cingulum</name><RGBA></RGBA><XYZmm>-5.61,-45.62,20.24</XYZmm></label>
+    <label><index>36</index><short_name>rCin</short_name><name>Right Cingulum</name><RGBA></RGBA><XYZmm>6.01,-44.77,17.08</XYZmm></label>
+    <label><index>37</index><short_name>lHip</short_name><name>Left Hippocampus</name><RGBA></RGBA><XYZmm>-25.02,-24.05,-12.22</XYZmm></label>
+    <label><index>38</index><short_name>rHip</short_name><name>Right Hippocampus</name><RGBA></RGBA><XYZmm>26.64,-23.08,-12.11</XYZmm></label>
+    <label><index>39</index><short_name>lParHip</short_name><name>Left Parahippocampus</name><RGBA></RGBA><XYZmm>-23.50,-19.88,-23.32</XYZmm></label>
+    <label><index>40</index><short_name>rParHip</short_name><name>Right Parahippocampus</name><RGBA></RGBA><XYZmm>23.56,-18.93,-22.99</XYZmm></label>
+    <label><index>41</index><short_name>lAmy</short_name><name>Left Amygdala</name><RGBA></RGBA><XYZmm>-24.67,-5.23,-18.58</XYZmm></label>
+    <label><index>42</index><short_name>rAmy</short_name><name>Right Amygdala</name><RGBA></RGBA><XYZmm>24.49,-3.70,-20.08</XYZmm></label>
+    <label><index>43</index><short_name>lCal</short_name><name>Left Calcarine</name><RGBA></RGBA><XYZmm>-8.79,-80.50,3.11</XYZmm></label>
+    <label><index>44</index><short_name>rCal</short_name><name>Right Calcarine</name><RGBA></RGBA><XYZmm>13.16,-75.55,6.63</XYZmm></label>
+    <label><index>45</index><short_name>lCun</short_name><name>Left Cuneus</name><RGBA></RGBA><XYZmm>-8.50,-81.00,23.54</XYZmm></label>
+    <label><index>46</index><short_name>rCun</short_name><name>Right Cuneus</name><RGBA></RGBA><XYZmm>10.40,-79.82,25.51</XYZmm></label>
+    <label><index>47</index><short_name>lLin</short_name><name>Left Lingual</name><RGBA></RGBA><XYZmm>-15.61,-69.92,-7.67</XYZmm></label>
+    <label><index>48</index><short_name>rLin</short_name><name>Right Lingual</name><RGBA></RGBA><XYZmm>14.83,-69.98,-6.74</XYZmm></label>
+    <label><index>49</index><short_name>lSupOcc</short_name><name>Left Superior Occipital</name><RGBA></RGBA><XYZmm>-19.02,-84.64,25.45</XYZmm></label>
+    <label><index>50</index><short_name>rSupOcc</short_name><name>Right Superior Occipital</name><RGBA></RGBA><XYZmm>21.02,-81.70,28.29</XYZmm></label>
+    <label><index>51</index><short_name>lMidOcc</short_name><name>Left Middle Occipital</name><RGBA></RGBA><XYZmm>-34.32,-81.64,15.06</XYZmm></label>
+    <label><index>52</index><short_name>rMidOcc</short_name><name>Right Middle Occipital</name><RGBA></RGBA><XYZmm>35.27,-80.21,18.62</XYZmm></label>
+    <label><index>53</index><short_name>lInfOcc</short_name><name>Left Inferior Occipital</name><RGBA></RGBA><XYZmm>-38.47,-79.10,-9.54</XYZmm></label>
+    <label><index>54</index><short_name>rInfOcc</short_name><name>Right Inferior Occipital</name><RGBA></RGBA><XYZmm>35.86,-82.97,-7.23</XYZmm></label>
+    <label><index>55</index><short_name>lFus</short_name><name>Left Fusiform</name><RGBA></RGBA><XYZmm>-33.52,-43.85,-21.72</XYZmm></label>
+    <label><index>56</index><short_name>rFus</short_name><name>Right Fusiform</name><RGBA></RGBA><XYZmm>33.06,-42.00,-21.10</XYZmm></label>
+    <label><index>57</index><short_name>lPoC</short_name><name>Left Postcentral</name><RGBA></RGBA><XYZmm>-43.08,-23.88,48.07</XYZmm></label>
+    <label><index>58</index><short_name>rPoC</short_name><name>Right Postcentral</name><RGBA></RGBA><XYZmm>40.39,-23.46,51.18</XYZmm></label>
+    <label><index>59</index><short_name>lSupPar</short_name><name>Left Superior Parietal</name><RGBA></RGBA><XYZmm>-24.13,-58.41,57.18</XYZmm></label>
+    <label><index>60</index><short_name>rSupPar</short_name><name>Right Superior Parietal</name><RGBA></RGBA><XYZmm>24.51,-56.97,59.49</XYZmm></label>
+    <label><index>61</index><short_name>lInfPar</short_name><name>Left Inferior Parietal</name><RGBA></RGBA><XYZmm>-43.07,-48.25,45.27</XYZmm></label>
+    <label><index>62</index><short_name>rInfPar</short_name><name>Right Inferior Parietal</name><RGBA></RGBA><XYZmm>44.79,-45.80,48.06</XYZmm></label>
+    <label><index>63</index><short_name>lSupMar</short_name><name>Left Supramarginal</name><RGBA></RGBA><XYZmm>-57.24,-37.31,27.87</XYZmm></label>
+    <label><index>64</index><short_name>rSupMar</short_name><name>Right Supramarginal</name><RGBA></RGBA><XYZmm>56.45,-31.49,34.58</XYZmm></label>
+    <label><index>65</index><short_name>lAng</short_name><name>Left Angular</name><RGBA></RGBA><XYZmm>-44.42,-62.74,35.28</XYZmm></label>
+    <label><index>66</index><short_name>rAng</short_name><name>Right Angular</name><RGBA></RGBA><XYZmm>42.85,-60.20,37.45</XYZmm></label>
+    <label><index>67</index><short_name>lPCu</short_name><name>Left Precuneus</name><RGBA></RGBA><XYZmm>-8.37,-56.10,45.98</XYZmm></label>
+    <label><index>68</index><short_name>rPCu</short_name><name>Right Precuneus</name><RGBA></RGBA><XYZmm>8.37,-55.26,40.74</XYZmm></label>
+    <label><index>69</index><short_name>lCenPacLo</short_name><name>Left Central Paracentral Lobule</name><RGBA></RGBA><XYZmm>-7.61,-24.71,66.45</XYZmm></label>
+    <label><index>70</index><short_name>rCenPacLo</short_name><name>Right Central Paracentral Lobule</name><RGBA></RGBA><XYZmm>6.86,-30.58,64.74</XYZmm></label>
+    <label><index>71</index><short_name>lCau</short_name><name>Left Caudate</name><RGBA></RGBA><XYZmm>-13.26,8.72,7.96</XYZmm></label>
+    <label><index>72</index><short_name>rCau</short_name><name>Right Caudate</name><RGBA></RGBA><XYZmm>13.38,9.55,8.50</XYZmm></label>
+    <label><index>73</index><short_name>lPut</short_name><name>Left Putamen</name><RGBA></RGBA><XYZmm>-25.12,1.03,1.01</XYZmm></label>
+    <label><index>74</index><short_name>rPut</short_name><name>Right Putamen</name><RGBA></RGBA><XYZmm>25.32,2.27,0.37</XYZmm></label>
+    <label><index>75</index><short_name>lPal</short_name><name>Left Pallidum</name><RGBA></RGBA><XYZmm>-20.30,-1.87,-1.65</XYZmm></label>
+    <label><index>76</index><short_name>rPal</short_name><name>Right Pallidum</name><RGBA></RGBA><XYZmm>19.72,-1.94,-2.46</XYZmm></label>
+    <label><index>77</index><short_name>lTha</short_name><name>Left Thalamus</name><RGBA></RGBA><XYZmm>-12.21,-19.66,6.65</XYZmm></label>
+    <label><index>78</index><short_name>rTha</short_name><name>Right Thalamus</name><RGBA></RGBA><XYZmm>12.33,-19.41,7.14</XYZmm></label>
+    <label><index>79</index><short_name>lHes</short_name><name>Left Heschl</name><RGBA></RGBA><XYZmm>-43.16,-22.13,8.30</XYZmm></label>
+    <label><index>80</index><short_name>rHes</short_name><name>Right Heschl</name><RGBA></RGBA><XYZmm>43.18,-20.21,9.36</XYZmm></label>
+    <label><index>81</index><short_name>lSupTem</short_name><name>Left Superior Temporal</name><RGBA></RGBA><XYZmm>-54.26,-23.38,4.65</XYZmm></label>
+    <label><index>82</index><short_name>rSupTem</short_name><name>Right Superior Temporal</name><RGBA></RGBA><XYZmm>55.19,-22.86,6.30</XYZmm></label>
+    <label><index>83</index><short_name>lSupTemPo</short_name><name>Left Superior Temporal Pole</name><RGBA></RGBA><XYZmm>-40.82,11.22,-23.31</XYZmm></label>
+    <label><index>84</index><short_name>rSupTemPo</short_name><name>Right Superior Temporal Pole</name><RGBA></RGBA><XYZmm>44.48,11.43,-18.82</XYZmm></label>
+    <label><index>85</index><short_name>lMidTem</short_name><name>Left Middle Temporal</name><RGBA></RGBA><XYZmm>-55.89,-36.14,-4.72</XYZmm></label>
+    <label><index>86</index><short_name>rMidTem</short_name><name>Right Middle Temporal</name><RGBA></RGBA><XYZmm>55.40,-38.09,-2.27</XYZmm></label>
+    <label><index>87</index><short_name>lMidTemPo</short_name><name>Left Middle Temporal Pole</name><RGBA></RGBA><XYZmm>-38.50,9.19,-38.26</XYZmm></label>
+    <label><index>88</index><short_name>rMidTemPo</short_name><name>Right Middle Temporal Pole</name><RGBA></RGBA><XYZmm>41.50,10.16,-34.88</XYZmm></label>
+    <label><index>89</index><short_name>lInfTem</short_name><name>Left Inferior Temporal</name><RGBA></RGBA><XYZmm>-50.40,-30.47,-26.18</XYZmm></label>
+    <label><index>90</index><short_name>rInfTem</short_name><name>Right Inferior Temporal</name><RGBA></RGBA><XYZmm>51.33,-33.22,-23.29</XYZmm></label>
+    <label><index>91</index><short_name>lCbe</short_name><name>Left Cerebellum</name><RGBA></RGBA><XYZmm>-30.79,-71.02,-35.89</XYZmm></label>
+    <label><index>92</index><short_name>rCbe</short_name><name>Right Cerebellum</name><RGBA></RGBA><XYZmm>32.19,-69.68,-35.22</XYZmm></label>
+    <label><index>93</index><short_name>lCbe3</short_name><name>Left Cerebellum 3</name><RGBA></RGBA><XYZmm>-8.92,-40.35,-21.23</XYZmm></label>
+    <label><index>94</index><short_name>rCbe3</short_name><name>Right Cerebellum 3</name><RGBA></RGBA><XYZmm>11.86,-38.75,-20.73</XYZmm></label>
+    <label><index>95</index><short_name>lCbe4-5</short_name><name>Left Cerebellum 4-5</name><RGBA></RGBA><XYZmm>-15.40,-46.41,-19.89</XYZmm></label>
+    <label><index>96</index><short_name>rCbe4-5</short_name><name>Right Cerebellum 4-5</name><RGBA></RGBA><XYZmm>16.87,-46.52,-20.33</XYZmm></label>
+    <label><index>97</index><short_name>lCbe6</short_name><name>Left Cerebellum 6</name><RGBA></RGBA><XYZmm>-22.28,-60.11,-24.75</XYZmm></label>
+    <label><index>98</index><short_name>rCbe6</short_name><name>Right Cerebellum 6</name><RGBA></RGBA><XYZmm>23.67,-59.04,-25.03</XYZmm></label>
+    <label><index>99</index><short_name>lCbe7b</short_name><name>Left Cerebellum 7b</name><RGBA></RGBA><XYZmm>-27.77,-64.64,-49.49</XYZmm></label>
+    <label><index>100</index><short_name>rCbe7b</short_name><name>Right Cerebellum 7b</name><RGBA></RGBA><XYZmm>29.70,-66.72,-49.82</XYZmm></label>
+    <label><index>101</index><short_name>lCbe8</short_name><name>Left Cerebellum 8</name><RGBA></RGBA><XYZmm>-22.87,-58.47,-52.00</XYZmm></label>
+    <label><index>102</index><short_name>rCbe8</short_name><name>Right Cerebellum 8</name><RGBA></RGBA><XYZmm>21.88,-60.07,-51.82</XYZmm></label>
+    <label><index>103</index><short_name>lCbe9</short_name><name>Left Cerebellum 9</name><RGBA></RGBA><XYZmm>-9.96,-52.62,-51.13</XYZmm></label>
+    <label><index>104</index><short_name>rCbe9</short_name><name>Right Cerebellum 9</name><RGBA></RGBA><XYZmm>8.12,-52.81,-51.21</XYZmm></label>
+    <label><index>105</index><short_name>lCbe10</short_name><name>Left Cerebellum 10</name><RGBA></RGBA><XYZmm>-20.91,-37.40,-44.36</XYZmm></label>
+    <label><index>106</index><short_name>rCbe10</short_name><name>Right Cerebellum 10</name><RGBA></RGBA><XYZmm>22.89,-38.07,-44.30</XYZmm></label>
+    <label><index>107</index><short_name>lVer1-2</short_name><name>Left Vermis 1-2</name><RGBA></RGBA><XYZmm>-1.38,-42.19,-22.34</XYZmm></label>
+    <label><index>108</index><short_name>rVer1-2</short_name><name>Right Vermis 1-2</name><RGBA></RGBA><XYZmm>2.25,-41.60,-21.80</XYZmm></label>
+    <label><index>109</index><short_name>lVer3</short_name><name>Left Vermis 3</name><RGBA></RGBA><XYZmm>-1.42,-44.03,-15.52</XYZmm></label>
+    <label><index>110</index><short_name>rVer3</short_name><name>Right Vermis 3</name><RGBA></RGBA><XYZmm>3.54,-43.20,-14.12</XYZmm></label>
+    <label><index>111</index><short_name>lVer4-5</short_name><name>Left Vermis 4-5</name><RGBA></RGBA><XYZmm>-1.87,-54.89,-10.82</XYZmm></label>
+    <label><index>112</index><short_name>rVer4-5</short_name><name>Right Vermis 4-5</name><RGBA></RGBA><XYZmm>2.92,-54.79,-10.16</XYZmm></label>
+    <label><index>113</index><short_name>lVer6</short_name><name>Left Vermis 6</name><RGBA></RGBA><XYZmm>-1.92,-69.33,-20.11</XYZmm></label>
+    <label><index>114</index><short_name>rVer6</short_name><name>Right Vermis 6</name><RGBA></RGBA><XYZmm>2.94,-69.48,-18.76</XYZmm></label>
+    <label><index>115</index><short_name>lVer</short_name><name>Left Vermis</name><RGBA></RGBA><XYZmm>-1.77,-73.61,-30.02</XYZmm></label>
+    <label><index>116</index><short_name>rVer</short_name><name>Right Vermis</name><RGBA></RGBA><XYZmm>3.32,-73.29,-29.09</XYZmm></label>
+    <label><index>117</index><short_name>lVer8</short_name><name>Left Vermis 8</name><RGBA></RGBA><XYZmm>-1.44,-67.40,-38.72</XYZmm></label>
+    <label><index>118</index><short_name>rVer8</short_name><name>Right Vermis 8</name><RGBA></RGBA><XYZmm>2.71,-67.06,-39.14</XYZmm></label>
+    <label><index>119</index><short_name>lVer9</short_name><name>Left Vermis 9</name><RGBA></RGBA><XYZmm>-1.44,-57.83,-39.72</XYZmm></label>
+    <label><index>120</index><short_name>rVer9</short_name><name>Right Vermis 9</name><RGBA></RGBA><XYZmm>2.91,-57.67,-38.45</XYZmm></label>
+    <label><index>121</index><short_name>lVer10</short_name><name>Left Vermis 10</name><RGBA></RGBA><XYZmm>-2.17,-48.85,-35.20</XYZmm></label>
+    <label><index>122</index><short_name>rVer10</short_name><name>Right Vermis 10</name><RGBA></RGBA><XYZmm>1.30,-49.19,-33.22</XYZmm></label>
+  </data>
+</atlas>

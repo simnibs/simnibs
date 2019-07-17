@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- This is a temporary file format -->
+  <atlas version="2.0">
+    <header>
+      <name>mori</name>
+      <version>1.0</version>
+      <description></description>
+      <url>http://www.spl.harvard.edu/publications/item/view/1883</url>
+      <licence>CC BY-NC</licence>
+      <coordinate_system>MNI</coordinate_system>
+      <type>Label</type>
+      <images>
+        <imagefile>mori.nii</imagefile>
+      </images>
+    </header>
+  <data>
+    <!-- could also include short_name, RGBA, XYZmm -->
+    <label><index>0</index><short_name>BG</short_name><name>Background</name><RGBA></RGBA><XYZmm>-0.35,-16.74,19.89</XYZmm></label>
+    <label><index>1</index><short_name>lSupParLo</short_name><name>Left Superior Parietal Lobule</name><RGBA></RGBA><XYZmm>-23.50,-52.94,51.76</XYZmm></label>
+    <label><index>2</index><short_name>rSupParLo</short_name><name>Right Superior Parietal Lobule</name><RGBA></RGBA><XYZmm>23.65,-51.63,51.92</XYZmm></label>
+    <label><index>3</index><short_name>lCinGy</short_name><name>Left Cingulate Gyrus</name><RGBA></RGBA><XYZmm>-5.10,-9.98,26.53</XYZmm></label>
+    <label><index>4</index><short_name>rCinGy</short_name><name>Right Cingulate Gyrus</name><RGBA></RGBA><XYZmm>8.06,-11.11,27.49</XYZmm></label>
+    <label><index>5</index><short_name>lSupFroGy</short_name><name>Left Superior Frontal Gyrus</name><RGBA></RGBA><XYZmm>-11.57,29.19,37.58</XYZmm></label>
+    <label><index>6</index><short_name>rSupFroGy</short_name><name>Right Superior Frontal Gyrus</name><RGBA></RGBA><XYZmm>13.89,32.41,34.44</XYZmm></label>
+    <label><index>7</index><short_name>lMidFroGy</short_name><name>Left Middle Frontal Gyrus</name><RGBA></RGBA><XYZmm>-33.58,28.91,26.49</XYZmm></label>
+    <label><index>8</index><short_name>rMidFroGy</short_name><name>Right Middle Frontal Gyrus</name><RGBA></RGBA><XYZmm>35.81,31.29,26.71</XYZmm></label>
+    <label><index>9</index><short_name>lFroGy</short_name><name>Left Frontal Gyrus</name><RGBA></RGBA><XYZmm>-41.37,22.97,5.92</XYZmm></label>
+    <label><index>10</index><short_name>rFroGy</short_name><name>Right Frontal Gyrus</name><RGBA></RGBA><XYZmm>44.08,24.19,6.70</XYZmm></label>
+    <label><index>11</index><short_name>lPrcGy</short_name><name>Left Precentral Gyrus</name><RGBA></RGBA><XYZmm>-33.60,-10.07,42.11</XYZmm></label>
+    <label><index>12</index><short_name>rPrcGy</short_name><name>Right Precentral Gyrus</name><RGBA></RGBA><XYZmm>36.09,-8.66,43.01</XYZmm></label>
+    <label><index>13</index><short_name>lPoCGy</short_name><name>Left Postcentral Gyrus</name><RGBA></RGBA><XYZmm>-33.63,-26.11,48.01</XYZmm></label>
+    <label><index>14</index><short_name>rPoCGy</short_name><name>Right Postcentral Gyrus</name><RGBA></RGBA><XYZmm>36.89,-23.72,46.92</XYZmm></label>
+    <label><index>15</index><short_name>lAngGy</short_name><name>Left Angular Gyrus</name><RGBA></RGBA><XYZmm>-43.19,-55.80,36.45</XYZmm></label>
+    <label><index>16</index><short_name>rAngGy</short_name><name>Right Angular Gyrus</name><RGBA></RGBA><XYZmm>42.80,-55.13,38.53</XYZmm></label>
+    <label><index>17</index><short_name>lCun</short_name><name>Left Cuneus</name><RGBA></RGBA><XYZmm>-6.72,-66.89,35.06</XYZmm></label>
+    <label><index>18</index><short_name>rCun</short_name><name>Right Cuneus</name><RGBA></RGBA><XYZmm>9.40,-69.59,31.12</XYZmm></label>
+    <label><index>19</index><short_name>lLinGy</short_name><name>Left Lingual Gyrus</name><RGBA></RGBA><XYZmm>-12.70,-68.69,-4.31</XYZmm></label>
+    <label><index>20</index><short_name>rLinGy</short_name><name>Right Lingual Gyrus</name><RGBA></RGBA><XYZmm>14.37,-68.87,-3.84</XYZmm></label>
+    <label><index>21</index><short_name>lFusGy</short_name><name>Left Fusiform Gyrus</name><RGBA></RGBA><XYZmm>-30.16,-48.23,-20.44</XYZmm></label>
+    <label><index>22</index><short_name>rFusGy</short_name><name>Right Fusiform Gyrus</name><RGBA></RGBA><XYZmm>33.97,-45.91,-20.51</XYZmm></label>
+    <label><index>23</index><short_name>lParHipGy</short_name><name>Left Parahippocampus Gyrus</name><RGBA></RGBA><XYZmm>-19.80,-27.95,-18.22</XYZmm></label>
+    <label><index>24</index><short_name>rParHipGy</short_name><name>Right Parahippocampus Gyrus</name><RGBA></RGBA><XYZmm>20.41,-28.49,-15.81</XYZmm></label>
+    <label><index>25</index><short_name>lSupOccGy</short_name><name>Left Superior Occipital Gyrus</name><RGBA></RGBA><XYZmm>-18.06,-79.14,29.85</XYZmm></label>
+    <label><index>26</index><short_name>rSupOccGy</short_name><name>Right Superior Occipital Gyrus</name><RGBA></RGBA><XYZmm>22.38,-76.59,29.23</XYZmm></label>
+    <label><index>27</index><short_name>lOccGy</short_name><name>Left Occipital Gyrus</name><RGBA></RGBA><XYZmm>-39.62,-72.44,-4.77</XYZmm></label>
+    <label><index>28</index><short_name>rOccGy</short_name><name>Right Occipital Gyrus</name><RGBA></RGBA><XYZmm>42.27,-72.22,-4.30</XYZmm></label>
+    <label><index>29</index><short_name>lMidOccGy</short_name><name>Left Middle Occipital Gyrus</name><RGBA></RGBA><XYZmm>-25.13,-83.47,12.45</XYZmm></label>
+    <label><index>30</index><short_name>rMidOccGy</short_name><name>Right Middle Occipital Gyrus</name><RGBA></RGBA><XYZmm>32.51,-79.26,14.73</XYZmm></label>
+    <label><index>31</index><short_name>lEnt</short_name><name>Left Entorhinal Area</name><RGBA></RGBA><XYZmm>-22.68,2.51,-33.97</XYZmm></label>
+    <label><index>32</index><short_name>rEnt</short_name><name>Right Entorhinal Area</name><RGBA></RGBA><XYZmm>23.18,2.84,-35.39</XYZmm></label>
+    <label><index>33</index><short_name>lSupTemGy</short_name><name>Left Superior Temporal Gyrus</name><RGBA></RGBA><XYZmm>-30.65,-12.87,-6.16</XYZmm></label>
+    <label><index>34</index><short_name>rSupTemGy</short_name><name>Right Superior Temporal Gyrus</name><RGBA></RGBA><XYZmm>49.89,-13.19,-1.23</XYZmm></label>
+    <label><index>35</index><short_name>lTemGy</short_name><name>Left Temporal Gyrus</name><RGBA></RGBA><XYZmm>-32.88,-25.83,-26.73</XYZmm></label>
+    <label><index>36</index><short_name>rTemGy</short_name><name>Right Temporal Gyrus</name><RGBA></RGBA><XYZmm>47.27,-24.90,-26.39</XYZmm></label>
+    <label><index>37</index><short_name>lMidTemGy</short_name><name>Left Middle Temporal Gyrus</name><RGBA></RGBA><XYZmm>-11.53,-22.49,-15.27</XYZmm></label>
+    <label><index>38</index><short_name>rMidTemGy</short_name><name>Right Middle Temporal Gyrus</name><RGBA></RGBA><XYZmm>48.16,-35.02,-4.42</XYZmm></label>
+    <label><index>39</index><short_name>lLatOrbGy</short_name><name>Left Lateral Orbital Gyrus</name><RGBA></RGBA><XYZmm>-26.28,34.29,-15.72</XYZmm></label>
+    <label><index>40</index><short_name>rLatOrbGy</short_name><name>Right Lateral Orbital Gyrus</name><RGBA></RGBA><XYZmm>27.62,36.66,-15.51</XYZmm></label>
+    <label><index>41</index><short_name>lMidOrbGy</short_name><name>Left Middle Orbital Gyrus</name><RGBA></RGBA><XYZmm>-12.83,36.49,-21.72</XYZmm></label>
+    <label><index>42</index><short_name>rMidOrbGy</short_name><name>Right Middle Orbital Gyrus</name><RGBA></RGBA><XYZmm>14.73,39.81,-19.80</XYZmm></label>
+    <label><index>43</index><short_name>lSupMarGy</short_name><name>Left Supramarginal Gyrus</name><RGBA></RGBA><XYZmm>-49.54,-33.48,28.81</XYZmm></label>
+    <label><index>44</index><short_name>rSupMarGy</short_name><name>Right Supramarginal Gyrus</name><RGBA></RGBA><XYZmm>52.19,-31.64,34.52</XYZmm></label>
+    <label><index>45</index><short_name>lRecGy</short_name><name>Left Gyrus Rectus</name><RGBA></RGBA><XYZmm>-4.13,38.29,-17.60</XYZmm></label>
+    <label><index>46</index><short_name>rRecGy</short_name><name>Right Gyrus Rectus</name><RGBA></RGBA><XYZmm>7.64,38.84,-15.05</XYZmm></label>
+    <label><index>47</index><short_name>lIns</short_name><name>Left Insula</name><RGBA></RGBA><XYZmm>-34.71,1.87,-1.85</XYZmm></label>
+    <label><index>48</index><short_name>rIns</short_name><name>Right Insula</name><RGBA></RGBA><XYZmm>37.98,4.44,-2.50</XYZmm></label>
+    <label><index>49</index><short_name>lAmy</short_name><name>Left Amygdala</name><RGBA></RGBA><XYZmm>-14.50,-1.99,-23.35</XYZmm></label>
+    <label><index>50</index><short_name>rAmy</short_name><name>Right Amygdala</name><RGBA></RGBA><XYZmm>22.63,0.22,-25.05</XYZmm></label>
+    <label><index>51</index><short_name>lHip</short_name><name>Left Hippocampus</name><RGBA></RGBA><XYZmm>-27.38,-24.93,-14.27</XYZmm></label>
+    <label><index>52</index><short_name>rHip</short_name><name>Right Hippocampus</name><RGBA></RGBA><XYZmm>28.70,-23.17,-15.05</XYZmm></label>
+    <label><index>53</index><short_name>lCbe</short_name><name>Left Cerebellum</name><RGBA></RGBA><XYZmm>-8.65,-62.79,-37.29</XYZmm></label>
+    <label><index>54</index><short_name>rCbe</short_name><name>Right Cerebellum</name><RGBA></RGBA><XYZmm>25.25,-58.76,-32.04</XYZmm></label>
+    <label><index>55</index><short_name>lCST</short_name><name>Left corticospinal_tract</name><RGBA></RGBA><XYZmm>-5.51,-25.23,-31.91</XYZmm></label>
+    <label><index>56</index><short_name>rCST</short_name><name>Right corticospinal_tract</name><RGBA></RGBA><XYZmm>7.82,-25.27,-32.50</XYZmm></label>
+    <label><index>57</index><short_name>lCbePed</short_name><name>Left Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>-6.57,-42.49,-45.47</XYZmm></label>
+    <label><index>58</index><short_name>rCbePed</short_name><name>Right Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>9.53,-42.89,-44.12</XYZmm></label>
+    <label><index>59</index><short_name>lMedLem</short_name><name>Left Medial Lemniscus</name><RGBA></RGBA><XYZmm>NaN,NaN,NaN</XYZmm></label>
+    <label><index>60</index><short_name>rMedLem</short_name><name>Right Medial Lemniscus</name><RGBA></RGBA><XYZmm>1.66,-34.73,-34.60</XYZmm></label>
+    <label><index>61</index><short_name>lSupCbePed</short_name><name>Left Superior Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>-4.76,-37.57,-23.67</XYZmm></label>
+    <label><index>62</index><short_name>rSupCbePed</short_name><name>Right Superior Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>8.18,-38.03,-24.11</XYZmm></label>
+    <label><index>63</index><short_name>lCbrPed</short_name><name>Left Cerebral Peduncle</name><RGBA></RGBA><XYZmm>-12.59,-17.48,-11.63</XYZmm></label>
+    <label><index>64</index><short_name>rCbrPed</short_name><name>Right Cerebral Peduncle</name><RGBA></RGBA><XYZmm>16.07,-16.50,-11.06</XYZmm></label>
+    <label><index>65</index><short_name>lAntCapLIC</short_name><name>Left Anterior Capsule Limb of Internal</name><RGBA></RGBA><XYZmm>-16.36,6.03,5.18</XYZmm></label>
+    <label><index>66</index><short_name>rAntCapLIC</short_name><name>Right Anterior Capsule Limb of Internal</name><RGBA></RGBA><XYZmm>19.02,8.97,4.88</XYZmm></label>
+    <label><index>67</index><short_name>lPosCapLIC</short_name><name>Left Posterior Capsule Limb of Internal</name><RGBA></RGBA><XYZmm>-19.47,-12.78,7.21</XYZmm></label>
+    <label><index>68</index><short_name>rPosCapLIC</short_name><name>Right Posterior Capsule Limb of Internal</name><RGBA></RGBA><XYZmm>21.29,-9.60,7.17</XYZmm></label>
+    <label><index>69</index><short_name>lPosThR</short_name><name>Left Posterior Thalamic Radiation</name><RGBA></RGBA><XYZmm>-29.11,-60.95,7.30</XYZmm></label>
+    <label><index>70</index><short_name>rPosThR</short_name><name>Right Posterior Thalamic Radiation</name><RGBA></RGBA><XYZmm>32.10,-54.59,7.97</XYZmm></label>
+    <label><index>71</index><short_name>lAntCR</short_name><name>Left Anterior Corona Radiata</name><RGBA></RGBA><XYZmm>-18.54,30.43,4.60</XYZmm></label>
+    <label><index>72</index><short_name>rAntCR</short_name><name>Right Anterior Corona Radiata</name><RGBA></RGBA><XYZmm>21.50,31.42,4.56</XYZmm></label>
+    <label><index>73</index><short_name>lSupCR</short_name><name>Left Superior Corona Radiata</name><RGBA></RGBA><XYZmm>-22.44,-6.35,29.23</XYZmm></label>
+    <label><index>74</index><short_name>rSupCR</short_name><name>Right Superior Corona Radiata</name><RGBA></RGBA><XYZmm>24.60,-3.21,29.71</XYZmm></label>
+    <label><index>75</index><short_name>lPosCR</short_name><name>Left Posterior Corona Radiata</name><RGBA></RGBA><XYZmm>-24.36,-35.82,28.78</XYZmm></label>
+    <label><index>76</index><short_name>rPosCR</short_name><name>Right Posterior Corona Radiata</name><RGBA></RGBA><XYZmm>26.40,-32.00,29.06</XYZmm></label>
+    <label><index>77</index><short_name>lCin+CinGy</short_name><name>Left Cingulate and Cingulum Gyrus</name><RGBA></RGBA><XYZmm>-8.46,-2.25,25.47</XYZmm></label>
+    <label><index>78</index><short_name>rCin+CinGy</short_name><name>Right Cingulate and Cingulum Gyrus</name><RGBA></RGBA><XYZmm>10.35,-0.93,25.85</XYZmm></label>
+    <label><index>79</index><short_name>lCin+Hip</short_name><name>Left Cingulum and Hippocampus</name><RGBA></RGBA><XYZmm>-15.78,-39.45,-1.80</XYZmm></label>
+    <label><index>80</index><short_name>rCin+Hip</short_name><name>Right Cingulum and Hippocampus</name><RGBA></RGBA><XYZmm>19.94,-34.46,-6.58</XYZmm></label>
+    <label><index>81</index><short_name>lForStrTer</short_name><name>Left Fornix Stria Terminalis</name><RGBA></RGBA><XYZmm>-24.53,-28.36,-1.96</XYZmm></label>
+    <label><index>82</index><short_name>rForStrTer</short_name><name>Right Fornix Stria Terminalis</name><RGBA></RGBA><XYZmm>27.25,-25.44,-2.01</XYZmm></label>
+    <label><index>83</index><short_name>lSupLonLon</short_name><name>Left Superior Longitudinal Longitudinal</name><RGBA></RGBA><XYZmm>-32.81,-27.04,31.29</XYZmm></label>
+    <label><index>84</index><short_name>rSupLonLon</short_name><name>Right Superior Longitudinal Longitudinal</name><RGBA></RGBA><XYZmm>34.89,-21.54,32.01</XYZmm></label>
+    <label><index>85</index><short_name>lSupOcc</short_name><name>Left Superior Occipital</name><RGBA></RGBA><XYZmm>-20.13,4.49,19.93</XYZmm></label>
+    <label><index>86</index><short_name>rSupOcc</short_name><name>Right Superior Occipital</name><RGBA></RGBA><XYZmm>22.12,7.23,19.73</XYZmm></label>
+    <label><index>87</index><short_name>lOcc</short_name><name>Left Occipital</name><RGBA></RGBA><XYZmm>-25.47,11.31,-10.97</XYZmm></label>
+    <label><index>88</index><short_name>rOcc</short_name><name>Right Occipital</name><RGBA></RGBA><XYZmm>27.73,11.56,-11.34</XYZmm></label>
+    <label><index>89</index><short_name>lSagStr</short_name><name>Left Sagital Stratum</name><RGBA></RGBA><XYZmm>-37.13,-38.35,-9.33</XYZmm></label>
+    <label><index>90</index><short_name>rSagStr</short_name><name>Right Sagital Stratum</name><RGBA></RGBA><XYZmm>38.82,-33.74,-10.07</XYZmm></label>
+    <label><index>91</index><short_name>lCapExt</short_name><name>Left Capsule External</name><RGBA></RGBA><XYZmm>-28.04,1.94,4.85</XYZmm></label>
+    <label><index>92</index><short_name>rCapExt</short_name><name>Right Capsule External</name><RGBA></RGBA><XYZmm>31.00,3.29,4.29</XYZmm></label>
+    <label><index>93</index><short_name>lUNC</short_name><name>Left Uncinate</name><RGBA></RGBA><XYZmm>-31.10,-0.96,-18.49</XYZmm></label>
+    <label><index>94</index><short_name>rUNC</short_name><name>Right Uncinate</name><RGBA></RGBA><XYZmm>32.35,2.13,-19.58</XYZmm></label>
+    <label><index>95</index><short_name>lPCT</short_name><name>Left Pontine Crossing Tract</name><RGBA></RGBA><XYZmm>-1.80,-28.42,-31.07</XYZmm></label>
+    <label><index>96</index><short_name>rPCT</short_name><name>Right Pontine Crossing Tract</name><RGBA></RGBA><XYZmm>6.20,-29.36,-31.52</XYZmm></label>
+    <label><index>97</index><short_name>lMidCbePed</short_name><name>Left Middle Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>-13.82,-35.88,-36.90</XYZmm></label>
+    <label><index>98</index><short_name>rMidCbePed</short_name><name>Right Middle Cerebellar Peduncle</name><RGBA></RGBA><XYZmm>17.84,-37.80,-37.07</XYZmm></label>
+    <label><index>99</index><short_name>lBodForCol</short_name><name>Left (Body) Fornix Column</name><RGBA></RGBA><XYZmm>-0.42,-8.65,12.75</XYZmm></label>
+    <label><index>100</index><short_name>rBodForCol</short_name><name>Right (Body) Fornix Column</name><RGBA></RGBA><XYZmm>4.33,-13.50,14.17</XYZmm></label>
+    <label><index>101</index><short_name>lCCGen</short_name><name>Left Corpus Callosum (Genu)</name><RGBA></RGBA><XYZmm>-7.02,26.76,5.34</XYZmm></label>
+    <label><index>102</index><short_name>rCCGen</short_name><name>Right Corpus Callosum (Genu)</name><RGBA></RGBA><XYZmm>10.04,27.23,5.38</XYZmm></label>
+    <label><index>103</index><short_name>lCCBod</short_name><name>Left Corpus Callosum (Body)</name><RGBA></RGBA><XYZmm>-7.34,-1.35,24.82</XYZmm></label>
+    <label><index>104</index><short_name>rCCBod</short_name><name>Right Corpus Callosum (Body)</name><RGBA></RGBA><XYZmm>10.41,-0.20,25.73</XYZmm></label>
+    <label><index>105</index><short_name>lCC</short_name><name>Left Corpus Callosum</name><RGBA></RGBA><XYZmm>-12.04,-40.22,19.35</XYZmm></label>
+    <label><index>106</index><short_name>rCC</short_name><name>Right Corpus Callosum</name><RGBA></RGBA><XYZmm>13.78,-37.50,19.91</XYZmm></label>
+    <label><index>107</index><short_name>lCapRetLenINC</short_name><name>Left Capsule Retrolenticular_part_of_internal_capsule</name><RGBA></RGBA><XYZmm>-28.63,-26.76,4.24</XYZmm></label>
+    <label><index>108</index><short_name>rCapRetLenINC</short_name><name>Right Capsule Retrolenticular_part_of_internal_capsule</name><RGBA></RGBA><XYZmm>30.50,-23.32,5.67</XYZmm></label>
+    <label><index>109</index><short_name>lRedNuc</short_name><name>Left Red-Nucleus</name><RGBA></RGBA><XYZmm>-3.58,-19.06,-8.90</XYZmm></label>
+    <label><index>110</index><short_name>rRedNuc</short_name><name>Right Red-Nucleus</name><RGBA></RGBA><XYZmm>5.46,-19.02,-8.21</XYZmm></label>
+    <label><index>111</index><short_name>lSubNig</short_name><name>Left Substancia-Nigra</name><RGBA></RGBA><XYZmm>-9.62,-12.93,-7.81</XYZmm></label>
+    <label><index>112</index><short_name>rSubNig</short_name><name>Right Substancia-Nigra</name><RGBA></RGBA><XYZmm>12.19,-12.38,-7.44</XYZmm></label>
+    <label><index>113</index><short_name>lTap</short_name><name>Left Tapatum</name><RGBA></RGBA><XYZmm>-26.57,-41.55,18.30</XYZmm></label>
+    <label><index>114</index><short_name>rTap</short_name><name>Right Tapatum</name><RGBA></RGBA><XYZmm>29.48,-39.64,16.32</XYZmm></label>
+    <label><index>115</index><short_name>lCauNuc</short_name><name>Left Caudate Nucleus</name><RGBA></RGBA><XYZmm>-12.84,9.75,7.07</XYZmm></label>
+    <label><index>116</index><short_name>rCauNuc</short_name><name>Right Caudate Nucleus</name><RGBA></RGBA><XYZmm>14.88,9.45,8.09</XYZmm></label>
+    <label><index>117</index><short_name>lPut</short_name><name>Left Putamen</name><RGBA></RGBA><XYZmm>-24.13,1.02,-1.83</XYZmm></label>
+    <label><index>118</index><short_name>rPut</short_name><name>Right Putamen</name><RGBA></RGBA><XYZmm>26.48,2.88,-1.93</XYZmm></label>
+    <label><index>119</index><short_name>lTha</short_name><name>Left Thalamus</name><RGBA></RGBA><XYZmm>-10.72,-20.45,4.64</XYZmm></label>
+    <label><index>120</index><short_name>rTha</short_name><name>Right Thalamus</name><RGBA></RGBA><XYZmm>12.84,-18.10,5.19</XYZmm></label>
+    <label><index>121</index><short_name>lGloPal</short_name><name>Left Globus Pallidus</name><RGBA></RGBA><XYZmm>-18.76,-2.96,-2.84</XYZmm></label>
+    <label><index>122</index><short_name>rGloPal</short_name><name>Right Globus Pallidus</name><RGBA></RGBA><XYZmm>21.59,-1.62,-3.12</XYZmm></label>
+    <label><index>123</index><short_name>lMBR</short_name><name>Left Midbrain</name><RGBA></RGBA><XYZmm>-3.61,-23.31,-10.60</XYZmm></label>
+    <label><index>124</index><short_name>rMBR</short_name><name>Right Midbrain</name><RGBA></RGBA><XYZmm>7.33,-22.66,-10.81</XYZmm></label>
+    <label><index>125</index><short_name>lPNS</short_name><name>Left Pons</name><RGBA></RGBA><XYZmm>0.81,-31.19,-33.72</XYZmm></label>
+    <label><index>126</index><short_name>rPNS</short_name><name>Right Pons</name><RGBA></RGBA><XYZmm>3.20,-29.87,-29.38</XYZmm></label>
+    <label><index>127</index><short_name>lMDA</short_name><name>Left Medulla</name><RGBA></RGBA><XYZmm>-0.82,-40.84,-56.55</XYZmm></label>
+    <label><index>128</index><short_name>rMDA</short_name><name>Right Medulla</name><RGBA></RGBA><XYZmm>4.96,-40.51,-57.19</XYZmm></label>
+  </data>
+</atlas>

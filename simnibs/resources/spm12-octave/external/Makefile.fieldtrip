@@ -1,0 +1,94 @@
+#!/usr/bin/env make -f
+# FieldTrip Makefile called by {SPM}/external/Makefile
+#
+# Copyright (C) 2009-2016 Wellcome Trust Centre for Neuroimaging
+#
+# Guillaume Flandin
+# $Id: Makefile.fieldtrip 7053 2017-04-03 11:04:13Z guillaume $
+
+include ../src/Makefile.var
+
+FIELDTRIP =\
+	fieldtrip/src/read_24bit.$(SUF) fieldtrip/src/read_16bit.$(SUF) \
+	fieldtrip/src/ft_getopt.$(SUF) \
+	\
+	fieldtrip/src/nanmean.$(SUF) fieldtrip/src/nanstd.$(SUF) \
+	fieldtrip/src/nansum.$(SUF) fieldtrip/src/nanvar.$(SUF) \
+	\
+	fieldtrip/src/meg_leadfield1.$(SUF) fieldtrip/src/ptriproj.$(SUF) \
+	fieldtrip/src/lmoutr.$(SUF) fieldtrip/src/plgndr.$(SUF) \
+	fieldtrip/src/solid_angle.$(SUF) fieldtrip/src/routlm.$(SUF) \
+	fieldtrip/src/ltrisect.$(SUF) fieldtrip/src/plinproj.$(SUF) \
+	fieldtrip/src/splint_gh.$(SUF)
+
+all: $(FIELDTRIP)
+
+clean:
+
+distclean: clean
+	$(DEL) $(FIELDTRIP)
+        
+install:
+	$(COPY) fieldtrip/src/read_24bit.$(SUF) fieldtrip/fileio/private/
+	$(COPY) fieldtrip/src/read_16bit.$(SUF) fieldtrip/fileio/private/
+	$(COPY) fieldtrip/src/ft_getopt.$(SUF) fieldtrip/fileio/private/
+	$(COPY) fieldtrip/src/solid_angle.$(SUF) fieldtrip/fileio/private/
+
+	$(COPY) fieldtrip/src/meg_leadfield1.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/ptriproj.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/lmoutr.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/plgndr.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/solid_angle.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/routlm.$(SUF) fieldtrip/forward/private/
+	$(COPY) fieldtrip/src/ft_getopt.$(SUF) fieldtrip/forward/private/
+	
+	$(COPY) fieldtrip/src/solid_angle.$(SUF) fieldtrip/inverse/private/
+	$(COPY) fieldtrip/src/ft_getopt.$(SUF) fieldtrip/inverse/private/
+	
+	$(COPY) fieldtrip/src/ptriproj.$(SUF) fieldtrip/private/
+	$(COPY) fieldtrip/src/lmoutr.$(SUF) fieldtrip/private/
+	$(COPY) fieldtrip/src/plgndr.$(SUF) fieldtrip/private/
+	$(COPY) fieldtrip/src/routlm.$(SUF) fieldtrip/private/
+	$(COPY) fieldtrip/src/solid_angle.$(SUF) fieldtrip/private/
+
+	$(COPY) fieldtrip/src/ft_getopt.$(SUF) fieldtrip/utilities/
+	$(COPY) fieldtrip/src/ptriproj.$(SUF) fieldtrip/utilities/private/
+	$(COPY) fieldtrip/src/lmoutr.$(SUF) fieldtrip/utilities/private/
+
+	$(COPY) fieldtrip/src/ft_getopt.$(SUF) fieldtrip/connectivity/private/
+
+	$(COPY) fieldtrip/src/nanmean.$(SUF) fieldtrip/external/stats/
+	$(COPY) fieldtrip/src/nansum.$(SUF) fieldtrip/external/stats/
+	$(COPY) fieldtrip/src/nanstd.$(SUF) fieldtrip/external/stats/
+	$(COPY) fieldtrip/src/nanvar.$(SUF) fieldtrip/external/stats/
+
+tarball: all
+	$(TAR) -cf fieldtrip_mex.tar $(FIELDTRIP)
+
+fieldtrip/src/%.$(SUF) : fieldtrip/src/%.c
+	$(MEX) $< $(MEXEND)
+	$(MOVE) $*.$(SUF) $(dir $<)
+
+fieldtrip/src/lmoutr.$(SUF): fieldtrip/src/lmoutr.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) lmoutr.$(SUF) $(dir $<)
+
+fieldtrip/src/routlm.$(SUF): fieldtrip/src/routlm.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) routlm.$(SUF) $(dir $<)
+
+fieldtrip/src/ptriproj.$(SUF): fieldtrip/src/ptriproj.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) ptriproj.$(SUF) $(dir $<)
+
+fieldtrip/src/solid_angle.$(SUF): fieldtrip/src/solid_angle.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) solid_angle.$(SUF) $(dir $<)
+
+fieldtrip/src/ltrisect.$(SUF): fieldtrip/src/ltrisect.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) ltrisect.$(SUF) $(dir $<)
+
+fieldtrip/src/plinproj.$(SUF): fieldtrip/src/plinproj.c fieldtrip/src/geometry.c fieldtrip/src/geometry.h
+	$(MEX) $< fieldtrip/src/geometry.c $(MEXEND)
+	$(MOVE) plinproj.$(SUF) $(dir $<)

@@ -1,0 +1,69 @@
+% ?h.central.freesurfer.gii 
+% ?h.sphere.freesurfer.gii
+% ?h.inflated.freesurfer.gii
+% ?h.patch.freesurfer.gii
+% ---------------------------------
+% Surfaces based on Freesurfer fsaverage
+% These surfaces are internally used for spherical registration, resampling
+% and can be used to overlay maps and results in template space (e.g. after
+% spherical registration and resampling).
+% The central surface is estimated by averaging the white and pial surface.
+% The cortex patch is based on ?h.cortex.patch.flat and rotated to fit to the
+% hemisphere views using:
+% lh: spm_mesh_transform(g,spm_matrix([0 0 0 pi -pi/2 0]));
+% rh: spm_mesh_transform(g,spm_matrix([0 0 0 0   pi/2 0]));
+%
+% ?h.mc.freesurfer.gii
+% ?h.sqrtsulc.freesurfer.gii
+% ---------------------------------
+% Mean curvature and (sqrt) sulcal depth for display purposes (e.g. underlying 
+% texture)
+%
+% ?h.mask
+% ---------------------------------
+% Mask based on the DK40 Atlas of Freesurfer
+% The mask file was created by masking out region 0 (Unkown). This mask file is 
+% internally used to set values to NaN in these regions. These NaN values are 
+% ignored if data during smoothing (masked smoothing) and in the statistical
+% analysis.
+%
+% ?h.central.Template_T1_IXI555_MNI152_GS.gii
+% ?h.thickness.Template_T1_IXI555_MNI152_GS
+% ---------------------------------
+% Surfaces and thickness values based on average of 550 subjects from IXI 
+% database
+% These data should be only used to map results from 3D space (e.g. VBM or
+% fMRI results of the statistical analysis) to the template space after 
+% spherical registration.
+%
+% ?c.central.Template_T1_IXI555_MNI152_GS.gii
+% ?c.thickness.Template_T1_IXI555_MNI152_GS
+% ---------------------------------
+% Surfaces and thickness values for the cerebellar hemisphere based on average 
+% of 550 subjects from IXI database
+% These data should be only used to map results from 3D space (e.g. VBM or
+% fMRI results of the statistical analysis) to the template space after 
+% spherical registration.
+%
+% ?c.central.freesurfer.gii 
+% ?c.sphere.freesurfer.gii
+% ---------------------------------
+% Cerebellar surface based on average of 5 subjects from CoBra Lab (http://cobralab.ca/)
+% The cerebellar surfaces of these 5 subjects were initially registered to the
+% cerebellar surface ?c.central.Template_T1_IXI555_MNI152_GS.gii, then averaged and the
+% average was used as new template and the whole procedure was repeated. The final cerebellar
+% surfaces were then averaged.
+%
+% These surfaces are internally used for spherical registration, resampling
+% and can be used to overlay maps and results in template space (e.g. after
+% spherical registration and resampling).
+% The central surface is estimated by averaging the white and pial surface.
+%
+% mesh.central.freesurfer.gii 
+% ---------------------------------
+% Merged left and right hemisphere based on Freesurfer fsaverage
+%
+% fsavg.index2D_256x128.txt
+% ---------------------------------
+% Index file that contains the transformation from surface maps to 2D maps for 
+% visualization purposes in cat_stat_check_cov.m

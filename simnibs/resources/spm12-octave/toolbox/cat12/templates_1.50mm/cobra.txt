@@ -1,0 +1,102 @@
+Cobra atlas:
+--------------------------------------------------------------------------------
+
+The Cobra atlas is build from 3 atlases that are provided by the Computational Brain Anatomy Laboratory at the Douglas Institute (CoBra Lab). The 3 atlases are based on high-resolution (0.3mm isotropic voxel size) images of the amygdala, hippocampus and the cerebellum. Some of the hippocampus subfields were merged because of their small size (CA1/CA2/CA3/stratum radiatum/subiculum/stratum lacunosum/stratum moleculare). Please note that the original labels were changed in order to allow a combined atlas.
+
+High-resolution in vivo atlases of the amygdala
+=================================================
+
+These atlases are described in: 
+
+     Treadway MT, Waskom ML, Dillon DG, et al. Illness Progression, Recent
+     Stress, and Morphometry of Hippocampal Subfields and Medial Prefrontal Cortex
+     in Major Depression. Biol Psychiatry. 2014;
+
+Please cite this paper when using these atlases. 
+
+These atlases are defined on the same subjects as the Cerebellar and
+Hippocampal subfield atlases. 
+
+The manual segmentation protocol used to produce these atlases is described in: 
+
+    Entis JJ, Doerga P, Barrett LF, Dickerson BC. A reliable protocol for the
+    manual segmentation of the human amygdala and its subregions using ultra-high
+    resolution MRI. Neuroimage. 2012;60(2):1226-35.
+
+Labels 
+------
+
+Label: 26  - left amygdala
+Label: 126 - right amygdala
+
+Whole Hippocampus Atlas
+=======================
+
+These atlases, and the manual segmentation protocol used to produce them are described in: 
+
+    Winterburn JL, Pruessner JC, Chavez S, et al. A novel in vivo atlas of
+    human hippocampal subfields using high-resolution 3 T magnetic resonance
+    imaging.  Neuroimage. 2013;74:254-65.
+
+To obtain the subject T1 and T2 images for these labels, or for more
+information, please visit: 
+
+  http://cobralab.ca/atlases/hippocampus-subfields
+
+
+Labels 
+------
+
+Label: 1   - right CA1/CA2/CA3/stratum radiatum/subiculum/stratum lacunosum/stratum moleculare
+Label: 4   - right CA4/dentate gyrus
+Label: 101 - left CA1/CA2/CA3/stratum radiatum/subiculum/stratum lacunosum/stratum moleculare
+Label: 104 - left CA4/dentate gyrus
+
+High-resolution in vivo atlases of the cerebellum
+=================================================
+
+
+These atlases, and the manual segmentation protocol used to produce them are described in: 
+
+    Park, M.T., Pipitone, J., Baer, L., Winterburn, J.L., Shah, Y., Chavez, S.,
+    Schira, M.M., Lobaugh, N.J., Lerch, J.P., Voineskos, A.N., Chakravarty, M.M.
+    Derivation of high-resolution MRI atlases of the human cerebellum at 3T and segmentation 
+    using multiple automatically generated templates. Neurimage. 2014; 95: 217-31.
+
+To obtain the subject T1 and T2 images for these labels, or for more
+information, please visit: 
+
+  http://cobralab.ca/atlases/cerebellum
+
+Labels 
+------
+
+Label: 11   - left I-II
+Label: 12   - left III
+Label: 13   - left IV
+Label: 14   - left V
+Label: 15   - left VI
+Label: 16   - left Crus I
+Label: 17   - left Crus II
+Label: 18   - left VIIB
+Label: 19   - left VIIIA
+Label: 20  - left VIIIB
+Label: 21  - left IX
+Label: 22  - left X
+Label: 23  - left CM
+Label: 111 - right I-II
+Label: 112 - right III
+Label: 113 - right IV
+Label: 114 - right V
+Label: 115 - right VI
+Label: 116 - right Crus I
+Label: 117 - right Crus II
+Label: 118 - right VIIB
+Label: 119 - right VIIIA
+Label: 120 - right VIIIB
+Label: 121 - right IX
+Label: 122 - right X
+Label: 123 - right CM
+
+--------------------------------------------------------------------------------
+$Id: cobra.txt 1178 2017-09-08 10:48:13Z gaser $
