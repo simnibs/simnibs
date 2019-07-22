@@ -11,7 +11,8 @@ Authors: Ole Numssen, Konstantin Weise, 2019
 """
 
 from simnibs.simulation.optim_tms import optimize_tms_coil_pos
-from simnibs.simulation.sim_struct import TMSLIST, TMSOPTIMIZATION
+from simnibs.simulation.sim_struct import TMSLIST
+from simulation.optim_tms import TMSOPTIMIZATION
 import numpy as np
 
 ########################################################################
@@ -19,7 +20,7 @@ import numpy as np
 ########################################################################
 
 # define cortical target where normE should be maximal
-from utils.nnav import simnibs2nnav, save_tms_navigator_im
+from utils.nnav import simnibs2nnav, write_tms_navigator_im
 
 target = np.array([-27.17, -17.94, 69.94])  # ~ left M1
 coil_fn = 'MagVenture_MC_B60_REF.nii.gz'  # Choose a coil from the ccd-files folder
@@ -118,4 +119,4 @@ mat_tms_navigator = simnibs2nnav(fn_exp_nii,
 
 # write InstrumentMarker .xml file.
 xml_fn = '/data/project/best_cond_instrument_marker.xml'
-save_tms_navigator_im(mat_tms_navigator, xml_fn)
+write_tms_navigator_im(mat_tms_navigator, xml_fn)

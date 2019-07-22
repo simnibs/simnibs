@@ -8,7 +8,8 @@ from simnibs.simulation.optim_tms import get_opt_grid, read_msh_from_pckl, optim
 from simnibs.msh import mesh_io
 import numpy as np
 
-from simnibs.simulation import sim_struct, TMSLIST, TMSOPTIMIZATION
+from simnibs.simulation import sim_struct, TMSLIST
+from simulation.optim_tms import TMSOPTIMIZATION
 
 subject = "29965.48"
 subject = "14102.d1"
