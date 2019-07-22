@@ -4,8 +4,10 @@ import os
 import tempfile
 from nose.tools import *
 import logging
+
 from simnibs.simulation import sim_struct, mesh_io, logging, TMSLIST, save_matlab_sim_struct
 from simnibs.simulation.optim_tms import optimize_tms_coil_pos
+import simnibs.simulation as simulation
 
 """Some helper functions to get files and filenames."""
 
@@ -30,7 +32,7 @@ class TestTMSOptimizationClass:
 
     def test_mat_read(self):
         """Check additions to read_mat() """
-        tms_optim = sim_struct.TMSOPTIMIZATION()
+        tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
         tms_optim.add_poslist(sim_struct.TMSLIST())
         tms_optim.optimlist.add_position()
         tms_optim.optimlist.add_position()
@@ -42,7 +44,7 @@ class TestTMSOptimizationClass:
         with tempfile.NamedTemporaryFile('w', suffix='.mat') as f:
             save_matlab_sim_struct(tms_optim, f.name)
 
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.read_mat_struct(f.name)
             assert tms_optim.angle_limits == [-180, 180]  # list of num
             assert tms_optim.resolution_angle == 60.
@@ -55,10 +57,11 @@ class TestTMSOptimizationClass:
 
     @raises(AssertionError)
     def test_no_tmslist(self):
+        """Check for assertionError if not TMSLIST"""
         logger = logging.getLogger("simnibs")
-        logging.shutdown(logger.handlers)
+        logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim._set_logger()
@@ -66,10 +69,11 @@ class TestTMSOptimizationClass:
 
     @raises(AssertionError)
     def test_tmslist_no_poslist(self):
+        """Check for error on no poslist"""
         logger = logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim.optimlist = sim_struct.TMSLIST()
@@ -78,10 +82,11 @@ class TestTMSOptimizationClass:
             tms_optim._prepare()
 
     def test_tmslist_prepare(self):
+        """Check TMSOPTIMIZATION._prepare() """
         logger = logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim.optimlist = sim_struct.TMSLIST()
@@ -96,10 +101,11 @@ class TestTMSOptimizationClass:
 
     @raises(AssertionError)
     def test_tmslist_different_distances_in_optimlist(self):
+        """Check for error on different coil distances in optimlist"""
         logger = logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim.optimlist = sim_struct.TMSLIST()
@@ -123,10 +129,11 @@ class TestTMSOptimization:
     """Tests for the optimization."""
     @raises(AssertionError)
     def test_optimization_empty_matsimnibs(self):
+        """Test for error on empty position"""
         logger = logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim.optimlist = sim_struct.TMSLIST()
@@ -150,10 +157,10 @@ class TestTMSOptimization:
                                   resolution_angle=resolution_angle,
                                   handle_direction_ref=handle_direction_ref)
 
-    def test_optimization(self):
-
+    def test_optimization(self,n_cpu=1):
+        """Test optimization and output files."""
         with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = sim_struct.TMSOPTIMIZATION()
+            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim.optimlist = sim_struct.TMSLIST()
@@ -169,7 +176,7 @@ class TestTMSOptimization:
 
             results = optimize_tms_coil_pos(tms_optim=tms_optim,
                                             target=target,
-                                            n_cpu=1,
+                                            n_cpu=n_cpu,
                                             radius=radius,
                                             resolution_pos=resolution_pos,
                                             resolution_angle=resolution_angle,
@@ -187,3 +194,8 @@ class TestTMSOptimization:
             assert os.path.exists(os.path.join(pathfem, 'optimization_' + results['tms_optim'].time_str + '.mat'))
             assert os.path.exists(os.path.join(pathfem, 'optimization_' + results['tms_optim'].time_str + '.log'))
             assert os.path.exists(os.path.join(pathfem, 'optimization.hdf5'))
+
+    def test_optimization_multicore(self):
+        """Test the same optimization as above with 2 cpus in parallel"""
+        self.test_optimization(2)
+        # pass
