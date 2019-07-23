@@ -1750,13 +1750,23 @@ class ELECTRODE(object):
             # array of vertices (nx2) for S.definition=='plane'
             self.vertices = []
 
-        if len(el['holes']) > 0:
-            for h in el['holes'][0]:
-                self.holes.append(ELECTRODE(h))
+        try:
+            el['holes']
+        except ValueError:
+            pass
+        else:
+            if len(el['holes']) > 0:
+                for h in el['holes'][0]:
+                    self.holes.append(ELECTRODE(h))
 
-        if len(el['plug']) > 0:
-            for p in el['plug'][0]:
-                self.plug.append(ELECTRODE(p))
+        try:
+            el['plug']
+        except ValueError:
+            pass
+        else:
+            if len(el['plug']) > 0:
+                for p in el['plug'][0]:
+                    self.plug.append(ELECTRODE(p))
 
         if not self.definition or self.definition == '[]': # simplify matlab synthax
             self.definition = 'plane'
