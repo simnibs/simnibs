@@ -1751,18 +1751,22 @@ class ELECTRODE(object):
             self.vertices = []
 
         try:
-            for h in el['holes']:
-                if len(h) > 0:
-                    self.holes.append(ELECTRODE(h[0]))
+            el['holes']
         except ValueError:
             pass
+        else:
+            if len(el['holes']) > 0:
+                for h in el['holes'][0]:
+                    self.holes.append(ELECTRODE(h))
 
         try:
-            for p in el['plug']:
-                if len(p) > 0:
-                    self.plug.append(ELECTRODE(p[0]))
+            el['plug']
         except ValueError:
             pass
+        else:
+            if len(el['plug']) > 0:
+                for p in el['plug'][0]:
+                    self.plug.append(ELECTRODE(p))
 
         if not self.definition or self.definition == '[]': # simplify matlab synthax
             self.definition = 'plane'

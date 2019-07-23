@@ -368,8 +368,7 @@ def norm(coords, pdftype, gridshape, limits):
 
             # if gridtype[i_DIM] == 'hermite':
         if pdftype[i_DIM] == "norm" or pdftype[i_DIM] == "normal":
-            coords_norm[:, i_DIM] = coords[:, i_DIM] / gridshape[1][i_DIM] - gridshape[0][i_DIM]
-
+            coords_norm[:, i_DIM] = (coords[:, i_DIM] - gridshape[0][i_DIM])/ gridshape[1][i_DIM] 
     return coords_norm
 
 #%% full-grid object subclass   
