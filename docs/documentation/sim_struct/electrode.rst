@@ -63,7 +63,7 @@ Attributes
   * **Description**: Position along the electrode's y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position
   * **Example**: *Python/MATLAB*
 
-    To set-up an electrode centered at AF4 and with a y axis pointing laterally (:download:`example <../../images/electrode_axis.png>`), you can use
+    To set-up an electrode centered at AF4 and with a y axis pointing laterally, you can use
 
     .. code-block:: python
 
@@ -71,6 +71,9 @@ Attributes
        electrode.pos_ydir = 'F6'
 
     \
+    The resulting electrode is oriented such as the following:
+
+    .. image:: ../../images/electrode_axis.png
 
   * **Note**: Not required for circular electrodes. :ref:`More about coordinates in SimNIBS <coords_doc>`. Coordinates do not need to be exactly in the skin surface, as SimNIBS automatically finds the closest point in the skin surface.
 
@@ -89,7 +92,7 @@ Attributes
   * **Description**: Size of the electrode along the *x* and *y* directions of the electrode axes, in mm.
   * **Example**: *Python/MATLAB*
      
-    To reproduce :download:`this electrode <../../images/electrode_axis.png>`, you can use
+    To reproduce the electrode in the image shown above, you can use
 
     .. code-block:: python
 
