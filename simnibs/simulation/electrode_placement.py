@@ -819,8 +819,10 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
 def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
     if elec.definition == 'plane':
         if elec.shape in ['rect', 'rectangle', 'ellipse']:
-            if elec.dimensions is None:
+            if elec.dimensions is None or len(elec.dimensions) == 0:
                 raise ValueError('Undefined electrode dimension')
+            if np.any(np.array(elec.dimensions) <= 1e-5):
+                raise ValueError('Found zero or negative value for electrode dimension')
             try:
                 x = float(elec.dimensions[0]) / 2.
                 y = float(elec.dimensions[1]) / 2.
