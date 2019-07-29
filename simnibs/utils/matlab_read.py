@@ -1,6 +1,5 @@
 import os
 import scipy.io
-import numpy as np
 
 
 def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternative=None):
@@ -22,31 +21,15 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
     alternative: any
         if the field could not be read, return alternative. (Default: None)
     """
-    if field_type == list:
-        try:
-            res = np.squeeze(matlab_structure[field_name]).tolist()
-            try:
-                # lists of string are white-padded to largest element in list. Remove padding:
-                res = [re.strip() for re in res]
-            except AttributeError:
-                pass
-            return res
-        except (TypeError, KeyError, IndexError, ValueError):
-            pass
-    elif field_type == np.array:
-        try:
-            return np.squeeze(np.array(matlab_structure[field_name]))
-        except (TypeError, KeyError, IndexError, ValueError):
-            pass
-    else:
-        try:
-            return field_type(matlab_structure[field_name][0])
-        except (TypeError, KeyError, IndexError, ValueError):
-            pass
-        try:
-            return field_type(matlab_structure[field_name][0][0])
-        except (TypeError, KeyError, IndexError, ValueError):
-            pass
+
+    try:
+        return field_type(matlab_structure[field_name][0])
+    except (TypeError, KeyError, IndexError, ValueError):
+        pass
+    try:
+        return field_type(matlab_structure[field_name][0][0])
+    except (TypeError, KeyError, IndexError, ValueError):
+        pass
     return alternative
 
 

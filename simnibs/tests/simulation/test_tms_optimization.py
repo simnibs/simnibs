@@ -36,11 +36,18 @@ class TestTMSOptimizationClass:
         tms_optim.add_poslist(sim_struct.TMSLIST())
         tms_optim.optimlist.add_position()
         tms_optim.optimlist.add_position()
+
         tms_optim.angle_limits = [-180, 180]  # list of num
         tms_optim.resolution_angle = 60.
         tms_optim.target = np.array((-30., 0.01, 49.))  # np.ndarray
+        tms_optim.handle_direction_ref = np.array([-1, 0, 1.1])
         tms_optim.save_fields = ['normE', 'E']  # list of str
         tms_optim.optimlist.postprocess = ['E', 'e', 'J', 'j']  # list of str
+        tms_optim.target_coil_matsim = np.array([[0, 1, 2],
+                                                 [np.inf, -np.inf, np.nan],
+                                                 [-1, -1., 0],
+                                                 [1.1, 1.2, 1.3]])
+
         with tempfile.NamedTemporaryFile('w', suffix='.mat') as f:
             save_matlab_sim_struct(tms_optim, f.name)
 
@@ -54,6 +61,13 @@ class TestTMSOptimizationClass:
             assert type(tms_optim.optimlist) == TMSLIST
             assert len(tms_optim.optimlist.pos) == 2
             assert tms_optim.optimlist.postprocess == ['E', 'e', 'J', 'j']  # list of str
+            assert np.allclose(tms_optim.target_coil_matsim,
+                               np.array([[0, 1, 2],
+                                         [np.inf, -np.inf, np.nan],
+                                         [-1, -1., 0],
+                                         [1.1, 1.2, 1.3]]),
+                               equal_nan=True)
+            assert np.all(tms_optim.handle_direction_ref == np.array([-1, 0, 1.1]))
 
     @raises(AssertionError)
     def test_no_tmslist(self):

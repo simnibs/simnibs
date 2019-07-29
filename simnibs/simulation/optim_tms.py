@@ -489,14 +489,19 @@ def optimize_tms_coil_pos(tms_optim, target=None,
     simnibs.utils.simnibs_logger.logger.info("Starting optimization: "
                                              "{} FEMs on {} cpus".format(len(tms_optim.optimlist.pos), n_cpu))
 
-    # create copy of tms_optim, as resuming changes tms_optim.optimlist.pos
-    tms_optim_org = copy.copy(tms_optim)
-    simulations_fn = tms_optim.run(allow_multiple_runs=True, cpus=n_cpu)
+    if tms_optim.resume:
+        # create copy of tms_optim, as resuming changes tms_optim.optimlist.pos
+        # tms_optim_org = copy.copy(tms_optim)
+        optimlist_org = copy.copy(tms_optim.optimlist.pos)
+        simulations_fn = tms_optim.run(allow_multiple_runs=True, cpus=n_cpu)
+        tms_optim.optimlist.opt = optimlist_org
+    else:
+        simulations_fn = tms_optim.run(allow_multiple_runs=True, cpus=n_cpu)
 
     # evaluate all simulations
     tms_list_optim = eval_optim(simulations_fn,
                                 target,
-                                tms_optim_org,
+                                tms_optim,
                                 os.path.join(tms_optim.pathfem,
                                              tms_optim.optim_name + '_' + tms_optim.time_str + '.csv'),
                                 qoi=tms_optim.qoi)
@@ -615,6 +620,7 @@ class TMSOPTIMIZATION(SESSION):
         self.resolution_pos = try_to_read_matlab_field(mat, 'resolution_pos', float)
 
         self.save_fields = try_to_read_matlab_field(mat, 'save_fields', list)  # 'normE', 'E', both
+        self.save_fields = [f.strip(' ') for f in self.save_fields]
         self.write_mesh_geom = try_to_read_matlab_field(mat, 'write_mesh_geom', bool)
 
         if self.compress_hdf5 == '':
@@ -673,7 +679,7 @@ class TMSOPTIMIZATION(SESSION):
         mat['distance'] = remove_None(self.distance)
         mat['fnamecoil'] = remove_None(self.fnamecoil)
         mat['qoi'] = remove_None(self.qoi)
-        mat['save_fields'] = remove_None(self.save_fields)
+        mat['save_fields'] = [remove_None(self.save_fields)]  # as list to cope with matlab_read
         mat['n_sim'] = remove_None(self.n_sim)
         mat['write_mesh_geom'] = remove_None(self.write_mesh_geom)
         mat['compress_hdf5'] = remove_None(self.compress_hdf5)
@@ -690,7 +696,7 @@ class TMSOPTIMIZATION(SESSION):
         mat['resolution_angle'] = remove_None(self.resolution_angle)
         mat['resolution_pos'] = remove_None(self.resolution_pos)
         mat['target'] = remove_None(self.target)
-        mat['target_coil_matsim'] = remove_None(self.target_coil_matsim)
+        mat['target_coil_matsim'] = [remove_None(self.target_coil_matsim)]  # as list to cope with matlab_read
         mat['target_idx'] = remove_None(self.target_idx)
 
         return mat
