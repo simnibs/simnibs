@@ -1,39 +1,132 @@
-import pytest
+"""Testsuite to test the TMSOptimization class, including Neuronavigation I/O and some helper functions.
+
+All filesystem I/O is done through tempfile package, that writes files to /tmp/* and clears things afterwards.
+"""
+
 import numpy as np
 import os
 import tempfile
+import shutil
 from nose.tools import *
-import logging
 
-from simnibs.simulation import sim_struct, mesh_io, logging, TMSLIST, save_matlab_sim_struct
-from simnibs.simulation.optim_tms import optimize_tms_coil_pos
 import simnibs.simulation as simulation
-
-"""Some helper functions to get files and filenames."""
+from simnibs.utils.nnav import write_tms_navigator_im, simnibs2nnav
 
 
 def sphere3_msh():
+    """Helper functions to get files and filenames."""
     fn = sphere3_msh_fn()
-    return mesh_io.read_msh(fn)
+    return simulation.mesh_io.read_msh(fn)
 
 
 def sphere3_msh_fn():
+    """Helper functions to get files and filenames."""
     return os.path.join(os.path.dirname(os.path.realpath(
         __file__)), '..', 'testing_files', 'sphere3.msh')
 
 
+def example_nii_fn():
+    """Helper functions to get files and filenames."""
+    return os.path.join(os.path.dirname(os.path.realpath(
+        __file__)), '..', 'testing_files', 'avg152T1_RL_nifti.nii')
+
+
 def coil_fn():
+    """Helper functions to get files and filenames."""
     return os.path.join(os.path.dirname(os.path.realpath(
         __file__)), '..', '..', 'ccd-files', 'Magstim_70mm_Fig8.ccd')
 
 
+class TestTMSOptimizationUtils:
+    """Tests for helper functions for the TMS coil optimization"""
+
+    def test_simnibs2nnav(self):
+        """Tests simnibs2nnav for the different input types. No FSL processing is tested here."""
+
+        with tempfile.TemporaryDirectory() as d:
+            fn_nii = d + 'example.nii'
+            shutil.copy(example_nii_fn(), fn_nii)
+            mat = np.array([[00., 01., 02., -10.],
+                            [03., 04., 05., -11.],
+                            [06., 07., 08., -12.],
+                            [00., 00., 00., 01.]])
+            im_mat_exp = np.array([[2., -1., 0., 79.],
+                                  [5., -4., 3., 98.],
+                                  [8., -7., 6., 77.],
+                                  [0., 0., 0., 1.]])
+
+            im = simnibs2nnav(fn_nii, fn_nii, mat)
+            assert np.all(np.squeeze(im) == im_mat_exp), "simnibs2nnav() with np.ndarray() failed"
+
+            pos = simulation.sim_struct.POSITION()
+            pos.matsimnibs = mat
+            im = simnibs2nnav(fn_nii, fn_nii, pos)
+            assert np.all(np.squeeze(im) == im_mat_exp), "simnibs2nnav() with Position() failed"
+
+            tmslist = simulation.sim_struct.TMSLIST()
+            tmslist.add_position(pos)
+            tmslist.add_position(pos)
+            im = simnibs2nnav(fn_nii, fn_nii, tmslist)
+            assert np.all(im[:, :, 0] == im_mat_exp), "simnibs2nnav() with TMSLIST() failed"
+            assert np.all(im[:, :, 1] == im_mat_exp), "simnibs2nnav() with TMSLIST() failed"
+
+            session = simulation.sim_struct.SESSION()
+            session.add_poslist(tmslist)
+            im = simnibs2nnav(fn_nii, fn_nii, session)
+            assert np.all(im[:, :, 0] == im_mat_exp), "simnibs2nnav() with Session() failed"
+            assert np.all(im[:, :, 1] == im_mat_exp), "simnibs2nnav() with Session() failed"
+
+            tms_optim = simulation.TMSOPTIMIZATION()
+            tms_optim.add_poslist(tmslist)
+            im = simnibs2nnav(fn_nii, fn_nii, session)
+            assert np.all(im[:, :, 0] == im_mat_exp), "simnibs2nnav() with TMSOPTIMIZATION() failed"
+            assert np.all(im[:, :, 1] == im_mat_exp), "simnibs2nnav() with TMSOPTIMIZATION() failed"
+
+    def test_write_write_tms_navigator_im(self):
+        """Test the Localite instrument marker file generation"""
+
+        im_mat = np.array([[00., 01., 02., -10.],
+                           [03., 04., 05., -11.],
+                           [06., 07., 08., -12.],
+                           [09., 10., 11., -13.]])
+
+        with tempfile.NamedTemporaryFile('w', suffix='.xml') as f:
+            write_tms_navigator_im(im_mat, f.name, overwrite=True)
+
+            cor = ['<?xml version="1.0" encoding="UTF-8"?>',
+                   '<InstrumentMarkerList coordinateSpace="RAS">',
+                   '    <!--This InstrumentMarkerList was written by SimNIBS-->',
+                   '    <InstrumentMarker alwaysVisible="false" index="0" selected="false">',
+                   '        <Marker additionalInformation="" color="#ff0000" description="opt_0" set="true">',
+                   '            <Matrix4D',
+                   '                data00="+0.00000000000000000" data01="+1.00000000000000000" '
+                   'data02="+2.00000000000000000" data03="-10.00000000000000000"',
+                   '                data10="+3.00000000000000000" data11="+4.00000000000000000" '
+                   'data12="+5.00000000000000000" data13="-11.00000000000000000"',
+                   '                data20="+6.00000000000000000" data21="+7.00000000000000000" '
+                   'data22="+8.00000000000000000" data23="-12.00000000000000000"',
+                   '                data30="+0.00000000000000000" data31="+0.00000000000000000" '
+                   'data32="+0.00000000000000000" data33="+1.00000000000000000"/>',
+                   '        </Marker>',
+                   '    </InstrumentMarker>',
+                   '</InstrumentMarkerList>']
+
+            with open(f.name) as fp:
+                line = fp.readline().rstrip()
+                cnt = 0
+                while line:
+                    assert line == cor[cnt]
+                    line = fp.readline().rstrip()
+                    cnt += 1
+
+
 class TestTMSOptimizationClass:
-    """Tests for the sim_struct.TMSOPTIMIZATION class"""
+    """Tests for the simulation.sim_struct.TMSOPTIMIZATION class"""
 
     def test_mat_read(self):
-        """Check additions to read_mat() """
+        """Check I/O with read_mat() """
         tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
-        tms_optim.add_poslist(sim_struct.TMSLIST())
+        tms_optim.add_poslist(simulation.sim_struct.TMSLIST())
         tms_optim.optimlist.add_position()
         tms_optim.optimlist.add_position()
 
@@ -49,7 +142,7 @@ class TestTMSOptimizationClass:
                                                  [1.1, 1.2, 1.3]])
 
         with tempfile.NamedTemporaryFile('w', suffix='.mat') as f:
-            save_matlab_sim_struct(tms_optim, f.name)
+            simulation.save_matlab_sim_struct(tms_optim, f.name)
 
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.read_mat_struct(f.name)
@@ -58,7 +151,7 @@ class TestTMSOptimizationClass:
             assert np.allclose(tms_optim.target, np.array((-30., 0.01, 49.)))  # np.ndarray
 
             assert tms_optim.save_fields == ['normE', 'E']  # list of str
-            assert type(tms_optim.optimlist) == TMSLIST
+            assert type(tms_optim.optimlist) == simulation.TMSLIST
             assert len(tms_optim.optimlist.pos) == 2
             assert tms_optim.optimlist.postprocess == ['E', 'e', 'J', 'j']  # list of str
             assert np.allclose(tms_optim.target_coil_matsim,
@@ -71,8 +164,8 @@ class TestTMSOptimizationClass:
 
     @raises(AssertionError)
     def test_no_tmslist(self):
-        """Check for assertionError if not TMSLIST"""
-        logger = logging.getLogger("simnibs")
+        """Check for AssertionError if not TMSLIST"""
+        logger = simulation.logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
@@ -84,26 +177,26 @@ class TestTMSOptimizationClass:
     @raises(AssertionError)
     def test_tmslist_no_poslist(self):
         """Check for error on no poslist"""
-        logger = logging.getLogger("simnibs")
+        logger = simulation.logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = sim_struct.TMSLIST()
+            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
             tms_optim._set_logger()
             tms_optim._prepare()
 
     def test_tmslist_prepare(self):
         """Check TMSOPTIMIZATION._prepare() """
-        logger = logging.getLogger("simnibs")
+        logger = simulation.logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = sim_struct.TMSLIST()
+            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
             tms_optim.optimlist.add_position()
             tms_optim.optim_name = 'test'
@@ -116,21 +209,21 @@ class TestTMSOptimizationClass:
     @raises(AssertionError)
     def test_tmslist_different_distances_in_optimlist(self):
         """Check for error on different coil distances in optimlist"""
-        logger = logging.getLogger("simnibs")
+        logger = simulation.logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = sim_struct.TMSLIST()
+            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
 
-            pos = sim_struct.POSITION()
+            pos = simulation.sim_struct.POSITION()
             pos.pos_ydir = [0, 0, 0]
             pos.centre = [0, 0, 0]
             pos.distance = 1
             tms_optim.optimlist.add_position(pos)
-            pos = sim_struct.POSITION()
+            pos = simulation.sim_struct.POSITION()
             pos.pos_ydir = [0, 0, 0]
             pos.centre = [0, 0, 0]
             pos.distance = 2
@@ -144,17 +237,17 @@ class TestTMSOptimization:
     @raises(AssertionError)
     def test_optimization_empty_matsimnibs(self):
         """Test for error on empty position"""
-        logger = logging.getLogger("simnibs")
+        logger = simulation.logging.getLogger("simnibs")
         logger.handlers.clear()
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = sim_struct.TMSLIST()
+            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
 
             target = [-1, 1, 1]
-            # pos = sim_struct.POSITION()
+            # pos = simulation.sim_struct.POSITION()
             # pos.pos_ydir = [-1, 0, 0]
             # pos.centre = [0, 0, 0]
             # pos.distance = 1
@@ -164,12 +257,12 @@ class TestTMSOptimization:
             resolution_pos = 10
             resolution_angle = 15
             handle_direction_ref = [-1, 2, .5]
-            optimize_tms_coil_pos(tms_optim=tms_optim,
-                                  target=target,
-                                  n_cpu=1,
-                                  resolution_pos=resolution_pos,
-                                  resolution_angle=resolution_angle,
-                                  handle_direction_ref=handle_direction_ref)
+            simulation.optim_tms.optimize_tms_coil_pos(tms_optim=tms_optim,
+                                                       target=target,
+                                                       n_cpu=1,
+                                                       resolution_pos=resolution_pos,
+                                                       resolution_angle=resolution_angle,
+                                                       handle_direction_ref=handle_direction_ref)
 
     def test_optimization(self,n_cpu=1):
         """Test optimization and output files."""
@@ -177,7 +270,7 @@ class TestTMSOptimization:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = sim_struct.TMSLIST()
+            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
             tms_optim.optim_name = 'optimization'
 
@@ -188,14 +281,14 @@ class TestTMSOptimization:
             angle_limits = [0, 15]
             handle_direction_ref = [-1, 2, .5]
 
-            results = optimize_tms_coil_pos(tms_optim=tms_optim,
-                                            target=target,
-                                            n_cpu=n_cpu,
-                                            radius=radius,
-                                            resolution_pos=resolution_pos,
-                                            resolution_angle=resolution_angle,
-                                            handle_direction_ref=handle_direction_ref,
-                                            angle_limits=angle_limits)
+            results = simulation.optim_tms.optimize_tms_coil_pos(tms_optim=tms_optim,
+                                                                 target=target,
+                                                                 n_cpu=n_cpu,
+                                                                 radius=radius,
+                                                                 resolution_pos=resolution_pos,
+                                                                 resolution_angle=resolution_angle,
+                                                                 handle_direction_ref=handle_direction_ref,
+                                                                 angle_limits=angle_limits)
 
             res_matsimnibs = np.array([[-0.71645712, 0.53550334, 0.44713014, -41.88353921],
                                        [0.26607118, 0.80222911, -0.53444793, 52.22674481],
@@ -212,4 +305,4 @@ class TestTMSOptimization:
     def test_optimization_multicore(self):
         """Test the same optimization as above with 2 cpus in parallel"""
         self.test_optimization(2)
-        # pass
+

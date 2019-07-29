@@ -38,9 +38,9 @@ tms_optim.optim_name = 'm1_l'
 # call optimization procedure with default arguments
 best_positions_right = optimize_tms_coil_pos(tms_optim=tms_optim,
                                              target=target)
-best_positions_right['best_conds']  # is TMSOPTIMZATION object with best coil position(s)
-best_positions_right['simulations']  # is .hdf5 filename where all simulations are stored
-best_positions_right['tms_optim']  # is TMSOPTIMIZATION object with all simulations that where calculated
+# best_positions_right['best_conds']  # is TMSOPTIMZATION object with best coil position(s)
+# best_positions_right['simulations']  # is .hdf5 filename where all simulations are stored
+# best_positions_right['tms_optim']  # is TMSOPTIMIZATION object with all simulations that where calculated
 
 
 ########################################################################
@@ -89,9 +89,9 @@ best_positions_left = optimize_tms_coil_pos(tms_optim=tms_optim,
                                             angle_limits=angle_limits,
                                             distance=distance)
 
-best_positions_right['best_conds']  # TMSOPTIMZATION object with best coil position(s)
-best_positions_right['simulations']  # .hdf5 filename where all simulations are stored
-best_positions_right['tms_optim']  # TMSOPTIMIZATION object with all simulations that where calculated
+# best_positions_right['best_conds']  # TMSOPTIMZATION object with best coil position(s)
+# best_positions_right['simulations']  # .hdf5 filename where all simulations are stored
+# best_positions_right['tms_optim']  # TMSOPTIMIZATION object with all simulations that where calculated
 
 
 ########################################################################

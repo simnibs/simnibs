@@ -49,7 +49,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     fn_conform_nii: str
         Filename of .nii file from SimNIBS mri2msh function
         (e.g.: .../fs_subjectID/subjectID_T1fs_conform.nii.gz).
-    simnibs_obj: any simnibssimulation.sim_struct object with position/s (POSITION | SESSION | TMSLIST | ...)
+    simnibs_obj: simnibs.simulation.sim_struct object with position/s (POSITION | SESSION | TMSLIST | ...) or np.ndarray
         N positions/orientations of coil.
     orientation: str
         Orientation convention ('RAS' or 'LPS').
@@ -207,7 +207,9 @@ def get_m_localite(fn_exp_nii, fn_conform_nii,
     if skip_flirt == 'auto':
         skip_flirt = (os.path.split(splitext_niigz(fn_exp_nii)[0])[1] ==
                       os.path.split(splitext_niigz(fn_conform_nii)[0])[1]) \
-                     and np.all((np.isclose(m_qform_conform_original, m_qform_exp_original)))
+                     and np.all(np.isclose(m_qform_conform_original, m_qform_exp_original)) \
+                     and np.all(flirt_mat2conf == np.eye(4))
+
     fn_exp_nii_ras = splitext_niigz(fn_exp_nii)[0] + '_RAS' + splitext_niigz(fn_exp_nii)[1]
 
     # transform exp to RAS
@@ -234,7 +236,7 @@ def get_m_localite(fn_exp_nii, fn_conform_nii,
     m_2ras = get_m_2ras(orientation)
 
     # construct flirt transformation matrix if necessary
-    if skip_flirt is True or not np.all(flirt_mat2conf == np.eye(4)):
+    if skip_flirt:
         logger.debug('Skipping flirt coregistration of headmesh.nii and neuronavigation.nii.')
         m_2conf = flirt_mat2conf
     else:
@@ -455,50 +457,37 @@ def write_tms_navigator_im(ims, xml_fn, overwrite=False):
     file: fn_out.xml
     """
 
+    ims = np.atleast_3d(ims)
+
     assert ims.shape[:2] == (4, 4), 'Expecting array with shape (4, 4, N instrument marker).'
+
     if not xml_fn.lower().endswith('.xml'):
         xml_fn += '.xml'
 
     assert not os.path.exists(xml_fn) or overwrite, '.xml file already exists. Remove or set overwrite=True.'
 
-    with io.open(xml_fn, 'w', newline='\n') as f: #\r\n
+    with io.open(xml_fn, 'w', newline='\n') as f:  # correct windows style would be \r\n, but Localite uses \n
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<InstrumentMarkerList coordinateSpace="RAS">\n')
         f.write('    <!--This InstrumentMarkerList was written by SimNIBS-->\n')
 
         for idx in range(ims.shape[-1]):
             im = ims[:, :, idx]
-            # f.write('\t' + '<InstrumentMarker alwaysVisible="false" index="{}" selected="false">\n'.format(idx))
-            # f.write('\t' * 2 + '<Marker additionalInformation="" color="#ff0000" description="" set="false">\n')
-            # f.write('\t' * 3 + '<Matrix4D \n')
-            # f.write('\t' * 4 + 'data00="{:+1.17f}" data01="{:+1.17f}" '
-            #                    'data02="{:+1.17f}" data03="{:+1.17f}"\n'.format(im[0, 0], im[0, 1], im[0, 2],
-            #                                                                     im[0, 3]))
-            # f.write('\t' * 4 + 'data10="{:+1.17f}" data11="{:+1.17f}" '
-            #                    'data12="{:+1.17f}" data13="{:+1.17f}"\n'.format(im[1, 0], im[1, 1], im[1, 2],
-            #                                                                     im[1, 3]))
-            # f.write('\t' * 4 + 'data20="{:+1.17f}" data21="{:+1.17f}" '
-            #                    'data22="{:+1.17f}" data23="{:+1.17f}"\n'.format(im[2, 0], im[2, 1], im[2, 2],
-            #                                                                     im[2, 3]))
-            # f.write('\t' * 4 + 'data30="{:+1.17f}" data31="{:+1.17f}" '
-            #                    'data32="{:+1.17f}" data33="{:+1.17f}"/>\n'.format(0, 0, 0, 1))
-            # f.write('\t' * 2 + '</Marker>\n')
-            # f.write('\t' + '</InstrumentMarker>\n')
             f.write('    ' + f'<InstrumentMarker alwaysVisible="false" index="{idx}" selected="false">\n')
             f.write('    ' * 2 + f'<Marker additionalInformation="" '
-            f'color="#ff0000" description="opt_{idx}" set="false">\n')
+            f'color="#ff0000" description="opt_{idx}" set="true">\n')
             f.write('    ' * 3 + '<Matrix4D \n')
             f.write('    ' * 4 + 'data00="{:+1.17f}" data01="{:+1.17f}" '
-                               'data02="{:+1.17f}" data03="{:+1.17f}"\n'.format(im[0, 0], im[0, 1], im[0, 2],
-                                                                                im[0, 3]))
+                                 'data02="{:+1.17f}" data03="{:+1.17f}"\n'.format(im[0, 0], im[0, 1], im[0, 2],
+                                                                                  im[0, 3]))
             f.write('    ' * 4 + 'data10="{:+1.17f}" data11="{:+1.17f}" '
-                               'data12="{:+1.17f}" data13="{:+1.17f}"\n'.format(im[1, 0], im[1, 1], im[1, 2],
-                                                                                im[1, 3]))
+                                 'data12="{:+1.17f}" data13="{:+1.17f}"\n'.format(im[1, 0], im[1, 1], im[1, 2],
+                                                                                  im[1, 3]))
             f.write('    ' * 4 + 'data20="{:+1.17f}" data21="{:+1.17f}" '
-                               'data22="{:+1.17f}" data23="{:+1.17f}"\n'.format(im[2, 0], im[2, 1], im[2, 2],
-                                                                                im[2, 3]))
+                                 'data22="{:+1.17f}" data23="{:+1.17f}"\n'.format(im[2, 0], im[2, 1], im[2, 2],
+                                                                                  im[2, 3]))
             f.write('    ' * 4 + 'data30="{:+1.17f}" data31="{:+1.17f}" '
-                               'data32="{:+1.17f}" data33="{:+1.17f}"/>\n'.format(0, 0, 0, 1))
+                                 'data32="{:+1.17f}" data33="{:+1.17f}"/>\n'.format(0, 0, 0, 1))
             f.write('    ' * 2 + '</Marker>\n')
             f.write('    ' + '</InstrumentMarker>\n')
 
