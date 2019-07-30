@@ -1101,7 +1101,7 @@ def tms_dadt(mesh, cond, dAdt):
 
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
-             output_names, geo_names=None, n_workers=1, write_hdf5=False, remove_msh=False):
+             output_names, geo_names=None, n_workers=1):
     ''' Simulates TMS fields using a coild + matsimnibs + dIdt definition
 
     Parameters
@@ -1124,10 +1124,6 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         List of output mesh file names, one per position
     n_workers: int
         Number of workers to use
-    write_hdf5: bool (Default: False)
-        Write .hdf5 version of .msh to disk for each simulation.
-    remove_msh: bool (Default: False)
-        Remove .msh after simulation
 
     Returns
     --------

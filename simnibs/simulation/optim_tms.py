@@ -12,9 +12,10 @@ import scipy.io
 import copy
 
 import simnibs
+from utils.simnibs_logger import logger
 from ..msh import mesh_io
-from ..simulation import SESSION, SimuList, TMSLIST, save_matlab_sim_struct, FEMSystem, run_optim_sim
-from ..simulation.sim_struct import _set_up_global_solver, _finalize_global_solver
+from ..simulation import SESSION, SimuList, TMSLIST, save_matlab_sim_struct, FEMSystem, coil, calc_fields
+# from ..simulation.sim_struct import _set_up_global_solver, _finalize_global_solver
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from ..utils.simnibs_logger import logger
@@ -991,3 +992,162 @@ class TMSOPTIMIZATION(SESSION):
             self.cond = self.optimlist.cond2elmdata()
         else:
             logger.info("Reusing already processed conductivity information.")
+
+
+def run_optim_sim(pos, mesh, fnamecoil, didt, hdf5_fn, field_names, cond, fields_to_save, n_sim, compression=None):
+    """
+    Runs a single simulation for TMSOPTIMIZATION
+
+    Parameters:
+    -----------
+    pos: simnibs.simulation.mesh_io.POSITION
+        Position object with matsimnibs.
+    mesh: simnibs.simulation.mesh_io.MSH
+        Head mesh.
+    fnamecoil: str
+        Coil filename. Endswith .ccd or .nii or .nii.gz
+    didt: int
+        Intensity used for simulation.
+    hdf5_fn: str
+        Filename of .hdf5 file. Path must exist, file may.
+    field_names: list of str
+        Field types to be computed. E.g. ['eE']
+    cond
+    save_fields: list of str
+        Field names that shall be saved in hdf5. Subset of fields. E.g. ['eE']
+    n_sim: int
+        Number of simulations in total.
+    compression: str or None (Default: None)
+        Compression used for .hdf5. 'gzip' or None.
+    """
+    global tms_global_solver
+
+    # compute dadt
+    dadt = coil.set_up_tms_dAdt(
+        mesh,
+        fnamecoil,
+        pos.matsimnibs,
+        didt=didt)
+    if isinstance(dadt, mesh_io.NodeData):
+        dadt = dadt.node_data2elm_data()
+    dadt.field_name = 'dAdt'
+
+    # compute fields
+    b = tms_global_solver.assemble_tms_rhs(dadt)
+    v = tms_global_solver.solve(b)
+    v = mesh_io.NodeData(v, name='v', mesh=mesh)
+    mesh.nodedata = [v]
+    v.mesh = mesh
+    computed_fields = calc_fields(v, field_names, cond=cond, dadt=dadt)
+
+    # write results thread-save into hdf5
+    tms_global_solver.lock.acquire()
+    add_optim_fields_to_hdf5(computed_fields, pos,
+                             hdf5_fn=hdf5_fn, fields_to_save=fields_to_save, n_sim=n_sim, compression=compression)
+    tms_global_solver.lock.release()
+    del v
+
+
+def add_optim_fields_to_hdf5(data, pos, hdf5_fn, fields_to_save, n_sim, compression=None):
+    """
+    Adds a single simulation (fields and position information) from optimization to hdf5 file.
+
+    For each field in fields_to_save, one array is created with (field.shape,n_sim). The data of this simulation is
+    stored in field[::,pos.name], so pos.name should be the simulation's index number.
+
+    Parameters:
+    -----------
+    pos: simnibs.simulation.sim_struct.POSITION
+        Position object that according to simulation
+    data: simnibs.msh.mesh_io.Msh
+        Msh with simnibs.msh.mesh_io.ElementData in data.fields[]
+    hdf5_fn: string
+        Filename of .hdf5 file. Defaults to self.hdf5_fn
+    fields_to_save: list of string
+        Fields to pick from data.fields
+    compression: str or None (Default: None)
+        Compression used for .hdf5. 'gzip' or None.
+    """
+
+    sim_nr = int(pos.name)
+    logger.debug("Writing results of position {} to .hdf5 .".format(sim_nr))
+
+    with h5py.File(hdf5_fn, 'a') as f:
+        # write elmdata
+        for elmdata in data.elmdata:
+            field = elmdata.field_name
+            logger.debug("Starting field {} of position {} to .hdf5 done.".format(field, sim_nr))
+
+            # only write out fields from fields_to_save
+            if field in fields_to_save:
+                try:
+                    g = f.create_group('/elmdata')
+                except ValueError:
+                    g = f['/elmdata']
+
+                if field not in g.keys():
+                    # create initial zero-filled dataset with the size field X n_optimizations
+                    try:
+                        shape = (elmdata.value.shape[0],
+                                 elmdata.value.shape[1],
+                                 n_sim)  # 3-dimensional data (E)
+                    except IndexError:
+                        shape = (elmdata.value.shape[0],
+                                 1,
+                                 n_sim)  # 1-dimensional data (normE)
+                    g.create_dataset(field, shape, compression=compression, chunks=shape[:2] + (1,)  )
+
+                try:
+                    # add this simulation's field to the array
+                    g[field][:, :, sim_nr] = elmdata.value[:]
+                except TypeError:
+                    g[field][:, 0, sim_nr] = elmdata.value[:]
+
+        # write nodedata
+        for nodedata in data.nodedata:
+            field = nodedata.field_name
+            if field in fields_to_save:
+                try:
+                    g = f.create_group('/nodedata')
+                except ValueError:
+                    g = f['/nodedata']
+
+                if field not in g.keys():
+                    # create initial zero-filled dataset with the size field X n_optimizations
+                    try:
+                        shape = (nodedata.value.shape[0],
+                                 nodedata.value.shape[1],
+                                 n_sim)  # 3-dimensional data (E)
+                    except IndexError:
+                        shape = (nodedata.value.shape[0],
+                                 1,
+                                 n_sim)  # 1-dimensional data (normE)
+                    g.create_dataset(field, shape, compression=compression, chunks=shape[:2] + (1,))
+
+                try:
+                    # add this simulation's field to the array
+                    g[field][:, :, sim_nr] = nodedata.value[:]
+                except TypeError:
+                    g[field][:, 0, sim_nr] = nodedata.value[:]
+        # add coil information
+        try:
+            g = f.create_group('/coil')
+        except ValueError:
+            g = f['/coil']
+        if not 'matsimnibs' in g.keys():
+            # create initial zero-filled dataset with the size field X n_optimizations
+            shape = (4, 4, n_sim)
+            g.create_dataset('matsimnibs', shape, compression="gzip")
+        g['matsimnibs'][:, :, sim_nr] = pos.matsimnibs
+
+        logger.debug("Writing results of position {} to .hdf5 done.".format(sim_nr))
+
+
+def _set_up_global_solver(S):
+    global tms_global_solver
+    tms_global_solver = S
+
+
+def _finalize_global_solver():
+    global tms_global_solver
+    del tms_global_solver
