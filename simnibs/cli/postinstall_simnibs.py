@@ -194,7 +194,10 @@ def _get_win_simnibs_env_vars():
 
 def _get_win_path():
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
-        path = winreg.QueryValueEx(reg, 'Path')[0]
+        try:
+            path = winreg.QueryValueEx(reg, 'Path')[0]
+        except FileNotFoundError: # PATH not set
+            path = ''
     return path
 
 def path_setup(scripts_dir, force=False, silent=False):
