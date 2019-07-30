@@ -1043,7 +1043,7 @@ def add_optim_fields_to_hdf5(data, pos, hdf5_fn, fields_to_save, n_sim, compress
                         shape = (elmdata.value.shape[0],
                                  1,
                                  n_sim)  # 1-dimensional data (normE)
-                    g.create_dataset(field, shape, compression=compression, chunks=shape[:2] + (1,)  )
+                    g.create_dataset(field, shape, compression=compression, chunks=shape[:2] + (1,))
 
                 try:
                     # add this simulation's field to the array
@@ -1082,7 +1082,7 @@ def add_optim_fields_to_hdf5(data, pos, hdf5_fn, fields_to_save, n_sim, compress
             g = f.create_group('/coil')
         except ValueError:
             g = f['/coil']
-        if not 'matsimnibs' in g.keys():
+        if 'matsimnibs' not in g.keys():
             # create initial zero-filled dataset with the size field X n_optimizations
             shape = (4, 4, n_sim)
             g.create_dataset('matsimnibs', shape, compression="gzip")
