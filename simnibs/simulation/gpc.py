@@ -119,7 +119,7 @@ class gPC_regression(pygpc.RegularizedRegression):
     coords_norm: np.ndarray
         List of sampled points in normalized space
     sim_type: {'TMS', 'TCS'}
-        Type of siulation
+        Type of simulation
     data_file: str, optional
         Path to file with raw data
     """

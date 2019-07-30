@@ -325,8 +325,8 @@ class SESSION(object):
         """ Reads form matlab structure
         Parameters
         ------------------
-        mat: scipy.io.loadmat of str
-            Loaded matlab structure
+        mat: scipy.io.loadmat or str
+            Loaded matlab structure or filename
         """
         if type(mat) == str:
             mat = scipy.io.loadmat(mat)
@@ -439,6 +439,13 @@ class SESSION(object):
     def _set_logger(self, fname_prefix='simnibs_simulation', summary=True):
         """
         Set-up loggger to write to a file
+
+        Parameters
+        ----------
+        fname_prefix: str, optional
+            Prefix of log-file. Defaults to 'simnibs_simulation'.
+        summary: bool, optional
+            Create summary file 'fields_summary.txt'. Default: True.
         """
         if not os.path.isdir(self.pathfem):
             os.mkdir(self.pathfem)
@@ -889,17 +896,18 @@ class TMSLIST(SimuList):
     """List of TMS coil position
 
     Note: Children of SimuList class
+
     Parameters
-    -------------------------
+    ----------
     matlab_struct(optional): scipy.io.loadmat structure
         matlab structure defining the posist
 
     Attributes
-    -------------------------
+    ----------
     fnamecoil: str
-        Name of coil file
+        Name of coil file.
     pos: list of simnibs.simulation.sim_struct.POSITION() structures
-        Definition of coil positions
+        Definition of coil positions.
     """
 
     def __init__(self, matlab_struct=None):
@@ -913,13 +921,13 @@ class TMSLIST(SimuList):
 
     def _prepare(self):
         """Prepares structures for simulations
-        Changes anisotropy_type and fnamecoil, _prepares poscoil structures
+        Changes anisotropy_type and fnamecoil, _prepares pos structures
         """
         self.check_conductivities()
         self.resolve_fnamecoil()
-        for poscoil in self.pos:
-            poscoil.eeg_cap = self.eeg_cap
-            poscoil._prepare()
+        for pos in self.pos:
+            pos.eeg_cap = self.eeg_cap
+            pos._prepare()
 
     def read_mat_struct(self, PL):
         """ Reads matlab poslist structure
@@ -1051,11 +1059,6 @@ class TMSLIST(SimuList):
           We return a list for consistency with the TMS version
 
         """
-        if not hasattr(self, 'write_hdf5'):
-            self.write_hdf5 = False
-        if not hasattr(self, 'remove_msh'):
-            self.remove_msh = False
-
         if len(self.pos) == 0:
             raise ValueError('There are no positions defined for this poslist!')
         fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
@@ -1092,7 +1095,7 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     cpus, self.write_hdf5, self.remove_msh)
+                     cpus)
 
         logger.info('Creating visualizations')
         summary = ''

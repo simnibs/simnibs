@@ -1375,14 +1375,14 @@ class Msh:
         Parameters
         -----------
         center: np.ndarray
-            Position of the center of the coil, will be projected to the skin surface
+            Position of the center of the coil, will be projected to the skin surface.
         pos_ydir: np.ndarray
-            Position of the y axis in relation to the coil center
+            Position of the y axis in relation to the coil center.
         distance: float
-            Distance from the center
-        skin_surface: list of num
-            Possible tags for the skin surface (Default: [5, 1005])
-        msh_surf: bool (Default: False)
+            Distance from the center.
+        skin_surface: list of num, optional
+            Possible tags for the skin surface (default: [5, 1005]).
+        msh_surf: simnibs.msh.Msh, optional
             Surface cropped mesh. If not provided, this is computed from self.
 
         Returns

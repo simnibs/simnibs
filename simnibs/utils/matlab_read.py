@@ -17,7 +17,7 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
         name of field in mat structure
     field_type: function
         function that transforms the field into the desired type
-        'int', 'float', 'str',....
+        'int', 'float', 'str', ...
     alternative: any
         if the field could not be read, return alternative. (Default: None)
     """

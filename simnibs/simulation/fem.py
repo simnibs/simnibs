@@ -4,7 +4,6 @@
 '''
 
 import multiprocessing
-import os
 import time
 import copy
 import warnings
@@ -1118,9 +1117,9 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         List of "matsimnibs" matrices, one per position
     didt_list: list
         List of dIdt values, one per position
-    output_names: list
+    output_names: list of str
         List of output mesh file names, one per position
-    geo_names: list
+    geo_names: list of str
         List of output mesh file names, one per position
     n_workers: int
         Number of workers to use
