@@ -1148,7 +1148,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                 matsimnibs_list, didt_list, output_names, geo_names):
             _run_tms(
                 mesh, cond, fn_coil, fields,
-                matsimnibs, didt, fn_out, fn_geo, write_hdf5, remove_msh)
+                matsimnibs, didt, fn_out, fn_geo)
         _finalize_global_solver()
     else:
         with multiprocessing.Pool(processes=n_workers,
