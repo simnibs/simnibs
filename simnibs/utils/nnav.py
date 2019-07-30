@@ -1,5 +1,8 @@
 """
 Neuronavigation functions. So far, only for Localite TMS Navigator software.
+This code is adapted from A. Thielscher's nnav_read_im.m and nnav_read_localite.m .
+
+Written by Ole Numssen & Konstantin Weise, 2019.
 """
 import copy
 import io
@@ -40,7 +43,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     Transforms simnibs positions/orientations to neuronavigation instrument marker space.
 
 
-    This code is adapted from A. Thielscher's nnav_read_im.m and nnav_read_localite.m .
+
 
     Parameters
     ----------

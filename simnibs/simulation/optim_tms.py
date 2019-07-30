@@ -1,3 +1,9 @@
+"""
+Functions to find optimal TMS coil positions for a given cortical target. See examples/tms_optimization.py for
+some examples on how to use these.
+
+Written by Ole Numssen & Konstantin Weise, 2019.
+"""
 import os
 import glob
 import numpy as np
