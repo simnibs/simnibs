@@ -1,15 +1,15 @@
-import glob
-import multiprocessing
 import os
-import copy
+import glob
+import pandas as pd
+import multiprocessing
 import datetime
 import logging
 import h5py
 import pickle
 import itertools
-import pandas as pd
 import numpy as np
 import scipy.io
+import copy
 
 import simnibs
 from ..msh import mesh_io

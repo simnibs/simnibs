@@ -28,7 +28,7 @@ def sphere3_msh_fn():
 def example_nii_fn():
     """Helper functions to get files and filenames."""
     return os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'avg152T1_RL_nifti.nii')
+        __file__)), '..','..', 'resources', 'templates', 'MNI152_T1_1mm.nii.gz')
 
 
 def coil_fn():
@@ -44,15 +44,15 @@ class TestTMSOptimizationUtils:
         """Tests simnibs2nnav for the different input types. No FSL processing is tested here."""
 
         with tempfile.TemporaryDirectory() as d:
-            fn_nii = d + 'example.nii'
+            fn_nii = d + 'example.nii.gz'
             shutil.copy(example_nii_fn(), fn_nii)
             mat = np.array([[00., 01., 02., -10.],
                             [03., 04., 05., -11.],
                             [06., 07., 08., -12.],
                             [00., 00., 00., 01.]])
-            im_mat_exp = np.array([[2., -1., 0., 79.],
-                                  [5., -4., 3., 98.],
-                                  [8., -7., 6., 77.],
+            im_mat_exp = np.array([[2., -1., 0., -11.],
+                                  [5., -4., 3., -28.],
+                                  [8., -7., 6., 6.],
                                   [0., 0., 0., 1.]])
 
             im = simnibs2nnav(fn_nii, fn_nii, mat)
