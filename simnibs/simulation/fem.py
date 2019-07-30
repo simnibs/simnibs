@@ -1161,7 +1161,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                     pool.apply_async(
                         _run_tms,
                         (mesh, cond, fn_coil, fields,
-                         matsimnibs, didt, fn_out, fn_geo, write_hdf5, remove_msh)))
+                         matsimnibs, didt, fn_out, fn_geo)))
             pool.close()
             pool.join()
 
