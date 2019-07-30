@@ -1,28 +1,21 @@
 import os
 import glob
-import pandas as pd
+import numpy as np
 import multiprocessing
 import datetime
 import logging
 import h5py
-import pickle
 import itertools
-import numpy as np
+import pandas as pd
 import scipy.io
 import copy
 
 import simnibs
-from utils.simnibs_logger import logger
 from ..msh import mesh_io
 from ..simulation import SESSION, SimuList, TMSLIST, save_matlab_sim_struct, FEMSystem, coil, calc_fields
-# from ..simulation.sim_struct import _set_up_global_solver, _finalize_global_solver
-from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
+from ..utils.file_finder import SubjectFiles
 from ..utils.simnibs_logger import logger
-
-from .. import msh
-from ..utils.simnibs_logger import logger
-from ..simulation import save_matlab_sim_struct
 
 try:
     import pyfempp
@@ -99,11 +92,11 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
             # read first mesh to get index of target element
             try:
                 # try to read mesh geom from .hdf5
-                mesh = msh.mesh_io.Msh()
+                mesh = mesh_io.Msh()
                 mesh = mesh.read_hdf5(simulations, load_data=False)
                 _, idx = mesh.find_closest_element(target, return_index=True)
             except (ValueError, KeyError):
-                mesh = msh.mesh_io.read_msh(tms_optim.fnamehead)
+                mesh = mesh_io.read_msh(tms_optim.fnamehead)
                 _, idx = mesh.find_closest_element(target, return_index=True)
         else:
             idx = tms_optim.target_idx
@@ -158,50 +151,6 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
             tms_optim.optimlist.add_position(best_pos)
 
     return tms_optim
-
-
-def read_msh_from_pckl(fn, m=None):
-    """ Reads a gmsh '.msh' file
-
-    Parameters
-    ------------
-    fn: str
-        File name
-    m: simnibs.msh.Msh (optional)
-        Mesh structure to be overwritten. If unset, will create a new structure
-
-    Returns
-    --------
-    msh: simnibs.msh.Msh
-        Mesh structure
-    """
-    print("This is the monkey-patched version of read_msh().")
-    assert fn.endswith('.msh')
-    fn_pckl = fn[:-3] + "pckl"
-    try:
-        return pickle.load(open(fn_pckl, 'rb'))
-
-    except FileNotFoundError:
-        print("Falling back to original read_msh for {}".format(fn))
-        if m is None:
-            m = msh.Msh()
-
-        fn = os.path.expanduser(fn)
-
-        if not os.path.isfile(fn):
-            raise IOError(fn + ' not found')
-
-        version_number = simnibs.msh.msh.mesh_io_find_mesh_version(fn)
-        if version_number == 2:
-            m = simnibs.simulation.mesh_io._read_msh_2(fn, m)
-
-        elif version_number == 4:
-            m = simnibs.simulation.mesh_io._read_msh_4(fn, m)
-
-        else:
-            raise IOError('Unrecgnized Mesh file version : {}'.format(version_number))
-
-        return m
 
 
 def get_opt_grid(tms_optim, mesh,
@@ -470,9 +419,8 @@ def optimize_tms_coil_pos(tms_optim, target=None,
     # setup tmslist if not provided
     if not tms_optim.optimlist.pos:
 
-        mesh = msh.mesh_io.read_msh(tms_optim.fnamehead)  # TODO: remove this
+        mesh = mesh_io.read_msh(tms_optim.fnamehead)
         mesh.fix_surface_labels()
-        # mesh = pickle.load(open(tms_optim.fnamehead[:-3] + "pckl", 'rb'))
 
         # update session poslist with changed tms_list
         tms_optim = get_opt_grid(tms_optim=tms_optim,
