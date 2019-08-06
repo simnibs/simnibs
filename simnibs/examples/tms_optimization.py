@@ -1,11 +1,21 @@
 """
 Example for TMS coil position/orientation optimization.
 
-optimize_tms_coil_pos() implements a brute-force approach to find the optimal coil position & rotation to maximize
-the quantity of interest (normE/E/...) at a given cortical target. The cortical target is projected to the nearest
-position at the skin surface and candidate coil positions/rotations are distributed equally in a circular plane
-around that location. The number of candiate coil positions/rotations is defined by the two resolution parameters
-(_pos and angle), the radius of the circular plane, and angle_limits.
+optim_tms.optimize_tms_coil_pos() implements a brute-force approach to find the optimal coil position & rotation to
+maximize the quantity of interest (qoi) (normE/...) at a given cortical target. The cortical target is projected to
+the nearest position at the skin surface and candidate coil positions/rotations are distributed equally in a circular
+plane around that location. The number of candiate coil positions/rotations is defined by the two resolution
+parameters (resolution_pos and resolution_angle), the radius of the circular plane (radius), and the the range of the
+coil angles (angle_limits).
+
+The qoi is calculated for each of these candidate coil positions (whole brain) and stored in
+<pathfem>/<optim_name>.hdf5 and the qoi at the cortical target is stored in  <pathfem>/<optim_name>_<datetime>.csv
+with the corresponding coil positions and orientations.
+
+nnav.simnibs2nnav() transforms simnibs positions/orientations to Localite TMS Navigator instrument markers.
+
+
+See below for an examplary workflow to go from target location to optimal coil position to instrument marker file.
 
 Authors: Ole Numssen, Konstantin Weise, 2019
 """
@@ -120,3 +130,10 @@ mat_tms_navigator = simnibs2nnav(fn_exp_nii,
 # write InstrumentMarker .xml file.
 xml_fn = '/data/project/best_cond_instrument_marker.xml'
 write_tms_navigator_im(mat_tms_navigator, xml_fn)
+
+#
+# At the moment (July 2019) there is no official way to import instrument marker files into the TMS Localite
+# software. A workaround is to copy-paste the content of the above generated .xml file into an existing TMS Navigator
+# Session instrument marker file:
+# subject_name/subject_name_date/Sessions/Session_latest/InstrumentMarkers/InstrumentMarker_latest.xml
+# and load the session afterwards.

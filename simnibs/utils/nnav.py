@@ -43,8 +43,6 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     Transforms simnibs positions/orientations to neuronavigation instrument marker space.
 
 
-
-
     Parameters
     ----------
     fn_exp_nii: str
