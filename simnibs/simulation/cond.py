@@ -388,13 +388,15 @@ def _fix_eigv(eig_val, max_value, max_ratio, c):
     return eig_val
 
 
-def TensorVisualization(cond, all_compoents=False):
+def TensorVisualization(cond, mesh, all_compoents=False):
     ''' Creates a visualization of the tensors for plotting
 
     Parameters
     -----------
     cond: Nx9 numpy array
         Array with conductivity values at each element
+    mesh: simnibs.msh.Msh
+        Mesh file
     all_componets: bool (optional)
         Whether or nor to plot the middle and minimum eigenvalue, as well as the mean
         conductivity
@@ -410,17 +412,20 @@ def TensorVisualization(cond, all_compoents=False):
     mc = np.prod(eig_val, axis=1) ** (1.0/3.0)
     data = []
     data.append(
-        mesh_io.ElementData(eig_vec[:, :, 0] * eig_val[:, 0, None],
-                         name='max_eig'))
+        mesh_io.ElementData(
+            eig_vec[:, :, 0] * eig_val[:, 0, None],
+            name='max_eig', mesh=mesh))
     if all_compoents:
         data.append(
-            mesh_io.ElementData(eig_vec[:, :, 1] * eig_val[:, 1, None],
-                             name='mid_eig'))
+            mesh_io.ElementData(
+                eig_vec[:, :, 1] * eig_val[:, 1, None],
+                name='mid_eig', mesh=mesh))
         data.append(
-            mesh_io.ElementData(eig_vec[:, :, 2] * eig_val[:, 2, None],
-                             name='min_eig'))
+            mesh_io.ElementData(
+                eig_vec[:, :, 2] * eig_val[:, 2, None],
+                name='min_eig', mesh=mesh))
 
         data.append(
             mesh_io.ElementData(mc,
-                             name='mean_conductivity'))
+                 name='mean_conductivity', mesh=mesh))
     return data

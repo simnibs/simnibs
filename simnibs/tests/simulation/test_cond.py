@@ -192,7 +192,7 @@ class TestTensorVisualization:
         factor = np.arange(1, 11)
         t *= factor[:, None, None]
         t = mesh_io.ElementData(t.reshape(-1, 9))
-        fields = cond.TensorVisualization(t, all_compoents=True)
+        fields = cond.TensorVisualization(t, None, all_compoents=True)
         assert np.allclose(fields[0].value / factor[:, None],
                            eig_val[max_eig] * eig_vec[:, max_eig])
         assert np.allclose(fields[2].value / factor[:, None],

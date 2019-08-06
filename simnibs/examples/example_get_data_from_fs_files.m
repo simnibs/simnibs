@@ -1,93 +1,107 @@
 %
-% example script that reads simulation results mapped onto the
-% freesurfer surfaces of the subject. It extracts peak magnitude and some
-% percentiles of E. This is done (i) for the whole cortex, (ii) separately
-% for left and right hemisphere, and (iii) in all regions defined in the
-% aparc.a2009s annotation files
+% Example script that shows how to extract results from
+% cortical regions-of-interest using node_data indices.
+% 
+% It asks for simulation results saved in the fsavg_overlays
+% subfolder of a simulation, and reports some key values
+%       (1) for the whole cortex
+%       (2) for the (randomly selected) "S_precentral-sup-part" area 
+%            (from the Destrieux atlas or "a2009s" in FreeSurfer notation) 
+%            of the left hemisphere
+%       (3) in a sphere of 10 mm radius around the peak position
 %
-% A. Thielscher, 06-Nov-2017
+% A. Thielscher, 06-Nov-2017; updated 08-Oct-2018
 
 
-% input files and options
-%-------------------------
-
-% get results for both hemispheres, or only for the one specified
-% by the surface name below
-bothHemi=true;
-
-% name of a freesurfer or CAT12 surface
-%
-% freesurfer surfaces: fs_{subID}/surf/lh.pial, fs_{subID}/surf/rh.pial
-% CAT12 surfaces: m2m_{subID}/segment/cat/surf/lh.central.T1fs_conform.gii, m2m_{subID}/segment/cat/surf/rh.central.T1fs_conform.gii
-fname_surface='.../m2m_test/segment/cat/surf/lh.central.T1fs_conform.gii'; % UPDATE
-
-% corresponding name of a results file in the 'subject_overlays' subfolder
-%
-% NOTE:
-% E field strength: files ending on .E.norm
-% normal component of E: files ending on .E.normal
-fname_res='.../simu/subject_overlays/lh.test_TMS_1-0001_MagVenture_MC_B70_scalar.central.E.normal'; % UDPATE
-
-% optional: output mesh name for visualizing results using gmsh
-fname_msh=''; % UDPATE
-
-% optional: annotation or label file (NOTE: has to be empty for CAT12 results)
-%
-% freesurfer annotation files are in fs_{subID}/label
-% {lh, rh}.aparc.annot (Desikan-Killiany Atlas)
-% {lh, rh}.aparc.a2009s.annot (Destrieux Atlas)
-% {lh, rh}.aparc.DKTatlas40.annot (DKT Atlas)
-% {lh, rh}.BA.annot (some Brodmann areas, unthresholded)
-% {lh, rh}.BA.thresh.annot (some Brodmann areas, thresholded)
-fname_annot=''; % UDPATE
+% get name of results mapped on fsaverage surface
+[fname,pname] = uigetfile('lh.*.norm;lh.*.normal;lh.*.tangent;lh.*.angle', ...
+                          'Select a results file in a fsavg_overlays folder');
+if isequal(fname,0) || isequal(pname,0); return; end
 
 
-% read in surfaces
-%-------------------------
-m=mesh_load_fssurf(fname_surface,bothHemi,true);
+% load the fsaverage surface with the Destrieux atlas:
+% 	m is the mesh structure containing the surface and label data
+%   s is the list of label names
+[m, snames]=mesh_load_fssurf('fsaverage','label','a2009s');
+
+% add the simulation results to the mesh structure
+m=mesh_load_fsresults(fullfile(pname,fname),'addtomesh',m);
+
+% show the atlas (loaded as first --> node data index 1)
+mesh_show_surface(m,'field_idx',1)
+
+% show the data (loaded as second --> node data index 2)
+mesh_show_surface(m,'field_idx',2)
 
 
-% add results as node_data to mesh
-%----------------------------------------------
-fname_hlp=dir(fname_res);
-name_res=fname_hlp.name(find(fname_hlp.name=='.',1)+1:end);
-
-m=mesh_load_fsresults(m, name_res, fname_res ,bothHemi);
-
-if ~isempty(fname_msh)
-    mesh_save_gmsh4(m,fname_msh);
-end
-
-
-% get extrema and percentiles for results
-%-------------------------------------------------------
-if isempty(fname_annot)
-    res = mesh_get_surf_extrema_and_percentiles(m,1,[]);
-    % m:    input mesh with results data attached
-    % 1:    results data is first node data entry
-    % []:   use "standard" percentiles
-else
-    % add annotations or labels as 2nd node_data to mesh
-    [m, struct_names]=mesh_load_fsannot(m,fname_annot,bothHemi);
-    
-    [res, res_annot] = mesh_get_surf_extrema_and_percentiles(m,1,[], 2, struct_names);
-    % m:    input mesh with results data attached
-    % 1:    results data is first node data entry
-    % []:   use "standard" percentiles
-    % 2:    annotations are 2nd node data entry
-    % struct_names: names of annotations or labels
-end
-
-
-% display results
-%-------------------------------------------------------
+% -------------------------------------------------------
+% EXAMPLE 1 
+% display some key results for whole cortex
+% Note: Focality results are only an estimate, as the fsaverage surface
+% rather the individual surface was used to determine the stimulated areas
 disp(' ')
-disp('RESULTS:')
+disp('whole cortex:')
+summary=mesh_get_fieldpeaks_and_focality(m,'field_idx',2);
+
+
+% -------------------------------------------------------
+% EXAMPLE 2
+% extract "S_precentral-sup-part" of the left hemisphere
+
+% find the atlas index of the area
+area_idx=find(strcmpi(snames,'lh.S_precentral-sup-part'));
+% find all nodes having this atlas index
+node_idx=m.node_data{1}.data==area_idx;
+% extract those nodes and the related triangles and data
+m_ROI=mesh_extract_regions(m, 'node_idx', node_idx);
+
+% show the extracted ROI:
+% show the whole cortex semi-transparent
+mesh_show_surface(m,'showSurface',true,'facealpha',0.3); 
+% add the extracted area to the plot
+mesh_show_surface(m_ROI,'showSurface',true,'surfaceColor',[1 0 0],'haxis',gca); 
+title('lh.S_precentral-sup-part');
+
+% get some key results for the "S_precentral-sup-part" area
 disp(' ')
-for i=1:length(res)
-    disp(res(i))
-    disp(' ');
-end
-                                                            
-% NOTE: when annotations were used, res_annot contains results
-%       similar to those in res for each label listed in struct_names
+disp('lh.S_precentral-sup-part:')
+mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',2);
+
+
+% -------------------------------------------------------
+% EXAMPLE 3
+% extract a spherical ROI with 10 mm radius around the peak position
+%
+% the "summary" structure contains the peak values
+% together with their positions:
+%   "summary.percentiles" lists the tested percentile cutoffs - 
+%   the 99.9 percentile is the 3rd entry
+%
+%   "summary.perc_values" lists the corresponding values, as they
+%   are also displayed by mesh_get_fieldpeaks_and_focality
+%
+%   "summary.XYZ_perc" lists the corresponding center positions -
+%   the center position for the 99.9 percentile is the 3rd row:
+peak_pos=summary.XYZ_perc(3,:);
+
+% distance to peak position
+dist=sqrt(sum(bsxfun(@minus,m.nodes,peak_pos).^2,2));
+
+% extract nodes closer than 10 mm, and the related triangles and data
+node_idx=dist<10;
+m_ROI=mesh_extract_regions(m, 'node_idx', node_idx);
+
+% show the extracted ROI:
+% show the whole cortex semi-transparent
+mesh_show_surface(m,'showSurface',true,'facealpha',0.3); 
+% add the extracted area to the plot
+mesh_show_surface(m_ROI,'showSurface',true,'surfaceColor',[1 0 0],'haxis',gca); 
+title('10 mm spherical ROI around peak position');
+
+% get some key results for the spherical ROI
+disp(' ')
+disp('10 mm spherical ROI around peak position:')
+mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',2);
+
+
+

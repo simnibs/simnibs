@@ -25,8 +25,7 @@ A SimNIBS workflow consists of three main parts:
     box-sizing: border-box;
   }
   div {
-    text-align: justify;
-    text-justify: inter-word;
+    text-align: left;
   }
   .column {
     float: left;

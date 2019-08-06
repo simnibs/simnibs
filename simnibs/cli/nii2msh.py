@@ -64,15 +64,14 @@ def main():
         cond_list = [c.value for c in cond.standard_cond()]
         sigma = cond.cond2elmdata(mesh, cond_list, anisotropy_volume=vol, affine=affine,
                                   aniso_tissues=[1, 2])
-        views = cond.TensorVisualization(sigma)
+        views = cond.TensorVisualization(sigma, mesh)
         mesh.nodedata = []
         mesh.elmdata = views
         mesh_io.write_msh(mesh, args.fn_out)
     else:
         logger.info('Interpolating data in NifTI file to mesh')
         ed = mesh_io.ElementData.from_data_grid(
-                mesh, vol, affine, 'from_volume',
-                bounds_error=False, fill_value=0)
+                mesh, vol, affine, 'from_volume')
         mesh.nodedata = []
         mesh.elmdata = [ed]
         mesh_io.write_msh(mesh, args.fn_out)

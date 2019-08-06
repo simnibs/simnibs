@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7 -u
 # -*- coding: utf-8 -*-\
-"""
-Global Polynomial Chaos things for SimNIBS
+'''
+    Generalized Polynomial Chaos things for SimNIBS
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
     Copyright (C) 2017, 2018 Konstantin Weise, Guilherme B Saturnino
@@ -19,13 +19,12 @@ Global Polynomial Chaos things for SimNIBS
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
+'''
 from __future__ import print_function
 import os
 
 import h5py
 import numpy as np
-import multiprocessing
 import copy
 from collections import OrderedDict
 
@@ -37,9 +36,10 @@ from . import fem
 from . import coil_numpy as coil
 from ..utils.simnibs_logger import logger
 
+FIELD_NAME = {'v': 'v', 'E': 'E', 'e': 'normE', 'J': 'J', 'j': 'normJ'}
 
-def write_data_hdf5(data, data_name, hdf5_fn, path='data/'):
-    """ Saves a field in an hdf5 file
+def write_data_hdf5(data, data_name, hdf5_fn, path='data/', compression='gzip'):
+    ''' Saves a field in an hdf5 file
 
     Parameters:
     ---------------
@@ -49,13 +49,13 @@ def write_data_hdf5(data, data_name, hdf5_fn, path='data/'):
         name of data
     path: str (optional)
         path inside hdf5 file (default: data/)
-    """
+    '''
     with h5py.File(hdf5_fn, 'a') as f:
-        f.create_dataset(path + data_name, data=data)
+        f.create_dataset(path + data_name, data=data, compression=compression)
 
 
 def read_data_hdf5(data_name, hdf5_fn, path='data/'):
-    """ Saves a field in an hdf5 file
+    ''' Saves a field in an hdf5 file
 
     Parameters:
     ---------------
@@ -65,13 +65,13 @@ def read_data_hdf5(data_name, hdf5_fn, path='data/'):
         name of hdf5 file
     path: str (optional)
         path inside hdf5 file (default: data/)
-    """
+    '''
     with h5py.File(hdf5_fn, 'r') as f:
         return np.squeeze(f[path + data_name])
 
 
 class gPC_regression(pygpc.RegularizedRegression):
-    """ Class defining the parameters of a gPC regression
+    ''' Class defining the parameters of a gPC regression
 
     Inherits from pygpc's "reg" class
 
@@ -119,10 +119,10 @@ class gPC_regression(pygpc.RegularizedRegression):
     coords_norm: np.ndarray
         List of sampled points in normalized space
     sim_type: {'TMS', 'TCS'}
-        Type of simulation
+        Type of siulation 
     data_file: str, optional
         Path to file with raw data
-    """
+    '''
     def __init__(self, random_vars, pdftype, pdfshape, limits, poly_idx, coords_norm, sim_type, data_file=None):
         if isinstance(pdftype, str):
             raise ValueError('pdftype must be a list of strings')
@@ -154,16 +154,16 @@ class gPC_regression(pygpc.RegularizedRegression):
 
     @property
     def sim_type(self):
-        """Simulation type, TMS or TCS"""
+        '''Simulation type, TMS or TCS'''
         return self._sim_type
 
     @property
     def mesh_file(self):
-        """ Name of mesh file """
+        ''' Name of mesh file '''
         return os.path.splitext(self.data_file)[0] + '.msh'
 
     def postprocessing(self, postprocessing_type, order_sobol_max=1):
-        """ Postprocessing for TMS gPC operation
+        ''' Postprocessing for TMS gPC operation
         Makes the operation for the postprodesssing and saves in in the data_file
 
         Parameters
@@ -179,7 +179,7 @@ class gPC_regression(pygpc.RegularizedRegression):
         -----------------------
         Writes mean, std, expansion coefficiets, sobol coefficiets, sensitivity and
         global sensitivity to file
-        """
+        '''
 
         if self.data_file is None:
             raise ValueError('Please set a data_file before running the postprocessing')
@@ -204,9 +204,14 @@ class gPC_regression(pygpc.RegularizedRegression):
 
         nr_simu = potentials.shape[0]
 
+        '''
         if 'v' in postprocessing_type:
-            self._postprocessing_core(potentials.T, 'v', False)
+            self._postprocessing_core(potentials, 'mesh_roi/nodedata', False)
+'mesh_roi/' + dtype + '/',
+                FIELD_NAME[p],
+                order_sobol_max
             postprocessing_type.remove('v')
+        '''
 
         # This will NOT work when changing positions
         if self.sim_type == 'TMS':
@@ -218,17 +223,18 @@ class gPC_regression(pygpc.RegularizedRegression):
         # See which fields have already been calculated
         fields_dict = dict.fromkeys(postprocessing_type)
         to_calc = []
-        field_name_dict = {'E': 'E', 'e': 'normE', 'J': 'J', 'j': 'normJ'}
         for postprocess in postprocessing_type:
             try:
                 fields_dict[postprocess] = read_data_hdf5(
-                    field_name_dict[postprocess] +
+                    FIELD_NAME[postprocess] +
                     '_samples', self.data_file, 'mesh_roi/data_matrices/')
             except:
                 if postprocess in ['e', 'j']:
-                    fields_dict[postprocess] = np.nan * np.ones((nr_simu,msh.elm.nr), dtype=float)
+                    fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.elm.nr), dtype=float)
                 elif postprocess in ['E', 'J']:
                     fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.elm.nr, 3), dtype=float)
+                elif postprocess in ['v']:
+                    fields_dict[postprocess] = np.nan * np.ones((nr_simu, msh.nodes.nr), dtype=float)
                 else:
                     raise ValueError('Unrecognized postprocessing option: ' + postprocess)
                 to_calc.append(postprocess)
@@ -257,21 +263,30 @@ class gPC_regression(pygpc.RegularizedRegression):
                     m = fem.calc_fields(pot, to_calc, cond=elmdata, dadt=dAdt)
 
                 for p in to_calc:
-                    fields_dict[p][i] = m.field[field_name_dict[p]].value
+                    fields_dict[p][i] = m.field[FIELD_NAME[p]].value
 
         for p, f in fields_dict.items():
-            logger.info('Expanding field: {0}'.format(field_name_dict[p]))
-            if f is 'v':
+            logger.info('Expanding field: {0}'.format(FIELD_NAME[p]))
+            if p == 'v':
                 dtype = 'nodedata'
             else:
                 dtype = 'elmdata'
             self._postprocessing_core(
                 f, 'mesh_roi/' + dtype + '/',
-                field_name_dict[p],
+                FIELD_NAME[p],
                 order_sobol_max)
+
 
     def _postprocessing_core(self, data, path, name, order_sobol_max):
         ''' Convinience function to calculate postprocessing output '''
+        with h5py.File(self.data_file, 'a') as f:
+            try:
+                f.create_dataset(
+                    'mesh_roi/data_matrices/' + name + '_samples',
+                    data=data, compression='gzip')
+            except RuntimeError:
+                pass
+
         data_dims = data.shape[1:]
         if data.ndim == 3:
             data = data.reshape(data.shape[0], -1)
@@ -379,30 +394,33 @@ class gPC_regression(pygpc.RegularizedRegression):
                    poly_idx, coords_norm, sim_type, data_file=fn_hdf5)
 
     def visualize(self):
-        """ Creates a mesh file for visualization
+        ''' Creates a mesh file for visualization
 
         Returns:
         --------
         writes a mesh file in the same folder as the hdf5 file
         msh: simnibs.msh.mesh_io
             mesh with gpc fields
-        """
+        '''
         msh = mesh_io.Msh.read_hdf5(self.data_file, path='mesh_roi/')
         mesh_io.write_msh(msh, self.mesh_file)
         return msh
 
-    def expand_quantity(self, func, field='E'):
-        """ Expand an arbitrary quantity
+    def expand_quantity(self, func=None, field='E'):
+        ''' Expand an arbitrary quantity
 
         Parameters
         --------......
-        func: function
+        func (optional): function
             Function which takes up a single argument and returns a single number or a
             vector to be expanded by gpc.
-            The arguments corresponds the the electric field in the format
-            [N_simulations x N_roi x 3]
-        field: {v, e, E, J, j}
-            field to be passed as an argument to the function
+            The arguments corresponds the the field samples in the format
+            [N_simulations x N_roi x 3] for vector fields
+            [N_simulations x N_roi] for scalar fields
+
+        field (Optinal): 'v', 'e', 'E', 'J' or 'j'
+            field to be passed as an argument to the function, must have been previously
+            calculated suing the postprocessing method. Default: E
 
         Returns
         --------
@@ -410,14 +428,27 @@ class gPC_regression(pygpc.RegularizedRegression):
             gPC polynomial coefficients. You can then call the attributes mean, std,
             sobol, and globalsens to calculate the mean, standard deviation, sobol coefficients
             and sensitivity of you quantity of interest
-        """
-        if field != 'E':
-            raise NotImplementedError('For now, can only expand E')
-        E = read_data_hdf5('E_samples', self.data_file, 'mesh_roi/data_matrices/')
-        f = func(E)
+        '''
+        try:
+            field = read_data_hdf5(
+                FIELD_NAME[field] + '_samples',
+                self.data_file, 'mesh_roi/data_matrices/'
+            )
+        except RuntimeError:
+            raise IOError(
+                f'Could not read field "{field}" in file "{self.data_file}"'
+            )
+        if func:
+            f = func(field)
+        else:
+            f = field.reshape(field.shape[0], -1)
         coeffs, cv = self.expand(f)
         logger.info('CV value: {0:1e}'.format(cv))
         return coeffs
+
+    def roi_mesh(self):
+        ''' Returns the mesh where the expansion is defined '''
+        return mesh_io.Msh.read_hdf5(self.data_file, 'mesh_roi/')
 
 
 def prep_gpc(simlist):
@@ -470,7 +501,7 @@ def prep_gpc(simlist):
 
 def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
                 max_iter=1000, min_iter=2, data_poly_ratio=2):
-    """ Runs one TMS gPC for each position in the current TMSLIST
+    ''' Runs one TMS gPC for each position in the current TMSLIST
 
     Parameters
     ------------
@@ -495,7 +526,7 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
     --------
     fns: list
         List of mesh file names
-    """
+    '''
     poslist._prepare()
     fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
     if cpus > 1:
@@ -544,7 +575,7 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
 
 def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
                 max_iter=1000, min_iter=2, data_poly_ratio=2):
-    """ Runs a tDCS gPC expansion
+    ''' Runs a tDCS gPC expansion
 
     Parameters
     ------------
@@ -569,7 +600,7 @@ def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
     --------
     fns: list
         List of mesh file names
-    """
+    '''
     poslist._prepare()
     fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
     if cpus > 1:
@@ -613,9 +644,8 @@ def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
 
     return [gpc_reg.mesh_file]
 
-
 class gPCSampler(object):
-    """ Object used by pygpc to sample
+    ''' Object used by pygpc to sample
 
     Attributes
     -----------
@@ -638,7 +668,7 @@ class gPCSampler(object):
 
     Parameters
     ----------
-    m: simnibs.msh.mesh_io.Msh
+    mesh: simnibs.msh.mesh_io.Msh
         Mesh structure
     poslist: simnibs.simulation.sim_struct.SimuList
         Structure where the conductivity is defined
@@ -646,7 +676,7 @@ class gPCSampler(object):
         Name of hdf5 file with simulation output
     roi: list of integers (Optional)
         List of tags defining the ROI. Default: [2]
-    """
+    '''
     def __init__(self, m, poslist, fn_hdf5, roi=[2]):
         self.mesh = m
         self.roi = roi
@@ -660,7 +690,6 @@ class gPCSampler(object):
         self._gpc_vars = prep_gpc(poslist)
         self.identifiers = self._gpc_vars[0]
         self.qoi_function = OrderedDict([('E', self._calc_E)])
-        self._file_lock = multiprocessing.Manager().Lock()
 
     def create_hdf5(self):
         '''Creates an HDF5 file to store the data '''
@@ -678,7 +707,7 @@ class gPCSampler(object):
 
     @classmethod
     def load_hdf5(cls, fn_hdf5):
-        """Loads structure from hdf5 file """
+        '''Loads structure from hdf5 file '''
         mesh = mesh_io.Msh.read_hdf5(fn_hdf5, 'mesh/')
         poslist = SimuList()
         poslist._get_conductivity_from_hdf5(fn_hdf5)
@@ -687,7 +716,7 @@ class gPCSampler(object):
         return cls(mesh, poslist, fn_hdf5, roi)
 
     def record_data_matrix(self, data, name, group):
-        """ Appends or create data to the HDF5 file
+        ''' Appends or create data to the HDF5 file 
 
         Parameters:
         -------------
@@ -697,7 +726,7 @@ class gPCSampler(object):
             Name of data seet
         group: str
             Group where to place data set
-        """
+        '''
         data = np.array(data).squeeze()
         data = np.atleast_1d(data)
         with h5py.File(self.fn_hdf5, 'a') as f:
@@ -745,7 +774,7 @@ class gPCSampler(object):
 
 
 class TDCSgPCSampler(gPCSampler):
-    """ Object used by pygpc to sample a tDCS problem
+    ''' Object used by pygpc to sample a tDCS problem
 
     Attributes
     -----------
@@ -787,7 +816,7 @@ class TDCSgPCSampler(gPCSampler):
     roi: list of integers (Optional)
         List of tags defining the ROI. Default: [2]
 
-    """
+    '''
 
     def __init__(self, mesh, poslist, fn_hdf5, el_tags, el_currents, roi=[2]):
         super(TDCSgPCSampler, self).__init__(
@@ -819,6 +848,7 @@ class TDCSgPCSampler(gPCSampler):
             self.mesh, cond, self.el_currents,
             self.el_tags, units='mm')
 
+
         self.mesh.nodedata = [v]
         cropped = self.mesh.crop_mesh(self.roi)
         v_c = cropped.nodedata[0]
@@ -828,16 +858,12 @@ class TDCSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             qois.append(qoi_f(v_c))
 
-        # We should write everything in one block to avoid input from different
-        # processes getting mixed up
-        self._file_lock.acquire()
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples', 'mesh_roi/data_matrices')
         for qoi_name, qoi_f in self.qoi_function.items():
             self.record_data_matrix(
                 qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
-        self._file_lock.release()
 
         del cropped
         del cond
@@ -848,7 +874,7 @@ class TDCSgPCSampler(gPCSampler):
 
 
 class TMSgPCSampler(gPCSampler):
-    """ Object used by pygpc to sample a TMS problem
+    ''' Object used by pygpc to sample a TMS problem
 
     Attributes
     -----------
@@ -888,7 +914,7 @@ class TMSgPCSampler(gPCSampler):
     roi: list of integers (Optional)
         List of tags defining the ROI. Default: [2]
 
-    """
+    '''
 
     def __init__(self, mesh, poslist, fn_hdf5, fnamecoil, matsimnibs, didt, roi=[2]):
         super(TMSgPCSampler, self).__init__(
@@ -955,7 +981,6 @@ class TMSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             qois.append(qoi_f(v_c, dAdt_roi))
 
-        self._file_lock.acquire()
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples',
@@ -963,7 +988,6 @@ class TMSgPCSampler(gPCSampler):
         for qoi_name, qoi_f in self.qoi_function.items():
             self.record_data_matrix(
                 qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
-        self._file_lock.release()
 
         del cropped
         del cond

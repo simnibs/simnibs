@@ -42,7 +42,7 @@ from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from . import fem
 from . import electrode_placement
-from .. import SIMNIBSDIR
+from .. import SIMNIBSDIR, __version__
 
 
 class SESSION(object):
@@ -454,7 +454,7 @@ class SESSION(object):
             fname_prefix + '_{0}.log'.format(self.time_str))
         fh = logging.FileHandler(log_fn, mode='w')
         formatter = logging.Formatter(
-            '[ %(name)s - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
+            f'[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
         fh.setFormatter(formatter)
         fh.setLevel(logging.DEBUG)
         logger = logging.getLogger("simnibs")
@@ -1592,7 +1592,7 @@ class TDCSLIST(SimuList):
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
-                     electrode_surfaces, n_workers=cpus)
+                     np.unique(electrode_surfaces), n_workers=cpus)
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)
@@ -1769,18 +1769,22 @@ class ELECTRODE(object):
             self.vertices = []
 
         try:
-            for h in el['holes']:
-                if len(h) > 0:
-                    self.holes.append(ELECTRODE(h[0]))
+            el['holes']
         except ValueError:
             pass
+        else:
+            if len(el['holes']) > 0:
+                for h in el['holes'][0]:
+                    self.holes.append(ELECTRODE(h))
 
         try:
-            for p in el['plug']:
-                if len(p) > 0:
-                    self.plug.append(ELECTRODE(p[0]))
+            el['plug']
         except ValueError:
             pass
+        else:
+            if len(el['plug']) > 0:
+                for p in el['plug'][0]:
+                    self.plug.append(ELECTRODE(p))
 
         if not self.definition or self.definition == '[]':  # simplify matlab synthax
             self.definition = 'plane'

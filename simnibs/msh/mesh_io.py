@@ -25,10 +25,11 @@ import struct
 import copy
 import datetime
 import warnings
-import multiprocessing
 import gc
 import hashlib
 import tempfile
+import subprocess
+import threading
 
 from functools import partial
 import numpy as np
@@ -41,7 +42,6 @@ import h5py
 
 from .transformations import nifti_transform
 from . import gmsh_view
-from ..utils.run_shell_command import run_command, run_command_new_thread
 from ..utils.file_finder import path2bin
 import simnibs.cython_code.cython_msh as cython_msh
 
@@ -2815,13 +2815,8 @@ class ElementData(Data):
             output=data_grid.dtype, **kwargs)
         if len(data_grid.shape) == 4:
             indim = data_grid.shape[3]
-            n = multiprocessing.cpu_count()
-            n = np.min((n, indim))
-            p = multiprocessing.Pool(processes=n)
             outdata = np.array(
-                p.map(f, [data_grid[..., i] for i in range(indim)])).T
-            p.close()
-            p.join()
+                [f(data_grid[..., i]) for i in range(indim)]).T
         elif len(data_grid.shape) == 3:
             outdata = f(data_grid)
 
@@ -4548,9 +4543,13 @@ def open_in_gmsh(fn, new_thread=False):
     '''
     gmsh_bin = path2bin('gmsh')
     if new_thread:
-        run_command_new_thread(f'"{gmsh_bin}" "{fn}"')
+        t = threading.Thread(target=subprocess.run,
+                             args=([gmsh_bin, fn], ),
+                             kwargs={'check': True})
+        t.daemon = False  # thread dies with the program
+        t.start()
     else:
-        run_command(f'"{gmsh_bin}" "{fn}"')
+        subprocess.run([gmsh_bin, fn], check=True)
 
 
 def _hash_rows(array, mult=1000003, dtype=np.uint64):
