@@ -1,4 +1,5 @@
-"""Testsuite to test the TMSOptimization class, including Neuronavigation I/O and some helper functions.
+"""
+Testsuite to test the TMSOptimization class, including Neuronavigation I/O and some helper functions.
 
 All filesystem I/O is done through tempfile package, that writes files to /tmp/* and clears things afterwards.
 """
