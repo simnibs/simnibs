@@ -166,7 +166,7 @@ setup(name='simnibs',
           'numpy>=1.16',
           'scipy>=1.2',
           'h5py>=2.9',
-          'nibabel>=2.3',
+          'nibabel>=2.3', 'pandas', 'nose'
       ],
       extras_require={
           'GUI': ['pyqt5', 'pyopengl']

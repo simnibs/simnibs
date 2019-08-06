@@ -1109,7 +1109,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         Mesh structure
     cond: simnibs.msh.mesh_io.ElementData
         Conductivity field
-    fields: str
+    fields: str or list of str
         Fields to be calculated for each position
     fn_coil: string
         Name of coil file
@@ -1117,9 +1117,9 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         List of "matsimnibs" matrices, one per position
     didt_list: list
         List of dIdt values, one per position
-    output_names: list
+    output_names: list of str
         List of output mesh file names, one per position
-    geo_names: list
+    geo_names: list of str
         List of output mesh file names, one per position
     n_workers: int
         Number of workers to use
@@ -1160,9 +1160,11 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
             pool.close()
             pool.join()
 
+
 def _set_up_global_solver(S):
     global tms_global_solver
     tms_global_solver = S
+
 
 def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     global tms_global_solver
@@ -1174,6 +1176,7 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
     mesh_io.write_msh(out, fn_out)
+
 
 def _finalize_global_solver():
     global tms_global_solver
@@ -1306,7 +1309,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
             pool.close()
             pool.join()
 
-#### Functions for running tDCS leadfields in parallel ####
+
+# ### Functions for running tDCS leadfields in parallel ####
 def _set_up_tdcs_global_solver(S, n, D, post_pro, cond, field):
     global tdcs_global_solver
     global tdcs_global_nsims
@@ -1362,3 +1366,4 @@ def _finalize_tdcs_global_solver():
     del tdcs_global_post_pro
 
 #### Finished functionr to tun tDCS leadfields in parallel ####
+

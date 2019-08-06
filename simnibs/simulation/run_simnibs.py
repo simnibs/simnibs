@@ -6,6 +6,7 @@ import numpy as np
 from ..utils.matlab_read import read_mat
 from .. import __version__
 
+
 def run_simnibs(simnibs_struct, cpus=1):
     """Runs a simnnibs problem.
 

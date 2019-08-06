@@ -1,23 +1,27 @@
 import os
 import scipy.io
 
+
 def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternative=None):
-    """Function for flexibilly reading a field from the mesh file
+    """
+    Function for flexibilly reading a field from the mesh file
     Tries to read the field with the specified name
     if sucesseful, returns the read
     if not, returns the alternative
 
     Parameters
-    -------------------------------------
-    matlab_struct: dict
+    ----------
+    matlab_structure: dict
         matlab structure as read by scipy.io, without squeeze
     field_name: str
         name of field in mat structure
-    field_type: 'int', 'float', 'str',....
+    field_type: function
         function that transforms the field into the desired type
-    alternative (optional): any
-        if the field could not be red, return alternative
+        'int', 'float', 'str', ...
+    alternative: any
+        if the field could not be read, return alternative. (Default: None)
     """
+
     try:
         return field_type(matlab_structure[field_name][0])
     except (TypeError, KeyError, IndexError, ValueError):
