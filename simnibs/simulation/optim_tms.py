@@ -170,27 +170,26 @@ def get_opt_grid(tms_optim, mesh,
     tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION object
         TMS simulation object instance
     mesh: simnibs.msh.mesh_io.Msh object
-        Simnibs mesh object
+        Simnibs mesh object.
     target: list of float or np.ndarray or None
-        Coordinates (x, y, z) of cortical target
+        Coordinates (x, y, z) of cortical target.
     handle_direction_ref: list of float or np.ndarray
-        Vector of handle prolongation direction
+        Vector of handle prolongation direction.
     distance: float or None
-        Coil distance to skin surface [mm]. (Default: 1.)
+        Coil distance to skin surface [mm]. Default: 1.
     radius: float or None
-        Radius of region of interest around skin-projected cortical target, where the bruteforce simulations are
-        conducted
+        Radius of region of interest around skin-projected cortical target.
     resolution_pos: float or None
         Resolution in mm of the coil positions in the region of interest.
     resolution_angle: float or None
-        Resolution in deg of the coil positions in the region of interest (Default: 20)
+        Resolution in deg of the coil positions in the region of interest. Default: 20.
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-60, 60]).
 
     Returns
     -------
-    tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION object
-        TMS simulation object instance
+    tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION
+        TMS simulation object instance.
     """
     if not angle_limits:
         angle_limits = [-60, 60]
@@ -474,13 +473,63 @@ def optimize_tms_coil_pos(tms_optim, target=None,
 
 
 class TMSOPTIMIZATION(SESSION):
-    """This class defines the structure to optimize the TMS coil position/rotation for a given cortical target.
+    """
+    Defines the structure to optimize the TMS coil position/rotation for a given cortical target.
 
     Use one TMSOPTIMIZATION per optimization target. That means:
     - only one TMSLIST is accepted, with
-        - same mesh & anisotropy file for all positions
+        - same mesh & anisotropy setup for all positions
         - same coil for all positions
         - same intensity for all positions
+
+    Attributes
+    ----------
+    angle_limits: list of float or None
+        Range of angles to get coil rotations for. Default: [-60, 60].
+    anisotropy_type: str
+        Type of anisotropy for simulation. ('scalar', 'vn', or 'mc').
+    compress_hdf5: str or None
+        Compression used for .hdf5. 'gzip' or None.
+    cond: list
+        List of COND structures with conductivity information.
+    didt: float
+        Change of current in coil, in A/s.
+    distance: float or None
+        Coil distance to skin surface [mm]. Default: 1.
+    fname_hdf5: str
+        Filename for the qoi results.
+    fnamecoil: str
+        Filename of coil file.
+    handle_direction_ref: list of float or np.ndarray[float]
+        Vector of handle prolongation direction.
+    resolution_angle: float or None
+        Resolution in deg of the coil positions in the region of interest. Default: 20.
+    resolution_pos: float or None
+        Resolution in mm of the coil positions in the region of interest.
+    mesh: simnibs.mesh_io.Msh
+        Mesh where the simulations will be performed.
+    n_sim: int
+        Number of simulations.
+    optim_name: str
+        Filename prefix for result files.
+    optimlist: sim_struct.TMSLIST()
+        List of coil positions/rotations.
+    qoi: str
+        Quality of interest to maximize, a member of self.save_fields. 'E', 'normE', ...
+    radius: float or None
+        Radius of region of interest around skin-projected cortical target.
+    resume: bool
+        Resume an unfinished optimization. Default: False.
+    save_fields: str
+        Which fields to store in <optim_name>.hdf5. 'normE' | 'E' | list of both.
+    target: ndarray
+        Target location (X,Y,Z) at which the maximum qoi is determined. target.shape == (3,)
+    target_coil_matsim: np.ndarray[float]
+        Matsimnibs for start coil position/orientation according to self.target.
+    target_idx: int
+        Nearest headmesh element index according to target.
+    write_mesh_geom: bool
+        Add mesh geometry to <optim_name>.hdf5. Default: True.
     """
 
     def __init__(self, matlab_struct=None):
@@ -491,9 +540,9 @@ class TMSOPTIMIZATION(SESSION):
         self.open_in_gmsh = False
 
         # new fields
+        self.anisotropy_type = 'scalar'
         self.compress_hdf5 = None  # None | 'gzip'
         self.cond = None
-        self.dAdt = None
         self.didt = None
         self.distance = None
         self.fname_hdf5 = None
@@ -504,21 +553,18 @@ class TMSOPTIMIZATION(SESSION):
         self.optimlist = None
         self.qoi = 'E'
         self.resume = False
-        self.save_fields = None  # 'normE' | 'E' | list of both
-        self.target = None
-        self.target_coil_matsim = None
-        self.target_idx = None
-        self.anisotropy_type = 'scalar'
-        self.write_mesh_geom = True  # add mesh geometry information to .hdf5
+        self.save_fields = None
+        self.write_mesh_geom = True
 
         # target information
-        self.target = None
-        self.target_coil_matsim = None
         self.angle_limits = None
         self.handle_direction_ref = None
         self.radius = None
         self.resolution_angle = None
         self.resolution_pos = None
+        self.target = None
+        self.target_coil_matsim = None
+        self.target_idx = None
 
     def _set_logger(self, fname_prefix=None, summary=False):
         """Set logfile name to self.optim_name"""
@@ -859,9 +905,6 @@ class TMSOPTIMIZATION(SESSION):
                               ' Please run the simulation in a new directory or delete'
                               ' the simnibs_simulation*.mat files from the folder : {0}'.format(dir_name_sim))
 
-            # g = glob.glob(os.path.join(dir_name_sim, '*.hdf5'))
-            # if g and not allow_multiple_runs:
-            #     logger.warn('Found existing simulations in ({}*.hdf5).'.format(dir_name_sim))
             logger.info('Saving optimization results in {0}'.format(dir_name_sim))
         else:
             logger.info('Running optimization results in new directory {0}'.format(dir_name_sim))
@@ -983,22 +1026,27 @@ def run_optim_sim(pos, mesh, fnamecoil, didt, hdf5_fn, field_names, cond, fields
         pos.matsimnibs,
         didt=didt)
     if isinstance(dadt, mesh_io.NodeData):
-        dadt = dadt.node_data2elm_data()
+        dadt = dadt.node_data2elm_data()  # 5s
     dadt.field_name = 'dAdt'
 
     # compute fields
-    b = tms_global_solver.assemble_tms_rhs(dadt)
+    b = tms_global_solver.assemble_tms_rhs(dadt)  # 9s
     v = tms_global_solver.solve(b)
     v = mesh_io.NodeData(v, name='v', mesh=mesh)
     mesh.nodedata = [v]
     v.mesh = mesh
-    computed_fields = calc_fields(v, field_names, cond=cond, dadt=dadt)
+    computed_fields = calc_fields(v, field_names, cond=cond, dadt=dadt)  # 10s
 
     # write results thread-save into hdf5
     tms_global_solver.lock.acquire()
     add_optim_fields_to_hdf5(computed_fields, pos,
-                             hdf5_fn=hdf5_fn, fields_to_save=fields_to_save, n_sim=n_sim, compression=compression)
+                             hdf5_fn=hdf5_fn,
+                             fields_to_save=fields_to_save,
+                             n_sim=n_sim,
+                             compression=compression)  # 5s
+
     tms_global_solver.lock.release()
+
     del v
 
 

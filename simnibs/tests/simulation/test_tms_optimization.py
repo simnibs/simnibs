@@ -4,10 +4,10 @@ Testsuite to test the TMSOptimization class, including Neuronavigation I/O and s
 All filesystem I/O is done through tempfile package, that writes files to /tmp/* and clears things afterwards.
 """
 
-import numpy as np
 import os
-import tempfile
 import shutil
+import tempfile
+import numpy as np
 from nose.tools import *
 
 import simnibs.simulation as simulation
@@ -125,6 +125,8 @@ class TestTMSOptimizationClass:
     """Tests for the simulation.sim_struct.TMSOPTIMIZATION class"""
 
     def test_mat_read(self):
+        logger = simulation.logging.getLogger("simnibs")
+        logger.handlers.clear()
         """Check I/O with read_mat() """
         tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
         tms_optim.add_poslist(simulation.sim_struct.TMSLIST())
@@ -235,35 +237,6 @@ class TestTMSOptimizationClass:
 
 class TestTMSOptimization:
     """Tests for the optimization."""
-    @raises(AssertionError)
-    def test_optimization_empty_matsimnibs(self):
-        """Test for error on empty position"""
-        logger = simulation.logging.getLogger("simnibs")
-        logger.handlers.clear()
-        with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
-            tms_optim.fnamehead = sphere3_msh_fn()
-            tms_optim.pathfem = pathfem
-            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
-            tms_optim.optimlist.fnamecoil = coil_fn()
-
-            target = [-1, 1, 1]
-            # pos = simulation.sim_struct.POSITION()
-            # pos.pos_ydir = [-1, 0, 0]
-            # pos.centre = [0, 0, 0]
-            # pos.distance = 1
-            # pos.calc_matsimnibs(tms_optim.fnamehead)
-            tms_optim.optimlist.add_position()  # this should not work
-
-            resolution_pos = 10
-            resolution_angle = 15
-            handle_direction_ref = [-1, 2, .5]
-            simulation.optim_tms.optimize_tms_coil_pos(tms_optim=tms_optim,
-                                                       target=target,
-                                                       n_cpu=1,
-                                                       resolution_pos=resolution_pos,
-                                                       resolution_angle=resolution_angle,
-                                                       handle_direction_ref=handle_direction_ref)
 
     def test_optimization(self,n_cpu=1):
         """Test optimization and output files."""
@@ -305,5 +278,7 @@ class TestTMSOptimization:
 
     def test_optimization_multicore(self):
         """Test the same optimization as above with 2 cpus in parallel"""
+        logger = simulation.logging.getLogger("simnibs")
+        logger.handlers.clear()
         self.test_optimization(2)
 
