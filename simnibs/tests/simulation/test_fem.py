@@ -591,7 +591,6 @@ class TestTMS:
 
 
 class TestLeadfield:
-
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('field', ['E', 'J'])
     @pytest.mark.parametrize('n_workers', [1, 2])
@@ -637,3 +636,40 @@ class TestLeadfield:
 
         os.remove(fn_hdf5)
 
+
+class TestTMSMany:
+    @pytest.mark.parametrize('post_pro', [False, True])
+    @pytest.mark.parametrize('n_workers', [1, 2])
+    @patch.object(coil_lib, 'set_up_tms')
+    def test_many_simulations(self, mock_set_up, n_workers, post_pro, tms_sphere):
+        if sys.platform == 'win32' and n_workers > 1:
+            ''' Same as above, does not work on windows '''
+            return
+        m, cond, dAdt, E_analytical = tms_sphere
+        mock_set_up.return_value = dAdt.node_data2elm_data()
+        matsimnibs = np.eye(6)
+        didt = 6
+        fn_hdf5 = tempfile.NamedTemporaryFile(delete=False).name
+        dataset = 'leadfield'
+        if post_pro:
+            def post(E):
+                return E[:10]*2
+        else:
+            post = None
+        fem.tms_many_simulations(
+            m, cond, 'coil.ccd',
+            2*[matsimnibs], 2*[didt],
+            fn_hdf5, dataset, roi=[3],
+            post_pro=post,
+            n_workers=n_workers
+        )
+        roi_select = m.elm.tag1 == 3
+        with h5py.File(fn_hdf5) as f:
+            for E in f[dataset]:
+                if post_pro:
+                    assert rdm(E, post(E_analytical[roi_select])) < .3
+                    assert mag(E, post(E_analytical[roi_select])) < np.log(1.1)
+                else:
+                    assert rdm(E, E_analytical[roi_select]) < .3
+                    assert mag(E, E_analytical[roi_select]) < np.log(1.1)
+        os.remove(fn_hdf5)

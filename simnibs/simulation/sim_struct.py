@@ -2081,16 +2081,14 @@ class TDCSLEADFIELD(LEADFIELD):
         path to m2m folder
     pathfem: str
         path where the leadfield should be saved
-    fname_tensor: str
-        name of DTI tensor file
     tissues: list
-        List of tags in the mesh corresponding to the region of interest. Default:
+        List of tags in the mesh corresponding to the region of interest. Default: [2] (GM)
     map_to_surf: bool
-        Wether to map output to middle gray matter
+        Wether to map output to middle gray matter. Defaults to True
     cond: list
         list of COND structures with conductivity information
     anisotropy_type: property, can be 'scalar', 'vn' or 'mc'
-        type of anisotropy for simulation
+        type of anisotropy for simulation. Default: 'scalar'
     eeg_cap: str or None
         Name of eeg cap (in subject space). by default, will look for the 10-10 cap.
     electrode: ELECTRODE object or list of ELECTRODE objects
@@ -2430,6 +2428,147 @@ class TDCSLEADFIELD(LEADFIELD):
         mat['eeg_cap'] = remove_None(self.eeg_cap)
         return mat
 
+
+
+class TMSOPTIMIZATION():
+    '''
+    Attributes:
+    ------------------------------
+    fnamehead: str
+        file name of mesh
+    subpath: str
+        path to m2m folder
+    pathfem: str
+        path where the leadfield should be saved
+    fnamecoil: str
+        name of coil file to be used
+    cond: list
+        list of COND structures with conductivity information
+    anisotropy_type: property, can be 'scalar', 'vn' or 'mc'
+        type of anisotropy for simulation
+    target: (3x1) array
+        Optimization target
+    pos_ydir(optional): (3x1) array or None
+        Reference position for the coil Y axis, with respect to the target. If left
+        empty, will search positions in a 360 degrees radius. Default: None
+    distance: float
+        Distance from coil to scalp. Default: 4
+    didt: float
+        Coil dI/dt value. Default: 1e6
+    search_radius (optional): float
+        Radius of area where to search for coil positions. Default: 20
+    spatial_resolution (optional): float
+        Spatial resolution of search area. Default: 1
+    search_angles (optional): (2x1)float
+        Limit angles to use in search, in degrees. If pos_ydir is set, will default to +/- 60 degrees
+        around the original y axis. if not, will search in 360 degrees
+    angle_resolution (optional): float
+        Resolution to use for the angles, in degrees. Default: 20
+    save_fields (optional): bool
+        Whether to save the intermediate field results
+    '''
+    def __init__(self, matlab_struct=None):
+        # : Date when the session was initiated
+        self.date = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_str = time.strftime("%Y%m%d-%H%M%S")
+        # Input stuff
+        self.fnamehead = None
+        self.subpath = None
+        self.pathfem = None
+        self.fname_tensor = None
+        self.mesh = None
+        # Name of coil file
+        self.fnamecoil = None
+        # Conductivity stuff
+        self.cond = cond.standard_cond()
+        self.anisotropy_type = 'scalar'
+        self.aniso_maxratio = 10
+        self.aniso_maxcond = 2
+        self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
+        # Optimization stuff
+        self.target = None
+        self.pos_ydir = None
+        self.distance = 4.
+        self.didt = 1e6
+        self.quantity_of_interest = 'normE'
+        self.search_radius = 20
+        self.spatial_resolution = 1
+        self.search_angles = None
+        self.angle_resolution = 20
+        self.save_fields
+        if matlab_struct:
+            self.read_mat_struct(matlab_struct)
+
+    @property
+    def fn_tensor_nifti(self):
+        return self.fname_tensor
+
+    @fn_tensor_nifti.setter
+    def fn_tensor_nifti(self, value):
+        self.fname_tensor = value
+
+    @property
+    def type(self):
+        return self.__class__.__name__
+
+    def _set_logger(self):
+        SESSION._set_logger(self)
+
+    def _finish_logger(self):
+        SESSION._finish_logger(self)
+
+    def _prepare(self):
+        """Prepares Leadfield for simulations
+        relative paths are made absolute,
+        empty fields are set to default values,
+        check if required fields exist
+        """
+        self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
+        if not os.path.isfile(self.fnamehead):
+            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+
+        sub_files = SubjectFiles(self.fnamehead, self.subpath)
+        self.fnamehead = sub_files.fnamehead
+        self.subpath = sub_files.subpath
+
+        if not os.path.isdir(self.subpath):
+            logger.warning('Cannot locate subjects m2m folder')
+            logger.warning('some postprocessing options might fail')
+            self.subpath = None
+
+        if not self.fname_tensor:
+            self.fname_tensor = sub_files.tensor_file
+
+        logger.info('Head Mesh: {0}'.format(self.fnamehead))
+        logger.info('Subject Path: {0}'.format(self.subpath))
+        self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
+        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+
+        self.mesh = mesh_io.read_msh(self.fnamehead)
+        assert self.target is not None and len(self.target) == 3
+        assert self.search_radius > 0
+        assert self.spatial_resolution > 0
+        assert self.angle_resolution > 0
+
+    def run(self, cpus=1):
+        from . import optim_tms
+        self._set_logger()
+        dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
+        os.makedirs(dir_name, exists_ok=True)
+        self._prepare()
+        pos_matrices = optim_tms(
+            self.mesh, self.target,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=self.search_angles
+        )
+        cond = SimuList.cond2elmdata(self)
+        didt_list = [self.didt for i in pos_matrices]
+        # Write .geo file with candidate position
+        # Simulate and write results to a .hdf5 file
+        # TODO: pass postprocessing to tms_coil or some other function
 
 """
     EXPORT FUNCTIONS
