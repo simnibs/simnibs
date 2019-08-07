@@ -15,6 +15,7 @@ import simnibs.msh.mesh_io as mesh_io
 import simnibs.simulation.analytical_solutions.sphere as analytical_solutions
 from simnibs.cython_code import petsc_solver
 
+
 @pytest.fixture
 def sphere3_msh():
     fn = os.path.join(os.path.dirname(os.path.realpath(
