@@ -1,8 +1,6 @@
 import os
 import sys
 from unittest.mock import Mock, patch
-import multiprocessing
-import asyncio
 import tempfile
 import pytest
 import h5py

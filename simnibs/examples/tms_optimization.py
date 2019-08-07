@@ -32,6 +32,7 @@ import numpy as np
 # define cortical target where normE should be maximal
 from utils.nnav import simnibs2nnav, write_tms_navigator_im
 
+# Select target
 target = np.array([-27.17, -17.94, 69.94])  # ~ left M1
 coil_fn = 'MagVenture_MC_B60_REF.nii.gz'  # Choose a coil from the ccd-files folder
 

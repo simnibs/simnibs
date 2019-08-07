@@ -7,17 +7,10 @@ import numpy as np
 import os
 import tempfile
 import shutil
-from nose.tools import *
+import pytest
 
 import simnibs.simulation as simulation
 from simnibs.utils.nnav import write_tms_navigator_im, simnibs2nnav
-
-
-def sphere3_msh():
-    """Helper functions to get files and filenames."""
-    fn = sphere3_msh_fn()
-    return simulation.mesh_io.read_msh(fn)
-
 
 def sphere3_msh_fn():
     """Helper functions to get files and filenames."""
@@ -162,7 +155,6 @@ class TestTMSOptimizationClass:
                                equal_nan=True)
             assert np.all(tms_optim.handle_direction_ref == np.array([-1, 0, 1.1]))
 
-    @raises(AssertionError)
     def test_no_tmslist(self):
         """Check for AssertionError if not TMSLIST"""
         logger = simulation.logging.getLogger("simnibs")
@@ -172,9 +164,9 @@ class TestTMSOptimizationClass:
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
             tms_optim._set_logger()
-            tms_optim._prepare()
+            with pytest.raises(AssertionError):
+                tms_optim._prepare()
 
-    @raises(AssertionError)
     def test_tmslist_no_poslist(self):
         """Check for error on no poslist"""
         logger = simulation.logging.getLogger("simnibs")
@@ -186,7 +178,8 @@ class TestTMSOptimizationClass:
             tms_optim.optimlist = simulation.sim_struct.TMSLIST()
             tms_optim.optimlist.fnamecoil = coil_fn()
             tms_optim._set_logger()
-            tms_optim._prepare()
+            with pytest.raises(AssertionError):
+                tms_optim._prepare()
 
     def test_tmslist_prepare(self):
         """Check TMSOPTIMIZATION._prepare() """
@@ -206,7 +199,6 @@ class TestTMSOptimizationClass:
             assert tms_optim.fname_hdf5 == os.path.join(pathfem, 'test.hdf5')
             assert tms_optim.n_sim == 1
 
-    @raises(AssertionError)
     def test_tmslist_different_distances_in_optimlist(self):
         """Check for error on different coil distances in optimlist"""
         logger = simulation.logging.getLogger("simnibs")
@@ -229,49 +221,19 @@ class TestTMSOptimizationClass:
             pos.distance = 2
             tms_optim.optimlist.add_position(pos)
             tms_optim._set_logger()
-            tms_optim._prepare()
+            with pytest.raises(AssertionError):
+                tms_optim._prepare()
 
 
 class TestTMSOptimization:
     """Tests for the optimization."""
-    @raises(AssertionError)
-    def test_optimization_empty_matsimnibs(self):
-        """Test for error on empty position"""
-        logger = simulation.logging.getLogger("simnibs")
-        logger.handlers.clear()
-        with tempfile.TemporaryDirectory() as pathfem:
-            tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
-            tms_optim.fnamehead = sphere3_msh_fn()
-            tms_optim.pathfem = pathfem
-            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
-            tms_optim.optimlist.fnamecoil = coil_fn()
-
-            target = [-1, 1, 1]
-            # pos = simulation.sim_struct.POSITION()
-            # pos.pos_ydir = [-1, 0, 0]
-            # pos.centre = [0, 0, 0]
-            # pos.distance = 1
-            # pos.calc_matsimnibs(tms_optim.fnamehead)
-            tms_optim.optimlist.add_position()  # this should not work
-
-            resolution_pos = 10
-            resolution_angle = 15
-            handle_direction_ref = [-1, 2, .5]
-            simulation.optim_tms.optimize_tms_coil_pos(tms_optim=tms_optim,
-                                                       target=target,
-                                                       n_cpu=1,
-                                                       resolution_pos=resolution_pos,
-                                                       resolution_angle=resolution_angle,
-                                                       handle_direction_ref=handle_direction_ref)
-
     def test_optimization(self,n_cpu=1):
         """Test optimization and output files."""
         with tempfile.TemporaryDirectory() as pathfem:
             tms_optim = simulation.optim_tms.TMSOPTIMIZATION()
             tms_optim.fnamehead = sphere3_msh_fn()
             tms_optim.pathfem = pathfem
-            tms_optim.optimlist = simulation.sim_struct.TMSLIST()
-            tms_optim.optimlist.fnamecoil = coil_fn()
+            tms_optim.fnamecoil = coil_fn()
             tms_optim.optim_name = 'optimization'
 
             target = [-1, 1, 1]
@@ -305,4 +267,3 @@ class TestTMSOptimization:
     def test_optimization_multicore(self):
         """Test the same optimization as above with 2 cpus in parallel"""
         self.test_optimization(2)
-

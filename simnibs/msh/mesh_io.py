@@ -962,24 +962,38 @@ class Msh:
         measures['gamma'] = ElementData(gamma, 'gamma')
         return measures
 
-    def triangle_normals(self):
+    def triangle_normals(self, smooth=False):
         """ Calculates the normals of triangles
 
+        Parameters
+        ------------
+        smooth (optional): int
+            Number of smoothing steps to perform. Default: 0
         Returns
         --------
         normals: ElementData
             normals of triangles, zero at the tetrahedra
 
         """
-        normals = ElementData(np.zeros((self.elm.nr, 3), dtype=float),
-                              'normals')
+        normals = ElementData(
+            np.zeros((self.elm.nr, 3), dtype=float),
+            'normals'
+        )
         tr_indexes = self.elm.triangles
-        node_tr = self.nodes[self.elm[tr_indexes, :3]]
-        sideA = node_tr[:, 1] - node_tr[:, 0]
+        if smooth == 0:
+            node_tr = self.nodes[self.elm[tr_indexes, :3]]
+            sideA = node_tr[:, 1] - node_tr[:, 0]
 
-        sideB = node_tr[:, 2] - node_tr[:, 0]
-        n = np.cross(sideA, sideB)
-        normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+            sideB = node_tr[:, 2] - node_tr[:, 0]
+            n = np.cross(sideA, sideB)
+            normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+        elif smooth > 0:
+            normals_nodes = self.nodes_normals(smooth)
+            tr = self.elm[tr_indexes, :3]
+            n = np.mean(normals_nodes[tr], axis=1)
+            normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+        else:
+            raise ValueError('smooth parameter must be >= 0')
         return normals
 
     def nodes_volumes_or_areas(self):
@@ -1611,6 +1625,72 @@ class Msh:
                 M = M.dot(self.elm2node_matrix(th_indices))
 
         return M
+
+
+    def intercept_ray(self, near, far):
+        ''' Finds the triangle (if any) that intercepts a line segment
+
+        Parameters
+        ------------
+        near: (3,) array
+            Start of the line segment
+        far: (3,) array
+            end of the line segment
+
+        Returns
+        --------
+        intercept_elm:
+            Index of the triangle intercepting the ray
+        intercpt_pos:
+            Position of the interception
+        '''
+        # Find point in surface in the near-far line thats nearest to the "near point"
+        # based on http://geomalgorithms.com/a06-_intersect-2.html
+        delta = 1e-6
+        P1 = np.array(near)
+        P0 = np.array(far)
+        if not (P1.shape == (3,) and P0.shape == (3,)):
+            raise ValueError('near and far poins should be arrays of size (3,)')
+
+        V0 = self.nodes[self.elm[self.elm.triangles, 0]]
+        V1 = self.nodes[self.elm[self.elm.triangles, 1]]
+        V2 = self.nodes[self.elm[self.elm.triangles, 2]]
+        u = V1 - V0
+        v = V2 - V0
+        normals = self.triangle_normals()[self.elm.triangles]
+
+        ray_dir = P1 - P0
+        w0 = P0 - V0
+        a = -np.sum(normals *  w0, axis=1)
+        b = np.sum(normals * ray_dir, axis=1)
+        # ray parallel or in triangle plane
+        if np.all(np.abs(b) < delta):
+            return None, None
+        r = a/b
+        intersect_point  = P0 + r[:, None] * ray_dir
+        w = intersect_point - V0
+        uu = np.sum(u * u, axis=1)
+        uv = np.sum(u * v, axis=1)
+        vv = np.sum(v * v, axis=1)
+        wu = np.sum(w * u, axis=1)
+        wv = np.sum(w * v, axis=1)
+        D = uv * uv - uu * vv
+        s = (uv * wv - vv * wu) / D
+        t = (uv * wu - uu * wv) / D
+        intersects = np.where(
+            (np.abs(b) > delta) *
+            (r > -delta) * (r < 1 + delta) *
+            (s > -delta) * (s < 1 + delta) *
+            (t > -delta) * (s + t < 1 + delta)
+        )[0]
+
+        if not np.any(intersects):
+            return None, None
+
+        # if at least one triangle intersects, take the one closest to the near point
+        else:
+            closest = intersects[np.argmax(r[intersects])]
+            return self.elm.triangles[closest], intersect_point[closest]
 
 
     def view(self,

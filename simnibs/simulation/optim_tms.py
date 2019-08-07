@@ -26,7 +26,6 @@ from ..utils.simnibs_logger import logger
 try:
     import pyfempp
 except ImportError:
-    print("pyfempp not found. Some visualizations will not work.")
     pyfempp = False
 
 
@@ -122,6 +121,7 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
                 ydir = [np.nan, np.nan, np.nan]
 
             d[i] = [i, qoi_in_target[i]] + centre + ydir + [idx - 1] + target
+        # TODO: remove pandas dependency
         data = pd.DataFrame.from_dict(d)
         data = data.transpose()
         data.columns = ['sim_nr'] + [qoi] + ['x', 'y', 'z'] + \
@@ -159,175 +159,139 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
     return tms_optim
 
 
-def get_opt_grid(tms_optim, mesh,
-                 target=None, handle_direction_ref=None, distance=1., radius=20,
-                 resolution_pos=1, resolution_angle=10, angle_limits=None):
+
+def _create_grid(mesh, target, distance, radius, resolution_pos):
+    ''' Creates a position grid '''
+    # extract ROI
+    msh_surf = mesh.crop_mesh(elm_type=2)
+    msh_skin = msh_surf.crop_mesh([5, 1005])
+    target_skin = msh_skin.find_closest_element(target)
+    elm_center = msh_skin.elements_baricenters()[:]
+    elm_mask_roi = np.linalg.norm(elm_center - target_skin, axis=1) < 1.2 * radius
+    elm_center_zeromean = (
+        elm_center[elm_mask_roi] -
+        np.mean(elm_center[elm_mask_roi], axis=0)
+    )
+    msh_roi = msh_skin.crop_mesh(elements=msh_skin.elm.elm_number[elm_mask_roi])
+
+    # tangential plane of target_skin point
+    u, s, vh = np.linalg.svd(elm_center_zeromean)
+    vh = vh.transpose()
+
+    # define regular grid and rotate it to head space
+    coords_plane = np.array(
+        np.meshgrid(
+            np.linspace(-radius, radius, int(2 * radius / resolution_pos + 1)),
+            np.linspace(-radius, radius, int(2 * radius / resolution_pos + 1)),
+        )
+    ).T.reshape(-1, 2)
+    coords_plane = coords_plane[np.linalg.norm(coords_plane, axis=1) <= radius]
+    coords_plane = np.dot(coords_plane, vh[:, :2].transpose()) + target_skin
+
+    # project grid-points to skin-surface
+    coords_mapped = []
+    coords_normals = []
+    normals_roi = msh_roi.triangle_normals(smooth=1)
+    for i, c in enumerate(coords_plane):
+        # Query points inside/outside the surface
+        q1 = c + 1e2 * vh[:, 2]
+        q2 = c - 1e2 * vh[:, 2]
+        idx, pos = msh_roi.intercept_ray(q1, q2)
+        if idx is not None:
+            coords_normals.append(normals_roi[idx])
+            coords_mapped.append(pos)
+
+    coords_mapped = np.array(coords_mapped)
+    coords_normals = np.array(coords_normals)
+    inside = np.linalg.norm(coords_mapped - target_skin, axis=1) <= radius
+    coords_mapped += distance * coords_normals
+    return coords_mapped[inside], coords_normals[inside]
+
+def _rotate_system(R, angle_limits, angle_res):
+    ''' Rotates the vector "y" aroud "z" between the given limits and in the given
+    resolution and return rotation matrices'''
+    # Define rotation matrix around Z
+    n_steps = int((angle_limits[1] - angle_limits[0])/angle_res + 1)
+    angles = np.deg2rad(np.linspace(angle_limits[0], angle_limits[1], n_steps))
+    matrices = []
+    for a in angles:
+        Rz = np.array((
+            (np.cos(a), -np.sin(a), 0),
+            (np.sin(a), np.cos(a), 0),
+            (0, 0, 1),
+        ))
+        matrices.append(R.dot(Rz))
+    return matrices
+
+def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20,
+                 resolution_pos=1, resolution_angle=20, angle_limits=None):
     """
     Determine the coil positions and orientations for bruteforce TMS optimization
 
     Parameters
     ----------
-    tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION object
-        TMS simulation object instance
     mesh: simnibs.msh.mesh_io.Msh object
         Simnibs mesh object
-    target: list of float or np.ndarray or None
+    target: ndarray
         Coordinates (x, y, z) of cortical target
-    handle_direction_ref: list of float or np.ndarray
-        Vector of handle prolongation direction
+    handle_direction_ref (optinal): list of float or np.ndarray
+        Vector of handle prolongation direction, in relation to the target. (Default: do
+        not select a handle direction and scan rotations from -180 to 180)
     distance: float or None
         Coil distance to skin surface [mm]. (Default: 1.)
     radius: float or None
-        Radius of region of interest around skin-projected cortical target, where the bruteforce simulations are
-        conducted
+        Radius of region of interest around skin-projected cortical target, where the
+        bruteforce simulations are conducted
     resolution_pos: float or None
         Resolution in mm of the coil positions in the region of interest.
     resolution_angle: float or None
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
-        Range of angles to get coil rotations for (Default: [-60, 60]).
+        Range of angles to get coil rotations for (Default: [-60, 60] if
+        handle_direction_ref is defined, else [-180, -180]).
 
     Returns
     -------
     tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION object
         TMS simulation object instance
     """
-    if not angle_limits:
-        angle_limits = [-60, 60]
+    # creates the spatial grid
+    coords_mapped, coords_normals = _create_grid(
+        mesh, target, distance, radius, resolution_pos)
+    
+    # Determines the seed y direction
+    if handle_direction_ref is None:
+        y_seed = np.array([0., 1., 0.])
+        if angle_limits is not None:
+            logger.warn(
+                'Angle limits set without handle_direction_ref, '
+                'overwiting the former'
+            )
+        angle_limits = [-180, 180 - resolution_angle]
+    else:
+        y_seed = np.array(handle_direction_ref) - np.array(target)
+        if np.isclose(np.linalg.norm(y_seed), 0.):
+            raise ValueError('The coil Y axis reference is too close to the coil center! ')
+        if angle_limits is None:
+            angle_limits = [-60, 60]
+        
+    matrices = []
+    for p, n in zip(coords_mapped, coords_normals):
+        z = -n
+        y = y_seed - (z * y_seed.dot(z))
+        y /= np.linalg.norm(y)
+        x = np.cross(y, z)
+        R = np.array([x, y, z]).T
+        rotated = _rotate_system(R, angle_limits, resolution_angle)
+        for r in rotated:
+            matrices.append(
+                np.vstack((
+                    np.hstack((r, p[:, None])),
+                    [0, 0, 0, 1]
+                ))
+            )
 
-    if not tms_optim.angle_limits:
-        tms_optim.angle_limits = angle_limits
-    if not tms_optim.handle_direction_ref:
-        tms_optim.handle_direction_ref = handle_direction_ref
-    if not tms_optim.resolution_angle:
-        tms_optim.resolution_angle = resolution_angle
-    if not tms_optim.resolution_pos:
-        tms_optim.resolution_pos = resolution_pos
-    if not tms_optim.target:
-        tms_optim.target = target
-    if not tms_optim.radius:
-        tms_optim.radius = radius
-
-    # project cortical target to skin surface
-    tms_tmp = copy.deepcopy(tms_optim.optimlist)
-    pos_target = tms_tmp.add_position()
-    pos_target.centre = tms_optim.target
-    pos_target.pos_ydir = tms_optim.handle_direction_ref
-    pos_target.distance = .1
-    target_matsimnibs = pos_target.calc_matsimnibs(mesh, log=False)
-    tms_optim.target_coil_matsim = target_matsimnibs
-
-    _, tms_optim.target_idx = mesh.find_closest_element(tms_optim.target, return_index=True)
-    tms_optim.target = tms_optim.target
-    target_skin = target_matsimnibs[0:3, 3]
-
-    # extract ROI
-    msh_surf = mesh.crop_mesh(elm_type=2)
-    msh_skin = msh_surf.crop_mesh([5, 1005])
-    elm_center = np.mean(msh_skin.nodes.node_coord[msh_skin.elm.node_number_list[:, 0:3] - 1], axis=1)
-    elm_mask_roi = np.linalg.norm(elm_center - target_skin, axis=1) < 1.2 * tms_optim.radius
-    # elm_center_roi = elm_center[elm_mask_roi, ]
-    node_number_list_roi = msh_skin.elm.node_number_list[elm_mask_roi, 0:3] - 1
-    nodes_roi = msh_skin.nodes.node_coord[node_number_list_roi]
-    nodes_roi = np.reshape(nodes_roi, (nodes_roi.shape[0] * 3, 3))
-    nodes_roi_mean = np.mean(nodes_roi, axis=0)[np.newaxis, :]
-    nodes_roi_zeromean = nodes_roi - nodes_roi_mean
-
-    # tangential plane of target_skin point
-    u, s, vh = np.linalg.svd(nodes_roi_zeromean)
-    vh = vh.transpose()
-
-    # define regular grid and rotate it to head space
-    coords_plane = np.array(np.meshgrid(np.linspace(-tms_optim.radius,
-                                                    tms_optim.radius,
-                                                    int(2 * tms_optim.radius / tms_optim.resolution_pos + 1)),
-                                        np.linspace(-tms_optim.radius,
-                                                    tms_optim.radius,
-                                                    int(2 * tms_optim.radius / tms_optim.resolution_pos + 1)))
-                            ).T.reshape(-1, 2)
-    coords_plane = coords_plane[np.linalg.norm(coords_plane, axis=1) <= tms_optim.radius]
-    coords_plane = np.dot(coords_plane, vh[:, :2].transpose()) + target_skin
-
-    # project grid-points to skin-surface
-    p1 = msh_skin.nodes.node_coord[node_number_list_roi[:, 0]]
-    p2 = msh_skin.nodes.node_coord[node_number_list_roi[:, 1]]
-    p3 = msh_skin.nodes.node_coord[node_number_list_roi[:, 2]]
-
-    normals = np.cross(p2 - p1, p3 - p1)
-    # coords_mapped = np.zeros(coords_plane.shape)
-    coords_mapped = []
-
-    for i, c in enumerate(coords_plane):
-        q1 = c + 1e2 * vh[:, 2]
-        q2 = c - 1e2 * vh[:, 2]
-
-        # point of intersection of infinite half-plane from triangle
-        p0 = q1[np.newaxis, :] + (np.sum((p1 - q1) * normals, axis=1) /
-                                  np.dot(q2 - q1, normals.transpose()))[:, np.newaxis] * (q2 - q1)[np.newaxis, :]
-
-        # check if intersection points are inside triangle
-        inside = np.logical_and(
-            np.logical_and(np.sum(np.cross(p2 - p1, p0 - p1) * normals, axis=1) >= 0,
-                           np.sum(np.cross(p3 - p2, p0 - p2) * normals, axis=1) >= 0),
-            np.sum(np.cross(p1 - p3, p0 - p3) * normals, axis=1) >= 0)
-        if np.sum(inside) == 1:
-            coords_mapped.append(np.squeeze(p0[inside]))
-        else:
-            logger.debug(f"Cannot map coord for radius: {tms_optim.radius}, plane:: {i}. "
-                         f"Try a smaller radius (or > 0).")
-        # coords_mapped[i] = p0[inside]
-
-    # determine rotation matrices around z-axis of coil and rotate
-    angles = np.linspace(tms_optim.angle_limits[0],
-                         tms_optim.
-                         angle_limits[1],
-                         int((tms_optim.angle_limits[1] - tms_optim.angle_limits[0]) / tms_optim.resolution_angle + 1))
-    handle_directions = np.zeros((len(angles), 3))
-
-    for i, a in enumerate(angles):
-        x = target_matsimnibs[0:3, 0]
-        y = target_matsimnibs[0:3, 1]
-        handle_directions[i] = np.cos(a / 180. * np.pi) * y + np.sin(a / 180. * np.pi) * -x
-
-    # combine coil positions and orientations
-    po = list(itertools.product(coords_mapped, handle_directions))
-    n_pos, starttime = len(po), 0
-    assert n_pos, "Cannot create any positions from given arguments. "
-
-    n_zeros = len(str(n_pos))
-
-    # store coordinates in TMS object
-    for i, val in enumerate(po):
-        c, h = val
-        pos = tms_optim.optimlist.add_position()
-        pos.centre = c.tolist()
-        pos.pos_ydir = (h + c).tolist()
-
-        if not i % 100:  # on every 100th iteration print status
-            if i:
-                duration = datetime.datetime.now() - starttime
-                try:
-                    time_left = ((n_pos - i) / 100.) * duration
-                    time_left = datetime.timedelta(seconds=time_left.seconds)
-                except OverflowError:
-                    time_left = 'unknown'
-                simnibs.utils.simnibs_logger.logger.info("Determining coil position "
-                                                         "{0:0>{3}}/{1} (time left: {2}).".format(i,
-                                                                                                  n_pos,
-                                                                                                  time_left,
-                                                                                                  n_zeros))
-            else:
-                simnibs.utils.simnibs_logger.logger.info("Determining coil position "
-                                                         "{0:0>{2}}/{1}.".format(i,
-                                                                                 n_pos,
-                                                                                 n_zeros))
-            starttime = datetime.datetime.now()
-
-        pos.matsimnibs = None
-        pos.distance = distance
-        pos.matsimnibs = pos.calc_matsimnibs(mesh, log=False, msh_surf=msh_surf)
-
-    return tms_optim
+    return matrices
 
 
 def optimize_tms_coil_pos(tms_optim, target=None,
@@ -345,11 +309,11 @@ def optimize_tms_coil_pos(tms_optim, target=None,
 
     Parameters
     ----------
-    target: np.ndarray or list of float
-        XYZ coordinates to optimize coil position/rotation for.
     tms_optim: simnibs.simulation.stim_struct.TMSOPTIMIZATION
         Session object with 1 TMSLIST() as poslist.
         If session.poslists[0].pos is empty, is is filled according to parameters below.
+    target: np.ndarray or list of float
+        XYZ coordinates to optimize coil position/rotation for.
     handle_direction_ref: list of num or np.ndarray
         Vector of coil handle prolongation direction. Defaults to left M1 45° ([-2.8, 7, 8.1]).
     radius: float
@@ -697,27 +661,25 @@ class TMSOPTIMIZATION(SESSION):
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
         logger.info('Simulation Folder: {0}'.format(self.pathfem))
 
-        assert self.optimlist, "No TMSLIST as optimlist provided."
+        #assert self.optimlist, "No TMSLIST as optimlist provided."
         if os.path.isfile(self.fnamehead):
             mesh = mesh_io.read_msh(self.fnamehead)
             mesh.fix_surface_labels()
-            self.optimlist.postprocess = self.fields
-            self.optimlist.fn_tensor_nifti = self.fname_tensor
+            #self.optimlist.postprocess = self.fields
+            #self.optimlist.fn_tensor_nifti = self.fname_tensor
 
-            self.optimlist._prepare()
-            if not self.optimlist.mesh:
-                self.optimlist.mesh = mesh
+            #self.optimlist._prepare()
+            #if not self.optimlist.mesh:
+            #    self.optimlist.mesh = mesh
 
             # do some checks
-            assert len(self.optimlist.pos)
-            assert np.all([pos.didt == self.optimlist.pos[0].didt for pos in self.optimlist.pos]), \
-                "For TMSOPTIMIZATION, use the same didt for all positions."
+            #assert len(self.optimlist.pos)
+            #assert np.all([pos.didt == self.optimlist.pos[0].didt for pos in self.optimlist.pos]), \    "For TMSOPTIMIZATION, use the same didt for all positions."
 
-            for pos in self.optimlist.pos:
-                if pos.name:
-                    pos.name = int(pos.name)
-            assert np.all([not pos.name or type(pos.name) == int for pos in self.optimlist.pos]), \
-                "Provide no positions names or integer vales"
+            #for pos in self.optimlist.pos:
+            #    if pos.name:
+            #        pos.name = int(pos.name)
+            #assert np.all([not pos.name or type(pos.name) == int for pos in self.optimlist.pos]), \ "Provide no positions names or integer vales"
 
             # if no pos names are given, use index
             if not self.optimlist.pos[0].name:
