@@ -2055,7 +2055,7 @@ class LEADFIELD():
         self.field = try_to_read_matlab_field(mat, 'field', str, self.field)
         self.fname_tensor = try_to_read_matlab_field(mat, 'fname_tensor', str, self.fname_tensor)
         self.map_to_surf = try_to_read_matlab_field(mat, 'map_to_surf', bool, self.map_to_surf)
-        self.tissues = try_to_read_matlab_field(mat, 'tissues', list, self.map_to_surf)
+        self.tissues = try_to_read_matlab_field(mat, 'tissues', list, self.tissues)
 
     def sim_struct2mat(self):
         mat = SimuList.cond_mat_struct(self)
@@ -2503,7 +2503,7 @@ class TMSOptimize():
         self.didt = 1e6
         self.search_radius = 20
         self.spatial_resolution = 2
-        self.search_angles = None
+        self.search_angles = []
         self.angle_resolution = 20
 
         self.open_in_gmsh = True
@@ -2567,6 +2567,8 @@ class TMSOptimize():
             self.pos_ydir = None
         if len(self.pos) == 0:
             self.pos = np.copy(self.target)
+        if len(self.search_angles) == 0:
+            self.search_angles = None
 
     def sim_struct2mat(self):
         mat = SimuList.cond_mat_struct(self)
@@ -2579,7 +2581,6 @@ class TMSOptimize():
         mat['tissues'] = remove_None(self.tissues)
 
         mat['target'] = remove_None(self.target)
-        mat['tissues'] = remove_None(self.tissues)
         mat['target_size'] = remove_None(self.target_size)
         mat['pos'] = remove_None(self.pos)
         mat['pos_ydir'] = remove_None(self.pos_ydir)
@@ -2589,10 +2590,66 @@ class TMSOptimize():
         mat['spatial_resolution'] = remove_None(self.spatial_resolution)
         mat['search_angles'] = remove_None(self.search_angles)
         mat['angle_resolution'] = remove_None(self.angle_resolution)
-
-        self.open_in_gmsh = True
+        mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
 
         return mat
+
+    def read_mat_struct(self, mat):
+        """ Reads form matlab structure
+        Parameters
+        ------------------
+        mat: scipy.io.loadmat
+            Loaded matlab structure
+        """
+        SimuList.read_cond_mat_struct(self, mat)
+        self.date = try_to_read_matlab_field(
+            mat, 'date', str, self.date
+        )
+        self.subpath = try_to_read_matlab_field(
+            mat, 'subpath', str, self.subpath
+        )
+        self.fnamehead = try_to_read_matlab_field(
+            mat, 'fnamehead', str, self.fnamehead
+        )
+        self.pathfem = try_to_read_matlab_field(
+            mat, 'pathfem', str, self.pathfem
+        )
+        self.fname_tensor = try_to_read_matlab_field(
+            mat, 'fname_tensor', str, self.fname_tensor
+        )
+        self.target = try_to_read_matlab_field(
+            mat, 'target', list, self.target
+        )
+        self.target_size = try_to_read_matlab_field(
+            mat, 'target_size', float, self.target_size
+        )
+        self.pos = try_to_read_matlab_field(
+            mat, 'pos', list, self.pos
+        )
+        self.pos_ydir = try_to_read_matlab_field(
+            mat, 'pos_ydir', list, self.pos_ydir
+        )
+        self.distance = try_to_read_matlab_field(
+            mat, 'distance', float, self.distance
+        )
+        self.didt = try_to_read_matlab_field(
+            mat, 'didt', float, self.didt
+        )
+        self.search_radius = try_to_read_matlab_field(
+            mat, 'search_radius', float, self.search_radius
+        )
+        self.spatial_resolution = try_to_read_matlab_field(
+            mat, 'spatial_resolution', float, self.spatial_resolution
+        )
+        self.search_angles = try_to_read_matlab_field(
+            mat, 'search_angles', list, self.search_angles
+        )
+        self.angle_resolution = try_to_read_matlab_field(
+            mat, 'angle_resolution', float, self.angle_resolution
+        )
+        self.open_in_gmsh = try_to_read_matlab_field(
+            mat, 'open_in_gmsh', bool, self.open_in_gmsh
+        )
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
         ''' Runs the tms optimization

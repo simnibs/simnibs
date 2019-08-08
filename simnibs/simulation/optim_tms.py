@@ -3,10 +3,9 @@ Functions to find optimal TMS coil positions ior a given cortical target. See ex
 some examples on how to use these.
 
 Written by Ole Numssen & Konstantin Weise, 2019.
-Adapted by Guilherme Saturnino
+Adapted by Guilherme Saturnino, 2019
 """
 import numpy as np
-
 
 
 def _create_grid(mesh, pos, distance, radius, resolution_pos):
