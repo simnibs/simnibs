@@ -120,3 +120,17 @@ class TestGetOptGrid:
                 np.cos(np.deg2rad(60)),
                 atol=1e-1
             )
+
+def test_define_target_region(sphere3_msh):
+    c = [85, 0, 0]
+    r = 5
+    t = 3
+    elm = optim_tms.define_target_region(sphere3_msh, c, r, t)
+    outside = sphere3_msh.elm.elm_number[
+        ~np.isin(sphere3_msh.elm.elm_number, elm)
+    ]
+    bar = sphere3_msh.elements_baricenters()
+    dist = np.linalg.norm(bar[:] - c, axis=1)
+    assert np.all(dist[elm - 1] < r)
+    assert np.all(sphere3_msh.elm.tag1[elm - 1] == 3)
+    assert np.all(sphere3_msh.elm.elm_type[elm - 1] == 4)

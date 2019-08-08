@@ -1684,7 +1684,7 @@ class Msh:
             (t > -delta) * (s + t < 1 + delta)
         )[0]
 
-        if not np.any(intersects):
+        if len(intersects) == 0:
             return None, None
 
         # if at least one triangle intersects, take the one closest to the near point
@@ -4320,6 +4320,45 @@ def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
         for p, v in zip(positions, values):
             f.write(("SP(" + ", ".join([str(i) for i in p]) +
                      "){" + str(v) + "};\n").encode('ascii'))
+        f.write(b"};\n")
+
+
+def write_geo_vectors(positions, values, fn, name="", mode='bw'):
+    """ Writes a .geo file with spheres in specified positions
+
+    Parameters
+    ------------
+    positions: nx3 ndarray:
+        position of vecrors
+    values: nx3 ndarray  (optional)
+        values to be assigned to the vectors. Default: 1
+    fn: str
+        name of file to be written
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+
+    """
+    values = np.array(values)
+    positions = np.array(positions)
+    if values.shape[1] != 3:
+        raise ValueError('Values vector must have size (Nx3)')
+
+    if positions.shape[1] != 3:
+        raise ValueError('Positions vector must have size (Nx3)')
+
+    if len(values) != len(positions):
+        raise ValueError(
+            'The length of the vector of positions is different from the'
+            ' length of the vector of values')
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for p, v in zip(positions, values):
+            f.write(
+                ("VP(" + ", ".join([str(i) for i in p]) + ")"
+                 "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
         f.write(b"};\n")
 
 

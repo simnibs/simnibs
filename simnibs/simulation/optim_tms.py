@@ -1,5 +1,5 @@
 """
-Functions to find optimal TMS coil positions for a given cortical target. See examples/tms_optimization.py for
+Functions to find optimal TMS coil positions ior a given cortical target. See examples/tms_optimization.py for
 some examples on how to use these.
 
 Written by Ole Numssen & Konstantin Weise, 2019.
@@ -160,12 +160,12 @@ def eval_optim(simulations, target, tms_optim, res_fn, qoi="normE", elmtype='elm
 
 
 
-def _create_grid(mesh, target, distance, radius, resolution_pos):
+def _create_grid(mesh, pos, distance, radius, resolution_pos):
     ''' Creates a position grid '''
     # extract ROI
     msh_surf = mesh.crop_mesh(elm_type=2)
     msh_skin = msh_surf.crop_mesh([5, 1005])
-    target_skin = msh_skin.find_closest_element(target)
+    target_skin = msh_skin.find_closest_element(pos)
     elm_center = msh_skin.elements_baricenters()[:]
     elm_mask_roi = np.linalg.norm(elm_center - target_skin, axis=1) < 1.2 * radius
     elm_center_zeromean = (
@@ -173,7 +173,6 @@ def _create_grid(mesh, target, distance, radius, resolution_pos):
         np.mean(elm_center[elm_mask_roi], axis=0)
     )
     msh_roi = msh_skin.crop_mesh(elements=msh_skin.elm.elm_number[elm_mask_roi])
-
     # tangential plane of target_skin point
     u, s, vh = np.linalg.svd(elm_center_zeromean)
     vh = vh.transpose()
@@ -223,7 +222,7 @@ def _rotate_system(R, angle_limits, angle_res):
         matrices.append(R.dot(Rz))
     return matrices
 
-def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20,
+def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
                  resolution_pos=1, resolution_angle=20, angle_limits=None):
     """
     Determine the coil positions and orientations for bruteforce TMS optimization
@@ -232,15 +231,15 @@ def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20
     ----------
     mesh: simnibs.msh.mesh_io.Msh object
         Simnibs mesh object
-    target: ndarray
-        Coordinates (x, y, z) of cortical target
+    pos: ndarray
+        Coordinates (x, y, z) of reference position
     handle_direction_ref (optinal): list of float or np.ndarray
-        Vector of handle prolongation direction, in relation to the target. (Default: do
+        Vector of handle prolongation direction, in relation to "pos". (Default: do
         not select a handle direction and scan rotations from -180 to 180)
     distance: float or None
         Coil distance to skin surface [mm]. (Default: 1.)
     radius: float or None
-        Radius of region of interest around skin-projected cortical target, where the
+        Radius of region of interest around the reference position, where the
         bruteforce simulations are conducted
     resolution_pos: float or None
         Resolution in mm of the coil positions in the region of interest.
@@ -252,12 +251,12 @@ def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20
 
     Returns
     -------
-    tms_optim: simnibs.simulation.sim_struct.TMSOPTIMIZATION object
-        TMS simulation object instance
+    matsimnibs_list: list
+        list of MATSIMNIBS matrices
     """
     # creates the spatial grid
     coords_mapped, coords_normals = _create_grid(
-        mesh, target, distance, radius, resolution_pos)
+        mesh, pos, distance, radius, resolution_pos)
     
     # Determines the seed y direction
     if handle_direction_ref is None:
@@ -269,7 +268,7 @@ def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20
             )
         angle_limits = [-180, 180 - resolution_angle]
     else:
-        y_seed = np.array(handle_direction_ref) - np.array(target)
+        y_seed = np.array(handle_direction_ref) - np.array(pos)
         if np.isclose(np.linalg.norm(y_seed), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
         if angle_limits is None:
@@ -293,6 +292,64 @@ def get_opt_grid(mesh, target, handle_direction_ref=None, distance=1., radius=20
 
     return matrices
 
+
+def plot_matsimnibs_list(matsimnibs_list, values, field_name, fn_geo):
+    ''' Plots the center and the y vector of each matsimnibs matrix as a geo file
+
+    Parameters
+    -------------
+    matsimnibs_list: list
+        list of matsimnibs matrices
+    values: array
+        Value to assign to each matsimnibs
+    field_name: str
+        Name of field being printed
+    fn_geo: str
+        Name of output geo file
+    '''
+    with open(fn_geo, 'w') as f:
+        f.write('View"' + field_name + '"{\n')
+        for mat, v in zip(matsimnibs_list, values):
+            c = mat[:3, 3]
+            y = mat[:3, 1] * v
+            f.write(
+                "VP(" + ", ".join([str(i) for i in c]) + ")"
+                "{" + ", ".join([str(i) for i in y]) + "};\n")
+            f.write(
+                "SP(" + ", ".join([str(i) for i in c]) + ")"
+                "{" + str(v) + "};\n")
+        f.write("};\n")
+
+
+def define_target_region(mesh, target_position, target_radius, tags, elm_type=4):
+    ''' Defines a target based on a position, a radius and an element tag
+
+    Paramters
+    ------------
+    mesh: simnibs.mesh_io.msh
+        Mesh
+    target_position: array of size (3,)
+        Position of target
+    target_radius: float
+        Size of target
+    tags: array of ints
+        Tag where the target is located
+    elm_type: int
+        Type of target element (4 for tetrahedra and 2 for triangles)
+
+    Returns
+    -------
+    elements: array of size (n,)
+        Numbers (1-based) of elements in the tag
+    '''
+    bar = mesh.elements_baricenters()[:]
+    dist = np.linalg.norm(bar - target_position, axis=1)
+    elm = mesh.elm.elm_number[
+        (dist < target_radius) *
+        np.isin(mesh.elm.tag1, tags) *
+        np.isin(mesh.elm.elm_type, elm_type)
+    ]
+    return elm
 
 def optimize_tms_coil_pos(tms_optim, target=None,
                           handle_direction_ref=None, radius=20, angle_limits=None,

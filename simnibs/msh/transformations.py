@@ -952,6 +952,7 @@ def _read_csv(fn):
     return type_, coordinates, extra, name, extra_cols, header
 
 
+
 def _write_csv(fn, type_, coordinates, extra, name, extra_cols, header):
     coordinates = coordinates.tolist()
     name = [[] if not n else [n] for n in name]

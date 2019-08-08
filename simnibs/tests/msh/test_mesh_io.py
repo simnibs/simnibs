@@ -1416,7 +1416,7 @@ class TestReadRes:
 
         np.testing.assert_allclose([-1.2, -2, 3.0], v)
 
-class TestWriteGeo():
+class TestWriteGeo:
     def test_write_spheres_no_values(self):
         positions = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
         mesh_io.write_geo_spheres(positions, 'tst.geo')
