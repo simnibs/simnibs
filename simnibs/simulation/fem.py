@@ -9,6 +9,7 @@ import copy
 import warnings
 import h5py
 import numpy as np
+import functools
 import scipy.sparse as sparse
 
 from ..msh import mesh_io
@@ -1182,6 +1183,7 @@ def _finalize_global_solver():
     global tms_global_solver
     del tms_global_solver
 
+
 def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     ''' Simulates a tDCS field using PETSc and Neumann boundary conditions on the
     electrodes
@@ -1367,3 +1369,186 @@ def _finalize_tdcs_global_solver():
 
 #### Finished functionr to tun tDCS leadfields in parallel ####
 
+
+def tms_many_simulations(
+    mesh, cond, fn_coil, matsimnibs_list, didt_list,
+    fn_hdf5, dataset, roi=None, field='E', post_pro=None, n_workers=1):
+    ''' Function for runnining a large amount of TMS simulations
+
+    Parameters
+    -------------
+    mesh: simnibs.msh.mesh_io.Msh
+        Mesh structure
+    cond: simnibs.msh.mesh_io.ElementData
+        Conductivity field
+    fields: str or list of str
+        Fields to be calculated for each position
+    fn_coil: string
+        Name of coil file
+    matsimnibs_list: list
+        List of "matsimnibs" matrices, one per position
+    didt_list: list
+        List of dIdt values, one per position
+    fn_hdf5: str
+        Name of hdf5 where simulations will be saved
+    dataset: str
+        Name of dataset where data is to be saved
+    roi: list or None (optional)
+        Regions of interest where the fields is to be saved.
+        If set to None, will save the electric field in all tissues.
+        Default: None
+    field: 'E' or 'J' (optional)
+        Which field to save (electric field E or current density J). Default: 'E'
+    post_pro: list of callables (optional)
+        list of callables f_post = post_pro(f), where f is an input field in the ROI and
+        f_post is an Nx3 ndarray
+    n_workers: int
+        Number of workers to use
+    '''
+    if field != 'E' and field != 'J':
+        raise ValueError("Field shoud be either 'E' or 'J'")
+    if len(matsimnibs_list) != len(didt_list):
+        raise ValueError("matsimnibs_list and didt_list should have the same length")
+    D = grad_matrix(mesh, split=True)
+    S = FEMSystem.tms(mesh, cond)
+    n_out = mesh.elm.nr
+    # Separate out the part of the gradiend that is in the ROI
+    if roi is not None:
+        roi = np.in1d(mesh.elm.tag1, roi)
+        D = [d.tocsc() for d in D]
+        D = [d[roi] for d in D]
+        cond = cond.value[roi]
+    else:
+        roi = np.ones(mesh.elm.nr, dtype=bool)
+
+    n_roi = np.sum(roi)
+    # Figure out size of the postprocessing output
+    if post_pro is not None:
+        n_out = np.array(post_pro(np.zeros((n_roi, 3)))).shape
+    else:
+        n_out = (n_roi, 3)
+
+    n_sims = len(matsimnibs_list)
+    # Create HDF5 dataset
+    with h5py.File(fn_hdf5, 'a') as f:
+        f.create_dataset(
+            dataset,
+            (n_sims,) + n_out,
+            dtype=float, compression="gzip")
+
+    # Run sequentially
+    if n_workers == 1:
+        for i, matsimnibs, didt in zip(range(n_sims), matsimnibs_list, didt_list):
+            logger.info(
+                f'Running Simulation {i+1} out of {n_sims}')
+            dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
+
+            b = S.assemble_tms_rhs(dAdt)
+            v = S.solve(b)
+            E = np.vstack([-d.dot(v) for d in D]).T * 1e3
+            dAdt = dAdt[roi]
+            E -= dAdt
+            if field == 'E':
+                out_field = E
+            elif field == 'J':
+                out_field = calc_J(E, cond)
+            if post_pro is not None:
+                out_field = post_pro(out_field)
+            with h5py.File(fn_hdf5) as f:
+                f[dataset][i] = out_field
+
+    # Run in parallel
+    else:
+        # Lock has to be passed through inheritance
+        S.lock = multiprocessing.Lock()
+        with multiprocessing.Pool(
+                processes=n_workers,
+                initializer=_set_up_tms_many_global_solver,
+                initargs=(S, fn_coil, n_sims, D, post_pro, cond, field, roi)) as pool:
+            sims = []
+            for i, matsimnibs, didt in zip(
+                    range(n_sims), matsimnibs_list, didt_list):
+                sims.append(
+                    pool.apply_async(
+                        _run_tms_many_simulations,
+                        (i, matsimnibs, didt,
+                         fn_hdf5, dataset)))
+            [s.get() for s in sims]
+            pool.close()
+            pool.join()
+
+### Functions for running man TMS simulations in parallel ####
+def _set_up_tms_many_global_solver(S, fn_coil, n, D, post_pro, cond, field, roi):
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+    tms_many_global_solver = S
+    tms_many_global_fn_coil = fn_coil
+    tms_many_global_nsims = n
+    tms_many_global_grad_matrix = D
+    tms_many_global_post_pro = post_pro
+    tms_many_global_cond = cond
+    tms_many_global_field = field
+    tms_many_global_roi = roi
+
+
+def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+    logger.info('Running Simulation {0} out of {1}'.format(
+        i+1, tms_many_global_nsims))
+    # RHS
+    dAdt = coil_lib.set_up_tms(
+        tms_many_global_solver.mesh,
+        tms_many_global_fn_coil,
+        matsimnibs, didt
+    )
+    b = tms_many_global_solver.assemble_tms_rhs(dAdt)
+    # Simulate
+    v = tms_many_global_solver.solve(b)
+    # Calculate E and postprocessing
+    E = np.vstack([-d.dot(v) for d in tms_many_global_grad_matrix]).T * 1e3
+    E -= dAdt[tms_many_global_roi]
+    if tms_many_global_field == 'E':
+        out_field = E
+    elif tms_many_global_field == 'J':
+        out_field = calc_J(E, tms_many_global_cond)
+    if tms_many_global_post_pro is not None:
+        out_field = tms_many_global_post_pro(out_field)
+    # Write out
+    tms_many_global_solver.lock.acquire()
+    with h5py.File(fn_hdf5, 'a') as f:
+        f[dataset][i] = out_field
+    tms_many_global_solver.lock.release()
+
+
+def _finalize_tms_many_simulations_global_solver():
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+
+    del tms_many_global_solver
+    del tms_many_global_fn_coil
+    del tms_many_global_nsims
+    del tms_many_global_grad_matrix
+    del tms_many_global_post_pro
+    del tms_many_global_cond
+    del tms_many_global_field
+    del tms_many_global_roi
+### Finished functionr to run many TMS simulations in parallel ####
