@@ -32,7 +32,6 @@ Modifications done by Guilherme Saturnino, 2019
 '''
 
 import sys
-import os
 import ctypes
 import warnings
 import time
@@ -64,9 +63,9 @@ def get_libmkl():
 class Solver:
     """
     Python interface to the Intel MKL PARDISO library for solving large sparse linear systems of equations Ax=b.
-    
+
     Pardiso documentation: https://software.intel.com/en-us/node/470282
-    
+
     Parameters
     ------------
     A: scipy.sparse csr or csc
@@ -80,54 +79,55 @@ class Solver:
         self._libmkl = get_libmkl()
 
         self._mkl_pardiso = self._libmkl.pardiso
-        
+
         # determine 32bit or 64bit architecture
         if ctypes.sizeof(ctypes.c_void_p) == 8:
             self._pt_type = (ctypes.c_int64, np.int64)
         else:
             self._pt_type = (ctypes.c_int32, np.int32)
 
-        self._mkl_pardiso.argtypes = [ctypes.POINTER(self._pt_type[0]),    # pt
-                                      ctypes.POINTER(ctypes.c_int32),      # maxfct
-                                      ctypes.POINTER(ctypes.c_int32),      # mnum
-                                      ctypes.POINTER(ctypes.c_int32),      # mtype
-                                      ctypes.POINTER(ctypes.c_int32),      # phase
-                                      ctypes.POINTER(ctypes.c_int32),      # n
-                                      ctypes.POINTER(None),                # a
-                                      ctypes.POINTER(ctypes.c_int32),      # ia
-                                      ctypes.POINTER(ctypes.c_int32),      # ja
-                                      ctypes.POINTER(ctypes.c_int32),      # perm
-                                      ctypes.POINTER(ctypes.c_int32),      # nrhs
-                                      ctypes.POINTER(ctypes.c_int32),      # iparm
-                                      ctypes.POINTER(ctypes.c_int32),      # msglvl
-                                      ctypes.POINTER(None),                # b
-                                      ctypes.POINTER(None),                # x
-                                      ctypes.POINTER(ctypes.c_int32)]      # error
+        self._mkl_pardiso.argtypes = [
+            ctypes.POINTER(self._pt_type[0]),    # pt
+            ctypes.POINTER(ctypes.c_int32),      # maxfct
+            ctypes.POINTER(ctypes.c_int32),      # mnum
+            ctypes.POINTER(ctypes.c_int32),      # mtype
+            ctypes.POINTER(ctypes.c_int32),      # phase
+            ctypes.POINTER(ctypes.c_int32),      # n
+            ctypes.POINTER(None),                # a
+            ctypes.POINTER(ctypes.c_int32),      # ia
+            ctypes.POINTER(ctypes.c_int32),      # ja
+            ctypes.POINTER(ctypes.c_int32),      # perm
+            ctypes.POINTER(ctypes.c_int32),      # nrhs
+            ctypes.POINTER(ctypes.c_int32),      # iparm
+            ctypes.POINTER(ctypes.c_int32),      # msglvl
+            ctypes.POINTER(None),                # b
+            ctypes.POINTER(None),                # x
+            ctypes.POINTER(ctypes.c_int32)]      # error
 
         self._mkl_pardiso.restype = None
-        
+
         self._pt = np.zeros(64, dtype=self._pt_type[1])
         self._iparm = np.zeros(64, dtype=np.int32)
         self._perm = np.zeros(0, dtype=np.int32)
-        
+
         self._mtype = mtype
         self._msglvl = False
-        
+
         self._solve_transposed = False
         self._factorize(A)
-        
-    
+
+
     def _factorize(self, A):
-        """ 
+        """
         Factorize the matrix A, the factorization will automatically be used if the same
-        matrix A is passed to the solve method.        
+        matrix A is passed to the solve method.
 
         Parameters
         -------------
         A: scipy.sparse csr or csc
             Spase square matrix
         """
-        
+
         self._check_A(A)
         self._A = A.copy()
         logger.info('Factorizing FEM matrix unsing MKL PARDISO')
@@ -138,30 +138,30 @@ class Solver:
 
     def solve(self, b):
         """ solve Ax=b for x
-        
+
         Parameters
         ----------
         b: numpy ndarray
            right-hand side(s), b.shape[0] needs to be the same as A.shape[0]
-           
+
         Returns
         --------
         x: numpy ndarray
            solution of the system of linear equations, same shape as input b
         """
-        
+
         logger.info('Solving system using MKL PARDISO')
         start = time.time()
         b = self._check_b(b)
         x = self._call_pardiso(b, 33)
         logger.info(f'{time.time()-start:.2f} seconds to solve system')
         return x
-    
+
 
     def _check_A(self, A):
         if A.shape[0] != A.shape[1]:
             raise ValueError('Matrix A needs to be square, but has shape: {}'.format(A.shape))
-        
+
         if sp.isspmatrix_csr(A):
             self._solve_transposed = False
             self._iparm[11] = 0
@@ -172,11 +172,11 @@ class Solver:
             msg = 'Pardiso requires matrix A to be in CSR or CSC format,' \
                   ' but matrix A is: {}'.format(type(A))
             raise TypeError(msg)
-                 
+
         # scipy allows unsorted csr-indices, which lead to completely wrong pardiso results
         if not A.has_sorted_indices:
             A.sort_indices()
-            
+
         # scipy allows csr matrices with empty rows. a square matrix with an empty row is singular. calling 
         # pardiso with a matrix A that contains empty rows leads to a segfault, same applies for csc with 
         # empty columns
@@ -184,27 +184,26 @@ class Solver:
             row_col = 'column' if self._solve_transposed else 'row'
             raise ValueError('Matrix A is singular, because it contains empty'
                              ' {}(s)'.format(row_col))
-        
+
         if A.dtype != np.float64:
             raise TypeError('Pardiso currently only supports float64, '
                             'but matrix A has dtype: {}'.format(A.dtype))
-            
-            
+
     def _check_b(self, b):
         if sp.isspmatrix(b):
             warnings.warn('Pardiso requires the right-hand side b'
-                          'to be a dense array for maximum efficiency', 
+                          'to be a dense array for maximum efficiency',
                           SparseEfficiencyWarning)
             b = b.todense()
-        
+
         # pardiso expects fortran (column-major) order if b is a matrix
         if b.ndim == 2:
             b = np.asfortranarray(b)
-        
+
         if b.shape[0] != self._A.shape[0]:
             raise ValueError("Dimension mismatch: Matrix A {} and array b "
                              "{}".format(self._A.shape, b.shape))
-            
+
         if b.dtype != np.float64:
             if b.dtype in [np.float16, np.float32, np.int16, np.int32, np.int64]:
                 warnings.warn("Array b's data type was converted from "
@@ -268,5 +267,3 @@ class PardisoError(Exception):
     def __str__(self):
         return ('The Pardiso solver failed with error code {}. '
                 'See Pardiso documentation for details.'.format(self.value))
-
-        
