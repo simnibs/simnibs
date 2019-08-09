@@ -42,6 +42,7 @@ from scipy.sparse import SparseEfficiencyWarning
 
 from simnibs.utils.simnibs_logger import logger
 
+
 def test_mkl():
     try:
         get_libmkl()
@@ -58,6 +59,7 @@ def get_libmkl():
         return ctypes.CDLL('mkl_rt.dll')
     else:
         return ctypes.CDLL('libmkl_rt.so')
+
 
 class Solver:
     """

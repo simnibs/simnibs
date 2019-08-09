@@ -10,7 +10,6 @@ import copy
 import warnings
 import h5py
 import numpy as np
-import functools
 import scipy.sparse as sparse
 
 from ..msh import mesh_io
@@ -559,7 +558,12 @@ class FEMSystem(object):
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
 
         if solver_options == 'pardiso':
-            self._solver = pardiso.Solver(A)
+            try:
+                self._solver = pardiso.Solver(A)
+            except OSError:
+                logger.warning('Could not find MKL, switching to AMG solver')
+                self._A_reduced = A
+                self._solver = petsc_solver.Solver(DEFAULT_SOLVER_OPTIONS)
         else:
             self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
             self._solver = petsc_solver.Solver(solver_options, A)
@@ -1296,7 +1300,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
             logger.info('Running Simulation {0} out of {1}'.format(
                 i+1, n_sims))
             b = S.assemble_tdcs_neumann_rhs([el_tag], [current])
-            v = S.solve(b)
+            v = S.solve(b, 'pardiso')
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             if field == 'E':
                 out_field = E
@@ -1354,7 +1358,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset):
     # RHS
     b = tdcs_global_solver.assemble_tdcs_neumann_rhs(el_tags, currents)
     # Simulate
-    v = tdcs_global_solver.solve(b)
+    v = tdcs_global_solver.solve(b, 'pardiso')
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tdcs_global_grad_matrix]).T * 1e3
     if tdcs_global_field == 'E':
@@ -1382,8 +1386,6 @@ def _finalize_tdcs_global_solver():
     del tdcs_global_post_pro
 
 #### Finished functionr to tun tDCS leadfields in parallel ####
-
-
 def tms_many_simulations(
     mesh, cond, fn_coil, matsimnibs_list, didt_list,
     fn_hdf5, dataset, roi=None, field='E', post_pro=None, n_workers=1):
@@ -1456,9 +1458,8 @@ def tms_many_simulations(
             logger.info(
                 f'Running Simulation {i+1} out of {n_sims}')
             dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
-
             b = S.assemble_tms_rhs(dAdt)
-            v = S.solve(b)
+            v = S.solve(b, 'pardiso')
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             dAdt = dAdt[roi]
             E -= dAdt
@@ -1490,6 +1491,7 @@ def tms_many_simulations(
             [s.get() for s in sims]
             pool.close()
             pool.join()
+
 
 ### Functions for running man TMS simulations in parallel ####
 def _set_up_tms_many_global_solver(S, fn_coil, n, D, post_pro, cond, field, roi):
@@ -1530,7 +1532,7 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     )
     b = tms_many_global_solver.assemble_tms_rhs(dAdt)
     # Simulate
-    v = tms_many_global_solver.solve(b)
+    v = tms_many_global_solver.solve(b, 'pardiso')
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tms_many_global_grad_matrix]).T * 1e3
     E -= dAdt[tms_many_global_roi]
