@@ -3,6 +3,7 @@
     Functions for assembling and solving FEM systems
 '''
 
+import os
 import multiprocessing
 import time
 import copy
@@ -15,14 +16,20 @@ import scipy.sparse as sparse
 from ..msh import mesh_io
 from . import cond as cond_lib
 from . import coil_numpy as coil_lib
+from . import pardiso
 from ..utils.simnibs_logger import logger
 from ..cython_code import petsc_solver
 
-PETSC_OPTIONS = '-ksp_type cg ' +\
-                '-ksp_rtol 1e-10 -pc_type hypre ' +\
-                '-pc_hypre_type boomeramg ' +\
-                '-pc_hypre_boomeramg_coarsen_type HMIS'
+DEFAULT_SOLVER_OPTIONS = \
+        '-ksp_type cg ' \
+        '-ksp_rtol 1e-10 -pc_type hypre ' \
+        '-pc_hypre_type boomeramg ' \
+        '-pc_hypre_boomeramg_coarsen_type HMIS'
 
+try:
+    SOLVER_OPTIONS = os.environ['SIMNIBS_SOLVER_OPTIONS']
+except KeyError:
+    SOLVER_OPTIONS = DEFAULT_SOLVER_OPTIONS
 
 
 '''
@@ -480,7 +487,7 @@ class FEMSystem(object):
         self._dirichlet = dirichlet
         self._dof_map = dofMap(mesh.nodes.node_number)
         self._A = None
-        self._petsc_solver = None
+        self._solver = None
         self._G = None # Gradient operator
         self._D = None # Gradient matrix
         self.assemble_fem_matrix(store_G=store_G)
@@ -527,12 +534,12 @@ class FEMSystem(object):
         logger.info(
             '{0:.2f}s to assemble FEM matrix'.format(time_assemble))
 
-    def prepare_solver(self, petsc_options=None):
+    def prepare_solver(self, solver_options=None):
         '''Prepares the object to solve FEM systems
 
         Parameters
         -------------
-        petsc_options: str (optional)
+        solver_options: str (optional)
             Options to be used by PETSc. Default:
             '-ksp_type cg -ksp_rtol 1e-10 -pc_type hypre -pc_hypre_type boomeramg '
 
@@ -540,18 +547,24 @@ class FEMSystem(object):
         -------
         After running this method, do NOT change any attributes of the class!
         '''
-        if petsc_options is None:
-            petsc_options = PETSC_OPTIONS
+        if solver_options is None:
+            solver_options = SOLVER_OPTIONS
+
+        logger.debug(f'Solver Options: {solver_options}')
 
         A = sparse.csc_matrix(self.A, copy=True)
         A.sort_indices()
         dof_map = copy.deepcopy(self.dof_map)
         if self.dirichlet is not None:
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
-        self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
-        self._petsc_solver = petsc_solver.Solver(petsc_options, A)
 
-    def solve(self, b=None, petsc_options=None):
+        if solver_options == 'pardiso':
+            self._solver = pardiso.Solver(A)
+        else:
+            self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
+            self._solver = petsc_solver.Solver(solver_options, A)
+
+    def solve(self, b=None, solver_options=None):
         ''' Solves the FEM system
         Calls PETSc to solve the FEM system
 
@@ -559,9 +572,8 @@ class FEMSystem(object):
         ------------
         b: np.ndarray (Optional):
             Right-hand side. If not set, will assume zeros
-        petsc_options: str (optional)
-            Options to be used by PETSc. Default:
-            '-ksp_type cg -ksp_rtol 1e-10 -pc_type hypre -pc_hypre_type boomeramg '
+        solver_options: str (optional)
+            Options to be used by the solver
         Returns
         -----------
         x: ndarray
@@ -572,14 +584,16 @@ class FEMSystem(object):
         '''
         logger.debug('Solving FEM System')
 
-        if petsc_options is None:
-            petsc_options = PETSC_OPTIONS
+        if solver_options is None:
+            solver_options = SOLVER_OPTIONS
 
-        logger.debug('PETSc Options: {0}'.format(petsc_options))
+        if solver_options == DEFAULT_SOLVER_OPTIONS:
+            logger.debug(f'Using default solver options: {solver_options}')
+        else:
+            logger.info(f'Using custom solver options: {solver_options}')
 
-        if self._petsc_solver is None:
-            self.prepare_solver(petsc_options)
-            pass
+        if self._solver is None:
+            self.prepare_solver(solver_options)
 
         if b is None:
             b = np.zeros(self.dof_map.nr, dtype=float)
@@ -591,7 +605,7 @@ class FEMSystem(object):
         if self.dirichlet is not None:
             b, dof_map = self.dirichlet.apply_to_rhs(self.A, b, dof_map)
 
-        x = self._petsc_solver.solve(b)
+        x = self._solver.solve(b)
 
         if self.dirichlet is not None:
             x, dof_map = self.dirichlet.apply_to_solution(x, dof_map)
