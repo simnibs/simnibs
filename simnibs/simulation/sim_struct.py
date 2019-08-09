@@ -1028,7 +1028,11 @@ class TMSLIST(SimuList):
                 self.pos.append(p)
 
     def resolve_fnamecoil(self):
-        fnamecoil = os.path.expanduser(self.fnamecoil)
+        try:
+            fnamecoil = os.path.expanduser(self.fnamecoil)
+        except TypeError:
+            print(self.fnamecoil)
+            raise TypeError('fnamecoil is not a string')
         if os.path.isfile(fnamecoil):
             self.fnamecoil = fnamecoil
         else:

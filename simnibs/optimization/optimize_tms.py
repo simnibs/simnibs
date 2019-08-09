@@ -60,6 +60,7 @@ def _rotate_system(R, angle_limits, angle_res):
     # Define rotation matrix around Z
     n_steps = int((angle_limits[1] - angle_limits[0])/angle_res + 1)
     angles = np.deg2rad(np.linspace(angle_limits[0], angle_limits[1], n_steps))
+    angles = angles[(angles > -180) * (angles < 180)]
     matrices = []
     for a in angles:
         Rz = np.array((
@@ -109,12 +110,6 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
     # Determines the seed y direction
     if handle_direction_ref is None:
         y_seed = np.array([0., 1., 0.])
-        if angle_limits is not None:
-            logger.warn(
-                'Angle limits set without handle_direction_ref, '
-                'overwiting the former'
-            )
-        angle_limits = [-180, 180 - resolution_angle]
     else:
         y_seed = np.array(handle_direction_ref) - np.array(pos)
         if np.isclose(np.linalg.norm(y_seed), 0.):

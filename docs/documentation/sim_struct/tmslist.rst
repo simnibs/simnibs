@@ -31,6 +31,8 @@ Initialization
 Attributes
 ----------
 
+.. _tmslist_fnamecoil: 
+
 * **fnamecoil**: *string (Python)/ character array (MATLAB)*
 
   * **Description**: Name of coil file. Coil files come in two types
@@ -67,11 +69,11 @@ Attributes
 
   :ref:`Follow this link <anisotropy_type_attribute_doc>`.
 
-* **aniso_maxratio**: *float*
+* **aniso_maxratio**: *float, optional*
 
   :ref:`Follow this link <aniso_maxratio_doc>`.
 
-* **aniso_maxcond**: *float*
+* **aniso_maxcond**: *float, optional*
 
   :ref:`Follow this link <aniso_maxcond_doc>`.
 

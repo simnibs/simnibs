@@ -1260,7 +1260,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
         Which field to save (electric field E or current density J). Default: 'E'
     post_pro: callable (optional)
         callable f_post = post_pro(f), where f is an input field in the ROI and
-        f_post is an Nx3 ndarray
+        f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
+        field
     n_workers: int
         Number of workers to use
     Returns
@@ -1417,7 +1418,8 @@ def tms_many_simulations(
         Which field to save (electric field E or current density J). Default: 'E'
     post_pro: list of callables (optional)
         list of callables f_post = post_pro(f), where f is an input field in the ROI and
-        f_post is an Nx3 ndarray
+        f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
+        field
     n_workers: int
         Number of workers to use
     '''

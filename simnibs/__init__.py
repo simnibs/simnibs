@@ -5,4 +5,4 @@ from .utils import file_finder
 from .simulation import sim_struct
 from .simulation import cond
 from .simulation.run_simnibs import run_simnibs
-from .optimization import optimization
+from .optimization import opt_struct

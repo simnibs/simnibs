@@ -17,7 +17,7 @@ from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 
 
-class TMSOptimize():
+class TMSoptimize():
     '''
     Attributes:
     ------------------------------
@@ -39,9 +39,9 @@ class TMSOptimize():
         Size of target region, in mm. Defualt: 5
     tissues (optional): list of ints
         Tissues where the target is defined. Default: [2]
-    pos(optional): (3x1) array or None
+    centre(optional): (3x1) array or None
         Position in scalp to use as a reference for the search space. By dafault, will
-        project the target to the scalp and use it as the "pos" variable
+        project the target to the scalp
     pos_ydir(optional): (3x1) array or None
         Reference position for the coil Y axis, with respect to the target (or the pos
         variable, if it is defined). If left empty, will search positions in a 360 degrees radius. Default: None
@@ -52,10 +52,9 @@ class TMSOptimize():
     search_radius (optional): float
         Radius of area where to search for coil positions, in mm. Default: 20
     spatial_resolution (optional): float
-        Spatial resolution of search area, in mm. Default: 2
-    search_angles (optional): (2x1)float
-        Limit angles to use in search, in degrees. If pos_ydir is set, will default to +/- 60 degrees
-        around the original y axis. if not, will search in 360 degrees
+        Spatial resolution of search area, in mm. Default: 5
+    search_angle (optional): float
+        Range of angles to use in search, in degrees. Default: 360
     angle_resolution (optional): float
         Resolution to use for the angles, in degrees. Default: 20
     open_in_gmsh(optional): bool
@@ -83,14 +82,14 @@ class TMSOptimize():
         self.target = None
         self.tissues = [2]
         self.target_size = 5
-        self.pos = []
+        self.centre = []
         self.pos_ydir = []
         self.distance = 4.
         self.didt = 1e6
         self.search_radius = 20
-        self.spatial_resolution = 2
-        self.search_angles = []
-        self.angle_resolution = 20
+        self.spatial_resolution = 5
+        self.search_angle = 360
+        self.angle_resolution = 30
 
         self.open_in_gmsh = True
 
@@ -145,17 +144,16 @@ class TMSOptimize():
 
         self.mesh = mesh_io.read_msh(self.fnamehead)
         TMSLIST.resolve_fnamecoil(self)
-        assert self.target is not None and len(self.target) == 3
+        if self.target is None or len(self.target) != 3:
+            raise ValueError('Target for optimization not defined')
         assert self.search_radius > 0
         assert self.spatial_resolution > 0
         assert self.angle_resolution > 0
         # fix a few variables
         if len(self.pos_ydir) == 0:
             self.pos_ydir = None
-        if len(self.pos) == 0:
-            self.pos = np.copy(self.target)
-        if len(self.search_angles) == 0:
-            self.search_angles = None
+        if len(self.centre) == 0:
+            self.centre = np.copy(self.target)
 
     def sim_struct2mat(self):
         mat = SimuList.cond_mat_struct(self)
@@ -169,18 +167,19 @@ class TMSOptimize():
 
         mat['target'] = remove_None(self.target)
         mat['target_size'] = remove_None(self.target_size)
-        mat['pos'] = remove_None(self.pos)
+        mat['centre'] = remove_None(self.centre)
         mat['pos_ydir'] = remove_None(self.pos_ydir)
         mat['distance'] = remove_None(self.distance)
         mat['didt'] = remove_None(self.didt)
         mat['search_radius'] = remove_None(self.search_radius)
         mat['spatial_resolution'] = remove_None(self.spatial_resolution)
-        mat['search_angles'] = remove_None(self.search_angles)
+        mat['search_angle'] = remove_None(self.search_angle)
         mat['angle_resolution'] = remove_None(self.angle_resolution)
         mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
 
         return mat
 
+    @classmethod
     def read_mat_struct(self, mat):
         """ Reads form matlab structure
         Parameters
@@ -188,6 +187,7 @@ class TMSOptimize():
         mat: scipy.io.loadmat
             Loaded matlab structure
         """
+        self = self()
         SimuList.read_cond_mat_struct(self, mat)
         self.date = try_to_read_matlab_field(
             mat, 'date', str, self.date
@@ -201,6 +201,9 @@ class TMSOptimize():
         self.pathfem = try_to_read_matlab_field(
             mat, 'pathfem', str, self.pathfem
         )
+        self.fnamecoil = try_to_read_matlab_field(
+            mat, 'fnamecoil', str, self.fnamecoil
+        )
         self.fname_tensor = try_to_read_matlab_field(
             mat, 'fname_tensor', str, self.fname_tensor
         )
@@ -210,8 +213,11 @@ class TMSOptimize():
         self.target_size = try_to_read_matlab_field(
             mat, 'target_size', float, self.target_size
         )
-        self.pos = try_to_read_matlab_field(
-            mat, 'pos', list, self.pos
+        self.centre = try_to_read_matlab_field(
+            mat, 'centre', list, self.centre
+        )
+        self.centre = try_to_read_matlab_field(
+            mat, 'center', list, self.centre
         )
         self.pos_ydir = try_to_read_matlab_field(
             mat, 'pos_ydir', list, self.pos_ydir
@@ -228,8 +234,8 @@ class TMSOptimize():
         self.spatial_resolution = try_to_read_matlab_field(
             mat, 'spatial_resolution', float, self.spatial_resolution
         )
-        self.search_angles = try_to_read_matlab_field(
-            mat, 'search_angles', list, self.search_angles
+        self.search_angle = try_to_read_matlab_field(
+            mat, 'search_angle', float, self.search_angle
         )
         self.angle_resolution = try_to_read_matlab_field(
             mat, 'angle_resolution', float, self.angle_resolution
@@ -237,6 +243,7 @@ class TMSOptimize():
         self.open_in_gmsh = try_to_read_matlab_field(
             mat, 'open_in_gmsh', bool, self.open_in_gmsh
         )
+        return self
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
         ''' Runs the tms optimization
@@ -274,12 +281,12 @@ class TMSOptimize():
                     'simnibs_simulation_{0}.mat'.format(self.time_str)))
         logger.info(str(self))
         pos_matrices = optimize_tms.get_opt_grid(
-            self.mesh, self.pos,
+            self.mesh, self.centre,
             handle_direction_ref=self.pos_ydir,
             distance=self.distance, radius=self.search_radius,
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
-            angle_limits=self.search_angles
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
         )
         cond = SimuList.cond2elmdata(self)
         didt_list = [self.didt for i in pos_matrices]
@@ -316,7 +323,10 @@ class TMSOptimize():
             os.path.join(self.pathfem, 'coil_positions.geo')
         )
         v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
-        v.add_view(VectorType=4, CenterGlyphs=0, Visible=1)
+        v.add_view(
+            CustomMax=1, CustomMin=1,
+            VectorType=4, CenterGlyphs=0,
+            Visible=1)
         v.write_opt(fn_target)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_target, True)
@@ -409,10 +419,11 @@ class TMSOptimize():
         string += 'Mesh file name: %s\n' % self.fnamehead
         string += 'Coil file: %s\n' % self.fnamecoil
         string += 'Target: %s\n' % self.target
-        string += 'Reference position: %s\n' % self.pos
+        string += 'Centre position: %s\n' % self.centre
         string += 'Reference y: %s\n' % self.pos_ydir
         string += 'Coil distance: %s\n' % self.distance
         string += 'Search radius: %s\n' % self.search_radius
         string += 'Spatial resolution: %s\n' % self.spatial_resolution
+        string += 'Seach angle: %s\n' % self.search_angle
         string += 'Angle resolution: %s' % self.angle_resolution
         return string
