@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pytest
 import scipy.spatial
-from simnibs.simulation import optim_tms
+from simnibs.optimization import optimize_tms
 from simnibs.msh import mesh_io
 
 
@@ -15,7 +15,7 @@ def sphere3_msh():
 
 class TestGetOptGrid:
     def test_get_pos(self, sphere3_msh):
-        pos, normals = optim_tms._create_grid(
+        pos, normals = optimize_tms._create_grid(
             sphere3_msh,
             [90, 0, 0],
             0, 10, 2
@@ -38,7 +38,7 @@ class TestGetOptGrid:
              [0, 0, -1],
              [0, 1, 0]]
         )
-        matrices = optim_tms._rotate_system(
+        matrices = optimize_tms._rotate_system(
             R, [-90, 90], 90
         )
         assert len(matrices) == 3
@@ -63,7 +63,7 @@ class TestGetOptGrid:
         )
 
     def test_get_opt_grid(self, sphere3_msh):
-        matrices = optim_tms.get_opt_grid(
+        matrices = optimize_tms.get_opt_grid(
             sphere3_msh, [90, 0, 0], handle_direction_ref=None,
             distance=1., radius=10, resolution_pos=1,
             resolution_angle=20, angle_limits=None)
@@ -86,9 +86,8 @@ class TestGetOptGrid:
                 np.cos(np.deg2rad(20))
             )
 
-
     def test_get_opt_handle_dir(self, sphere3_msh):
-        matrices = optim_tms.get_opt_grid(
+        matrices = optimize_tms.get_opt_grid(
             sphere3_msh, [90, 0, 0], handle_direction_ref=[90, 0, 1],
             distance=1., radius=10, resolution_pos=1,
             resolution_angle=30, angle_limits=[-60, 60])
@@ -125,7 +124,7 @@ def test_define_target_region(sphere3_msh):
     c = [85, 0, 0]
     r = 5
     t = 3
-    elm = optim_tms.define_target_region(sphere3_msh, c, r, t)
+    elm = optimize_tms.define_target_region(sphere3_msh, c, r, t)
     outside = sphere3_msh.elm.elm_number[
         ~np.isin(sphere3_msh.elm.elm_number, elm)
     ]
