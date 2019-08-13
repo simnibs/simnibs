@@ -59,8 +59,8 @@ def _rotate_system(R, angle_limits, angle_res):
     resolution and return rotation matrices'''
     # Define rotation matrix around Z
     n_steps = int((angle_limits[1] - angle_limits[0])/angle_res + 1)
-    angles = np.deg2rad(np.linspace(angle_limits[0], angle_limits[1], n_steps))
-    angles = angles[(angles > -180.1) * (angles < 180)]
+    angles = np.linspace(angle_limits[0], angle_limits[1], n_steps)
+    angles = np.deg2rad(angles[(angles > -180.1) * (angles < 180.)])
     matrices = []
     for a in angles:
         Rz = np.array((
@@ -95,8 +95,7 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
     resolution_angle: float or None
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
-        Range of angles to get coil rotations for (Default: [-60, 60] if
-        handle_direction_ref is defined, else [-180, -180]).
+        Range of angles to get coil rotations for (Default: [-180, 180])
 
     Returns
     -------
@@ -114,8 +113,8 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
         y_seed = np.array(handle_direction_ref) - np.array(pos)
         if np.isclose(np.linalg.norm(y_seed), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
-        if angle_limits is None:
-            angle_limits = [-60, 60]
+    if angle_limits is None:
+        angle_limits = -180, 180
 
     matrices = []
     for p, n in zip(coords_mapped, coords_normals):
