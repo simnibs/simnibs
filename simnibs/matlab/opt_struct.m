@@ -59,6 +59,7 @@ switch S.type
        S.search_angle = 360; % Range of angles to search (in degrees)
        S.angle_resolution = 30; % Resolution to use for angles (in degrees)
        S.open_in_gmsh = true; % Wether to open simulation result in Gmsh
+       S.solver_options = ''; % FEM solver options
 
 
 end

@@ -60,7 +60,7 @@ def _rotate_system(R, angle_limits, angle_res):
     # Define rotation matrix around Z
     n_steps = int((angle_limits[1] - angle_limits[0])/angle_res + 1)
     angles = np.deg2rad(np.linspace(angle_limits[0], angle_limits[1], n_steps))
-    angles = angles[(angles > -180) * (angles < 180)]
+    angles = angles[(angles > -180.1) * (angles < 180)]
     matrices = []
     for a in angles:
         Rz = np.array((

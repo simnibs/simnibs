@@ -58,7 +58,9 @@ class TMSoptimize():
     angle_resolution (optional): float
         Resolution to use for the angles, in degrees. Default: 20
     open_in_gmsh(optional): bool
-        Wether to open the results in gmsh
+        Wether to open the results in gmsh. Default: False
+    solver_options (optional): str
+        Options for the FEM solver. Default: CG+AMG
     '''
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
@@ -92,6 +94,7 @@ class TMSoptimize():
         self.angle_resolution = 30
 
         self.open_in_gmsh = True
+        self.solver_options = ''
 
         self._log_handlers = []
         if matlab_struct:
@@ -176,6 +179,7 @@ class TMSoptimize():
         mat['search_angle'] = remove_None(self.search_angle)
         mat['angle_resolution'] = remove_None(self.angle_resolution)
         mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
+        mat['solver_options'] = remove_None(self.solver_options)
 
         return mat
 
@@ -243,6 +247,9 @@ class TMSoptimize():
         self.open_in_gmsh = try_to_read_matlab_field(
             mat, 'open_in_gmsh', bool, self.open_in_gmsh
         )
+        self.solver_options = try_to_read_matlab_field(
+            mat, 'solver_options', str, self.solver_options
+        )
         return self
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
@@ -301,6 +308,7 @@ class TMSoptimize():
         if len(target_region) == 0:
             raise ValueError('Did not find any elements within the defined target region')
 
+        logger.info(f'Searching {len(pos_matrices)} positions')
         # write mesh with target and get file with grid
         m = self.mesh
         fn_target = os.path.join(self.pathfem, 'target.msh')
@@ -354,6 +362,7 @@ class TMSoptimize():
             pos_matrices, didt_list,
             fn_hdf5, dataset,
             post_pro=postpro,
+            solver_options=self.solver_options,
             n_workers=cpus
         )
         # Read the field norms
@@ -393,6 +402,8 @@ class TMSoptimize():
         v.View[-1].CustomMax = 1
         v.View[-1].CustomMin = 0
         v.add_merge(fn_geo)
+        v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
+        v.add_view(VectorType=4, CenterGlyphs=0)
         v.write_opt(fn_out)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
