@@ -130,7 +130,7 @@ class Solver:
 
         self._check_A(A)
         self._A = A.copy()
-        logger.info('Factorizing FEM matrix unsing MKL PARDISO')
+        logger.info('Factorizing matrix using MKL PARDISO')
         start = time.time()
         b = np.zeros((A.shape[0],1))
         self._call_pardiso(b, 12)     
