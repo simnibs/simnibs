@@ -103,7 +103,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
                              'Y axis perpendicular to surface?')
         y_axis /= np.linalg.norm(y_axis)
 
-    x_axis = np.cross(y_axis, z_axis)
+    x_axis = np.cross(y_axis, -z_axis) # For coherence with the GUI
     affine = np.zeros((4, 4), dtype=float)
     affine[0, :3] = x_axis
     affine[1, :3] = y_axis
