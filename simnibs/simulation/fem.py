@@ -7,6 +7,7 @@ import multiprocessing
 import time
 import copy
 import warnings
+import atexit
 import h5py
 import numpy as np
 import scipy.sparse as sparse
@@ -44,6 +45,11 @@ PETSC_OPTIONS = '-ksp_type cg ' +\
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+
+# Initialize PETSc
+petsc_solver.petsc_initialize()
+# Register the finalizer for PETSc
+atexit.register(petsc_solver.petsc_finalize)
 
 
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):

@@ -36,13 +36,31 @@ cdef extern from "_solver.c" nogil:
         PetscKSP ksp, PetscInt N, PetscScalar rhs[],
         FILE *stream, PetscScalar solution[])
     PetscErrorCode _print_ksp_info(PetscKSP ksp, FILE *stream)
-    PetscErrorCode _dealloc(
-        PetscKSP KSP)
+    PetscErrorCode _dealloc(PetscKSP KSP)
+    PetscErrorCode _petsc_initialize()
+    PetscErrorCode _petsc_finalize()
 
+
+def petsc_initialize():
+    err = _petsc_initialize()
+    if err:
+        raise SolverError(
+            'There was an error initializing PETSc.\n'
+            'PETSc returned error code: {}'.format(err))
+
+
+
+def petsc_finalize():
+    err = _petsc_finalize()
+    if err:
+        raise SolverError(
+            'There was an error finalizing PETSc.\n'
+            'PETSc returned error code: {}'.format(err))
 
 
 class SolverError(Exception):
     pass
+
 
 cdef class Solver:
     ''' Solver for FEM equations 
