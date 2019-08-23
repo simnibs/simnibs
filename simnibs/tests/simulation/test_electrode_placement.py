@@ -23,12 +23,13 @@ def sphere3_msh():
 
 class TestDrawElectrodes:
     def test_get_transformation(self, sphere3_msh):
+        # Notice, the coordinate system is left-handed for coherence with the GUI
         affine, c = electrode_placement._get_transform(
              [0., 0., 100.], None, sphere3_msh)
         assert np.allclose(c, [0., 0., 95.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 0., 1.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 1., 0.], atol=1e-2)
-        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [1., 0., 0.], atol=1e-2)
+        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [-1., 0., 0.], atol=1e-2)
         assert np.allclose(affine.dot([0., 0., 100., 1.]), [0, 0, 5, 1], atol=1e-1,
                            rtol=1e-1)
 
@@ -37,7 +38,7 @@ class TestDrawElectrodes:
         assert np.allclose(c, [0., 95., 0.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 1., 0.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 0., 1.], atol=1e-2)
-        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [-1., 0., 0.], atol=1e-2)
+        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [1., 0., 0.], atol=1e-2)
         assert np.allclose(affine.dot([0., 100., 0., 1.]), [0, 0, 5, 1], atol=1e-1,
                            rtol=1e-1)
 
@@ -46,7 +47,7 @@ class TestDrawElectrodes:
         assert np.allclose(c, [0., 95., 0.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 1., 0.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 0., 1.], atol=1e-2)
-        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [-1., 0., 0.], atol=1e-2)
+        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [1., 0., 0.], atol=1e-2)
         assert np.allclose(affine.dot([0., 100., 0., 1.]), [0, 0, 5, 1], atol=1e-1,
                            rtol=1e-1)
 

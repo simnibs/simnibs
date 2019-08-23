@@ -14,10 +14,11 @@ jobs:
   container: simnibs/simnibs-testing:centos6
   steps:
   - bash: |
-      conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
-    displayName: Create Conda environment
+      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
+      conda env create -f env.yml
+    displayName: Create conda environment
   - bash: |
-      source activate simnibs_build
+      source activate simnibs_env
       python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
@@ -52,6 +53,7 @@ jobs:
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
       conda env create -f env.yml
     displayName: Create conda environment
+
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'

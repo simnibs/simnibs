@@ -103,7 +103,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
                              'Y axis perpendicular to surface?')
         y_axis /= np.linalg.norm(y_axis)
 
-    x_axis = np.cross(y_axis, z_axis)
+    x_axis = np.cross(y_axis, -z_axis) # For coherence with the GUI
     affine = np.zeros((4, 4), dtype=float)
     affine[0, :3] = x_axis
     affine[1, :3] = y_axis
@@ -819,8 +819,10 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
 def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
     if elec.definition == 'plane':
         if elec.shape in ['rect', 'rectangle', 'ellipse']:
-            if elec.dimensions is None:
+            if elec.dimensions is None or len(elec.dimensions) == 0:
                 raise ValueError('Undefined electrode dimension')
+            if np.any(np.array(elec.dimensions) <= 1e-5):
+                raise ValueError('Found zero or negative value for electrode dimension')
             try:
                 x = float(elec.dimensions[0]) / 2.
                 y = float(elec.dimensions[1]) / 2.

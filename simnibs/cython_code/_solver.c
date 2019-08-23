@@ -5,14 +5,27 @@
 #include <time.h>
 #include <stdio.h>
 #include <petscksp.h>
-
+static PetscErrorCode _petsc_initialize(void);
+static PetscErrorCode _petsc_finalize(void);
 static PetscErrorCode _petsc_prepare_ksp(int, char**, PetscInt, PetscInt[], PetscInt[], PetscScalar[], FILE*, KSP*);
 static PetscErrorCode _print_ksp_info(KSP, FILE*);
 static PetscErrorCode _petsc_solve_with_ksp(KSP, PetscInt, PetscScalar[], FILE*, PetscScalar[]);
 static PetscErrorCode _dealloc(KSP);
 
+static PetscErrorCode _petsc_initialize(void){
+  PetscErrorCode ierr;
+  ierr = PetscInitializeNoArguments();CHKERRQ(ierr);
+  return ierr;
+}
+
+static PetscErrorCode _petsc_finalize(void){
+  PetscErrorCode ierr;
+  ierr = PetscFinalize();CHKERRQ(ierr);CHKERRQ(ierr);
+  return ierr;
+}
+
 /* Creates the ksp
- * argc, args: Arguments to be passed to PetscInitialize
+ * argc, args: PETSc options
  * N: size of the system
  * row_indices: csr-style row indices for the system matrix
  * column_indices: csr-style column indices for the system matrix
@@ -33,8 +46,8 @@ static PetscErrorCode _petsc_prepare_ksp(int argc,char **args, PetscInt N,
   /* Initialization */
   PETSC_STDOUT=stream;
   PETSC_STDERR=stream;
-  ierr = MPI_Init(&argc, &args); // We need to call MPI_init if we want to call PetscInitialize many times
-  ierr = PetscInitialize(&argc,&args,NULL, NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsClear(NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsInsert(NULL, &argc, &args, NULL); CHKERRQ(ierr);
   PETSC_STDERR=stream;
   PETSC_STDOUT=stream;
   /* Set-up matrix */
@@ -121,13 +134,11 @@ static PetscErrorCode _petsc_solve_with_ksp(KSP ksp, PetscInt N, PetscScalar rhs
   return ierr;
 }
 
-/* Destroys the KSP object and finalizes PETSc
+/* Destroys the KSP object
  * ksp: KSP object to be destroyed
 */
 static PetscErrorCode _dealloc(KSP ksp){
   PetscErrorCode        ierr;
-
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
-  ierr = PetscFinalize();CHKERRQ(ierr);CHKERRQ(ierr);
   return ierr;
 }
