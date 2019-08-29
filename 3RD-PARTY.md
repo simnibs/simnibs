@@ -313,3 +313,22 @@ Konstantin Weise (https://github.com/konstantinweise/pygpc)
 License
 -------
 GPL V3
+
+
+
+PyPardiso
+==========
+
+Files
+-----
+* simnibs/simulation/pardiso.py (Modified by G. Saturnino
+
+Copyright
+----------
+Adrian Haas, ETH Zurich (https://github.com/haasad/PyPardisoProject)
+
+License
+-------
+BSD 3-Clause
+
+

@@ -1028,7 +1028,11 @@ class TMSLIST(SimuList):
                 self.pos.append(p)
 
     def resolve_fnamecoil(self):
-        fnamecoil = os.path.expanduser(self.fnamecoil)
+        try:
+            fnamecoil = os.path.expanduser(self.fnamecoil)
+        except TypeError:
+            print(self.fnamecoil)
+            raise TypeError('fnamecoil is not a string')
         if os.path.isfile(fnamecoil):
             self.fnamecoil = fnamecoil
         else:
@@ -1888,6 +1892,7 @@ class ELECTRODE(object):
 
 
 class VOLUME:
+    ''' This is Axel's stuff, it doesn't do anything '''
     def __init__(self, matlab_struct=None):
         self.org = []  # used for parsing neuronavigation data; not stored permanently; optional
         self.fname = ''  # string; points towards neuronavigation file specifying details of structural MRI; optional
@@ -1966,6 +1971,8 @@ class LEADFIELD():
         list of COND structures with conductivity information
     anisotropy_type: property, can be 'scalar', 'vn' or 'mc'
         type of anisotropy for simulation
+    solver_options (optional): str
+        Options for the FEM solver. Default: CG+AMG
     Parameters
     ------------------------
     matlab_struct: (optional) scipy.io.loadmat()
@@ -1989,6 +1996,8 @@ class LEADFIELD():
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
+
+        self.solver_options = ''
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
 
@@ -2054,7 +2063,9 @@ class LEADFIELD():
         self.field = try_to_read_matlab_field(mat, 'field', str, self.field)
         self.fname_tensor = try_to_read_matlab_field(mat, 'fname_tensor', str, self.fname_tensor)
         self.map_to_surf = try_to_read_matlab_field(mat, 'map_to_surf', bool, self.map_to_surf)
-        self.tissues = try_to_read_matlab_field(mat, 'tissues', list, self.map_to_surf)
+        self.tissues = try_to_read_matlab_field(mat, 'tissues', list, self.tissues)
+        self.solver_options = try_to_read_matlab_field(mat, 'solver_options', str,
+                                                       self.solver_options)
 
     def sim_struct2mat(self):
         mat = SimuList.cond_mat_struct(self)
@@ -2067,7 +2078,11 @@ class LEADFIELD():
         mat['fname_tensor'] = remove_None(self.fname_tensor)
         mat['map_to_surf'] = remove_None(self.map_to_surf)
         mat['tissues'] = remove_None(self.tissues)
+        mat['solver_options'] = remove_None(self.solver_options)
         return mat
+
+    def run(self, **kwargs):
+        raise NotImplementedError()
 
 
 class TDCSLEADFIELD(LEADFIELD):
@@ -2081,16 +2096,14 @@ class TDCSLEADFIELD(LEADFIELD):
         path to m2m folder
     pathfem: str
         path where the leadfield should be saved
-    fname_tensor: str
-        name of DTI tensor file
     tissues: list
-        List of tags in the mesh corresponding to the region of interest. Default:
+        List of tags in the mesh corresponding to the region of interest. Default: [2] (GM)
     map_to_surf: bool
-        Wether to map output to middle gray matter
+        Wether to map output to middle gray matter. Defaults to True
     cond: list
         list of COND structures with conductivity information
     anisotropy_type: property, can be 'scalar', 'vn' or 'mc'
-        type of anisotropy for simulation
+        type of anisotropy for simulation. Default: 'scalar'
     eeg_cap: str or None
         Name of eeg cap (in subject space). by default, will look for the 10-10 cap.
     electrode: ELECTRODE object or list of ELECTRODE objects
@@ -2369,7 +2382,9 @@ class TDCSLEADFIELD(LEADFIELD):
         fem.tdcs_leadfield(
             w_elec, c, electrode_surfaces, fn_hdf5, dset,
             current=1., roi=self.tissues,
-            post_pro=post_pro, field=self.field, n_workers=cpus)
+            post_pro=post_pro, field=self.field,
+            solver_options=self.solver_options,
+            n_workers=cpus)
 
         with h5py.File(fn_hdf5, 'a') as f:
             f[dset].attrs['electrode_names'] = [el.name.encode() for el in self.electrode]

@@ -3,6 +3,7 @@
     Functions for assembling and solving FEM systems
 '''
 
+import os
 import multiprocessing
 import time
 import copy
@@ -14,15 +15,15 @@ import scipy.sparse as sparse
 from ..msh import mesh_io
 from . import cond as cond_lib
 from . import coil_numpy as coil_lib
+from . import pardiso
 from ..utils.simnibs_logger import logger
 from ..cython_code import petsc_solver
 
-PETSC_OPTIONS = '-ksp_type cg ' +\
-                '-ksp_rtol 1e-10 -pc_type hypre ' +\
-                '-pc_hypre_type boomeramg ' +\
-                '-pc_hypre_boomeramg_coarsen_type HMIS'
-
-
+DEFAULT_SOLVER_OPTIONS = \
+        '-ksp_type cg ' \
+        '-ksp_rtol 1e-10 -pc_type hypre ' \
+        '-pc_hypre_type boomeramg ' \
+        '-pc_hypre_boomeramg_coarsen_type HMIS'
 
 '''
     This program is part of the SimNIBS package.
@@ -440,9 +441,12 @@ class FEMSystem(object):
         conductivity information
     dirichlet: list of DirichletBC (optional)
         Dirichlet boundary conditions
-    units: {'mm' or 'm'}
-        Units of the mesh nodes
-
+    units: {'mm' or 'm'} (optional)
+        Units of the mesh nodes. Default: mm
+    store_G: bool (optional)
+        Wether to store the gradient matrix. Default: False
+    solver_options: str
+        Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
     Attributes
     ------------
     mesh: mesh_io.Msh
@@ -463,7 +467,8 @@ class FEMSystem(object):
     Once created, do NOT change the attributes of this class.
 
     '''
-    def __init__(self, mesh, cond, dirichlet=None, units='mm', store_G=False):
+    def __init__(self, mesh, cond, dirichlet=None, units='mm', store_G=False,
+                 solver_options=None):
         if units in ['mm', 'm']:
             self.units = units
         else:
@@ -479,9 +484,13 @@ class FEMSystem(object):
         self._dirichlet = dirichlet
         self._dof_map = dofMap(mesh.nodes.node_number)
         self._A = None
-        self._petsc_solver = None
+        self._solver = None
         self._G = None # Gradient operator
         self._D = None # Gradient matrix
+        if solver_options in [None, '']:
+            self._solver_options = DEFAULT_SOLVER_OPTIONS
+        else:
+            self._solver_options = solver_options
         self.assemble_fem_matrix(store_G=store_G)
 
     @property
@@ -526,31 +535,26 @@ class FEMSystem(object):
         logger.info(
             '{0:.2f}s to assemble FEM matrix'.format(time_assemble))
 
-    def prepare_solver(self, petsc_options=None):
+    def prepare_solver(self):
         '''Prepares the object to solve FEM systems
-
-        Parameters
-        -------------
-        petsc_options: str (optional)
-            Options to be used by PETSc. Default:
-            '-ksp_type cg -ksp_rtol 1e-10 -pc_type hypre -pc_hypre_type boomeramg '
-
         Note
         -------
         After running this method, do NOT change any attributes of the class!
         '''
-        if petsc_options is None:
-            petsc_options = PETSC_OPTIONS
-
+        logger.info(f'Using solver options: {self._solver_options}')
         A = sparse.csc_matrix(self.A, copy=True)
         A.sort_indices()
         dof_map = copy.deepcopy(self.dof_map)
         if self.dirichlet is not None:
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
-        self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
-        self._petsc_solver = petsc_solver.Solver(petsc_options, A)
 
-    def solve(self, b=None, petsc_options=None):
+        if self._solver_options == 'pardiso':
+            self._solver = pardiso.Solver(A)
+        else:
+            self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
+            self._solver = petsc_solver.Solver(self._solver_options, A)
+
+    def solve(self, b=None):
         ''' Solves the FEM system
         Calls PETSc to solve the FEM system
 
@@ -558,9 +562,6 @@ class FEMSystem(object):
         ------------
         b: np.ndarray (Optional):
             Right-hand side. If not set, will assume zeros
-        petsc_options: str (optional)
-            Options to be used by PETSc. Default:
-            '-ksp_type cg -ksp_rtol 1e-10 -pc_type hypre -pc_hypre_type boomeramg '
         Returns
         -----------
         x: ndarray
@@ -570,27 +571,20 @@ class FEMSystem(object):
         After running this method, do NOT change any attributes of the class!
         '''
         logger.debug('Solving FEM System')
-
-        if petsc_options is None:
-            petsc_options = PETSC_OPTIONS
-
-        logger.debug('PETSc Options: {0}'.format(petsc_options))
-
-        if self._petsc_solver is None:
-            self.prepare_solver(petsc_options)
-            pass
-
         if b is None:
             b = np.zeros(self.dof_map.nr, dtype=float)
         else:
             b = np.copy(b)
+
+        if self._solver is None:
+            self.prepare_solver()
 
         # We also need the A matrix here because the DOFs change
         dof_map = copy.deepcopy(self.dof_map)
         if self.dirichlet is not None:
             b, dof_map = self.dirichlet.apply_to_rhs(self.A, b, dof_map)
 
-        x = self._petsc_solver.solve(b)
+        x = self._solver.solve(b)
 
         if self.dirichlet is not None:
             x, dof_map = self.dirichlet.apply_to_solution(x, dof_map)
@@ -599,7 +593,7 @@ class FEMSystem(object):
         return np.squeeze(x)
 
     @classmethod
-    def tms(cls, mesh, cond):
+    def tms(cls, mesh, cond, solver_options=None):
         '''Sets up a TMS problem
 
         Parameters:
@@ -608,6 +602,8 @@ class FEMSystem(object):
             Mesh structure
         cond: ndarray or simnibs.mesh_io.msh.ElementData
             Conductivity of each element
+        solver_options: str
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         Returns:
         ------
         S: FEMSystem
@@ -616,7 +612,7 @@ class FEMSystem(object):
         # Add a dirichlet BC to the single lowest node to make the problem SPD
         lowest_node = mesh.nodes.node_number[mesh.nodes.node_coord[:, 2].argmin()]
         bc = DirichletBC([lowest_node], [0])
-        S = cls(mesh, cond, dirichlet=bc, store_G=True)
+        S = cls(mesh, cond, dirichlet=bc, store_G=True, solver_options=solver_options)
         return S
 
     def assemble_tms_rhs(self, dadt):
@@ -668,7 +664,7 @@ class FEMSystem(object):
         return b
 
     @classmethod
-    def tdcs(cls, mesh, cond, electrode_tags, potentials):
+    def tdcs(cls, mesh, cond, electrode_tags, potentials, solver_options=None):
         '''Sets up a tDCS problem using Dirichled boundary conditions
 
         Parameters:
@@ -681,6 +677,8 @@ class FEMSystem(object):
             list of the surfaces where the dirichlet BC is to be applied
         potentials: list
             list of the potentials each surface is to be set
+        solver_options: str
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         Returns:
         ------
         S: FEMSystem
@@ -696,10 +694,10 @@ class FEMSystem(object):
             bcs.append(DirichletBC(n, p * np.ones_like(n, dtype=float)))
         bc = DirichletBC.join(bcs)
 
-        return cls(mesh, cond, dirichlet=bc)
+        return cls(mesh, cond, dirichlet=bc, solver_options=solver_options)
 
     @classmethod
-    def tdcs_neumann(cls, mesh, cond, ground_electrode):
+    def tdcs_neumann(cls, mesh, cond, ground_electrode, solver_options=None):
         '''Sets up a tDCS problem using Dirichlet boundary conditions in the ground
         electrode and Neumann BC in the others
 
@@ -711,6 +709,8 @@ class FEMSystem(object):
             Conductivity of each element
         ground_electrode: int
             Tag of the ground electrode surface
+        solver_options: str
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         Returns:
         ------
         S: FEMSystem
@@ -723,7 +723,7 @@ class FEMSystem(object):
                 'Did not find any surface with tag: {0}'.format(ground_electrode))
         n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
         bcs = DirichletBC(n, np.zeros_like(n, dtype=float))
-        S = cls(mesh, cond, dirichlet=bcs)
+        S = cls(mesh, cond, dirichlet=bcs, solver_options=solver_options)
         return S
 
     def assemble_tdcs_neumann_rhs(self, electrode_tags, currents):
@@ -954,7 +954,8 @@ def _vol(msh, volume_tag=None):
     return np.abs(np.linalg.det(th[:, 1:] - th[:, 0, None])) / 6.
 
 
-def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm'):
+def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
+         solver_options=None):
     ''' Simulates a tDCS field using PETSc
 
     Parameters:
@@ -990,7 +991,7 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm'):
     if n_workers == 1:
         for el_surf, el_c in zip(electrode_surface_tags[1:], currents[1:]):
             total_p += _sim_tdcs_pair(
-                mesh, cond, ref_electrode, el_surf, el_c, units)
+                mesh, cond, ref_electrode, el_surf, el_c, units, solver_options)
     else:
         with multiprocessing.Pool(processes=n_workers) as pool:
             sims = []
@@ -998,7 +999,7 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm'):
                 sims.append(
                     pool.apply_async(
                         _sim_tdcs_pair,
-                        (mesh, cond, ref_electrode, el_surf, el_c, units)))
+                        (mesh, cond, ref_electrode, el_surf, el_c, units, solver_options)))
             for s in sims:
                 total_p += s.get()
             pool.close()
@@ -1007,10 +1008,11 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm'):
     return mesh_io.NodeData(total_p, 'v', mesh=mesh)
 
 
-def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units):
+def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_options):
     logger.info('Simulating electrode pair {0} - {1}'.format(
         ref_electrode, el_surf))
-    S = FEMSystem.tdcs(mesh, cond, [ref_electrode, el_surf], [0., 1.])
+    S = FEMSystem.tdcs(mesh, cond, [ref_electrode, el_surf], [0., 1.],
+                       solver_options=solver_options)
     v = S.solve()
     v = mesh_io.NodeData(v, name='v', mesh=mesh)
     flux = np.array([
@@ -1074,7 +1076,7 @@ def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[5, 1005], units='mm'):
     return flux
 
 
-def tms_dadt(mesh, cond, dAdt):
+def tms_dadt(mesh, cond, dAdt, solver_options=None):
     ''' Simulates a TMS field using PETSc
     If strings are used, it will use already existing files. Otherwise, temporary files
     are created
@@ -1092,7 +1094,7 @@ def tms_dadt(mesh, cond, dAdt):
     v:  simnibs.msh.mesh_io.NodeData
         NodeData instance with potential at the nodes
     '''
-    S = FEMSystem.tms(mesh, cond)
+    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
     b = S.assemble_tms_rhs(dAdt)
     v = S.solve(b)
     v = mesh_io.NodeData(v, name='v', mesh=mesh)
@@ -1100,7 +1102,7 @@ def tms_dadt(mesh, cond, dAdt):
 
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
-             output_names, geo_names=None, n_workers=1):
+             output_names, geo_names=None, solver_options=None, n_workers=1):
     ''' Simulates TMS fields using a coild + matsimnibs + dIdt definition
 
     Parameters
@@ -1121,6 +1123,8 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         List of output mesh file names, one per position
     geo_names: list of str
         List of output mesh file names, one per position
+    solver_options: str
+        Options for the solver
     n_workers: int
         Number of workers to use
 
@@ -1182,6 +1186,7 @@ def _finalize_global_solver():
     global tms_global_solver
     del tms_global_solver
 
+
 def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     ''' Simulates a tDCS field using PETSc and Neumann boundary conditions on the
     electrodes
@@ -1214,7 +1219,8 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
 
 
 def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
-                   current=1., roi=None, post_pro=None, field='E', n_workers=1):
+                   current=1., roi=None, post_pro=None, field='E',
+                   solver_options=None, n_workers=1):
     ''' Simulates tDCS fields using Neumann boundary conditions and writes the output
     Electric fields to an HDF5 file
 
@@ -1240,7 +1246,10 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
         Which field to save (electric field E or current density J). Default: 'E'
     post_pro: callable (optional)
         callable f_post = post_pro(f), where f is an input field in the ROI and
-        f_post is an Nx3 ndarray
+        f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
+        field
+    solver_options: str (optional)
+        Options to be used by the solver. Default: Hypre solver
     n_workers: int
         Number of workers to use
     Returns
@@ -1251,7 +1260,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface_tags, fn_hdf5, dataset,
     if field != 'E' and field != 'J':
         raise ValueError("Field shoud be either 'E' or 'J'")
     # Construct system and gradient matrix
-    S = FEMSystem.tdcs_neumann(mesh, cond, electrode_surface_tags[0])
+    S = FEMSystem.tdcs_neumann(
+        mesh, cond, electrode_surface_tags[0], solver_options=solver_options)
     D = grad_matrix(mesh, split=True)
     n_out = mesh.elm.nr
     # Separate out the part of the gradiend that is in the ROI
@@ -1366,4 +1376,189 @@ def _finalize_tdcs_global_solver():
     del tdcs_global_post_pro
 
 #### Finished functionr to tun tDCS leadfields in parallel ####
+def tms_many_simulations(
+    mesh, cond, fn_coil, matsimnibs_list, didt_list,
+    fn_hdf5, dataset, roi=None, field='E', post_pro=None,
+    solver_options=None, n_workers=1):
+    ''' Function for runnining a large amount of TMS simulations
 
+    Parameters
+    -------------
+    mesh: simnibs.msh.mesh_io.Msh
+        Mesh structure
+    cond: simnibs.msh.mesh_io.ElementData
+        Conductivity field
+    fields: str or list of str
+        Fields to be calculated for each position
+    fn_coil: string
+        Name of coil file
+    matsimnibs_list: list
+        List of "matsimnibs" matrices, one per position
+    didt_list: list
+        List of dIdt values, one per position
+    fn_hdf5: str
+        Name of hdf5 where simulations will be saved
+    dataset: str
+        Name of dataset where data is to be saved
+    roi: list or None (optional)
+        Regions of interest where the fields is to be saved.
+        If set to None, will save the electric field in all tissues.
+        Default: None
+    field: 'E' or 'J' (optional)
+        Which field to save (electric field E or current density J). Default: 'E'
+    post_pro: list of callables (optional)
+        list of callables f_post = post_pro(f), where f is an input field in the ROI and
+        f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
+        field
+    solver_options: str (optional)
+        Options to be used by the solver. Default: Hypre solver
+    n_workers: int
+        Number of workers to use
+    '''
+    if field != 'E' and field != 'J':
+        raise ValueError("Field shoud be either 'E' or 'J'")
+    if len(matsimnibs_list) != len(didt_list):
+        raise ValueError("matsimnibs_list and didt_list should have the same length")
+    D = grad_matrix(mesh, split=True)
+    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
+    n_out = mesh.elm.nr
+    # Separate out the part of the gradiend that is in the ROI
+    if roi is not None:
+        roi = np.in1d(mesh.elm.tag1, roi)
+        D = [d.tocsc() for d in D]
+        D = [d[roi] for d in D]
+        cond = cond.value[roi]
+    else:
+        roi = np.ones(mesh.elm.nr, dtype=bool)
+
+    n_roi = np.sum(roi)
+    # Figure out size of the postprocessing output
+    if post_pro is not None:
+        n_out = np.array(post_pro(np.zeros((n_roi, 3)))).shape
+    else:
+        n_out = (n_roi, 3)
+
+    n_sims = len(matsimnibs_list)
+    # Create HDF5 dataset
+    with h5py.File(fn_hdf5, 'a') as f:
+        f.create_dataset(
+            dataset,
+            (n_sims,) + n_out,
+            dtype=float, compression="gzip")
+
+    # Run sequentially
+    if n_workers == 1:
+        for i, matsimnibs, didt in zip(range(n_sims), matsimnibs_list, didt_list):
+            logger.info(
+                f'Running Simulation {i+1} out of {n_sims}')
+            dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
+            b = S.assemble_tms_rhs(dAdt)
+            v = S.solve(b)
+            E = np.vstack([-d.dot(v) for d in D]).T * 1e3
+            dAdt = dAdt[roi]
+            E -= dAdt
+            if field == 'E':
+                out_field = E
+            elif field == 'J':
+                out_field = calc_J(E, cond)
+            if post_pro is not None:
+                out_field = post_pro(out_field)
+            with h5py.File(fn_hdf5) as f:
+                f[dataset][i] = out_field
+
+    # Run in parallel
+    else:
+        # Lock has to be passed through inheritance
+        S.lock = multiprocessing.Lock()
+        with multiprocessing.Pool(
+                processes=n_workers,
+                initializer=_set_up_tms_many_global_solver,
+                initargs=(S, fn_coil, n_sims, D, post_pro, cond, field, roi)) as pool:
+            sims = []
+            for i, matsimnibs, didt in zip(
+                    range(n_sims), matsimnibs_list, didt_list):
+                sims.append(
+                    pool.apply_async(
+                        _run_tms_many_simulations,
+                        (i, matsimnibs, didt,
+                         fn_hdf5, dataset)))
+            [s.get() for s in sims]
+            pool.close()
+            pool.join()
+
+
+### Functions for running man TMS simulations in parallel ####
+def _set_up_tms_many_global_solver(S, fn_coil, n, D, post_pro, cond, field, roi):
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+    tms_many_global_solver = S
+    tms_many_global_fn_coil = fn_coil
+    tms_many_global_nsims = n
+    tms_many_global_grad_matrix = D
+    tms_many_global_post_pro = post_pro
+    tms_many_global_cond = cond
+    tms_many_global_field = field
+    tms_many_global_roi = roi
+
+
+def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+    logger.info('Running Simulation {0} out of {1}'.format(
+        i+1, tms_many_global_nsims))
+    # RHS
+    dAdt = coil_lib.set_up_tms(
+        tms_many_global_solver.mesh,
+        tms_many_global_fn_coil,
+        matsimnibs, didt
+    )
+    b = tms_many_global_solver.assemble_tms_rhs(dAdt)
+    # Simulate
+    v = tms_many_global_solver.solve(b)
+    # Calculate E and postprocessing
+    E = np.vstack([-d.dot(v) for d in tms_many_global_grad_matrix]).T * 1e3
+    E -= dAdt[tms_many_global_roi]
+    if tms_many_global_field == 'E':
+        out_field = E
+    elif tms_many_global_field == 'J':
+        out_field = calc_J(E, tms_many_global_cond)
+    if tms_many_global_post_pro is not None:
+        out_field = tms_many_global_post_pro(out_field)
+    # Write out
+    tms_many_global_solver.lock.acquire()
+    with h5py.File(fn_hdf5, 'a') as f:
+        f[dataset][i] = out_field
+    tms_many_global_solver.lock.release()
+
+
+def _finalize_tms_many_simulations_global_solver():
+    global tms_many_global_solver
+    global tms_many_global_fn_coil
+    global tms_many_global_nsims
+    global tms_many_global_grad_matrix
+    global tms_many_global_post_pro
+    global tms_many_global_cond
+    global tms_many_global_field
+    global tms_many_global_roi
+
+    del tms_many_global_solver
+    del tms_many_global_fn_coil
+    del tms_many_global_nsims
+    del tms_many_global_grad_matrix
+    del tms_many_global_post_pro
+    del tms_many_global_cond
+    del tms_many_global_field
+    del tms_many_global_roi
+### Finished functionr to run many TMS simulations in parallel ####

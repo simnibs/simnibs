@@ -12,10 +12,11 @@ Current Contributors
    * Creation of the new example dataset *ernie* (2.1)
 
 * Guilherme B. Saturnino
+   * Implementation of TMS optimization (3.1)
    * Installation procedure (3.0)
    * Documentation (3.0)
    * Implementation of the fast FEM code (3.0)
-   * Implementation (together with Konstantin Weise) of the UQ functionality (3.0)
+   * Implementation of the UQ functionality (3.0)
    * Main contributor to the new python core (2.1)
    * Main contributor to the GUI and the electrode modeling for tDCS (2.0)
    * Bug-fixing
@@ -32,9 +33,15 @@ Current Contributors
    * Help with :ref:`headreco_docs` (2.1)
    * Creation of the new MNI head mesh (2.1)
 
+* Thomas Knoesche
+   * Implementation of the UQ functionality (3.0)
 
-* Konstantin Weise and Thomas Knoesche
-   * Implementation (together with G. B. Saturnino) of the UQ functionality (3.0)
+* Konstantin Weise
+   * Implementation of TMS optimization (3.1)
+   * Implementation of the UQ functionality (3.0)
+
+* Ole Numssen
+   * Implementation of TMS optimization (3.1)
 
 Former Contributors
 ---------------------

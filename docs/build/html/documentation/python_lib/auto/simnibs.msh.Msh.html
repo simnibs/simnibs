@@ -220,7 +220,7 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.prepare_surface_tags" title="simnibs.msh.Msh.prepare_surface_tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Msh.read_hdf5" title="simnibs.msh.Msh.read_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code></a>(hdf5_fn[, path])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Msh.read_hdf5" title="simnibs.msh.Msh.read_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code></a>(hdf5_fn[, path, load_data])</p></td>
 <td><p>Reads mesh information from an hdf5 file</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.remove_from_mesh" title="simnibs.msh.Msh.remove_from_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code></a>(tags)</p></td>
@@ -232,7 +232,7 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.tetrahedra_quality" title="simnibs.msh.Msh.tetrahedra_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code></a>([tetrahedra])</p></td>
 <td><p>calculates the quality measures of the tetrahedra</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Msh.triangle_normals" title="simnibs.msh.Msh.triangle_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Msh.triangle_normals" title="simnibs.msh.Msh.triangle_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code></a>([smooth])</p></td>
 <td><p>Calculates the normals of triangles</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.view" title="simnibs.msh.Msh.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>([visible_tags, visible_fields])</p></td>
@@ -241,7 +241,7 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.msh.Msh.write" title="simnibs.msh.Msh.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(out_fn)</p></td>
 <td><p>Writes out the mesh as a “.msh” file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.write_hdf5" title="simnibs.msh.Msh.write_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code></a>(hdf5_fn[, path])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.msh.Msh.write_hdf5" title="simnibs.msh.Msh.write_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code></a>(hdf5_fn[, path, compression])</p></td>
 <td><p>Writes a HDF5 file with mesh information</p></td>
 </tr>
 </tbody>
@@ -306,15 +306,16 @@ Overides nodes and elements</p></li>
 
 <dl class="method">
 <dt id="simnibs.msh.Msh.calc_matsimnibs">
-<code class="descname">calc_matsimnibs</code><span class="sig-paren">(</span><em>center, pos_ydir, distance, skin_surface=[5, 1005]</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.calc_matsimnibs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calc_matsimnibs</code><span class="sig-paren">(</span><em>center</em>, <em>pos_ydir</em>, <em>distance</em>, <em>skin_surface=None</em>, <em>msh_surf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.calc_matsimnibs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the matsimnibs matrix for TMS simulations</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>center</strong> (<em>np.ndarray</em>) – Position of the center of the coil, will be projected to the skin surface</p></li>
-<li><p><strong>pos_ydir</strong> (<em>np.ndarray</em>) – Position of the y axis in relation to the coil center</p></li>
-<li><p><strong>distance</strong> (<em>float</em>) – Distance from the center</p></li>
-<li><p><strong>skin_surface</strong> (<em>list</em>) – Possible tags for the skin surface (Default: [5, 1005])</p></li>
+<li><p><strong>center</strong> (<em>np.ndarray</em>) – Position of the center of the coil, will be projected to the skin surface.</p></li>
+<li><p><strong>pos_ydir</strong> (<em>np.ndarray</em>) – Position of the y axis in relation to the coil center.</p></li>
+<li><p><strong>distance</strong> (<em>float</em>) – Distance from the center.</p></li>
+<li><p><strong>skin_surface</strong> (<em>list of num</em><em>, </em><em>optional</em>) – Possible tags for the skin surface (default: [5, 1005]).</p></li>
+<li><p><strong>msh_surf</strong> (<a class="reference internal" href="#simnibs.msh.Msh" title="simnibs.msh.Msh"><em>simnibs.msh.Msh</em></a><em>, </em><em>optional</em>) – Surface cropped mesh. If not provided, this is computed from self.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -566,6 +567,27 @@ iterations</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="simnibs.msh.Msh.intercept_ray">
+<code class="descname">intercept_ray</code><span class="sig-paren">(</span><em>near</em>, <em>far</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.intercept_ray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the triangle (if any) that intercepts a line segment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>near</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – Start of the line segment</p></li>
+<li><p><strong>far</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – end of the line segment</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>intercept_elm</em> – Index of the triangle intercepting the ray</p></li>
+<li><p><em>intercpt_pos</em> – Position of the interception</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="simnibs.msh.Msh.interp_matrix">
 <code class="descname">interp_matrix</code><span class="sig-paren">(</span><em>pos</em>, <em>out_fill=nan</em>, <em>th_indices=None</em>, <em>element_wise=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.interp_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates a matrix to perform interpolation
@@ -667,7 +689,7 @@ Only works for ordered values of mesh and node indices</p>
 
 <dl class="classmethod">
 <dt id="simnibs.msh.Msh.read_hdf5">
-<em class="property">classmethod </em><code class="descname">read_hdf5</code><span class="sig-paren">(</span><em>hdf5_fn</em>, <em>path='./'</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.read_hdf5" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">read_hdf5</code><span class="sig-paren">(</span><em>hdf5_fn</em>, <em>path='./'</em>, <em>load_data=True</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.read_hdf5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reads mesh information from an hdf5 file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -736,14 +758,17 @@ goes right through an edge
 
 <dl class="method">
 <dt id="simnibs.msh.Msh.triangle_normals">
-<code class="descname">triangle_normals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.triangle_normals" title="Permalink to this definition">¶</a></dt>
+<code class="descname">triangle_normals</code><span class="sig-paren">(</span><em>smooth=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.triangle_normals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the normals of triangles</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>normals</strong> – normals of triangles, zero at the tetrahedra</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>smooth</em>) – Number of smoothing steps to perform. Default: 0</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.msh.ElementData.html#simnibs.msh.ElementData" title="simnibs.msh.ElementData">ElementData</a></p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>normals</strong> – normals of triangles, zero at the tetrahedra</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="simnibs.msh.ElementData.html#simnibs.msh.ElementData" title="simnibs.msh.ElementData">ElementData</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -787,13 +812,14 @@ goes right through an edge
 
 <dl class="method">
 <dt id="simnibs.msh.Msh.write_hdf5">
-<code class="descname">write_hdf5</code><span class="sig-paren">(</span><em>hdf5_fn</em>, <em>path='./'</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.write_hdf5" title="Permalink to this definition">¶</a></dt>
+<code class="descname">write_hdf5</code><span class="sig-paren">(</span><em>hdf5_fn</em>, <em>path='./'</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.Msh.write_hdf5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes a HDF5 file with mesh information</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hdf5_fn</strong> (<em>str</em>) – file name of hdf5 file</p></li>
 <li><p><strong>path</strong> (<em>str</em>) – path in the hdf5 file where the mesh should be saved</p></li>
+<li><p><strong>compression</strong> (<em>str</em><em> or </em><em>int</em><em> (</em><em>Default: None</em><em>)</em>) – compression strategy: “gzip”, “lzf”, “szip”, None</p></li>
 </ul>
 </dd>
 </dl>
@@ -848,6 +874,7 @@ goes right through an edge
 <li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>

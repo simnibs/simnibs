@@ -73,7 +73,7 @@
 </div>
 <div class="section" id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
-<ul>
+<ul id="tmslist-fnamecoil">
 <li><p><strong>fnamecoil</strong>: <em>string (Python)/ character array (MATLAB)</em></p>
 <ul>
 <li><p><strong>Description</strong>: Name of coil file. Coil files come in two types</p>
@@ -94,24 +94,32 @@
 </ul>
 </li>
 </ul>
-<ul id="tmslist-pos">
+<ul class="simple" id="tmslist-pos">
 <li><p><strong>pos</strong>: <em>list/array of POSITION structures (Python/MATLAB)</em></p>
-<ul class="simple">
+<ul>
 <li><p><strong>Description</strong>: List of coil positions for the simulations</p></li>
 <li><p><strong>Examples</strong>: See the <a class="reference internal" href="position.html#position-doc"><span class="std std-ref">documentation for the POSITION strucure</span></a>.</p></li>
 </ul>
 </li>
 <li><p><strong>cond</strong>: <em>list/array of COND structures (Python/MATLAB), optional</em></p>
-<p><a class="reference internal" href="tdcslist.html#cond-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p>
+<ul>
+<li><p><a class="reference internal" href="tdcslist.html#cond-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p></li>
+</ul>
 </li>
 <li><p><strong>anisotropy_type</strong>: <em>‘scalar’, ‘vn’, ‘dir’ or ‘mc’, optional</em></p>
-<p><a class="reference internal" href="tdcslist.html#anisotropy-type-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p>
+<ul>
+<li><p><a class="reference internal" href="tdcslist.html#anisotropy-type-attribute-doc"><span class="std std-ref">Follow this link</span></a>.</p></li>
+</ul>
 </li>
-<li><p><strong>aniso_maxratio</strong>: <em>float</em></p>
-<p><a class="reference internal" href="tdcslist.html#aniso-maxratio-doc"><span class="std std-ref">Follow this link</span></a>.</p>
+<li><p><strong>aniso_maxratio</strong>: <em>float, optional</em></p>
+<ul>
+<li><p><a class="reference internal" href="tdcslist.html#aniso-maxratio-doc"><span class="std std-ref">Follow this link</span></a>.</p></li>
+</ul>
 </li>
-<li><p><strong>aniso_maxcond</strong>: <em>float</em></p>
-<p><a class="reference internal" href="tdcslist.html#aniso-maxcond-doc"><span class="std std-ref">Follow this link</span></a>.</p>
+<li><p><strong>aniso_maxcond</strong>: <em>float, optional</em></p>
+<ul>
+<li><p><a class="reference internal" href="tdcslist.html#aniso-maxcond-doc"><span class="std std-ref">Follow this link</span></a>.</p></li>
+</ul>
 </li>
 </ul>
 </div>
@@ -213,6 +221,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>

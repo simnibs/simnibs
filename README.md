@@ -33,5 +33,6 @@ We have included code or binaries from the following project to this repository:
 * [MSMPI](https://github.com/Microsoft/Microsoft-MPI)
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
+* [PyPardiso](https://github.com/haasad/PyPardisoProject)
 
 For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file

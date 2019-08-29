@@ -81,8 +81,12 @@ def read_mat(fn):
     elif structure_type == 'TDCSLEADFIELD':
         from ..simulation.sim_struct import TDCSLEADFIELD
         structure = TDCSLEADFIELD(matlab_struct=mat)
+    elif structure_type == 'TMSoptimize':
+        from ..optimization.opt_struct import TMSoptimize
+        structure = TMSoptimize.read_mat_struct(mat)
+
     elif structure_type == 'TDCSoptimize':
-        from ..optimize.optimization import TDCSoptimize
+        from ..optimization.opt_struct import TDCSoptimize
         structure = TDCSoptimize.read_mat_struct(mat)
     else:
         raise IOError('Not a valid structure type!')

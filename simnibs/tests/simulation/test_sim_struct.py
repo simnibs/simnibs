@@ -387,5 +387,3 @@ class TestTDCSLEADFIELD:
         assert np.allclose(p.electrode[0].centre, [1.2,2.4,7.1])
         assert p.electrode[0].pos_ydir == []
         assert p.electrode[0].shape == 'rect'
-
-

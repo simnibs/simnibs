@@ -51,7 +51,7 @@ simnibs/ccd-files/README.md
 __pycache__/
 *.py[cod]
 *$py.class
-build/lib.linux-x86_64-3.6/
+build/lib.*/
 
 # C extensions
 *.so

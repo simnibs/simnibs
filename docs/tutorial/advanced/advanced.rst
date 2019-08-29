@@ -7,3 +7,4 @@ Advanced Features
 
    group_analysis
    uq
+   tms_optimization
