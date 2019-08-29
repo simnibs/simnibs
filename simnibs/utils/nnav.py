@@ -9,242 +9,48 @@ import io
 import os
 import nibabel
 import numpy as np
-
-from ..simulation import optim_tms
-from simnibs.simulation import sim_struct
 from simnibs.utils.simnibs_logger import logger
 
 
-def get_matsimnibs_from_pos(pos, msh=None):
-    """Returns matsimnibs from simnibs.simulation.sim_struct.POSITION as np.ndarray with shape = (4,4)"""
-    if pos.matsimnibs is None:
-        pos.calc_matsimnibs(msh)
-
-    return np.squeeze(pos.matsimnibs)
-
-
-def get_matsimnibs_from_tmslist(tmslist, msh=None):
-    """Returns matsimnibs from all positions as np.ndarray with shape (4,4,n_pos)"""
-    return np.stack([get_matsimnibs_from_pos(pos, msh=msh) for pos in tmslist.pos], axis=2)
-
-
-def get_matsimnis_from_session(session, msh=None):
-    """Returns matsimnibs from all positions from all poslists as np.ndarray with shape (4,4,N_pos)"""
-    if msh is None:
-        msh = session.fnamehead
-
-    return np.squeeze(np.array([get_matsimnibs_from_tmslist(poslist, msh=msh) for poslist in session.poslists]))
-
-
-def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
-                 orientation='RAS', fsl_pref='',
-                 manufacturer='localite', msh=None, flirt_mat2conf=np.eye(4), skip_flirt='auto'):
-    """
-    Transforms simnibs positions/orientations to neuronavigation instrument marker space.
-
-
-    Parameters
-    ----------
-    fn_exp_nii: str
-        Filename of .nii file the experiments were conducted with.
-    fn_conform_nii: str
-        Filename of .nii file from SimNIBS mri2msh function
-        (e.g.: .../fs_subjectID/subjectID_T1fs_conform.nii.gz).
-    simnibs_obj: simnibs.simulation.sim_struct object with position/s (POSITION | SESSION | TMSLIST | ...) or np.ndarray
-        N positions/orientations of coil.
-    orientation: str
-        Orientation convention ('RAS' or 'LPS').
-        Can be read from localite neuronavigation .xml file under coordinateSpace="RAS".
-    fsl_pref: str
-        Bash prefix needed to start FSL environment (Default: '').
-    manufacturer: str (Default: 'localite')
-        Do transforms for which software.
-    msh: simnibs.simulation.sim_struct.Mesh or None (Default: None)
-        Headmesh. Only needed if matsimnibs is not present in pos.
-    flirt_mat2conf: np.ndarray or basestring
-        Coregistration matrix for mesh.nii and neuronav.nii (Default: identity matrix).
-    skip_flirt: str or bool
-        Skip flirt coregistration between nnav.nii und mesh.nii. True, False, 'auto'. (Default: 'auto')
-
-    Returns
-    -------
-    m_simnibs : nparray of float [4 x 4 x N]
-    """
-
-    if type(simnibs_obj) == np.ndarray:
-        simnibs_obj_mat = simnibs_obj
-
-    elif type(simnibs_obj) == sim_struct.TMSLIST:
-        simnibs_obj_mat = get_matsimnibs_from_tmslist(simnibs_obj, msh=msh)
-
-    elif type(simnibs_obj) == sim_struct.POSITION:
-        simnibs_obj_mat = get_matsimnibs_from_pos(simnibs_obj, msh=msh)
-
-    elif type(simnibs_obj) == optim_tms.TMSOPTIMIZATION:
-        if msh is None:
-            msh = simnibs_obj.fnamehead
-        simnibs_obj_mat = get_matsimnibs_from_tmslist(simnibs_obj.optimlist, msh=msh)
-
-    elif type(simnibs_obj) == sim_struct.SESSION:
-        simnibs_obj_mat = get_matsimnis_from_session(simnibs_obj, msh=msh)
-
-    else:
-        raise NotImplementedError("{} not implemented in simnibs2nnav().".format(type(simnibs_obj)))
-
-    if len(simnibs_obj_mat.shape) == 2:
-        simnibs_obj_mat = simnibs_obj_mat[:, :, np.newaxis]
-
-    if manufacturer == 'localite':
-
-        m_total = get_m_localite(fn_exp_nii, fn_conform_nii, fsl_pref, orientation,
-                                 skip_flirt=skip_flirt, flirt_mat2conf=flirt_mat2conf)
-        m_total = np.linalg.inv(m_total)
-
-        # construct flip matrix
-        m_flip = np.array([[0, 0, 1, 0],
-                           [0, -1, 0, 0],
-                           [1, 0, 0, 0],
-                           [0, 0, 0, 1]])
-
-        # transform coil position from neuronavigation to simnibs space
-        m_nnav = np.dot(np.dot(m_total,
-                               simnibs_obj_mat.transpose([2, 0, 1])
-                               ).transpose([1, 0, 2]),
-                        m_flip).transpose([1, 2, 0])
-
-    else:
-        raise NotImplementedError
-
-    return m_nnav
-
-
-def nnav2simnibs(fn_exp_nii, fn_conform_nii, m_nnav, orientation='RAS',
-                 fsl_pref='', manufacturer='localite'):
-    """
-    Transforms TMS coil instrument markers from neuronavigation to simnibs space.
-
-    Parameters
-    ----------
-    fn_exp_nii: str
-        Filename of .nii file the experiments were conducted with.
-    fn_conform_nii: str
-        Filename of .nii file from SimNIBS mri2msh function
-        (e.g.: .../fs_subjectID/subjectID_T1fs_conform.nii.gz).
-    m_nnav: nparray [4 x 4 x N]
-        N position matrices from neuronavigation.
-    orientation: str
-        Orientation convention ('RAS' or 'LPS').
-        Can be read from localite neuronavigation .xml file under coordinateSpace="RAS".
-    fsl_pref: str
-        Bash prefix needed to start FSL environment (Default: '').
-    manufacturer: str (Default: 'localite')
-        Do transforms for which software.
-
-    Returns
-    -------
-    m_simnibs: nparray of float [4 x 4 x N]
-
-    """
-
-    if len(m_nnav.shape) == 2:
-        m_nnav = m_nnav[:, :, np.newaxis]
-
-    if manufacturer == 'localite':
-
-        m_total = get_m_localite(fn_exp_nii, fn_conform_nii, fsl_pref, orientation)
-
-        # construct flip matrix
-        m_flip = np.array([[0, 0, 1, 0],
-                           [0, -1, 0, 0],
-                           [1, 0, 0, 0],
-                           [0, 0, 0, 1]])
-
-        # transform coil position from neuronavigation to simnibs space
-        m_simnibs = np.dot(np.dot(m_total,
-                                  m_nnav.transpose([2, 0, 1])
-                                  ).transpose([1, 0, 2]),
-                           m_flip).transpose([1, 2, 0])
-
-    else:
-        raise NotImplementedError
-
-    return m_simnibs
-
-
-def get_m_localite(fn_exp_nii, fn_conform_nii,
-                   fsl_pref='', orientation='RAS',
-                   skip_flirt='auto', flirt_mat2conf=np.eye(4)):
+def get_m_localite(fn_nii,
+                   orientation='RAS', flirt_nav2conf=np.eye(4)):
     """Returns global transformation matrix for Localite TMS Navigator -> simnibs.
+    
+    If the image used for neuronavigation is not the SimNIBS _conform.nii image used for the mesh generation, 
+    provide flirt_mat2conf transformation matrix. 
 
     Parameters
     ----------
-    fn_exp_nii: str
+    fn_nii: str
         Filename of .nii file the experiments were conducted with.
-    fn_conform_nii: str
-        Filename of .nii file from SimNIBS mri2msh function
-        (e.g.: .../fs_subjectID/subjectID_T1fs_conform.nii.gz).
-    fsl_pref: str
-        Bash prefix needed to start FSL environment (Default: '').
     orientation: str
         Orientation convention ('RAS' or 'LPS').
         Can be read from localite neuronavigation .xml file under coordinateSpace="RAS".
-    skip_flirt: 'auto' or bool
-        Skip coregistration between headmeash.nii and neuronavigation.nii
-        'auto': same base-filenames and same qforms -> Skip
-        True: skip. False: do flirt coregistration.
-    flirt_mat2conf: np.ndarray or basestring
+
+    flirt_nav2conf: np.ndarray or basestring
         Coregistration matrix for mesh.nii and neuronav.nii (Default: identity matrix).
     """
-    if type(flirt_mat2conf) == str:
-        flirt_mat2conf = np.loadtxt(flirt_mat2conf)
+    if type(flirt_nav2conf) == str:
+        flirt_nav2conf = np.loadtxt(flirt_nav2conf)
 
-    # get original qform without RAS
-    exp_nii_original = nibabel.load(fn_exp_nii)
-    conform_nii_original = nibabel.load(fn_conform_nii)
-    m_qform_exp_original = exp_nii_original.get_qform()
-    m_qform_conform_original = conform_nii_original.get_qform()
-
-    # check if conform_nii and exp_nii are the same and have the same q-form
-    if skip_flirt == 'auto':
-        skip_flirt = (os.path.split(splitext_niigz(fn_exp_nii)[0])[1] ==
-                      os.path.split(splitext_niigz(fn_conform_nii)[0])[1]) \
-                     and np.all(np.isclose(m_qform_conform_original, m_qform_exp_original)) \
-                     and np.all(flirt_mat2conf == np.eye(4))
-
-    fn_exp_nii_ras = splitext_niigz(fn_exp_nii)[0] + '_RAS' + splitext_niigz(fn_exp_nii)[1]
+    fn_exp_nii_ras = splitext_niigz(fn_nii)[0] + '_RAS' + splitext_niigz(fn_nii)[1]
 
     # transform exp to RAS
-    exp_nii = to_ras(fn_exp_nii, fn_exp_nii_ras)
-    conform_nii = nibabel.load(fn_conform_nii)
-    logger.debug('Gathering header information...')
-
-    # extract header information
-    conform_hdr = conform_nii.header
-    exp_hdr = exp_nii.header
+    img = to_ras(fn_nii, fn_exp_nii_ras)
 
     # read q-form matrix from exp
     logger.debug('Constructing transformation matrices:')
     logger.debug(' > q-form matrix of exp')
-    m_qform_exp = exp_nii.get_qform()
-
-    # read q-form matrix from conform
-    # m_qform_conform = conform_nii.get_qform()
+    m_qform_exp = img.get_qform()
 
     # invert q-form matrix
     m_qform_exp_inv = np.linalg.inv(m_qform_exp)
-    m_vox2mm = get_vox2mm(exp_hdr)
-    m_flirt2fs = get_flirt2fs(conform_hdr)
+    m_vox2mm = get_vox2mm(img.header)
+    m_flirt2fs = get_flirt2fs(img.header)
     m_2ras = get_m_2ras(orientation)
 
-    # construct flirt transformation matrix if necessary
-    if skip_flirt:
-        logger.debug('Skipping flirt coregistration of headmesh.nii and neuronavigation.nii.')
-        m_2conf = flirt_mat2conf
-    else:
-        m_2conf = get_m_2conf(exp_nii, fn_conform_nii, fn_exp_nii_ras, fsl_pref)
-
     # combine transformation matrices
-    m_total = np.dot(np.dot(np.dot(np.dot(m_flirt2fs, m_2conf), m_vox2mm), m_qform_exp_inv), m_2ras)
+    m_total = np.dot(np.dot(np.dot(np.dot(m_flirt2fs, flirt_nav2conf), m_vox2mm), m_qform_exp_inv), m_2ras)
     return m_total
 
 
@@ -267,40 +73,54 @@ def get_m_2ras(orientation):
                            [0, -1, 0, 0],
                            [0, 0, 1, 0],
                            [0, 0, 0, 1]])
-    else:
+    elif orientation == 'RAS':
         m_2ras = np.eye(4)
+
+    else:
+        raise NotImplementedError(f"orientation {orientation} is not implemented. Use RAS or LPS.")
 
     return m_2ras
 
 
-def get_m_2conf(exp_nii, fn_conform_nii, fn_exp_nii_ras, fsl_cmd):
+def get_m_2conf(fn_exp_nii, fn_conform_nii, remove_tmp_files=True):
     """
-    Construct headmesh.nii to neuronavigation .nii transformation matrix
+    Calculate headmesh.nii to neuronavigation .nii transformation matrix with FSL FLIRT registration.
 
 
+    If not remove_tmp_files, the matrix is also stored at fn_exp_nii + _m_2conform.mat
+
+    Parameters
+    ----------
+    fn_exp_nii: str
+        Full filename to .nii used in neuronavigation
+    fn_conform_nii: str
+        Full filename of .nii produced by SimNIBS for mesh generation.
+    remove_tmp_files: bool
+        Remove FSL intermediate files. Default: True.
+
+    Returns
+    -------
+    np.ndarry (4x4)
+        Transformation matrix from neuronavigation .nii to mesh conform .nii
     """
-    # temo file names to store intermediate results from fsl
-    fn_flip = splitext_niigz(fn_exp_nii_ras)[0] + '_flipped_temp.nii'
-    fn_out_fslmaths = splitext_niigz(fn_exp_nii_ras)[0] + '_fslmaths_temp'
-    fn_mat_m_2conform = splitext_niigz(fn_exp_nii_ras)[0] + '_m_2conform_temp'
-    if any([os.path.exists(fn_flip), os.path.exists(fn_out_fslmaths), os.path.exists(fn_mat_m_2conform)]):
-        remove_tmp_files = False
-    else:
-        remove_tmp_files = True
-
+    # temp file names to store intermediate results from fsl
+    fn_flip = splitext_niigz(fn_exp_nii)[0] + '_flipped_temp.nii'
+    fn_out_fslmaths = splitext_niigz(fn_exp_nii)[0] + '_fslmaths_temp'
+    fn_mat_m_2conform = splitext_niigz(fn_exp_nii)[0] + '_m_2conform'
     dof = 6
 
     # flip image of exp along first dimension and save it (to LAS, radiologic)
+    exp_nii = nibabel.load(fn_exp_nii)
     data_exp_flipped = np.flip(exp_nii.get_data(), axis=0)
     exp_flipped_nii = nibabel.Nifti1Image(data_exp_flipped, exp_nii.affine, exp_nii.header)
     nibabel.save(exp_flipped_nii, fn_flip)
 
     # define FSL commands
     cmdstr = [[] for _ in range(4)]
-    cmdstr[0] = fsl_cmd + ' fslorient -setqformcode 1 ' + fn_flip
-    cmdstr[1] = fsl_cmd + ' fslorient -forceradiological ' + fn_flip
-    cmdstr[2] = fsl_cmd + ' fslmaths ' + fn_conform_nii + ' -bin -s 1 ' + fn_out_fslmaths + '.nii.gz'
-    cmdstr[3] = fsl_cmd + ' flirt -in ' + fn_flip + ' -ref ' + fn_conform_nii + ' -refweight ' + fn_out_fslmaths + \
+    cmdstr[0] = 'fslorient -setqformcode 1 ' + fn_flip
+    cmdstr[1] = 'fslorient -forceradiological ' + fn_flip
+    cmdstr[2] = 'fslmaths ' + fn_conform_nii + ' -bin -s 1 ' + fn_out_fslmaths + '.nii.gz'
+    cmdstr[3] = 'flirt -in ' + fn_flip + ' -ref ' + fn_conform_nii + ' -refweight ' + fn_out_fslmaths + \
                 ' -searchrx -30 30 -searchry -30 30 -searchrz -30 30  -interp sinc -cost mutualinfo ' + \
                 '-searchcost mutualinfo -dof ' + str(dof) + ' -omat ' + fn_mat_m_2conform + '.mat -out ' + \
                 fn_mat_m_2conform + '.nii.gz'
@@ -322,11 +142,11 @@ def get_m_2conf(exp_nii, fn_conform_nii, fn_exp_nii_ras, fsl_cmd):
     return mat2conf
 
 
-def get_flirt2fs(conform_hdr):
+def get_flirt2fs(img_hdr):
     """Construct flirt to freesurfer transformation matrix"""
 
-    pixdim_conform = conform_hdr['pixdim'][1:4]
-    dim_conform = conform_hdr['dim'][1:4]
+    pixdim_conform = img_hdr['pixdim'][1:4]
+    dim_conform = img_hdr['dim'][1:4]
 
     m_flirt2fs = np.eye(4)
     m_flirt2fs[0, 3] = -pixdim_conform[0] * (dim_conform[0] / 2.0 - 1)
