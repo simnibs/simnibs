@@ -1202,7 +1202,7 @@ def get_surface_names_from_folder_structure(m2m_folder):
     names = {}
 
     if sub_files.seg_type == 'headreco':
-        names['surf_dir'] = look_up(sub_files.suf_dir)
+        names['surf_dir'] = look_up(sub_files.surf_dir)
         names['lh_midgm'] = look_up(sub_files.lh_midgm)
         names['rh_midgm'] = look_up(sub_files.rh_midgm)
         names['lh_reg'] = look_up(sub_files.lh_reg)

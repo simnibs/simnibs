@@ -249,19 +249,19 @@ class SubjectFiles:
         # Stuff for surface transformations
 
         self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
-        headreco_suf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
+        headreco_surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
         mri2mesh_surf_dir = os.path.join(self.basedir, 'fs_' + self.subid, 'surf')
 
-        if os.path.isdir(headreco_suf_dir):
-            self.suf_dir = headreco_suf_dir
+        if os.path.isdir(headreco_surf_dir):
+            self.surf_dir = headreco_surf_dir
             self.seg_type = 'headreco'
-            self.lh_midgm = os.path.join(headreco_suf_dir, 'lh.central.T1fs_conform.gii')
-            self.rh_midgm = os.path.join(headreco_suf_dir, 'rh.central.T1fs_conform.gii')
-            self.lh_reg = os.path.join(headreco_suf_dir, 'lh.sphere.reg.T1fs_conform.gii')
-            self.rh_reg = os.path.join(headreco_suf_dir, 'rh.sphere.reg.T1fs_conform.gii')
+            self.lh_midgm = os.path.join(headreco_surf_dir, 'lh.central.T1fs_conform.gii')
+            self.rh_midgm = os.path.join(headreco_surf_dir, 'rh.central.T1fs_conform.gii')
+            self.lh_reg = os.path.join(headreco_surf_dir, 'lh.sphere.reg.T1fs_conform.gii')
+            self.rh_reg = os.path.join(headreco_surf_dir, 'rh.sphere.reg.T1fs_conform.gii')
 
         elif os.path.isdir(mri2mesh_surf_dir):
-            self.suf_dir = mri2mesh_surf_dir
+            self.surf_dir = mri2mesh_surf_dir
             self.seg_type = 'mri2mesh'
             self.lh_gm = os.path.join(mri2mesh_surf_dir, 'lh.pial')
             self.lh_wm = os.path.join(mri2mesh_surf_dir, 'lh.white')
@@ -271,7 +271,7 @@ class SubjectFiles:
             self.rh_reg = os.path.join(mri2mesh_surf_dir, 'rh.sphere.reg')
 
         else:
-            self.suf_dir = None
+            self.surf_dir = None
             self.seg_type = None
 
         self.final_contr = os.path.join(
