@@ -110,13 +110,12 @@ def main():
 
     csv_basename, _ = os.path.splitext(fn_csv)
     for ed in msh.elmdata:
-        c = ed.field_name in ['normJ', 'J']
         fn_out = '{0}_{1}.csv'.format(csv_basename, ed.field_name)
         logger.info('Interpolating field: {0} and writing to file: {1}'.format(
             ed.field_name, fn_out))
         f = ed.interpolate_scattered(
-            points, out_fill=args.out_fill,
-            method=args.method, continuous=c, squeeze=False)
+                points, out_fill=args.out_fill,
+                method=args.method, continuous=False, squeeze=False)
         if f.ndim == 1:
             f = f[:, None]
         np.savetxt(fn_out, f, delimiter=',')
