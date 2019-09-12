@@ -68,18 +68,26 @@ def copy_scripts(dest_dir):
         else:
             _write_unix_sh(s, bash_name)
             
-    # Create an additionl simnibs script in the matlab folder
-    if sys.platform == 'win32':
-        _write_windows_cmd(os.path.join(SIMNIBSDIR, 'cli', 'run_simnibs.py'),
-                           os.path.join(SIMNIBSDIR, 'matlab', 'simnibs'))
-    else:
-        _write_unix_sh(os.path.join(SIMNIBSDIR, 'cli', 'run_simnibs.py'),
-                       os.path.join(SIMNIBSDIR, 'matlab', 'simnibs'))
     with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
         f.write("function path=SIMNIBSDIR\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
         f.write("end\n")
+
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+        if sys.platform == 'win32':
+            activate_bin = os.path.abspath(os.path.join(
+                os.path.dirname(sys.executable),
+                '..', '..', 'Scripts', 'activate'
+            ))
+            python_call = f'call "{activate_bin}" simnibs_env && python -E -u '
+        else:
+            python_call = f'"{sys.executable}" -E -u '
+        f.write("function python_call=SIMNIBSPYTHON\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"python_call='{python_call}';\n")
+        f.write("end\n")
+
 
     # simnibs_python interpreter
     if sys.platform == 'win32':

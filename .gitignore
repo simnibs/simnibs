@@ -1,6 +1,7 @@
 # SimNIBS specific
 bin/
 simnibs/matlab/SIMNIBSDIR.m
+simnibs/matlab/SIMNIBSPYTHON.m
 simnibs/matlab/simnibs
 simnibs/matlab/simnibs.cmd
 simnibs/resources/spm12/

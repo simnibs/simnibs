@@ -24,10 +24,7 @@ function result = run_simnibs(session)
 
 name_mat = [tempname,'.mat'];
 save(name_mat, 'session');
-% Write the 'simnibs' executable during the postinstall process
-path_to_simnibs = fullfile(fileparts(mfilename('fullpath')), 'simnibs');
-
-result = system([path_to_simnibs ' ' name_mat]);
+result = system([simnibs_cli_call('run_simnibs') ' ' name_mat]);
 
 if result ~= 0
     error('There was an error running SimNIBS')
