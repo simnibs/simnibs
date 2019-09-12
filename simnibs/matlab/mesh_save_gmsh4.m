@@ -37,7 +37,6 @@ function mesh_save_gmsh4(varargin)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-tic
 
 if nargin < 2
     error('at least two arguments are required: the mesh structure and the filename');
@@ -240,5 +239,3 @@ end
 
 
 fclose(fid);
-
-toc
