@@ -17,6 +17,10 @@ __all__ = [
     'Msh',
     'Nodes',
     'Elements',
-    'ElementData']
+    'ElementData',
+    'subject2mni_coords',
+    'mni2subject_coords',
+    'eeg_positions'
+]
 from .mesh_io import *
 from .transformations import *

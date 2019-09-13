@@ -750,8 +750,8 @@ def headmodel(argv):
         geo_out = os.path.join(eeg_positions, 'EEG10-10_UI_Jurak_2007.geo')
         transformations.warp_coordinates(
             cap_file, subject_dir,
-            out_name=cap_out,
             transformation_direction='mni2subject',
+            out_name=cap_out,
             out_geo=geo_out)
 
         hmu.log("="*width)

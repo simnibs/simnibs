@@ -964,19 +964,116 @@ def _write_csv(fn, type_, coordinates, extra, name, extra_cols, header):
         for t, c, e, n, e_c in zip(type_, coordinates, extra, name, extra_cols):
             writer.writerow([t] + c + e + n + e_c)
 
+def _get_eeg_positions(fn_csv):
+    if not os.path.isfile(fn_csv):
+        raise IOError('Could not find EEG cap file: {0}'.format(fn_csv))
+    type_, coordinates, _, name, _, _ = _read_csv(fn_csv)
+    eeg_pos = {}
+    for i, t in enumerate(type_):
+        if t in ['Electrode', 'ReferenceElectrode', 'Fiducial']:
+            eeg_pos[name[i]] = coordinates[i]
+    return eeg_pos
+
+def eeg_positions(m2m_folder, cap_name='EEG10-10_UI_Jurak_2007.csv'):
+    ''' Returns a directory with EEG electrode positions
+
+    Parameters
+    -----------
+
+    m2m_folder: str
+        Path to the m2m_{subject_id} folder, generated during the segmantation
+
+    cap_name: str
+        Name of EEG cap. Default: 'EEG10-10_UI_Jurak_2007.csv'
+
+
+    Returns
+    --------
+    eeg_caps: dict
+        Dictionary with cap position
+    '''
+    sub_files = SubjectFiles(subpath=m2m_folder)
+    if not cap_name.endswith('.csv'):
+        cap_name += '.csv'
+    fn_cap = sub_files.get_eeg_cap(cap_name)
+    return _get_eeg_positions(fn_cap)
+
+def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
+    ''' Warps a set of coordinates in subject space to MNI space
+
+    Parameters
+    ------------
+    coordinates: list or numpy array in Nx3 format
+        Coordinates to be transformd
+
+    m2m_folder: str
+        Path to the m2m_{subject_id} folder, generated during the segmantation
+
+    transformation_type: {'nonl', '6dof', '12dof'}
+        Type of tranformation, non-linear, 6 or 12 degrees of freedom
+
+    Returns:
+    ----------
+    transformed_coords: Nx3 numpy array
+        Array with transformed coordinates
+
+    '''
+    transformed =  warp_coordinates(
+        coordinates, m2m_folder,
+        transformation_direction='subject2mni',
+        transformation_type=transformation_type,
+        out_name=None,
+        out_geo=None)[1]
+    if np.array(coordinates).ndim == 1:
+        transformed = np.squeeze(transformed)
+    return transformed
+
+def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
+    ''' Warps a set of coordinates in MNI space to subject space
+
+    Parameters
+    ------------
+    coordinates: list or numpy array in Nx3 format
+        Coordinates to be transformd
+
+    m2m_folder: str
+        Path to the m2m_{subject_id} folder, generated during the segmantation
+
+    transformation_type: {'nonl', '6dof', '12dof'}
+        Type of tranformation, non-linear, 6 or 12 degrees of freedom
+
+    Returns:
+    ----------
+    transformed_coords: Nx3 numpy array
+        Array with transformed coordinates
+
+    '''
+    transformed =  warp_coordinates(
+        coordinates, m2m_folder,
+        transformation_direction='mni2subject',
+        transformation_type=transformation_type,
+        out_name=None,
+        out_geo=None)[1]
+    if np.array(coordinates).ndim == 1:
+        transformed = np.squeeze(transformed)
+    return transformed
 
 def warp_coordinates(coordinates, m2m_folder,
-                     out_name=None,
                      transformation_direction='subject2mni',
                      transformation_type='nonl',
+                     out_name=None,
                      out_geo=None):
-    ''' Warps a nifti image or a mesh
+    ''' Warps a set of coordinates
+    For simpler calls, please see subject2mni_coords and mni2subject_coords
 
     Parameters
     --------
     coordinates: str, list or ndarray
-        path to csv file with coordinates in the first 3 columns or list with
-        coordinates. The csv file must have the format
+        if list or ndarray (Nx3 format):
+            Will do a simple transformation of the
+        If path to csv file:
+            The CSV file must have at least 4 columns, dependind on the type of data to
+            be transformed
             Generic:
                 Generic, pos_x, pos_y, pos_z, name, ...
             Positions will not be changed after transformation.
@@ -991,18 +1088,25 @@ def warp_coordinates(coordinates, m2m_folder,
                 Type, pos_x, pos_y, pos_z, ez_x, ez_y, ez_z, ey_x, ey_y, ey_z, dist, name, ...
             if the direction is mni2subject: position will be adjusted after transformation
             to have specified distance to skin (mni2subject_coords ignores distances)
-        You can also input a list with the same structure as the csv files
+
+            You can also input a list with the same structure as the csv files
+
     m2m_folder: str
         Path to the m2m_{subject_id} folder, generated during the segmantation
-    out_name: str
-        Name of output file. If defined, the function will write to this file as a csv
+
     transfomation_direction: {'subject2mni' or 'mni2subject'}
         Direction of the tranformation. If 'subject2mni', assumes that the input is in
         subject space, and if 'mni2subject', assumes the input is in MNI space
+
+    out_name: str
+        Name of output file. If defined, the function will write to this file as a csv
+
     transformation_type: {'nonlinear', '6dof', '12dof'}
         Type of tranformation
+
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
+
     Returns:
     ----------
     type: list
@@ -1025,7 +1129,7 @@ def warp_coordinates(coordinates, m2m_folder,
         try:
             type_, coordinates, extra, name, extra_cols, header = coordinates
         except ValueError:
-            coordinates = np.asarray(coordinates)
+            coordinates = np.asarray(coordinates, dtype=float)
             if len(coordinates.shape) == 1:
                 coordinates = coordinates[None, :]
             if coordinates.shape[1] != 3:
@@ -1063,7 +1167,6 @@ def warp_coordinates(coordinates, m2m_folder,
             warp = np.loadtxt(names['mni2conf_6dof'])
         elif transformation_type == '12dof':
             warp = np.loadtxt(names['mni2conf_12dof'])
-        mesh = read_msh(names['mesh'])
 
     # Apply transformation
     if transformation_type == 'nonl':
@@ -1079,6 +1182,10 @@ def warp_coordinates(coordinates, m2m_folder,
     generic = [i for i, t in enumerate(type_) if t == 'Generic']
     if len(generic) > 0:
         transformed_coords[generic, :] = simple(coordinates[generic, :], warp)
+
+    # delay reading the mesh
+    if len(generic) != len(type_) and transformation_direction == 'mni2subject':
+        mesh = read_msh(names['mesh'])
 
     # Transform all electrode types
     electrode = [i for i, t in enumerate(type_) if t in ['Fiducial', 'Electrode', 'ReferenceElectrode']]

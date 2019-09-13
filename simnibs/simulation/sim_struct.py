@@ -2455,21 +2455,10 @@ def save_electrode_mat(electrode_list):
     return elec_mat
 
 
-def get_eeg_positions(fn_csv):
-    if not os.path.isfile(fn_csv):
-        raise IOError('Could not find EEG cap file: {0}'.format(fn_csv))
-    type_, coordinates, _, name, _, _ = transformations._read_csv(fn_csv)
-    eeg_pos = OrderedDict()
-    for i, t in enumerate(type_):
-        if t in ['Electrode', 'ReferenceElectrode', 'Fiducial']:
-            eeg_pos[name[i]] = coordinates[i]
-    return eeg_pos
-
-
 def _substitute_el(pos, eeg_cap):
     if isinstance(pos, str):
         if eeg_cap:
-            eeg_pos = get_eeg_positions(eeg_cap)
+            eeg_pos = transformations._get_eeg_positions(eeg_cap)
             try:
                 pos = eeg_pos[pos]
             except:

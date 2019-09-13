@@ -111,8 +111,8 @@ def main():
 
     coords = transformations.warp_coordinates(
         coords, m2m_dir,
-        out_name=fn_out,
         transformation_direction='mni2subject',
+        out_name=fn_out,
         transformation_type=args.t,
         out_geo=fn_geo)[1]
     if fn_out is None:
