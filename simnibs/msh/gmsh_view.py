@@ -122,7 +122,8 @@ class Visualization:
     def _write(self, fn, mode='w'):
         with open(fn, mode) as f:
             f.write('// Visualization File Created by SimNIBS\n')
-            [f.write(f'Merge "{m}";\n') for m in self.merge]
+            dirname = os.path.dirname(fn)
+            [f.write(f'Merge "{os.path.relpath(m, dirname)}";\n') for m in self.merge]
             f.write(str(self.General))
             f.write(str(self.Mesh))
             try:
