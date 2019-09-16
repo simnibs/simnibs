@@ -38,3 +38,6 @@ S.poslist{1}.electrode(2).holes.dimensions = [75, 75]; % Diameter of 75mm
 %% Run Simulation
 run_simnibs(S);
 
+%% Visualize Simulations
+m = mesh_load_gmsh4(fullfile(S.pathfem, 'ernie_TDCS_1_scalar.msh'));
+mesh_show_surface(m);
