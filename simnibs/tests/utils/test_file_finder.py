@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import pytest
 from simnibs.utils import file_finder
 
 
@@ -13,6 +15,38 @@ class TestTemplates:
                 is_file = os.path.isfile(fn)
                 is_dir = os.path.isdir(fn)
                 assert is_file or is_dir
+
+@pytest.mark.parametrize('atlas_name', ['a2009s', 'DK40', 'HCP_MMP1'])
+@pytest.mark.parametrize('hemi', ['lh', 'rh', 'both'])
+def test_get_atlas(atlas_name, hemi):
+    atlas = file_finder.get_atlas(atlas_name, hemi)
+
+    if atlas_name == 'a2009':
+        if hemi == 'both':
+            assert len(atlas) == 77*2
+        else:
+            assert len(atlas) == 77
+    elif atlas_name == 'DK40':
+        if hemi == 'both':
+            assert len(atlas) == 36*2
+        else:
+            assert len(atlas) == 36
+    elif atlas_name == 'HCP_MMP1':
+        if hemi == 'both':
+            assert len(atlas) == 181*2
+        else:
+            assert len(atlas) == 181
+
+    for name, mask in atlas.items():
+        if hemi in ['lh', 'rh']:
+            assert len(mask) == 163842
+        else:
+            assert len(mask) == 2*163842
+            if name.startswith('lh'):
+                assert not np.any(mask[163842:])
+            if name.startswith('rh'):
+                assert not np.any(mask[:163842])
+
 
 class TestSubjectFiles:
     def test_define_fnamehead(self):

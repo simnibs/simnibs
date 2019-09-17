@@ -20,8 +20,12 @@
 import sys
 import os
 import re
+import numpy as np
+import nibabel
 
 from .. import SIMNIBSDIR
+
+__all__ = ['templates', 'get_atlas', 'SubjectFiles']
 
 class Templates:
     ''' Defines the Templates for file names used in SimNIBS
@@ -90,7 +94,73 @@ class Templates:
             self.fs_lh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
             self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
 
+
 templates = Templates()
+
+def get_atlas(atlas_name, hemi='both'):
+    ''' Loads a brain atlas based of the FreeSurfer fsaverage template
+
+    Parameters
+    -----------
+    atlas_name: 'a2009s', 'DK40' or 'HCP_MMP1'
+            Name of atlas to load
+
+            'a2009s': Destrieux atlas (FreeSurfer v4.5, aparc.a2009s)
+            Cite: Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal
+            depth-based anatomical parcellation of the cerebral cortex.
+            Human Brain Mapping (HBM) Congress 2009, Poster #541
+
+            'DK40': Desikan-Killiany atlas (FreeSurfer, aparc.a2005s)
+            Cite: Desikan RS, S�gonne F, Fischl B, Quinn BT, Dickerson BC,
+            Blacker D, Buckner RL, Dale AM, Maguire RP, Hyman BT, Albert MS,
+            Killiany RJ. An automated labeling system for subdividing the
+            human cerebral cortex on MRI scans into gyral based regions of
+            interest. Neuroimage. 2006 Jul 1;31(3):968-80.
+
+            'HCP_MMP1': Human Connectome Project (HCP) Multi-Modal Parcellation
+            Cite: Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal
+            parcellation of human cerebral cortex. Nature. 2016;536(7615):171-178.
+
+    hemi (optional): 'lh', 'rh' or 'both'
+        Hemisphere to use. In the case of 'both', will assume that left hemisphere
+        nodes comes before right hemisphere nodes
+
+    Returns
+    ---------
+    atlas: dict
+        Dictionary where altas['region'] = labels
+    '''
+    if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
+        raise ValueError('Invalid atlas name')
+
+    # If only one hemisphere
+    if hemi in ['lh', 'rh']:
+        fn_atlas = os.path.join(
+            templates.cat_atlases_surfaces,
+            f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
+        )
+        labels, _ , names = nibabel.freesurfer.io.read_annot(fn_atlas)
+        atlas = {}
+        for l, name in enumerate(names):
+            atlas[name.decode()] = labels == l
+
+        return atlas
+    # If both hemispheres
+    elif hemi == 'both':
+        atlas_lh = get_atlas(atlas_name, 'lh')
+        atlas_rh = get_atlas(atlas_name, 'rh')
+        atlas = {}
+        pad_lh = np.zeros_like(list(atlas_rh.values())[0])
+        pad_rh = np.zeros_like(list(atlas_lh.values())[0])
+        for name, mask in atlas_lh.items():
+            atlas[f'lh.{name}'] = np.append(mask, pad_rh)  # pad after
+        for name, mask in atlas_rh.items():
+            atlas[f'rh.{name}'] = np.append(pad_lh, mask)  # pad after
+
+        return atlas
+    else:
+        raise ValueError('Invalid hemisphere name')
+
 
 
 class SubjectFiles:

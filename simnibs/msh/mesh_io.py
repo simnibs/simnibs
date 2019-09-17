@@ -42,7 +42,7 @@ import h5py
 
 from .transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import path2bin
+from ..utils.file_finder import path2bin, templates
 import simnibs.cython_code.cython_msh as cython_msh
 
 
