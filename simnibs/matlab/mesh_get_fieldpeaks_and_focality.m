@@ -36,7 +36,7 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %   datatype: 'node', 'tri' or 'tet'
 %   sizeunits: units used for the focality results; either 'square mm' 
 %              for surface data or 'cubic mm' for volume data
-%   valueunits: units of the extracted data; either V/m, A/m² or empty
+%   valueunits: units of the extracted data; either V/m, A/mï¿½ or empty
 %               (the latter for unknown data)
 %   max: maximal value; this value can be caused by an outlier; please
 %        visually check that it is embedded in a region of high values
@@ -131,7 +131,7 @@ s.valueunits='';
 if strcmpi(name,'normE')||strcmpi(name,'E.normal')
     s.valueunits='[V/m]';
 elseif strcmpi(name,'normJ')||strcmpi(name,'J.normal')
-    s.valueunits='[A/m²]';
+    s.valueunits='[A/mï¿½]';
 end
 s.max=max(data);
 s.XYZ_max=elempos(data==s.max,:);
@@ -183,7 +183,11 @@ if isempty(idx); idx=length(data); end
 peakvalue=data(idx);
 for i=1:length(s.focality_cutoffs)
     idx=find(data>=s.focality_cutoffs(i)/100*peakvalue,1,'first');
-    s.focality_values(i)=elemsizes(end)-elemsizes(idx-1);
+    if idx == 1
+        s.focality_values(i) = elemsizes(end);
+    else
+        s.focality_values(i)=elemsizes(end)-elemsizes(idx-1);
+    end
 end
 
 if scaleLimits(1)<0

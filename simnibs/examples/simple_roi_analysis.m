@@ -28,7 +28,7 @@ elm_centers = mesh_get_tetrahedron_centers(gray_matter);
 roi = sqrt(sum(bsxfun(@minus, elm_centers, ernie_M1).^2, 2)) < r;
 
 % finally, calculate the mean of the electric field norm
-normE = mesh_get_field(gray_matter, 'normE');
+normE = mesh_get_field(gray_matter, 'normE'); % use get_field_idx
 mean_normE = mean(normE.tetdata(roi));
 fprintf('mean normE in M1 ROI: %f\n', mean_normE)
-
+# plot the roi

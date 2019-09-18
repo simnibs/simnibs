@@ -11,27 +11,30 @@
 %       (3) in a sphere of 10 mm radius around the peak position
 %
 % A. Thielscher, 06-Nov-2017; updated 08-Oct-2018
+% G. Saturnino, updated 18-SEP-2019
 
 
 % get name of results mapped on fsaverage surface
-[fname,pname] = uigetfile('lh.*.norm;lh.*.normal;lh.*.tangent;lh.*.angle', ...
+[fname,pname] = uigetfile('*_fsavg.msh', ...
                           'Select a results file in a fsavg_overlays folder');
 if isequal(fname,0) || isequal(pname,0); return; end
 
+% Load simulations
+m=mesh_load_gmsh4(fullfile(pname,fname));
+
+% Show all the fields
+for i =1:length(m.node_data)
+    mesh_show_surface(m, 'field_idx',i)
+end
 
 % load the fsaverage surface with the Destrieux atlas:
-% 	m is the mesh structure containing the surface and label data
+% 	labels is a mesh structure containing the surface and label data
 %   s is the list of label names
-[m, snames]=mesh_load_fssurf('fsaverage','label','a2009s');
+[labels, snames]=mesh_load_fssurf('fsaverage','label','a2009s');
 
-% add the simulation results to the mesh structure
-m=mesh_load_fsresults(fullfile(pname,fname),'addtomesh',m);
 
 % show the atlas (loaded as first --> node data index 1)
-mesh_show_surface(m,'field_idx',1)
-
-% show the data (loaded as second --> node data index 2)
-mesh_show_surface(m,'field_idx',2)
+mesh_show_surface(labels,'field_idx',1)
 
 
 % -------------------------------------------------------
@@ -41,7 +44,8 @@ mesh_show_surface(m,'field_idx',2)
 % rather the individual surface was used to determine the stimulated areas
 disp(' ')
 disp('whole cortex:')
-summary=mesh_get_fieldpeaks_and_focality(m,'field_idx',2);
+% You can modify the 'field_idx' to see different fields
+summary=mesh_get_fieldpeaks_and_focality(m,'field_idx',1);
 
 
 % -------------------------------------------------------
@@ -51,13 +55,13 @@ summary=mesh_get_fieldpeaks_and_focality(m,'field_idx',2);
 % find the atlas index of the area
 area_idx=find(strcmpi(snames,'lh.S_precentral-sup-part'));
 % find all nodes having this atlas index
-node_idx=m.node_data{1}.data==area_idx;
+node_idx=labels.node_data{1}.data==area_idx;
 % extract those nodes and the related triangles and data
 m_ROI=mesh_extract_regions(m, 'node_idx', node_idx);
 
 % show the extracted ROI:
 % show the whole cortex semi-transparent
-mesh_show_surface(m,'showSurface',true,'facealpha',0.3); 
+mesh_show_surface(labels,'showSurface',true,'facealpha',0.3); 
 % add the extracted area to the plot
 mesh_show_surface(m_ROI,'showSurface',true,'surfaceColor',[1 0 0],'haxis',gca); 
 title('lh.S_precentral-sup-part');
@@ -65,7 +69,7 @@ title('lh.S_precentral-sup-part');
 % get some key results for the "S_precentral-sup-part" area
 disp(' ')
 disp('lh.S_precentral-sup-part:')
-mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',2);
+mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',1);
 
 
 % -------------------------------------------------------
@@ -101,7 +105,7 @@ title('10 mm spherical ROI around peak position');
 % get some key results for the spherical ROI
 disp(' ')
 disp('10 mm spherical ROI around peak position:')
-mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',2);
+mesh_get_fieldpeaks_and_focality(m_ROI,'field_idx',1);
 
 
 

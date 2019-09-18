@@ -34,16 +34,4 @@ roi = np.linalg.norm(elm_centers - ernie_M1, axis=1) < r
 # finally, calculate the mean of the electric field norm
 mean_normE = np.mean(gray_matter.field['normE'][roi])
 print('mean normE in M1 ROI: ', mean_normE)
-
-
-## Alternative: define ROI from EEG electrode position
-eeg_pos = simnibs.eeg_positions('m2m_ernie/')
-
-# Find the point in gray matter closest to C3
-c3_gm = gray_matter.find_closest_element(eeg_pos['C3'])
-# re-define the ROI
-roi = np.linalg.norm(elm_centers - c3_gm, axis=1) < r
-# finally, calculate the mean of the electric field norm
-mean_normE = np.mean(gray_matter.field['normE'][roi])
-print('mean normE in C3 ROI: ', mean_normE)
-
+# plot the roi
