@@ -92,7 +92,7 @@ class Templates:
             self.fs_rh_sphere_ref = os.path.join(self.freesurfer_templates, 'rh.sphere.reg')
 
             self.fs_lh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
-            self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
+            self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'rh.pial')
 
 
 templates = Templates()
