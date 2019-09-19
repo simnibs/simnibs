@@ -1105,6 +1105,12 @@ class Msh:
             np.all(
                 (th_min <= points_max + slack) * (th_max >= points_min - slack), axis=1))[0]
         th_indices = th_indices[th_in_box]
+        # if all the points are outside the bounding box
+        if len(th_indices) == 0: 
+            if compute_baricentric:
+                return -np.ones(len(points), dtype=int), np.zeros_like(points)
+            else:
+                return -np.ones(len(points), dtype=int)
         th_nodes = th_nodes[th_in_box]
 
         # Calculate a few things we will use later
@@ -2558,7 +2564,6 @@ class ElementData(Data):
             f = np.zeros((points.shape[0], self.nr_comp), self.value.dtype)
         else:
             f = np.zeros((points.shape[0], ), self.value.dtype)
-
         th_with_points = \
             msh.find_tetrahedron_with_points(points, compute_baricentric=False)
         inside = th_with_points != -1
@@ -2579,7 +2584,12 @@ class ElementData(Data):
                 nd = self.elm_data2node_data()
                 f = nd.interpolate_scattered(points, out_fill=out_fill, squeeze=False)
             else:
-                tags = np.unique(msh.elm.tag1[th_with_points[inside] - 1])
+                # if all points are outside
+                if not np.any(inside):
+                    tags = [np.unique(msh.elm.tag1[msh.elm.elm_type==4])]
+                # if there are points inside
+                else:
+                    tags = np.unique(msh.elm.tag1[th_with_points[inside] - 1])
                 msh_copy = copy.deepcopy(msh)
                 msh_copy.elmdata = [ElementData(self.value, mesh=msh_copy)]
                 # create a list of fields at each tag
@@ -2587,8 +2597,7 @@ class ElementData(Data):
                 for t in tags:
                     msh_tag = msh_copy.crop_mesh(tags=t)
                     nd = msh_tag.elmdata[0].elm_data2node_data()
-                    field_at_tags.append(
-                        nd.interpolate_scattered(points, out_fill=np.nan, squeeze=False))
+                    field_at_tags.append(nd.interpolate_scattered(points, out_fill=np.nan, squeeze=False))
                     del msh_tag
                     del nd
                 # Join the list of field values
@@ -2624,13 +2633,11 @@ class ElementData(Data):
                     f[unasigned_f] = self[nearest]
                 else:
                     f[unasigned_f] = out_fill
-
         else:
             raise ValueError('Invalid interpolation method!')
 
         if squeeze:
             f = np.squeeze(f)
-
         return f
 
     def interpolate_to_grid(self, n_voxels, affine, method='linear', continuous=False):
@@ -3087,11 +3094,11 @@ class NodeData(Data):
         th_with_points, bar = \
             msh.find_tetrahedron_with_points(points, compute_baricentric=True)
         inside = th_with_points != -1
-        if len(self.value.shape) == 1:
+        if np.any(inside) and len(self.value.shape) == 1:
             f[inside] = np.einsum('ik, ik -> i',
                                   self[msh.elm[th_with_points[inside]]],
                                   bar[inside])
-        else:
+        elif np.any(inside):
             f[inside] = np.einsum('ikj, ik -> ij',
                                   self[msh.elm[th_with_points[inside]]],
                                   bar[inside])
@@ -4634,7 +4641,6 @@ def _fix_indexing_one(index):
         return tuple(index)
 
     else:
-        print(index)
         return index
 
 def _getitem_one_indexed(array, index):
