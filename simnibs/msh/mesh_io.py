@@ -46,6 +46,22 @@ from ..utils.file_finder import path2bin, templates
 import simnibs.cython_code.cython_msh as cython_msh
 
 
+__all__ = [
+    'read_msh',
+    'write_msh',
+    'read_freesurfer_surface',
+    'write_freesurfer_surface',
+    'read_gifti_surface',
+    'read_curv',
+    'write_curv',
+    'read_stl',
+    'write_geo_spheres',
+    'write_geo_text',
+    'Msh',
+    'Nodes',
+    'Elements',
+    'ElementData',
+]
 # =============================================================================
 # CLASSES
 # =============================================================================

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-\
 '''
     linear and non-linear transfomations for SimNIBS
+'''
+'''
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
-
     Copyright (C) 2019 Kristoffer H Madsen, Guilherme B Saturnino, Axel Thielscher
 
     This program is free software: you can redistribute it and/or modify
@@ -20,8 +21,6 @@
 '''
 
 
-from __future__ import division
-from __future__ import print_function
 import warnings
 import os
 from functools import partial
@@ -36,8 +35,14 @@ import nibabel as nib
 
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
-from ..utils.file_finder import templates, SubjectFiles
+from ..utils.file_finder import templates, SubjectFiles, get_atlas
 
+__all__ = [
+    'subject2mni_coords',
+    'mni2subject_coords',
+    'eeg_positions',
+    'subject_atlas'
+]
 
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
                          target_dimensions=None, intorder=3, cpus=1,
@@ -1381,7 +1386,6 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     open_in_gmsh: bool
         If true, opens a Gmsh window with the interpolated fields
     '''
-    #from .mesh_io import read_freesurfer_surface, read_gifti_surface, _middle_surface
     from . import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
     names, segtype = get_surface_names_from_folder_structure(m2m_folder)
@@ -1557,3 +1561,91 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
             avg_surf,
             os.path.join(out_fsaverage, sim_name[1:] + '_fsavg.msh'),
             open_in_gmsh)
+
+def subject_atlas(atlas_name, m2m_dir, hemi='both'):
+    ''' Loads a brain atlas based of the FreeSurfer fsaverage template
+
+    Parameters
+    -----------
+    atlas_name: 'a2009s', 'DK40' or 'HCP_MMP1'
+            Name of atlas to load
+
+            'a2009s': Destrieux atlas (FreeSurfer v4.5, aparc.a2009s)
+            Cite: Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal
+            depth-based anatomical parcellation of the cerebral cortex.
+            Human Brain Mapping (HBM) Congress 2009, Poster #541
+
+            'DK40': Desikan-Killiany atlas (FreeSurfer, aparc.a2005s)
+            Cite: Desikan RS, S�gonne F, Fischl B, Quinn BT, Dickerson BC,
+            Blacker D, Buckner RL, Dale AM, Maguire RP, Hyman BT, Albert MS,
+            Killiany RJ. An automated labeling system for subdividing the
+            human cerebral cortex on MRI scans into gyral based regions of
+            interest. Neuroimage. 2006 Jul 1;31(3):968-80.
+
+            'HCP_MMP1': Human Connectome Project (HCP) Multi-Modal Parcellation
+            Cite: Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal
+            parcellation of human cerebral cortex. Nature. 2016;536(7615):171-178.
+
+    m2m_folder: str
+        Path to the m2m_{subject_id} folder, generated during the segmantation
+ 
+    hemi (optional): 'lh', 'rh' or 'both'
+        Hemisphere to use. In the case of 'both', will assume that left hemisphere
+        nodes comes before right hemisphere nodes
+
+    Returns
+    ---------
+    atlas: dict
+        Dictionary where atlas['region'] = roi
+    '''
+    from .mesh_io import read_gifti_surface, read_freesurfer_surface
+    if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
+        raise ValueError('Invalid atlas name')
+
+    subject_files = SubjectFiles(subpath=m2m_dir)
+
+    if hemi in ['lh', 'rh']:
+        fn_atlas = os.path.join(
+            templates.cat_atlases_surfaces,
+            f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
+        )
+        labels, _ , names = nib.freesurfer.io.read_annot(fn_atlas)
+        if subject_files.seg_type == 'headreco':
+            read_fun = read_gifti_surface
+        elif subject_files.seg_type == 'mri2mesh':
+            read_fun = read_freesurfer_surface
+
+        if hemi == 'lh':
+            labels_sub, _ = _surf2surf(
+                labels,
+                read_gifti_surface(templates.cat_lh_sphere_ref),
+                read_fun(subject_files.lh_reg)
+                ) 
+        if hemi == 'rh':
+            labels_sub, _ = _surf2surf(
+                labels,
+                read_gifti_surface(templates.cat_rh_sphere_ref),
+                read_fun(subject_files.rh_reg)
+                ) 
+        atlas = {}
+        for l, name in enumerate(names):
+            atlas[name.decode()] = labels_sub == l
+
+        return atlas
+
+    # If both hemispheres
+    elif hemi == 'both':
+        atlas_lh = subject_atlas(atlas_name, m2m_dir, 'lh')
+        atlas_rh = subject_atlas(atlas_name, m2m_dir, 'rh')
+        atlas = {}
+        pad_rh = np.zeros_like(list(atlas_rh.values())[0])
+        pad_lh = np.zeros_like(list(atlas_lh.values())[0])
+        for name, mask in atlas_lh.items():
+            atlas[f'lh.{name}'] = np.append(mask, pad_rh)  # pad after
+        for name, mask in atlas_rh.items():
+            atlas[f'rh.{name}'] = np.append(pad_lh, mask)  # pad after
+
+        return atlas
+    else:
+        raise ValueError('Invalid hemisphere name')
+

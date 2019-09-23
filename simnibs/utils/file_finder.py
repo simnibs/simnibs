@@ -128,7 +128,7 @@ def get_atlas(atlas_name, hemi='both'):
     Returns
     ---------
     atlas: dict
-        Dictionary where altas['region'] = labels
+        Dictionary where atlas['region'] = roi
     '''
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
@@ -150,8 +150,8 @@ def get_atlas(atlas_name, hemi='both'):
         atlas_lh = get_atlas(atlas_name, 'lh')
         atlas_rh = get_atlas(atlas_name, 'rh')
         atlas = {}
-        pad_lh = np.zeros_like(list(atlas_rh.values())[0])
-        pad_rh = np.zeros_like(list(atlas_lh.values())[0])
+        pad_rh = np.zeros_like(list(atlas_rh.values())[0])
+        pad_lh = np.zeros_like(list(atlas_lh.values())[0])
         for name, mask in atlas_lh.items():
             atlas[f'lh.{name}'] = np.append(mask, pad_rh)  # pad after
         for name, mask in atlas_rh.items():
