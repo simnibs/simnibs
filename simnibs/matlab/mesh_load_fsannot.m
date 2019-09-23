@@ -102,7 +102,7 @@ for i=1:length(fnames)
     else
         % add labels from annotation file to node_data field
         [vertices, label, colortable] = read_annotation(fnames{i});
-        vertices=vertices+start_idx(i); % FS indexing starts at 0
+        vertices=int32(vertices)+start_idx(i); % FS indexing starts at 0
 
         label_remap=zeros(size(label)); % remap labeling to be 1,2,3,4,...
         for j=1:length(colortable.table(:,5))

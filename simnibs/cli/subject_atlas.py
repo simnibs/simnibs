@@ -82,6 +82,7 @@ def main():
     if not os.path.isdir(m2m_dir):
         raise IOError('Could not find directory: {0}'.format(args.m2mpath))
     subject_files = file_finder.SubjectFiles(subpath=m2m_dir)
+    os.makedirs(args.out_folder, exist_ok=True)
     for hemi in ['lh', 'rh']:
         # I have a parallel implementation here
         fn_atlas = os.path.join(
