@@ -412,7 +412,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 out_original=None,
                 order=3,
                 method='linear',
-                continuous='auto',
+                continuous=False,
                 binary=False):
     ''' Warps a nifti image or a mesh using a linear or non-linar transform, writes out
     the output as a nifti file
@@ -447,10 +447,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
         Method for gridding the data. If 'assign', gives to each voxel the value of the element that contains
         it. If linear, first assign fields to nodes, and then perform
         baricentric interpolatiom. Default: linear
-    continuous: 'auto' or bool
-        Wether fields is continuous across tissue boundaries. Changes the
-        behaviour of the function only if method == 'linear'. If auto, it will be set to
-        True for normJ and J, and False for other fields. Default: auto
+    continuous: bool (option)
+        Wether fields is continuous across tissue boundaries. Default: False
     '''
     from .mesh_io import read_msh
     names = get_names_from_folder_structure(m2m_folder)
@@ -520,23 +518,19 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 name_original = append_name(out_original, ed.field_name)
             else:
                 name_original = None
-            if continuous == 'auto':
-                c = ed.field_name in ['normJ', 'J']
-            else:
-                c = continuous
             logger.info('Warping field: {0}'.format(ed.field_name))
             logger.info('To file: {0}'.format(name))
             logger.debug('Transformation type: {0}'.format(transformation_type))
             logger.debug('Method: {0}'.format(method))
             logger.debug('Labels: {0}'.format(labels))
-            logger.debug('Continuous: {0}'.format(c))
+            logger.debug('Continuous: {0}'.format(continuous))
             ed.to_deformed_grid(warp, reference,
                                 out=name,
                                 out_original=name_original,
                                 tags=labels,
                                 order=order,
                                 method=method,
-                                continuous=c,
+                                continuous=continuous,
                                 inverse_warp=inverse_warp,
                                 reference_original=names['reference_conf'],
                                 binary=binary)
@@ -551,7 +545,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
                         inverse_warp=inverse_warp, binary=binary)
 
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
-                          method='linear', continuous='auto'):
+                          method='linear', continuous=False):
     ''' Interpolates the fields in a mesh and writem them to nifti files
 
     Parameters:
@@ -570,10 +564,8 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         Method for gridding the data. If 'assign', gives to each voxel the value of the element that contains
         it. If linear, first assign fields to nodes, and then perform
         baricentric interpolatiom. Default: linear
-    continuous: 'auto' or bool
-        Wether fields is continuous across tissue boundaries. Changes the
-        behaviour of the function only if method == 'linear'. If auto, it will be set to
-        True for normJ and J, and False for other fields. Default: auto
+    continuous: bool
+        Wether fields is continuous across tissue boundaries. Default: False
     '''
     from .mesh_io import read_msh, ElementData
     if os.path.isdir(reference):
@@ -614,16 +606,12 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         if len(mesh.elmdata) + len(mesh.nodedata) == 0:
             warnings.warn('No fields found in mesh!')
         for ed in mesh.elmdata + mesh.nodedata:
-            if continuous == 'auto':
-                c = ed.field_name in ['normJ', 'J']
-            else:
-                c = continuous
             name = append_name(fn_out, ed.field_name)
             logger.info('Field: {0}'.format(ed.field_name))
             logger.info('To file: {0}'.format(name))
             logger.debug('Method: {0}'.format(method))
-            logger.debug('Continuous: {0}'.format(c))
-            ed.to_nifti(n_voxels, affine, fn=name, method=method, continuous=c)
+            logger.debug('Continuous: {0}'.format(continuous))
+            ed.to_nifti(n_voxels, affine, fn=name, method=method, continuous=continuous)
             gc.collect()
 
 
