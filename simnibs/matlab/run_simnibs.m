@@ -23,7 +23,7 @@ function result = run_simnibs(session)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 name_mat = [tempname,'.mat'];
-save(name_mat, 'session');
+save('-v7', name_mat, 'session');
 result = system([simnibs_cli_call('run_simnibs') ' ' name_mat]);
 
 if result ~= 0
