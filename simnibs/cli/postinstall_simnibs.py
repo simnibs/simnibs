@@ -384,9 +384,13 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
              '%windir%\System32\cmd.exe',
              arguments=f'/K ""{activate_bin}"" simnibs_env')
     if sys.platform == 'linux':
-        subprocess.run(
-            ['update-desktop-database',
-             os.path.expanduser('~/.local/share/applications')])
+        try:
+            subprocess.run(
+                ['update-desktop-database',
+                 os.path.expanduser('~/.local/share/applications')])
+        except:
+            print('Could not update desktop database')
+
 
 def _create_shortcut(shortcut_name, target_path, comment='', icon=None, mime_type=None, arguments=None):
     if sys.platform == 'win32':
