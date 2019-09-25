@@ -261,6 +261,9 @@ def headmodel(argv):
         # SPM
         fspm = sorted(glob(os.path.join(spm, "c*T1fs_conform*")),
                            key=str.lower)
+        if len(fspm) == 0:
+            raise OSError('Could not find tissue probability maps.\n'
+                           'Probably something went wrong with the Matlab call or SPM')
         masks = hmu.binarize([nib.load(v).get_data() for v in fspm])
         
         M = nib.load(fspm[0])
