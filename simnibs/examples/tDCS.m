@@ -8,7 +8,7 @@
 
 S = sim_struct('SESSION');
 S.fnamehead = 'ernie.msh'; % head mesh
-S.pathfem = 'tdcs_minimal'; %Folder for the simulation output
+S.pathfem = 'tdcs'; %Folder for the simulation output
 
 %% Define tDCS simulation
 S.poslist{1} = sim_struct('TDCSLIST');

@@ -24,9 +24,8 @@ roi = atlas['lh.4']
 
 # calculate the node areas
 node_areas = gm_surf.nodes_areas()
-breakpoint()
 # finally, calculate the mean of the electric field norm
-max_normE = np.average(gm_surf.field['E_normal'][roi], weights=node_areas[roi])
+mean_normE = np.average(gm_surf.field['E_normal'][roi], weights=node_areas[roi])
 print('mean normE in M1 ROI: ', mean_normE)
 # plot the roi
 gm_surf.add_node_field(roi, 'ROI')
