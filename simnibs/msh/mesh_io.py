@@ -2265,6 +2265,11 @@ class Data(object):
                     max_ = 0
                     min_ = self.get_percentiles(0.1, roi)[0]
 
+            # if the min and the max are close together (eg. masks)
+            if np.isclose(min_, max_, atol=1e-12):
+                min_ = self.value.min()
+                max_ = self.value.max()
+
         else:
             if percentile is True:
                 min_, max_ = self.get_percentiles([min_, max_], roi)
