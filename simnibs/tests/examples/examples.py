@@ -4,6 +4,7 @@ import stat
 import subprocess
 import zipfile
 import urllib.request
+import tempfile
 import shutil
 import pytest
 
@@ -13,14 +14,14 @@ import simnibs
 EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'examples'))
 
 @pytest.fixture
-def example_dataset():
+def example_dataset(scope="module"):
     url = (f'https://github.com/simnibs/example-dataset/'
             'releases/download/v3.0/simnibs_examples.zip')
     fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'simnibs_examples'))
-    tmpname = 'examples.zip'
+    tmpname = tempfile.mktemp(".zip")
     urllib.request.urlretrieve(url, tmpname)
     with zipfile.ZipFile(tmpname) as z:
-        z.extractall('.')
+        z.extractall(os.path.dirname(__file__))
     os.remove(tmpname)
     yield fn_folder
     shutil.rmtree(fn_folder)
@@ -36,7 +37,7 @@ def replace_gmsh():
     if sys.platform == 'win32':
         fn_script = fn_gmsh[:4] + '.cmd'
         with open(fn_script, 'w') as f:
-            f.write("echo GMSH")
+            f.write('echo "GMSH"')
     else:
         with open(fn_gmsh, 'w') as f:
             f.write('#! /bin/bash -e\n')
@@ -134,7 +135,6 @@ class TestMatlabErnie:
         os.chdir(os.path.join(example_dataset, 'ernie'))
         ret = self.run_script('transform_coordinates.m')
         assert ret.returncode == 0
-
 
     def test_tDCS(self, example_dataset, replace_show_surface):
         os.chdir(os.path.join(example_dataset, 'ernie'))
