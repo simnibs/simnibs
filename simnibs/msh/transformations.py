@@ -45,7 +45,7 @@ __all__ = [
 ]
 
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
-                         target_dimensions=None, intorder=3, cpus=1,
+                         target_dimensions=None, intorder=1, cpus=1,
                          inverse_deformation=None,
                          keep_vector_length=True):
     ''' Applies a volumetric non-linear transformation
@@ -65,7 +65,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         Dimensions of volume in the final image. Default: s
     intorder: int (Optiona)
         Order of interpolation. See the documentation for the
-        scipy.ndimage.map_coordinates function. Default=3
+        scipy.ndimage.map_coordinates function. Default=1
     inverse_deformation: tuple
         tuple (ndarray, affine) with inverse field. The inverse deformation field is in the
         original space and specifies in each voxel the equivalent coordinates (x, y, z)
@@ -167,7 +167,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
 
 
 def volumetric_affine(image, affine, target_space_affine,
-                      target_dimensions, intorder=3, cpus=1,
+                      target_dimensions, intorder=1, cpus=1,
                       keep_vector_length=True):
     ''' Applies an affine transformation
 
@@ -184,7 +184,7 @@ def volumetric_affine(image, affine, target_space_affine,
         Dimensions of volume in the final image
     intorder: int (Optional)
         Order of interpolation. See the documentation for the
-        scipy.ndimage.map_coordinates function. Default: 3
+        scipy.ndimage.map_coordinates function. Default: 1
     keep_vector_length: bool
         Whether to keep the length of the vectors unchanged. Only comes into effect if the
         image is 3 dimensional. Default: True
@@ -242,7 +242,7 @@ def _interpolate(im_data, coords, intorder, outdim, cpus=1):
     return outdata
 
 
-def nifti_transform(image, warp, ref, out=None, mask=None, order=3, inverse_warp=None,
+def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp=None,
                     binary=False):
     ''' Transforms a nifti file to the reference space usign the defined warp
 
@@ -264,7 +264,7 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=3, inverse_warp
     mask: str (optional)
         Mak to be applied before transformation
     order: int (optional)
-        Interpolation order to be used. Default_ 3
+        Interpolation order to be used. Default: 1
     inverse_warp: str
         Name of nifti file with inverse the transformation. Used to rotate vectors to the
         target space in the case of non-liner transformations. If the transformation is

@@ -1954,7 +1954,7 @@ class Data(object):
             return img
 
     def to_deformed_grid(self, warp, reference, out=None,
-                         out_original=None, tags=None, order=3,
+                         out_original=None, tags=None, order=1,
                          method='linear', continuous=False,
                          inverse_warp=None, reference_original=None,
                          binary=False):
@@ -1978,10 +1978,10 @@ class Data(object):
             If not None, the result will be written to this file as a nifti
         out_original: str (optional)
             If not None, the volume in the original grid be written to this file as a nifti
-        tags: list (options)
+        tags: list (optional)
             Mesh tags to be transformed. Defaut: transform the entire mesh
-        order: int
-            Interpolation order to be used
+        order: int (optional)
+            Interpolation order to be used. Default: 1
         method: {'assign' or 'linear'} (Optional)
             Method for gridding the data.
             If 'assign', gives to each voxel the value of the element that contains

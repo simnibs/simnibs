@@ -60,7 +60,7 @@ def parse_arguments(argv):
                         default=None)
     parser.add_argument('--interpolation_order', type=int, dest='int_order',
                         help='(optional) Interpolation order of spline interpolation to be used. '
-                        'should be between 0 and 5. Default: 3', default=3)
+                        'should be between 0 and 5. Default: 1', default=1)
     parser.add_argument('--version', action='version', version=__version__)
     return parser.parse_args(argv)
 
