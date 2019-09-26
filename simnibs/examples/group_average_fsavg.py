@@ -40,8 +40,8 @@ results_fsavg.view(visible_fields='E_normal_avg').show()
 
 ## Calculate average in an ROI defined using an atlas
 # load atlas and define a region
-atlas = simnibs.get_atlas('a2009s')
-region_name = 'lh.S_precentral-sup-part'
+atlas = simnibs.get_atlas('HCP_MMP1')
+region_name = 'lh.4'
 roi = atlas[region_name]
 # visualize region
 results_fsavg.add_node_field(roi, region_name)

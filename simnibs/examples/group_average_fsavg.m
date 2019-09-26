@@ -36,8 +36,8 @@ mesh_show_surface(m, 'field_idx', [field_name '_std'])
 
 %% Calculate average in an ROI defined using an atlas
 % load atlas and define a region
-[m, snames]=mesh_load_fssurf('fsaverage','label','a2009s');
-region_name = 'lh.S_precentral-sup-part';
+[m, snames]=mesh_load_fssurf('fsaverage','label','HCP_MMP1');
+region_name = 'lh.4';
 roi_idx=find(strcmpi(snames, region_name));
 node_idx = m.node_data{end}.data==roi_idx;
 % visualize region
