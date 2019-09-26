@@ -13,8 +13,8 @@ import simnibs
 
 EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'examples'))
 
-@pytest.fixture
-def example_dataset(scope="module"):
+@pytest.fixture(scope="module")
+def example_dataset():
     url = (f'https://github.com/simnibs/example-dataset/'
             'releases/download/v3.0/simnibs_examples.zip')
     fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'simnibs_examples'))
@@ -95,14 +95,14 @@ class TestPythonErnie:
         ret = self.run_script('tDCS.py', 'tdcs')
         assert ret.returncode == 0
 
-    def test_roi_analysis_atlas(self, example_dataset, replace_gmsh):
+    def test_roi_analysis_surf(self, example_dataset, replace_gmsh):
         os.chdir(os.path.join(example_dataset, 'ernie'))
         simnibs.msh.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'
         )
-        ret = self.run_script('roi_analysis_atlas.py')
+        ret = self.run_script('roi_analysis_surf.py')
         assert ret.returncode == 0
 
     def test_roi_analysis_mni(self, example_dataset, replace_gmsh):
@@ -141,15 +141,17 @@ class TestMatlabErnie:
         ret = self.run_script('tDCS.m', 'tdcs')
         assert ret.returncode == 0
 
-    def test_roi_analysis_atlas(self, example_dataset, replace_show_surface):
+    ''' Octave does not have the repelms function
+    def test_roi_analysis_surf(self, example_dataset, replace_show_surface):
         os.chdir(os.path.join(example_dataset, 'ernie'))
         simnibs.msh.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'
         )
-        ret = self.run_script('roi_analysis_atlas.m')
+        ret = self.run_script('roi_analysis_surf.m')
         assert ret.returncode == 0
+    '''
 
     def test_roi_analysis_mni(self, example_dataset, replace_show_surface):
         os.chdir(os.path.join(example_dataset, 'ernie'))
@@ -166,7 +168,9 @@ class TestMatlabErnie:
         ret = self.run_script('tDCS_ring.m', 'tdcs_ring')
         assert ret.returncode == 0
 
+    '''
     def test_tDCS_advanced(self, example_dataset, replace_show_surface):
         os.chdir(os.path.join(example_dataset, 'ernie'))
         ret = self.run_script('tDCS_advanced.m', 'tdcs_simulation')
         assert ret.returncode == 0
+    '''
