@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.msh.ElementData &#8212; SimNIBS 3.0.5 documentation</title>
+    <title>simnibs.msh.ElementData &#8212; SimNIBS 3.0.7 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -16,7 +16,6 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Contributors and Funding" href="../../../contributors.html" />
-    <link rel="prev" title="simnibs.msh.NodeData" href="simnibs.msh.NodeData.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -33,10 +32,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="simnibs.msh.NodeData.html" title="Previous document">simnibs.msh.NodeData</a>
-        </li>
         <li>
           <a href="../../../contributors.html" title="Next document">Contributors and Funding</a>
           &rarr;
@@ -435,7 +430,7 @@ The interpolation occurs in the tetrahedra!</p>
 <dd class="field-even"><p><strong>node_data</strong> – Node data structure with the interpolated field</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.msh.NodeData.html#simnibs.msh.NodeData" title="simnibs.msh.NodeData">NodeData</a></p>
+<dd class="field-odd"><p>NodeData</p>
 </dd>
 </dl>
 </dd></dl>
@@ -469,7 +464,7 @@ small values when the field is focal and</p>
 <dd class="field-even"><p><strong>norm</strong> – NodeData field with the norm the field</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.msh.NodeData.html#simnibs.msh.NodeData" title="simnibs.msh.NodeData">NodeData</a></p>
+<dd class="field-odd"><p>NodeData</p>
 </dd>
 </dl>
 </dd></dl>
@@ -524,7 +519,7 @@ small values when the field is focal and</p>
 
 <dl class="method">
 <dt id="simnibs.msh.ElementData.to_deformed_grid">
-<code class="descname">to_deformed_grid</code><span class="sig-paren">(</span><em>warp</em>, <em>reference</em>, <em>out=None</em>, <em>out_original=None</em>, <em>tags=None</em>, <em>order=3</em>, <em>method='linear'</em>, <em>continuous=False</em>, <em>inverse_warp=None</em>, <em>reference_original=None</em>, <em>binary=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.ElementData.to_deformed_grid" title="Permalink to this definition">¶</a></dt>
+<code class="descname">to_deformed_grid</code><span class="sig-paren">(</span><em>warp</em>, <em>reference</em>, <em>out=None</em>, <em>out_original=None</em>, <em>tags=None</em>, <em>order=1</em>, <em>method='linear'</em>, <em>continuous=False</em>, <em>inverse_warp=None</em>, <em>reference_original=None</em>, <em>binary=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.msh.ElementData.to_deformed_grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolates field to a grid and apply non-linear interpolation</p>
 <p>We first interpolate to a grid and then apply the transformation in order to
 avoid problems from deformed triangles</p>
@@ -540,8 +535,8 @@ with the numpy loadtxt file</p></li>
 as the reference (same affine transfomation and same dimensions)</p></li>
 <li><p><strong>out</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – If not None, the result will be written to this file as a nifti</p></li>
 <li><p><strong>out_original</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – If not None, the volume in the original grid be written to this file as a nifti</p></li>
-<li><p><strong>tags</strong> (<em>list</em><em> (</em><em>options</em><em>)</em>) – Mesh tags to be transformed. Defaut: transform the entire mesh</p></li>
-<li><p><strong>order</strong> (<em>int</em>) – Interpolation order to be used</p></li>
+<li><p><strong>tags</strong> (<em>list</em><em> (</em><em>optional</em><em>)</em>) – Mesh tags to be transformed. Defaut: transform the entire mesh</p></li>
+<li><p><strong>order</strong> (<em>int</em><em> (</em><em>optional</em><em>)</em>) – Interpolation order to be used. Default: 1</p></li>
 <li><p><strong>method</strong> (<em>{'assign'</em><em> or </em><em>'linear'}</em><em> (</em><em>Optional</em><em>)</em>) – Method for gridding the data.
 If ‘assign’, gives to each voxel the value of the element that contains
 it. If linear, first assign fields to nodes, and then perform
@@ -663,10 +658,6 @@ This file needs to be merged with a mesh for visualization</p>
   <nav id="rellinks">
     <ul>
         <li>
-          &larr;
-          <a href="simnibs.msh.NodeData.html" title="Previous document">simnibs.msh.NodeData</a>
-        </li>
-        <li>
           <a href="../../../contributors.html" title="Next document">Contributors and Funding</a>
           &rarr;
         </li>
@@ -722,7 +713,6 @@ This file needs to be merged with a mesh for visualization</p>
   <li><a href="../../documentation.html">Documentation</a><ul>
   <li><a href="../python_lib.html">Python Library Documentation</a><ul>
   <li><a href="../msh.html">simnibs.msh</a><ul>
-      <li>Previous: <a href="simnibs.msh.NodeData.html" title="previous chapter">simnibs.msh.NodeData</a></li>
       <li>Next: <a href="../../../contributors.html" title="next chapter">Contributors and Funding</a></li>
   </ul></li>
   </ul></li>
