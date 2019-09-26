@@ -5,12 +5,12 @@
 
 % Read the simulation results interpolated to the middle gray matter surface
 surf = mesh_load_gmsh4(...
-    fullfile('tdcs_example_run', 'subject_overlays', ...
+    fullfile('tdcs', 'subject_overlays', ...
              'ernie_TDCS_1_scalar_central.msh')...
 );
 
 % Load the atlas and define the brain region of interest
-[labels, snames] = subject_atlas(surf, 'm2m_ernie', 'HCP_MMP1');
+[labels, snames] = subject_atlas(surf, fullfile(pwd, 'm2m_ernie'), 'HCP_MMP1');
 region_name = 'lh.4';
 roi_idx=find(strcmpi(snames, region_name));
 node_idx = labels.node_data{end}.data==roi_idx;
@@ -30,5 +30,5 @@ field = surf.node_data{field_idx}.data;
 
 % Calculate the mean
 avg_field_roi = sum(field(node_idx).*nodes_areas(node_idx))/sum(nodes_areas(node_idx));
-sprintf('Average %s in %s: %f', field_name, region_name, avg_field_roi)
+fprintf('Average %s in %s: %f\n', field_name, region_name, avg_field_roi)
 

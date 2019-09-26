@@ -12,6 +12,7 @@ S = sim_struct.SESSION()
 S.fnamehead = 'ernie.msh'  # head mesh
 S.pathfem = 'tms'  # Directory for the simulation
 
+
 ## Define the TMS simulation
 tms = S.add_tmslist()
 tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'  # Choose a coil from the ccd-files folder

@@ -8,7 +8,8 @@ subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
 % Start a SESSION
 S = sim_struct('SESSION');
 S.map_to_fsavg = true;
-S.open_in_gmsh = false;
+S.map_to_mni = true;
+S.fields = 'eEjJ';
 
 % Set a TDCSLIST with the simulation set-up
 S.poslist{1} = sim_struct('TDCSLIST');

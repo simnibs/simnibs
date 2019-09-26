@@ -11,7 +11,7 @@ import simnibs
 
 # Read the simulation result
 head_mesh = simnibs.read_msh(
-    os.path.join('tdcs_example_run', 'ernie_TDCS_1_scalar.msh')
+    os.path.join('tdcs', 'ernie_TDCS_1_scalar.msh')
 )
 
 # Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)
@@ -23,7 +23,7 @@ gray_matter = head_mesh.crop_mesh(2)
 # Define M1 from MNI coordinates (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2034289/)
 # the first argument is the MNI coordinates
 # the second argument is the subject "m2m" folder
-ernie_coords = simnibs.mni2subject_coords([-37, -21, 58], 'm2m_ernie/')
+ernie_coords = simnibs.mni2subject_coords([-37, -21, 58], 'm2m_ernie')
 # we will use a sphere of radius 10 mm
 r = 10.
 

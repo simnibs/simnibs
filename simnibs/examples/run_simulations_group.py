@@ -36,6 +36,8 @@ for sub in subjects:
     # ALWAYS create a new SESSION when changing subjects
     s = sim_struct.SESSION()
     s.map_to_fsavg = True
+    s.map_to_MNI = True
+    s.fields = 'eEjJ'
     s.fnamehead = os.path.join(sub, sub + '.msh')
     s.pathfem = os.path.join(sub, 'bipolar')
     # Don't open in gmsh

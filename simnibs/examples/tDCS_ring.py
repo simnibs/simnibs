@@ -12,6 +12,7 @@ S = sim_struct.SESSION()
 S.fnamehead = 'ernie.msh'  # head mesh
 S.pathfem = 'tdcs_ring'  # Directory for the simulation
 
+
 ### Define tDCS simulation
 tdcs = S.add_tdcslist()
 tdcs.currents = [0.001, -0.001]  # Current flow though each channel (mA)

@@ -11,12 +11,12 @@ import simnibs
 
 # Read the simulation result mapped to the gray matter surface
 gm_surf = simnibs.read_msh(
-    os.path.join('tdcs_example_run', 'subject_overlays',
+    os.path.join('tdcs', 'subject_overlays',
                  'ernie_TDCS_1_scalar_central.msh')
 )
 
 # Load the atlas and define the brain region of interest
-atlas = simnibs.subject_atlas('HCP_MMP1', 'm2m_ernie/')
+atlas = simnibs.subject_atlas('HCP_MMP1', 'm2m_ernie')
 region_name = 'lh.4'
 roi = atlas[region_name]
 
