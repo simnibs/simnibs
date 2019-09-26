@@ -10,23 +10,24 @@ import simnibs
 ## Input ##
 
 # Read the simulation result mapped to the gray matter surface
-gm_surf = simnibs.read_msh(os.path.join(
-    'tdcs', 'subject_overlays', 'ernie_TDCS_1_scalar_central.msh'
-))
+gm_surf = simnibs.read_msh(
+    os.path.join('tdcs_example_run', 'subject_overlays',
+                 'ernie_TDCS_1_scalar_central.msh')
+)
 
-## Define the ROI ##
-# We will now define our ROI
-
-# Load the HCP_MMP atlas transformed to subject space
+# Load the atlas and define the brain region of interest
 atlas = simnibs.subject_atlas('HCP_MMP1', 'm2m_ernie/')
-roi = atlas['lh.4']
-# SOME PROBLEMS WITH THE SIZE OF THE ROI VECTOR??
+region_name = 'lh.4'
+roi = atlas[region_name]
 
-# calculate the node areas
-node_areas = gm_surf.nodes_areas()
-# finally, calculate the mean of the electric field norm
-mean_normE = np.average(gm_surf.field['E_normal'][roi], weights=node_areas[roi])
-print('mean normE in M1 ROI: ', mean_normE)
 # plot the roi
 gm_surf.add_node_field(roi, 'ROI')
 gm_surf.view(visible_fields='ROI').show()
+
+# calculate the node areas, we will use those later for averaging
+node_areas = gm_surf.nodes_areas()
+
+# finally, calculate the mean of the field
+field_name = 'E_normal'
+mean_normE = np.average(gm_surf.field[field_name][roi], weights=node_areas[roi])
+print('mean ', field_name, ' in ', region_name, ': ', mean_normE)
