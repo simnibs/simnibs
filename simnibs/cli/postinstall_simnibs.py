@@ -538,12 +538,15 @@ def setup_file_association(force=False, silent=False):
         # So a write a .cmd script and run it with administrative privileges
         with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
             [f.write(f'call assoc {ext}=gmsh.simnibs\n') for ext, val in associate.items() if val]
-            f.write(f'call ftype gmsh.simnibs="{gmsh_bin}" "%%1"')
+            f.write(f'call ftype gmsh.simnibs="{gmsh_bin}" "%1"')
             temp_fn = f.name
-        # I need to run as shell for some reason
+        # I need to run as admin for some reason
+        # using a very ugly trick to get "%1" through
+        # I have to use %1 as an argument so "%1" in the script becomes literal
         ret = subprocess.run(
             'powershell.exe -noprofile -executionpolicy bypass -Command '
-            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"',
+            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"'
+            f' -ArgumentList "%1"',
             shell=True)
         try:
             ret.check_returncode()
