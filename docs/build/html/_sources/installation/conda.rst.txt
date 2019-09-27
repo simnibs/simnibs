@@ -27,4 +27,13 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
   \
 
-5. (Optional) to install the Menu icons, set-up file associations, the matlab library and add SimNIBS binaries to the system path, run the :code:`postinstall_simnibs` script. Type :code:`postinstall_simnibs -h` for help
+5. (Optional) to install the Menu icons, set-up file associations, the matlab library and add SimNIBS binaries to the system path, run the :code:`postinstall_simnibs` script.
+
+   .. code-block:: bash
+  
+     postinstall_simnibs --copy-matlab --setup-links -d path/to/install_dir
+
+  \  
+   
+   
+   Type :code:`postinstall_simnibs -h` for help

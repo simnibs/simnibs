@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="simnibs.msh" href="msh.html" />
+    <link rel="next" title="simnibs.read_msh" href="auto/simnibs.read_msh.html" />
     <link rel="prev" title="Coil Models Included in SimNIBS" href="../coils.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -38,7 +38,7 @@
           <a href="../coils.html" title="Previous document">Coil Models Included in SimNIBS</a>
         </li>
         <li>
-          <a href="msh.html" title="Next document">simnibs.msh</a>
+          <a href="auto/simnibs.read_msh.html" title="Next document">simnibs.read_msh</a>
           &rarr;
         </li>
     </ul>
@@ -52,39 +52,115 @@
 <h1>Python Library Documentation<a class="headerlink" href="#python-library-documentation" title="Permalink to this headline">¶</a></h1>
 <p>SimNIBS main programming language is Python. Here you can see documentation for the main
 modules used in SimNIBS.</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="msh.html#simnibs-msh"><span class="std std-ref">simnibs.msh</span></a> handles the I/O and manipulation of mesh files and data contained in
-mesh files</p></li>
-</ul>
-<div class="section" id="index">
-<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="msh.html">simnibs.msh</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="msh.html#i-o-functions">I/O Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.read_msh.html">simnibs.msh.read_msh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.write_msh.html">simnibs.msh.write_msh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.read_freesurfer_surface.html">simnibs.msh.read_freesurfer_surface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.write_freesurfer_surface.html">simnibs.msh.write_freesurfer_surface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.read_gifti_surface.html">simnibs.msh.read_gifti_surface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.read_curv.html">simnibs.msh.read_curv</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.write_curv.html">simnibs.msh.write_curv</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.read_stl.html">simnibs.msh.read_stl</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.write_geo_spheres.html">simnibs.msh.write_geo_spheres</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.write_geo_text.html">simnibs.msh.write_geo_text</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="msh.html#mesh-classes">Mesh Classes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.Msh.html">simnibs.msh.Msh</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.Nodes.html">simnibs.msh.Nodes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.Elements.html">simnibs.msh.Elements</a></li>
-<li class="toctree-l3"><a class="reference internal" href="auto/simnibs.msh.ElementData.html">simnibs.msh.ElementData</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<div class="section" id="i-o-functions">
+<h2>I/O Functions<a class="headerlink" href="#i-o-functions" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.read_msh.html#simnibs.read_msh" title="simnibs.read_msh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_msh</span></code></a></p></td>
+<td><p>Reads a gmsh ‘.msh’ file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.write_msh.html#simnibs.write_msh" title="simnibs.write_msh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_msh</span></code></a></p></td>
+<td><p>Writes a gmsh ‘msh’ file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.read_freesurfer_surface.html#simnibs.read_freesurfer_surface" title="simnibs.read_freesurfer_surface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_freesurfer_surface</span></code></a></p></td>
+<td><p>Function to read FreeSurfer surface files, based on the read_surf.m script by Bruce Fischl</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.write_freesurfer_surface.html#simnibs.write_freesurfer_surface" title="simnibs.write_freesurfer_surface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_freesurfer_surface</span></code></a></p></td>
+<td><p>Writes a FreeSurfer surface Only the surfaces (triangles) are writen to the FreeSurfer surface file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.read_gifti_surface.html#simnibs.read_gifti_surface" title="simnibs.read_gifti_surface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_gifti_surface</span></code></a></p></td>
+<td><p>Reads a gifti surface</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.read_curv.html#simnibs.read_curv" title="simnibs.read_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_curv</span></code></a></p></td>
+<td><p>Reads a freesurfer .curv file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.write_curv.html#simnibs.write_curv" title="simnibs.write_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_curv</span></code></a></p></td>
+<td><p>Writes a freesurfer .curv file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.read_stl.html#simnibs.read_stl" title="simnibs.read_stl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_stl</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.write_geo_spheres.html#simnibs.write_geo_spheres" title="simnibs.write_geo_spheres"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_geo_spheres</span></code></a></p></td>
+<td><p>Writes a .geo file with spheres in specified positions</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.write_geo_text.html#simnibs.write_geo_text" title="simnibs.write_geo_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_geo_text</span></code></a></p></td>
+<td><p>Writes a .geo file with text in specified positions</p></td>
+</tr>
+</tbody>
+</table>
 </div>
+<div class="section" id="mesh-classes">
+<h2>Mesh Classes<a class="headerlink" href="#mesh-classes" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.Msh.html#simnibs.Msh" title="simnibs.Msh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Msh</span></code></a></p></td>
+<td><p>class to handle the meshes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.Nodes.html#simnibs.Nodes" title="simnibs.Nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Nodes</span></code></a></p></td>
+<td><p>class to handle the node information:</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.Elements.html#simnibs.Elements" title="simnibs.Elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Elements</span></code></a></p></td>
+<td><p>Mesh elements.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeData</span></code></a></p></td>
+<td><p>Data (scalar, vector or tensor) defined in mesh nodes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElementData</span></code></a></p></td>
+<td><p>Data (scalar, vector or tensor) defined in mesh elements.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="transformations">
+<h2>Transformations<a class="headerlink" href="#transformations" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.subject2mni_coords.html#simnibs.subject2mni_coords" title="simnibs.subject2mni_coords"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject2mni_coords</span></code></a></p></td>
+<td><p>Warps a set of coordinates in subject space to MNI space</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.mni2subject_coords.html#simnibs.mni2subject_coords" title="simnibs.mni2subject_coords"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mni2subject_coords</span></code></a></p></td>
+<td><p>Warps a set of coordinates in MNI space to subject space</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.eeg_positions.html#simnibs.eeg_positions" title="simnibs.eeg_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eeg_positions</span></code></a></p></td>
+<td><p>Returns a directory with EEG electrode positions</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.subject_atlas.html#simnibs.subject_atlas" title="simnibs.subject_atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_atlas</span></code></a></p></td>
+<td><p>Loads a brain atlas based of the FreeSurfer fsaverage template</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-center">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.templates.html#simnibs.templates" title="simnibs.templates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">templates</span></code></a></p></td>
+<td><p>Defines the Templates for file names used in SimNIBS</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.get_atlas.html#simnibs.get_atlas" title="simnibs.get_atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_atlas</span></code></a></p></td>
+<td><p>Loads a brain atlas based of the FreeSurfer fsaverage template</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.SubjectFiles.html#simnibs.SubjectFiles" title="simnibs.SubjectFiles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubjectFiles</span></code></a></p></td>
+<td><p>Class to find files for a given subject</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
@@ -99,7 +175,7 @@ mesh files</p></li>
           <a href="../coils.html" title="Previous document">Coil Models Included in SimNIBS</a>
         </li>
         <li>
-          <a href="msh.html" title="Next document">simnibs.msh</a>
+          <a href="auto/simnibs.read_msh.html" title="Next document">simnibs.read_msh</a>
           &rarr;
         </li>
     </ul>
@@ -153,7 +229,7 @@ mesh files</p></li>
   <li><a href="../../index.html">Documentation overview</a><ul>
   <li><a href="../documentation.html">Documentation</a><ul>
       <li>Previous: <a href="../coils.html" title="previous chapter">Coil Models Included in SimNIBS</a></li>
-      <li>Next: <a href="msh.html" title="next chapter">simnibs.msh</a></li>
+      <li>Next: <a href="auto/simnibs.read_msh.html" title="next chapter">simnibs.read_msh</a></li>
   </ul></li>
   </ul></li>
 </ul>

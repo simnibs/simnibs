@@ -62,7 +62,7 @@ This means that the head head is represented as a set of <em>Nodes</em> and <em>
 <p>Head Meshes are stored in <strong>binary gmsh version 2 format</strong>, as described in the <a class="reference external" href="http://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format-version-2">Gmsh documentation</a>.
 SimNIBS can read arbitrary mesh files.
 But it can’t write files with elements other then first order triangles and tetrahedra.</p>
-<p>SimNIBS offers the <em>Python</em> <a class="reference internal" href="python_lib/auto/simnibs.msh.read_msh.html#simnibs.msh.read_msh" title="simnibs.msh.read_msh"><code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_msh()</span></code></a> function and the
+<p>SimNIBS offers the <em>Python</em> <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_msh()</span></code> function and the
 <em>MATLAB</em> function <em>mesh_load_gmsh4</em> to read <em>.msh</em> files.</p>
 </div>
 <div class="section" id="simulation-results">
@@ -81,7 +81,7 @@ However, the gradient operation is defined element-wise, and not node-wise.</p>
 </div>
 <div class="section" id="surface-fields">
 <h2>Surface Fields<a class="headerlink" href="#surface-fields" title="Permalink to this headline">¶</a></h2>
-<p>When fields are mapped to the middle gray matter surface, either on the subject or on the  <em>FsAverage</em>, it saves results as a <em>FreeSurfer</em> <em>.curv</em> file, which contains values for each point in the surface.  SimNIBS has the <em>mesh_load_fsresults</em> <em>MATLAB</em> function and the <a class="reference internal" href="python_lib/auto/simnibs.msh.read_curv.html#simnibs.msh.read_curv" title="simnibs.msh.read_curv"><code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_curv()</span></code></a> <em>Python</em> function to load this kind of file.</p>
+<p>When fields are mapped to the middle gray matter surface, either on the subject or on the  <em>FsAverage</em>, it saves results as a <em>FreeSurfer</em> <em>.curv</em> file, which contains values for each point in the surface.  SimNIBS has the <em>mesh_load_fsresults</em> <em>MATLAB</em> function and the <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_curv()</span></code> <em>Python</em> function to load this kind of file.</p>
 <p>The surfaces themselves are stored in different places depend on how the head model was
 created:</p>
 <ul class="simple">
@@ -92,7 +92,7 @@ created:</p>
 <li><p>Format: gifti</p></li>
 <li><p>Functions:</p>
 <ul>
-<li><p><em>Python</em>: <a class="reference internal" href="python_lib/auto/simnibs.msh.read_gifti_surface.html#simnibs.msh.read_gifti_surface" title="simnibs.msh.read_gifti_surface"><code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_gifti_surface()</span></code></a></p></li>
+<li><p><em>Python</em>: <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_gifti_surface()</span></code></p></li>
 <li><p><em>MATLAB</em>: <em>mesh_load_fssurf</em></p></li>
 </ul>
 </li>
@@ -105,7 +105,7 @@ created:</p>
 <li><p>format: <em>FreeSurfer</em> surface format</p></li>
 <li><p>Functions:</p>
 <ul>
-<li><p><em>Python</em>: <a class="reference internal" href="python_lib/auto/simnibs.msh.read_freesurfer_surface.html#simnibs.msh.read_freesurfer_surface" title="simnibs.msh.read_freesurfer_surface"><code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_freesurfer_surface()</span></code></a></p></li>
+<li><p><em>Python</em>: <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_freesurfer_surface()</span></code></p></li>
 <li><p><em>MATLAB</em>: <em>mesh_load_fssurf</em></p></li>
 </ul>
 </li>

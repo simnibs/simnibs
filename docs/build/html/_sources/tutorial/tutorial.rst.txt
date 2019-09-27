@@ -10,5 +10,6 @@ Tutorial
    visualization
    head_meshing
    scripting
+   analysis
    advanced/advanced
    win_prompt

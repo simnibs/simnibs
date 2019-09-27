@@ -71,13 +71,13 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 Python
 ''''''''
 
-.. literalinclude:: ../../../simnibs/examples/group_average.py
+.. literalinclude:: ../../../simnibs/examples/group_average_fsavg.py
    :language: python
 
 
 MATLAB
 '''''''
-.. literalinclude:: ../../../simnibs/examples/group_average.m
+.. literalinclude:: ../../../simnibs/examples/group_average_fsavg.m
    :language: matlab
 
 

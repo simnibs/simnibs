@@ -10,6 +10,8 @@ SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running 
 In both, we use a set of nested structures to define the simulation, and then use the *run_simnibs* function to run the simulation.
 
 
+.. _run_scripts:
+
 Running Scripts
 -----------------
 
@@ -35,7 +37,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('/home/<USER_NAME>/SimNIBS/matlab')`
+    addpath('/home/<USER_NAME>/SimNIBS/matlab')
 
 \
 
@@ -43,7 +45,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('/Users/<USER_NAME>/Applications/SimNIBS/matlab')`
+    addpath('/Users/<USER_NAME>/Applications/SimNIBS/matlab')
 
 \
 
