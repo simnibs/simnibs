@@ -918,6 +918,7 @@ def install(install_dir, force, silent,
             copy_matlab=False,
             setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
+    os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
     if extra_coils:
         download_extra_coils(timeout=30*60)

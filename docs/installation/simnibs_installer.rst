@@ -20,8 +20,6 @@ Windows
 
 .. note:: If you already have Anaconda or Miniconda installed in your computer, the links to the Anaconda Prompt and Anaconda Powershell in the Start Menu may be overwritten
 
-.. note:: Antivirus software might interfere with the installation
-
 Testing the installation
 '''''''''''''''''''''''''
 
