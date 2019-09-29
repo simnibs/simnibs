@@ -1289,13 +1289,17 @@ class POSITION(object):
             return self.matsimnibs
         else:
             logger.info('Calculating Coil position from (centre, pos_y, distance)')
-            if not self.centre:
+            if not isinstance(self.centre, np.ndarray) and not self.centre:
                 raise ValueError('Coil centre not set!')
-            if not self.pos_ydir:
+            if not isinstance(self.pos_ydir, np.ndarray) and not self.pos_ydir:
                 raise ValueError('Coil pos_ydir not set!')
             if not self.distance:
                 raise ValueError('Coil distance not set!')
             self.substitute_positions_from_cap(cap=cap)
+            if len(self.centre) != 3:
+                raise ValueError('Coil centre must be 3-dimensional')
+            if len(self.pos_ydir) != 3:
+                raise ValueError('Coil pos_ydir must be 3-dimensional')
             self.matsimnibs = msh.calc_matsimnibs(
                 self.centre, self.pos_ydir, self.distance)
             logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
