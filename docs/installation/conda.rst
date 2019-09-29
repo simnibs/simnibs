@@ -5,25 +5,38 @@ Install Using Conda (Advanced)
 
 It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/en/latest/>`_ package manager.
 
-1. Download and install the `Anaconda <https://www.anaconda.com/>`_ or the lightweight `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ Python 3 distribution.
+1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Go to the latest `SimNIBS release page <https://github.com/simnibs/simnibs/releases/latest>`_ 
+2. Go to the latest `SimNIBS release page <https://github.com/simnibs/simnibs/releases/latest>`_ and download the :file:`environment_*.yml` file for your operating system
 
-3. Download the :file:`environment_*.yml` file for your operating system
+3. 
+   * **Windows**: Open the the *Anaconda Prompt*, which can be found in the *Star Menu*.
+   * **Linux** and **MacOS**: Open a terminal. Type
 
-4. **Windows**: Open the the *Anaconda Prompt*, which can be found in the *Star Menu*.
-   **Linux** and **MacOS**: Open a terminal. Please ensure that *conda* has been added to the system path.
+   .. code-block:: bash
+  
+      export PATH="$HOME/miniconda/bin:$PATH"
+  
+   \
 
-5. Create and activate the :code:`simnibs_env` conda environment
+   to ensure :code:`conda` is in your system PATH. You might need to change the call above depending on your install miniconda location.
+
+4. Create and activate the :code:`simnibs_env` conda environment.
 
   .. code-block:: bash
   
-     conda env create -f environment_*.yml
+     conda env create -f PATH/TO/environment_<OS>.yml
      conda activate simnibs_env
   
   \
 
-6. Install SimNIBS using :code:`pip`
+  Where :file:`PATH/TO/environment_<OS>.yml` designates the path to the downloaded environment file, typically:
+
+  * **Windows**:  :file:`%HOMEPATH%\\Downloads\\environment_win.yml` 
+  * **Linux**:  :file:`~/Downloads/environment_linux.yml` 
+  * **MacOS**:  :file:`~/Downloads/environment_macOS.yml` 
+
+5. Install SimNIBS using :code:`pip`.
 
   .. code-block:: bash
   
@@ -31,7 +44,7 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
   \
 
-7. (Optional) to setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script
+6. To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
 
    * **Windows**
 
@@ -57,4 +70,4 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
      \  
 
-   Type :code:`postinstall_simnibs -h` for more options
+   Type :code:`postinstall_simnibs -h` for more options.

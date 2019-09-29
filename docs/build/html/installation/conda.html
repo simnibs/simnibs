@@ -50,24 +50,37 @@
             
   <div class="section" id="install-using-conda-advanced">
 <span id="conda-install"></span><h1>Install Using Conda (Advanced)<a class="headerlink" href="#install-using-conda-advanced" title="Permalink to this headline">¶</a></h1>
-<p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager,</p>
-<ol class="arabic simple">
-<li><p>Download and install the <a class="reference external" href="https://www.anaconda.com/">Anaconda</a> or the lightweight <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> Python 3 distribution.</p></li>
-<li><p>Go to the latest <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest">SimNIBS release page</a></p></li>
-<li><p>Download the <code class="file docutils literal notranslate"><span class="pre">environment_*.yml</span></code> file for your operating system</p></li>
-<li><p><strong>Windows</strong>: Open the the <em>Anaconda Prompt</em>, which can be found in the <em>Star Menu</em>.
-<strong>Linux</strong> and <strong>MacOS</strong>: Open a terminal. Please ensure that <em>conda</em> has been added to the system path.</p></li>
-<li><p>Create and activate the <code class="code docutils literal notranslate"><span class="pre">simnibs_env</span></code> conda environment</p></li>
+<p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager.</p>
+<ol class="arabic">
+<li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Go to the latest <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest">SimNIBS release page</a> and download the <code class="file docutils literal notranslate"><span class="pre">environment_*.yml</span></code> file for your operating system</p></li>
+<li><ul class="simple">
+<li><p><strong>Windows</strong>: Open the the <em>Anaconda Prompt</em>, which can be found in the <em>Star Menu</em>.</p></li>
+<li><p><strong>Linux</strong> and <strong>MacOS</strong>: Open a terminal. Type</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p></p>
+<p>to ensure <code class="code docutils literal notranslate"><span class="pre">conda</span></code> is in your system PATH. You might need to change the call above depending on your install miniconda location.</p>
+</li>
+<li><p>Create and activate the <code class="code docutils literal notranslate"><span class="pre">simnibs_env</span></code> conda environment.</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment_*.yml
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f PATH/TO/environment_&lt;OS&gt;.yml
 conda activate simnibs_env
 </pre></div>
 </div>
 <p></p>
+<p>Where <code class="file docutils literal notranslate"><span class="pre">PATH/TO/environment_&lt;OS&gt;.yml</span></code> designates the path to the downloaded environment file, typically:</p>
+<ul class="simple">
+<li><p><strong>Windows</strong>:  <code class="file docutils literal notranslate"><span class="pre">%HOMEPATH%\Downloads\environment_win.yml</span></code></p></li>
+<li><p><strong>Linux</strong>:  <code class="file docutils literal notranslate"><span class="pre">~/Downloads/environment_linux.yml</span></code></p></li>
+<li><p><strong>MacOS</strong>:  <code class="file docutils literal notranslate"><span class="pre">~/Downloads/environment_macOS.yml</span></code></p></li>
+</ul>
 </div></blockquote>
-<ol class="arabic simple" start="6">
-<li><p>Install SimNIBS using <code class="code docutils literal notranslate"><span class="pre">pip</span></code></p></li>
+<ol class="arabic simple" start="5">
+<li><p>Install SimNIBS using <code class="code docutils literal notranslate"><span class="pre">pip</span></code>.</p></li>
 </ol>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
@@ -75,8 +88,8 @@ conda activate simnibs_env
 </div>
 <p></p>
 </div></blockquote>
-<ol class="arabic" start="7">
-<li><p>(Optional) to setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script, run</p>
+<ol class="arabic" start="6">
+<li><p>To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p>
 <ul>
 <li><p><strong>Windows</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">postinstall_simnibs</span> <span class="o">--</span><span class="n">copy</span><span class="o">-</span><span class="n">matlab</span> <span class="o">--</span><span class="n">setup</span><span class="o">-</span><span class="n">links</span> <span class="o">-</span><span class="n">d</span> <span class="o">%</span><span class="n">LOCALAPPDATA</span><span class="o">%</span>\<span class="n">SimNIBS</span>
@@ -97,7 +110,7 @@ conda activate simnibs_env
 <p></p>
 </li>
 </ul>
-<p>Type <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span> <span class="pre">-h</span></code> for more options</p>
+<p>Type <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span> <span class="pre">-h</span></code> for more options.</p>
 </li>
 </ol>
 </div>
