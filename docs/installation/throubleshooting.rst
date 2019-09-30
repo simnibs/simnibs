@@ -11,4 +11,4 @@ Troubleshooting
 
 * **glError** messages when opening the GUI can often be solved by updating video drivers.
 
-* Please send an email to support@simnibs.org including the :file:`simnibs_install_log.txt` file, which can be found in your SimNIBS installation directory
+* If you are stuck, please send an email to support@simnibs.org including the :file:`simnibs_install_log.txt` file, which can be found in your SimNIBS installation directory

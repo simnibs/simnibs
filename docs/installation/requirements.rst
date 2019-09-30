@@ -25,6 +25,6 @@ SimNIBS has been tested on MacOS 10.13 (High Sierra) and 10.14 (Mojave)
 Hardware
 --------
 
-  * 3 GB disk space
+  * 5 GB disk space
   * 6GB of memory (8GB are recommended)
 

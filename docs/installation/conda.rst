@@ -13,13 +13,13 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
    * **Windows**: Open the the *Anaconda Prompt*, which can be found in the *Star Menu*.
    * **Linux** and **MacOS**: Open a terminal. Type
 
-   .. code-block:: bash
+     .. code-block:: bash
   
-      export PATH="$HOME/miniconda/bin:$PATH"
+        export PATH="$HOME/miniconda/bin:$PATH"
   
-   \
+     \
 
-   to ensure :code:`conda` is in your system PATH. You might need to change the call above depending on your install miniconda location.
+     to ensure :code:`conda` is in your system PATH. You might need to change the command above depending on your miniconda install location.
 
 4. Create and activate the :code:`simnibs_env` conda environment.
 
@@ -50,6 +50,7 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
      .. code-block::
    
+        md %LOCALAPPDATA%\SimNIBS
         postinstall_simnibs --copy-matlab --setup-links -d %LOCALAPPDATA%\SimNIBS
 
      \  
@@ -58,6 +59,7 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
      .. code-block:: bash
    
+        mkdir $HOME/SimNIBS
         postinstall_simnibs --copy-matlab --setup-links -d $HOME/SimNIBS
 
      \  
@@ -66,6 +68,7 @@ It is also possible to install SimNIBS using the `Conda <https://docs.conda.io/e
 
      .. code-block:: bash
    
+        mkdir -p $HOME/Applications/SimNIBS
         postinstall_simnibs --copy-matlab --setup-links -d $HOME/Applications/SimNIBS
 
      \  

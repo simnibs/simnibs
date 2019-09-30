@@ -10,7 +10,7 @@ Linux
 -----
 Run the :code:`uninstall simnibs` script, located in the SimNIBS installation directory, by default :file:`/home/<USERNAME>/SimNIBS`
 
-Linux
+MacOS
 -----
 Run the :code:`uninstall simnibs` script, located in the SimNIBS installation directory, by default :file:`/Users/<USERNAME>/Applications/SimNIBS.app`
 

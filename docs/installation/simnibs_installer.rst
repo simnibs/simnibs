@@ -5,7 +5,7 @@ Install SimNIBS
 
 
 
-A SimNIBS installation takes about 5 GB disk space, and SimNIBS requires about 4 GB memory to run.
+A SimNIBS installation takes about 5 GB disk space.
 
 
 Windows
