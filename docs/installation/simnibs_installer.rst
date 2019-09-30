@@ -3,7 +3,9 @@
 Install SimNIBS
 ===============
 
-As of version 3.0, SimNIBS is now distributed through the SimNIBS installer.
+
+
+A SimNIBS installation takes about 5 GB disk space, and SimNIBS requires about 4 GB memory to run.
 
 
 Windows
@@ -47,7 +49,7 @@ Linux
 
 .. note:: The SimNIBS Installer does not support CentOS 6. However, it is possible to :ref:`install it using conda <conda-install>`
 
-.. note:: The installer also has a silent mode, type :code:`./install_simnibs -h` for more information
+.. note:: The installer also has a silent mode (no GUI), type :code:`./install_simnibs -h` for more information
 
 
 Testing the Installation
@@ -73,6 +75,8 @@ MacOS
 
 4. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
 
+.. note:: SimNIBS only supports MacOS versions ≥ 10.13 (High Sierra)
+
 
 Testing the Installation
 '''''''''''''''''''''''''
@@ -82,7 +86,7 @@ Open the Launcher and search for :code:`SimNIBS GUI`
 Updating SimNIBS
 -----------------
 
-If you already have SimNIBS >= 3.0 installed, it is possible to upgrade your
+If you already have SimNIBS ≥ 3.0 installed, it is possible to upgrade your
 installation.
 
 Just start a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and type
