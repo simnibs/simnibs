@@ -87,7 +87,7 @@ def build():
             f.write('tar -zxf "$CUR_DIR/simnibs_env.tar.gz" -C "$INSTALL_DIR/simnibs_env"\n')
             f.write('source "$INSTALL_DIR/simnibs_env/bin/activate"\n')
             f.write('python -m pip install simnibs --no-cache-dir --no-index --upgrade --find-links="$CUR_DIR"\n')
-            f.write('python -m pip install pyqt5 --no-cache-dir\n') # I need to re-install pyqt, this requires internet
+            f.write('python -m pip install pyqt5 --force-reinstall --no-cache-dir\n') # I need to re-install pyqt, this requires internet
             f.write('postinstall_simnibs -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils')
 
         os.chmod(fn_script,
