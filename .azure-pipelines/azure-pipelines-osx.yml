@@ -17,13 +17,20 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - bash: |
-      conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
+      conda env create -f environment_macOS.yml
     displayName: Create Conda environment
   - bash: |
       source activate simnibs_build
-      python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
+      python setup.py bdist_wheel
+      cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+  - bash: |
+      source activate
+      pip install conda-pack
+      python pack.py
+      cp simnibs-*-macOS.zip $(Build.ArtifactStagingDirectory)
+    displayName: Create SimNIBS pack
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

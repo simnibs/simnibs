@@ -73,10 +73,10 @@ def build():
 
     else:
         if sys.platform == 'darwin':
-            fn_script = os.path.join('pack', 'install.command')
+            fn_script = os.path.join('pack', 'install')
             install_dir = "$HOME/Applications/SimNIBS"
         else:
-            fn_script = os.path.join('pack', 'install.sh')
+            fn_script = os.path.join('pack', 'install')
             install_dir = "$HOME/SimNIBS"
         with open(fn_script, 'w') as f:
             # Some problem with Qt
