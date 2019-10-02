@@ -96,7 +96,6 @@ def copy_scripts(dest_dir):
         f.write(f"python_call='{python_call}';\n")
         f.write("end\n")
 
-
     # simnibs_python interpreter
     if sys.platform == 'win32':
         _write_windows_cmd(None, os.path.join(dest_dir, 'simnibs_python'))
@@ -635,10 +634,10 @@ def uninstaller_setup(install_dir, force, silent):
 
         with open(uninstaller + '.cmd', 'a') as f:
             f.write(
-                f'& rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
+                f' & rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
                 f'& rd /Q /S "{simnibs_env_dir}" >NUL 2>&1 '
                 f'& del "{uninstaller}.cmd" >NUL 2>&1 '
-                f'& rd /Q "{install_dir}"'
+                f'& rd /Q /S "{install_dir}"'
             )
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
@@ -698,9 +697,10 @@ def uninstaller_setup(install_dir, force, silent):
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
             f.write(
-                f' && rm "{uninstaller}" '
                 f'&& rm -rf {miniconda_dir} '
-                f'; rmdir "{install_dir}"')
+                f'; rm -rf {simnibs_env_dir} '
+                f'; rm "{uninstaller}" '
+                f'; rm -rf "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
@@ -962,6 +962,7 @@ def install(install_dir,
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
+    copy_scripts(scripts_dir)
     if extra_coils:
         print('Downloading Extra Coils', flush=True)
         download_extra_coils(timeout=30*60)
@@ -992,7 +993,6 @@ def install(install_dir,
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
-    copy_scripts(scripts_dir)
 
 
 def uninstall(install_dir):
