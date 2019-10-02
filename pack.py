@@ -1,5 +1,3 @@
-import tarfile
-import zipfile
 import stat
 import glob
 import sys
@@ -21,14 +19,19 @@ def build():
     if sys.platform == 'linux':
         env = env.format('linux')
         out_pack = os.path.join('pack', 'simnibs_env.tar.gz')
+        os_name = 'linux'
     elif sys.platform == 'darwin':
         env = env.format('macOS')
         out_pack = os.path.join('pack', 'simnibs_env.tar.gz')
+        os_name = 'macOS'
     elif sys.platform == 'win32':
         env = env.format('win')
         out_pack = os.path.join('pack', 'simnibs_env.zip')
+        os_name = 'win'
     else:
         raise OSError('OS not supported!')
+    # Create temporary environment
+    '''
     subprocess.run(
         f'conda env create -n simnibs_env_tmp -f {env}',
         check=True,
@@ -42,6 +45,12 @@ def build():
         dest_prefix='simnibs_env',
         output=out_pack,
     )
+    # Remove temporary env
+    subprocess.run(
+        'conda env remove -y --name simnibs_env_tmp',
+        check=True,
+        shell=True
+    )
 
     # Copy wheel
     wheels = glob.glob(f'dist/simnibs-{version}*.whl')
@@ -49,18 +58,19 @@ def build():
         raise FileNotFoundError(f'Did not find any wheels for version {version}')
     for f in wheels:
         shutil.copy(f, 'pack')
-    # remove temporary env
-    subprocess.run(
-        'conda env remove -y --name simnibs_env_tmp',
-        check=True,
-        shell=True
-    )
+
     # Create bash or bat file for installation
     if sys.platform == 'win32':
         with open(os.path.join('pack/install.cmd'), 'w') as f:
-            f.write("@echo off\n")
-            f.write(f'call "%~dp0simnibs_env\\Scripts\\activate"\n')
-            f.write(f'python "%~dp0pack.py" install')
+            f.write(f'SET INSTALL_DIR=%LOCALAPPDATA%\SimNIBS\n')
+            f.write('mkdir "%INSTALL_DIR%\simnibs_env"\n')
+            f.write('powershell.exe -nologo -noprofile -command "& '
+                    '{ Add-Type -A \'System.IO.Compression.FileSystem\'; '
+                    '[IO.Compression.ZipFile]::ExtractToDirectory(\'%~dp0simnibs_env.zip\', \'%INSTALL_DIR%\simnibs_env\'); }"\n'
+            )
+            f.write('call "%INSTALL_DIR%\simnibs_env\\Scripts\\activate"\n')
+            f.write('python -m pip install simnibs --no-cache-dir --no-index --upgrade --find-links=./\n')
+            f.write('postinstall_simnibs -d "%INSTALL_DIR%" --copy-matlab --setup-links --no-extra-coils')
 
     else:
         if sys.platform == 'darwin':
@@ -78,15 +88,16 @@ def build():
             f.write('tar -zxf "$CUR_DIR/simnibs_env.tar.gz" -C "$INSTALL_DIR/simnibs_env"\n')
             f.write('source "$INSTALL_DIR/simnibs_env/bin/activate"\n')
             f.write('python -m pip install simnibs --no-cache-dir --no-index --upgrade --find-links="$CUR_DIR"\n')
-            f.write('python -m pip install pyqt5\n') # I need to re-install pyqt
+            f.write('python -m pip install pyqt5 --no-cache-dir\n') # I need to re-install pyqt
             f.write('postinstall_simnibs -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils')
 
 
         os.chmod(fn_script,
                  os.stat(fn_script).st_mode |
                  stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    
+    '''
     # zip the whole thing
+    shutil.make_archive(f'simnibs-{version}-{os_name}', 'zip', 'pack')
 
 
 def _get_default_dir():
