@@ -143,6 +143,38 @@ class Visualization:
         s += '}\n'
         return s
 
+    def screenshot_views(self, fn_out, sleep=1):
+        try:
+            self.View[0]
+            view = self.View
+        except IndexError:
+            view = [self.View]
+        assert len(view) == len(fn_out), \
+                'Please define one name per view'
+        with tempfile.NamedTemporaryFile(suffix='.msh') as f:
+            mesh_fn = f.name
+        self.mesh.write(mesh_fn)
+        with tempfile.NamedTemporaryFile(suffix='.geo', delete=False, mode='w') as f:
+            f.write('// Visualization File Created by SimNIBS\n')
+            f.write('Merge "{0}";\n'.format(mesh_fn))
+            f.write(str(self.General))
+            f.write(str(self.Mesh))
+            for fn, v in zip(fn_out, view):
+                if v.indx is None:
+                    raise ValueError('Please assign an index to all views')
+                fn = os.path.abspath(fn)
+                f.write(str(v))
+                f.write('View[{0}].Visible = 1;\n'.format(v.indx))
+                f.write('Draw;\n')
+                f.write('Print "{0}";\n'.format(fn))
+                f.write('Sleep {0};\n'.format(sleep))
+                f.write('View[{0}].Visible = 0;\n'.format(v.indx))
+            f.write('Exit;\n')
+            geo_fn = f.name
+
+        _run([path2bin('gmsh'), geo_fn], [geo_fn])
+
+
 
 class General(object):
     ''' General Gmsh visualization options.
@@ -423,9 +455,10 @@ class View(object):
             add = 'View[%d].' % self.indx
 
         if self.ColorTable is not None:
-            st = add + 'ColorTable = {1};\n'.format(
+            st = add + 'ColorTable = {0};\n'.format(
                         self._color_table_string())
             string += st
+            exclude += ['ColormapNumber']
 
         for k, v in self.__dict__.items():
             if k not in exclude:

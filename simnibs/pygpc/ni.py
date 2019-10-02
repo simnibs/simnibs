@@ -726,7 +726,7 @@ class gpc:
         self.N_poly = self.poly_idx.shape[0]
         
         # if point index list is not provided, evaluate over all points 
-        if not output_idx:
+        if len(output_idx) == 0:
             output_idx = np.arange(self.N_out, dtype=int)
             output_idx = output_idx[np.newaxis,:]        
         

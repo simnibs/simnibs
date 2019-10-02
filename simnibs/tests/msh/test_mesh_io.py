@@ -32,6 +32,82 @@ def sphere3_baricenters(sphere3_msh):
     return baricenters
 
 
+class TestGetitem:
+    def test_getitem_scalar(self):
+        array = np.arange(1, 10, dtype=int)
+        g = mesh_io._GetitemTester(array)
+        assert g[1] == array[0]
+        assert g[2] == array[1]
+        assert g[-1] == array[-1]
+
+    def test_getitem_slice(self):
+        array = np.arange(1, 13, dtype=int).reshape(-1, 2)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[1:10:2] == array[0:9:2])
+        assert np.all(g[:] == array)
+        assert np.all(g[1:] == array[0:])
+        assert np.all(g[:5] == array[:4])
+        assert np.all(g[::2] == array[::2])
+        with pytest.raises(IndexError):
+            g[::-1]
+        with pytest.raises(IndexError):
+            g[0::]
+        with pytest.raises(IndexError):
+            g[-1::]
+        with pytest.raises(IndexError):
+            g[::-1]
+
+    def test_indexes(self):
+        array = np.arange(1, 13, dtype=int).reshape(-1, 2)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[[1, 3, 4]] == array[[0, 2, 3]])
+        assert np.all(g[np.array([1, 3, 4])] == array[np.array([0, 2, 3])])
+        with pytest.raises(IndexError):
+            g[[0]]
+        assert np.all(g[[1, 5], [0, 1]] == array[[0, 4], [0, 1]])
+        idx = np.array([[1, 3],
+                        [5, 2]])
+        assert np.all(g[idx] == array[idx-1])
+
+    def test_two_slices(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[1:10:2, :3] == array[0:9:2, :3])
+
+    def test_bool(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[array[:,0]>20] == array[array[:,0]>20])
+        assert np.all(g[array>20] == array[array>20])
+
+    def test_ellipsis(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[...] == array[...])
+        assert np.all(g[..., 1:3] == array[..., 1:3])
+
+    def test_None(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[None] == array[None])
+        assert np.all(g[np.newaxis, 1:3] == array[np.newaxis, 1:3])
+        assert np.all(g[:, 1:3, None] == array[:, 1:3, None])
+
+    def test_mixed(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[[1,3,5], 1:3] == array[[0,2,4], 1:3])
+        assert np.all(g[array[:,0]>20, 1:3] == array[array[:,0]>20, 1:3])
+
+    def test_advanced(self):
+        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
+        rows = np.array([0, 5])
+        cols = np.array([0, 3])
+        g = mesh_io._GetitemTester(array)
+        assert np.all(g[rows+1, cols] == array[rows, cols])
+        assert np.all(g[np.ix_(rows+1, cols)] == array[np.ix_(rows, cols)])
+
+
 class TestGmshRead:
 
     def test_node_nr(self, sphere3_msh):
@@ -52,6 +128,218 @@ class TestGmshRead:
     def test_elm_node_number_list(self, sphere3_msh):
         np.testing.assert_array_equal(sphere3_msh.elm.node_number_list[-1, :],
                                       np.array([31, 4149, 4272, 1118]))
+
+
+class TestNodes:
+
+    def test_node_init_nrs(self):
+        node_coord = np.array(((3, 2, 4), (5, 3, 3)))
+        nodes = mesh_io.Nodes(node_coord)
+        assert nodes.nr == 2
+
+    def test_node_init_node_nr(self):
+        node_coord = np.array(((3.0, 2.0, 4), (5, 3, 3)))
+        nodes = mesh_io.Nodes(node_coord)
+        np.testing.assert_array_almost_equal(
+            nodes.node_number, np.array((1, 2)))
+
+    def test_node_find_closest_node(self):
+        node_coord = np.array(((3, 2, 4), (5, 3, 3), (1, 2, 0)))
+        nodes = mesh_io.Nodes(node_coord)
+        n = nodes.find_closest_node(
+            np.array(((3, 1.9, 4), (5.2, 2.2, 3), (1, 2, 1)), dtype=float))
+
+        np.testing.assert_array_equal(node_coord, n)
+
+    def test_node_find_closest_testing(self):
+        node_coord = np.array(((3, 2, 4), (5, 3, 3), (1, 2, 0)))
+        nodes = mesh_io.Nodes(node_coord)
+        _, idx = nodes.find_closest_node(np.array(
+            ((3, 1.9, 4), (5.2, 2.2, 3), (1, 2, 1)), dtype=float),
+            return_index=True)
+
+        assert all(idx == [1, 2, 3])
+
+    def test_getitem_simple_index(self):
+        nodes = mesh_io.Nodes()
+        nodes.node_coord = np.array(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        assert np.all(nodes[1] == [1, 0, 0])
+
+    def test_getitem_list_index(self):
+        nodes = mesh_io.Nodes()
+        nodes.node_coord = np.array(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        assert np.all(nodes[[1, 2]] == [[1, 0, 0], [0, 1, 0]])
+        assert np.all(nodes[np.array([1, 2])] == [[1, 0, 0], [0, 1, 0]])
+
+    def test_getitem_slice(self):
+        nodes = mesh_io.Nodes()
+        nodes.node_coord = np.array(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        assert np.all(nodes[1:] == [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+    def test_getitem_raise(self):
+        nodes = mesh_io.Nodes()
+        nodes.node_coord = np.array(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        with pytest.raises(IndexError):
+            nodes[0]
+
+class TestElements:
+    def test_elm_init_nr(self):
+        triangles = np.array(((1, 3, 2), (4, 1, 2)))
+        tetrahedra = np.array(((1, 3, 2, 4), (4, 1, 3, 7)))
+        elm = mesh_io.Elements(triangles, tetrahedra)
+        assert elm.nr == 4
+        assert np.all(elm[:] == np.array(
+            [[1, 3, 2, -1], [4, 1, 2, -1],
+             [1, 3, 2, 4], [4, 1, 3, 7]]))
+
+    def test_elm_init_node_number_list(self):
+        triangles = np.array(((1, 3, 2), (4, 1, 2)))
+        tetrahedra = np.array(((1, 3, 2, 4), (4, 1, 3, 7)))
+        elm = mesh_io.Elements(triangles, tetrahedra)
+        np.testing.assert_array_almost_equal(
+            elm.node_number_list,
+            np.array(((1, 3, 2, -1), (4, 1, 2, -1), (1, 3, 2, 4), (4, 1, 3, 7))))
+
+    def test_elements_find_neighbouring_nodes(self):
+        elm = mesh_io.Elements()
+        elm.node_number_list = np.array(
+            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
+        assert set(elm.find_neighbouring_nodes(1)) == set([2, 3, 4, 8, 6])
+
+    def test_elements_find_neighbouring_elements(self):
+        elm = mesh_io.Elements()
+        elm.node_number_list = np.array(
+            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
+        assert set(elm.find_all_elements_with_node(1)) == set([1, 3])
+
+    def test_elements_find_neighbouring_elements_many(self):
+        elm = mesh_io.Elements()
+        elm.node_number_list = np.array(
+            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
+        assert set(elm.find_all_elements_with_node([3, 7])) == set([1, 2])
+
+    def test_elements_getitem(self):
+        elm = mesh_io.Elements()
+        elm.node_number_list = np.array(
+            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
+        assert np.all(elm[[2, 3]] == np.array([[3, 2, 5, 7], [1, 8, 2, 6]]))
+
+    def test_get_faces(self, sphere3_msh):
+        elm = sphere3_msh.elm
+        faces, th_faces, adjacency_list = elm.get_faces()
+        th = elm[elm.tetrahedra]
+        faces_th = th[:, [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]]
+        assert np.all(faces_th[0] == faces[th_faces[0]])
+        assert np.sum(np.in1d(th[adjacency_list[0, 0]], th[adjacency_list[0, 1]])) == 3
+        assert np.any(np.in1d(th_faces[0], th_faces[adjacency_list[th_faces[0, 0], 1]]))
+
+        # Here I don't care about order because it might be flipped
+        assert np.all(np.unique(faces_th[-1]) == np.unique(faces[th_faces[-1]]))
+        assert np.sum(np.in1d(th[adjacency_list[-1, 0]], th[adjacency_list[-1, 1]])) == 3
+        assert np.any(np.in1d(th_faces[-1], th_faces[adjacency_list[th_faces[-1, 0], 1]]))
+
+
+    def test_get_outside_faces(self, sphere3_msh):
+        elm = sphere3_msh.elm
+        outside_faces = elm.get_outside_faces()
+        nodes_in_face = sphere3_msh.nodes[outside_faces]
+        assert np.allclose(np.linalg.norm(nodes_in_face, axis=2), 95)
+        edge1 = nodes_in_face[:, 1, :] - nodes_in_face[:, 0, :]
+        edge2 = nodes_in_face[:, 2, :] - nodes_in_face[:, 0, :]
+        n = np.cross(edge1, edge2)
+        n /= np.linalg.norm(n, axis=1)[:, None]
+        bar = np.average(nodes_in_face, axis=1)
+        bar /= np.linalg.norm(bar, axis=1)[:, None]
+        assert np.allclose(n, bar, atol=1e-1)
+
+    def test_nodes_in_tag(self, sphere3_msh):
+        n = sphere3_msh.elm.nodes_with_tag(5)
+        r = np.linalg.norm(sphere3_msh.nodes[n], axis=1)
+        assert np.all(r > 89.) and np.all(r < 96.)
+
+        n = sphere3_msh.elm.nodes_with_tag([3, 5])
+        r = np.linalg.norm(sphere3_msh.nodes[n], axis=1)
+        assert np.all(((r > 89.)*(r < 96.)) + (r < 86.))
+
+    def test_find_adjacent_tetrahedra_tr(self, sphere3_msh):
+        adj_elements = sphere3_msh.elm.find_adjacent_tetrahedra()
+        outer_surf = sphere3_msh.elm.tag1 == 1005
+        assert np.all(adj_elements[outer_surf, 1:] == -1)
+        assert np.all(sphere3_msh.elm.tag1[adj_elements[outer_surf, 0] - 1] == 5)
+        inner = sphere3_msh.elm.tag1 == 1004
+        assert np.all(np.isin(sphere3_msh.elm.tag1[adj_elements[inner, :1] - 1], [4, 5]))
+
+    def test_find_adjacent_tetrahedra_tr_dangling(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh([3, 1005])
+        adj_elements = m.elm.find_adjacent_tetrahedra()
+        outer_surf = m.elm.tag1 == 1005
+        assert np.all(adj_elements[outer_surf] == -1)
+
+    def test_find_adjacent_tetrahedra_th(self, sphere3_msh):
+        adj_elements = sphere3_msh.elm.find_adjacent_tetrahedra()
+        inner_vol = sphere3_msh.elm.tag1 == 3
+        assert np.all(np.unique(sphere3_msh.elm.tag1[adj_elements[inner_vol] - 1]) == [3, 4])
+        mid = sphere3_msh.elm.tag1 == 4
+        assert np.all(np.unique(sphere3_msh.elm.tag1[adj_elements[mid] - 1]) == [3, 4, 5])
+
+    def test_connected_components_connected_mesh(self, sphere3_msh):
+        cc = sphere3_msh.elm.connected_components()
+        assert len(cc) == 1
+        assert np.all(cc[0] == sphere3_msh.elm.elm_number)
+
+    def test_connected_components_disconnected_th(self, sphere3_msh):
+        elm_select = sphere3_msh.elm.elm_number[
+            (sphere3_msh.elm.tag1 == 3) +
+            (sphere3_msh.elm.tag1 == 5)
+        ]
+        cc = sphere3_msh.elm.connected_components(elm_select)
+        assert len(cc) == 2
+        assert np.all(cc[0] == sphere3_msh.elm.elm_number[(sphere3_msh.elm.tag1 == 3)])
+        assert np.all(cc[1] == sphere3_msh.elm.elm_number[(sphere3_msh.elm.tag1 == 5)])
+
+    def test_connected_components_disconnected_th_tr(self, sphere3_msh):
+        elm_select = sphere3_msh.elm.elm_number[
+            (sphere3_msh.elm.tag1 == 3) +
+            (sphere3_msh.elm.tag1 == 1005)
+        ]
+        cc = sphere3_msh.elm.connected_components(elm_select)
+        assert len(cc) == 2
+        assert np.all(cc[0] == sphere3_msh.elm.elm_number[(sphere3_msh.elm.tag1 == 3)])
+        assert np.all(cc[1] == sphere3_msh.elm.elm_number[(sphere3_msh.elm.tag1 == 1005)])
+
+    def test_add_triangles(self, sphere3_msh):
+        m = copy.deepcopy(sphere3_msh)
+        m.elm.add_triangles(m.elm[m.elm.tag1 == 1005, :3], 1006)
+        assert m.elm.nr == sphere3_msh.elm.nr + np.sum(m.elm.tag1 == 1005)
+        assert np.all(
+            m.elm[m.elm.tag1 == 1006] ==
+            sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005]
+        )
+
+    def test_node_elm_adjacency(self, sphere3_msh):
+        M = sphere3_msh.elm.node_elm_adjacency()
+        for n in [1, 523, 3803, 1821, sphere3_msh.nodes.nr]:
+            elm_with_node = sphere3_msh.elm.elm_number[
+                np.any(sphere3_msh.elm.node_number_list == n, axis=1)
+            ]
+            assert np.all(M[n].data == elm_with_node)
+
+    def test_add_triangles_tags(self, sphere3_msh):
+        m = copy.deepcopy(sphere3_msh)
+        tr = m.elm[m.elm.tag1 == 1005, :3]
+        tags = m.elm.tag1[m.elm.tag1 == 1005] + 1
+        m.elm.add_triangles(tr, tags)
+        assert m.elm.nr == sphere3_msh.elm.nr + np.sum(m.elm.tag1 == 1005)
+        assert np.all(
+            m.elm[m.elm.tag1 == 1006] ==
+            sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005]
+        )
+
+
 
 class TestMsh:
     def test_compact_ordering_elm(self, sphere3_msh):
@@ -126,7 +414,25 @@ class TestMsh:
 
     def test_remove_elements(self, sphere3_msh):
         removed = sphere3_msh.remove_from_mesh(1003)
-        assert np.sum(removed.elm.tag1 == 1003) == 0
+        assert np.all(removed.elm.tag1 != 1003)
+
+    def test_remove_mesh_type(self, sphere3_msh):
+        removed = sphere3_msh.remove_from_mesh(elm_type=4)
+        assert np.all(removed.elm.elm_type == 2)
+
+    def test_remove_mesh_nodes(self, sphere3_msh):
+        removed = sphere3_msh.remove_from_mesh(
+            nodes=np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1==5])
+        )
+
+        assert len(np.setdiff1d([3, 1003, 4], removed.elm.tag1)) == 0
+
+    def test_remove_mesh_elements(self, sphere3_msh):
+        removed = sphere3_msh.remove_from_mesh(
+            elements=sphere3_msh.elm.elm_number[sphere3_msh.elm.tag1==1005]
+        )
+        assert len(np.setdiff1d([3, 1003, 4, 1004, 5], removed.elm.tag1)) == 0
+
 
     def test_elements_baricenters(self, sphere3_msh):
         baricenters = sphere3_msh.elements_baricenters()
@@ -278,8 +584,11 @@ class TestMsh:
     def test_quality_parameters(self):
         # define mesh with a single regular tetrahedron
         msh = mesh_io.Msh()
-        msh.elm = mesh_io.Elements(tetrahedra=np.array([[1, 2, 3, 4],
-                                                     [1, 2, 5, 4]], dtype=int))
+        # 2 regular tetrahedron of edge size 1
+        msh.elm = mesh_io.Elements(
+            tetrahedra=np.array(
+                [[1, 2, 3, 4],
+                 [1, 2, 5, 4]], dtype=int))
         msh.elm.elm_type = np.array([4, 4])
         msh.nodes = mesh_io.Nodes(np.array(
             [[1./3. * np.sqrt(3), 0, 0],
@@ -287,9 +596,39 @@ class TestMsh:
              [0, 0, 1./3. * np.sqrt(6)],
              [-1./6. * np.sqrt(3), -1./2., 0],
              [0, 0, 1./3. * np.sqrt(6)]], dtype=float))
-        quality = msh.tetrahedra_quality()
-        assert np.allclose(quality['beta'][[1, 2]], [3.0, 3.0])
-        assert np.allclose(quality['gamma'][[1, 2]], [8.479, 8.479], rtol=1e-3)
+        re_ratio, ir_cr_ratio = msh.tetrahedra_quality()
+        # circumradius of a regular tetrahedron
+        # http://mathworld.wolfram.com/RegularTetrahedron.html
+        assert np.allclose(re_ratio[:], 1/4*np.sqrt(6))
+        assert np.allclose(ir_cr_ratio[:], 1/3)
+
+    def test_triangle_angles(self):
+        msh = mesh_io.Msh()
+        # 2 regular tetrahedron of edge size 1
+        msh.elm = mesh_io.Elements(
+            triangles=np.array(
+                [[1, 2, 3],
+                 [1, 4, 2]], dtype=int))
+        msh.nodes = mesh_io.Nodes(np.array(
+            [[0, 0, 0],
+             [1, 0, 0],
+             [0, np.tan(np.pi/6), 0],
+             [0, 0, np.tan(np.pi/6)]], dtype=float))
+        angles = msh.triangle_angles()
+        assert np.allclose(angles[:], [[90, 30, 60], [90, 60, 30]])
+
+    def test_curvature(self, sphere3_msh):
+        # https://computergraphics.stackexchange.com/a/1721
+        surf_1005 = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+        surf_1004 = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1004, :3])
+        surf_1003 = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1003, :3])
+        curv = sphere3_msh.gaussian_curvature()
+        assert np.allclose(curv[surf_1005], (1/95**2), atol=1e-4)
+        assert np.allclose(curv[surf_1004], (1/90**2), atol=1e-4)
+        assert np.allclose(curv[surf_1003], (1/85**2), atol=1e-4)
+
+        assert np.average(curv[surf_1005]) < np.average(curv[surf_1004])
+        assert np.average(curv[surf_1004]) < np.average(curv[surf_1003])
 
     def test_node_volume(self, sphere3_msh):
         v = sphere3_msh.nodes_volumes_or_areas()
@@ -325,7 +664,7 @@ class TestMsh:
         outer_nodes = np.unique(
             sphere3_msh.elm.node_number_list[sphere3_msh.elm.tag1 == 1005, :3])
         # high tolerance due to low resolution
-        assert np.isclose(np.sum(areas[outer_nodes]), np.pi * 4. * 95 ** 2, rtol=1e-2)
+        assert np.isclose(np.sum(areas[outer_nodes]), np.pi * 4. * 95 ** 2, rtol=1)
 
     '''
     def test_find_tetrahedron_with_points(self, sphere3_msh):
@@ -548,6 +887,21 @@ class TestMsh:
         assert np.allclose(M.dot(x)[inside], interp_points[inside, 0], atol=1, rtol=1e-1)
         assert np.all(np.isnan(M.dot(x)[~inside]))
 
+    def test_find_shared_nodes(self, sphere3_msh):
+        shared_nodes = sphere3_msh.find_shared_nodes([3, 4])
+        surf_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1==1003, :3])
+        assert np.all(shared_nodes == surf_nodes)
+
+    def test_find_shared_nodes_tr(self, sphere3_msh):
+        shared_nodes = sphere3_msh.find_shared_nodes([3, 1003])
+        surf_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1==1003, :3])
+        print(shared_nodes)
+        assert np.all(shared_nodes == surf_nodes)
+
+    def test_find_shared_nodes_empty(self, sphere3_msh):
+        shared_nodes = sphere3_msh.find_shared_nodes([3, 5])
+        assert len(shared_nodes) == 0
+
     def test_add_node_field_value(self, sphere3_msh):
         m = copy.deepcopy(sphere3_msh)
         m.add_node_field(m.nodes.node_coord, 'node_coord')
@@ -590,7 +944,26 @@ class TestMsh:
         m = copy.deepcopy(sphere3_msh)
         with pytest.raises(ValueError):
             m.add_element_field(m.elm.tag1[1:], 'tags')
- 
+
+    def test_reconstruct_surfaces(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh(elm_type=4)
+        m.reconstruct_surfaces()
+        c = m.elements_baricenters()
+        assert np.allclose(np.linalg.norm(c[m.elm.tag1 == 1003], axis=1), 85, rtol=1e-2)
+        assert np.all(
+            np.isclose(np.linalg.norm(c[m.elm.tag1 == 1004], axis=1), 85, rtol=1e-2) +
+            np.isclose(np.linalg.norm(c[m.elm.tag1 == 1004], axis=1), 90, rtol=1e-2)
+            )
+        assert np.all(
+            np.isclose(np.linalg.norm(c[m.elm.tag1 == 1005], axis=1), 90, rtol=1e-2) +
+            np.isclose(np.linalg.norm(c[m.elm.tag1 == 1005], axis=1), 95, rtol=1e-2)
+            )
+
+    def test_reconstruct_surfaces_tag(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh(elm_type=4)
+        m.reconstruct_surfaces(tags=[4])
+        assert ~np.any(np.in1d(m.elm.tag1, [1003, 1005]))
+
 
 class TestData:
     def test_read_hdf5_data_matrix_row(self):
@@ -1251,136 +1624,6 @@ class TestNodeData:
 
 
 
-class TestNodes:
-
-    def test_node_init_nrs(self):
-        node_coord = np.array(((3, 2, 4), (5, 3, 3)))
-        nodes = mesh_io.Nodes(node_coord)
-        assert nodes.nr == 2
-
-    def test_node_init_node_nr(self):
-        node_coord = np.array(((3.0, 2.0, 4), (5, 3, 3)))
-        nodes = mesh_io.Nodes(node_coord)
-        np.testing.assert_array_almost_equal(
-            nodes.node_number, np.array((1, 2)))
-
-    def test_node_find_closest_node(self):
-        node_coord = np.array(((3, 2, 4), (5, 3, 3), (1, 2, 0)))
-        nodes = mesh_io.Nodes(node_coord)
-        n = nodes.find_closest_node(
-            np.array(((3, 1.9, 4), (5.2, 2.2, 3), (1, 2, 1)), dtype=float))
-
-        np.testing.assert_array_equal(node_coord, n)
-
-    def test_node_find_closest_testing(self):
-        node_coord = np.array(((3, 2, 4), (5, 3, 3), (1, 2, 0)))
-        nodes = mesh_io.Nodes(node_coord)
-        _, idx = nodes.find_closest_node(np.array(
-            ((3, 1.9, 4), (5.2, 2.2, 3), (1, 2, 1)), dtype=float),
-            return_index=True)
-
-        assert all(idx == [1, 2, 3])
-
-    def test_getitem_simple_index(self):
-        nodes = mesh_io.Nodes()
-        nodes.node_coord = np.array(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        assert np.all(nodes[1] == [1, 0, 0])
-
-    def test_getitem_list_index(self):
-        nodes = mesh_io.Nodes()
-        nodes.node_coord = np.array(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        assert np.all(nodes[[1, 2]] == [[1, 0, 0], [0, 1, 0]])
-        assert np.all(nodes[np.array([1, 2])] == [[1, 0, 0], [0, 1, 0]])
-
-    def test_getitem_slice(self):
-        nodes = mesh_io.Nodes()
-        nodes.node_coord = np.array(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        assert np.all(nodes[1:] == [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-
-    def test_getitem_raise(self):
-        nodes = mesh_io.Nodes()
-        nodes.node_coord = np.array(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        with pytest.raises(IndexError):
-            nodes[0]
-
-class TestElements:
-    def test_elm_init_nr(self):
-        triangles = np.array(((1, 3, 2), (4, 1, 2)))
-        tetrahedra = np.array(((1, 3, 2, 4), (4, 1, 3, 7)))
-        elm = mesh_io.Elements(triangles, tetrahedra)
-        assert elm.nr == 4
-        assert np.all(elm[:] == np.array(
-            [[1, 3, 2, -1], [4, 1, 2, -1],
-             [1, 3, 2, 4], [4, 1, 3, 7]]))
-
-    def test_elm_init_node_number_list(self):
-        triangles = np.array(((1, 3, 2), (4, 1, 2)))
-        tetrahedra = np.array(((1, 3, 2, 4), (4, 1, 3, 7)))
-        elm = mesh_io.Elements(triangles, tetrahedra)
-        np.testing.assert_array_almost_equal(
-            elm.node_number_list,
-            np.array(((1, 3, 2, -1), (4, 1, 2, -1), (1, 3, 2, 4), (4, 1, 3, 7))))
-
-    def test_elements_find_neighbouring_nodes(self):
-        elm = mesh_io.Elements()
-        elm.node_number_list = np.array(
-            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
-        assert set(elm.find_neighbouring_nodes(1)) == set([2, 3, 4, 8, 6])
-
-    def test_elements_find_neighbouring_elements(self):
-        elm = mesh_io.Elements()
-        elm.node_number_list = np.array(
-            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
-        assert set(elm.find_all_elements_with_node(1)) == set([1, 3])
-
-    def test_elements_find_neighbouring_elements_many(self):
-        elm = mesh_io.Elements()
-        elm.node_number_list = np.array(
-            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
-        assert set(elm.find_all_elements_with_node([3, 7])) == set([1, 2])
-
-    def test_elements_getitem(self):
-        elm = mesh_io.Elements()
-        elm.node_number_list = np.array(
-            [[1, 2, 3, 4], [3, 2, 5, 7], [1, 8, 2, 6]])
-        assert np.all(elm[[2, 3]] == np.array([[3, 2, 5, 7], [1, 8, 2, 6]]))
-
-    def test_get_faces(self, sphere3_msh):
-        elm = sphere3_msh.elm
-        faces, th_faces, adjacency_list = elm.get_faces()
-        th = elm[elm.tetrahedra]
-        faces_th = th[:, [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]]
-        assert np.all(faces_th[0] == faces[th_faces[0]])
-        assert np.sum(np.in1d(th[adjacency_list[0, 0]], th[adjacency_list[0, 1]])) == 3
-        assert np.any(np.in1d(th_faces[0], th_faces[adjacency_list[th_faces[0, 0], 1]]))
-
-    def test_get_outside_faces(self, sphere3_msh):
-        elm = sphere3_msh.elm
-        outside_faces = elm.get_outside_faces()
-        nodes_in_face = sphere3_msh.nodes[outside_faces]
-        assert np.allclose(np.linalg.norm(nodes_in_face, axis=2), 95)
-        edge1 = nodes_in_face[:, 1, :] - nodes_in_face[:, 0, :]
-        edge2 = nodes_in_face[:, 2, :] - nodes_in_face[:, 0, :]
-        n = np.cross(edge1, edge2)
-        n /= np.linalg.norm(n, axis=1)[:, None]
-        bar = np.average(nodes_in_face, axis=1)
-        bar /= np.linalg.norm(bar, axis=1)[:, None]
-        assert np.allclose(n, bar, atol=1e-1)
-
-    def test_nodes_in_tag(self, sphere3_msh):
-        n = sphere3_msh.elm.nodes_with_tag(5)
-        r = np.linalg.norm(sphere3_msh.nodes[n], axis=1)
-        assert np.all(r > 89.) and np.all(r < 96.)
-
-        n = sphere3_msh.elm.nodes_with_tag([3, 5])
-        r = np.linalg.norm(sphere3_msh.nodes[n], axis=1)
-        assert np.all(((r > 89.)*(r < 96.)) + (r < 86.))
-
-
 class TestReadRes:
 
     def test_read_res_ascii(self):
@@ -1470,80 +1713,4 @@ class TestHashing:
         hash_ = mesh_io._hash_rows(np.array(array))
         _, count = np.unique(hash_, return_counts=True)
         assert np.all(count == 1)
-
-
-class TestGetitem:
-    def test_getitem_scalar(self):
-        array = np.arange(1, 10, dtype=int)
-        g = mesh_io._GetitemTester(array)
-        assert g[1] == array[0]
-        assert g[2] == array[1]
-        assert g[-1] == array[-1]
-
-    def test_getitem_slice(self):
-        array = np.arange(1, 13, dtype=int).reshape(-1, 2)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[1:10:2] == array[0:9:2])
-        assert np.all(g[:] == array)
-        assert np.all(g[1:] == array[0:])
-        assert np.all(g[:5] == array[:4])
-        assert np.all(g[::2] == array[::2])
-        with pytest.raises(IndexError):
-            g[::-1]
-        with pytest.raises(IndexError):
-            g[0::]
-        with pytest.raises(IndexError):
-            g[-1::]
-        with pytest.raises(IndexError):
-            g[::-1]
-
-    def test_indexes(self):
-        array = np.arange(1, 13, dtype=int).reshape(-1, 2)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[[1, 3, 4]] == array[[0, 2, 3]])
-        assert np.all(g[np.array([1, 3, 4])] == array[np.array([0, 2, 3])])
-        with pytest.raises(IndexError):
-            g[[0]]
-        assert np.all(g[[1, 5], [0, 1]] == array[[0, 4], [0, 1]])
-        idx = np.array([[1, 3],
-                        [5, 2]])
-        assert np.all(g[idx] == array[idx-1])
-
-    def test_two_slices(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[1:10:2, :3] == array[0:9:2, :3])
-
-    def test_bool(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[array[:,0]>20] == array[array[:,0]>20])
-        assert np.all(g[array>20] == array[array>20])
-
-    def test_ellipsis(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[...] == array[...])
-        assert np.all(g[..., 1:3] == array[..., 1:3])
-
-    def test_None(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[None] == array[None])
-        assert np.all(g[np.newaxis, 1:3] == array[np.newaxis, 1:3])
-        assert np.all(g[:, 1:3, None] == array[:, 1:3, None])
-
-    def test_mixed(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[[1,3,5], 1:3] == array[[0,2,4], 1:3])
-        assert np.all(g[array[:,0]>20, 1:3] == array[array[:,0]>20, 1:3])
-
-    def test_advanced(self):
-        array = np.arange(1, 101, dtype=int).reshape(-1, 5)
-        rows = np.array([0, 5])
-        cols = np.array([0, 3])
-        g = mesh_io._GetitemTester(array)
-        assert np.all(g[rows+1, cols] == array[rows, cols])
-        assert np.all(g[np.ix_(rows+1, cols)] == array[np.ix_(rows, cols)])
 

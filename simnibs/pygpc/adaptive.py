@@ -122,12 +122,11 @@ class RegularizedRegression(reg):
         if data.ndim == 1:
             data = data[:, None]
 
-        errors = np.zeros_like(self.regularization_factors)
+        errors = np.zeros_like(self.regularization_factors, dtype=float)
         A = self.construct_gpc_matrix()
         for i, reg_factor in enumerate(self.regularization_factors): 
             regression_fun = functools.partial(_tikhonov, alpha=reg_factor)
             errors[i] = _k_fold_cv_regression(A, data, regression_fun)
-
         min_error = np.argmin(errors)
         reg_error = errors[min_error]
         selected_reg = self.regularization_factors[min_error]
@@ -170,7 +169,8 @@ class RegularizedRegression(reg):
 def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
                           data_poly_ratio=2, max_iter=1000,
                           order_max=None, interaction_max=None,
-                          eps=1E-3, min_iter=0, n_cpus=1, print_function=None):
+                          eps=1E-3, regularization_factors=np.logspace(-5, 3, 9),
+                          min_iter=0, n_cpus=1, print_function=None):
     """  
     Adaptive regression approach based on leave one out cross validation error
     estimation
@@ -248,7 +248,9 @@ def run_reg_adaptive_grid(pdftype, pdfshape, limits, func, args=(),
             grid_init = randomgrid(pdftype, pdfshape, limits, 0)
             regobj = RegularizedRegression(
                 pdftype, pdfshape, limits, order*np.ones(DIM),
-                order_max=order, interaction_order=DIM, grid=grid_init)
+                order_max=order, interaction_order=DIM, grid=grid_init,
+                regularization_factors=regularization_factors
+            )
             RES = np.empty((0, 0))
 
         else:

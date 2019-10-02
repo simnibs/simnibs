@@ -20,7 +20,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
 import warnings
 import os
 from functools import partial
@@ -155,7 +154,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
             if keep_vector_length:
                 im_data_rotated = im_data_rotated * \
                         (np.linalg.norm(im_data, axis=3))[:, :, :, None] /\
-                        (1e-8 +
+                        (1e-32 +
                          np.linalg.norm(im_data_rotated, axis=3))[:, :, :, None]
             im_data = im_data_rotated
 
@@ -215,7 +214,7 @@ def volumetric_affine(image, affine, target_space_affine,
         if keep_vector_length:
             outdata_rotated = outdata_rotated * \
                     (np.linalg.norm(outdata, axis=3))[:, :, :, None] /\
-                    (1e-8 +
+                    (1e-32 +
                      np.linalg.norm(outdata_rotated, axis=3))[:, :, :, None]
 
         outdata = outdata_rotated
@@ -410,7 +409,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 reference=None, mask=None,
                 labels=None,
                 out_original=None,
-                order=3,
+                order=1,
                 method='linear',
                 continuous=False,
                 binary=False):

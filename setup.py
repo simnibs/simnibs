@@ -5,6 +5,7 @@ import glob
 import shutil
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
+from distutils.core import setup, Command
 import numpy as np
 
 ########################
@@ -16,25 +17,53 @@ try:
 except ImportError:
     ext = '.c'
 
+'''
+If you want to setup SimNIBS to use your own locally compiled PETSC, you can call
+setup.py with the SIMNIBS_PETSC_INCLUDE and SIMNIBS_PETSC_DIR environment variables, for
+example
+
+SIMNIBS_PETSC_DIR=/path/to/petsc/simnibs_petsc_arch/lib \
+SIMNIBS_PETSC_INCLUDE="/path/to/petsc/simnibs_direct_petsc_arch/include:/path/to/petsc/include" \
+python setup.py develop
+'''
 if sys.platform == 'win32':
-    petsc_include = [np.get_include(),
-                     'simnibs/include/win/petsc',
-                     'simnibs/include/win/hypre',
-                     'simnibs/include/win/mpi']
+    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
+        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(';')
+    else:
+        petsc_include = [np.get_include(),
+                         'simnibs/include/win/petsc',
+                         'simnibs/include/win/hypre',
+                         'simnibs/include/win/mpi']
+    if 'SIMNIBS_PETSC_DIR' in os.environ:
+        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
+    else:
+        petsc_dirs = ['simnibs/lib/win']
     petsc_libs = ['libpetsc', 'msmpi']
-    petsc_dirs = ['simnibs/lib/win']
     petsc_runtime = None
 
 elif sys.platform == 'linux':
-    petsc_include = [np.get_include(), 'simnibs/include/linux/petsc']
     petsc_libs = ['petsc']
-    petsc_dirs = ['simnibs/lib/linux']
-    petsc_runtime = ['$ORIGIN/../lib/linux']
+    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
+        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
+    else:
+        petsc_include = [np.get_include(), 'simnibs/include/linux/petsc']
+    if 'SIMNIBS_PETSC_DIR' in os.environ:
+        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
+        petsc_runtime = petsc_dirs
+    else:
+        petsc_dirs = ['simnibs/lib/linux']
+        petsc_runtime = ['$ORIGIN/../lib/linux']
 
 elif sys.platform == 'darwin':
-    petsc_include = [np.get_include(), 'simnibs/include/osx/petsc']
     petsc_libs = ['petsc']
-    petsc_dirs = ['simnibs/lib/osx']
+    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
+        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
+    else:
+        petsc_include = [np.get_include(), 'simnibs/include/osx/petsc']
+    if 'SIMNIBS_PETSC_DIR' in os.environ:
+        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
+    else:
+        petsc_dirs = ['simnibs/lib/osx']
     petsc_runtime = None
 
 else:

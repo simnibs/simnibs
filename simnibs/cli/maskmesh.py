@@ -67,9 +67,10 @@ def main():
     # Re-label tetrahedra
     mesh.elm.tag1[(ed.value > 0) * mesh.elm.elm_type == 4] = args.tag
     mesh.elm.tag2[(ed.value > 0) * mesh.elm.elm_type == 4] = args.tag
-    # Re-label triangles
-    mesh.elm.tag1[(ed.value > 0) * mesh.elm.elm_type == 2] = 1000 + args.tag
-    mesh.elm.tag2[(ed.value > 0) * mesh.elm.elm_type == 2] = 1000 + args.tag
+    # Remove triangles
+    mesh.elm.tag1[(ed.value > 0) * mesh.elm.elm_type == 2] = 99999
+    mesh.elm.tag2[(ed.value > 0) * mesh.elm.elm_type == 2] = 99999
+    mesh = mesh.remove_from_mesh(99999)
 
     logger.info(f'Writing {args.fn_out}')
     mesh_io.write_msh(mesh, args.fn_out)
