@@ -38,8 +38,12 @@ simnibs/ccd-files/README.md
 *.x86_64
 *.hex
 
-#Ubuntu backup files
+# Ubuntu backup files
 *~
+
+# IDE stuff
+.idea/
+.Rhistory
 
 # Mac stuff
 .DS_store
@@ -48,6 +52,7 @@ simnibs/ccd-files/README.md
 __pycache__/
 *.py[cod]
 *$py.class
+build/lib.*/
 
 # C extensions
 *.so

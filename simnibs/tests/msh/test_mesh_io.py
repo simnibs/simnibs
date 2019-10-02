@@ -171,6 +171,14 @@ class TestMsh:
         # high tolerance due to low resolution
         assert np.allclose(n[top], [1., 0., 0.], rtol=1e-1, atol=1e-1)
 
+    def test_triangle_normals_smooth(self, sphere3_msh):
+        n = sphere3_msh.triangle_normals(smooth=1)
+        _, top = sphere3_msh.find_closest_element(
+            [95, 0, 0], return_index=True,
+            elements_of_interest=sphere3_msh.elm.triangles)
+        # high tolerance due to low resolution
+        assert np.allclose(n[top], [1., 0., 0.], rtol=1e-1, atol=1e-1)
+
 
     def test_find_closest_element_index(self, sphere3_msh):
         b = sphere3_msh.elements_baricenters().value
@@ -459,6 +467,15 @@ class TestMsh:
             [0., 0.,-95.], [0, 95., 0.], 1)
         assert np.allclose(matsimnibs[:3, :3], np.eye(3), atol=1e-2)
         assert np.allclose(matsimnibs[:3, 3], [0., 0., -96.], atol=1e-2)
+
+    def test_intercept_ray(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh(1005)
+        near = np.array([120, 19, 32])
+        far = -near
+        idx, pos = m.intercept_ray(near, far)
+        proj2surf = near/np.linalg.norm(near)*95
+        assert np.linalg.norm(pos - proj2surf) < 0.3
+        assert np.linalg.norm(m.elements_baricenters()[idx] - pos) < 2
 
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
@@ -1399,7 +1416,7 @@ class TestReadRes:
 
         np.testing.assert_allclose([-1.2, -2, 3.0], v)
 
-class TestWriteGeo():
+class TestWriteGeo:
     def test_write_spheres_no_values(self):
         positions = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
         mesh_io.write_geo_spheres(positions, 'tst.geo')

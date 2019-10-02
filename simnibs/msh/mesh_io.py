@@ -594,7 +594,7 @@ class Msh:
         return cropped
 
     def join_mesh(self, other):
-        ''' Join the current mesh with another
+        """ Join the current mesh with another
 
         Parameters
         -----------
@@ -605,7 +605,7 @@ class Msh:
         --------
         joined: simnibs.msh.Msh
             Mesh with joined nodes and elements
-        '''
+        """
         joined = copy.deepcopy(self)
         joined.elmdata = []
         joined.nodedata = []
@@ -626,7 +626,6 @@ class Msh:
         joined.elm.tag1 = joined.elm.tag1[new_elm_order]
         joined.elm.tag2 = joined.elm.tag2[new_elm_order]
         joined.elm.elm_type = joined.elm.elm_type[new_elm_order]
-
 
         for nd in self.nodedata:
             assert len(nd.value) == self.nodes.nr
@@ -833,7 +832,7 @@ class Msh:
 
         return elm_node_coords
 
-    def write_hdf5(self, hdf5_fn, path='./'):
+    def write_hdf5(self, hdf5_fn, path='./', compression=None):
         """ Writes a HDF5 file with mesh information
 
         Parameters
@@ -842,6 +841,9 @@ class Msh:
             file name of hdf5 file
         path: str
             path in the hdf5 file where the mesh should be saved
+        compression: str or int (Default: None)
+            compression strategy: "gzip", "lzf", "szip", None
+
         """
         with h5py.File(hdf5_fn, 'a') as f:
             try:
@@ -857,19 +859,19 @@ class Msh:
             g.attrs['fn'] = self.fn
             elm = g.create_group('elm')
             for key, value in vars(self.elm).items():
-                elm.create_dataset(key, data=value)
+                elm.create_dataset(key, data=value, compression=compression)
             node = g.create_group('nodes')
             for key, value in vars(self.nodes).items():
-                node.create_dataset(key, data=value)
+                node.create_dataset(key, data=value, compression=compression)
             elmdata = g.create_group('elmdata')
             for d in self.elmdata:
-                elmdata.create_dataset(d.field_name, data=d.value)
+                elmdata.create_dataset(d.field_name, data=d.value, compression=compression)
             nodedata = g.create_group('nodedata')
             for d in self.nodedata:
-                nodedata.create_dataset(d.field_name, data=d.value)
+                nodedata.create_dataset(d.field_name, data=d.value, compression=compression)
 
     @classmethod
-    def read_hdf5(self, hdf5_fn, path='./'):
+    def read_hdf5(self, hdf5_fn, path='./', load_data=True):
         """ Reads mesh information from an hdf5 file
 
         Parameters
@@ -894,19 +896,20 @@ class Msh:
                     setattr(self.nodes, key, np.squeeze(np.array(g['nodes'][key])))
                 except KeyError:
                     pass
-            try:
-                for field_name, field in g['elmdata'].items():
-                    self.elmdata.append(
-                        ElementData(np.squeeze(np.array(field)), field_name, mesh=self))
-            except KeyError:
-                pass
+            if load_data:
+                try:
+                    for field_name, field in g['elmdata'].items():
+                        self.elmdata.append(
+                            ElementData(np.squeeze(np.array(field)), field_name, mesh=self))
+                except KeyError:
+                    pass
 
-            try:
-                for field_name, field in g['nodedata'].items():
-                    self.nodedata.append(
-                        NodeData(np.squeeze(np.array(field)), field_name, mesh=self))
-            except KeyError:
-                pass
+                try:
+                    for field_name, field in g['nodedata'].items():
+                        self.nodedata.append(
+                            NodeData(np.squeeze(np.array(field)), field_name, mesh=self))
+                except KeyError:
+                    pass
 
         return self
 
@@ -976,24 +979,38 @@ class Msh:
         measures['gamma'] = ElementData(gamma, 'gamma')
         return measures
 
-    def triangle_normals(self):
+    def triangle_normals(self, smooth=False):
         """ Calculates the normals of triangles
 
+        Parameters
+        ------------
+        smooth (optional): int
+            Number of smoothing steps to perform. Default: 0
         Returns
         --------
         normals: ElementData
             normals of triangles, zero at the tetrahedra
 
         """
-        normals = ElementData(np.zeros((self.elm.nr, 3), dtype=float),
-                              'normals')
+        normals = ElementData(
+            np.zeros((self.elm.nr, 3), dtype=float),
+            'normals'
+        )
         tr_indexes = self.elm.triangles
-        node_tr = self.nodes[self.elm[tr_indexes, :3]]
-        sideA = node_tr[:, 1] - node_tr[:, 0]
+        if smooth == 0:
+            node_tr = self.nodes[self.elm[tr_indexes, :3]]
+            sideA = node_tr[:, 1] - node_tr[:, 0]
 
-        sideB = node_tr[:, 2] - node_tr[:, 0]
-        n = np.cross(sideA, sideB)
-        normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+            sideB = node_tr[:, 2] - node_tr[:, 0]
+            n = np.cross(sideA, sideB)
+            normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+        elif smooth > 0:
+            normals_nodes = self.nodes_normals(smooth)
+            tr = self.elm[tr_indexes, :3]
+            n = np.mean(normals_nodes[tr], axis=1)
+            normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
+        else:
+            raise ValueError('smooth parameter must be >= 0')
         return normals
 
     def nodes_volumes_or_areas(self):
@@ -1389,19 +1406,21 @@ class Msh:
         if not np.isclose(vol_before, vol_after):
             self.nodes.node_coord = nodes_bk
 
-    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=[5, 1005]):
-        ''' Calculate the matsimnibs matrix for TMS simulations
+    def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=None, msh_surf=None):
+        """ Calculate the matsimnibs matrix for TMS simulations
 
         Parameters
         -----------
         center: np.ndarray
-            Position of the center of the coil, will be projected to the skin surface
+            Position of the center of the coil, will be projected to the skin surface.
         pos_ydir: np.ndarray
-            Position of the y axis in relation to the coil center
+            Position of the y axis in relation to the coil center.
         distance: float
-            Distance from the center
-        skin_surface: list
-            Possible tags for the skin surface (Default: [5, 1005])
+            Distance from the center.
+        skin_surface: list of num, optional
+            Possible tags for the skin surface (default: [5, 1005]).
+        msh_surf: simnibs.msh.Msh, optional
+            Surface cropped mesh. If not provided, this is computed from self.
 
         Returns
         -------
@@ -1412,22 +1431,28 @@ class Msh:
             y' is the direction of the coil
             z' is a direction normal to the coil, points inside the head
 
-        '''
-        msh_surf = self.crop_mesh(elm_type=2)
+        """
+        if not skin_surface:
+            skin_surface = [5, 1005]
+        if not msh_surf:
+            msh_surf = self.crop_mesh(elm_type=2)
         msh_skin = msh_surf.crop_mesh(skin_surface)
         closest = np.argmin(np.linalg.norm(msh_skin.nodes.node_coord - center, axis=1))
         center = msh_skin.nodes.node_coord[closest]
+
         # Y axis
         y = pos_ydir - center
         if np.isclose(np.linalg.norm(y), 0.):
             raise ValueError('The coil Y axis reference is too close to the coil center! ')
         y /= np.linalg.norm(y)
-        #Normal
+
+        # Normal
         normal = msh_skin.nodes_normals().value[closest]
         if np.isclose(np.abs(y.dot(normal)), 1.):
             raise ValueError('The coil Y axis normal to the surface! ')
         z = -normal
-        #Orthogonalize y
+
+        # Orthogonalize y
         y -= z * y.dot(z)
         y /= np.linalg.norm(y)
         # Determine x
@@ -1623,6 +1648,72 @@ class Msh:
                 M = M.dot(self.elm2node_matrix(th_indices))
 
         return M
+
+
+    def intercept_ray(self, near, far):
+        ''' Finds the triangle (if any) that intercepts a line segment
+
+        Parameters
+        ------------
+        near: (3,) array
+            Start of the line segment
+        far: (3,) array
+            end of the line segment
+
+        Returns
+        --------
+        intercept_elm:
+            Index of the triangle intercepting the ray
+        intercpt_pos:
+            Position of the interception
+        '''
+        # Find point in surface in the near-far line thats nearest to the "near point"
+        # based on http://geomalgorithms.com/a06-_intersect-2.html
+        delta = 1e-6
+        P1 = np.array(near)
+        P0 = np.array(far)
+        if not (P1.shape == (3,) and P0.shape == (3,)):
+            raise ValueError('near and far poins should be arrays of size (3,)')
+
+        V0 = self.nodes[self.elm[self.elm.triangles, 0]]
+        V1 = self.nodes[self.elm[self.elm.triangles, 1]]
+        V2 = self.nodes[self.elm[self.elm.triangles, 2]]
+        u = V1 - V0
+        v = V2 - V0
+        normals = self.triangle_normals()[self.elm.triangles]
+
+        ray_dir = P1 - P0
+        w0 = P0 - V0
+        a = -np.sum(normals *  w0, axis=1)
+        b = np.sum(normals * ray_dir, axis=1)
+        # ray parallel or in triangle plane
+        if np.all(np.abs(b) < delta):
+            return None, None
+        r = a/b
+        intersect_point  = P0 + r[:, None] * ray_dir
+        w = intersect_point - V0
+        uu = np.sum(u * u, axis=1)
+        uv = np.sum(u * v, axis=1)
+        vv = np.sum(v * v, axis=1)
+        wu = np.sum(w * u, axis=1)
+        wv = np.sum(w * v, axis=1)
+        D = uv * uv - uu * vv
+        s = (uv * wv - vv * wu) / D
+        t = (uv * wu - uu * wv) / D
+        intersects = np.where(
+            (np.abs(b) > delta) *
+            (r > -delta) * (r < 1 + delta) *
+            (s > -delta) * (s < 1 + delta) *
+            (t > -delta) * (s + t < 1 + delta)
+        )[0]
+
+        if len(intersects) == 0:
+            return None, None
+
+        # if at least one triangle intersects, take the one closest to the near point
+        else:
+            closest = intersects[np.argmax(r[intersects])]
+            return self.elm.triangles[closest], intersect_point[closest]
 
 
     def view(self,
@@ -2808,8 +2899,6 @@ class ElementData(Data):
                              mesh=self.mesh)
         return ed
 
-
-
     @classmethod
     def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
         ''' Defines an ElementData field form a mesh and gridded data
@@ -2937,7 +3026,6 @@ class ElementData(Data):
             f.write(m.tostring())
 
             f.write(b'$EndElementData\n')
-
 
 
 class NodeData(Data):
@@ -4034,7 +4122,7 @@ def _read_msh_4(fn, m):
 
 # write msh to mesh file
 def write_msh(msh, file_name=None, mode='binary'):
-    ''' Writes a gmsh 'msh' file
+    """ Writes a gmsh 'msh' file
 
     Parameters
     ------------
@@ -4044,7 +4132,7 @@ def write_msh(msh, file_name=None, mode='binary'):
         Name of file to be writte. Default: msh.fn
     mode: 'binary' or 'ascii':
         The mode in which the file should be read
-    '''
+    """
     if file_name is not None:
         msh.fn = file_name
 
@@ -4261,6 +4349,45 @@ def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
         for p, v in zip(positions, values):
             f.write(("SP(" + ", ".join([str(i) for i in p]) +
                      "){" + str(v) + "};\n").encode('ascii'))
+        f.write(b"};\n")
+
+
+def write_geo_vectors(positions, values, fn, name="", mode='bw'):
+    """ Writes a .geo file with spheres in specified positions
+
+    Parameters
+    ------------
+    positions: nx3 ndarray:
+        position of vecrors
+    values: nx3 ndarray  (optional)
+        values to be assigned to the vectors. Default: 1
+    fn: str
+        name of file to be written
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+
+    """
+    values = np.array(values)
+    positions = np.array(positions)
+    if values.shape[1] != 3:
+        raise ValueError('Values vector must have size (Nx3)')
+
+    if positions.shape[1] != 3:
+        raise ValueError('Positions vector must have size (Nx3)')
+
+    if len(values) != len(positions):
+        raise ValueError(
+            'The length of the vector of positions is different from the'
+            ' length of the vector of values')
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for p, v in zip(positions, values):
+            f.write(
+                ("VP(" + ", ".join([str(i) for i in p]) + ")"
+                 "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
         f.write(b"};\n")
 
 
