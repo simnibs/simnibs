@@ -63,10 +63,22 @@ def copy_scripts(dest_dir):
             gui = False
         # Norma things
         bash_name = os.path.join(dest_dir, basename)
-        if sys.platform == 'win32':
-            _write_windows_cmd(s, bash_name, gui)
+
+        # Special treatment to meshfix and gmsh
+        if basename in ['meshfix', 'gmsh']:
+            if sys.platform == 'win32':
+                with open(bash_name + '.cmd', 'w') as f:
+                    f.write(f'"{file_finder.path2bin(basename)}" %*')
+            else:
+                if os.path.lexists(bash_name):
+                    os.remove(bash_name)
+            os.symlink(file_finder.path2bin(basename), bash_name)
+        # Other stuff
         else:
-            _write_unix_sh(s, bash_name)
+            if sys.platform == 'win32':
+                _write_windows_cmd(s, bash_name, gui)
+            else:
+                _write_unix_sh(s, bash_name)
             
     with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
         f.write("function path=SIMNIBSDIR\n")

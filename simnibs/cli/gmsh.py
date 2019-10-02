@@ -8,8 +8,11 @@ from simnibs.utils.file_finder import path2bin
 
 
 def main():
-    subprocess.call([path2bin('gmsh')] + sys.argv[1:])
-
+    subprocess.run(
+        path2bin('gmsh') + ' '  + ' '.join(sys.argv[1:]),
+        shell=True,
+        check=True
+    )
 
 if __name__ == '__main__':
     main()
