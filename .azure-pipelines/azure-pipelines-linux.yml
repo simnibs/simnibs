@@ -14,7 +14,8 @@ jobs:
   container: simnibs/simnibs-testing:centos6
   steps:
   - bash: |
-      conda env create -f environment_linux.yml
+      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
+      conda env create -f env.yml
     displayName: Create Conda environment
   - bash: |
       source activate simnibs_env
