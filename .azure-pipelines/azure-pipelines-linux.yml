@@ -22,12 +22,13 @@ jobs:
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-  - bash: |
-      source activate
-      pip install conda-pack
-      python pack.py
-      cp simnibs-*-linux.zip $(Build.ArtifactStagingDirectory)
-    displayName: Create SimNIBS pack
+  # Do not build the pack in linux now (OpenGL error stuff, need to change the container, see installer)
+  #- bash: |
+  #    source activate
+  #    pip install conda-pack
+  #    python pack.py
+  #    cp simnibs-*-linux.zip $(Build.ArtifactStagingDirectory)
+  #  displayName: Create SimNIBS pack
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

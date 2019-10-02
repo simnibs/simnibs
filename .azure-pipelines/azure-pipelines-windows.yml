@@ -30,7 +30,7 @@ jobs:
       copy dist\* $(Build.ArtifactStagingDirectory)
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-  - bash: |
+  - script: |
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       pip install conda-pack
       python pack.py
