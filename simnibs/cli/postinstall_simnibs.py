@@ -80,22 +80,6 @@ def copy_scripts(dest_dir):
             else:
                 _write_unix_sh(s, bash_name)
             
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
-        f.write("function path=SIMNIBSDIR\n")
-        f.write("% Function writen by SimNIBS postinstaller\n")
-        f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
-        f.write("end\n")
-
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
-        if sys.platform == 'win32':
-            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
-        else:
-            python_call = f'"{sys.executable}" -E -u '
-        f.write("function python_call=SIMNIBSPYTHON\n")
-        f.write("% Function writen by SimNIBS postinstaller\n")
-        f.write(f"python_call='{python_call}';\n")
-        f.write("end\n")
-
     # simnibs_python interpreter
     if sys.platform == 'win32':
         _write_windows_cmd(None, os.path.join(dest_dir, 'simnibs_python'))
@@ -313,6 +297,22 @@ def path_cleanup():
             path = ';'.join(path) + ';'
             winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
 
+def matlab_prepare():
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+        f.write("function path=SIMNIBSDIR\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
+        f.write("end\n")
+
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+        if sys.platform == 'win32':
+            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
+        else:
+            python_call = f'"{sys.executable}" -E -u '
+        f.write("function python_call=SIMNIBSPYTHON\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"python_call='{python_call}';\n")
+        f.write("end\n")
 
 def matlab_setup(install_dir):
     destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
@@ -962,7 +962,7 @@ def install(install_dir,
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
-    copy_scripts(scripts_dir)
+    matlab_prepare()
     if extra_coils:
         print('Downloading Extra Coils', flush=True)
         download_extra_coils(timeout=30*60)
@@ -993,7 +993,7 @@ def install(install_dir,
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
-
+    copy_scripts(scripts_dir)
 
 def uninstall(install_dir):
     path_cleanup()
