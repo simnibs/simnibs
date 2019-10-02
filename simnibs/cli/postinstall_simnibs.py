@@ -374,10 +374,12 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         mime_type='model/x.stl-binary',
         icon=gmsh_icon
     )
-
+    fn_gui_script = os.path.join(scripts_dir, 'simnibs_gui')
+    if sys.platform == 'win32':
+        fn_gui_script += '.cmd'
     _create_shortcut(
         os.path.join(shortcut_folder, 'SimNIBS GUI'),
-        os.path.join(scripts_dir, 'simnibs_gui'),
+        fn_gui_script,
         'SimNIBS is software for simulating electric fields caused by NIBS',
         icon=simnibs_icon
     )
@@ -733,7 +735,6 @@ def _download_manager(blocknum, blocksize, totalsize, start_time=None, timeout=N
 def download_extra_coils(timeout=None):
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
-    print('Donwloading extra coil files', flush=True)
     with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
         tmpname = tmpf.name
     reporthook = functools.partial(_download_manager, start_time=time.time(), timeout=timeout)
@@ -950,19 +951,19 @@ def install(install_dir,
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
     if extra_coils:
-        log('Downloading Extra Coils')
+        print('Downloading Extra Coils', flush=True)
         download_extra_coils(timeout=30*60)
     if copy_gmsh_options:
         print('Copying Gmsh Options')
         setup_gmsh_options(force, silent)
     if add_shortcut_icons:
-        print('Adding Shortcut Icons')
+        print('Adding Shortcut Icons', flush=True)
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:
-        print('Associating Files')
+        print('Associating Files', flush=True)
         setup_file_association(force, silent)
     if copy_matlab:
-        print('Copying matlab folder')
+        print('Copying matlab folder', flush=True)
         matlab_setup(install_dir)
     if setup_links:
         links_setup(install_dir)
