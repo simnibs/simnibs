@@ -76,11 +76,7 @@ def copy_scripts(dest_dir):
 
     with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
         if sys.platform == 'win32':
-            activate_bin = os.path.abspath(os.path.join(
-                os.path.dirname(sys.executable),
-                '..', '..', 'Scripts', 'activate'
-            ))
-            python_call = f'call "{activate_bin}" simnibs_env && python -E -u '
+            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
         else:
             python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
@@ -114,22 +110,39 @@ def _write_unix_sh(python_cli, bash_cli, commands='"$@"'):
 def _write_windows_cmd(python_cli, bash_cli, gui=False, commands='%*'):
     bash_cli = bash_cli + '.cmd'
     # I need to activate the environment first
-    activate_bin = os.path.abspath(os.path.join(
-        os.path.dirname(sys.executable),
-        '..', '..', 'Scripts', 'activate'))
-    if not os.path.isfile(activate_bin):
-        raise OSError("Can't run postinstall script (not a conda environment)")
     if gui:
         python_interpreter = 'start pythonw'
     else:
         python_interpreter = 'python'
     with open(bash_cli, 'w') as f:
         f.write("@echo off\n")
-        f.write(f'call "{activate_bin}" simnibs_env\n')
+        f.write(f'call "{_get_activate_bin()}" {_get_conda_env()}\n')
         if python_cli is None:
             f.write(f'{python_interpreter} %*')
         else:
             f.write(f'{python_interpreter} -E -u "{python_cli}"  {commands}')
+
+
+def _get_activate_bin():
+    activate_bin = os.path.abspath(os.path.join(
+        os.path.dirname(sys.executable),
+        '..', '..', 'Scripts', 'activate'))
+    if os.path.isfile(activate_bin):
+        return activate_bin
+    activate_bin = os.path.abspath(os.path.join(
+        os.path.dirname(sys.executable), 'Scripts', 'activate.bat'
+    ))
+    if os.path.isfile(activate_bin):
+        return activate_bin
+    else:
+        raise OSError("Can't run postinstall script (not a conda environment?)")
+
+
+def _get_conda_env():
+    try:
+        return os.environ['CONDA_PREFIX']
+    except KeyError:
+        return ''
 
 def setup_gmsh_options(force=False, silent=False):
     ''' Copies the gmsh_options file to the appropriate place '''
@@ -295,7 +308,7 @@ def matlab_setup(install_dir):
     if not os.path.isdir(destdir):
         os.mkdir(destdir)
     for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab', '*')):
-        _copy_and_log(m, destdir)
+        shutil.copy(m, destdir)
 
 def links_setup(install_dir):
     if sys.platform == 'win32':
@@ -377,12 +390,10 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             os.path.join(shortcut_folder, 'SimNIBS Documentation'),
             os.path.abspath(os.path.join(scripts_dir, '..', 'documentation', 'index.html')),
         )
-        activate_bin = os.path.abspath(os.path.join(
-            os.path.dirname(sys.executable), '..', '..', 'Scripts', 'activate'))
         _create_shortcut(
              os.path.join(shortcut_folder, 'SimNIBS Prompt'),
              '%windir%\System32\cmd.exe',
-             arguments=f'/K ""{activate_bin}"" simnibs_env')
+             arguments=f'/K ""{_get_activate_bin()}"" {_get_conda_env()}')
     if sys.platform == 'linux':
         try:
             subprocess.run(
@@ -863,9 +874,23 @@ if GUI:
                     'Less coil files will be availiable')
 
 
-    def start_gui(simnibsdir, copy_matlab, setup_links):
+    def start_gui(simnibsdir,
+                  copy_matlab,
+                  setup_links,
+                  copy_gmsh_options,
+                  add_to_path,
+                  extra_coils,
+                  add_shortcut_icons,
+                  associate_files):
         app = QtWidgets.QApplication(sys.argv)
-        ex = PostInstallGUI(simnibsdir)
+        ex = PostInstallGUI(
+            simnibsdir,
+            copy_gmsh_options,
+            add_to_path,
+            extra_coils,
+            add_shortcut_icons,
+            associate_files
+        )
         ex.show()
         app.exec_()
         if ex.result():
@@ -909,7 +934,9 @@ if GUI:
         else:
             raise Exception('uninstall cancelled by user')
 
-def install(install_dir, force, silent,
+def install(install_dir,
+            force,
+            silent,
             copy_gmsh_options=True,
             add_to_path=True,
             extra_coils=True,
@@ -921,14 +948,19 @@ def install(install_dir, force, silent,
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
     if extra_coils:
+        log('Downloading Extra Coils')
         download_extra_coils(timeout=30*60)
     if copy_gmsh_options:
+        print('Copying Gmsh Options')
         setup_gmsh_options(force, silent)
     if add_shortcut_icons:
+        print('Adding Shortcut Icons')
         setup_shortcut_icons(scripts_dir, force, silent)
     if associate_files:
+        print('Associating Files')
         setup_file_association(force, silent)
     if copy_matlab:
+        print('Copying matlab folder')
         matlab_setup(install_dir)
     if setup_links:
         links_setup(install_dir)
@@ -1006,6 +1038,16 @@ def main():
                         'and example folders')
     parser.add_argument('-u', "--uninstall", required=False, action='store_true',
                         help="Ignores all other arguments and uninstall SimNIBS")
+    parser.add_argument('--no-copy-gmsh-options', dest='copy_gmsh_options',
+                        action='store_false', help='Do not copy gmsh options')
+    parser.add_argument('--no-add-to-path', dest='add_to_path',
+                        action='store_false', help='Do not add SimNBIS to system PATH')
+    parser.add_argument('--no-extra-coils', dest='extra_coils',
+                        action='store_false', help='Do not download extra coil files')
+    parser.add_argument('--no-shortcut-icons', dest='add_shortcut_icons',
+                        action='store_false', help='Do not create start menu shortcuts')
+    parser.add_argument('--no-associate-files', dest='associate_files',
+                        action='store_false', help='Do not create file associations')
     args = parser.parse_args(sys.argv[1:])
     install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if args.uninstall:
@@ -1020,11 +1062,30 @@ def main():
                 'Trying to run post-install script without PyQt istalled, '
                 'please use the silent mode (postinstall_simnibs --help for '
                 'more information')
-        start_gui(install_dir, args.copy_matlab, args.setup_links)
+        start_gui(
+            install_dir,
+            args.copy_matlab,
+            args.setup_links,
+            args.copy_gmsh_options,
+            args.add_to_path,
+            args.extra_coils,
+            args.add_shortcut_icons,
+            args.associate_files
+        )
 
     else:
-        install(install_dir, args.force, args.silent,
-                copy_matlab=args.copy_matlab, setup_links=args.setup_links)
+        install(
+            install_dir,
+            args.force,
+            args.silent,
+            args.copy_gmsh_options,
+            args.add_to_path,
+            args.extra_coils,
+            args.add_shortcut_icons,
+            args.associate_files,
+            args.copy_matlab,
+            args.setup_links
+        )
 
 if __name__ == '__main__':
     main()
