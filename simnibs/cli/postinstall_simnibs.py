@@ -57,7 +57,7 @@ def copy_scripts(dest_dir):
         basename = os.path.splitext(os.path.basename(s))[0]
         if basename == 'run_simnibs':
             basename = 'simnibs'
-        if basename in ['simnibs_gui', 'gmsh']:
+        if basename == 'simnibs_gui':
             gui = True
         else:
             gui = False
@@ -68,11 +68,12 @@ def copy_scripts(dest_dir):
         if basename in ['meshfix', 'gmsh']:
             if sys.platform == 'win32':
                 with open(bash_name + '.cmd', 'w') as f:
+                    f.write("@echo off\n")
                     f.write(f'"{file_finder.path2bin(basename)}" %*')
             else:
                 if os.path.lexists(bash_name):
                     os.remove(bash_name)
-            os.symlink(file_finder.path2bin(basename), bash_name)
+                os.symlink(file_finder.path2bin(basename), bash_name)
         # Other stuff
         else:
             if sys.platform == 'win32':
@@ -135,7 +136,7 @@ def _get_activate_bin():
 
 def _get_conda_env():
     try:
-        return os.environ['CONDA_PREFIX']
+        return os.environ['CONDA_DEFAULT_ENV']
     except KeyError:
         return ''
 
@@ -704,11 +705,14 @@ def uninstaller_setup(install_dir, force, silent):
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
-        with winreg.OpenKey(
+        try:
+            with winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
-                r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-                access=winreg.KEY_WRITE) as reg:
-            winreg.DeleteKey(reg, 'SimNIBS')
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+                    access=winreg.KEY_WRITE) as reg:
+                winreg.DeleteKey(reg, 'SimNIBS')
+        except FileNotFoundError:
+            pass
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')

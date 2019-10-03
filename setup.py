@@ -73,14 +73,13 @@ script_names = [os.path.splitext(os.path.basename(s))[0]
 console_scripts = []
 
 for s in script_names:
-    if s not in ['__init__', 'gmsh', 'simnibs_gui']:
+    if s not in ['__init__', 'simnibs_gui']:
         console_scripts.append(f'{s}=simnibs.cli.{s}:main')
 
 console_scripts.append(f'simnibs=simnibs.cli.run_simnibs:main')
 
 gui_scripts = [
     'simnibs_gui=simnibs.cli.simnibs_gui:main',
-    'gmsh=simnibs.cli.gmsh:main',
 ]
 
 

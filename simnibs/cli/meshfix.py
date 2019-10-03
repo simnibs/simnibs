@@ -8,11 +8,11 @@ from simnibs.utils.file_finder import path2bin
 
 
 def main():
-    subprocess.run(
+    ret = subprocess.run(
         path2bin('meshfix') + ' '  + ' '.join(sys.argv[1:]),
-        shell=True,
-        check=True
+        shell=True
     )
+    sys.exit(ret.returncode)
 
 if __name__ == '__main__':
     main()
