@@ -20,14 +20,14 @@ To calculate leadfields, the user must write a small Python of Matlab script usi
 
 * *Python*
 
-  .. literalinclude:: ../../python_examples/internal/calculate_leadfield.py
+  .. literalinclude:: ../../simnibs/examples/calculate_leadfield.py
      :language: python
 
 \
 
 * *MATLAB*
 
-  .. literalinclude:: ../../matlab/examples/internal/calculate_leadfield.m
+  .. literalinclude:: ../../simnibs/examples/calculate_leadfield.m
      :language: matlab
 
 \
@@ -40,7 +40,7 @@ We use the :code:`map_to_surf` option to interpolate the electric field to the m
 
 \
 
-.. warning:: the :code:`map_to_surf` option only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
+.. note:: the :code:`map_to_surf` option does not work with *headreco* models ran with the :code:`--no-cat` option.
 
 \
 
@@ -249,5 +249,5 @@ Complete example
 
 Click to download:
 
-* :download:`Python <../../python_examples/internal/optimize.py>`
-* :download:`MATLAB <../../matlab/examples/internal/optimize.m>`
+* :download:`Python <../../simnibs/examples/optimize.py>`
+* :download:`MATLAB <../../simnibs/examples/optimize.m>`

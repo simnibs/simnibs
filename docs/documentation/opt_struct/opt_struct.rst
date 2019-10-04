@@ -9,6 +9,8 @@ Structures used to define optimization problems
 .. toctree::
    :maxdepth: 1
 
+   tdcsleadfield
+   tdcsoptimize
+   tdcstarget
+   tdcsavoid
    tmsoptimize
-
-

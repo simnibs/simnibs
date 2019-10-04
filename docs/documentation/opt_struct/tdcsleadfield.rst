@@ -102,7 +102,7 @@ Attributes
   * **Description**: Whether to map the fields to the middle gray matter surface. Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
   * **Default**: False
 
-  .. warning:: Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
+  .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
 
 \
 
