@@ -184,7 +184,7 @@ class Elements:
         second tag for each elenent
     node_number_list: (Nx4) ndarray
         4xnumber_of_element matrix of the nodes that constitute the element.
-        For the triangles, the fourth element = 1
+        For the triangles, the fourth element = -1
     nr: int
         Number or elemets
 
