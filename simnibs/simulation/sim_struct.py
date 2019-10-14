@@ -1998,6 +1998,7 @@ class LEADFIELD():
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
+        self._log_handlers = []
 
         self.solver_options = ''
         if matlab_struct:
