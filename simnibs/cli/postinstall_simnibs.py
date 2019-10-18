@@ -57,34 +57,30 @@ def copy_scripts(dest_dir):
         basename = os.path.splitext(os.path.basename(s))[0]
         if basename == 'run_simnibs':
             basename = 'simnibs'
-        if basename in ['simnibs_gui', 'gmsh']:
+        if basename == 'simnibs_gui':
             gui = True
         else:
             gui = False
         # Norma things
         bash_name = os.path.join(dest_dir, basename)
-        if sys.platform == 'win32':
-            _write_windows_cmd(s, bash_name, gui)
+
+        # Special treatment to meshfix and gmsh
+        if basename in ['meshfix', 'gmsh']:
+            if sys.platform == 'win32':
+                with open(bash_name + '.cmd', 'w') as f:
+                    f.write("@echo off\n")
+                    f.write(f'"{file_finder.path2bin(basename)}" %*')
+            else:
+                if os.path.lexists(bash_name):
+                    os.remove(bash_name)
+                os.symlink(file_finder.path2bin(basename), bash_name)
+        # Other stuff
         else:
-            _write_unix_sh(s, bash_name)
+            if sys.platform == 'win32':
+                _write_windows_cmd(s, bash_name, gui)
+            else:
+                _write_unix_sh(s, bash_name)
             
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
-        f.write("function path=SIMNIBSDIR\n")
-        f.write("% Function writen by SimNIBS postinstaller\n")
-        f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
-        f.write("end\n")
-
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
-        if sys.platform == 'win32':
-            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
-        else:
-            python_call = f'"{sys.executable}" -E -u '
-        f.write("function python_call=SIMNIBSPYTHON\n")
-        f.write("% Function writen by SimNIBS postinstaller\n")
-        f.write(f"python_call='{python_call}';\n")
-        f.write("end\n")
-
-
     # simnibs_python interpreter
     if sys.platform == 'win32':
         _write_windows_cmd(None, os.path.join(dest_dir, 'simnibs_python'))
@@ -140,7 +136,7 @@ def _get_activate_bin():
 
 def _get_conda_env():
     try:
-        return os.environ['CONDA_PREFIX']
+        return os.environ['CONDA_DEFAULT_ENV']
     except KeyError:
         return ''
 
@@ -302,6 +298,22 @@ def path_cleanup():
             path = ';'.join(path) + ';'
             winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
 
+def matlab_prepare():
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+        f.write("function path=SIMNIBSDIR\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
+        f.write("end\n")
+
+    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+        if sys.platform == 'win32':
+            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
+        else:
+            python_call = f'"{sys.executable}" -E -u '
+        f.write("function python_call=SIMNIBSPYTHON\n")
+        f.write("% Function writen by SimNIBS postinstaller\n")
+        f.write(f"python_call='{python_call}';\n")
+        f.write("end\n")
 
 def matlab_setup(install_dir):
     destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
@@ -623,10 +635,10 @@ def uninstaller_setup(install_dir, force, silent):
 
         with open(uninstaller + '.cmd', 'a') as f:
             f.write(
-                f'& rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
+                f' & rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
                 f'& rd /Q /S "{simnibs_env_dir}" >NUL 2>&1 '
                 f'& del "{uninstaller}.cmd" >NUL 2>&1 '
-                f'& rd /Q "{install_dir}"'
+                f'& rd /Q /S "{install_dir}"'
             )
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
@@ -686,17 +698,21 @@ def uninstaller_setup(install_dir, force, silent):
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
             f.write(
-                f' && rm "{uninstaller}" '
                 f'&& rm -rf {miniconda_dir} '
-                f'; rmdir "{install_dir}"')
+                f'; rm -rf {simnibs_env_dir} '
+                f'; rm "{uninstaller}" '
+                f'; rm -rf "{install_dir}"')
 
 def uninstaller_cleanup():
     if sys.platform == 'win32':
-        with winreg.OpenKey(
+        try:
+            with winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
-                r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-                access=winreg.KEY_WRITE) as reg:
-            winreg.DeleteKey(reg, 'SimNIBS')
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+                    access=winreg.KEY_WRITE) as reg:
+                winreg.DeleteKey(reg, 'SimNIBS')
+        except FileNotFoundError:
+            pass
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')
@@ -950,6 +966,7 @@ def install(install_dir,
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
+    matlab_prepare()
     if extra_coils:
         print('Downloading Extra Coils', flush=True)
         download_extra_coils(timeout=30*60)
@@ -981,7 +998,6 @@ def install(install_dir,
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     copy_scripts(scripts_dir)
-
 
 def uninstall(install_dir):
     path_cleanup()

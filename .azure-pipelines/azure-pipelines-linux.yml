@@ -16,12 +16,20 @@ jobs:
   - bash: |
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
       conda env create -f env.yml
-    displayName: Create conda environment
+    displayName: Create Conda environment
   - bash: |
       source activate simnibs_env
-      python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
+      python setup.py bdist_wheel
+      cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+  # Do not build the pack in linux now (OpenGL error stuff, need to change the container, see installer)
+  #- bash: |
+  #    source activate
+  #    pip install conda-pack
+  #    python pack.py
+  #    cp simnibs-*-linux.zip $(Build.ArtifactStagingDirectory)
+  #  displayName: Create SimNIBS pack
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

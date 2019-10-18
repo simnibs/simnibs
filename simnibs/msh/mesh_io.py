@@ -189,7 +189,7 @@ class Elements:
         second tag for each elenent
     node_number_list: (Nx4) ndarray
         4xnumber_of_element matrix of the nodes that constitute the element.
-        For the triangles, the fourth element = 1
+        For the triangles, the fourth element = -1
     nr: int
         Number or elemets
 
@@ -2693,7 +2693,6 @@ class Data(object):
             two_sided = True
         else:
             two_sided = False
-
         if v_range == 'auto':
             if two_sided:
                 prc = self.get_percentiles([0.1, 99.9], roi)
@@ -2707,7 +2706,7 @@ class Data(object):
 
             else:
                 # all positive or vector
-                if self.nr_comp > 1 or self.value.min() > 0:
+                if self.nr_comp > 1 or self.value.min() > -1e-10:
                     min_ = 0
                     max_ = self.get_percentiles(99.9, roi)[0]
                     # for sparse fields

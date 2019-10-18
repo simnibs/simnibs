@@ -20,15 +20,16 @@ jobs:
   - script: start /wait "" Miniconda3.exe /InstallationType=JustMe /RegisterPython=0 /S /D=$(Agent.BuildDirectory)\CONDA
     displayName: Install Miniconda
 
-  - script: call $(Agent.BuildDirectory)\CONDA\Scripts\activate & conda create -y -q -n simnibs_build numpy cython setuptools
-    displayName: Create Conda environment
-
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_build
-      python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
+      call $(Agent.BuildDirectory)\CONDA\Scripts\activate
+      conda env create -f environment_win.yml
+    displayName: Create Conda environment
+  - script: |
+      call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
+      python setup.py bdist_wheel
+      copy dist\* $(Build.ArtifactStagingDirectory)
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

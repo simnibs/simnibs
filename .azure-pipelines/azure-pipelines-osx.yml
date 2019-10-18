@@ -4,7 +4,6 @@ variables:
 trigger:
 - master
 
-# Build SimNIBS on a Centos 6 container
 jobs:
 - job: Build
   pool:
@@ -17,11 +16,12 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - bash: |
-      conda create -y -q -n simnibs_build numpy cython setuptools nomkl python=3.7
+      conda env create -f environment_macOS.yml
     displayName: Create Conda environment
   - bash: |
-      source activate simnibs_build
-      python setup.py bdist_wheel -d $(Build.ArtifactStagingDirectory)
+      source activate simnibs_env
+      python setup.py bdist_wheel
+      cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
   - task: PublishBuildArtifacts@1
