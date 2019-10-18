@@ -253,6 +253,9 @@ class SubjectFiles:
     masks_contr: str
         Volume mask before meshing (.nii.gz)
 
+    T1: str
+        T1 image after applying transformations
+    
     Warning
     --------
     This class does not check for existance of the files
@@ -348,6 +351,8 @@ class SubjectFiles:
             self.subpath, self.subid + '_final_contr.nii.gz')
         self.masks_contr = os.path.join(
             self.subpath, self.subid + '_masks_contr.nii.gz')
+        self.T1 = os.path.join(
+            self.subpath, self.subid + '_T1fs_nu_conform.nii.gz')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
