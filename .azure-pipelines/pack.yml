@@ -16,14 +16,16 @@ jobs:
   - bash: |
       conda env create -f environment_linux.yml
     displayName: Create Conda environment
-
+  - bash: |
+      source activate simnibs_env
+      python setup.py bdist_wheel
+    displayName: Build SimNIBS
   - bash: |
       source activate
       pip install conda-pack
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
-
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -42,6 +44,10 @@ jobs:
   - bash: |
       conda env create -f environment_macOS.yml
     displayName: Create Conda environment
+  - bash: |
+      source activate simnibs_env
+      python setup.py bdist_wheel
+    displayName: Build SimNIBS
   - bash: |
       source activate
       pip install conda-pack
@@ -68,6 +74,10 @@ jobs:
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       conda env create -f environment_win.yml
     displayName: Create Conda environment
+  - script: |
+      call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
+      python setup.py bdist_wheel
+    displayName: Build SimNIBS
   - script: |
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       pip install conda-pack
