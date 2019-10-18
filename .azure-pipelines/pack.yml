@@ -1,8 +1,10 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 1
+  
+trigger: none
 
 jobs:
-- job: Pack-Linux
+- job: Linux
   pool:
     vmImage: 'ubuntu-16.04'
 
@@ -28,7 +30,7 @@ jobs:
       artifactName: pack-linux
     displayName: Publish Artifact
 
-- job: Pack-OSX
+- job: MacOS
   pool:
     vmImage: 'macOS-10.14'
 
@@ -52,7 +54,7 @@ jobs:
       artifactName: pack-osx
     displayName: Publish Artifact
 
-- job: Pack-Win
+- job: Windows
   pool:
     vmImage: 'vs2015-win2012r2'
 
