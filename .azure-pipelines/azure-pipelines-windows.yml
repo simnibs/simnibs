@@ -30,13 +30,7 @@ jobs:
       copy dist\* $(Build.ArtifactStagingDirectory)
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-  - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate
-      pip install conda-pack
-      python pack.py
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
-    displayName: Create SimNIBS pack
-  - task: PublishBuildArtifacts@1
+ - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: windows_wheel

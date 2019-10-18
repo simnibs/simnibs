@@ -4,7 +4,6 @@ variables:
 trigger:
 - master
 
-# Build SimNIBS on a Centos 6 container
 jobs:
 - job: Build
   pool:
@@ -25,12 +24,6 @@ jobs:
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-  - bash: |
-      source activate
-      pip install conda-pack
-      python pack.py
-      cp simnibs-*-macOS.zip $(Build.ArtifactStagingDirectory)
-    displayName: Create SimNIBS pack
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
