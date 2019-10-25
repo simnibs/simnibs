@@ -1,5 +1,16 @@
-''' Based on the OrthoSlicer3D from nibabel
+''' Nifti viewer Based on the OrthoSlicer3D from nibabel
 Modified to handle overlays
+'''
+
+import numpy as np
+import nibabel as nib
+import matplotlib.pyplot as plt
+
+from nibabel.affines import voxel_sizes
+from nibabel.orientations import aff2axcodes, axcodes2ornt
+import simnibs
+'''
+The NiftiViewer class is based on the OthoSlicer3D class from nibabel, and has the following license
 
 The MIT License
 
@@ -31,40 +42,10 @@ THE SOFTWARE.
 
 
 Modifications by Guilherme Saturnino, 2019
-
 '''
-import numpy as np
-import nibabel as nib
-import matplotlib.pyplot as plt
-
-from nibabel.affines import voxel_sizes
-from nibabel.orientations import aff2axcodes, axcodes2ornt
 
 
 class NiftiViewer(object):
-    """ Orthogonal-plane slice viewer.
-    OrthoSlicer3d expects 3- or 4-dimensional array data.  It treats
-    4D data as a sequence of 3D spatial volumes, where a slice over the final
-    array axis gives a single 3D spatial volume.
-    For 3D data, the default behavior is to create a figure with 3 axes, one
-    for each slice orientation of the spatial volume.
-    Clicking and dragging the mouse in any one axis will select out the
-    corresponding slices in the other two. Scrolling up and
-    down moves the slice up and down in the current axis.
-    For 4D data, the fourth figure axis can be used to control which
-    3D volume is displayed.  Alternatively, the ``-`` key can be used to
-    decrement the displayed volume and the ``+`` or ``=`` keys can be used to
-    increment it.
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a = np.sin(np.linspace(0, np.pi, 20))
-    >>> b = np.sin(np.linspace(0, np.pi*5, 20))
-    >>> data = np.outer(a, b)[..., np.newaxis] * a
-    >>> OrthoSlicer3D(data).show()  # doctest: +SKIP
-    """
-    # Skip doctest above b/c not all systems have mpl installed
-
     def __init__(self, volume, affine=None, title=None, cmap='gray', clim=None, alpha=1.):
         """
         Parameters
@@ -193,7 +174,9 @@ class NiftiViewer(object):
         self._changing = False  # keep track of status to avoid loops
         plt.draw()
         for fig in self._figs:
+            fig.canvas.draw_idle()
             fig.canvas.draw()
+        plt.pause(1e-3) # give a little bit of time for the renderer (needed on MacOS)
         self._set_position(0., 0., 0.)
         self._draw()
 
@@ -210,7 +193,7 @@ class NiftiViewer(object):
             transparency value
         '''
         if len(self._volumes) > 0 and vol.shape != self._volumes[0].shape:
-            raise('Cannot add overlay, different shape')
+            raise ValueError('Cannot add overlay, different shape')
         # add volume
         self._volumes.append(vol)
         if clim is None:
@@ -382,10 +365,28 @@ class NiftiViewer(object):
                     ax.draw_artist(line)
             ax.figure.canvas.blit(ax.bbox)
 
-if __name__ == '__main__':
-    from simnibs import templates
-    image = nib.load(templates.mni_volume)
-    viewer = NiftiViewer(image.get_fdata(), image.affine)
-    overlay = np.random.random(image.get_fdata().shape)
-    viewer.add_overlay(overlay, cmap='viridis', alpha=0.5)
+def check_segmentation(fn_subject):
+    from scipy import ndimage
+    import matplotlib.pylab as pl
+    from matplotlib.colors import ListedColormap
+    files = simnibs.SubjectFiles(fn_subject + '.msh')
+    T1 = nib.load(files.T1)
+    masks = nib.load(files.final_contr).get_data()
+    lines = np.linalg.norm(np.gradient(masks), axis=0) > 0
+    print(lines.shape)
+    viewer = NiftiViewer(T1.get_data(), T1.affine)
+    cmap = pl.cm.jet
+    my_cmap = cmap(np.arange(cmap.N))
+    my_cmap[:,-1] = np.linspace(0, 1, cmap.N)
+    my_cmap = ListedColormap(my_cmap)
+    viewer.add_overlay(lines, cmap=my_cmap)
     viewer.show()
+
+if __name__ == '__main__':
+    #from simnibs import templates
+    #image = nib.load(templates.mni_volume)
+    #viewer = NiftiViewer(image.get_fdata(), image.affine)
+    #overlay = np.random.random(image.get_fdata().shape)
+    #viewer.add_overlay(overlay, cmap='viridis', alpha=0.5)
+    #viewer.show()
+    check_segmentation('/Users/gbs/simnibs_examples/ernie/ernie')
