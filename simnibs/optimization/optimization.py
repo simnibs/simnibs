@@ -438,7 +438,9 @@ class TDCSoptimize():
             el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
             self.electrode_geo(el_geo_fn, currents)
             v.add_merge(el_geo_fn)
-            v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
+            max_c = np.max(np.abs(currents))
+            v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1,
+                       CustomMax=max_c, CustomMin=-max_c)
             v.write_opt(fn_out_mesh)
             if self.open_in_gmsh:
                 mesh_io.open_in_gmsh(fn_out_mesh, True)
@@ -1403,7 +1405,7 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         for i in indexes:
             n_i = np.where(mesh_indexes == i)[0]
             if len(n_i) == 0:
-                raise IndexError('Could not find inxed {0} in the given mesh and '
+                raise IndexError('Could not find index {0} in the given mesh and '
                                  'tissues'.format(i))
             # THE BELLOW SHOULD NEVER HAPPEN, ONLY FROM A CODING ERROR
             elif len(n_i) > 1:
