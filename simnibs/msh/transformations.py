@@ -910,22 +910,22 @@ def _read_csv(fn):
         header = rows[0]
         start = 1
 
-    type_ = [r[0] for r in rows[start:]]
-    try:
-        coordinates = np.array(
-            [[float(d) for d in r[1:4]] for r in rows[start:]],
-            dtype=float)
-    except:
-        raise IOError('Could not read coordinates from CSV file')
+    rows = rows[start:]
+    type_ = [r[0] for r in rows]
+
     extra = []
     name = []
     extra_cols = []
+    type_filtered = []
+    rows_filtered = []
 
-    for t, r in zip(type_, rows[start:]):
+    for t, r, i in zip(type_, rows, range(len(type_))):
         if t in ['Generic', 'Fiducial'] or len(r) == 4:
             name += [r[4] if len(r) >= 5 else None]
             extra_cols += [r[5:] if len(r) > 5 else None]
             extra += [None]
+            type_filtered.append(t)
+            rows_filtered.append(r)
         elif t in ['Electrode', 'ReferenceElectrode']:
             try:
                 extra += [np.array([float(d) for d in r[4:7]])]
@@ -935,12 +935,24 @@ def _read_csv(fn):
                 extra += [None]
                 name += [r[4] if len(r) >= 5 else None]
                 extra_cols += [r[5:] if len(r) > 5 else None]
+            type_filtered.append(t)
+            rows_filtered.append(r)
         elif t == 'CoilPos':
             extra += [np.array([float(d) for d in r[4:11]])]
             name += [r[11] if len(r) >= 12 else None]
             extra_cols += [r[12:] if len(r) > 12 else None]
+            type_filtered.append(t)
+            rows_filtered.append(r)
         else:
             warnings.warn('Unrecognized column type: {0}'.format(t))
+    type_ = type_filtered
+    rows = rows_filtered
+    try:
+        coordinates = np.array(
+            [[float(d) for d in r[1:4]] for r in rows],
+            dtype=float)
+    except:
+        raise IOError('Could not read coordinates from CSV file')
 
     return type_, coordinates, extra, name, extra_cols, header
 
