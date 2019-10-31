@@ -2376,6 +2376,12 @@ class TDCSLEADFIELD(LEADFIELD):
         fn_roi = os.path.join(dir_name, self._mesh_roi_name())
         mesh_lf.write(fn_roi)
         mesh_lf.write_hdf5(fn_hdf5, 'mesh_leadfield/')
+        # Write information about number of nodes in left hemishere for compatibility
+        # with MNE
+        if self.map_to_surf:
+            with h5py.File(fn_hdf5, 'a') as f:
+                f['mesh_leadfield'].attrs['nodes_lh'] = middle_surf['lh'].nodes.nr
+                f['mesh_leadfield'].attrs['tr_lh'] = middle_surf['lh'].elm.nr
 
         # Run Leadfield
         dset = 'mesh_leadfield/leadfields/tdcs_leadfield'
