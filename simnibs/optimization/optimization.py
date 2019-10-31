@@ -555,7 +555,7 @@ class TDCSoptimize():
         -------------
         fn_out: str
             Output name of .geo file
-        ALL THE BELLOW ARE AUTOMATICALLY FILLED BY THE LEADFIELD
+        ALL THE BELOW ARE AUTOMATICALLY FILLED BY THE LEADFIELD
         currents: Nx1 ndarray (optional)
             Currents through the electrodes. If set, will create spheres with the
             currents in the .geo file
@@ -793,7 +793,7 @@ class TDCStarget:
         Tissues included in the target. Either a list of integer with tissue tags or None
         for all tissues. Default: None
 
-    THE ONES BELLOW SHOULD NOT BE FILLED BY THE USERS IN NORMAL CIRCUNTANCES:
+    THE ONES BELOW SHOULD NOT BE FILLED BY THE USERS IN NORMAL CIRCUNTANCES:
     mesh: simnibs.msh.mesh_io.Msh (optional)
         Mesh where the target is defined. Set by the TDCSoptimize methods
     lf_type: 'node' or 'element'
@@ -816,7 +816,7 @@ class TDCStarget:
         self.radius = radius
         self.tissues = tissues
         self.positions = positions
-        self.indexes = indexes
+        self._indexes = indexes
         self.directions = directions
         self.intensity = intensity
         self.max_angle = max_angle
@@ -830,7 +830,7 @@ class TDCStarget:
                 _, idx = self.mesh.find_closest_element(self.positions,True)
             else:
                 raise ValueError('Invalid lf_type: {0}'.format(self.lf_type))
-            self.indexes = idx
+            self._indexes = np.atleast_1d(idx)
 
         return self._indexes
 
@@ -1155,7 +1155,7 @@ class TDCSavoid:
         self.radius = radius
         self.tissues = tissues
         self.positions = positions
-        self.indexes = indexes
+        self._indexes = indexes
         self.weight = weight
 
     @property
@@ -1167,7 +1167,7 @@ class TDCSavoid:
                 _, idx = self.mesh.find_closest_element(self.positions,True)
             else:
                 raise ValueError('Invalid lf_type: {0}'.format(self.lf_type))
-            self.indexes = idx
+            self._indexes = idx
 
         return self._indexes
 
@@ -1391,7 +1391,8 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
     else:
         raise ValueError('lf_type must be either "node" or "element"')
 
-    kdtree = scipy.spatial.cKDTree(mesh_pos)
+    if positions is not None or not np.isclose(radius, 0.):
+        kdtree = scipy.spatial.cKDTree(mesh_pos)
 
     if positions is not None and indexes is not None:
         raise ValueError('Please define either only positions of only indexes')
@@ -1400,21 +1401,15 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         indexes = np.atleast_1d(indexes)
 
     elif indexes is not None:
-        indexes_new = []
         indexes = np.atleast_1d(indexes)
-        for i in indexes:
-            n_i = np.where(mesh_indexes == i)[0]
-            if len(n_i) == 0:
-                raise IndexError('Could not find index {0} in the given mesh and '
-                                 'tissues'.format(i))
-            # THE BELLOW SHOULD NEVER HAPPEN, ONLY FROM A CODING ERROR
-            elif len(n_i) > 1:
-                raise ValueError("Found two indexes with the same number")
-            indexes_new.append(n_i[0])
+        in_roi = np.isin(indexes, mesh_indexes)
+        if np.any(~in_roi):
+            raise IndexError('Could not find indexes {0} in the given mesh and '
+                             'tissues'.format(indexes[~in_roi]))
 
-        indexes = np.array(indexes_new)
-
-    positions = mesh_pos[indexes]
+        # Transform the indexes from global mesh indexes to local ROI indexes
+        indexes = np.searchsorted(mesh_indexes, indexes)
+        positions = mesh_pos[indexes]
 
     assert radius >= 0., 'radius should be >= 0'
 
