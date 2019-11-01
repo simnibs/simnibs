@@ -60,7 +60,7 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
             try:
                 w_z = np.linalg.solve(Z.T.dot(Q).dot(Z), - Z.T.dot(l_i))
             except np.linalg.LinAlgError:
-                w_z = np.linalg.lstsq(Z.T.dot(Q).dot(Z), - Z.T.dot(l_i))[0]
+                w_z = np.linalg.lstsq(Z.T.dot(Q).dot(Z), - Z.T.dot(l_i), rcond=None)[0]
             p = Z.dot(w_z)
             p = np.squeeze(p.T)
         # If no update, check the duals and try to terminate

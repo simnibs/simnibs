@@ -2,7 +2,7 @@ import functools
 import numpy as np
 import scipy.optimize
 import pytest
-from simnibs.optimization import optimize_tdcs
+from simnibs.optimization import optimization_methods
 
 @pytest.fixture()
 def optimization_variables():
@@ -53,10 +53,6 @@ def optimization_variables_avg_QCQP():
     return l, Q, np.ones(5), Q_in
 
 
-def objective(l, Q, lam, x):
-    P = np.vstack([-np.ones(len(l)), np.eye(len(l))])
-    return l.dot(x) + 0.5 * x.T.dot(Q.dot(x)) + lam * np.linalg.norm(P.dot(x), 1)
-
 def optimize_scipy(l, Q, C, d, A=None, b=None, atol=1e-5):
     objective = lambda x: l.dot(x) + .5 * x.dot(Q.dot(x))
     x0 = np.zeros_like(l)
@@ -85,7 +81,7 @@ class TestActiveSetQp:
         C = np.eye(len(l))
         x0 = np.zeros(len(l))
         d = 1e3 * np.ones(C.shape[0])
-        x = optimize_tdcs._active_set_QP(l, Q, C, d, x0)
+        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d)
         assert np.isclose(objective(l, Q, 0, x), objective(l, Q, 0, x_sp),
@@ -96,7 +92,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), -np.eye(len(l))])
         x0 = np.zeros(len(l))
         d = 0.3 * np.ones(C.shape[0])
-        x = optimize_tdcs._active_set_QP(l, Q, C, d, x0)
+        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
 
@@ -109,7 +105,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), np.ones(len(l)), -np.eye(len(l)), -np.ones(len(l))])
         x0 = np.zeros(len(l))
         d =  0.3 * np.ones(C.shape[0])
-        x = optimize_tdcs._active_set_QP(l, Q, C, d, x0)
+        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d)
@@ -123,7 +119,7 @@ class TestActiveSetQp:
         b = np.zeros(1)
         x0 = np.zeros(len(l))
         d = 0.3 * np.ones(C.shape[0])
-        x = optimize_tdcs._active_set_QP(l, Q, C, d, x0, A=A, b=b)
+        x = optimization_methods._active_set_QP(l, Q, C, d, x0, A=A, b=b)
         x_sp = optimize_scipy(l, Q, C, d, A, b)
         assert np.isclose(A.dot(x), b)
         assert np.linalg.norm(C.dot(x) <= d + 1e-4)
@@ -137,7 +133,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), -np.eye(len(l))])
         x0 = 2 * np.ones(len(l))
         d = 2 * np.ones(C.shape[0])
-        x = optimize_tdcs._active_set_QP(l, Q, C, d, x0)
+        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d + 1e-4)
@@ -154,7 +150,7 @@ class TestCalcMatrices():
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-        l, _ = optimize_tdcs.target_matrices(
+        l, _ = optimization_methods.target_matrices(
             A, targets, target_direction, volumes, avg_reference)
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
@@ -170,7 +166,7 @@ class TestCalcMatrices():
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-        l, _, = optimize_tdcs.target_matrices(
+        l, _, = optimization_methods.target_matrices(
             A, targets, target_direction, volumes, avg_reference)
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
@@ -187,7 +183,7 @@ class TestCalcMatrices():
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 4])
-        _, Qin = optimize_tdcs.target_matrices(
+        _, Qin = optimization_methods.target_matrices(
             A, targets, target_direction, volumes, avg_reference)
         currents = np.array([1, 0])
         field = np.einsum('ijk, i->jk', A, currents)
@@ -203,7 +199,7 @@ class TestCalcMatrices():
         # test if currents.dot(Q).dot(currents) really is the average energy
         A = np.random.random((2, 5, 3))
         volumes = np.array([1, 2, 2, 2, 4])
-        Q = optimize_tdcs.energy_matrix(
+        Q = optimization_methods.energy_matrix(
             A, volumes, avg_reference)
         currents = np.array([1, 0])
         field = np.vstack([A[..., i].T.dot(currents) for i in range(3)])
@@ -245,9 +241,9 @@ class TestOptimizeTargetIntensity:
     def test_bound_constraints(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
         m = 2e-3
-        x = optimize_tdcs.optimize_field_component(l, max_el_current=m)
+        x = optimization_methods.optimize_field_component(l, max_el_current=m)
         x_sp = optimize_comp(l, A, m)
-        assert np.all(np.abs(x) <= m)
+        assert np.all(np.abs(x) <= m+1e-6)
         assert np.isclose(np.sum(x), 0)
         assert np.isclose(l.dot(x), l.dot(x_sp),
                           rtol=1e-4, atol=1e-4)
@@ -255,7 +251,7 @@ class TestOptimizeTargetIntensity:
     def test_l1_constraint(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
         m = 2e-3
-        x = optimize_tdcs.optimize_field_component(l, max_total_current=m)
+        x = optimization_methods.optimize_field_component(l, max_total_current=m)
         x_sp = optimize_comp(l, A, max_total_current=m)
         assert np.linalg.norm(x, 1) <= 2 *m + 1e-4
         assert np.isclose(l.dot(x), l.dot(x_sp),
@@ -266,11 +262,11 @@ class TestOptimizeTargetIntensity:
         l, Q, A = optimization_variables_avg
         m = 2e-3
         m1 = 3e-3
-        x = optimize_tdcs.optimize_field_component(l, max_el_current=m,
+        x = optimization_methods.optimize_field_component(l, max_el_current=m,
                                                           max_total_current=m1)
         x_sp = optimize_comp(l, A, m, m1)
         assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m)
+        assert np.all(np.abs(x) <= m+1e-6)
         assert np.isclose(l.dot(x), l.dot(x_sp),
                           rtol=1e-4, atol=1e-4)
         assert np.isclose(np.sum(x), 0)
@@ -323,7 +319,7 @@ class TestOptimizeFocality:
         l, Q, A = optimization_variables_avg
         m = 2e-3
         f = 2e-2
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_el_current=m)
+        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m)
         x_sp = optimize_focality(l, Q, f, m)
         assert np.all(np.abs(x) <= m)
         assert np.isclose(np.sum(x), 0)
@@ -334,7 +330,7 @@ class TestOptimizeFocality:
         l, Q, A = optimization_variables_avg
         m = 3e-3
         f = 2e-2
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_total_current=m)
+        x = optimization_methods.optimize_focality(l, Q, f, max_total_current=m)
         x_sp = optimize_focality(l, Q, f, max_total_current=m)
         assert np.linalg.norm(x, 1) <= 2 * m + 1e-4
         assert np.isclose(np.sum(x), 0)
@@ -346,7 +342,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = 2e-2
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_el_current=m,
+        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
                                                    max_total_current=m1)
 
         x_sp = optimize_focality(
@@ -363,7 +359,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = 4e-2
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1)
 
@@ -380,7 +376,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = .02
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -403,7 +399,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = .02
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -425,7 +421,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = .02
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -444,7 +440,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = .01
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -465,7 +461,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = 2
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -483,7 +479,7 @@ class TestOptimizeFocality:
         m1 = 4e-3
         f = 2e3
         n = 3
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_el_current=m,
+        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
                                                    max_total_current=m1,
                                                    max_active_electrodes=n)
 
@@ -498,7 +494,7 @@ class TestOptimizeFocality:
         m1 = 4e-3
         f = 1e-2
         n = 3
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_el_current=m,
+        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
                                                    max_total_current=m1,
                                                    max_active_electrodes=n)
 
@@ -515,7 +511,7 @@ class TestOptimizeFocality:
         m1 = 4e-3
         f = 2
         n = 4
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -535,7 +531,7 @@ class TestOptimizeFocality:
         m1 = 4e-3
         f = .01
         n = 4
-        x = optimize_tdcs.optimize_focality(l, Q, f,
+        x = optimization_methods.optimize_focality(l, Q, f,
                                                    max_el_current=m,
                                                    max_total_current=m1,
                                                    Qin=Q_in,
@@ -554,14 +550,14 @@ class TestOptimizeFocality:
         l = np.vstack([l ,l2])
         m = 2e-3
         m1 = 4e-3
-        x = optimize_tdcs.optimize_field_component(l, max_el_current=m,
+        x = optimization_methods.optimize_field_component(l, max_el_current=m,
                                                           max_total_current=m1)
 
         l_avg = np.average(l, axis=0)
         x_sp = optimize_comp(l_avg, np.ones_like(l2), max_el_current=m, max_total_current=m1)
 
         assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m)
+        assert np.all(np.abs(x) <= m + 1e-6)
         assert np.isclose(l_avg.dot(x), l_avg.dot(x_sp),
                           rtol=1e-4, atol=1e-4)
         assert np.isclose(np.sum(x), 0)
@@ -573,7 +569,7 @@ class TestOptimizeFocality:
         m = 2e-3
         m1 = 4e-3
         f = [1e-2, 1e-2]
-        x = optimize_tdcs.optimize_focality(l, Q, f, max_el_current=m,
+        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
                                                    max_total_current=m1)
         x_sp = optimize_focality(
             l, Q, f, max_el_current=m, max_total_current=m1)
@@ -592,7 +588,7 @@ class TestOptimizeFocality:
         m1 = 4e-3
         f = np.array([1e-2, 1e-2])
         n = 3
-        x = optimize_tdcs.optimize_focality(
+        x = optimization_methods.optimize_focality(
             l, Q, f, max_el_current=m,
             max_total_current=m1,
             max_active_electrodes=n)
@@ -608,7 +604,7 @@ class TestEqConstrained:
         l, Q, P = optimization_variables
         A = np.ones((1, len(l)))
         b = np.zeros(1)
-        x = optimize_tdcs._eq_constrained_QP(l, Q, A, b)
+        x = optimization_methods._eq_constrained_QP(l, Q, A, b)
 
         ob = lambda x: l.dot(x) + .5 * x.dot(Q.dot(x))
         x0 = np.zeros(Q.shape[0])
@@ -651,8 +647,8 @@ class TestBB:
                 split2 = None
             return ub, lb, split1, split2
 
-        init = optimize_tdcs.bb_state([], [], list(range(10)))
-        bb_node = optimize_tdcs.bb_node(init, bounds_func)
+        init = optimization_methods.bb_state([], [], list(range(10)))
+        bb_node = optimization_methods.bb_node(init, bounds_func)
         assert bb_node.lb_val == 0 + 1 + 2 + 3
         assert bb_node.ub_val == sum(range(10))
         assert np.all(bb_node.child1.active == [])
@@ -690,9 +686,9 @@ class TestBB:
 
             return ub, lb, split1, split2
 
-        init = optimize_tdcs.bb_state([], [], list(range(10)))
+        init = optimization_methods.bb_state([], [], list(range(10)))
         eps = 1e-1
-        final_state = optimize_tdcs._branch_and_bound(init, bounds_func, eps, 100)
+        final_state = optimization_methods._branch_and_bound(init, bounds_func, eps, 100)
         assert np.all(final_state.active == [1, 2, 4, 3])
 
     def test_bb_lower_bound(self, optimization_variables_avg):
@@ -701,8 +697,8 @@ class TestBB:
         m1 = 4e-3
         f = 1e-2
         max_active = 2
-        state = optimize_tdcs.bb_state([1], [2], [3, 0, 4])
-        x, val = optimize_tdcs._bb_lower_bound(
+        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
+        x, val = optimization_methods._bb_lower_bound(
             np.atleast_2d(l), Q, f, m1, m,
             max_active, state)
 
@@ -759,8 +755,8 @@ class TestBB:
         m1 = 4e-3
         f = 1e-3
         max_active = 2
-        state = optimize_tdcs.bb_state([1], [2], [3, 0, 4])
-        x_ub, ub = optimize_tdcs._bb_upper_bound(
+        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
+        x_ub, ub = optimization_methods._bb_upper_bound(
             np.atleast_2d(l), Q, f, m1, m, max_active, state)
 
         assert np.linalg.norm(x_ub, 1) <= 2 * m1 + 1e-4
@@ -770,9 +766,9 @@ class TestBB:
         assert np.isclose(l.dot(x_ub), f)
 
     def test_bb_split(self):
-        state = optimize_tdcs.bb_state([1], [2], [3, 0, 4])
+        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
         x = np.array([4, 3, 0, 1, -5])
-        child1, child2 = optimize_tdcs._bb_split(x, state)
+        child1, child2 = optimization_methods._bb_split(x, state)
         assert child1.active == [1, 4]
         assert child1.inactive == [2]
         assert child2.active == [1]
@@ -784,11 +780,11 @@ class TestBB:
         m1 = 4e-3
         f = 1e-2
         max_active = 2
-        init = optimize_tdcs.bb_state([], [], list(range(len(l))))
+        init = optimization_methods.bb_state([], [], list(range(len(l))))
         bf = functools.partial(
-            optimize_tdcs._bb_bounds_function,
+            optimization_methods._bb_bounds_function,
             np.atleast_2d(l), Q, f, m1, m, max_active)
-        final_state = optimize_tdcs._branch_and_bound(
+        final_state = optimization_methods._branch_and_bound(
             init, bf, 1e-2, 100)
         x = final_state.x_lb
         assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
@@ -803,7 +799,7 @@ class TestBB:
         m1 = 4e-3
         f = 1e-2
         max_active = 2
-        x = optimize_tdcs._constrained_l0_branch_and_bound(
+        x = optimization_methods._constrained_l0_branch_and_bound(
             l, Q, f, m1, m, max_active)
         assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
         assert np.linalg.norm(x, 0) <= max_active
@@ -817,7 +813,7 @@ class TestBB:
         m1 = 4e-3
         f = 1e-2
         max_active = 3
-        x = optimize_tdcs._constrained_l0_branch_and_bound(
+        x = optimization_methods._constrained_l0_branch_and_bound(
             l, Q, f, m1, m, max_active, start_inactive=[2], start_active=[1])
         assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
         assert np.linalg.norm(x, 0) <= max_active
