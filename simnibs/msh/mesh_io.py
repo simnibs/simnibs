@@ -4117,10 +4117,11 @@ def _read_msh_2(fn, m):
         def read_NodeData(t, name, nr, nr_comp, m):
             data = NodeData(np.empty((nr, nr_comp)), name=name, mesh=m)
             if binary:
-                dt = np.dtype([
-                    ('id', np.int32, 1),
-                    ('values', np.float64, nr_comp)])
-
+                if nr_comp == 1:
+                    value_dt = ('values', np.float64)
+                else:
+                    value_dt = ('values', np.float64, nr_comp)
+                dt = np.dtype([('id', np.int32), value_dt])
                 temp = np.fromfile(f, dtype=dt, count=nr)
                 node_number = np.copy(temp['id'])
                 data.value = np.copy(temp['values'])
@@ -4148,10 +4149,11 @@ def _read_msh_2(fn, m):
                               'Element ordering not compact or invalid element type')
             data = ElementData(np.empty((nr, nr_comp)), name=name, mesh=m)
             if binary:
-                dt = np.dtype([
-                    ('id', np.int32, 1),
-                    ('values', np.float64, nr_comp)])
-
+                if nr_comp == 1:
+                    value_dt = ('values', np.float64)
+                else:
+                    value_dt = ('values', np.float64, nr_comp)
+                dt = np.dtype([('id', np.int32), value_dt])
                 temp = np.fromfile(f, dtype=dt, count=nr)
                 elm_number = np.copy(temp['id'])
                 data.value = np.copy(temp['values'])
