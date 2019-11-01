@@ -3949,7 +3949,7 @@ def _read_msh_2(fn, m):
         if binary:
             # 0.02s to read binary.msh
             dt = np.dtype([
-                ('id', np.int32, 1),
+                ('id', np.int32),
                 ('coord', np.float64, 3)])
 
             temp = np.fromfile(f, dtype=dt, count=node_nr)
