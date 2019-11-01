@@ -410,7 +410,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 reference=None, mask=None,
                 labels=None,
                 out_original=None,
-                order=3,
+                order=1,
                 method='linear',
                 continuous=False,
                 binary=False):
