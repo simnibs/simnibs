@@ -1499,7 +1499,7 @@ class Position_GUI(QtWidgets.QDialog):
         self.pos_x.setValue(projected_center[0])
         self.pos_y.setValue(projected_center[1])
         self.pos_z.setValue(projected_center[2])
-        self.update_center()
+        self.update_stimulator()
 
     #Executes the GUI
     def update_center(self):
