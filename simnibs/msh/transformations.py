@@ -1539,6 +1539,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     # Join surfaces, fields and open in gmsh
     def join_and_write(surfs, fn_out, open_in_gmsh):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
+        mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.nodedata = []
         mesh.elmdata = []
         for k in surfs['lh'].field.keys():

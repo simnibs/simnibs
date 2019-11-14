@@ -1992,7 +1992,7 @@ class LEADFIELD():
         self.mesh = None
         self.field = 'E'
         self.tissues = [2]
-        self.map_to_surf = False
+        self.map_to_surf = True
         self.cond = cond.standard_cond()
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
@@ -2355,14 +2355,14 @@ class TDCSLEADFIELD(LEADFIELD):
                     middle_surf[hemi] = mesh_io.read_gifti_surface(
                         s_names[hemi + '_midgm'])
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
-            mesh_lf.tag1 = 1002
-            mesh_lf.tag2 = 1002
+            mesh_lf.elm.tag1 = 1002 * np.ones(mesh_lf.elm.nr, dtype=int)
+            mesh_lf.elm.tag2 = 1002 * np.ones(mesh_lf.elm.nr, dtype=int)
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
                 mesh_lf.nodes.node_coord,
                 out_fill='nearest',
-                element_wise=True)
-
+                element_wise=True
+            )
             # Define postprocessing operation
             def post(out_field, M):
                 return M.dot(out_field)

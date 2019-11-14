@@ -106,7 +106,9 @@ class Visualization:
             len(self.View)
         except TypeError:
             self.View = []
-        self.View.append(View(len(self.View), **kwargs))
+        new_view = View(len(self.View), **kwargs)
+        self.View.append(new_view)
+        return new_view
 
     def add_merge(self, fn):
         ''' adds a file to be merged to the current Visualization
