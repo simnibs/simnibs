@@ -542,7 +542,7 @@ class TDCSoptimize():
                  max_total_current=2e-3,
                  max_individual_current=1e-3,
                  max_active_electrodes=None,
-                 name='',
+                 name='optimization/tdcs',
                  target=None,
                  avoid=None,
                  open_in_gmsh=True):
@@ -1217,9 +1217,10 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimied for each mesh point
+        List of Electric field directions to be optimied for each mesh point or the
+        string 'normal', Default: 'normal'
     intensity: float (optional)
-        Target intensity of the electric field component in V/m. Default: 0.3
+        Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
         Maximum angle between electric field and target direction, in degrees. Default:
         No maximum
@@ -1236,10 +1237,6 @@ class TDCStarget:
     lf_type: 'node' or 'element'
         Where the electric field values are defined
 
-    Warning
-    -----------
-    Changing positions or directions after constructing the class
-    can cause unexpected behaviour
     '''
     def __init__(self, positions=None, indexes=None, directions='normal',
                  intensity=0.2, max_angle=None, radius=2, tissues=None,
@@ -1788,7 +1785,7 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         return mesh_indexes[indexes],  np.arange(len(indexes))
 
 def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
-    if directions is 'normal':
+    if directions == 'normal':
         if 4 in np.unique(mesh.elm.elm_type):
             raise ValueError("Can't define a normal direction for volumetric data!")
         if lf_type == 'node':
