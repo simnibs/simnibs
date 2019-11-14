@@ -1,7 +1,7 @@
 ''' Example for running a SimNIBS tDCS leadfield in Python
     Run with:
 
-    simnibs_python calculate_leadfield.py
+    simnibs_python leadfield.py
 
     Copyright (C) 2019 Guilherme B Saturnino
 '''
@@ -10,8 +10,6 @@ tdcs_lf = sim_struct.TDCSLEADFIELD()
 # head mesh
 tdcs_lf.fnamehead = 'ernie.msh'
 # output directory
-tdcs_lf.pathfem = 'tdcs_leadfield'
-# Interpolate to the middle gray matter surface
-tdcs_lf.map_to_surf = True
+tdcs_lf.pathfem = 'leadfield'
 
 run_simnibs(tdcs_lf)
