@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>TDCS Optimization &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Advanced Features" href="advanced/advanced.html" />
+    <link rel="prev" title="Analyzing Simulations" href="analysis.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="analysis.html" title="Previous document">Analyzing Simulations</a>
+        </li>
+        <li>
+          <a href="advanced/advanced.html" title="Next document">Advanced Features</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="tdcs-optimization">
+<span id="tdcs-opt"></span><h1>TDCS Optimization<a class="headerlink" href="#tdcs-optimization" title="Permalink to this headline">¶</a></h1>
+<p>SimNIBS 3 is able of optimizing TDCS montages for maximal focality.
+There are two steps for performing the optimizations.</p>
+<ol class="arabic simple">
+<li><p>Create a <em>leadfield</em>.</p></li>
+<li><p>Set-up an optimization based on the <em>leadfield</em>.</p></li>
+</ol>
+<div class="section" id="leadfield-calculations">
+<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
+<p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
+As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
+<p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS leadfield in Python</span>
+<span class="sd">    Run with:</span>
+
+<span class="sd">    simnibs_python leadfield.py</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+<span class="n">tdcs_lf</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TDCSLEADFIELD</span><span class="p">()</span>
+<span class="c1"># head mesh</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># output directory</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;leadfield&#39;</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS leadfield </span>
+<span class="c">%    Copyright (C) 2019 Guilherme B Saturnino</span>
+
+<span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
+<span class="c">% Head mesh</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% Output directory</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield&#39;</span><span class="p">;</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<p>Here, we are calculating a leadfield in the <code class="file docutils literal notranslate"><span class="pre">ernie</span></code> example data set, based on the EEG 10-10 system.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more options in running tDCS leadfields, please see the documentation at <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>.</p>
+</div>
+<p></p>
+<p>This script will create the files in the <code class="file docutils literal notranslate"><span class="pre">leadfield</span></code> folder:</p>
+<ul>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_electrodes_EEG10-10_UI_Jurak_2007.msh</span></code>: File with the head mesh and electrodes placed on top. Can be used for checking electrode positions. Beware that some electrodes will be of the same color as the skin.</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_ROI.msh</span></code>: The region of interest where the electric field values were recorded. In the example, the middle gray matter surface.</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5</span></code>: HDF5 file with the leadfield matrix, orgenized with the datasets:</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_electrodes</span></code>: Full mesh with the electrodes</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_leadfield</span></code>: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the <code class="file docutils literal notranslate"><span class="pre">mesh_leadfield/leadfields/tdcs_leadfield</span></code> data set with the leadfield. In the attributes, you can se information such as the reference electrode, the field (<em>E</em> or <em>J</em>), units, currents and so on.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="optimization">
+<h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h2>
+<p>Now, we will use the leadfield to optimize the electric field at a given target.</p>
+<div class="section" id="simple-optimiztion">
+<h3>Simple Optimiztion<a class="headerlink" href="#simple-optimiztion" title="Permalink to this headline">¶</a></h3>
+<p>The first step is to set <a class="reference internal" href="../documentation/opt_struct/tdcsoptimize.html#tdcsoptimize-doc"><span class="std std-ref">TDCSoptimize</span></a> structure.
+In this structure, we need to select the leadfield we will use for the optimization, a name for the optimization problem, safety constraints and limit the number of electrodes.</p>
+<p>Afterwards, we need to define an optimization target using an <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a> structure.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS optimization in Python</span>
+<span class="sd">    Run with:</span>
+
+<span class="sd">    simnibs_python tdcs_optimize.py</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="c1"># Initialize structure</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="c1"># Select the leadfield file</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="c1"># Select a name for the optimization</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/single_target&#39;</span>
+
+<span class="c1"># Select a maximum total current (in A)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="c1"># Select a maximum current at each electrodes (in A)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="c1"># Select a maximum number of active electrodes (optional)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="c1"># Define optimization target</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="c1"># Position of target, in subjet space!</span>
+<span class="c1"># please see tdcs_optimize_mni.py for how to use MNI coordinates</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="c1"># Intensity of the electric field (in V/m)</span>
+<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS optimization in MATLAB</span>
+<span class="c">%</span>
+<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
+
+
+<span class="c">% Initialize structure</span>
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="c">% Select the leadfield file</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="c">% Select a name for the optimization</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/single_target&#39;</span><span class="p">;</span>
+
+<span class="c">% Select a maximum total current (in A)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="c">% Select a maximum current at each electrodes (in A)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="c">% Select a maximum number of active electrodes (optional)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="c">% Define optimization target</span>
+<span class="c">% Position of target, in subjet space!</span>
+<span class="c">% please see tdcs_optimize_mni.m for how to use MNI coordinates</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="c">% Intensity of the electric field (in V/m)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more information see the documentation for <a class="reference internal" href="../documentation/opt_struct/tdcsoptimize.html#tdcsoptimize-doc"><span class="std std-ref">TDCSoptimize</span></a> and <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a>.</p>
+</div>
+<div class="section" id="output-files">
+<h4>Output files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h4>
+<p>The optimization outputs:</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">.csv</span></code>: comma separated values (CSV) files with optimal current values at each electrode (in A)</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">_electrodes.geo</span></code>: <em>Gmsh</em> <em>.geo</em> file for visualizing electrodes and currents</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">.msh</span></code>: <em>Gmsh</em> <em>.msh</em> file with the target and the optimized electric field in the ROI.</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">_summary.txt</span></code>: Some summary quantities about the optimization</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="using-mni-coordinates">
+<h3>Using MNI Coordinates<a class="headerlink" href="#using-mni-coordinates" title="Permalink to this headline">¶</a></h3>
+<p>The target positions are, as always in SimNIBS, given in <strong>world coordinates</strong> in <strong>subject space</strong> (<a class="reference internal" href="../documentation/coordinates.html#coords-doc"><span class="std std-ref">see here for more information</span></a>). However, we can use the <em>mni2subject_coords</em> function to transform coordinates from MNI space to subject space.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/MNI_target&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="c1"># Transfrorm a set of coordinates from MNI space to subject space.</span>
+<span class="c1"># The second argument of the mni2subject_coords function</span>
+<span class="c1"># is the path to the &quot;m2m_subID&quot; folder.</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s1">&#39;m2m_ernie&#39;</span><span class="p">)</span>
+<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/MNI_target&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="c">% Transfrorm a set of coordinates from MNI space to subject space.</span>
+<span class="c">% The second argument of the mni2subject_coords function</span>
+<span class="c">% is the path to the &quot;m2m_subID&quot; folder.</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+</div>
+<div class="section" id="multiple-targets">
+<h3>Multiple targets<a class="headerlink" href="#multiple-targets" title="Permalink to this headline">¶</a></h3>
+<p>To optimize multiple distant targets simultaneously, just use multiple <strong>target</strong> structures.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of an optimization with two targets</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/two_targets&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="c1"># Target in the left motor cortex</span>
+<span class="n">target_left</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="c1"># Target in the right motor cortex</span>
+<span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">46.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.8</span><span class="p">,</span> <span class="mf">80.1</span><span class="p">]</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value revert the direction</span>
+
+
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of an optimization with two targets</span>
+<span class="c">%</span>
+
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/two_targets&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="c">% Target in the left motor cortex</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="c">% Target in the right motor cortex</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">46.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.8</span><span class="p">,</span> <span class="mf">80.1</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">;</span>
+
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<p>By using multiple targets, SimNIBS will try to hit each target with its intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
+</div>
+<div class="section" id="avoidance-regions">
+<h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>
+<p>You can also add regions where the electric field should be more penalized than elsewhere. This is done using the <strong>avoid</strong> optional structure.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Selecting a particular region to be heavily avoided  </span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/avoid_region&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+<span class="n">avoid</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_avoid</span><span class="p">()</span>
+<span class="c1"># Center of the region</span>
+<span class="n">avoid</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">85</span><span class="p">]</span>
+<span class="c1"># Radius of the region, in mm</span>
+<span class="n">avoid</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Selecting a particular region to be heavily avoided  </span>
+<span class="c">%</span>
+
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/avoid_region&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="c">% Set target</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+
+<span class="c">% Center of the region</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">avoid</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">85</span><span class="p">];</span>
+<span class="c">% Radius of the region, in mm</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">avoid</span><span class="p">.</span><span class="n">radius</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+</div>
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="analysis.html" title="Previous document">Analyzing Simulations</a>
+        </li>
+        <li>
+          <a href="advanced/advanced.html" title="Next document">Advanced Features</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="tutorial.html">Tutorial</a><ul>
+      <li>Previous: <a href="analysis.html" title="previous chapter">Analyzing Simulations</a></li>
+      <li>Next: <a href="advanced/advanced.html" title="next chapter">Advanced Features</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/tutorial/optimization.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

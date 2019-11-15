@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Visualizing Results &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Creating Head Models" href="head_meshing.html" />
+    <link rel="prev" title="Setting up and Running Simulations" href="gui.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="gui.html" title="Previous document">Setting up and Running Simulations</a>
+        </li>
+        <li>
+          <a href="head_meshing.html" title="Next document">Creating Head Models</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="visualizing-results">
+<span id="visualization-tutorial"></span><h1>Visualizing Results<a class="headerlink" href="#visualizing-results" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial comes after the tutorial on <a class="reference internal" href="gui.html#gui-tutorial"><span class="std std-ref">Setting up and Running Simulations</span></a>. Please be sure to complete it before going further.</p>
+<div class="section" id="visualizing-results-in-gmsh">
+<h2>Visualizing Results in Gmsh<a class="headerlink" href="#visualizing-results-in-gmsh" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is a powerful program for 3D visualization. However, it has somewhat steep learning curve.
+For this reason, in SimNIBS 3.0 we now write the <em>.opt</em> files with basic visualization configurations.
+Here we will give a walk-through of a few useful features in Gmsh.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is distributed together with SimNIBS, you don’t need to install it separately</p>
+</div>
+<div class="section" id="starting-gmsh">
+<h3>Starting Gmsh<a class="headerlink" href="#starting-gmsh" title="Permalink to this headline">¶</a></h3>
+<p>Gmsh automatically opens when a simulation is finished.
+Alternatively, you can start Gmsh by double clicking in the <code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code> file or typing in the terminal</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gmsh ernie_TDCS_1_scalar.msh
+</pre></div>
+</div>
+<p>The following window will appear</p>
+</div></blockquote>
+<img alt="../_images/tutorial_gmshinit.png" class="align-center" src="../_images/tutorial_gmshinit.png" />
+<p></p>
+<blockquote>
+<div><p>There, we see the gray matter surface with the <strong>norm</strong> of the electric field (<strong>normE</strong>) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel</p>
+</div></blockquote>
+</div>
+<div class="section" id="selecting-where-to-visualize">
+<h3>Selecting Where to Visualize<a class="headerlink" href="#selecting-where-to-visualize" title="Permalink to this headline">¶</a></h3>
+<p>To visualize another surface, such as while matter</p>
+<ol class="arabic simple">
+<li><p>Go to <em>Tools</em> → <em>Visibility</em></p></li>
+</ol>
+<img alt="../_images/tutorial_gmshvisibility.png" class="align-center" src="../_images/tutorial_gmshvisibility.png" />
+<p></p>
+<blockquote>
+<div><p>select <em>Elementary entities</em></p>
+</div></blockquote>
+<img alt="../_images/tutorial_elementaryentities.png" class="align-center" src="../_images/tutorial_elementaryentities.png" />
+<p></p>
+<ol class="arabic" start="2">
+<li><p>Select surfaces and volumes to be visualized. In SimNIBS, we have defined</p>
+<p>1: White Matter volume</p>
+<p>2: Gray Matter volume</p>
+<p>3: Cerebrospinal Fluid (CSF) volume</p>
+<p>4: Skull volume</p>
+<p>5: Skin volume</p>
+<p>6: Eye volumes (headreco models only)</p>
+<p>101+: Electrode rubber layer volume</p>
+<p>501+: Electrode Gel / Sponge volume</p>
+<p>The corresponding surfaces have the number 1000 + volume value. For example, 1002 corresponds to the gray matter surface. The only exception are the electrode contacts, numbered 2100+. You can select multiple surfaces or volumes by holding <em>Ctrl</em>. Selecting 1001 and clicking in <em>Apply</em>, we can see the white matter surface</p>
+</li>
+</ol>
+<img alt="../_images/tutorial_gmshwmfield.png" class="align-center" src="../_images/tutorial_gmshwmfield.png" />
+<p></p>
+</div>
+<div class="section" id="selecting-what-to-visualize">
+<h3>Selecting What to Visualize<a class="headerlink" href="#selecting-what-to-visualize" title="Permalink to this headline">¶</a></h3>
+<p>You can select the field to be visualized by checking the boxes in the left of the Gmsh window</p>
+<img alt="../_images/tutorial_gmshnorme.png" class="align-center" src="../_images/tutorial_gmshnorme.png" />
+<p></p>
+<p>To visualize the surfaces or volumes without any field, go to <em>Tools</em> -&gt; <em>Options</em> -&gt; <em>Mesh</em> and click on <em>Surface Faces</em> or <em>Volume Faces</em></p>
+<img alt="../_images/tutorial_gmshdeselecsurf.png" class="align-center" src="../_images/tutorial_gmshdeselecsurf.png" />
+<p></p>
+</div>
+<div class="section" id="changing-the-scale">
+<h3>Changing the Scale<a class="headerlink" href="#changing-the-scale" title="Permalink to this headline">¶</a></h3>
+<p>To change the scale of a field visualization <em>Tools</em> → <em>Options</em> → <em>View [N]</em> and change the <em>Min</em> and <em>Max</em> values</p>
+<img alt="../_images/tutorial_gmshview.png" class="align-center" src="../_images/tutorial_gmshview.png" />
+<p></p>
+</div>
+<div class="section" id="exporting-an-image">
+<h3>Exporting an Image<a class="headerlink" href="#exporting-an-image" title="Permalink to this headline">¶</a></h3>
+<p>To create an image, go to <em>File</em> -&gt; <em>Export</em> (or press <em>Ctrl+E</em>)and type in a file name with a  <em>.png</em> or  <em>.jpg</em> extension.</p>
+</div>
+<div class="section" id="other-functionalities">
+<h3>Other Functionalities<a class="headerlink" href="#other-functionalities" title="Permalink to this headline">¶</a></h3>
+<p>We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image bellow by selecting the Volume 2 for visualization an clipping the model in <em>Tools</em> →  <em>Clipping</em></p>
+<img alt="../_images/tutorial_gmshclip.png" class="align-center" src="../_images/tutorial_gmshclip.png" />
+<p></p>
+</div>
+</div>
+<div class="section" id="visualizing-results-in-matlab">
+<h2>Visualizing Results in MATLAB<a class="headerlink" href="#visualizing-results-in-matlab" title="Permalink to this headline">¶</a></h2>
+<p>To visualize results in MATLAB, add the <code class="file docutils literal notranslate"><span class="pre">&lt;SIMNIBS_INSTALL_DIR&gt;/matlab/</span></code> folder to your MATLAB path. Afterwards, type</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_get_simulation_result</span>
+</pre></div>
+</div>
+<p></p>
+<p>or use</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_show_surface</span>
+</pre></div>
+</div>
+<p></p>
+<p>to have more control over the visualization.</p>
+</div>
+<div class="section" id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<p>For more information on visualization and simulation output, please see the <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>.</p>
+</div>
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="gui.html" title="Previous document">Setting up and Running Simulations</a>
+        </li>
+        <li>
+          <a href="head_meshing.html" title="Next document">Creating Head Models</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="tutorial.html">Tutorial</a><ul>
+      <li>Previous: <a href="gui.html" title="previous chapter">Setting up and Running Simulations</a></li>
+      <li>Next: <a href="head_meshing.html" title="next chapter">Creating Head Models</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/tutorial/visualization.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
