@@ -1075,7 +1075,7 @@ class TDCSoptimize():
                 raise ValueError('Please define the electrode names')
 
         assert len(electrode_names) == len(currents)
-        with open(fn_csv, 'w') as f:
+        with open(fn_csv, 'w', newline='') as f:
             writer = csv.writer(f)
             for n, c in zip(electrode_names, currents):
                 writer.writerow([n, c])
