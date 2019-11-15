@@ -6,6 +6,9 @@ opt.max_total_current = 2e-3;
 opt.max_individual_current = 1e-3;
 opt.max_active_electrodes = 8;
 
+% Transfrorm a set of coordinates from MNI space to subject space.
+% The second argument of the mni2subject_coords function
+% is the path to the "m2m_subID" folder.
 opt.target.positions = mni2subject_coords([-37, -21, 58], 'm2m_ernie');
 opt.target.intensity = 0.2;
 

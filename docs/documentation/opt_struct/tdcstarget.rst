@@ -45,6 +45,7 @@ Attributes
         *Mesh* -> *Inspect* and click in the model
       * Open the :file:`m2m_{subID}/T1fs_conform.nii.gz` file in a NifTi reader and
         record the **world coordinates**.
+      * Rea
 
 
 * **directions**: *'normal' or Nx3 list/array of floats (Python/MATLAB), optional*
@@ -101,3 +102,8 @@ Attributes
     all tissues in the leadfield.
   * **Default**: All tissues
 
+ 
+References
+------------
+
+`Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_

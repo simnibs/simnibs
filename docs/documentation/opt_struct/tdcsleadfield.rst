@@ -100,7 +100,7 @@ Attributes
 * **map_to_surf**: *bool, optional*
 
   * **Description**: Whether to map the fields to the middle gray matter surface. Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
-  * **Default**: False
+  * **Default**: True
 
   .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
 
@@ -128,4 +128,8 @@ Attributes
   * **Default**: Automatically finds the file :file:`d2c_{subID}/dti_results_T1space/DTI_conf_tensor.nii.gz` based on **fnamehead**.
   * **Note**: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.
 
+References
+-------------
+
+`Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
 

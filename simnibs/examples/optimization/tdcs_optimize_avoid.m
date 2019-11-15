@@ -13,7 +13,6 @@ opt.max_active_electrodes = 8;
 opt.target.positions = [-55.4, -20.7, 73.4];
 opt.target.intensity = 0.2;
 
-% Set region to be specially avoided
 % Center of the region
 opt.avoid.positions = [-35, -19, 85];
 % Radius of the region, in mm

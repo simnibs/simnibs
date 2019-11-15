@@ -22,14 +22,14 @@ solver uses approximately three times more memory than the standard solver.
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_optimization.py
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_optimization.m
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.m
    :language: matlab
 
 
@@ -48,14 +48,14 @@ refine the search by precisely specifying the search region, search angles and r
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_opt_refined.py
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_opt_refined.m
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.m
    :language: matlab
 
 

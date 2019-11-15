@@ -1017,7 +1017,7 @@ def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     transformation_type: {'nonl', '6dof', '12dof'}
         Type of tranformation, non-linear, 6 or 12 degrees of freedom
 
-    Returns:
+    Returns
     ----------
     transformed_coords: Nx3 numpy array
         Array with transformed coordinates
@@ -1047,7 +1047,7 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     transformation_type: {'nonl', '6dof', '12dof'}
         Type of tranformation, non-linear, 6 or 12 degrees of freedom
 
-    Returns:
+    Returns
     ----------
     transformed_coords: Nx3 numpy array
         Array with transformed coordinates
@@ -1112,7 +1112,7 @@ def warp_coordinates(coordinates, m2m_folder,
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
 
-    Returns:
+    Returns
     ----------
     type: list
         List with point types. Can be 'Generic', 'Fiducial', 'Electrode',

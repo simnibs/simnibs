@@ -2429,7 +2429,7 @@ class Data(object):
             Name of nifti file with reference in the original space. Used to determine
             the dimensions and affine transformation for the initial griding
 
-        Returns:
+        Returns
         --------
         img: nibabel.Nifti1Pair
             Nibabel image object with tranformed field
@@ -3014,7 +3014,7 @@ class ElementData(Data):
         squeeze: bool
             Wether to squeeze the output. Default: True
 
-        Returns:
+        Returns
         -------
         f: np.ndarray
             Value of function in the points
@@ -3533,7 +3533,7 @@ class NodeData(Data):
         containing the point and performing linear interpolation inside the element
 
         Parameters
-        ------
+        ------------
         points: Nx3 ndarray
             List of points where we want to interpolate
         out_fill: float
@@ -3541,8 +3541,9 @@ class NodeData(Data):
             value of th nearest node. (default: NaN)
         squeeze: bool
             Wether to squeeze the output. Default: True
-        Returns:
-        ----
+
+        Returns
+        -------
         f: np.ndarray
             Value of function in the points
         '''

@@ -40,14 +40,14 @@ It is simple to set-up a simulation with UQ. All you need to do is to set-up the
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification.py
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uncertainty_quantification.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification.m
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uncertainty_quantification.m
    :language: matlab
 
 
@@ -92,7 +92,7 @@ In *Python*, it is also possible to call lower-level functions to set more optio
 
 In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.
 
-.. literalinclude:: ../../../simnibs/examples/uq_setup_advanced.py
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uq_setup_advanced.py
    :language: python
 
 
@@ -101,7 +101,7 @@ Secondary Quantities
 
 It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm
 
-.. literalinclude:: ../../../simnibs/examples/uq_secondary_quantities.py
+.. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uq_secondary_quantities.py
    :language: python
 
 Acknolowedgements
