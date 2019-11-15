@@ -27,7 +27,6 @@ def example_dataset():
     os.remove(tmpname)
     yield fn_folder
     shutil.rmtree(fn_folder)
-    pass
 
 
 @pytest.fixture
