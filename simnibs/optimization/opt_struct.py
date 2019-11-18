@@ -868,7 +868,16 @@ class TDCSoptimize():
             fn_out_mesh = os.path.abspath(fn_out_mesh)
             m = self.field_mesh(currents)
             m.write(fn_out_mesh)
-            v = m.view(visible_fields=list(m.field.values())[0].field_name)
+            v = m.view()
+            ## Configure view
+            v.Mesh.SurfaceFaces = 0
+            v.View[0].Visible = 1
+            # Change vector type for target field
+            for i, t in enumerate(self.target):
+                v.View[2 + i].VectorType = 4
+                v.View[2 + i].ArrowSizeMax = 60
+                v.View[2 + i].Visible = 1
+            # Electrode geo file
             el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
             self.electrode_geo(el_geo_fn, currents)
             v.add_merge(el_geo_fn)
@@ -1789,9 +1798,9 @@ def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
         if 4 in np.unique(mesh.elm.elm_type):
             raise ValueError("Can't define a normal direction for volumetric data!")
         if lf_type == 'node':
-            directions = mesh.nodes_normals()[indexes]
+            directions = -mesh.nodes_normals()[indexes]
         elif lf_type == 'element':
-            directions = mesh.triangle_normals()[indexes]
+            directions = -mesh.triangle_normals()[indexes]
         return directions
     else:
         directions = np.atleast_2d(directions)

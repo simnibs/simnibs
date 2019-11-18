@@ -426,7 +426,7 @@ class View(object):
 
     '''
     def __init__(self, indx=None, **kwargs):
-        self.CenterGlyphs = 0
+        self.CenterGlyphs = 1
         self.GlyphLocation = 1
         self.VectorType = 1
         self.Visible = 0

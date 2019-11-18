@@ -192,7 +192,7 @@ class TestFindDirections:
             normals = sphere_surf.nodes_normals()[idx]
         elif lf_type == 'element':
             normals = sphere_surf.triangle_normals()[idx]
-        assert np.allclose(directions, normals)
+        assert np.allclose(directions, -normals)
 
 
     def test_find_directions_defined_1d(self):
