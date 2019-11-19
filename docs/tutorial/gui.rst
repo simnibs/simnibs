@@ -171,19 +171,21 @@ Setting Simulation Options
 
 
   * **v**:
-      Electrical Potential (Voltage)
+      Electrical Potential (Voltage). Units: Volts
   * **vector E**:
-      Electric field vector
+      Electric field vector. Units: V/m
   * **norm E**:
-      Norm (or strength) of the electric field
+      Norm (or strength) of the electric field. Units: V/m
   * **vector J**:
-      Current density vector
+      Current density vector. Units: A/mm²
   * **norm J**:
-      Norm of the current density
+      Norm of the current density. Units: A/mm²
   * **Conductivities**:
-      Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
+      Conductivity field. For isotropic conductivities, this is a scalar.
+      For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
+      Units: S/m
   * **dA/dt**:
-      Primary field caused by the coil. TMS only. This is a vector field
+      Primary field caused by the coil. TMS only. This is a vector field. Units: V/m
 
    Select **vector E** and **norm E**.
 

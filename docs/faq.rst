@@ -67,3 +67,32 @@ Another useful quantity is the **normal** with respect to a given surface, norma
 \
 
 The effect that the different polarities have on neuronal modulation suggests that the field **normal** is important in tDCS. For TMS, it is harder to determine which field component if any is more relevant for stimulation.
+
+
+Which Units does SimNIBS Use?
+-------------------------------
+
+SimNIBS almost always uses units in the International System of Units (SI units).
+The exceptions are head model node positions, which are in millimiter and current values in the GUI, which are in mA.
+
+This means we have the units:
+
+.. list-table::
+   :widths: 30 10
+   :header-rows: 1
+
+   * - Quantity
+     - Units
+   * - Electric field (and respective norm, normal, ...)
+     - V/m
+   * - Current Density (and respective norm, normal, ...)
+     - A/mm²
+   * - Conductivities
+     - S/m
+   * - Electrode Currents
+     - mA (GUI) / A (scripts)
+   * - Coil dI/dt
+     - A/s
+   * - Mesh node positions
+     - mm
+

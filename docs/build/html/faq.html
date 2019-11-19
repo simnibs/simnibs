@@ -86,6 +86,43 @@
 <p></p>
 <p>The effect that the different polarities have on neuronal modulation suggests that the field <strong>normal</strong> is important in tDCS. For TMS, it is harder to determine which field component if any is more relevant for stimulation.</p>
 </div>
+<div class="section" id="which-units-does-simnibs-use">
+<h2>Which Units does SimNIBS Use?<a class="headerlink" href="#which-units-does-simnibs-use" title="Permalink to this headline">¶</a></h2>
+<p>SimNIBS almost always uses units in the International System of Units (SI units).
+The exceptions are head model node positions, which are in millimiter and current values in the GUI, which are in mA.</p>
+<p>This means we have the units</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 75%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Quantity</p></th>
+<th class="head"><p>Units</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Electric field (and respective norm, normal, …)</p></td>
+<td><p>V/m</p></td>
+</tr>
+<tr class="row-odd"><td><p>Current Density (and respective norm, normal, …)</p></td>
+<td><p>A/mm²</p></td>
+</tr>
+<tr class="row-even"><td><p>Conductivities</p></td>
+<td><p>S/m</p></td>
+</tr>
+<tr class="row-odd"><td><p>Electrode Currents</p></td>
+<td><p>mA (GUI) /A (scripts)</p></td>
+</tr>
+<tr class="row-even"><td><p>Coil dI/dt</p></td>
+<td><p>A/s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Mesh node positions</p></td>
+<td><p>mm</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
@@ -135,6 +172,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#what-is-the-di-dt-in-tms-simulations">What is the dI/dt in TMS simulations?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#are-the-simnibs-coordinates-in-mni-space">Are the SimNIBS coordinates in MNI Space?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#electric-field-norm-normal">Electric Field Norm? Normal?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#which-units-does-simnibs-use">Which Units does SimNIBS Use?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors and Funding</a></li>
