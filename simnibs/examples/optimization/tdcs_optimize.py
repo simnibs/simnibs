@@ -1,4 +1,4 @@
-''' Example for running a SimNIBS tDCS optimization in Python
+''' Example of a SimNIBS tDCS optimization in Python
     Run with:
 
     simnibs_python tdcs_optimize.py

@@ -1,4 +1,4 @@
-% Example for running a SimNIBS tDCS optimization in MATLAB
+% Example of a SimNIBS tDCS optimization in MATLAB
 %
 % Copyright (C) 2019 Guilherme B Saturnino
 

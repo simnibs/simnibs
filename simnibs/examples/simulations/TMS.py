@@ -1,4 +1,4 @@
-''' Example of how to run a SimNIBS TMS simulation in Python
+''' Example on how to run a SimNIBS TMS simulation in Python
     Run with:
 
     simnibs_python TMS.py

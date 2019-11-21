@@ -1756,7 +1756,6 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
     if (positions is not None) == (indexes is not None): # negative XOR operation
         raise ValueError('Please define either positions or indexes')
 
-
     if indexes is not None:
         indexes = np.atleast_1d(indexes)
         return indexes, np.arange(len(indexes))

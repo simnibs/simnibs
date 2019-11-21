@@ -1,4 +1,4 @@
-''' Example for running a SimNIBS tDCS simulation in Python
+''' Example on running a SimNIBS tDCS simulation in Python
     Run with:
 
     simnibs_python tDCS.py
