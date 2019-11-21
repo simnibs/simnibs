@@ -97,6 +97,25 @@ The optimization outputs:
 * :file:`{name}_summary.txt`: Some summary quantities about the optimization
 
 
+Maximizing intensity
+~~~~~~~~~~~~~~~~~~~~~
+
+To maximize intensity at the target, disregarding field focality, simply use a large value for the target intensity.
+
+
+* *Python*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_intensity.py
+     :language: python
+
+\
+
+* *MATLAB*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_intensity.m
+     :language: matlab
+
+\
 
 Using MNI Coordinates 
 ~~~~~~~~~~~~~~~~~~~~~
@@ -163,6 +182,50 @@ You can also add regions where the electric field should be more penalized than 
 
 .. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`.
 
+
+Avoid field in Eyes
+~~~~~~~~~~~~~~~~~~~~
+
+Here, we will perform an optimization penalizing more the electric field in the eyes
+
+Calculate Leadfield with Eyes
+''''''''''''''''''''''''''''''
+
+First we need to calculate a Leadfield which contains the eyes.
+
+* *Python*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/leadfield_eyes.py
+     :language: python
+
+\
+
+* *MATLAB*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/leadfield_eyes.m
+     :language: matlab
+
+\
+
+
+Optimize
+'''''''''
+
+Now we set-up the optimization and select the eyes as and avoid region
+
+* *Python*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_avoid_eyes.py
+     :language: python
+
+\
+
+* *MATLAB*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_avoid_eyes.m
+     :language: matlab
+
+\
 
 References
 ------------

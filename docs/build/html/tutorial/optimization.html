@@ -64,7 +64,7 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS leadfield in Python</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of running a SimNIBS tDCS leadfield in Python</span>
 <span class="sd">    Run with:</span>
 
 <span class="sd">    simnibs_python leadfield.py</span>
@@ -72,11 +72,19 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
 <span class="n">tdcs_lf</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TDCSLEADFIELD</span><span class="p">()</span>
 <span class="c1"># head mesh</span>
 <span class="n">tdcs_lf</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
 <span class="c1"># output directory</span>
 <span class="n">tdcs_lf</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;leadfield&#39;</span>
+
+
+<span class="c1"># Uncoment to use the pardiso solver</span>
+<span class="c1">#tdcs_lf.solver_options = &#39;pardiso&#39;</span>
+<span class="c1"># This solver is faster than the default. However, it requires much more</span>
+<span class="c1"># memory (~12 GB)</span>
+
 
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
 </pre></div>
@@ -86,14 +94,19 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS leadfield </span>
-<span class="c">%    Copyright (C) 2019 Guilherme B Saturnino</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of running a SimNIBS tDCS leadfield </span>
+<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
 <span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
 <span class="c">% Head mesh</span>
 <span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
 <span class="c">% Output directory</span>
 <span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield&#39;</span><span class="p">;</span>
+
+<span class="c">% Uncoment to use the pardiso solver</span>
+<span class="c">%tdcs_lf.solver_options = &#39;pardiso&#39;;</span>
+<span class="c">% This solver is faster than the default. However, it requires much more</span>
+<span class="c">% memory (~12 GB)</span>
 
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
 </pre></div>
@@ -133,7 +146,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>Afterwards, we need to define an optimization target using an <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a> structure.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS optimization in Python</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of running a SimNIBS tDCS optimization in Python</span>
 <span class="sd">    Run with:</span>
 
 <span class="sd">    simnibs_python tdcs_optimize.py</span>
@@ -175,7 +188,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS optimization in MATLAB</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of running a SimNIBS tDCS optimization in MATLAB</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
@@ -221,6 +234,64 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">_summary.txt</span></code>: Some summary quantities about the optimization</p></li>
 </ul>
 </div>
+</div>
+<div class="section" id="maximizing-intensity">
+<h3>Maximizing intensity<a class="headerlink" href="#maximizing-intensity" title="Permalink to this headline">¶</a></h3>
+<p>To maximize intensity at the target, disregarding field focality, simply use a large value for the target intensity.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for Maximizing intensity in the target</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/single_target&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="c1"># Set the intensity to a large value (e.g, 100)</span>
+<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for Maximizing intensity in the target</span>
+<span class="c">%</span>
+<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
+
+
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/single_target&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="c">% Set the intensity to a large value (e.g, 100)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mi">100</span><span class="p">;</span>
+
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
 </div>
 <div class="section" id="using-mni-coordinates">
 <h3>Using MNI Coordinates<a class="headerlink" href="#using-mni-coordinates" title="Permalink to this headline">¶</a></h3>
@@ -403,6 +474,141 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>.</p>
+</div>
+</div>
+<div class="section" id="avoid-field-in-eyes">
+<h3>Avoid field in Eyes<a class="headerlink" href="#avoid-field-in-eyes" title="Permalink to this headline">¶</a></h3>
+<p>Here, we will perform an optimization penalizing more the electric field in the eyes</p>
+<div class="section" id="calculate-leadfield-with-eyes">
+<h4>Calculate Leadfield with Eyes<a class="headerlink" href="#calculate-leadfield-with-eyes" title="Permalink to this headline">¶</a></h4>
+<p>First we need to calculate a Leadfield which contains the eyes.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS leadfield with Eyes</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="n">tdcs_lf</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TDCSLEADFIELD</span><span class="p">()</span>
+<span class="c1"># head mesh</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># output directory</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;leadfield_eyes&#39;</span>
+
+<span class="c1"># Store field in eyes (1006) and gray matter (1002) surfaces</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">tissues</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1006</span><span class="p">,</span> <span class="mi">1002</span><span class="p">]</span>
+
+<span class="c1"># Do not map to middle gray matter surface (Overwrites TISSUE)</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">map_to_surf</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c1"># Uncoment to use the pardiso solver</span>
+<span class="c1">#tdcs_lf.solver_options = &#39;pardiso&#39;</span>
+<span class="c1"># This solver is faster than the default. However, it requires much more</span>
+<span class="c1"># memory (~12 GB)</span>
+
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS leadfield with Eyes</span>
+<span class="c">%</span>
+<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
+
+<span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
+<span class="c">% head mesh</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% output directory</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield_eyes&#39;</span><span class="p">;</span>
+
+<span class="c">% Store field in eyes (1006) and gray matter (1002) surfaces</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">tissues</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1006</span><span class="p">,</span> <span class="mi">1002</span><span class="p">];</span>
+
+<span class="c">% Do not map to middle gray matter surface (Overwrites TISSUE)</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">map_to_surf</span> <span class="p">=</span> <span class="n">false</span><span class="p">;</span>
+
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">solver_options</span> <span class="p">=</span> <span class="s">&#39;pardiso&#39;</span><span class="p">;</span>
+
+<span class="c">% Uncoment to use the pardiso solver</span>
+<span class="c">%tdcs_lf.solver_options = &#39;pardiso&#39;;</span>
+<span class="c">% This solver is faster than the default. However, it requires much more</span>
+<span class="c">% memory (~12 GB)</span>
+
+
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+</div>
+<div class="section" id="optimize">
+<h4>Optimize<a class="headerlink" href="#optimize" title="Permalink to this headline">¶</a></h4>
+<p>Now we set-up the optimization and select the eyes as and avoid region</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running an Optimization punishing more the field in the eyes</span>
+<span class="sd">    This example should be run after  &quot;leadfield_eyes&quot;</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield_eyes/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization_eyes/avoid_eyes&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s1">&#39;m2m_ernie&#39;</span><span class="p">)</span>
+<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+
+<span class="n">avoid</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_avoid</span><span class="p">()</span>
+<span class="n">avoid</span><span class="o">.</span><span class="n">tissues</span> <span class="o">=</span> <span class="mi">1006</span>  <span class="c1"># 1006 corresponds to the eye surface</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running an Optimization punishing more the field in the eyes</span>
+<span class="c">% This example should be run after  &quot;leadfield_eyes&quot;</span>
+<span class="c">%</span>
+<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
+
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield_eyes/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization_eyes/avoid_eyes&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">avoid</span><span class="p">.</span><span class="n">tissues</span> <span class="p">=</span> <span class="mi">1006</span><span class="p">;</span> <span class="c">% 1006 corresponds to the eye surface</span>
+
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
 </div>
 </div>
 </div>

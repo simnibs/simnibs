@@ -75,7 +75,7 @@ Which Units does SimNIBS Use?
 SimNIBS almost always uses units in the International System of Units (SI units).
 The exceptions are head model node positions, which are in millimiter and current values in the GUI, which are in mA.
 
-This means we have the units
+This means we have the units:
 
 .. list-table::
    :widths: 30 10
@@ -90,7 +90,7 @@ This means we have the units
    * - Conductivities
      - S/m
    * - Electrode Currents
-     - mA (GUI) /\ A (scripts)
+     - mA (GUI) / A (scripts)
    * - Coil dI/dt
      - A/s
    * - Mesh node positions
