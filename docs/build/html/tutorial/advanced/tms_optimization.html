@@ -57,7 +57,7 @@ coil at various angles.</p>
 <h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Permalink to this headline">¶</a></h2>
 <p>Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
 settings, you need to select the head model, the coil being used and the target position.
-The target position are needed as <a class="reference internal" href="../../documentation/coordinates.html#coords-doc"><span class="std std-ref">SimNIBS coordinates</span></a> and can be
+The target position has to be given in <a class="reference internal" href="../../documentation/coordinates.html#coords-doc"><span class="std std-ref">SimNIBS coordinates</span></a> and can be
 determined using the <em>nifti</em> volumes produced by <a class="reference internal" href="../../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>, <a class="reference internal" href="../../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> or by using the <a class="reference internal" href="../../documentation/command_line/mni2subject_coords.html#mni2subject-coords-docs"><span class="std std-ref">mni2subject_coords</span></a> command line tool.</p>
 <p>For accelerating the simulations, SimNIBS can use the MKL Pardiso direct solver. However, this
 solver uses approximately three times more memory than the standard solver.</p>
@@ -192,14 +192,18 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 </div>
 </div>
-<div class="section" id="acknolowedgements">
-<h2>Acknolowedgements<a class="headerlink" href="#acknolowedgements" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
 <p>We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
 functionality</p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
 <p>Please see <a class="reference internal" href="../../documentation/opt_struct/tmsoptimize.html#tmsoptimize-doc"><span class="std std-ref">TMSoptimize</span></a> for a detail description of all TMS optimization options</p>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://doi.org/10.1101/595603">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603.</a></p>
 </div>
 </div>
 
@@ -301,7 +305,7 @@ functionality</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

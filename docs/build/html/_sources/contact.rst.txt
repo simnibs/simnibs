@@ -9,7 +9,7 @@ Mailing list
 
 You can send messages directly to discuss@simnibs.org. The mailing list is moderated, so it might take some time until your message appears. 
 
-Please do not send messages with large attachments (> 1 MB) to the mailing list. If you do so, your message might be deleted.
+Please do not send messages with large attachments (> 1 MB) or personal sensitive information (e.g. patient data) to the mailing list. If you do so, your message might be deleted.
 
 
 `Subscribe/Unsubscribe to our mailing list <https://mailman.drcmr.dk/mailman/listinfo/simnibs-discuss>`_

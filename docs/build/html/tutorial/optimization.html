@@ -61,15 +61,17 @@ There are two steps for performing the optimizations.</p>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
 <p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
-<p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure.</p>
+<p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure. Unless specified differently, the leadfields are calculated for EEG10-10 electrode positions.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of running a SimNIBS tDCS leadfield in Python</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a SimNIBS tDCS leadfield in Python</span>
 <span class="sd">    Run with:</span>
 
 <span class="sd">    simnibs_python leadfield.py</span>
 
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">    </span>
+<span class="sd">    place script in the “ernie” folder of the example dataset</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
 
@@ -94,8 +96,10 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of running a SimNIBS tDCS leadfield </span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a SimNIBS tDCS leadfield </span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
+
+<span class="c">% place script in the &#39;ernie&#39; folder of the example dataset</span>
 
 <span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
 <span class="c">% Head mesh</span>
@@ -103,9 +107,9 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <span class="c">% Output directory</span>
 <span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield&#39;</span><span class="p">;</span>
 
-<span class="c">% Uncoment to use the pardiso solver</span>
+<span class="c">% Uncomment to use the pardiso solver</span>
 <span class="c">%tdcs_lf.solver_options = &#39;pardiso&#39;;</span>
-<span class="c">% This solver is faster than the default. However, it requires much more</span>
+<span class="c">% This solver is much faster than the default. However, it requires much more</span>
 <span class="c">% memory (~12 GB)</span>
 
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
@@ -127,11 +131,11 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <li><p><code class="file docutils literal notranslate"><span class="pre">ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5</span></code>: HDF5 file with the leadfield matrix, orgenized with the datasets:</p>
 <ul class="simple">
 <li><p><code class="file docutils literal notranslate"><span class="pre">mesh_electrodes</span></code>: Full mesh with the electrodes</p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_leadfield</span></code>: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the <code class="file docutils literal notranslate"><span class="pre">mesh_leadfield/leadfields/tdcs_leadfield</span></code> data set with the leadfield. In the attributes, you can se information such as the reference electrode, the field (<em>E</em> or <em>J</em>), units, currents and so on.</p></li>
+<li><p><code class="file docutils literal notranslate"><span class="pre">mesh_leadfield</span></code>: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the <code class="file docutils literal notranslate"><span class="pre">mesh_leadfield/leadfields/tdcs_leadfield</span></code> data set with the leadfield. In the attributes, you can see information such as the reference electrode, the field (<em>E</em> or <em>J</em>), units, currents and so on.</p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+<p>meshes stored in HDF5 files can be read with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class or with the <em>mesh_load_hdf5</em> function in MATLAB</p>
 </div>
 </li>
 </ul>
@@ -146,7 +150,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>Afterwards, we need to define an optimization target using an <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a> structure.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of running a SimNIBS tDCS optimization in Python</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a SimNIBS tDCS optimization in Python</span>
 <span class="sd">    Run with:</span>
 
 <span class="sd">    simnibs_python tdcs_optimize.py</span>
@@ -173,7 +177,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 
 <span class="c1"># Define optimization target</span>
 <span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="c1"># Position of target, in subjet space!</span>
+<span class="c1"># Position of target, in subject space!</span>
 <span class="c1"># please see tdcs_optimize_mni.py for how to use MNI coordinates</span>
 <span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
 <span class="c1"># Intensity of the electric field (in V/m)</span>
@@ -188,7 +192,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of running a SimNIBS tDCS optimization in MATLAB</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a SimNIBS tDCS optimization in MATLAB</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
@@ -208,7 +212,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
 
 <span class="c">% Define optimization target</span>
-<span class="c">% Position of target, in subjet space!</span>
+<span class="c">% Position of target, in subject space!</span>
 <span class="c">% please see tdcs_optimize_mni.m for how to use MNI coordinates</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
 <span class="c">% Intensity of the electric field (in V/m)</span>
@@ -240,7 +244,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>To maximize intensity at the target, disregarding field focality, simply use a large value for the target intensity.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for Maximizing intensity in the target</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of optimizaion maximizing intensity in the target</span>
 
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -268,7 +272,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for Maximizing intensity in the target</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of optimization maximizing intensity in the target</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
@@ -295,7 +299,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </div>
 <div class="section" id="using-mni-coordinates">
 <h3>Using MNI Coordinates<a class="headerlink" href="#using-mni-coordinates" title="Permalink to this headline">¶</a></h3>
-<p>The target positions are, as always in SimNIBS, given in <strong>world coordinates</strong> in <strong>subject space</strong> (<a class="reference internal" href="../documentation/coordinates.html#coords-doc"><span class="std std-ref">see here for more information</span></a>). However, we can use the <em>mni2subject_coords</em> function to transform coordinates from MNI space to subject space.</p>
+<p>The target positions are, as always in SimNIBS, given in <strong>world coordinates</strong> in <strong>subject space</strong> (<a class="reference internal" href="../documentation/coordinates.html#coords-doc"><span class="std std-ref">see here for more information</span></a>). However, we can use the <em>mni2subject_coords</em> function to transform coordinates from MNI space to subject space. When the transformed coordinates are outside the gray matter of the subject, they will be projected to the closest gray matter position.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">simnibs</span>
@@ -366,13 +370,12 @@ In this structure, we need to select the leadfield we will use for the optimizat
 
 <span class="c1"># Target in the left motor cortex</span>
 <span class="n">target_left</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">21.4</span><span class="p">,</span> <span class="mf">88.5</span><span class="p">]</span>
 <span class="n">target_left</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
 <span class="c1"># Target in the right motor cortex</span>
 <span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">46.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.8</span><span class="p">,</span> <span class="mf">80.1</span><span class="p">]</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value revert the direction</span>
-
 
 <span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 </pre></div>
@@ -389,15 +392,15 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/two_targets&#39;</span><span class="p">;</span>
 
-<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">4e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
 
 <span class="c">% Target in the left motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span> <span class="o">-</span><span class="mf">21.4</span> <span class="mf">88.5</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 <span class="c">% Target in the right motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">46.2</span><span class="p">,</span> <span class="o">-</span><span class="mf">35.8</span><span class="p">,</span> <span class="mf">80.1</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">32.4</span> <span class="o">-</span><span class="mf">25.5</span> <span class="mf">90.4</span><span class="p">];</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">;</span>
 
 
@@ -473,7 +476,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>.</p>
+<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>. You can visualize the position of the avoided region in the results by deselecting <strong>normE</strong> in gmsh, and selecting <strong>avoid_1</strong>.</p>
 </div>
 </div>
 <div class="section" id="avoid-field-in-eyes">
@@ -484,7 +487,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>First we need to calculate a Leadfield which contains the eyes.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS leadfield with Eyes</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a tDCS leadfield with Eyes</span>
 
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -516,7 +519,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running a SimNIBS tDCS leadfield with Eyes</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a tDCS leadfield with Eyes</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
@@ -553,7 +556,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>Now we set-up the optimization and select the eyes as and avoid region</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running an Optimization punishing more the field in the eyes</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of an optimization punishing more the field in the eyes</span>
 <span class="sd">    This example should be run after  &quot;leadfield_eyes&quot;</span>
 
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
@@ -584,7 +587,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <ul>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example for running an Optimization punishing more the field in the eyes</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of an optimization punishing more the field in the eyes</span>
 <span class="c">% This example should be run after  &quot;leadfield_eyes&quot;</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
@@ -714,7 +717,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

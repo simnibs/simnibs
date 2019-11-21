@@ -13,6 +13,13 @@ TDCS Optimization
 
 * `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
 
+TMS Optimization
+'''''''''''''''''''
+
+* `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603. <https://doi.org/10.1101/595603>`_ 
+
+
+
 Version 3.0
 -----------
 

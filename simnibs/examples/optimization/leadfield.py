@@ -4,6 +4,8 @@
     simnibs_python leadfield.py
 
     Copyright (C) 2019 Guilherme B Saturnino
+    
+    place script in the “ernie” folder of the example dataset
 '''
 from simnibs import sim_struct, run_simnibs
 

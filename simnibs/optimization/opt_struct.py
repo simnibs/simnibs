@@ -464,7 +464,7 @@ class TMSoptimize():
         string += 'Coil distance: %s\n' % self.distance
         string += 'Search radius: %s\n' % self.search_radius
         string += 'Spatial resolution: %s\n' % self.spatial_resolution
-        string += 'Seach angle: %s\n' % self.search_angle
+        string += 'Search angle: %s\n' % self.search_angle
         string += 'Angle resolution: %s' % self.angle_resolution
         return string
 

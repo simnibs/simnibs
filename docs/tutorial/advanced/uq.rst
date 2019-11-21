@@ -6,7 +6,7 @@ Uncertainty Quantification
 
 Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.
 
-For that, reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalizer Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values of the fields of interest.
+For that reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.
 
 Before proceeding through this tutorial, please see `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
 
@@ -82,13 +82,13 @@ In the output folder of the examples above (the :file:`tdcs_uq/` folder) we have
   * :file:`mesh_roi`
       Mesh cropped to the ROI. Has the :file:`mesh/data_matrices/{Field Name}_samples` data sets with the field values (at nodes for *v* or elements for other quantities) for all iterations of the adaptive algorithm.
 
-  .. note:: meshes stored in HDF5 files can be red with the :meth:`simnibs.msh.Msh.read_hdf5` class of with the *mesh_load_hdf5* function in MATLAB 
+  .. note:: meshes stored in HDF5 files can be read with the :meth:`simnibs.msh.Msh.read_hdf5` class or with the *mesh_load_hdf5* function in MATLAB 
 
 
 More Options
 -------------
 
-In *Python*, it is also possible to call lower-level functions to set more options for the UQ run and post-process results.
+In *Python*, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.
 
 In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.
 
@@ -104,12 +104,12 @@ It is also possible to calculate secondary quantities, such as the 99th percenti
 .. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uq_secondary_quantities.py
    :language: python
 
-Acknolowedgements
+Acknowledgements
 ------------------
 
 We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the `pygpc library <https://github.com/konstantinweise/pygpc>`_.
 
 Further Reading
 ----------------
-`Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+`Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
 

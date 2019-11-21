@@ -45,8 +45,6 @@ Attributes
         *Mesh* -> *Inspect* and click in the model
       * Open the :file:`m2m_{subID}/T1fs_conform.nii.gz` file in a NifTi reader and
         record the **world coordinates**.
-      * Rea
-
 
 * **directions**: *'normal' or Nx3 list/array of floats (Python/MATLAB), optional*
 
@@ -83,7 +81,7 @@ Attributes
   * **Description**: Maximum angle between field and target direction.
   * **Default**: No maximum
 
-  .. warning:: This condition is only fultilled in the mean, and not point-wise. Does not work in multi-target optimization
+  .. note:: This condition is only fulfilled in the mean across the target region, and not point-wise. Does not work in multi-target optimization.
 
 
 \
@@ -98,8 +96,7 @@ Attributes
 
 * **tissues**: *list/array of ints (Python/MATLAB), optional*
 
-  * **Descrption**: List of tissue indices where the target is defined. Leave empty if
-    all tissues in the leadfield.
+  * **Descrption**: List of tissue indices where the target is defined. Leave empty if all tissues in the leadfield. This allows you to prevent that nearby tissue regions are included in the target (e.g. white matter or CSF bordering a target in GM , assuming that all three tissues were included in the leadfield).
   * **Default**: All tissues
 
  

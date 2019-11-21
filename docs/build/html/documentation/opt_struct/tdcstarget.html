@@ -85,7 +85,6 @@ mesh closest to the input position. These can be obtained by</p>
 <em>Mesh</em> -&gt; <em>Inspect</em> and click in the model</p></li>
 <li><p>Open the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file in a NifTi reader and
 record the <strong>world coordinates</strong>.</p></li>
-<li><p>Rea</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -126,9 +125,9 @@ number (eg: 100). With negative values, the direction will be inversed.</p></li>
 <li><p><strong>Description</strong>: Maximum angle between field and target direction.</p></li>
 <li><p><strong>Default</strong>: No maximum</p></li>
 </ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This condition is only fultilled in the mean, and not point-wise. Does not work in multi-target optimization</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This condition is only fulfilled in the mean across the target region, and not point-wise. Does not work in multi-target optimization.</p>
 </div>
 </li>
 </ul>
@@ -146,8 +145,7 @@ mm. Set to 0 if you want the target to be only the specified positions or indice
 <ul class="simple">
 <li><p><strong>tissues</strong>: <em>list/array of ints (Python/MATLAB), optional</em></p>
 <ul>
-<li><p><strong>Descrption</strong>: List of tissue indices where the target is defined. Leave empty if
-all tissues in the leadfield.</p></li>
+<li><p><strong>Descrption</strong>: List of tissue indices where the target is defined. Leave empty if all tissues in the leadfield. This allows you to prevent that nearby tissue regions are included in the target (e.g. white matter or CSF bordering a target in GM , assuming that all three tissues were included in the leadfield).</p></li>
 <li><p><strong>Default</strong>: All tissues</p></li>
 </ul>
 </li>
@@ -259,7 +257,7 @@ all tissues in the leadfield.</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -18,7 +18,7 @@ The leadfield is calculated by first placing many electrodes in the head accordi
 With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.
 
-To calculate leadfields, the user must write a small Python of Matlab script using the :ref:`tdcsleadfield_doc` structure.
+To calculate leadfields, the user must write a small Python of Matlab script using the :ref:`tdcsleadfield_doc` structure. Unless specified differently, the leadfields are calculated for EEG10-10 electrode positions.
 
 * *Python*
 
@@ -52,9 +52,9 @@ This script will create the files in the :file:`leadfield` folder:
 
   * :file:`mesh_electrodes`: Full mesh with the electrodes
   
-  * :file:`mesh_leadfield`: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the :file:`mesh_leadfield/leadfields/tdcs_leadfield` data set with the leadfield. In the attributes, you can se information such as the reference electrode, the field (*E* or *J*), units, currents and so on.
+  * :file:`mesh_leadfield`: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the :file:`mesh_leadfield/leadfields/tdcs_leadfield` data set with the leadfield. In the attributes, you can see information such as the reference electrode, the field (*E* or *J*), units, currents and so on.
 
-  .. note:: meshes stored in HDF5 files can be red with the :meth:`simnibs.msh.Msh.read_hdf5` class of with the *mesh_load_hdf5* function in MATLAB 
+  .. note:: meshes stored in HDF5 files can be read with the :meth:`simnibs.msh.Msh.read_hdf5` class or with the *mesh_load_hdf5* function in MATLAB 
 
 
 Optimization
@@ -120,7 +120,7 @@ To maximize intensity at the target, disregarding field focality, simply use a l
 Using MNI Coordinates 
 ~~~~~~~~~~~~~~~~~~~~~
 
-The target positions are, as always in SimNIBS, given in **world coordinates** in **subject space** (:ref:`see here for more information <coords_doc>`). However, we can use the *mni2subject_coords* function to transform coordinates from MNI space to subject space.
+The target positions are, as always in SimNIBS, given in **world coordinates** in **subject space** (:ref:`see here for more information <coords_doc>`). However, we can use the *mni2subject_coords* function to transform coordinates from MNI space to subject space. When the transformed coordinates are outside the gray matter of the subject, they will be projected to the closest gray matter position.
 
 
 * *Python*
@@ -180,7 +180,7 @@ You can also add regions where the electric field should be more penalized than 
 \
 
 
-.. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`.
+.. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **normE** in gmsh, and selecting **avoid_1**.
 
 
 Avoid field in Eyes

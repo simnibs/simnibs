@@ -18,7 +18,7 @@ opt.max_individual_current = 1e-3;
 opt.max_active_electrodes = 8;
 
 % Define optimization target
-% Position of target, in subjet space!
+% Position of target, in subject space!
 % please see tdcs_optimize_mni.m for how to use MNI coordinates
 opt.target.positions = [-55.4, -20.7, 73.4];
 % Intensity of the electric field (in V/m)
