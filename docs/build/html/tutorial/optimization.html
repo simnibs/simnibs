@@ -61,7 +61,7 @@ There are two steps for performing the optimizations.</p>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
 <p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
-<p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure. Unless specified differently, the leadfields are calculated for EEG10-10 electrode positions.</p>
+<p>To calculate leadfields, the user must write a small Python of Matlab script using the <a class="reference internal" href="../documentation/sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> structure. Unless specified differently, the leadfields are calculated for EEG10-10 electrode positions.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a SimNIBS tDCS leadfield in Python</span>
@@ -121,7 +121,7 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <p>Here, we are calculating a leadfield in the <code class="file docutils literal notranslate"><span class="pre">ernie</span></code> example data set, based on the EEG 10-10 system.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>For more options in running tDCS leadfields, please see the documentation at <a class="reference internal" href="../documentation/opt_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>.</p>
+<p>For more options in running tDCS leadfields, please see the documentation at <a class="reference internal" href="../documentation/sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>.</p>
 </div>
 <p></p>
 <p>This script will create the files in the <code class="file docutils literal notranslate"><span class="pre">leadfield</span></code> folder:</p>
@@ -414,158 +414,18 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </div>
 <div class="section" id="avoidance-regions">
 <h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>
-<p>You can also add regions where the electric field should be more penalized than elsewhere. This is done using the <strong>avoid</strong> optional structure.</p>
+<p>You can also add regions where the electric field should be more penalized than elsewhere. This is done using the <strong>avoid</strong> optional structure. In this examples, we will set the field to avoid the eyes.</p>
 <ul>
 <li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Selecting a particular region to be heavily avoided  </span>
-<span class="sd">&#39;&#39;&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of an optimization punishing more the field in the eyes</span>
 
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">simnibs</span>
 
 <span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/avoid_region&#39;</span>
-
-<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
-
-<span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
-<span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
-
-<span class="n">avoid</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_avoid</span><span class="p">()</span>
-<span class="c1"># Center of the region</span>
-<span class="n">avoid</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">85</span><span class="p">]</span>
-<span class="c1"># Radius of the region, in mm</span>
-<span class="n">avoid</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="mi">10</span>
-
-<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ul>
-<p></p>
-<ul>
-<li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Selecting a particular region to be heavily avoided  </span>
-<span class="c">%</span>
-
-<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/avoid_region&#39;</span><span class="p">;</span>
-
-<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
-
-<span class="c">% Set target</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
-
-<span class="c">% Center of the region</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">avoid</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">35</span><span class="p">,</span> <span class="o">-</span><span class="mi">19</span><span class="p">,</span> <span class="mi">85</span><span class="p">];</span>
-<span class="c">% Radius of the region, in mm</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">avoid</span><span class="p">.</span><span class="n">radius</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
-
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
-</pre></div>
-</div>
-</li>
-</ul>
-<p></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>. You can visualize the position of the avoided region in the results by deselecting <strong>normE</strong> in gmsh, and selecting <strong>avoid_1</strong>.</p>
-</div>
-</div>
-<div class="section" id="avoid-field-in-eyes">
-<h3>Avoid field in Eyes<a class="headerlink" href="#avoid-field-in-eyes" title="Permalink to this headline">¶</a></h3>
-<p>Here, we will perform an optimization penalizing more the electric field in the eyes</p>
-<div class="section" id="calculate-leadfield-with-eyes">
-<h4>Calculate Leadfield with Eyes<a class="headerlink" href="#calculate-leadfield-with-eyes" title="Permalink to this headline">¶</a></h4>
-<p>First we need to calculate a Leadfield which contains the eyes.</p>
-<ul>
-<li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a tDCS leadfield with Eyes</span>
-
-<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
-
-<span class="n">tdcs_lf</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TDCSLEADFIELD</span><span class="p">()</span>
-<span class="c1"># head mesh</span>
-<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
-<span class="c1"># output directory</span>
-<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;leadfield_eyes&#39;</span>
-
-<span class="c1"># Store field in eyes (1006) and gray matter (1002) surfaces</span>
-<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">tissues</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1006</span><span class="p">,</span> <span class="mi">1002</span><span class="p">]</span>
-
-<span class="c1"># Do not map to middle gray matter surface (Overwrites TISSUE)</span>
-<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">map_to_surf</span> <span class="o">=</span> <span class="bp">False</span>
-
-<span class="c1"># Uncoment to use the pardiso solver</span>
-<span class="c1">#tdcs_lf.solver_options = &#39;pardiso&#39;</span>
-<span class="c1"># This solver is faster than the default. However, it requires much more</span>
-<span class="c1"># memory (~12 GB)</span>
-
-
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ul>
-<p></p>
-<ul>
-<li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a tDCS leadfield with Eyes</span>
-<span class="c">%</span>
-<span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
-
-<span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
-<span class="c">% head mesh</span>
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
-<span class="c">% output directory</span>
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield_eyes&#39;</span><span class="p">;</span>
-
-<span class="c">% Store field in eyes (1006) and gray matter (1002) surfaces</span>
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">tissues</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1006</span><span class="p">,</span> <span class="mi">1002</span><span class="p">];</span>
-
-<span class="c">% Do not map to middle gray matter surface (Overwrites TISSUE)</span>
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">map_to_surf</span> <span class="p">=</span> <span class="n">false</span><span class="p">;</span>
-
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">solver_options</span> <span class="p">=</span> <span class="s">&#39;pardiso&#39;</span><span class="p">;</span>
-
-<span class="c">% Uncoment to use the pardiso solver</span>
-<span class="c">%tdcs_lf.solver_options = &#39;pardiso&#39;;</span>
-<span class="c">% This solver is faster than the default. However, it requires much more</span>
-<span class="c">% memory (~12 GB)</span>
-
-
-
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tdcs_lf</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ul>
-<p></p>
-</div>
-<div class="section" id="optimize">
-<h4>Optimize<a class="headerlink" href="#optimize" title="Permalink to this headline">¶</a></h4>
-<p>Now we set-up the optimization and select the eyes as and avoid region</p>
-<ul>
-<li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of an optimization punishing more the field in the eyes</span>
-<span class="sd">    This example should be run after  &quot;leadfield_eyes&quot;</span>
-
-<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
-<span class="sd">&#39;&#39;&#39;</span>
-<span class="kn">import</span> <span class="nn">simnibs</span>
-
-<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield_eyes/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization_eyes/avoid_eyes&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/avoid&#39;</span>
 
 <span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
@@ -588,13 +448,12 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <ul>
 <li><p><em>MATLAB</em></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of an optimization punishing more the field in the eyes</span>
-<span class="c">% This example should be run after  &quot;leadfield_eyes&quot;</span>
 <span class="c">%</span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span>
 
 <span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield_eyes/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization_eyes/avoid_eyes&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/avoid&#39;</span><span class="p">;</span>
 
 <span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
@@ -612,6 +471,9 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </li>
 </ul>
 <p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>. You can visualize the position of the avoided region in the results by deselecting <strong>normE</strong> in gmsh, and selecting <strong>avoid_1</strong>.</p>
 </div>
 </div>
 </div>
@@ -717,7 +579,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

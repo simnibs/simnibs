@@ -163,7 +163,7 @@ By using multiple targets, SimNIBS will try to hit each target with its intensit
 Avoidance Regions
 ~~~~~~~~~~~~~~~~~~~
 
-You can also add regions where the electric field should be more penalized than elsewhere. This is done using the **avoid** optional structure.
+You can also add regions where the electric field should be more penalized than elsewhere. This is done using the **avoid** optional structure. In this examples, we will set the field to avoid the eyes.
 
 * *Python*
 
@@ -181,51 +181,6 @@ You can also add regions where the electric field should be more penalized than 
 
 
 .. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **normE** in gmsh, and selecting **avoid_1**.
-
-
-Avoid field in Eyes
-~~~~~~~~~~~~~~~~~~~~
-
-Here, we will perform an optimization penalizing more the electric field in the eyes
-
-Calculate Leadfield with Eyes
-''''''''''''''''''''''''''''''
-
-First we need to calculate a Leadfield which contains the eyes.
-
-* *Python*
-
-  .. literalinclude:: ../../simnibs/examples/optimization/leadfield_eyes.py
-     :language: python
-
-\
-
-* *MATLAB*
-
-  .. literalinclude:: ../../simnibs/examples/optimization/leadfield_eyes.m
-     :language: matlab
-
-\
-
-
-Optimize
-'''''''''
-
-Now we set-up the optimization and select the eyes as and avoid region
-
-* *Python*
-
-  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_avoid_eyes.py
-     :language: python
-
-\
-
-* *MATLAB*
-
-  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_avoid_eyes.m
-     :language: matlab
-
-\
 
 References
 ------------
