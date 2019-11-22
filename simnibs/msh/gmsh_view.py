@@ -758,6 +758,8 @@ def _coolwarm_cm():
         [183,17,40],
         [181,11,39],
         [180,4,38]
-    ], dtype=np.uint8)
-    cm = np.append(cm, np.abs(np.arange(255) - 127, dtype=np.uint8), axis=1)
+    ], dtype=np.int)
+    alpha = np.abs(np.arange(len(cm)) - len(cm)/2)**1.5
+    alpha = (alpha * 255/alpha.max()).astype(int)
+    cm = np.append(cm, alpha[:, None], axis=1)
     return cm

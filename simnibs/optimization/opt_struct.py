@@ -885,8 +885,8 @@ class TDCSoptimize():
             self.electrode_geo(el_geo_fn, currents)
             v.add_merge(el_geo_fn)
             max_c = np.max(np.abs(currents))
-            v.add_view(ColormapNumber=10, ColormapAlpha=.5,
-                       Visible=1, RangeType=2,
+            v.add_view(Visible=1, RangeType=2,
+                       ColorTable=gmsh_view._coolwarm_cm(),
                        CustomMax=max_c, CustomMin=-max_c)
             v.write_opt(fn_out_mesh)
             if self.open_in_gmsh:
