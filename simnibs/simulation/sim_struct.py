@@ -2020,7 +2020,7 @@ class LEADFIELD():
         return self.__class__.__name__
 
     def _set_logger(self):
-        SESSION._set_logger(self)
+        SESSION._set_logger(self, summary=False)
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
@@ -2103,7 +2103,8 @@ class TDCSLEADFIELD(LEADFIELD):
     pathfem: str
         path where the leadfield should be saved
     tissues: list
-        List of tags in the mesh corresponding to the region of interest. Default: [2] (GM)
+        List of tags in the mesh corresponding to the region of interest, id addition to
+        what is defined in map_to_surf. Default: [1006] (eye surfaces)
     map_to_surf: bool
         Wether to map output to middle gray matter. Defaults to True
     cond: list
@@ -2128,9 +2129,9 @@ class TDCSLEADFIELD(LEADFIELD):
 
     def __init__(self, matlab_struct=None):
         super().__init__()
-        # : Date when the session was initiated
         self.eeg_cap = 'EEG10-10_UI_Jurak_2007.csv'
         self.pathfem = 'tdcs_leadfield/'
+        self.tissues = [1006]
         self.electrode = ELECTRODE()
         self.electrode.shape = 'ellipse'
         self.electrode.dimensions = [10, 10]
@@ -2317,9 +2318,15 @@ class TDCSLEADFIELD(LEADFIELD):
             if len(el.thickness) == 3:
                 raise ValueError('Can not run leadfield on sponge electrodes')
 
-        if self.map_to_surf and len(self.tissues) > 1 and self.tissues[0] != 2:
-            logger.warn('Using map_to_surf. Setting tissues=[2]')
-            self.tissues = [2]
+        if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
+            raise ValueError('Mixing Volumes and Surfaces in ROI!')
+
+        if self.map_to_surf:
+            if np.any(np.array(self.tissues) < 1000):
+               raise ValueError("Can't combine volumetric ROI with map_to_surf!")
+            roi = self.tissues + [2]
+        else:
+            roi = self.tissues
 
         if self.field != 'E' and self.field != 'J':
             raise ValueError("field parameter should be E or J. "
@@ -2337,7 +2344,7 @@ class TDCSLEADFIELD(LEADFIELD):
         scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
 
         # Write roi, scalp and electrode surfaces hdf5
-        roi_msh = w_elec.crop_mesh(self.tissues)
+        roi_msh = w_elec.crop_mesh(roi)
         # If mapping to surface
         if self.map_to_surf:
             # Load middle gray matter
@@ -2354,12 +2361,18 @@ class TDCSLEADFIELD(LEADFIELD):
                         wm_surface, gm_surface, .5)
 
             elif segtype == 'headreco':
-                for hemi in ['lh', 'rh']:
+                for i, hemi in enumerate(['lh', 'rh']):
                     middle_surf[hemi] = mesh_io.read_gifti_surface(
                         s_names[hemi + '_midgm'])
+                    middle_surf[hemi].elm.tag1 = (i + 1) * np.ones(
+                        middle_surf[hemi].elm.nr, dtype=int)
+                    middle_surf[hemi].elm.tag2 = (i + 1) * np.ones(
+                        middle_surf[hemi].elm.nr, dtype=int)
+
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
-            mesh_lf.elm.tag1 = 1002 * np.ones(mesh_lf.elm.nr, dtype=int)
-            mesh_lf.elm.tag2 = 1002 * np.ones(mesh_lf.elm.nr, dtype=int)
+            if len(self.tissues) > 0:
+                mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
                 mesh_lf.nodes.node_coord,
@@ -2393,7 +2406,7 @@ class TDCSLEADFIELD(LEADFIELD):
         c = SimuList.cond2elmdata(self, w_elec)
         fem.tdcs_leadfield(
             w_elec, c, electrode_surfaces, fn_hdf5, dset,
-            current=1., roi=self.tissues,
+            current=1., roi=roi,
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
             n_workers=cpus)

@@ -142,7 +142,7 @@ class TMSoptimize():
         return self.__class__.__name__
 
     def _set_logger(self):
-        SESSION._set_logger(self)
+        SESSION._set_logger(self, summary=False)
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
@@ -363,7 +363,8 @@ class TMSoptimize():
         v.add_view(
             CustomMax=1, CustomMin=1,
             VectorType=4, CenterGlyphs=0,
-            Visible=1)
+            Visible=1, ColormapNumber=0
+        )
         v.write_opt(fn_target)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_target, True)
@@ -860,7 +861,9 @@ class TDCSoptimize():
             max_el_current=self.max_individual_current,
             max_active_electrodes=self.max_active_electrodes,
             max_angle=max_angle,
-            Qin=Q_target)
+            Qin=Q_target,
+            log_level=10
+        )
 
         logger.log(25, '\n' + self.summary(currents))
 

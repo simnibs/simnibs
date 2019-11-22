@@ -608,6 +608,8 @@ class TestMsh:
         msh.elm = mesh_io.Elements(
             triangles=np.array(
                 [[1, 2, 3],
+                 [1, 2, 3],
+                 [1, 4, 2],
                  [1, 4, 2]], dtype=int))
         msh.nodes = mesh_io.Nodes(np.array(
             [[0, 0, 0],
@@ -615,7 +617,8 @@ class TestMsh:
              [0, np.tan(np.pi/6), 0],
              [0, 0, np.tan(np.pi/6)]], dtype=float))
         angles = msh.triangle_angles()
-        assert np.allclose(angles[:], [[90, 30, 60], [90, 60, 30]])
+        assert np.allclose(angles[:3], [90, 30, 60])
+        assert np.allclose(angles[3:], [90, 60, 30])
 
     def test_curvature(self, sphere3_msh):
         # https://computergraphics.stackexchange.com/a/1721
@@ -834,6 +837,27 @@ class TestMsh:
             atol=3, rtol=5e-1)
         assert np.allclose(
             M.dot(x)[nodes_r > 85.1], 0)
+
+    def test_elm2node_matrix_surf(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh(elm_type=2)
+        M = m.elm2node_matrix()
+        x = m.elements_baricenters().value[:, 0]
+        assert np.allclose(M.dot(x), m.nodes.node_coord[:, 0], atol=3)
+
+    def test_elm2node_matrix_mixed(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh([3, 1003, 1005])
+        M = m.elm2node_matrix()
+        x_node = m.nodes.node_coord[:, 0]
+        x_elms = m.elements_baricenters().value[:, 0]
+        R_node = np.linalg.norm(m.nodes.node_coord, axis=1)
+        R_elm = np.linalg.norm(m.elements_baricenters()[:], axis=1)
+        region = R_node < 84
+        assert np.allclose(M.dot(x_elms)[region], x_node[region], atol=1e-3)
+        region = (R_node > 84) * (R_node < 86)
+        assert np.allclose(M.dot(x_elms)[region], x_node[region], atol=10)
+        region = R_node > 86
+        assert np.allclose(M.dot(x_elms)[region], x_node[region], atol=3)
+
 
     def test_interp_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
