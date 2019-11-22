@@ -164,7 +164,7 @@ switch S.type
         S.field='E';   % Field to be stored in the leadfield. Possible options are 'E'and 'J'
         S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
         S.map_to_surf=true; % map results on individual surface (read out in middle of GM sheet)
-        S.tissues = 2; % list, tissues where to store the leadfield (if map_to_surf == false)
+        S.tissues = 1006; % list, tissues where to store the leadfield in addition to map_to_surf
         S.name=''; % string; name of simulation, will be used as part of the names of the output files; optional
         S.cond=standard_cond;   % list of conductivities
         S.anisotropy_type = 'scalar'; % can be 'scalar' (use isotropic values), 'dir' (direct mapping),'mc' (mean conductivity from direct mapping),'vn' (volume normalized); optional
