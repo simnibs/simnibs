@@ -1,3 +1,5 @@
+''' Has to be run from the conda root environment!!
+'''
 import stat
 import glob
 import sys
