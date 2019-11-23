@@ -15,11 +15,11 @@ The pipeline is divided in three parts:
 ## Getting Started
  
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.
-Please visit [the SimNIBS website](http://www.simnibs.org) for instructions into how to download and install SimNIBS.
+Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions into how to download and install SimNIBS.
 
 
 ## Authors
-Please see [the SimNIBS website](http://www.simnibs.org) for a complete list of contributors.
+Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.
 
 ## 3rd Party Files
 We have included code or binaries from the following project to this repository:
@@ -28,7 +28,7 @@ We have included code or binaries from the following project to this repository:
 * [SPM12](https://www.fil.ion.ucl.ac.uk/spm/software/spm12/)
 * [CAT12](http://www.neuro.uni-jena.de/cat/)
 * [PETSc](https://www.mcs.anl.gov/petsc/)
-* [HYPRE](https://www.mcs.anl.gov/petsc://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods)
+* [HYPRE](https://github.com/hypre-space/hypre)
 * [MPICH](https://www.mpich.org/)
 * [MSMPI](https://github.com/Microsoft/Microsoft-MPI)
 * [CYGWIN](https://www.cygwin.com/)
