@@ -123,7 +123,8 @@ class gPC_regression(pygpc.RegularizedRegression):
     data_file: str, optional
         Path to file with raw data
     '''
-    def __init__(self, random_vars, pdftype, pdfshape, limits, poly_idx, coords_norm, sim_type, data_file=None):
+    def __init__(self, random_vars, pdftype, pdfshape, limits, poly_idx, coords_norm,
+                 sim_type, data_file=None, regularization_factors=[0.]):
         if isinstance(pdftype, str):
             raise ValueError('pdftype must be a list of strings')
 
@@ -145,7 +146,7 @@ class gPC_regression(pygpc.RegularizedRegression):
 
         # initialize reg class
         super().__init__(pdftype, pdfshape, limits, [0]*len(pdftype), 0, len(pdftype),
-                         grid=grid)
+                         grid=grid, regularization_factors=regularization_factors)
         # enrich polynomial basis
         self.enrich_polynomial_basis(poly_idx, form_A=False)
 
@@ -355,6 +356,9 @@ class gPC_regression(pygpc.RegularizedRegression):
                              data=np.array(self.poly_idx))
             f.create_dataset('gpc_object/grid/coords_norm',
                              data=np.array(self.grid.coords_norm))
+            f.create_dataset('gpc_object/regularization_factors',
+                             data=np.array(self.regularization_factors))
+
 
     @classmethod
     def read_hdf5(cls, fn_hdf5):
@@ -389,9 +393,11 @@ class gPC_regression(pygpc.RegularizedRegression):
             limits[1] = [None if np.isclose(l, 1e10) else l for l in limits[1]]
             poly_idx = f['gpc_object/poly_idx'][()]
             coords_norm = f['gpc_object/grid/coords_norm'][()]
+            regularization_factors = f['gpc_object/regularization_factors'][()]
 
         return cls(random_vars, pdftype, pdfshape, limits,
                    poly_idx, coords_norm, sim_type, data_file=fn_hdf5)
+                   #regularization_factors=regularization_factors)
 
     def visualize(self):
         ''' Creates a mesh file for visualization
@@ -432,6 +438,11 @@ class gPC_regression(pygpc.RegularizedRegression):
         try:
             field = read_data_hdf5(
                 FIELD_NAME[field] + '_samples',
+                self.data_file, 'mesh_roi/data_matrices/'
+            )
+        except KeyError:
+            field = read_data_hdf5(
+                field + '_samples',
                 self.data_file, 'mesh_roi/data_matrices/'
             )
         except RuntimeError:
@@ -574,7 +585,8 @@ def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
 
 
 def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
-                max_iter=1000, min_iter=2, data_poly_ratio=2):
+                max_iter=1000, min_iter=2, data_poly_ratio=2,
+                regularization_factors=[0.]):
     ''' Runs a tDCS gPC expansion
 
     Parameters
@@ -631,6 +643,7 @@ def run_tcs_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
         data_poly_ratio=data_poly_ratio,
         max_iter=max_iter,
         eps=eps,
+        regularization_factors=regularization_factors,
         n_cpus=cpus,
         print_function=logger.info,
         min_iter=min_iter)
@@ -748,7 +761,7 @@ class gPCSampler(object):
     def run_simulation(self, random_vars):
         raise NotImplementedError('This method is to be implemented in a subclass!')
 
-    def _calc_E(self, v, dAdt=None):
+    def _calc_E(self, v, random_vars, dAdt=None):
         grad = v.gradient()
         grad.assign_triangle_values()
         E = -grad.value * 1e3
@@ -819,8 +832,7 @@ class TDCSgPCSampler(gPCSampler):
     '''
 
     def __init__(self, mesh, poslist, fn_hdf5, el_tags, el_currents, roi=[2]):
-        super(TDCSgPCSampler, self).__init__(
-            mesh, poslist, fn_hdf5, roi=roi)
+        super(TDCSgPCSampler, self).__init__(mesh, poslist, fn_hdf5, roi=roi)
         self.el_tags = el_tags
         self.el_currents = el_currents
 
@@ -856,14 +868,14 @@ class TDCSgPCSampler(gPCSampler):
 
         qois = []
         for qoi_name, qoi_f in self.qoi_function.items():
-            qois.append(qoi_f(v_c))
+            qois.append(qoi_f(v_c, random_vars))
 
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples', 'mesh_roi/data_matrices')
-        for qoi_name, qoi_f in self.qoi_function.items():
+        for qoi_name, qoi_v in zip(self.qoi_function.keys(), qois):
             self.record_data_matrix(
-                qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
+                qoi_v, qoi_name + '_samples', 'mesh_roi/data_matrices')
 
         del cropped
         del cond
@@ -979,15 +991,15 @@ class TMSgPCSampler(gPCSampler):
 
         qois = []
         for qoi_name, qoi_f in self.qoi_function.items():
-            qois.append(qoi_f(v_c, dAdt_roi))
+            qois.append(qoi_f(v_c, random_vars, dAdt_roi))
 
         self.record_data_matrix(random_vars, 'random_var_samples', '/')
         self.record_data_matrix(v.value, 'v_samples', 'mesh/data_matrices')
         self.record_data_matrix(v_c.value, 'v_samples',
                                 'mesh_roi/data_matrices')
-        for qoi_name, qoi_f in self.qoi_function.items():
+        for qoi_name, qoi_v in zip(self.qoi_function.keys(), qois):
             self.record_data_matrix(
-                qois[-1], qoi_name + '_samples', 'mesh_roi/data_matrices')
+                qoi_v, qoi_name + '_samples', 'mesh_roi/data_matrices')
 
         del cropped
         del cond

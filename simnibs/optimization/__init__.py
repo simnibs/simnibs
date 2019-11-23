@@ -1,0 +1,3 @@
+'''
+SimNIBS Optimization handling
+'''

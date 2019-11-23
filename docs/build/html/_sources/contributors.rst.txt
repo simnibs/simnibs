@@ -12,10 +12,11 @@ Current Contributors
    * Creation of the new example dataset *ernie* (2.1)
 
 * Guilherme B. Saturnino
+   * Implementation of tDCS optimiaztion (3.1)
    * Installation procedure (3.0)
    * Documentation (3.0)
    * Implementation of the fast FEM code (3.0)
-   * Implementation (together with Konstantin Weise) of the UQ functionality (3.0)
+   * Implementation (together with K. Weise) of the UQ functionality (3.0)
    * Main contributor to the new python core (2.1)
    * Main contributor to the GUI and the electrode modeling for tDCS (2.0)
    * Bug-fixing
@@ -33,8 +34,16 @@ Current Contributors
    * Creation of the new MNI head mesh (2.1)
 
 
-* Konstantin Weise and Thomas Knoesche
-   * Implementation (together with G. B. Saturnino) of the UQ functionality (3.0)
+* Konstantin Weise
+   * First version of the TMS optimization (3.1)
+   * Help with the UQ functionality (3.0)
+
+* Thomas Knoesche
+   * Help with the UQ functionality (3.0)
+
+* Ole Nummsen
+   * First version of the TMS optimization (3.1)
+
 
 Former Contributors
 ---------------------
@@ -73,7 +82,7 @@ and FEM calculations into one coherent pipeline:
 Institutions
 ---------------
 
-* Versions 2.1 and 3.0 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark).
+* Versions 2.1 and 3 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark).
 * Version 1.0 was created at the `Max-Planck Institute for Biological Cybernetics <http://www.kyb.tuebingen.mpg.de>`_ (Tübingen, Germany).
 * Version 2.0 was developed in all three institutions
 

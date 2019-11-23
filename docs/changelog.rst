@@ -1,6 +1,13 @@
 Changelog
 ===========
 
+3.1
+----
+ * Added TDCS and TMS Optimization
+ * Added support to the MKL PARDISO solver
+ * Minor bug fixes
+
+
 3.0
 -----
  * Major update to SimNIBS

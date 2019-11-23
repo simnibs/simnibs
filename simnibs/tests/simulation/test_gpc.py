@@ -244,7 +244,7 @@ class TestSampler:
         mesh, poslist, fn_hdf5, roi = sampler_args
         S = simnibs_gpc.gPCSampler(mesh, poslist, fn_hdf5, roi)
         v = mesh_io.NodeData(mesh.nodes.node_coord[:, 0], mesh=mesh)
-        E = S._calc_E(v)
+        E = S._calc_E(v, None)
         assert np.allclose(E, [-1e3, 0, 0])
 
     def test_update_poslist(self, sampler_args):
@@ -301,6 +301,9 @@ class TestSampler:
         S = simnibs_gpc.TDCSgPCSampler(
             mesh, poslist, fn_hdf5, [1101, 1102], [-1, 1], roi)
 
+        if extra_qoi:
+            S.qoi_function = extra_qoi + S.qoi_function
+
         E1 = S.run_simulation([1])
         assert E1.shape == (3 * np.sum(mesh.elm.tag1 == 3), )
         assert np.allclose(E1.reshape(-1, 3), [-1e3, 0, 0])
@@ -312,6 +315,35 @@ class TestSampler:
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][1, :],-v_roi)
             assert np.allclose(f['mesh_roi/data_matrices/E_samples'][0, :],[-1e3, 0., 0.])
             assert np.allclose(f['mesh_roi/data_matrices/E_samples'][1, :],[1e3, 0., 0.])
+
+    @patch.object(simnibs_gpc, 'fem')
+    def test_tdcs_run(self, mock_fem, sampler_args):
+        mesh, poslist, fn_hdf5, roi = sampler_args
+        v = mesh.nodes.node_coord[:, 0]
+        v_roi = mesh.crop_mesh(roi).nodes.node_coord[:, 0]
+
+        mock_fem.tdcs.side_effect = [
+            mesh_io.NodeData(v, mesh=mesh),
+            mesh_io.NodeData(-v, mesh=mesh)]
+
+        S = simnibs_gpc.TDCSgPCSampler(
+            mesh, poslist, fn_hdf5, [1101, 1102], [-1, 1], roi)
+
+        S.qoi_function['rand'] = lambda v, rand: rand
+
+        E1 = S.run_simulation([1])
+        assert E1.shape == (3 * np.sum(mesh.elm.tag1 == 3), )
+        assert np.allclose(E1.reshape(-1, 3), [-1e3, 0, 0])
+
+        S.run_simulation([2])
+        with h5py.File(fn_hdf5) as f:
+            assert np.allclose(f['random_var_samples'][()], [[1], [2]])
+            assert np.allclose(f['mesh_roi/data_matrices/v_samples'][0, :], v_roi)
+            assert np.allclose(f['mesh_roi/data_matrices/v_samples'][1, :],-v_roi)
+            assert np.allclose(f['mesh_roi/data_matrices/E_samples'][0, :],[-1e3, 0., 0.])
+            assert np.allclose(f['mesh_roi/data_matrices/E_samples'][1, :],[1e3, 0., 0.])
+            assert np.allclose(f['mesh_roi/data_matrices/rand_samples'][:],[[1], [2]])
+
 
     def test_tms_set_up(self, sampler_args):
         mesh, poslist, fn_hdf5, roi = sampler_args

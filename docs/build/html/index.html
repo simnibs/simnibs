@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>SimNIBS &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>SimNIBS &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -88,7 +88,7 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 <a href="https://www.drcmr.dk"><img src="_static/DRCMR_logo.png" alt="DRCMR", height="70"></a>
 <a href="https://www.dtu.dk/english"><img src="_static/DTU_logo.png" alt="DTU", height="70"></a>
 </div>
-</div><p>SimNIBS is copyrighted © by its <a class="reference internal" href="contributors.html#contributors"><span class="std std-ref">authors</span></a> and licensed under <a class="reference download internal" download="" href="_downloads/7d62c575653476e0a3c352e41841b54d/LICENSE.txt"><code class="xref download docutils literal notranslate"><span class="pre">GPL</span> <span class="pre">v3</span></code></a>.</p>
+</div><p>SimNIBS is copyrighted © by its <a class="reference internal" href="contributors.html#contributors"><span class="std std-ref">authors</span></a> and licensed under <a class="reference download internal" download="" href="_downloads/0b3c60fa81bcf8314682446572b4c00c/LICENSE.txt"><code class="xref download docutils literal notranslate"><span class="pre">GPL</span> <span class="pre">v3</span></code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When you publish results based on SimNIBS, please cite <a class="reference external" href="http://dx.doi.org/10.1109/EMBC.2015.7318340">Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy</a></p>
@@ -103,6 +103,7 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 <h1>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h1>
 <blockquote>
 <div><ul class="simple">
+<li><p><strong>Version 3.1 is now avaliable</strong>. This version features <a class="reference internal" href="tutorial/optimization.html#tdcs-opt"><span class="std std-ref">TDCS electrode optimization</span></a>, <a class="reference internal" href="tutorial/advanced/tms_optimization.html#tms-optimize"><span class="std std-ref">TMS coil position optimization</span></a> and even faster FEM solvers for leadfield calculations</p></li>
 <li><p><strong>Version 3.0 is now available</strong>. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!</p></li>
 </ul>
 </div></blockquote>
@@ -148,6 +149,7 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 <li class="toctree-l1"><a class="reference internal" href="dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -163,10 +165,10 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -188,7 +190,7 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

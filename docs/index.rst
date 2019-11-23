@@ -64,6 +64,7 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
 News
 ======
 
+  * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` and even faster FEM solvers for leadfield calculations
   * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!
     
 .. toctree::
@@ -74,6 +75,7 @@ News
    dataset
    tutorial/tutorial
    documentation/documentation
+   faq
    contributors
    publications
    changelog

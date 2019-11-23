@@ -298,23 +298,12 @@ def _baricentric_coordinates(point, triangle):
 
 def _orientation(point, triangle):
     '''here the triangle is a 3x2 array '''
-    edges = triangle[[[0, 1], [2, 0], [1, 2]], :]
+    #edges = triangle[[[0, 1], [2, 0], [1, 2]], :]
+    edges = triangle[[[1, 0], [0, 2], [2, 1]], :]
     orientation = np.zeros(3, dtype=int)
     for i, e in enumerate(edges):
-        orientation[i] =np.sign(np.linalg.det(e - point[None, :]))
+        orientation[i] = np.sign(np.linalg.det(e - point[None, :]))
     return orientation
-
-
-def _fix_triangle_node_ordering(triangles, nodes):
-    ''' Fixes triangle node ordering to be counter-clockwise, in-place '''
-    tr = nodes[triangles]
-    A = tr[:, 1:] - tr[:, 0, None]
-    switch = np.linalg.det(A) < 0
-    triangles = np.copy(triangles)
-    tmp = np.copy(triangles[switch, 1])
-    triangles[switch, 1] = triangles[switch, 0]
-    triangles[switch, 0] = tmp
-    return triangles
 
 def _calc_kdtree(triangles, nodes):
     tr_baricenters = _triangle_baricenters(triangles, nodes)
@@ -447,7 +436,6 @@ def _make_line(line, nodes, triangles, ends=True):
                     angles = np.array(angles)
                     new_nodes = new_nodes_list[angles.argmax()]
                     moved.append(triangles[t, angles.argmax()])
-
     # Finds the edges that are cut by the line segment
     edges, tr_edges, adjacency_list = _edge_list(triangles)
     _, closest, side = _point_line_distance(line[0], line[1], new_nodes)
@@ -483,6 +471,7 @@ def _draw_polygon_2D(poly, nodes, triangles, ends=True):
         vertices = poly[[v, next_v]]
         new_nodes, m = _make_line(vertices, new_nodes, triangles, ends=ends)
         moved.append(m)
+
     moved = [n for m in moved for n in m]
     return new_nodes, moved
 
@@ -972,7 +961,6 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
     nodes = _apply_affine(affine, nodes)
     nodes_z = nodes[:, 2]
     nodes = nodes[:, :2]
-
     # Draw polygon and  holes
     moved = []
     ends = elec.shape != 'ellipse'

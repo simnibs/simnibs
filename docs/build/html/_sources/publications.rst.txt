@@ -4,13 +4,30 @@ Publications
 =============
 The main publications documenting SimNIBS development are
 
+Version 3.1
+-----------
+
+
+TDCS Optimization
+'''''''''''''''''''
+
+* `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
+
+TMS Optimization
+'''''''''''''''''''
+
+* `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603. <https://doi.org/10.1101/595603>`_ 
+
+
+
 Version 3.0
 -----------
 
 Assessement of accuracy and speed of new solver
 ''''''''''''''''''''''''''''''''''''''''''''''''
 
-*  `Saturnino, Guilherme Bicalho, Kristoffer Hougaard Madsen, and Axel Thielscher. "Efficient Electric Field Simulations for Transcranial Brain Stimulation." bioRxiv (2019): 541409. <https://doi.org/10.1101/541409>`_
+* `Saturnino, Guilherme B., Kristoffer H. Madsen, and Axel Thielscher. (2019). "Electric field
+  simulations for transcranial brain stimulation using FEM: an efficient implementation and error analysis." Journal of neural engineering 16.6 066032. <https://doi.org/10.1088/1741-2552/ab41ba>`_
 
 
 Uncertainty Quantification

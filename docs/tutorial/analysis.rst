@@ -72,13 +72,13 @@ This analysis follows the steps:
 Python
 ^^^^^^^
 
-.. literalinclude:: ../../simnibs/examples/roi_analysis_mni.py
+.. literalinclude:: ../../simnibs/examples/analysis/roi_analysis_mni.py
    :language: python
 
 
 MATLAB
 ^^^^^^^
-.. literalinclude:: ../../simnibs/examples/roi_analysis_mni.m
+.. literalinclude:: ../../simnibs/examples/analysis/roi_analysis_mni.m
    :language: matlab
 
 
@@ -140,12 +140,12 @@ For this kind of analysis, we have to
 
 Python
 ^^^^^^^
-.. literalinclude:: ../../simnibs/examples/roi_analysis_surf.py
+.. literalinclude:: ../../simnibs/examples/analysis/roi_analysis_surf.py
    :language: python
 
 
 MATLAB
 ^^^^^^^
-.. literalinclude:: ../../simnibs/examples/roi_analysis_surf.m
+.. literalinclude:: ../../simnibs/examples/analysis/roi_analysis_surf.m
    :language: matlab
 

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Creating Head Models &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>Creating Head Models &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -63,12 +63,12 @@
 </div>
 <div class="section" id="good-and-bad-t1w-and-t2w-images">
 <h3>Good and Bad T1w and T2w images<a class="headerlink" href="#good-and-bad-t1w-and-t2w-images" title="Permalink to this headline">¶</a></h3>
-<div class="figure align-center" id="id4">
+<div class="figure align-default" id="id4">
 <img alt="../_images/t1_t2.jpg" src="../_images/t1_t2.jpg" />
 <p class="caption"><span class="caption-text"><strong>Good</strong> T1w and T2w images</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </div>
 <p></p>
-<div class="figure align-center" id="id5">
+<div class="figure align-default" id="id5">
 <a class="reference internal image-reference" href="../_images/bad_t1.png"><img alt="../_images/bad_t1.png" src="../_images/bad_t1.png" style="width: 450.0px; height: 404.5px;" /></a>
 <p class="caption"><span class="caption-text"><strong>Bad</strong> T1w image. The spongy bone is in part very bright (indicated by the red arrows) and a dark CSF region to separate GM and skull is missing at several positions (purple arrows indicate example positions).</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
 </div>
@@ -83,7 +83,7 @@
 <li><p>Navigate to the folder where the NifTI files are located (use the <code class="code docutils literal notranslate"><span class="pre">cd</span></code> command)</p></li>
 <li><p>Run a segmentation and meshing pipeline. SimNIBS offers two tools for this job, <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> and <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>. <em>headreco</em> is the most recent tool, and should be preferred in most cases.</p></li>
 </ol>
-<table class="colwidths-given docutils align-center">
+<table class="colwidths-given docutils align-default">
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 33%" />
@@ -125,17 +125,17 @@
 <ol class="arabic simple" start="4">
 <li><p>Check the segmentation. This can be done with <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">check</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>headreco</em> or <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">-c</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>mri2mesh</em>. Please see the documentation for your tool of choice for more information. With <em>FreeSurfer</em> installed, this command opens two <em>freeview</em> windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For <em>headreco</em>, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.</p></li>
 </ol>
-<div class="figure align-center" id="id6">
+<div class="figure align-default" id="id6">
 <img alt="../_images/check_segmentation_good.png" src="../_images/check_segmentation_good.png" />
 <p class="caption"><span class="caption-text"><strong>Good</strong> segmentation. Notice how the surface oulines (in white) nicely follows the tissue shapes in the T1w image</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
 </div>
 <p></p>
-<div class="figure align-center" id="id7">
+<div class="figure align-default" id="id7">
 <img alt="../_images/check_segmentation_bad.png" src="../_images/check_segmentation_bad.png" />
 <p class="caption"><span class="caption-text"><strong>Bad</strong> segmentation. Notice how part of the skull is missing</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
 </div>
 <p></p>
-<div class="figure align-center" id="id8">
+<div class="figure align-default" id="id8">
 <img alt="../_images/check_mni.png" src="../_images/check_mni.png" />
 <p class="caption"><span class="caption-text">Example of a good MNI registration.</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
 </div>
@@ -202,11 +202,13 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">TDCS Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -225,10 +227,10 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -250,7 +252,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

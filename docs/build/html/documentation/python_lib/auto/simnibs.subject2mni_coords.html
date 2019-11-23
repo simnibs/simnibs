@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.subject2mni_coords &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>simnibs.subject2mni_coords &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -52,7 +52,7 @@
 <h1>simnibs.subject2mni_coords<a class="headerlink" href="#simnibs-subject2mni-coords" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="simnibs.subject2mni_coords">
-<code class="descclassname">simnibs.</code><code class="descname">subject2mni_coords</code><span class="sig-paren">(</span><em>coordinates</em>, <em>m2m_folder</em>, <em>transformation_type='nonl'</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.subject2mni_coords" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">subject2mni_coords</code><span class="sig-paren">(</span><em class="sig-param">coordinates</em>, <em class="sig-param">m2m_folder</em>, <em class="sig-param">transformation_type='nonl'</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.subject2mni_coords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Warps a set of coordinates in subject space to MNI space</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -60,10 +60,13 @@
 <li><p><strong>coordinates</strong> (<em>list</em><em> or </em><em>numpy array in Nx3 format</em>) – Coordinates to be transformd</p></li>
 <li><p><strong>m2m_folder</strong> (<em>str</em>) – Path to the m2m_{subject_id} folder, generated during the segmantation</p></li>
 <li><p><strong>transformation_type</strong> (<em>{'nonl'</em><em>, </em><em>'6dof'</em><em>, </em><em>'12dof'}</em>) – Type of tranformation, non-linear, 6 or 12 degrees of freedom</p></li>
-<li><p><strong>Returns</strong> – </p></li>
-<li><p><strong>----------</strong> – </p></li>
-<li><p><strong>transformed_coords</strong> (<em>Nx3 numpy array</em>) – Array with transformed coordinates</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>transformed_coords</strong> – Array with transformed coordinates</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Nx3 numpy array</p>
 </dd>
 </dl>
 </dd></dl>
@@ -115,6 +118,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
@@ -123,6 +127,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
@@ -143,10 +148,10 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -168,7 +173,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

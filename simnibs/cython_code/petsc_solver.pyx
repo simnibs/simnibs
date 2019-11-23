@@ -110,7 +110,7 @@ cdef class Solver:
         cdef np.ndarray[PetscInt, ndim=1] indptr = A.indptr
         cdef np.ndarray[PetscInt, ndim=1] indices = A.indices
         cdef np.ndarray[PetscScalar, ndim=1] data = A.data
-
+        logger.log(self.log_level, 'Preparing the KSP')
         # Prepare the arguments
         petsc_options = [o.encode() for o in petsc_options]
         for i, o in enumerate(petsc_options):
@@ -129,7 +129,7 @@ cdef class Solver:
             self.ksp = new_ksp
             self._N = N
             end = time.time()
-            logger.log(self.log_level, 'Time to prepare KSP: {0:.2f}s'.format(end-start))
+            logger.log(self.log_level, 'Time to prepare the KSP: {0:.2f}s'.format(end-start))
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -154,6 +154,7 @@ cdef class Solver:
         cdef np.ndarray[PetscScalar, ndim=1] solution = np.zeros(b.shape, dtype=float).reshape(-1)
         for i in range(n_sims):
             # Print KSP info
+            logger.log(self.log_level, 'Solving system {0} of {1}'.format(i+1, n_sims))
             err = _print_ksp_info(self.ksp, self._log_stream)
             start = time.time()
             if err:

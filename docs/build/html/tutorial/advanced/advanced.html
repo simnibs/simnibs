@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Advanced Features &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>Advanced Features &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Group Analysis" href="group_analysis.html" />
-    <link rel="prev" title="Analyzing Simulations" href="../analysis.html" />
+    <link rel="prev" title="TDCS Optimization" href="../optimization.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -35,7 +35,7 @@
     <ul>
         <li>
           &larr;
-          <a href="../analysis.html" title="Previous document">Analyzing Simulations</a>
+          <a href="../optimization.html" title="Previous document">TDCS Optimization</a>
         </li>
         <li>
           <a href="group_analysis.html" title="Next document">Group Analysis</a>
@@ -60,13 +60,21 @@
 <li class="toctree-l2"><a class="reference internal" href="group_analysis.html#further-reading">Further Reading</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tms_optimization.html">TMS Optimization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html#basic-setting">Basic Setting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html#refining-the-search">Refining the Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html#acknowledgements">Acknowledgements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html#further-reading">Further Reading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html#references">References</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="uq.html">Uncertainty Quantification</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#setting-up-a-simulation-with-uq">Setting-up a Simulation with UQ</a></li>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#output-files">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#more-options">More Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#secondary-quantities">Secondary Quantities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="uq.html#acknolowedgements">Acknolowedgements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uq.html#acknowledgements">Acknowledgements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="uq.html#further-reading">Further Reading</a></li>
 </ul>
 </li>
@@ -82,7 +90,7 @@
     <ul>
         <li>
           &larr;
-          <a href="../analysis.html" title="Previous document">Analyzing Simulations</a>
+          <a href="../optimization.html" title="Previous document">TDCS Optimization</a>
         </li>
         <li>
           <a href="group_analysis.html" title="Next document">Group Analysis</a>
@@ -120,11 +128,13 @@
 <li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
@@ -136,17 +146,17 @@
 <ul>
   <li><a href="../../index.html">Documentation overview</a><ul>
   <li><a href="../tutorial.html">Tutorial</a><ul>
-      <li>Previous: <a href="../analysis.html" title="previous chapter">Analyzing Simulations</a></li>
+      <li>Previous: <a href="../optimization.html" title="previous chapter">TDCS Optimization</a></li>
       <li>Next: <a href="group_analysis.html" title="next chapter">Group Analysis</a></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -168,7 +178,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

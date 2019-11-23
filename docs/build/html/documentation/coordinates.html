@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Coordinates in SimNIBS &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>Coordinates in SimNIBS &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -53,23 +53,41 @@
 <div class="section" id="definitions">
 <h2>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h2>
 <p>Coordinates in SimNIBS are <strong>always world coordinates in subject space</strong>. Coordinates are given in <strong>millimiters</strong> and along <em>x</em>, <em>y</em> and <em>z</em> axis.</p>
-<p>The origin and the alignment of the axes can vary in head models ran with <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. In head models ran with <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, the coordinates are based on the conform coordinate system based on FreeSurfer.</p>
+<p>The origin and the alignment of the axes can vary in head models ran with <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. In head models ran with <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, the coordinates are based on the conform coordinate system used in FreeSurfer.</p>
 </div>
 <div class="section" id="voxel-to-simnibs-coordinates">
 <h2>Voxel to SimNIBS Coordinates<a class="headerlink" href="#voxel-to-simnibs-coordinates" title="Permalink to this headline">¶</a></h2>
-<p>The head meshing procedures create a NifTI file called <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code>. This file contains the input T1 image of the subject with a  header such that the world coordinates reflect those used by SimNIBS.</p>
-<p>Please notice that <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> changes the header compared to the original T1 input image, while <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> does not change it by default.</p>
+<p>The head meshing procedures create a NifTI file called <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code>. This file contains a transformed T1 image of the subject, with the world coordinates used by SimNIBS.</p>
+<p>Please notice that <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> changes the coordinate system of the input T1 image, while <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> does not change it by default.</p>
 </div>
 <div class="section" id="mni-transformations">
 <h2>MNI Transformations<a class="headerlink" href="#mni-transformations" title="Permalink to this headline">¶</a></h2>
 <p>During head meshing, SimNIBS calculates 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> folder.
-SimNIBS uses these transformations when transforming simulation results to MNI space (see the <a class="reference internal" href="gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a> and <a class="reference internal" href="sim_struct/session.html#session-doc"><span class="std std-ref">map_to_mni attribute</span></a>) as well as in the command line utilities</p>
+SimNIBS uses these transformations when transforming simulation results to MNI space (see the <a class="reference internal" href="gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a> and <a class="reference internal" href="sim_struct/session.html#session-doc"><span class="std std-ref">map_to_mni attribute</span></a>).</p>
+<div class="section" id="command-line-utilities">
+<h3>Command line Utilities<a class="headerlink" href="#command-line-utilities" title="Permalink to this headline">¶</a></h3>
+<p>SimNIBS has several command line utilities to transform data and coordinates between MNI and Subject space</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="command_line/mni2subject.html#mni2subject-docs"><span class="std std-ref">mni2subject</span></a>, to transform data in MNI space to subject space.</p></li>
 <li><p><a class="reference internal" href="command_line/subject2mni.html#subject2mni-docs"><span class="std std-ref">subject2mni</span></a>, to transform data in subject space to MNI space.</p></li>
 <li><p><a class="reference internal" href="command_line/mni2subject_coords.html#mni2subject-coords-docs"><span class="std std-ref">mni2subject_coords</span></a>, to transform coordinates from MNI space to subject space.</p></li>
 <li><p><a class="reference internal" href="command_line/subject2mni_coords.html#subject2mni-coords-docs"><span class="std std-ref">subject2mni_coords</span></a>, to transform coordinates from subject space to MNI space.</p></li>
 </ul>
+</div>
+<div class="section" id="python-and-matlab-functionas">
+<h3>Python and MATLAB Functionas<a class="headerlink" href="#python-and-matlab-functionas" title="Permalink to this headline">¶</a></h3>
+<p>We also provide <em>Python</em> and <em>MATLAB</em> interfaces to transform coordinates between MNI and Subject Space. Those have the signature</p>
+<ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">mni2subject_coords(coords_mni,</span> <span class="pre">subdir,</span> <span class="pre">transformation_type)</span></code></p>
+<ul>
+<li><p><code class="code docutils literal notranslate"><span class="pre">coords_mni</span></code> is a set of coordinates in MNI space</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">subdir</span></code> is the subject segmentation directory, for example <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code></p></li>
+<li><p>(Optional) <code class="code docutils literal notranslate"><span class="pre">transformation_type</span></code> is the type of transformation, can be <code class="code docutils literal notranslate"><span class="pre">nonl</span></code> (default), <code class="code docutils literal notranslate"><span class="pre">12dof</span></code> or <code class="code docutils literal notranslate"><span class="pre">6dof</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+<p>And equivalently to <code class="code docutils literal notranslate"><span class="pre">subject2mni_coords</span></code>.</p>
+</div>
 </div>
 </div>
 
@@ -118,6 +136,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Coordinates in SimNIBS</a></li>
@@ -126,6 +145,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
 <li class="toctree-l2"><a class="reference internal" href="python_lib/python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -144,10 +164,10 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -169,7 +189,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

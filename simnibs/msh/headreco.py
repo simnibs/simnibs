@@ -445,6 +445,8 @@ def headmodel(argv):
         vwm = hmu.decouple_volumes(vwm, fvgm, "inner-from-outer")
         nib.save(vwm, vwm.get_filename())
         vven = hmu.decouple_volumes(fvven, fvgm, "inner-from-outer")
+        
+        # vven=vven&~vwm
         nib.save(vven, vven.get_filename())
          
         hmu.log("Surface extraction: white matter")
@@ -473,9 +475,28 @@ def headmodel(argv):
         fvwm = voxelize(fswm, ref)[0]
         
         hmu.log("Voxelizing ventricles")
+        #fvven = voxelize(fsven, ref, merge=True)[0]
+        se = mrph.generate_binary_structure(3,1)
+        cWM_ERO = nib.load(fvwm)
+        cWM_ERO = mrph.binary_erosion(cWM_ERO.get_data(), se, 1)
+        
+        fsven_to_keep = []
+        for i in range(len(fsven)):
+            fvven_tmp = voxelize(fsven[i], ref)[0]
+            cVEN_tmp = nib.load(fvven_tmp)
+            
+            if np.any(cWM_ERO & (cVEN_tmp.get_data() > 0) ):
+                hmu.log("Throwing out " + fsven[i] + " because it is in WM")
+                os.remove(fsven[i])
+            else:
+                fsven_to_keep.append(fsven[i])
+                
+            os.remove(fvven_tmp)
+        
+        fsven=fsven_to_keep
         fvven = voxelize(fsven, ref, merge=True)[0]
         print("")
-                        
+         
         # move
         shutil.move(fvwm, os.path.join(mask_prep, "MASK_CAT_WM.nii.gz"))
         shutil.move(fvgm, os.path.join(mask_prep, "MASK_CAT_GM.nii.gz"))
@@ -1030,7 +1051,7 @@ def make_cat_masks(cat, spm, template, gm, ref, outdir):
     
     ventricles = mrph.binary_fill_holes(ventricles | vx, se)    
     ventricles = hmu.get_large_components(ventricles,se2,100)
-
+    #ventricles = hmu.get_n_largest_components(ventricles,se,1)
     fven = os.path.join(outdir, "ventricles"+ext)
     hmu.write_nifti(ventricles, fven, ref, dtype=dtype)
             
@@ -1422,6 +1443,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
                 shutil.copy2(fsven[i], off[key] + str(i+1) + ".off")
 
             off[key] = sorted(glob(os.path.join(temp_dir, off[key] +"*.off")), key=str.lower)
+            
         elif key in mask:
             hmu.log("Preparing volume for meshing")        
             modven = mask[key].get_data() & mrph.binary_erosion(cCSF.get_data(), se, 1)
@@ -2079,7 +2101,7 @@ def visualize_spm(subject_id,T1,control_mask_final,subject_dir,show_mni=False):
         cmd += "\"addpath('{}');".format(path2mfiles)
         cmd += "try,spm_check_registration(char('{0}','{1}')); uiwait(gcf);catch ME,rethrow(ME);end,exit;\"".format(
                 ref_mni_spm_name,T1_mni_nonlin_spm_name)
-	
+
         if (sys.platform == 'win32'):
             p2 = hmu.spawn_process(cmd, verbose=True, return_exit_status=True)
         else:
