@@ -21,14 +21,15 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - bash: |
-      source activate
+      source activate base
       pip install conda-pack
       python pack.py
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
   - bash: |
-      pack/install
+      cd pack
+      ./install
       $HOME/SimNIBS/bin/simnibs --version
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
@@ -53,14 +54,15 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - bash: |
-      source activate
+      source activate base
       pip install conda-pack
       python pack.py
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
   - bash: |
-      pack/install
+      cd pack
+      ./install
       $HOME/Applications/SimNIBS/bin/simnibs --version
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
@@ -87,14 +89,15 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate
+      call $(Agent.BuildDirectory)\CONDA\Scripts\activate base
       pip install conda-pack
       python pack.py
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
   - bash: |
-      pack\install
+      cd pack
+      install
       %LOCALAPPDATA%\SimNIBS\bin\simnibs --version
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:

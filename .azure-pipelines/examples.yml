@@ -10,7 +10,9 @@ jobs:
 
   steps:
   - bash: |
+      sudo apt-get update
       sudo apt-get install -y octave
+      octave -v
       echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Install Octave and add conda to PATH
 
