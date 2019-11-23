@@ -26,11 +26,12 @@ jobs:
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
-  - bash: |
-      cd pack
-      ./install
-      $HOME/SimNIBS/bin/simnibs --version
-    displayName: Test
+    # Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      ./install
+    #      $HOME/SimNIBS/bin/simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -59,11 +60,12 @@ jobs:
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
-  - bash: |
-      cd pack
-      ./install
-      $HOME/Applications/SimNIBS/bin/simnibs --version
-    displayName: Test
+    # Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      ./install
+    #      $HOME/Applications/SimNIBS/bin/simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -94,11 +96,12 @@ jobs:
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
-  - bash: |
-      cd pack
-      install
-      %LOCALAPPDATA%\SimNIBS\bin\simnibs --version
-    displayName: Test
+    #  Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      install
+    #      %LOCALAPPDATA%\SimNIBS\bin\simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
