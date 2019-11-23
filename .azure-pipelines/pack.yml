@@ -24,8 +24,12 @@ jobs:
       source activate
       pip install conda-pack
       python pack.py
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+  - bash: |
+      pack/install
+      $HOME/SimNIBS/bin/simnibs --version
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
+    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -52,8 +56,12 @@ jobs:
       source activate
       pip install conda-pack
       python pack.py
-      cp simnibs-*-macOS.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+  - bash: |
+      pack/install
+      $HOME/Applications/SimNIBS/bin/simnibs --version
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
+    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -82,8 +90,12 @@ jobs:
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       pip install conda-pack
       python pack.py
-      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+  - bash: |
+      pack\install
+      %LOCALAPPDATA%\SimNIBS\bin\simnibs --version
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
+    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'

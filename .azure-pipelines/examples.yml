@@ -24,7 +24,8 @@ jobs:
     displayName: Build SimNIBS
 
   - bash: |
-      pytest simnibs/simnibs/tests/examples/examples.py --junit-xml=test-results.xml
+      source activate simnibs_env
+      pytest simnibs/tests/examples/examples.py --junit-xml=test-results.xml
     displayName: Run tests
   
   - task: PublishTestResults@2
