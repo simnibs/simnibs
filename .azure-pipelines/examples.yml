@@ -22,12 +22,13 @@ jobs:
 
   - bash: |
       source activate simnibs_env
-      python setup.py install 
-    displayName: Build SimNIBS
+      python setup.py develop
+      postinstall_simnibs -d . -s --no-extra-coils 
+    displayName: install SimNIBS
 
   - bash: |
       source activate simnibs_env
-      pytest simnibs/tests/examples/examples.py --junit-xml=test-results.xml
+      pytest simnibs/tests/examples/examples.py -v -s -x --junit-xml=test-results.xml
     displayName: Run tests
   
   - task: PublishTestResults@2
