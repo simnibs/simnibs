@@ -31,6 +31,8 @@ Initialization
 Attributes
 ----------
 
+.. _tmslist_fnamecoil:
+
 * **fnamecoil**: *string (Python)/ character array (MATLAB)*
 
   * **Description**: Name of coil file. Coil files come in two types

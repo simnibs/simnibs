@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.SubjectFiles &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>simnibs.SubjectFiles &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Contributors and Funding" href="../../../contributors.html" />
+    <link rel="next" title="FAQ" href="../../../faq.html" />
     <link rel="prev" title="simnibs.get_atlas" href="simnibs.get_atlas.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
@@ -38,7 +38,7 @@
           <a href="simnibs.get_atlas.html" title="Previous document">simnibs.get_atlas</a>
         </li>
         <li>
-          <a href="../../../contributors.html" title="Next document">Contributors and Funding</a>
+          <a href="../../../faq.html" title="Next document">FAQ</a>
           &rarr;
         </li>
     </ul>
@@ -52,7 +52,7 @@
 <h1>simnibs.SubjectFiles<a class="headerlink" href="#simnibs-subjectfiles" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="simnibs.SubjectFiles">
-<em class="property">class </em><code class="descclassname">simnibs.</code><code class="descname">SubjectFiles</code><span class="sig-paren">(</span><em>fnamehead: str = None</em>, <em>subpath: str = None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">SubjectFiles</code><span class="sig-paren">(</span><em class="sig-param">fnamehead: str = None</em>, <em class="sig-param">subpath: str = None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to find files for a given subject</p>
 <dl class="field-list simple">
@@ -67,7 +67,7 @@ preference when it comes to finding other files</p></li>
 </dl>
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.fnamehead">
-<code class="descname">fnamehead</code><a class="headerlink" href="#simnibs.SubjectFiles.fnamehead" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fnamehead</code><a class="headerlink" href="#simnibs.SubjectFiles.fnamehead" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to head mesh (.msh)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -78,7 +78,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.subpath">
-<code class="descname">subpath</code><a class="headerlink" href="#simnibs.SubjectFiles.subpath" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">subpath</code><a class="headerlink" href="#simnibs.SubjectFiles.subpath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to m2m_folder (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -89,7 +89,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.subid">
-<code class="descname">subid</code><a class="headerlink" href="#simnibs.SubjectFiles.subid" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">subid</code><a class="headerlink" href="#simnibs.SubjectFiles.subid" title="Permalink to this definition">¶</a></dt>
 <dd><p>The subject ID (eg: ernie)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -100,7 +100,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.basedir">
-<code class="descname">basedir</code><a class="headerlink" href="#simnibs.SubjectFiles.basedir" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">basedir</code><a class="headerlink" href="#simnibs.SubjectFiles.basedir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the folder where the m2m_subid folder is located (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -111,7 +111,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.tensor_file">
-<code class="descname">tensor_file</code><a class="headerlink" href="#simnibs.SubjectFiles.tensor_file" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">tensor_file</code><a class="headerlink" href="#simnibs.SubjectFiles.tensor_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the NifTi file with the tensor conductivity information (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -122,7 +122,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.eeg_cap_folder">
-<code class="descname">eeg_cap_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_folder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">eeg_cap_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the folder with EEG caps (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -133,7 +133,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.eeg_cap_1010">
-<code class="descname">eeg_cap_1010</code><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_1010" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">eeg_cap_1010</code><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_1010" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the EEG 10-10 electrode file (.csv)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -144,7 +144,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.reference_volume">
-<code class="descname">reference_volume</code><a class="headerlink" href="#simnibs.SubjectFiles.reference_volume" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">reference_volume</code><a class="headerlink" href="#simnibs.SubjectFiles.reference_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the reference subject volume (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -155,7 +155,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.mni2conf_nonl">
-<code class="descname">mni2conf_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_nonl" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mni2conf_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_nonl" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform nonlinear transformation (.nii or .nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -166,7 +166,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.conf2mni_nonl">
-<code class="descname">conf2mni_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.conf2mni_nonl" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">conf2mni_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.conf2mni_nonl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Conform to MNI nonlinear tansformation (.nii or .nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -177,7 +177,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.mni2conf_6dof">
-<code class="descname">mni2conf_6dof</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_6dof" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mni2conf_6dof</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_6dof" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform 6 DOF transfomation (.txt or .mat)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -188,7 +188,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.mni2conf_12dof">
-<code class="descname">mni2conf_12dof</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_12dof" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mni2conf_12dof</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_12dof" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform 12 DOF transfomation (.txt or .mat)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -199,7 +199,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.ref_fs">
-<code class="descname">ref_fs</code><a class="headerlink" href="#simnibs.SubjectFiles.ref_fs" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">ref_fs</code><a class="headerlink" href="#simnibs.SubjectFiles.ref_fs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reference FreeSurfer space file (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -210,7 +210,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.surf_dir">
-<code class="descname">surf_dir</code><a class="headerlink" href="#simnibs.SubjectFiles.surf_dir" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">surf_dir</code><a class="headerlink" href="#simnibs.SubjectFiles.surf_dir" title="Permalink to this definition">¶</a></dt>
 <dd><p>Directory with surfaces from CAT12/FreeSurfer segmentations (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -221,7 +221,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.seg_type">
-<code class="descname">seg_type</code><a class="headerlink" href="#simnibs.SubjectFiles.seg_type" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">seg_type</code><a class="headerlink" href="#simnibs.SubjectFiles.seg_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type of segmentation (only in mri2mesh and headreco+CAT)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -232,7 +232,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.lh_midgm">
-<code class="descname">lh_midgm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_midgm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">lh_midgm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_midgm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Left hemisphere middle gray matter model (only for headreco+CAT segmentations) (.gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -243,7 +243,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.rh_midgm">
-<code class="descname">rh_midgm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_midgm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rh_midgm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_midgm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Right hemisphere middle right gray matter model (only for headreco+CAT segmentations) (.gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -254,7 +254,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.lh_gm">
-<code class="descname">lh_gm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_gm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">lh_gm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_gm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Left hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -265,7 +265,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.rh_gm">
-<code class="descname">rh_gm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_gm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rh_gm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_gm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Right hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -276,7 +276,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.lh_wm">
-<code class="descname">lh_wm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_wm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">lh_wm</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_wm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Left hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -287,7 +287,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.rh_wm">
-<code class="descname">rh_wm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_wm" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rh_wm</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_wm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Right hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -298,7 +298,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.lh_reg">
-<code class="descname">lh_reg</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_reg" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">lh_reg</code><a class="headerlink" href="#simnibs.SubjectFiles.lh_reg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Left hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -309,7 +309,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.rh_reg">
-<code class="descname">rh_reg</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_reg" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rh_reg</code><a class="headerlink" href="#simnibs.SubjectFiles.rh_reg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Right hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -320,7 +320,7 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.final_contr">
-<code class="descname">final_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.final_contr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">final_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.final_contr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Volume mask after meshing (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -331,8 +331,19 @@ preference when it comes to finding other files</p></li>
 
 <dl class="attribute">
 <dt id="simnibs.SubjectFiles.masks_contr">
-<code class="descname">masks_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.masks_contr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">masks_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.masks_contr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Volume mask before meshing (.nii.gz)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T1">
+<code class="sig-name descname">T1</code><a class="headerlink" href="#simnibs.SubjectFiles.T1" title="Permalink to this definition">¶</a></dt>
+<dd><p>T1 image after applying transformations</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -346,28 +357,28 @@ preference when it comes to finding other files</p></li>
 </div>
 <dl class="method">
 <dt id="simnibs.SubjectFiles.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>fnamehead: str = None</em>, <em>subpath: str = None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">fnamehead: str = None</em>, <em class="sig-param">subpath: str = None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-center">
+<table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.SubjectFiles.__init__" title="simnibs.SubjectFiles.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(fnamehead, subpath)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.SubjectFiles.__init__" title="simnibs.SubjectFiles.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([fnamehead, subpath])</p></td>
 <td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.SubjectFiles.get_eeg_cap" title="simnibs.SubjectFiles.get_eeg_cap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_eeg_cap</span></code></a>(cap_name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.SubjectFiles.get_eeg_cap" title="simnibs.SubjectFiles.get_eeg_cap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_eeg_cap</span></code></a>([cap_name])</p></td>
 <td><p>Gets the name of an EEG cap for this subject</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
 <dt id="simnibs.SubjectFiles.get_eeg_cap">
-<code class="descname">get_eeg_cap</code><span class="sig-paren">(</span><em>cap_name: str = 'EEG10-10_UI_Jurak_2007.csv'</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#simnibs.SubjectFiles.get_eeg_cap" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_eeg_cap</code><span class="sig-paren">(</span><em class="sig-param">cap_name: str = 'EEG10-10_UI_Jurak_2007.csv'</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#simnibs.SubjectFiles.get_eeg_cap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets the name of an EEG cap for this subject</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -401,7 +412,7 @@ preference when it comes to finding other files</p></li>
           <a href="simnibs.get_atlas.html" title="Previous document">simnibs.get_atlas</a>
         </li>
         <li>
-          <a href="../../../contributors.html" title="Next document">Contributors and Funding</a>
+          <a href="../../../faq.html" title="Next document">FAQ</a>
           &rarr;
         </li>
     </ul>
@@ -435,6 +446,7 @@ preference when it comes to finding other files</p></li>
 <li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
@@ -443,6 +455,7 @@ preference when it comes to finding other files</p></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
@@ -456,17 +469,17 @@ preference when it comes to finding other files</p></li>
   <li><a href="../../documentation.html">Documentation</a><ul>
   <li><a href="../python_lib.html">Python Library Documentation</a><ul>
       <li>Previous: <a href="simnibs.get_atlas.html" title="previous chapter">simnibs.get_atlas</a></li>
-      <li>Next: <a href="../../../contributors.html" title="next chapter">Contributors and Funding</a></li>
+      <li>Next: <a href="../../../faq.html" title="next chapter">FAQ</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -488,7 +501,7 @@ preference when it comes to finding other files</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

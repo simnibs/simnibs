@@ -20,7 +20,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
 import warnings
 import os
 from functools import partial
@@ -155,7 +154,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
             if keep_vector_length:
                 im_data_rotated = im_data_rotated * \
                         (np.linalg.norm(im_data, axis=3))[:, :, :, None] /\
-                        (1e-8 +
+                        (1e-32 +
                          np.linalg.norm(im_data_rotated, axis=3))[:, :, :, None]
             im_data = im_data_rotated
 
@@ -215,7 +214,7 @@ def volumetric_affine(image, affine, target_space_affine,
         if keep_vector_length:
             outdata_rotated = outdata_rotated * \
                     (np.linalg.norm(outdata, axis=3))[:, :, :, None] /\
-                    (1e-8 +
+                    (1e-32 +
                      np.linalg.norm(outdata_rotated, axis=3))[:, :, :, None]
 
         outdata = outdata_rotated
@@ -957,6 +956,7 @@ def _read_csv(fn):
     return type_, coordinates, extra, name, extra_cols, header
 
 
+
 def _write_csv(fn, type_, coordinates, extra, name, extra_cols, header):
     coordinates = coordinates.tolist()
     name = [[] if not n else [n] for n in name]
@@ -1017,7 +1017,7 @@ def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     transformation_type: {'nonl', '6dof', '12dof'}
         Type of tranformation, non-linear, 6 or 12 degrees of freedom
 
-    Returns:
+    Returns
     ----------
     transformed_coords: Nx3 numpy array
         Array with transformed coordinates
@@ -1047,7 +1047,7 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     transformation_type: {'nonl', '6dof', '12dof'}
         Type of tranformation, non-linear, 6 or 12 degrees of freedom
 
-    Returns:
+    Returns
     ----------
     transformed_coords: Nx3 numpy array
         Array with transformed coordinates
@@ -1112,7 +1112,7 @@ def warp_coordinates(coordinates, m2m_folder,
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
 
-    Returns:
+    Returns
     ----------
     type: list
         List with point types. Can be 'Generic', 'Fiducial', 'Electrode',
@@ -1539,6 +1539,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     # Join surfaces, fields and open in gmsh
     def join_and_write(surfs, fn_out, open_in_gmsh):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
+        mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.nodedata = []
         mesh.elmdata = []
         for k in surfs['lh'].field.keys():

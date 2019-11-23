@@ -177,43 +177,24 @@ class TestDrawElectrodes:
         assert np.allclose(bari, 1./3.)
 
     def test_orientation(self):
-        tri = np.array([[0., 0.], [np.sqrt(3) / 2., 1./2.], [0., 1.]])
+        tri = np.array([[np.sqrt(3) / 2., 1./2.], [0., 0.], [0., 1.]])
         p = np.average(tri, axis=0)
         orient = electrode_placement._orientation(p, tri)
         assert np.allclose(orient, 1.)
 
         p = np.array([-1, 0.])
         orient = electrode_placement._orientation(p, tri)
-        assert np.allclose(orient, [1, -1, 1])
+        assert np.allclose(orient, [1, 1, -1])
 
-    def test_fix_node_ordering(self):
-        X, Y = np.meshgrid(np.arange(-10, 11, dtype=float), np.arange(-10, 11, dtype=float))
-        nodes = np.vstack([X.reshape(-1), Y.reshape(-1)]).T
-        tri = scipy.spatial.Delaunay(nodes)
-        triangles = tri.simplices
-        nodes = tri.points
-        M = nodes[triangles][:, 1:, :] - nodes[triangles][:, 0, None]
-        assert np.all(np.linalg.det(M) > 0)
-
-        tmp = np.copy(triangles[:, 1])
-        triangles[:, 1] = triangles[:, 0]
-        triangles[:, 0] = tmp
-        M = nodes[triangles][:, 1:, :] - nodes[triangles][:, 0, None]
-        assert np.all(np.linalg.det(M) < 0)
-
-        triangles = electrode_placement._fix_triangle_node_ordering(triangles, nodes)
-        M = nodes[triangles][:, 1:, :] - nodes[triangles][:, 0, None]
-        assert np.all(np.linalg.det(M) > 0)
-
- 
 
     def test_triangle_with_points(self):
         X, Y = np.meshgrid(np.arange(-10, 11, dtype=float), np.arange(-10, 11, dtype=float))
         nodes = np.vstack([X.reshape(-1), Y.reshape(-1)]).T
         tri = scipy.spatial.Delaunay(nodes)
         query = np.random.rand(10, 2) * 20 - 10
-        triangles = electrode_placement._triangle_with_points(query, tri.simplices,
-                                                              tri.points)
+        trs = tri.simplices[:, [1,0,2]]
+        triangles = electrode_placement._triangle_with_points(
+            query, trs, tri.points)
         assert np.all(triangles == tri.find_simplex(query))
 
     def test_move_point(self):
@@ -223,23 +204,24 @@ class TestDrawElectrodes:
         new_position = [.5, .5]
         candidate = np.argmin(np.linalg.norm(tri.points - new_position, axis=1))
         min_angle = 0.2
+        trs = tri.simplices[:, [1,0,2]]
         new_points, angle = electrode_placement._move_point(new_position, candidate, tri.points,
-                                                            tri.simplices, min_angle)
-        angles = electrode_placement._calc_triangle_angles(new_points[tri.simplices])
+                                                            trs, min_angle)
+        angles = electrode_placement._calc_triangle_angles(new_points[trs])
         assert np.linalg.norm(new_points[candidate] - new_position) < 1e-5
         assert np.all(angles > 0.2)
 
         # Move too far out
         new_position = [.9, .9]
         new_points, angle = electrode_placement._move_point(new_position, candidate, tri.points,
-                                                            tri.simplices, min_angle)
-        angles = electrode_placement._calc_triangle_angles(new_points[tri.simplices])
+                                                            trs, min_angle)
+        angles = electrode_placement._calc_triangle_angles(new_points[trs])
         assert np.linalg.norm(new_points[candidate] - new_position) < 1
         assert np.all(angles > 0.2)
         # Move node outside
         new_position = [5, 5]
         new_points, angle = electrode_placement._move_point(new_position, candidate, tri.points,
-                                                            tri.simplices, min_angle)
+                                                            trs, min_angle)
         assert new_points is None
         assert angle is None
 
@@ -249,11 +231,12 @@ class TestDrawElectrodes:
         nodes = np.vstack([X.reshape(-1), Y.reshape(-1)]).T
         tri = scipy.spatial.Delaunay(nodes)
         line = np.array([[-5, .5], [5, .5]])
-        new_points, _= electrode_placement._make_line(line, tri.points, tri.simplices,
+        trs = tri.simplices[:, [1,0,2]]
+        new_points, _= electrode_placement._make_line(line, tri.points, trs,
                                                     ends=True)
 
 
-        edges, tr_edges, adjacency_list = electrode_placement._edge_list(tri.simplices)
+        edges, tr_edges, adjacency_list = electrode_placement._edge_list(trs)
         _, closest, side = electrode_placement._point_line_distance(line[0], line[1], new_points)
         edge_s = side[edges]
         edges_crossing = np.prod(edge_s, axis=1) < -.1
@@ -263,9 +246,9 @@ class TestDrawElectrodes:
         assert not np.all(edges_crossing)
 
         line = np.array([[-5, 0], [5, 0]])
-        new_points, _= electrode_placement._make_line(line, tri.points, tri.simplices,
+        new_points, _= electrode_placement._make_line(line, tri.points, trs,
                                                     ends=True)
-        edges, tr_edges, adjacency_list = electrode_placement._edge_list(tri.simplices)
+        edges, tr_edges, adjacency_list = electrode_placement._edge_list(trs)
         _, closest, side = electrode_placement._point_line_distance(line[0], line[1], new_points)
         edge_s = side[edges]
         edges_crossing = np.prod(edge_s, axis=1) < -.1
@@ -282,12 +265,13 @@ class TestDrawElectrodes:
         poly = np.array([[5.5, 5.5], [5.5, -5.5], [-5.5, -5.5], [-5.5, 5.5]])
         #angles = np.linspace(0, 2*np.pi, endpoint=False, num=20)
         #poly = np.vstack([5*np.sin(angles), 5*np.cos(angles)]).T
+        trs = tri.simplices[:, [1,0,2]]
         new_points, _ = electrode_placement._draw_polygon_2D(
-            poly, tri.points, tri.simplices, ends=True)
-        bar = np.mean(new_points[tri.simplices], axis=1)
-        m = new_points[tri.simplices[:, 1:]] -\
-            new_points[tri.simplices[:, 0]][:, None, :]
-        area = .5 * np.linalg.det(m)
+            poly, tri.points, trs, ends=True)
+        bar = np.mean(new_points[trs], axis=1)
+        m = new_points[trs[:, 1:]] -\
+            new_points[trs[:, 0]][:, None, :]
+        area = .5 * -np.linalg.det(m)
         inside = electrode_placement._point_inside_polygon(poly, bar, tol=1e-3)
         #plt.triplot(new_points[:, 0], new_points[:, 1], tri.simplices.copy())
         #plt.show()
@@ -300,13 +284,14 @@ class TestDrawElectrodes:
         poly = np.array([[5, 5], [5, -5], [-5, -5], [-5, 5]])
         hole1 = np.array([[2, 2], [2, -2], [-2, -2], [-2, 2]])
         hole2 = np.array([[4, 4], [4, 3], [3, 3], [3, 4]])
+        trs = tri.simplices[:, [1,0,2]]
         inside = electrode_placement._inside_complex_polygon(poly, tri.points,
-                                                             tri.simplices,
+                                                             trs,
                                                              holes=[hole1, hole2],
                                                              tol=1e-3)
-        m = tri.points[tri.simplices[inside, 1:]] -\
-            tri.points[tri.simplices[inside, 0]][:, None, :]
-        area = .5 * np.linalg.det(m)
+        m = tri.points[trs[inside, 1:]] -\
+            tri.points[trs[inside, 0]][:, None, :]
+        area = .5 * -np.linalg.det(m)
         assert np.isclose(np.sum(area), 100-16-1)
 
 
@@ -315,10 +300,11 @@ class TestDrawElectrodes:
         nodes = np.vstack([X.reshape(-1), Y.reshape(-1)]).T
         tri = scipy.spatial.Delaunay(nodes)
         poly = np.array([[5, 5], [5, -5], [-5, -5], [-5, 5]])
+        trs = tri.simplices[:, [1,0,2]]
         #hole = [np.array([[2, 2], [2, -2], [-2, -2], [-2, 2]])]
         h = 5
         new_points, tetrahedra, triangles, _, _, _, _ = electrode_placement._build_electrode(
-            poly, h, tri.points, tri.simplices)
+            poly, h, tri.points, trs)
         mesh = mesh_io.Msh()
         mesh.elm = mesh_io.Elements(#triangles=triangles+1)
                                  tetrahedra=tetrahedra + 1)
@@ -326,7 +312,7 @@ class TestDrawElectrodes:
         #mesh_io.write_msh(mesh, '~/Tests/electrode.msh')
         m = new_points[tetrahedra[:, 1:]] -\
             new_points[tetrahedra[:, 0]][:, None, :]
-        vol = np.linalg.det(m) / 6.0
+        vol = -np.linalg.det(m) / 6.0
         assert np.isclose(np.sum(vol), 100 * h)
 
         sides = new_points[triangles[:, 1:]] - \
@@ -339,7 +325,7 @@ class TestDrawElectrodes:
 
         h = [3, 1]
         new_points, tetrahedra, triangles, _, _, th_tags, tr_tags = electrode_placement._build_electrode(
-            poly, h, tri.points, tri.simplices)
+            poly, h, tri.points, trs)
         mesh = mesh_io.Msh()
         mesh.elm = mesh_io.Elements(#triangles=triangles+1)
                                  tetrahedra=tetrahedra + 1)
@@ -349,7 +335,7 @@ class TestDrawElectrodes:
         #mesh_io.write_msh(mesh, '~/Tests/electrode.msh')
         m = new_points[tetrahedra[:, 1:]] -\
             new_points[tetrahedra[:, 0]][:, None, :]
-        vol = np.linalg.det(m) / 6.0
+        vol = -np.linalg.det(m) / 6.0
         assert np.isclose(np.sum(vol[th_tags==0]), 100 * 3)
         assert np.isclose(np.sum(vol[th_tags==1]), 100 * 1)
         mesh.elm = mesh_io.Elements(triangles=triangles+1)
@@ -366,7 +352,7 @@ class TestDrawElectrodes:
 
         plug = np.array([[2, 2], [2, -2], [-2, -2], [-2, 2]])
         new_points, tetrahedra, triangles, _, _, th_tags, tr_tags = electrode_placement._build_electrode(
-            poly, h, tri.points, tri.simplices, plug=plug)
+            poly, h, tri.points, trs, plug=plug)
         sides = new_points[triangles[:, 1:]] - \
             new_points[triangles[:, 0]][:, None, :]
 
@@ -382,10 +368,10 @@ class TestDrawElectrodes:
         middle_layer = np.array([[2, 2], [2, -2], [-2, -2], [-2, 2]])
         h = [3, 1, 3]
         new_points, tetrahedra, triangles, _, _, th_tags, tr_tags = electrode_placement._build_electrode(
-            poly, h, tri.points, tri.simplices, middle_layer=middle_layer)
+            poly, h, tri.points, trs, middle_layer=middle_layer)
         m = new_points[tetrahedra[:, 1:]] -\
             new_points[tetrahedra[:, 0]][:, None, :]
-        vol = np.linalg.det(m) / 6.0
+        vol = -np.linalg.det(m) / 6.0
         assert np.isclose(np.sum(vol[th_tags==0]), 100 * 6 + (100-16) * 1)
         assert np.isclose(np.sum(vol[th_tags==1]), 16 * 1)
         sides = new_points[triangles[:, 1:]] - \

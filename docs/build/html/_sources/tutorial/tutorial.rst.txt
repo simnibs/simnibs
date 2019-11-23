@@ -11,5 +11,6 @@ Tutorial
    head_meshing
    scripting
    analysis
+   optimization
    advanced/advanced
    win_prompt

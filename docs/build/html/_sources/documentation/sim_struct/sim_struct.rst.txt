@@ -15,6 +15,5 @@ In order to set-up simulations, SimNIBS uses a set of custom data structures.
    cond
    electrode
    position
-
-
+   tdcsleadfield
 

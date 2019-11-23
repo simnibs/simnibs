@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.Nodes &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>simnibs.Nodes &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -52,7 +52,7 @@
 <h1>simnibs.Nodes<a class="headerlink" href="#simnibs-nodes" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="simnibs.Nodes">
-<em class="property">class </em><code class="descclassname">simnibs.</code><code class="descname">Nodes</code><span class="sig-paren">(</span><em>node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Nodes</code><span class="sig-paren">(</span><em class="sig-param">node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>class to handle the node information:</p>
 <dl class="field-list simple">
@@ -62,7 +62,7 @@
 </dl>
 <dl class="attribute">
 <dt id="simnibs.Nodes.node_coord">
-<code class="descname">node_coord</code><a class="headerlink" href="#simnibs.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">node_coord</code><a class="headerlink" href="#simnibs.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coordinates of the nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -73,7 +73,7 @@
 
 <dl class="attribute">
 <dt id="simnibs.Nodes.nr">
-<code class="descname">nr</code><a class="headerlink" href="#simnibs.Nodes.nr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">nr</code><a class="headerlink" href="#simnibs.Nodes.nr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -95,12 +95,12 @@
 </div>
 <dl class="method">
 <dt id="simnibs.Nodes.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-center">
+<table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
@@ -115,7 +115,7 @@
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table class="longtable docutils align-center">
+<table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
@@ -131,7 +131,7 @@
 </table>
 <dl class="method">
 <dt id="simnibs.Nodes.find_closest_node">
-<code class="descname">find_closest_node</code><span class="sig-paren">(</span><em>querry_points</em>, <em>return_index=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.find_closest_node" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">find_closest_node</code><span class="sig-paren">(</span><em class="sig-param">querry_points</em>, <em class="sig-param">return_index=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.find_closest_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the closest node to each point in p</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -153,15 +153,15 @@
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="simnibs.Nodes.node_number">
-<code class="descname">node_number</code><a class="headerlink" href="#simnibs.Nodes.node_number" title="Permalink to this definition">¶</a></dt>
+<em class="property">property </em><code class="sig-name descname">node_number</code><a class="headerlink" href="#simnibs.Nodes.node_number" title="Permalink to this definition">¶</a></dt>
 <dd><p>Node numbers (1, …, nr)</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt>
-<code class="descname">nr</code></dt>
+<em class="property">property </em><code class="sig-name descname">nr</code></dt>
 <dd><p>Number of nodes</p>
 </dd></dl>
 
@@ -214,6 +214,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
@@ -222,6 +223,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
@@ -242,10 +244,10 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -267,7 +269,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

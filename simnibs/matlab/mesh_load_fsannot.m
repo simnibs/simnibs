@@ -62,9 +62,17 @@ fnameIn=fnameHlp(idx+1:end);
 region_idx=unique(m.triangle_regions);
 load_lh = false; load_rh = false; start_idx=[]; fnames={}; prefix={};
 if any(region_idx == 1)
+    surf_idx = 1;
+    both_hemispheres = true;
+elseif any(region_idx == 1002)
+    surf_idx = 1002;
+    both_hemispheres = true;
+end
+if both_hemispheres
     load_lh=true;
     load_rh=true;
-    hlpIdx=m.triangles(m.triangle_regions==1,:); % get first lh node
+     % get first lh node
+    hlpIdx=m.triangles(m.triangle_regions==surf_idx,:);
     start_idx=[start_idx min(hlpIdx(:))]; 
     fnames={fnames{:} [pnameIn filesep 'lh.' fnameIn]};
     prefix={prefix{:} 'lh.'};

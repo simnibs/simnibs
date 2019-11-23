@@ -12,7 +12,6 @@ dependencies:
   - cython=0.29
   - mock
   - freeglut
-  - nomkl
   - pip
   - pip:
     - nibabel==2.3.*

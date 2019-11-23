@@ -48,7 +48,7 @@ Python
 '''''''
 Write a *Python* script. In this case, remember to set *map_to_fsavg* to *True* in the :ref:`session_doc` structure. See :ref:`scripting_tutorial` for more information.
 
-.. literalinclude:: ../../../simnibs/examples/run_simulations_group.py
+.. literalinclude:: ../../../simnibs/examples/simulations/run_simulations_group.py
    :language: python
 
 MATLAB
@@ -56,7 +56,7 @@ MATLAB
 Write a *MATLAB* script. In this case, remember to set *map_to_fsavg* to *True* in the :ref:`session_doc` structure. See :ref:`scripting_tutorial` for more information.
 
 
-.. literalinclude:: ../../../simnibs/examples/run_simulations_group.m
+.. literalinclude:: ../../../simnibs/examples/simulations/run_simulations_group.m
    :language: matlab
 
 
@@ -71,13 +71,13 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 Python
 ''''''''
 
-.. literalinclude:: ../../../simnibs/examples/group_average_fsavg.py
+.. literalinclude:: ../../../simnibs/examples/analysis/group_average_fsavg.py
    :language: python
 
 
 MATLAB
 '''''''
-.. literalinclude:: ../../../simnibs/examples/group_average_fsavg.m
+.. literalinclude:: ../../../simnibs/examples/analysis/group_average_fsavg.m
    :language: matlab
 
 

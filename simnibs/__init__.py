@@ -7,7 +7,4 @@ from .utils.file_finder import *
 from .simulation import sim_struct
 from .simulation import cond
 from .simulation.run_simnibs import run_simnibs
-try:
-    from .internal import optimize
-except ImportError:
-    pass
+from .optimization import opt_struct

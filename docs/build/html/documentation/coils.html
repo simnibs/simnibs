@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Coil Models Included in SimNIBS &#8212; SimNIBS 3.0.7 documentation</title>
+    <title>Coil Models Included in SimNIBS &#8212; SimNIBS 3.1-dev0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -52,7 +52,7 @@
 <span id="coil-fies"></span><h1>Coil Models Included in SimNIBS<a class="headerlink" href="#coil-models-included-in-simnibs" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="default-coil-files">
 <h2>Default Coil Files<a class="headerlink" href="#default-coil-files" title="Permalink to this headline">¶</a></h2>
-<table class="colwidths-given docutils align-center">
+<table class="colwidths-given docutils align-default">
 <colgroup>
 <col style="width: 50%" />
 <col style="width: 50%" />
@@ -79,7 +79,7 @@
 </div>
 <div class="section" id="extra-coil-files">
 <h2>Extra Coil Files<a class="headerlink" href="#extra-coil-files" title="Permalink to this headline">¶</a></h2>
-<p>Please see <a class="reference download internal" download="" href="../_downloads/ad899b1ed3dec68087407ecee5034e67/Deng_Brain_Stim_2013_docu.pdf"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a> for more information.
+<p>Please see <a class="reference download internal" download="" href="../_downloads/264fd613665159f067941469a86ad10d/Deng_Brain_Stim_2013_docu.pdf"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a> for more information.
 These coil files are optionally downloaded by SimNIBS during the installation.</p>
 <p>We would like to thank Zhi-De Deng for sharing his coil definition files with us and Mursel Karadas for converting them to SimNIBS format. These models were constructed from geometrical values about the coil windings taken from literature. Please note that some of the models represent non-planar coils. Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements, i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!</p>
 <div class="section" id="id1">
@@ -134,6 +134,7 @@ These coil files are optionally downloaded by SimNIBS during the installation.</
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical User Interface Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="opt_struct/opt_struct.html">Optimization Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="coordinates.html">Coordinates in SimNIBS</a></li>
@@ -142,6 +143,7 @@ These coil files are optionally downloaded by SimNIBS during the installation.</
 <li class="toctree-l2"><a class="reference internal" href="python_lib/python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
@@ -160,10 +162,10 @@ These coil files are optionally downloaded by SimNIBS during the installation.</
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -185,7 +187,7 @@ These coil files are optionally downloaded by SimNIBS during the installation.</
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
