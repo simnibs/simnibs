@@ -11,7 +11,7 @@ import simnibs.simulation.fem as fem
 import simnibs.simulation.coil_numpy as coil_lib
 import simnibs.msh.mesh_io as mesh_io
 import simnibs.simulation.analytical_solutions.sphere as analytical_solutions
-from simnibs.cython_code import petsc_solver
+from simnibs._compiled import petsc_solver
 
 
 @pytest.fixture

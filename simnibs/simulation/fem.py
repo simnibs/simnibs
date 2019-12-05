@@ -18,7 +18,7 @@ from . import cond as cond_lib
 from . import coil_numpy as coil_lib
 from . import pardiso
 from ..utils.simnibs_logger import logger
-from ..cython_code import petsc_solver
+from .._compiled import petsc_solver
 
 DEFAULT_SOLVER_OPTIONS = \
         '-ksp_type cg ' \

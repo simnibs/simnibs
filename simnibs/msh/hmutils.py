@@ -123,7 +123,7 @@ else:
 from simnibs import SIMNIBSDIR
 from simnibs.msh import mesh_io
 from . import _marching_cubes_lewiner_luts as mcluts
-import simnibs.cython_code._marching_cubes_lewiner_cy as _marching_cubes_lewiner_cy
+from . import _marching_cubes_lewiner_cy
 from ..utils.file_finder import path2bin
 
 logger = logging.getLogger("py.warnings")

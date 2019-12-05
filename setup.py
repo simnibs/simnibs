@@ -11,12 +11,6 @@ import numpy as np
 ########################
 # Compile C extensions #
 ########################
-try:
-    from Cython.Build import cythonize
-    ext = '.pyx'
-except ImportError:
-    ext = '.c'
-
 '''
 If you want to setup SimNIBS to use your own locally compiled PETSC, you can call
 setup.py with the SIMNIBS_PETSC_INCLUDE and SIMNIBS_PETSC_DIR environment variables, for
@@ -70,22 +64,19 @@ else:
     raise OSError('OS not supported!')
 
 extension = [
-    Extension('simnibs.cython_code.cython_msh',
-              ["simnibs/cython_code/cython_msh" + ext],
+    Extension('simnibs.msh.cython_msh',
+              ["simnibs/msh/cython_msh.pyx"],
               include_dirs=[np.get_include()]),
-    Extension('simnibs.cython_code._marching_cubes_lewiner_cy',
-              ["simnibs/cython_code/_marching_cubes_lewiner_cy" + ext],
+    Extension('simnibs.msh._marching_cubes_lewiner_cy',
+              ["simnibs/msh/_marching_cubes_lewiner_cy.pyx"],
               include_dirs=[np.get_include()]),
-    Extension('simnibs.cython_code.petsc_solver',
-              ["simnibs/cython_code/petsc_solver" + ext],
+    Extension('simnibs._compiled.petsc_solver',
+              ["simnibs/_compiled/petsc_solver.pyx"],
               include_dirs=petsc_include,
               library_dirs=petsc_dirs,
               libraries=petsc_libs,
-              runtime_library_dirs=petsc_runtime,
-    )]
-
-if ext == '.pyx':
-    extension = cythonize(extension)
+              runtime_library_dirs=petsc_runtime)
+]
 
 
 ####################################################
@@ -112,8 +103,26 @@ gui_scripts = [
 ]
 
 
+def move_libraries(build_folder, operation=shutil.move):
+    if sys.platform == 'darwin':
+        folder_name = 'osx'
+    elif sys.platform == 'linux':
+        folder_name = 'linux'
+    elif sys.platform == 'win32':
+        folder_name = 'win'
+
+    lib_folder = os.path.join(build_folder, 'simnibs', 'lib', folder_name)
+    compliled_folder = os.path.join(build_folder, 'simnibs', '_compiled')
+    for fn in glob.glob(os.path.join(lib_folder, '*')):
+        operation(
+            fn,
+            os.path.join(compliled_folder, os.path.basename(fn))
+        )
+
 class build_ext_(build_ext):
     def run(self):
+        from Cython.Build import cythonize
+        self.extension = cythonize(self.extensions)
         build_ext.run(self)
         # Remove unescessary binary files
         linux_folders = [
@@ -144,34 +153,21 @@ class build_ext_(build_ext):
         if sys.platform == 'darwin':
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in win_folders]
-            for f in glob.glob(os.path.join(self.build_lib, 'simnibs', 'lib', 'osx', '*')):
-                shutil.move(
-                            f,
-                            os.path.join(self.build_lib, 'simnibs', 'cython_code', os.path.basename(f)))
-        
+            move_libraries(self.build_lib)
+
         if sys.platform == 'win32':
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in osx_folders]
-            for f in glob.glob(os.path.join(self.build_lib, 'simnibs', 'lib', 'win', '*')):
-                shutil.move(
-                    f,
-                    os.path.join(self.build_lib, 'simnibs', 'cython_code', os.path.basename(f)))
+            move_libraries(self.build_lib)
 
 
 class develop_(develop):
     def run(self):
         develop.run(self)
         if sys.platform == 'win32':
-            for f in glob.glob(os.path.join('simnibs', 'lib', 'win', '*')):
-                shutil.copy(
-                    f,
-                    os.path.join('simnibs', 'cython_code', os.path.basename(f)))
+            move_libraries('.', shutil.copy)
         if sys.platform == 'darwin':
-            for f in glob.glob(os.path.join('simnibs', 'lib', 'osx', '*')):
-                shutil.copy(
-                    f,
-                    os.path.join('simnibs', 'cython_code', os.path.basename(f)))
-
+            move_libraries('.', shutil.copy)
 
 setup(name='simnibs',
       version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
