@@ -5,7 +5,7 @@ from simnibs.msh import mesh_io
 import scipy.sparse
 import scipy.ndimage
 
-from . import create_mesh
+from .._compiled import create_mesh
 
 
 class MeshingError(ValueError):
@@ -204,7 +204,6 @@ def _mesh_surfaces(surfaces, subdomains, facet_angle,
         mesh = mesh_io.read_medit(fn_mesh)
     return mesh
 
-## TODO: Mesh reconstruction
 def remesh(mesh, facet_size, cell_size,
            facet_angle=30, facet_distance=0.1,
            cell_radius_edge_ratio=2, optimize=True):

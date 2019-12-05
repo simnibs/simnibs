@@ -3,24 +3,53 @@ import os
 import sys
 import glob
 import shutil
+import urllib
+import tempfile
+import zipfile
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
 from distutils.core import setup, Command
 import numpy as np
 
-########################
-# Compile C extensions #
-########################
-'''
+''' C extensions
+
+PETSc Linking
+-------------
+
 If you want to setup SimNIBS to use your own locally compiled PETSC, you can call
 setup.py with the SIMNIBS_PETSC_INCLUDE and SIMNIBS_PETSC_DIR environment variables, for
 example
 
-SIMNIBS_PETSC_DIR=/path/to/petsc/simnibs_petsc_arch/lib \
-SIMNIBS_PETSC_INCLUDE="/path/to/petsc/simnibs_direct_petsc_arch/include:/path/to/petsc/include" \
+export SIMNIBS_PETSC_DIR="/path/to/petsc/simnibs_petsc_arch/lib"
+export SIMNIBS_PETSC_INCLUDE="/path/to/petsc/simnibs_direct_petsc_arch/include"
 python setup.py develop
+
+CGAL Compilation
+-----------------
+
+CGAL >= 5 is a header-only library, so we download it right before compiling.
+
+Compilation requires:
+GCC >= 6.3 or Apple Clang == 10.0.1 or MSVC >= 14.0
+
+Boost >= 1.57
+
+Boost can be instaled with
+    Ubuntu: sudo apt install libboost-all-dev
+    MacOS: brew install boost
+    Windows: conda install boost
+
+    Boost is also header-only, so we only need it during compile time
+
+For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
+
 '''
+
+CGAL_version = '5.0'
+CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
+
 if sys.platform == 'win32':
+    petsc_libs = ['libpetsc', 'msmpi']
     if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
         petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(';')
     else:
@@ -32,8 +61,20 @@ if sys.platform == 'win32':
         petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
     else:
         petsc_dirs = ['simnibs/lib/win']
-    petsc_libs = ['libpetsc', 'msmpi']
     petsc_runtime = None
+
+    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib']
+    cgal_include = [
+        np.get_include(),
+        CGAL_headers,
+        'simnibs/include/win/mpfr',
+        'simnibs/include/win/gmp',
+        # Assuming conda install boost
+        os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')
+    ]
+    cgal_dirs = ['simnibs/lib/win']
+    cgal_runtime = None
+    cgal_compile_args = None
 
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
@@ -48,6 +89,17 @@ elif sys.platform == 'linux':
         petsc_dirs = ['simnibs/lib/linux']
         petsc_runtime = ['$ORIGIN/../lib/linux']
 
+    cgal_libs = ['mpfr', 'gmp', 'z']
+    cgal_include = [
+        np.get_include(),
+        CGAL_headers,
+        'simnibs/include/linux/mpfr',
+        'simnibs/include/linux/gmp',
+    ]
+    cgal_dirs = ['simnibs/lib/linux']
+    cgal_runtime = ['$ORIGIN/../lib/linux']
+    cgal_compile_args = ['-Os', '-flto']
+
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
     if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
@@ -59,6 +111,18 @@ elif sys.platform == 'darwin':
     else:
         petsc_dirs = ['simnibs/lib/osx']
     petsc_runtime = None
+
+    cgal_libs = ['mpfr', 'gmp', 'z']
+    cgal_include = [
+        np.get_include(),
+        CGAL_headers,
+        'simnibs/include/osx/mpfr',
+        'simnibs/include/osx/gmp',
+    ]
+    cgal_dirs = ['simnibs/lib/osx']
+    cgal_runtime = None
+    cgal_compile_args = None
+
 
 else:
     raise OSError('OS not supported!')
@@ -75,7 +139,16 @@ extension = [
               include_dirs=petsc_include,
               library_dirs=petsc_dirs,
               libraries=petsc_libs,
-              runtime_library_dirs=petsc_runtime)
+              runtime_library_dirs=petsc_runtime),
+    Extension('simnibs._compiled.create_mesh',
+              sources=["simnibs/_compiled/create_mesh.pyx"],
+              language='c++',
+              include_dirs=cgal_include,
+              libraries=cgal_libs,
+              library_dirs=cgal_dirs,
+              runtime_library_dirs=cgal_runtime,
+              extra_compile_args=cgal_compile_args,
+              extra_link_args=cgal_compile_args)
 ]
 
 
@@ -103,6 +176,22 @@ gui_scripts = [
 ]
 
 
+def download_cgal():
+    CGAL_url = (
+        'https://github.com/CGAL/cgal/releases/download/'
+        'releases/CGAL-{0}/CGAL-{0}-library.zip'.format(CGAL_version)
+    )
+    with urllib.request.urlopen(CGAL_url) as response:
+        with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
+            shutil.copyfileobj(response, tmpf)
+            tmpname = tmpf.name
+
+    with zipfile.ZipFile(tmpname) as z:
+        z.extractall()
+
+    os.remove(tmpname)
+
+
 def move_libraries(build_folder, operation=shutil.move):
     if sys.platform == 'darwin':
         folder_name = 'osx'
@@ -119,12 +208,15 @@ def move_libraries(build_folder, operation=shutil.move):
             os.path.join(compliled_folder, os.path.basename(fn))
         )
 
+
 class build_ext_(build_ext):
     def run(self):
         from Cython.Build import cythonize
         self.extension = cythonize(self.extensions)
+        download_cgal()
         build_ext.run(self)
         # Remove unescessary binary files
+        shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
         linux_folders = [
             os.path.join(self.build_lib, 'simnibs', 'bin', 'linux'),
             os.path.join(self.build_lib, 'simnibs', 'include', 'linux'),
