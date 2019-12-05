@@ -24,7 +24,7 @@ import argparse
 import sys
 import os
 
-import simnibs.msh.transformations as transformations
+import simnibs import transformations
 from simnibs import __version__
 
 

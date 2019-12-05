@@ -40,7 +40,7 @@ import traceback
 from simnibs import SIMNIBSDIR, file_finder
 from simnibs.msh import mesh_io
 import simnibs.msh.hmutils as hmu
-import simnibs.msh.transformations as transformations
+import simnibs.transformations as transformations
 from simnibs import __version__
 
 # logging

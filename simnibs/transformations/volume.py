@@ -5,7 +5,7 @@
 '''
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
-    Copyright (C) 2019 Kristoffer H Madsen, Guilherme B Saturnino, Axel Thielscher
+    Copyright (C) 2020 Kristoffer H Madsen, Guilherme B Saturnino, Axel Thielscher
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,12 +35,13 @@ import nibabel as nib
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
 from ..utils.file_finder import templates, SubjectFiles, get_atlas
+from ..utils.csv_reader import write_csv_positions, read_csv_positions
 
 __all__ = [
+    'warp_volume',
+    'warp_coordinates',
     'subject2mni_coords',
     'mni2subject_coords',
-    'eeg_positions',
-    'subject_atlas'
 ]
 
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
@@ -890,119 +891,6 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
 
     return coords_transf, vy_transf, vz_transf
 
-
-
-def _read_csv(fn):
-    with open(os.path.expanduser(fn), 'r') as f:
-        reader = csv.reader(f)
-        rows = [row for row in reader]
-
-    if len(rows[-1]) < 3:
-        raise IOError('CSV file must have at least 4 rows')
-
-    coordinates = []
-    try:
-        float(rows[0][1])
-        header = []
-        start = 0
-    except:
-        header = rows[0]
-        start = 1
-
-    rows = rows[start:]
-    type_ = [r[0] for r in rows]
-
-    extra = []
-    name = []
-    extra_cols = []
-    type_filtered = []
-    rows_filtered = []
-
-    for t, r, i in zip(type_, rows, range(len(type_))):
-        if t in ['Generic', 'Fiducial'] or len(r) == 4:
-            name += [r[4] if len(r) >= 5 else None]
-            extra_cols += [r[5:] if len(r) > 5 else None]
-            extra += [None]
-            type_filtered.append(t)
-            rows_filtered.append(r)
-        elif t in ['Electrode', 'ReferenceElectrode']:
-            try:
-                extra += [np.array([float(d) for d in r[4:7]])]
-                name += [r[7] if len(r) >= 8 else None]
-                extra_cols += [r[8:] if len(r) > 8 else None]
-            except:
-                extra += [None]
-                name += [r[4] if len(r) >= 5 else None]
-                extra_cols += [r[5:] if len(r) > 5 else None]
-            type_filtered.append(t)
-            rows_filtered.append(r)
-        elif t == 'CoilPos':
-            extra += [np.array([float(d) for d in r[4:11]])]
-            name += [r[11] if len(r) >= 12 else None]
-            extra_cols += [r[12:] if len(r) > 12 else None]
-            type_filtered.append(t)
-            rows_filtered.append(r)
-        else:
-            warnings.warn('Unrecognized column type: {0}'.format(t))
-    type_ = type_filtered
-    rows = rows_filtered
-    try:
-        coordinates = np.array(
-            [[float(d) for d in r[1:4]] for r in rows],
-            dtype=float)
-    except:
-        raise IOError('Could not read coordinates from CSV file')
-
-    return type_, coordinates, extra, name, extra_cols, header
-
-
-
-def _write_csv(fn, type_, coordinates, extra, name, extra_cols, header):
-    coordinates = coordinates.tolist()
-    name = [[] if not n else [n] for n in name]
-    extra_cols = [[] if not e_c else e_c for e_c in extra_cols]
-    extra = [[] if e is None else e.tolist() for e in extra]
-    with open(fn, 'w', newline='') as f:
-        writer = csv.writer(f)
-        if header != []:
-            writer.writerow(header)
-        for t, c, e, n, e_c in zip(type_, coordinates, extra, name, extra_cols):
-            writer.writerow([t] + c + e + n + e_c)
-
-def _get_eeg_positions(fn_csv):
-    if not os.path.isfile(fn_csv):
-        raise IOError('Could not find EEG cap file: {0}'.format(fn_csv))
-    type_, coordinates, _, name, _, _ = _read_csv(fn_csv)
-    eeg_pos = {}
-    for i, t in enumerate(type_):
-        if t in ['Electrode', 'ReferenceElectrode', 'Fiducial']:
-            eeg_pos[name[i]] = coordinates[i]
-    return eeg_pos
-
-def eeg_positions(m2m_folder, cap_name='EEG10-10_UI_Jurak_2007.csv'):
-    ''' Returns a directory with EEG electrode positions
-
-    Parameters
-    -----------
-
-    m2m_folder: str
-        Path to the m2m_{subject_id} folder, generated during the segmantation
-
-    cap_name: str
-        Name of EEG cap. Default: 'EEG10-10_UI_Jurak_2007.csv'
-
-
-    Returns
-    --------
-    eeg_caps: dict
-        Dictionary with cap position
-    '''
-    sub_files = SubjectFiles(subpath=m2m_folder)
-    if not cap_name.endswith('.csv'):
-        cap_name += '.csv'
-    fn_cap = sub_files.get_eeg_cap(cap_name)
-    return _get_eeg_positions(fn_cap)
-
 def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     ''' Warps a set of coordinates in subject space to MNI space
 
@@ -1129,7 +1017,7 @@ def warp_coordinates(coordinates, m2m_folder,
     names = get_names_from_folder_structure(m2m_folder)
     # Read CSV
     if isinstance(coordinates, str):
-        type_, coordinates, extra, name, extra_cols, header = _read_csv(coordinates)
+        type_, coordinates, extra, name, extra_cols, header = read_csv_positions(coordinates)
     else:
         try:
             type_, coordinates, extra, name, extra_cols, header = coordinates
@@ -1237,7 +1125,8 @@ def warp_coordinates(coordinates, m2m_folder,
 
     # Write CSV
     if out_name is not None:
-        _write_csv(out_name, type_, transformed_coords, transformed_extra, name, extra_cols, header)
+        write_csv_positions(
+            out_name, type_, transformed_coords, transformed_extra, name, extra_cols, header)
         if out_geo is not None:
             csv_to_geo(out_name, out_geo)
 
@@ -1253,7 +1142,7 @@ def csv_to_geo(fn_csv, fn_out):
     fn_out: str
         name of output geo file
     '''
-    type_, coordinates, extra, name, _, _ = _read_csv(fn_csv)
+    type_, coordinates, extra, name, _, _ = read_csv_positions(fn_csv)
     file_text = 'View"' + '' + '"{\n'
 
     def write_electrode(file_text, coordinates, extra, name):
@@ -1299,355 +1188,167 @@ def csv_to_geo(fn_csv, fn_out):
         f.write(file_text)
 
 
-def get_surface_names_from_folder_structure(m2m_folder):
-    # Subject name
-    sub_files = SubjectFiles(subpath=m2m_folder)
-    if not os.path.isdir(sub_files.subpath):
-        raise IOError('The given m2m folder name does not correspond to a directory')
-
-    def look_up(f):
-        if os.path.isfile(f) or os.path.isdir(f):
-            return f
-        else:
-            raise IOError('Could not find file or directory: {0}'.format(f))
-
-    names = {}
-
-    if sub_files.seg_type == 'headreco':
-        names['surf_dir'] = look_up(sub_files.surf_dir)
-        names['lh_midgm'] = look_up(sub_files.lh_midgm)
-        names['rh_midgm'] = look_up(sub_files.rh_midgm)
-        names['lh_reg'] = look_up(sub_files.lh_reg)
-        names['rh_reg'] = look_up(sub_files.rh_reg)
-        names['lh_sphere_ref'] = look_up(templates.cat_lh_sphere_ref)
-        names['rh_sphere_ref'] = look_up(templates.cat_rh_sphere_ref)
-        names['ref_fs'] = look_up(sub_files.ref_fs)
-        names['lh_cortex_ref'] = look_up(templates.cat_lh_cortex_ref)
-        names['rh_cortex_ref'] = look_up(templates.cat_rh_cortex_ref)
-
-    elif sub_files.seg_type == 'mri2mesh':
-        names['subj_id'] = sub_files.subid
-        names['surf_dir'] = look_up(sub_files.surf_dir)
-        names['lh_gm'] = look_up(sub_files.lh_gm)
-        names['lh_wm'] = look_up(sub_files.lh_wm)
-        names['rh_gm'] = look_up(sub_files.rh_gm)
-        names['rh_wm'] = look_up(sub_files.rh_wm)
-        names['lh_reg'] = look_up(sub_files.lh_reg)
-        names['rh_reg'] = look_up(sub_files.rh_reg)
-        names['lh_sphere_ref'] = look_up(templates.fs_lh_sphere_ref)
-        names['rh_sphere_ref'] = look_up(templates.fs_rh_sphere_ref)
-        names['ref_fs'] = look_up(sub_files.ref_fs)
-        names['lh_cortex_ref'] = look_up(templates.fs_lh_cortex_ref)
-        names['rh_cortex_ref'] = look_up(templates.fs_rh_cortex_ref)
-
-    else:
-        raise IOError('Could not find surface files in m2m folder. SPM-only segmentation?')
-
-    return names, sub_files.seg_type
-
-
-def _surf2surf(field, in_surf, out_surf, kdtree=None):
-    ''' Interpolates the field defined in in_vertices to the field defined in
-    out_vertices using nearest neighbour '''
-    if kdtree is None:
-        # Normalize the radius of the input sphere
-        in_v = np.copy(in_surf.nodes.node_coord)
-        in_v /= np.average(np.linalg.norm(in_v, axis=1))
-        kdtree = scipy.spatial.cKDTree(in_v)
-    out_v = np.copy(out_surf.nodes.node_coord)
-    # Normalize the radius of the output sphere
-    out_v /= np.average(np.linalg.norm(out_v, axis=1))
-    _, closest = kdtree.query(out_v)
-    return field[closest], kdtree
-
-def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth=0.5, quantities=['norm', 'normal', 'tangent','angle'],
-                            fields=None, open_in_gmsh=False):
-    ''' Interpolates the vector fieds in the middle gray matter surface
+def get_vox_size(affine):
+    ''' Determines the voxel size based on the affine transformation
 
     Parameters
-    -----------
-    mesh_fn: str
-        String with file name to mesh
-    m2m_folder: str
-        Path to the m2m_{subject_id} folder, generated during the segmantation
-    out_folder: str
-        Name of output folder. Output files will be written to this folder
-    out_fsaverage: str (optional)
-        Name of output folder for transformed files. In not set, fsaverage transormation
-        will not be performed
-    depth: float (optional)
-        The distance bewteen grey and white matter where the
-        interpolation should be done. p = depth * wm + (1 - depth) * gm (default: .5)
-    quantities: list with the elements {norm, normal, tangent, angle}
-        Quantites to be calculated from vector field
-    fields: list of strings (optional)
-        Fields to be transformed. Default: all fields
-    open_in_gmsh: bool
-        If true, opens a Gmsh window with the interpolated fields
+    ------------
+    affine: 4x4 np.ndarray
+        Affine transformation
+
+    Returs
+    ----------
+    voxsize: 3x1 np.ndarray
+        Voxel sizes
     '''
-    from . import mesh_io
-    m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
-    names, segtype = get_surface_names_from_folder_structure(m2m_folder)
-    if depth < 0. or depth > 1.:
-        raise ValueError('Invalid depth value. Should be between 0 and 1')
-
-    if any([q not in ['norm', 'normal', 'tangent', 'angle'] for q in quantities]):
-        raise ValueError('Invalid quanty in {0}'.format(quantities))
-
-    def calc_quantities(nd, quantities):
-        d = dict.fromkeys(quantities)
-        for q in quantities:
-            if q == 'norm':
-                d[q] = nd.norm()
-            elif q == 'normal':
-                d[q] = nd.normal()
-                d[q].value *= -1
-            elif q == 'tangent':
-                d[q] = nd.tangent()
-            elif q == 'angle':
-                d[q] = nd.angle()
-            else:
-                raise ValueError('Invalid quantity: {0}'.format(q))
-        return d
-
-    m = mesh_io.read_msh(mesh_fn)
-    subdir, sim_name = os.path.split(mesh_fn)
-    sim_name = '.' + os.path.splitext(sim_name)[0]
-    # Crio out GM
-    m = m.crop_mesh(2)
-    if not os.path.isdir(out_folder):
-        os.mkdir(out_folder)
-    out_folder = os.path.abspath(os.path.normpath(out_folder))
-
-    if out_fsaverage is not None and not os.path.isdir(out_fsaverage):
-        os.mkdir(out_fsaverage)
-    if out_fsaverage is not None:
-        out_fsaverage = os.path.abspath(os.path.normpath(out_fsaverage))
-
-    middle_surf = {}
-    reg_surf = {}
-    ref_surf = {}
-    avg_surf = {}
-    # Load and write furfaces
-    if segtype == 'mri2mesh':
-        for hemi in ['lh', 'rh']:
-            wm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_wm'])
-            gm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_gm'])
-            middle_surf[hemi] = mesh_io._middle_surface(wm_surface, gm_surface, depth)
-            mesh_io.write_freesurfer_surface(
-                middle_surf[hemi],
-                os.path.join(out_folder, hemi + '.central'),
-                names['ref_fs'])
-    elif segtype == 'headreco':
-        for hemi in ['lh', 'rh']:
-            middle_surf[hemi] = mesh_io.read_gifti_surface(names[hemi + '_midgm'])
-            mesh_io.write_freesurfer_surface(
-                middle_surf[hemi],
-                os.path.join(out_folder, hemi + '.central'),
-                names['ref_fs'])
-    # Load average space things
-    if out_fsaverage:
-        for hemi in ['lh', 'rh']:
-            if segtype == 'headreco':
-                reg_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_reg'])
-                ref_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_sphere_ref'])
-                avg_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_cortex_ref'])
-            if segtype == 'mri2mesh':
-                reg_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_reg'])
-                ref_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_sphere_ref'])
-                avg_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_cortex_ref'])
-
-    names_subj = []
-    names_fsavg = []
-    kdtree = {'lh': None, 'rh': None}
-    h = []
-    for name, data in m.field.items():
-        for hemi in ['lh', 'rh']:
-            if fields is None or name in fields:
-                # Interpolate to middle gm
-                data = data.as_nodedata()
-                interpolated = data.interpolate_to_surface(middle_surf[hemi])
-                # For vector quantities, calculate quantities (normal, norm, ...)
-                if data.nr_comp == 3:
-                    q = calc_quantities(interpolated, quantities)
-                    for q_name, q_data in q.items():
-                        out_subj = os.path.join(
-                            out_folder, hemi + sim_name + '.central.' + name + '.' + q_name)
-                        mesh_io.write_curv(
-                            out_subj,
-                            q_data.value,
-                            middle_surf[hemi].elm.nr)
-                        names_subj.append(out_subj)
-                        middle_surf[hemi].add_node_field(q_data, name + '_' + q_name)
-                        h.append(hemi)
-                        # Interpolate to fsavg
-                        if out_fsaverage is not None:
-                            q_transformed, kdtree[hemi] = _surf2surf(
-                                q_data.value,
-                                reg_surf[hemi],
-                                ref_surf[hemi],
-                                kdtree[hemi])
-                            out_avg = os.path.join(
-                                          out_fsaverage,
-                                          hemi + sim_name + '.fsavg.'
-                                          + name + '.' + q_name)
-                            mesh_io.write_curv(out_avg,
-                                            q_transformed,
-                                            ref_surf[hemi].elm.nr)
-                            avg_surf[hemi].add_node_field(q_transformed, name + '_' + q_name)
-                            names_fsavg.append(out_avg)
-
-                # For scalar quantities
-                elif data.nr_comp == 1:
-                    field_name = name[-1]
-                    q_name = name[:-1]
-                    if field_name in m.field.keys() and q_name in quantities:
-                        # If we have an equivalent quantity being calculated, skip
-                        pass
-                    else:
-                        out_subj = os.path.join(
-                            out_folder, hemi + sim_name + '.central.' + name)
-                        mesh_io.write_curv(
-                            out_subj,
-                            interpolated.value.squeeze(),
-                            middle_surf[hemi].elm.nr)
-                        names_subj.append(out_subj)
-                        h.append(hemi)
-                        middle_surf[hemi].add_node_field(interpolated, name)
-                        if out_fsaverage is not None:
-                            f_transformed, kdtree[hemi] = _surf2surf(
-                                interpolated.value.squeeze(),
-                                reg_surf[hemi],
-                                ref_surf[hemi],
-                                kdtree[hemi])
-                            out_avg = os.path.join(
-                                out_fsaverage,
-                                hemi + sim_name + '.fsavg.' + name)
-                            mesh_io.write_curv(
-                                out_avg, f_transformed, ref_surf[hemi].elm.nr)
-                            names_fsavg.append(out_avg)
-                            avg_surf[hemi].add_node_field(f_transformed, name)
+    return np.linalg.norm(affine[:3, :3], axis=0)
 
 
-    # Join surfaces, fields and open in gmsh
-    def join_and_write(surfs, fn_out, open_in_gmsh):
-        mesh = surfs['lh'].join_mesh(surfs['rh'])
-        mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
-        mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
-        mesh.nodedata = []
-        mesh.elmdata = []
-        for k in surfs['lh'].field.keys():
-            mesh.add_node_field(
-                np.append(surfs['lh'].field[k].value,
-                          surfs['rh'].field[k].value),
-                k)
-        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
-        v.write_opt(fn_out)
-        mesh_io.write_msh(mesh, fn_out)
-        if open_in_gmsh:
-            mesh_io.open_in_gmsh(fn_out, True)
-
-    join_and_write(
-        middle_surf,
-        os.path.join(out_folder, sim_name[1:] + '_central.msh'),
-        open_in_gmsh)
-    if out_fsaverage:
-        join_and_write(
-            avg_surf,
-            os.path.join(out_fsaverage, sim_name[1:] + '_fsavg.msh'),
-            open_in_gmsh)
-
-def subject_atlas(atlas_name, m2m_dir, hemi='both'):
-    ''' Loads a brain atlas based of the FreeSurfer fsaverage template
+def crop_vol(vol, affine, mask, thickness_boundary=0):
+    ''' Crops a volume from vol based on the bounding box defined by the mask
+    Also fixes the affine transformation based on the bounding box
 
     Parameters
-    -----------
-    atlas_name: 'a2009s', 'DK40' or 'HCP_MMP1'
-            Name of atlas to load
+    ------------
+    vol: 3D np.ndarray
+        Volume to be cropped
 
-            'a2009s': Destrieux atlas (FreeSurfer v4.5, aparc.a2009s)
-            Cite: Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal
-            depth-based anatomical parcellation of the cerebral cortex.
-            Human Brain Mapping (HBM) Congress 2009, Poster #541
+    Affine: 4x4 np.ndarray
+        Affine transfromation from the original volume to world space
 
-            'DK40': Desikan-Killiany atlas (FreeSurfer, aparc.a2005s)
-            Cite: Desikan RS, S�gonne F, Fischl B, Quinn BT, Dickerson BC,
-            Blacker D, Buckner RL, Dale AM, Maguire RP, Hyman BT, Albert MS,
-            Killiany RJ. An automated labeling system for subdividing the
-            human cerebral cortex on MRI scans into gyral based regions of
-            interest. Neuroimage. 2006 Jul 1;31(3):968-80.
+    mask: 3D np.ndarray of floats
+        Volume defining the bouding box
 
-            'HCP_MMP1': Human Connectome Project (HCP) Multi-Modal Parcellation
-            Cite: Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal
-            parcellation of human cerebral cortex. Nature. 2016;536(7615):171-178.
-
-    m2m_folder: str
-        Path to the m2m_{subject_id} folder, generated during the segmantation
- 
-    hemi (optional): 'lh', 'rh' or 'both'
-        Hemisphere to use. In the case of 'both', will assume that left hemisphere
-        nodes comes before right hemisphere nodes
+    thickness_boundary: float (optional)
+        Thickness (in mm) to add to each side of the bounding box defined by the mask.
+        Default: 0
 
     Returns
     ---------
-    atlas: dict
-        Dictionary where atlas['region'] = roi
+    cropped_vol: 3D np.ndarray
+        Cropped volume
+
+    new_affine: 4x4 np.ndarray
+        Affine transformation from the cropped volume to world space
+
+    bound_box: 3x2 np.ndarray
+        Bound box used to crop the mesh
     '''
-    from .mesh_io import read_gifti_surface, read_freesurfer_surface
-    if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
-        raise ValueError('Invalid atlas name')
+    # Figure out bound box from mask
+    non_zero = np.where(mask)
+    bound_box = np.array([
+        (np.min(nz), np.max(nz))
+        for nz in non_zero
+    ], dtype=int)
 
-    subject_files = SubjectFiles(subpath=m2m_dir)
+    vx_size = get_vox_size(affine)
+    thickness_boundary = (thickness_boundary/vx_size).astype(int)
 
-    if hemi in ['lh', 'rh']:
-        fn_atlas = os.path.join(
-            templates.cat_atlases_surfaces,
-            f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
-        )
-        labels, _ , names = nib.freesurfer.io.read_annot(fn_atlas)
-        if subject_files.seg_type == 'headreco':
-            read_fun = read_gifti_surface
-        elif subject_files.seg_type == 'mri2mesh':
-            read_fun = read_freesurfer_surface
+    # Add thickness boundary in the left/bottom/front and fix
+    bound_box[:, 0] -= thickness_boundary
+    bound_box[bound_box[:, 0] < 0, 0] = 0
 
-        if hemi == 'lh':
-            labels_sub, _ = _surf2surf(
-                labels,
-                read_gifti_surface(templates.cat_lh_sphere_ref),
-                read_fun(subject_files.lh_reg)
-                ) 
-        if hemi == 'rh':
-            labels_sub, _ = _surf2surf(
-                labels,
-                read_gifti_surface(templates.cat_rh_sphere_ref),
-                read_fun(subject_files.rh_reg)
-                ) 
-        atlas = {}
-        for l, name in enumerate(names):
-            atlas[name.decode()] = labels_sub == l
+    # Add thickness boundary in the right/top/back and fix
+    bound_box[:, 1] += thickness_boundary
+    out_of_bound = bound_box[:, 1] >= vol.shape
+    bound_box[out_of_bound, 1] = np.array(vol.shape)[out_of_bound] - 1
 
-        return atlas
+    cropped_vol = vol[
+        bound_box[0, 0]:bound_box[0, 1] + 1,
+        bound_box[1, 0]:bound_box[1, 1] + 1,
+        bound_box[2, 0]:bound_box[2, 1] + 1
+    ]
 
-    # If both hemispheres
-    elif hemi == 'both':
-        atlas_lh = subject_atlas(atlas_name, m2m_dir, 'lh')
-        atlas_rh = subject_atlas(atlas_name, m2m_dir, 'rh')
-        atlas = {}
-        pad_rh = np.zeros_like(list(atlas_rh.values())[0])
-        pad_lh = np.zeros_like(list(atlas_lh.values())[0])
-        for name, mask in atlas_lh.items():
-            atlas[f'lh.{name}'] = np.append(mask, pad_rh)  # pad after
-        for name, mask in atlas_rh.items():
-            atlas[f'rh.{name}'] = np.append(pad_lh, mask)  # pad after
+    new_affine = affine.copy()
+    new_affine[:3, 3] += affine[:3, :3].dot(bound_box[:, 0])
+    return cropped_vol, new_affine, bound_box
 
-        return atlas
-    else:
-        raise ValueError('Invalid hemisphere name')
+
+def paste_vol(vol, target_size, bound_box):
+    ''' Pastes a volume in a larger empty image
+
+    Parameters
+    -----------
+    vol: 3D np.ndarray
+        Volume to be pasted
+
+    target_size: tuple
+        Dimensions of the target image
+
+    bound_box: 3x2 ndarray
+        Box indication the position where the volume should be placed
+
+    Returns
+    ---------
+    pasted_vol: 3D np.ndarray
+        volume of size target_size with the volume pasted in the positions indicated by
+        the bounding box
+    '''
+    paste_vol = np.zeros(target_size, dtype=vol.dtype)
+    paste_vol[
+        bound_box[0, 0]:bound_box[0, 1] + 1,
+        bound_box[1, 0]:bound_box[1, 1] + 1,
+        bound_box[2, 0]:bound_box[2, 1] + 1
+    ] = vol
+    return paste_vol
+
+
+def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
+    ''' Change the resolution of the volume
+
+    Parameters
+    -------------
+    vol: 3D np.ndarray
+        Volume to have the resolution changed
+
+    affine: 4x4 np.ndarray
+        Affine tranformation from the original volume to world space
+
+    target_res: 3x1 ndarray
+        Target resolution
+
+    order: int (optional)
+        Interpolation order. Default: 1
+        see: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.affine_transform.html#scipy.ndimage.affine_transform
+
+    mode: str (optional)
+        How to handle boundaries. Default: 'nearest'
+        see https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.affine_transform.html#scipy.ndimage.affine_transform
+        
+
+    Returns
+    ------------
+    resampled: 3D np.ndarray
+        Resampled volume
+
+    new_affine: 4x4 np.ndarray
+        Affine tranformation from the resampled volume to world space
+    '''
+    target_res = np.squeeze(target_res)
+    if target_res.ndim == 0:
+        target_res = target_res*np.ones(3)
+    original_res = get_vox_size(affine)
+
+    transform = np.squeeze(target_res/original_res)
+    new_affine = affine.astype(np.float)
+    new_affine[:3, :3] *= transform
+    # We need to change the translation component of the affine
+    # to make sure the voxel centers match
+    # We just solve
+    # R*(-0.5, -0.5, -0.5) + t  = R'*(-0.5, -0.5, -0.5) + t'
+    corner = -0.5*np.ones(3)
+    offset = (
+        affine[:3, :3].dot(corner) -
+        new_affine[:3, :3].dot(corner)
+    )
+    new_affine[:3, 3] += offset
+    resampled = scipy.ndimage.affine_transform(
+        vol,
+        transform,
+        offset=(transform - 1)/2.,  # the voxel coordinates define the center of the voxels
+        output_shape=(vol.shape/transform).astype(int),
+        order=order,
+        mode=mode
+    )
+    return resampled, new_affine
 

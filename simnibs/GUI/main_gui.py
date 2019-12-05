@@ -27,10 +27,7 @@ import numpy as np
 from .. import SIMNIBSDIR
 from ..simulation import sim_struct
 from ..simulation.cond import standard_cond
-from ..simulation import coil_numpy
 from ..simulation.run_simnibs import run_simnibs
-from ..msh import transformations
-from .. import msh
 from . import electrodeGUI
 from . import head_model_OGL
 from . import simulation_menu

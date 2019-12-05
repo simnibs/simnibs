@@ -34,12 +34,14 @@ import nibabel
 import h5py
 
 from . import cond
-from ..msh import transformations
+from ..transformations import volume as vol_transform
+from ..transformations import surface as surf_transform
 from ..msh import mesh_io
 from ..utils import simnibs_logger
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
+from ..utils.csv_reader import read_csv_positions, _get_eeg_positions
 from . import fem
 from . import electrode_placement
 from .. import SIMNIBSDIR, __version__
@@ -275,7 +277,7 @@ class SESSION(object):
                 out_fsavg = None
             for f in final_names:
                 if f.endswith('.msh'):
-                    transformations.middle_gm_interpolation(
+                    surf_transform.middle_gm_interpolation(
                         f, self.subpath, out_folder,
                         out_fsaverage=out_fsavg, depth=0.5,
                         open_in_gmsh=self.open_in_gmsh)
@@ -292,7 +294,7 @@ class SESSION(object):
                     name = os.path.split(f)[1]
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
-                    transformations.interpolate_to_volume(
+                    vol_transform.interpolate_to_volume(
                         f, self.subpath, name)
 
         if self.map_to_MNI:
@@ -307,7 +309,7 @@ class SESSION(object):
                     name = os.path.split(f)[1]
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
-                    transformations.warp_volume(
+                    vol_transform.warp_volume(
                         f, self.subpath, name)
 
         logger.info('=====================================')
@@ -534,7 +536,7 @@ class FIDUCIALS(object):
                  Type, pos_x, pos_y, pos_z, name, whatever
             Type must be Fiducial, and name Nz, Iz, LPA, RPA
         '''
-        type_, coordinates, _, name, _, _ = transformations._read_csv(fn_csv)
+        type_, coordinates, _, name, _, _ = read_csv_positions(fn_csv)
         for t, c, n in zip(type_, coordinates, name):
             if t == 'Fiducial':
                 if n in ['Nz', 'Iz', 'LPA', 'RPA']:
@@ -1011,7 +1013,7 @@ class TMSLIST(SimuList):
                 "Type" needs to be CoilPos. The positions are in subject space. The
                 transformations module can transfrom from MNI to subject space
         '''
-        type_, coordinates, extra, name, _, _ = transformations._read_csv(fn_csv)
+        type_, coordinates, extra, name, _, _ = read_csv_positions(fn_csv)
         for t, c, e, n in zip(type_, coordinates, extra, name):
             if t == 'CoilPos':
                 p = POSITION()
@@ -2169,7 +2171,7 @@ class TDCSLEADFIELD(LEADFIELD):
         if not os.path.isfile(self.eeg_cap):
             raise ValueError('Could not find EEG cap file: {0}'.format(self.eeg_cap))
         type_, coordinates, extra, name, _, _ = \
-            transformations._read_csv(self.eeg_cap)
+            read_csv_positions(self.eeg_cap)
         count_csv = len([t for t in type_ if t in
                          ['Electrode', 'ReferenceElectrode']])
         try:
@@ -2349,7 +2351,7 @@ class TDCSLEADFIELD(LEADFIELD):
         if self.map_to_surf:
             # Load middle gray matter
             s_names, segtype = \
-                transformations.get_surface_names_from_folder_structure(self.subpath)
+                surf_transform.get_surface_names_from_folder_structure(self.subpath)
             middle_surf = {}
             if segtype == 'mri2mesh':
                 for hemi in ['lh', 'rh']:
@@ -2518,7 +2520,7 @@ def save_electrode_mat(electrode_list):
 def _substitute_el(pos, eeg_cap):
     if isinstance(pos, str):
         if eeg_cap:
-            eeg_pos = transformations._get_eeg_positions(eeg_cap)
+            eeg_pos = _get_eeg_positions(eeg_cap)
             try:
                 pos = eeg_pos[pos]
             except:

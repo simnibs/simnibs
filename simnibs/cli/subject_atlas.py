@@ -24,7 +24,7 @@ import sys
 import os
 import numpy as np
 import nibabel
-import simnibs.msh.transformations as transformations
+import simnibs.transformations as transformations
 import simnibs.utils.file_finder as file_finder
 from simnibs.utils.simnibs_logger import logger
 from simnibs.msh.mesh_io import read_freesurfer_surface, read_gifti_surface
@@ -102,7 +102,7 @@ def main():
             ref_surf = read_gifti_surface(file_finder.templates.cat_rh_sphere_ref)
             sub_surf = read_fun(subject_files.rh_reg)
 
-        labels_sub, _ = transformations._surf2surf(labels, ref_surf, sub_surf)
+        labels_sub, _ = transformations.surface._surf2surf(labels, ref_surf, sub_surf)
         fn_out = os.path.join(
             args.out_folder,
             f'{hemi}.{subject_files.subid}_{args.atlas}.annot'

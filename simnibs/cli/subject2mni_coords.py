@@ -27,7 +27,7 @@ import os
 import textwrap
 from argparse import RawTextHelpFormatter
 import numpy as np
-import simnibs.msh.transformations as transformations
+import simnibs.transformations as transformations
 from simnibs import __version__
 
 

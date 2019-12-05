@@ -103,7 +103,7 @@ class TestPythonErnie:
 
     def test_roi_analysis_surf(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        simnibs.msh.transformations.middle_gm_interpolation(
+        simnibs.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'
@@ -179,7 +179,7 @@ class TestMatlabErnie:
 
     def test_roi_analysis_surf(self, example_dataset, replace_show_surface):
         os.chdir(example_dataset)
-        simnibs.msh.transformations.middle_gm_interpolation(
+        simnibs.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'

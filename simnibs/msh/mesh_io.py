@@ -41,7 +41,7 @@ import scipy.interpolate
 import nibabel
 import h5py
 
-from .transformations import nifti_transform
+from ..transformations.volume import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 from . import cython_msh

@@ -95,6 +95,8 @@ elif sys.platform == 'linux':
         CGAL_headers,
         'simnibs/include/linux/mpfr',
         'simnibs/include/linux/gmp',
+        # Assuming conda install boost
+        os.path.join(os.environ['CONDA_PREFIX'], 'include')
     ]
     cgal_dirs = ['simnibs/lib/linux']
     cgal_runtime = ['$ORIGIN/../lib/linux']
@@ -134,6 +136,10 @@ extension = [
     Extension('simnibs.msh._marching_cubes_lewiner_cy',
               ["simnibs/msh/_marching_cubes_lewiner_cy.pyx"],
               include_dirs=[np.get_include()]),
+    Extension('simnibs.segmentation._cs_utils',
+              ["simnibs/segmentation/_cs_utils.pyx",
+               "simnibs/segmentation/genus0.c"],
+              include_dirs=[np.get_include()]),
     Extension('simnibs._compiled.petsc_solver',
               ["simnibs/_compiled/petsc_solver.pyx"],
               include_dirs=petsc_include,
@@ -148,7 +154,7 @@ extension = [
               library_dirs=cgal_dirs,
               runtime_library_dirs=cgal_runtime,
               extra_compile_args=cgal_compile_args,
-              extra_link_args=cgal_compile_args)
+              extra_link_args=cgal_compile_args),
 ]
 
 

@@ -20,14 +20,9 @@
 '''
 
 import math
-import sys
 import numpy
-import argparse
 
-import simnibs.msh.surface as surface
-import simnibs.msh.mesh_io as mesh_io
 from simnibs import __version__
-import simnibs.msh.transformations as transformations
 import csv  # csv is in the standard library
 
 
