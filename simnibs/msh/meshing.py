@@ -73,9 +73,8 @@ def _decompose_affine(affine):
     shearing = np.diag(1/scaling).dot(z)
     return rot, scaling, shearing
 
-# TODO: IMAGE TRANFORMATION STUFF
 # tranforms image to isotropic and removes the shearing component fron the affine
-def resample2iso(image, affine, sampling_rate=1, order=1):
+def _resample2iso(image, affine, sampling_rate=1, order=1):
     # R is a rotation matrix, K a scaling matrix and S a shearing matrix
     R, Z, S = _decompose_affine(affine[:3, :3])
     # Definew new affine matrix
@@ -341,3 +340,61 @@ def smooth_surfaces(mesh, n_steps, step_size=.3):
             -1.05 * float(step_size)
         )
     mesh.nodes.node_coord = nodes_coords
+
+
+def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
+    ''' Relabels the spikes in a mesh volume, in-place
+
+    A spike is defined as a tetrahedron in "label_a" which has at least "adj_threshold"
+    faces adjacent to tetrahedra in "label_b"
+
+    Parameters
+    -----------
+    m: simnibs.Msh
+       Mesh structure
+    label_a: int
+        Volume label of the spikes
+    label_b: int
+        Volume label of where the spikes are located
+    target_label: int
+        Label to assign to the spikes, typically the same as "label_b"
+    adj_threshold: int (optional)
+        Threshhold of number of adjacent faces for being considered a spike 
+    '''
+    #print(f'relabeling sipkes in {label_a} and {label_b} to {target_label}')
+    def find_spikes():
+        # First, get all tetrahedra which have a node that is shared between the tissues
+        shared_nodes = m.find_shared_nodes([label_a, label_b])
+        with_shared_nodes = (
+            np.in1d(m.elm[:], shared_nodes)
+            .reshape(-1, 4)
+            .sum(axis=1, dtype=bool)
+        )
+        # Nos, select the tetrahedra with at least adj_th faces adjacent to the tissue
+        # with holes
+        adj_labels = m.elm.tag1[adj_th - 1]
+        adj_labels[adj_th == -1] = -1
+        spikes = with_shared_nodes *\
+            (np.sum(adj_labels == target_label, axis=1) >= adj_threshold)
+        return spikes
+
+    adj_th = m.elm.find_adjacent_tetrahedra()
+    relabeled = True
+    while np.any(relabeled):
+        # Relabel tissue A
+        A_to_relabel = (m.elm.tag1 == label_a) * find_spikes()
+        frac_A_relabeled = np.sum(A_to_relabel)/np.sum(m.elm.tag1 == label_a)
+        m.elm.tag1[A_to_relabel] = target_label
+        m.elm.tag2[A_to_relabel] = target_label
+        # Relabel tissue B
+        B_to_relabel = (m.elm.tag1 == label_b) * find_spikes()
+        frac_B_relabeled = np.sum(B_to_relabel)/np.sum(m.elm.tag1 == label_b)
+        m.elm.tag1[B_to_relabel] = target_label
+        m.elm.tag2[B_to_relabel] = target_label
+        relabeled = A_to_relabel + B_to_relabel
+        '''
+        print(
+            f'Relabeled {frac_A_relabeled:.2%} of elements from {label_a} '
+            f'and {frac_B_relabeled:.2%} of elements from {label_b}'
+        )
+        '''

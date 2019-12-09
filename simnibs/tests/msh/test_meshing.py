@@ -118,7 +118,7 @@ class TestResample2Iso():
     def test_resample(self, cube_image):
         aff = np.eye(4)
         #nibabel.viewers.OrthoSlicer3D(cube_image, aff).show()
-        iso, aff2 = meshing.resample2iso(cube_image, aff, .5, order=0)
+        iso, aff2 = meshing._resample2iso(cube_image, aff, .5, order=0)
         #nibabel.viewers.OrthoSlicer3D(iso, aff2).show()
         mask = np.zeros((100, 100, 100), dtype=bool)
         mask[19:79, 19:79, 19:79] = True
@@ -131,7 +131,7 @@ class TestResample2Iso():
     def test_diagonal(self, cube_image):
         aff = np.diag([1, 2, 3, 1])
         #nibabel.viewers.OrthoSlicer3D(cube_image, aff).show()
-        iso, aff2 = meshing.resample2iso(cube_image, aff, 1, order=0)
+        iso, aff2 = meshing._resample2iso(cube_image, aff, 1, order=0)
         #nibabel.viewers.OrthoSlicer3D(iso, aff2).show()
         mask = np.zeros((50, 100, 150), dtype=bool)
         mask[10:40, 19:79, 29:119] = True
@@ -147,7 +147,7 @@ class TestResample2Iso():
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-        iso, aff2 = meshing.resample2iso(cube_image, aff, 1, order=0)
+        iso, aff2 = meshing._resample2iso(cube_image, aff, 1, order=0)
         mask = np.zeros((50, 100, 50), dtype=bool)
         mask[10:40, 19:79, 10:40] = True
         assert iso.shape == (50, 100, 50)
