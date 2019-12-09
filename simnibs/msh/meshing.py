@@ -73,8 +73,9 @@ def _decompose_affine(affine):
     shearing = np.diag(1/scaling).dot(z)
     return rot, scaling, shearing
 
-# tranforms image to isotropic and removes the shearing component fron the affine
+
 def _resample2iso(image, affine, sampling_rate=1, order=1):
+    ## DEPRECATED ##
     # R is a rotation matrix, K a scaling matrix and S a shearing matrix
     R, Z, S = _decompose_affine(affine[:3, :3])
     # Definew new affine matrix
@@ -345,19 +346,22 @@ def smooth_surfaces(mesh, n_steps, step_size=.3):
 def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
     ''' Relabels the spikes in a mesh volume, in-place
 
-    A spike is defined as a tetrahedron in "label_a" which has at least "adj_threshold"
-    faces adjacent to tetrahedra in "label_b"
+    A spike is defined as a tetrahedron in "label_a" or "label_b" which has at least one
+    node in the other volume and at least "adj_threshold" faces adjacent to tetrahedra in
+    "tarrget_label". For example, for relabeling GM and Skull spikes going through CSF,
+    one can use
+    relabel_spikes(m, 2, 4, 3)
 
     Parameters
     -----------
     m: simnibs.Msh
        Mesh structure
     label_a: int
-        Volume label of the spikes
+        Volume label with spikes
     label_b: int
-        Volume label of where the spikes are located
+        Second volume label with spikes are located
     target_label: int
-        Label to assign to the spikes, typically the same as "label_b"
+        Volume label where the spikes are locate
     adj_threshold: int (optional)
         Threshhold of number of adjacent faces for being considered a spike 
     '''
@@ -370,7 +374,7 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
             .reshape(-1, 4)
             .sum(axis=1, dtype=bool)
         )
-        # Nos, select the tetrahedra with at least adj_th faces adjacent to the tissue
+        # Now, select the tetrahedra with at least adj_th faces adjacent to the tissue
         # with holes
         adj_labels = m.elm.tag1[adj_th - 1]
         adj_labels[adj_th == -1] = -1
