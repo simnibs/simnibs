@@ -13,6 +13,7 @@ import simnibs.msh.mesh_io as mesh_io
 import simnibs.simulation.analytical_solutions.sphere as analytical_solutions
 from simnibs._compiled import petsc_solver
 
+fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():

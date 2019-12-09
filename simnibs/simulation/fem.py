@@ -47,10 +47,15 @@ DEFAULT_SOLVER_OPTIONS = \
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-# Initialize PETSc
-petsc_solver.petsc_initialize()
-# Register the finalizer for PETSc
-atexit.register(petsc_solver.petsc_finalize)
+_PETSC_IS_INITILIZED = False
+def _initialize_petsc():
+    global _PETSC_IS_INITILIZED
+    if not _PETSC_IS_INITILIZED:
+        # Initialize PETSc
+        petsc_solver.petsc_initialize()
+        # Register the finalizer for PETSc
+        atexit.register(petsc_solver.petsc_finalize)
+        _PETSC_IS_INITILIZED = True
 
 
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
@@ -557,6 +562,7 @@ class FEMSystem(object):
         if self._solver_options == 'pardiso':
             self._solver = pardiso.Solver(A)
         else:
+            _initialize_petsc()
             self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
             self._solver = petsc_solver.Solver(self._solver_options, A)
 
