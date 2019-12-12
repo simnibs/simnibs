@@ -128,6 +128,10 @@ Attributes
   * **Default**: Automatically finds the file :file:`d2c_{subID}/dti_results_T1space/DTI_conf_tensor.nii.gz` based on **fnamehead**.
   * **Note**: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.
 
+* **solver_options**: *string (pytohn) / character array (MATLAB)*
+
+  :ref:`Follow this link <solver_options_doc>`.
+
 References
 -------------
 

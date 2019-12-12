@@ -113,3 +113,13 @@ Attributes
   * **Note**: Only taken into account when **anisotropy_type** is set to 'dir' or 'mc'
   * **Reference**: `Opitz et al., 2011 <https://doi.org/10.1016/j.neuroimage.2011.06.069>`_
 
+
+.. _solver_options_doc:
+
+* **solver_options**: *string (pytohn) / character array (MATLAB)*
+
+  * **Description**: Options for the SimNIBS FEM solver.
+  * **Default**: :code:`'-ksp_type cg -ksp_rtol 1e-10 -pc_type hypre -pc_hypre_type boomeramg -pc_hypre_boomeramg_coarsen_type HMIS'`
+  * **Note**: Can be either a PETSc options string or the simple string :code:`'pardiso'` to use the MKL PARDISO solver.
+
+

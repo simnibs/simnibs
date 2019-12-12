@@ -561,15 +561,22 @@ class SimuList(object):
         file name of nifti with tensor information
     postprocess: property
         fields to be calculated. valid fields are: 'v' , 'E', 'e', 'J', 'j', 'g', 's', 'D', 'q'
-    anisotropy_vol: ndarray
+    anisotropy_vol: ndarray (optional)
         Volume with anisotropy information (lower priority over fn_tensor_nifti)
-    anisotropy_affine: ndarray
+    anisotropy_affine: ndarray (optional)
         4x4 affine matrix describing the transformation from the regular grid to the mesh
         space (lower priority over fn_tensor_nifti)
-    anisotropic_tissues: list
+    anisotropic_tissues: list (optional)
         List with tissues with anisotropic conductivities
-    eeg_cap: str
+    eeg_cap: str (optional)
         Name of csv file with EEG positions
+    aniso_maxratio: float (optional)
+        Maximum ration between the largest and smallest eigenvalue in a conductivity
+        tensor.
+    aniso_cond: float (optional)
+        Maximum eigenvalue of a conductivity tensor.
+    solver_options: str (optional)
+        Options for the FEM solver
     """
 
     def __init__(self, mesh=None):
@@ -587,6 +594,7 @@ class SimuList(object):
         self.eeg_cap = None
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        self.solver_options = None
         self._anisotropy_type = 'scalar'
         self._postprocess = ['e', 'E', 'j', 'J']
 
@@ -677,6 +685,7 @@ class SimuList(object):
         mat_cond['aniso_maxcond'] = remove_None(self.aniso_maxcond)
         # Not really related to the conductivity
         mat_cond['name'] = remove_None(self.name)
+        mat_cond['solver_options'] = remove_None(self.name)
 
         return mat_cond
 
@@ -706,6 +715,10 @@ class SimuList(object):
             mat_struct, 'aniso_maxcond', float, self.aniso_maxcond)
         self.aniso_maxratio = try_to_read_matlab_field(
             mat_struct, 'aniso_maxratio', float, self.aniso_maxratio)
+        self.solver_options = try_to_read_matlab_field(
+            mat_struct, 'solver_options', str, self.solver_options)
+
+
 
     def compare_conductivities(self, other):
         if self.anisotropy_type != other.anisotropy_type:
@@ -1099,7 +1112,7 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     cpus)
+                     solver_options=self.solver_options, n_workers=cpus)
 
         logger.info('Creating visualizations')
         summary = ''
@@ -1601,7 +1614,9 @@ class TDCSLIST(SimuList):
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
-                     np.unique(electrode_surfaces), n_workers=cpus)
+                     np.unique(electrode_surfaces),
+                     solver_options=self.solver_options,
+                     n_workers=cpus)
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)

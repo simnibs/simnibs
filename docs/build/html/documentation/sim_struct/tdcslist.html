@@ -162,6 +162,15 @@
 </ul>
 </li>
 </ul>
+<ul class="simple" id="solver-options-doc">
+<li><p><strong>solver_options</strong>: <em>string (pytohn) / character array (MATLAB)</em></p>
+<ul>
+<li><p><strong>Description</strong>: Options for the SimNIBS FEM solver.</p></li>
+<li><p><strong>Default</strong>: <code class="code docutils literal notranslate"><span class="pre">'-ksp_type</span> <span class="pre">cg</span> <span class="pre">-ksp_rtol</span> <span class="pre">1e-10</span> <span class="pre">-pc_type</span> <span class="pre">hypre</span> <span class="pre">-pc_hypre_type</span> <span class="pre">boomeramg</span> <span class="pre">-pc_hypre_boomeramg_coarsen_type</span> <span class="pre">HMIS'</span></code></p></li>
+<li><p><strong>Note</strong>: Can be either a PETSc options string or the simple string <code class="code docutils literal notranslate"><span class="pre">'pardiso'</span></code> to use the MKL PARDISO solver.</p></li>
+</ul>
+</li>
+</ul>
 </div>
 </div>
 
