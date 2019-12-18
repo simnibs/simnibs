@@ -1539,7 +1539,7 @@ class TDCSLIST(SimuList):
         self.electrode.append(electrode)
         return electrode
 
-    def _place_electrodes(self, fix_th=True):
+    def _place_electrodes(self):
         """ Add the defined electrodes to a mesh
 
         Parameters:
@@ -1557,9 +1557,6 @@ class TDCSLIST(SimuList):
 
         w_elec.fix_th_node_ordering()
         w_elec.fix_tr_node_ordering()
-        if fix_th:
-            logger.info('Improving mesh quality')
-            w_elec.fix_thin_tetrahedra()
 
         gc.collect()
         return w_elec, electrode_surfaces

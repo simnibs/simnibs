@@ -450,7 +450,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
     continuous: bool (option)
         Wether fields is continuous across tissue boundaries. Default: False
     '''
-    from .mesh_io import read_msh
+    from ..msh.mesh_io import read_msh
     names = get_names_from_folder_structure(m2m_folder)
 
     if transformation_direction not in ['subject2mni', 'mni2subject']:
@@ -567,7 +567,7 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
     continuous: bool
         Wether fields is continuous across tissue boundaries. Default: False
     '''
-    from .mesh_io import read_msh, ElementData
+    from ..msh.mesh_io import read_msh, ElementData
     if os.path.isdir(reference):
         names = get_names_from_folder_structure(reference)
         reference = names['reference_conf']
@@ -1013,7 +1013,7 @@ def warp_coordinates(coordinates, m2m_folder,
     name: list
         Names of positions
     '''
-    from .mesh_io import read_msh
+    from ..msh.mesh_io import read_msh
     names = get_names_from_folder_structure(m2m_folder)
     # Read CSV
     if isinstance(coordinates, str):

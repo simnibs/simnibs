@@ -22,7 +22,7 @@
 '''
 
 
-from __future__ import division
+import warnings
 import copy
 import numpy as np
 import scipy.spatial
@@ -261,8 +261,9 @@ def _edge_list(triangles):
     edge_adjacency_list[:, 0] = idx // 3
 
     if np.any(count > 2):
-        raise ValueError('Invalid Mesh: Found an edge with more than 2 adjacent'
-                         ' Triangles!')
+        warnings.warn(
+            'Found an edge with more than 2 adjacent triangles!'
+        )
 
     # Remove the edges already seen from consideration
     # Second round in order to make adjacency list

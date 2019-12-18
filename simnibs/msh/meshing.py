@@ -1,10 +1,12 @@
 import os
 import tempfile
+import logging
 import numpy as np
 from simnibs.msh import mesh_io
 import scipy.sparse
 import scipy.ndimage
 
+from ..utils.simnibs_logger import logger
 from .._compiled import create_mesh
 
 
@@ -281,7 +283,9 @@ def remesh(mesh, facet_size, cell_size,
 
 def smooth_surfaces(mesh, n_steps, step_size=.3):
     ''' Smoothes the mesh surfaces using Taubin smoothing
-    IN-PLACE!!
+    IN-PLACE
+    
+    Can severely decrease tetrahedra quality
 
     Parameters
     ------------
@@ -343,7 +347,7 @@ def smooth_surfaces(mesh, n_steps, step_size=.3):
     mesh.nodes.node_coord = nodes_coords
 
 
-def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
+def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2, log_level=logging.DEBUG):
     ''' Relabels the spikes in a mesh volume, in-place
 
     A spike is defined as a tetrahedron in "label_a" or "label_b" which has at least one
@@ -365,7 +369,7 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
     adj_threshold: int (optional)
         Threshhold of number of adjacent faces for being considered a spike 
     '''
-    #print(f'relabeling sipkes in {label_a} and {label_b} to {target_label}')
+    logger.log(log_level, f'relabeling sipkes in {label_a} and {label_b} to {target_label}')
     def find_spikes():
         # First, get all tetrahedra which have a node that is shared between the tissues
         shared_nodes = m.find_shared_nodes([label_a, label_b])
@@ -396,9 +400,7 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2):
         m.elm.tag1[B_to_relabel] = target_label
         m.elm.tag2[B_to_relabel] = target_label
         relabeled = A_to_relabel + B_to_relabel
-        '''
-        print(
+        logger.log(log_level,
             f'Relabeled {frac_A_relabeled:.2%} of elements from {label_a} '
             f'and {frac_B_relabeled:.2%} of elements from {label_b}'
         )
-        '''

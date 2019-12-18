@@ -123,7 +123,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     open_in_gmsh: bool
         If true, opens a Gmsh window with the interpolated fields
     '''
-    from . import mesh_io
+    from ..msh import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
     names, segtype = get_surface_names_from_folder_structure(m2m_folder)
     if depth < 0. or depth > 1.:
