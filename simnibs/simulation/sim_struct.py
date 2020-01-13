@@ -1786,6 +1786,13 @@ class ELECTRODE(object):
         self.channelnr = try_to_read_matlab_field(el, 'channelnr', int, self.channelnr)
         self.dimensions_sponge = try_to_read_matlab_field(el, 'dimensions_sponge', list,
                                                           self.dimensions_sponge)
+
+        if self.dimensions is not None and len(self.dimensions) == 1:
+            self.dimensions *= 2
+
+        if self.dimensions_sponge is not None and len(self.dimensions_sponge) == 1:
+            self.dimensions_sponge *= 2
+
         try:
             self.vertices = el['vertices'].tolist()
         except:
