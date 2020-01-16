@@ -988,8 +988,7 @@ def install(install_dir,
     if add_to_path:
         path_setup(scripts_dir, force, silent)
     test_call = [
-        os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
-        '-k', 'TestSolve', '-q', '-W', 'ignore'
+        SIMNIBSDIR, '-k', 'TestSolve', '-q', '-W', 'ignore'
     ]
     run_tests(test_call)
     if sys.platform == 'win32':
