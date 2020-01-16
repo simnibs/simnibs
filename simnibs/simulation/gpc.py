@@ -29,7 +29,7 @@ import copy
 from collections import OrderedDict
 
 
-from .. import pygpc
+from ..external import pygpc
 from ..msh import mesh_io
 from .sim_struct import SimuList
 from . import fem
