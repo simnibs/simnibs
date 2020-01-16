@@ -299,13 +299,13 @@ def path_cleanup():
             winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
 
 def matlab_prepare():
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSDIR.m'), 'w') as f:
         f.write("function path=SIMNIBSDIR\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
         f.write("end\n")
 
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSPYTHON.m'), 'w') as f:
         if sys.platform == 'win32':
             python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
         else:
@@ -316,10 +316,10 @@ def matlab_prepare():
         f.write("end\n")
 
 def matlab_setup(install_dir):
-    destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
+    destdir =  os.path.abspath(os.path.join(install_dir, 'matlab_tools'))
     if not os.path.isdir(destdir):
         os.mkdir(destdir)
-    for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab', '*')):
+    for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab_tools', '*')):
         shutil.copy(m, destdir)
 
 def links_setup(install_dir):
@@ -1006,6 +1006,7 @@ def uninstall(install_dir):
     uninstaller_cleanup()
     shutil.rmtree(os.path.join(install_dir, 'documentation'), True)
     shutil.rmtree(os.path.join(install_dir, 'matlab'), True)
+    shutil.rmtree(os.path.join(install_dir, 'matlab_tools'), True)
     shutil.rmtree(os.path.join(install_dir, 'bin'), True)
     def try_remove(f):
         try:

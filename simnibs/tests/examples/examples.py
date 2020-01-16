@@ -55,7 +55,7 @@ def replace_gmsh():
 def octave_call(script):
     cmd = "octave -W --eval \""
     matlab_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..', 'matlab')
+        os.path.join(os.path.dirname(__file__), '..', '..', 'matlab_tools')
     )
     octave_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'octave_compatibility')
@@ -70,7 +70,7 @@ def replace_show_surface():
     fn_orig = os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
-            '..', '..', 'matlab',
+            '..', '..', 'matlab_tools',
             'mesh_show_surface.m'
         )
     )
