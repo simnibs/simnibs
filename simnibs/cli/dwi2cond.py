@@ -12,9 +12,11 @@ def main():
     if sys.platform == 'win32':
         raise OSError('dwi2cond does not run on windows!')
 
-    subprocess.call(
-        [os.path.join(SIMNIBSDIR, 'bash_modules', 'dwi2cond')] +
+    ret = subprocess.run(
+        [os.path.join(SIMNIBSDIR, 'bash_modules', 'external', 'dwi2cond')] +
         sys.argv[1:])
-    
+
+    sys.exit(ret.returncode)
+
 if __name__ == '__main__':
     main()
