@@ -121,7 +121,7 @@ else:
 
 # simnibs
 from simnibs import SIMNIBSDIR
-from simnibs.msh import mesh_io
+from . import mesh_io
 from . import _marching_cubes_lewiner_luts as mcluts
 from . import _marching_cubes_lewiner_cy
 from ..utils.file_finder import path2bin

@@ -30,7 +30,7 @@ from collections import OrderedDict
 
 
 from ..external import pygpc
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 from .sim_struct import SimuList
 from . import fem
 from . import coil_numpy as coil

@@ -1,8 +1,8 @@
 import sys
 import argparse
 
-from simnibs.msh.eeg_positions import *
-from simnibs.msh import surface, mesh_io
+from simnibs.mesh_tools.eeg_positions import *
+from simnibs.mesh_tools import surface, mesh_io
 from simnibs.utils.csv_reader import read_csv_positions
 from simnibs import __version__
 

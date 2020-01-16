@@ -38,8 +38,8 @@ import traceback
 
 # simnibs
 from simnibs import SIMNIBSDIR, file_finder
-from simnibs.msh import mesh_io
-import simnibs.msh.hmutils as hmu
+from simnibs.mesh_tools import mesh_io
+import simnibs.mesh_tools.hmutils as hmu
 import simnibs.transformations as transformations
 from simnibs import __version__
 

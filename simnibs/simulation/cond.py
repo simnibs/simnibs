@@ -26,7 +26,7 @@ from __future__ import division
 import warnings
 import numpy as np
 from . import sim_struct
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
 
 

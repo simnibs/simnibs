@@ -6,7 +6,7 @@ import nibabel
 
 from simnibs import SIMNIBSDIR
 import simnibs.simulation.cond as cond
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 
 @pytest.fixture
 def sphere3_msh():

@@ -26,7 +26,7 @@ import warnings
 import copy
 import numpy as np
 import scipy.spatial
-from ..msh.mesh_io import _hash_rows
+from ..mesh_tools.mesh_io import _hash_rows
 
 def _get_nodes_in_surface(mesh, surface_tags):
     tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))

@@ -9,7 +9,7 @@ import pytest
 from simnibs import SIMNIBSDIR
 import simnibs.simulation.gpc as simnibs_gpc
 import simnibs.simulation.sim_struct as sim_struct
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 
 
 @pytest.fixture(scope='module')

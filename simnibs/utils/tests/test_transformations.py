@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from simnibs import SIMNIBSDIR
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 from simnibs import transformations
 
 

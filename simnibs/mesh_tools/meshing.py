@@ -2,10 +2,10 @@ import os
 import tempfile
 import logging
 import numpy as np
-from simnibs.msh import mesh_io
 import scipy.sparse
 import scipy.ndimage
 
+from . import mesh_io
 from ..utils.simnibs_logger import logger
 from .._compiled import create_mesh
 

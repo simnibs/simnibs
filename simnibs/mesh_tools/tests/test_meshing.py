@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 
 from simnibs import SIMNIBSDIR
-from simnibs.msh import meshing, mesh_io
+from simnibs.mesh_tools import meshing, mesh_io
 
 
 @pytest.fixture

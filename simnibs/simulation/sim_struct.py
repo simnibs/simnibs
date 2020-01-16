@@ -34,7 +34,7 @@ import nibabel
 import h5py
 
 from . import cond
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 from ..utils import transformations
 from ..utils import simnibs_logger
 from ..utils.simnibs_logger import logger

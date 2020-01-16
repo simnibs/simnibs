@@ -5,7 +5,7 @@
 
 import numpy as np
 import nibabel as nib
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 
 
 '''

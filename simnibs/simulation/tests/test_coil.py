@@ -6,7 +6,7 @@ from mock import Mock, patch, call
 
 from simnibs import SIMNIBSDIR
 import simnibs.simulation.coil_numpy as coil
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 
 @pytest.fixture(scope='module')
 def sphere3_msh():

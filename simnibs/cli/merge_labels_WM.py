@@ -20,7 +20,7 @@
 
 '''
 from __future__ import print_function
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 from simnibs.utils.simnibs_logger import logger
 import sys
 import os

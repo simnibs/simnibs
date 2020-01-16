@@ -7,7 +7,7 @@ import h5py
 import scipy.io
 
 from simnibs import SIMNIBSDIR
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 from simnibs.optimization import opt_struct
 import simnibs.optimization.optimization_methods as methods
 

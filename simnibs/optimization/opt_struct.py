@@ -40,7 +40,7 @@ from . import optimization_methods
 from ..simulation import cond
 from ..simulation import fem
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
-from ..msh import mesh_io, gmsh_view
+from ..mesh_tools import mesh_io, gmsh_view
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None

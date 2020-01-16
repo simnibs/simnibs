@@ -13,7 +13,7 @@ import h5py
 import numpy as np
 import scipy.sparse as sparse
 
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 from . import cond as cond_lib
 from . import coil_numpy as coil_lib
 from . import pardiso

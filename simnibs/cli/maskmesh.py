@@ -27,7 +27,7 @@ import argparse
 import nibabel
 import numpy as np
 
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 from simnibs.utils.simnibs_logger import logger
 from simnibs import __version__
 
