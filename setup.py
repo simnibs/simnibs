@@ -54,21 +54,21 @@ if sys.platform == 'win32':
         petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(';')
     else:
         petsc_include = [np.get_include(),
-                         'simnibs/include/win/petsc',
-                         'simnibs/include/win/hypre',
-                         'simnibs/include/win/mpi']
+                         'simnibs/external/include/win/petsc',
+                         'simnibs/external/include/win/hypre',
+                         'simnibs/external/include/win/mpi']
     if 'SIMNIBS_PETSC_DIR' in os.environ:
         petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
     else:
-        petsc_dirs = ['simnibs/lib/win']
+        petsc_dirs = ['simnibs/external/lib/win']
     petsc_runtime = None
 
     cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
-        'simnibs/include/win/mpfr',
-        'simnibs/include/win/gmp',
+        'simnibs/external/include/win/mpfr',
+        'simnibs/external/include/win/gmp',
         # Assuming conda install boost
         os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')
     ]
@@ -81,25 +81,25 @@ elif sys.platform == 'linux':
     if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
         petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
     else:
-        petsc_include = [np.get_include(), 'simnibs/include/linux/petsc']
+        petsc_include = [np.get_include(), 'simnibs/external/include/linux/petsc']
     if 'SIMNIBS_PETSC_DIR' in os.environ:
         petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
         petsc_runtime = petsc_dirs
     else:
-        petsc_dirs = ['simnibs/lib/linux']
-        petsc_runtime = ['$ORIGIN/../lib/linux']
+        petsc_dirs = ['simnibs/external/lib/linux']
+        petsc_runtime = ['$ORIGIN/../external/lib/linux']
 
     cgal_libs = ['mpfr', 'gmp', 'z']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
-        'simnibs/include/linux/mpfr',
-        'simnibs/include/linux/gmp',
+        'simnibs/external/include/linux/mpfr',
+        'simnibs/external/include/linux/gmp',
         # Assuming conda install boost
         os.path.join(os.environ['CONDA_PREFIX'], 'include')
     ]
-    cgal_dirs = ['simnibs/lib/linux']
-    cgal_runtime = ['$ORIGIN/../lib/linux']
+    cgal_dirs = ['simnibs/external/lib/linux']
+    cgal_runtime = ['$ORIGIN/../external/lib/linux']
     cgal_compile_args = ['-Os', '-flto']
 
 elif sys.platform == 'darwin':
@@ -107,21 +107,21 @@ elif sys.platform == 'darwin':
     if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
         petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
     else:
-        petsc_include = [np.get_include(), 'simnibs/include/osx/petsc']
+        petsc_include = [np.get_include(), 'simnibs/external/include/osx/petsc']
     if 'SIMNIBS_PETSC_DIR' in os.environ:
         petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
     else:
-        petsc_dirs = ['simnibs/lib/osx']
+        petsc_dirs = ['simnibs/external/lib/osx']
     petsc_runtime = None
 
     cgal_libs = ['mpfr', 'gmp', 'z']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
-        'simnibs/include/osx/mpfr',
-        'simnibs/include/osx/gmp',
+        'simnibs/external/include/osx/mpfr',
+        'simnibs/external/include/osx/gmp',
     ]
-    cgal_dirs = ['simnibs/lib/osx']
+    cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
     cgal_compile_args = None
 
@@ -224,23 +224,23 @@ class build_ext_(build_ext):
         # Remove unescessary binary files
         shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
         linux_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'bin', 'linux'),
-            os.path.join(self.build_lib, 'simnibs', 'include', 'linux'),
-            os.path.join(self.build_lib, 'simnibs', 'lib', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'linux'),
             os.path.join(self.build_lib, 'simnibs', 'resources',
                          'spm12', 'toolbox', 'cat12', 'CAT.glnx86'),
         ]
         osx_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'bin', 'osx'),
-            os.path.join(self.build_lib, 'simnibs', 'include', 'osx'),
-            os.path.join(self.build_lib, 'simnibs', 'lib', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'osx'),
             os.path.join(self.build_lib, 'simnibs', 'resources',
                          'spm12', 'toolbox', 'cat12', 'CAT.maci64'),
         ]
         win_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'bin', 'win'),
-            os.path.join(self.build_lib, 'simnibs', 'include', 'win'),
-            os.path.join(self.build_lib, 'simnibs', 'lib', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'win'),
             os.path.join(self.build_lib, 'simnibs', 'resources',
                          'spm12', 'toolbox', 'cat12', 'CAT.w32'),
         ]
