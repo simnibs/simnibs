@@ -1038,7 +1038,7 @@ class TMSLIST(SimuList):
             self.fnamecoil = fnamecoil
         else:
             fnamecoil = os.path.join(
-                SIMNIBSDIR, 'ccd-files', self.fnamecoil)
+                SIMNIBSDIR, 'resources', 'coil_models', self.fnamecoil)
             if os.path.isfile(fnamecoil):
                 self.fnamecoil = fnamecoil
             else:

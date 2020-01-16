@@ -756,10 +756,10 @@ def download_extra_coils(timeout=None):
     reporthook = functools.partial(_download_manager, start_time=time.time(), timeout=timeout)
     urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
     with zipfile.ZipFile(tmpname) as z:
-        z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
+        z.extractall(os.path.join(SIMNIBSDIR, 'resources', 'coil_models'))
     os.remove(tmpname)
-    src = os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}')
-    dest = os.path.join(SIMNIBSDIR, 'ccd-files')
+    src = os.path.join(SIMNIBSDIR, 'resources', 'coil_models', f'simnibs-coils-{version}')
+    dest = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
     for f in glob.glob(os.path.join(src, '*')):
         d = os.path.join(dest, os.path.basename(f))
         if os.path.isdir(d):
@@ -767,8 +767,7 @@ def download_extra_coils(timeout=None):
         if os.path.isfile(d):
             os.remove(d)
         shutil.move(f, d)
-    shutil.rmtree(
-        os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
+    shutil.rmtree(src)
 
 def run_tests(args):
     ''' run tests on pytest '''

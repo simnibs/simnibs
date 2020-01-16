@@ -1126,7 +1126,7 @@ class CoilTable (QtWidgets.QWidget):
     def coilDialog(self):
         #get folder with ccd files
         try:
-            ccd_folder = os.path.join(SIMNIBSDIR, 'ccd-files')
+            ccd_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
         except:
             ccd_folder = './'
 
