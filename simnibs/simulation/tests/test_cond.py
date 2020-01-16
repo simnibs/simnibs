@@ -4,13 +4,13 @@ import numpy as np
 import pytest
 import nibabel
 
+from simnibs import SIMNIBSDIR
 import simnibs.simulation.cond as cond
 import simnibs.msh.mesh_io as mesh_io
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture

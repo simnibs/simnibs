@@ -11,7 +11,7 @@ import pytest
 from simnibs.utils.file_finder import path2bin
 import simnibs
 
-EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'examples'))
+EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..' ))
 
 @pytest.fixture(scope="module")
 def example_dataset():

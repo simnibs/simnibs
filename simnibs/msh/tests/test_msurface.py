@@ -3,6 +3,7 @@ import os
 import pytest
 import numpy as np
 
+from simnibs import SIMNIBSDIR
 import simnibs.msh.mesh_io as mesh_io
 import simnibs.msh.surface as surface
 
@@ -10,8 +11,7 @@ import simnibs.msh.surface as surface
 @pytest.fixture(scope='module')
 def sphere3_msh():
     fn = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), '..',
-        'testing_files', 'sphere3.msh')
+        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
 
     return mesh_io.read_msh(fn)
 

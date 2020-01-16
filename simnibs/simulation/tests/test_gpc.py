@@ -1,6 +1,3 @@
-import simnibs.simulation.gpc as simnibs_gpc
-import simnibs.simulation.sim_struct as sim_struct
-import simnibs.msh.mesh_io as mesh_io
 import numpy as np
 import h5py
 import os
@@ -9,17 +6,22 @@ from mock import Mock, patch, call
 
 import pytest
 
+from simnibs import SIMNIBSDIR
+import simnibs.simulation.gpc as simnibs_gpc
+import simnibs.simulation.sim_struct as sim_struct
+import simnibs.msh.mesh_io as mesh_io
+
+
 @pytest.fixture(scope='module')
 def sphere3():
     return mesh_io.read_msh(
         os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), '..',
+            SIMNIBSDIR, 'resources',
             'testing_files', 'sphere3.msh'))
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 

@@ -3,6 +3,8 @@ import os
 import tempfile
 import pytest
 import numpy as np
+
+from simnibs import SIMNIBSDIR
 from simnibs.msh import meshing, mesh_io
 
 
@@ -24,15 +26,13 @@ def cube_image():
 @pytest.fixture
 def surface():
     fn = os.path.join(
-            os.path.dirname(__file__),
-            '..', 'testing_files', 'cube.off')
+            SIMNIBSDIR, 'resources', 'testing_files', 'cube.off')
     return mesh_io.read_off(fn)
 
 @pytest.fixture
 def sphere3():
     fn = os.path.join(
-            os.path.dirname(__file__),
-            '..', 'testing_files', 'sphere3.msh')
+            SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 

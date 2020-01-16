@@ -7,6 +7,7 @@ import scipy.spatial
 import pytest
 
 
+from simnibs import SIMNIBSDIR
 import simnibs.msh.mesh_io as mesh_io
 import simnibs.simulation.electrode_placement as electrode_placement
 import simnibs.simulation.sim_struct as sim_struct
@@ -14,8 +15,7 @@ import simnibs.simulation.sim_struct as sim_struct
 
 @pytest.fixture(scope='module')
 def sphere3_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 

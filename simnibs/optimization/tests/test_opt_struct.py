@@ -6,6 +6,7 @@ import numpy as np
 import h5py
 import scipy.io
 
+from simnibs import SIMNIBSDIR
 import simnibs.msh.mesh_io as mesh_io
 from simnibs.optimization import opt_struct
 import simnibs.optimization.optimization_methods as methods
@@ -13,22 +14,22 @@ import simnibs.optimization.optimization_methods as methods
 
 @pytest.fixture()
 def sphere_surf():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(
+        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([1003, 1004])
 
 
 @pytest.fixture()
 def sphere_vol():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(
+        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([4, 5])
 
 
 @pytest.fixture
 def sphere_elec():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files',
+    fn = os.path.join(
+        SIMNIBSDIR, 'resources', 'testing_files',
         'sphere_w_electrodes.msh')
     return mesh_io.read_msh(fn).crop_mesh([1005, 1100, 1101])
 

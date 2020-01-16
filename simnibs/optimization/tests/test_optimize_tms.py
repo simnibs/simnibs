@@ -2,14 +2,16 @@ import os
 import numpy as np
 import pytest
 import scipy.spatial
+
+from simnibs import SIMNIBSDIR
 from simnibs.optimization import optimize_tms
 from simnibs.msh import mesh_io
 
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(
+            SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 

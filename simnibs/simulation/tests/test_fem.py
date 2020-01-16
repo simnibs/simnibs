@@ -7,6 +7,8 @@ import h5py
 import numpy as np
 import scipy.sparse.linalg as spalg
 import scipy.sparse as sparse
+
+from simnibs import SIMNIBSDIR
 import simnibs.simulation.fem as fem
 import simnibs.simulation.coil_numpy as coil_lib
 import simnibs.msh.mesh_io as mesh_io
@@ -17,28 +19,24 @@ fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture
 def sphere_el_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'sphere_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_lr():
-    fn = os.path.join(os.path.dirname(os.path.realpath(
-        __file__)), '..', 'testing_files', 'cube.msh')
+    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube.msh')
     return mesh_io.read_msh(fn)
 
 
