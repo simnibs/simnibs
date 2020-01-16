@@ -22,9 +22,9 @@
 import argparse
 import sys
 import os
-import numpy as np
 import nibabel
-import simnibs.transformations as transformations
+
+from simnibs import transformations
 import simnibs.utils.file_finder as file_finder
 from simnibs.utils.simnibs_logger import logger
 from simnibs.msh.mesh_io import read_freesurfer_surface, read_gifti_surface

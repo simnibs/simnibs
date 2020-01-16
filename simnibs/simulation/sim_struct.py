@@ -34,9 +34,8 @@ import nibabel
 import h5py
 
 from . import cond
-from ..transformations import volume as vol_transform
-from ..transformations import surface as surf_transform
 from ..msh import mesh_io
+from ..utils import transformations
 from ..utils import simnibs_logger
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
@@ -277,7 +276,7 @@ class SESSION(object):
                 out_fsavg = None
             for f in final_names:
                 if f.endswith('.msh'):
-                    surf_transform.middle_gm_interpolation(
+                    transformations.middle_gm_interpolation(
                         f, self.subpath, out_folder,
                         out_fsaverage=out_fsavg, depth=0.5,
                         open_in_gmsh=self.open_in_gmsh)
@@ -294,7 +293,7 @@ class SESSION(object):
                     name = os.path.split(f)[1]
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
-                    vol_transform.interpolate_to_volume(
+                    transformations.interpolate_to_volume(
                         f, self.subpath, name)
 
         if self.map_to_MNI:
@@ -309,7 +308,7 @@ class SESSION(object):
                     name = os.path.split(f)[1]
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
-                    vol_transform.warp_volume(
+                    transformations.warp_volume(
                         f, self.subpath, name)
 
         logger.info('=====================================')
@@ -2348,7 +2347,7 @@ class TDCSLEADFIELD(LEADFIELD):
         if self.map_to_surf:
             # Load middle gray matter
             s_names, segtype = \
-                surf_transform.get_surface_names_from_folder_structure(self.subpath)
+                transformations.get_surface_names_from_folder_structure(self.subpath)
             middle_surf = {}
             if segtype == 'mri2mesh':
                 for hemi in ['lh', 'rh']:
