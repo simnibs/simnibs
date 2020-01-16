@@ -184,44 +184,56 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.find_corresponding_tetrahedra" title="simnibs.Msh.find_corresponding_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code></a>()</p></td>
 <td><p>Finds the tetrahedra corresponding to each triangle</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.find_tetrahedron_with_points" title="simnibs.Msh.find_tetrahedron_with_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code></a>(points[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.find_shared_nodes" title="simnibs.Msh.find_shared_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_shared_nodes</span></code></a>(tags)</p></td>
+<td><p>Finds the nodes which are shared by all given tags</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.find_tetrahedron_with_points" title="simnibs.Msh.find_tetrahedron_with_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code></a>(points[, …])</p></td>
 <td><p>Finds the tetrahedron that contains each of the described points using a stochastic walk algorithm</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_surface_labels" title="simnibs.Msh.fix_surface_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_surface_labels" title="simnibs.Msh.fix_surface_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code></a>()</p></td>
 <td><p>Fixels labels of surfaces</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_th_node_ordering" title="simnibs.Msh.fix_th_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_th_node_ordering" title="simnibs.Msh.fix_th_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code></a>()</p></td>
 <td><p>Fixes the node ordering of tetrahedra in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_thin_tetrahedra" title="simnibs.Msh.fix_thin_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code></a>([n_iter, step_length])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_thin_tetrahedra" title="simnibs.Msh.fix_thin_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code></a>([n_iter, step_length])</p></td>
 <td><p>Optimize the locations of the points by moving them towards the center of their patch.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_tr_node_ordering" title="simnibs.Msh.fix_tr_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_tr_node_ordering" title="simnibs.Msh.fix_tr_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code></a>()</p></td>
 <td><p>Fixes the node ordering of the triangles in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.interp_matrix" title="simnibs.Msh.interp_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code></a>(pos[, out_fill, th_indices, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.gaussian_curvature" title="simnibs.Msh.gaussian_curvature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code></a>()</p></td>
+<td><p>Calculates the Gaussian curvature at each node</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.intercept_ray" title="simnibs.Msh.intercept_ray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept_ray</span></code></a>(near, far)</p></td>
+<td><p>Finds the triangle (if any) that intercepts a line segment</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.interp_matrix" title="simnibs.Msh.interp_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code></a>(pos[, out_fill, th_indices, …])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.join_mesh" title="simnibs.Msh.join_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code></a>(other)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.join_mesh" title="simnibs.Msh.join_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code></a>(other)</p></td>
 <td><p>Join the current mesh with another</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_areas" title="simnibs.Msh.nodes_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_areas" title="simnibs.Msh.nodes_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code></a>()</p></td>
 <td><p>Areas for all nodes in a surface</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_normals" title="simnibs.Msh.nodes_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code></a>([smooth])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_normals" title="simnibs.Msh.nodes_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code></a>([smooth])</p></td>
 <td><p>Normals for all nodes in a surface</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_volumes_or_areas" title="simnibs.Msh.nodes_volumes_or_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_volumes_or_areas" title="simnibs.Msh.nodes_volumes_or_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code></a>()</p></td>
 <td><p>Return the volume (volume mesh) if area (surface mesh) of all nodes Only works for ordered values of mesh and node indices</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.open_in_gmsh" title="simnibs.Msh.open_in_gmsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.open_in_gmsh" title="simnibs.Msh.open_in_gmsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code></a>()</p></td>
 <td><p>Opens the mesh in gmsh</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.prepare_surface_tags" title="simnibs.Msh.prepare_surface_tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.prepare_surface_tags" title="simnibs.Msh.prepare_surface_tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.read_hdf5" title="simnibs.Msh.read_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code></a>(hdf5_fn[, path, load_data])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.read_hdf5" title="simnibs.Msh.read_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code></a>(hdf5_fn[, path, load_data])</p></td>
 <td><p>Reads mesh information from an hdf5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.reconstruct_surfaces" title="simnibs.Msh.reconstruct_surfaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code></a>([tags])</p></td>
+<td><p>Reconstruct the mhes surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.remove_from_mesh" title="simnibs.Msh.remove_from_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code></a>([tags, elm_type, nodes, …])</p></td>
 <td><p>Removes the specified tags from the mesh Generates a new mesh, with the specified tags removed The nodes are also reordered</p></td>
@@ -232,16 +244,19 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.tetrahedra_quality" title="simnibs.Msh.tetrahedra_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code></a>()</p></td>
 <td><p>calculates the quality measures of the tetrahedra</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.triangle_normals" title="simnibs.Msh.triangle_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code></a>([smooth])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.triangle_angles" title="simnibs.Msh.triangle_angles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_angles</span></code></a>()</p></td>
+<td><p>Calculates minimum angle of the mesh triangles</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.triangle_normals" title="simnibs.Msh.triangle_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code></a>([smooth])</p></td>
 <td><p>Calculates the normals of triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.view" title="simnibs.Msh.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>([visible_tags, visible_fields])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.view" title="simnibs.Msh.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>([visible_tags, visible_fields])</p></td>
 <td><p>Visualize mesh in Gmsh</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.write" title="simnibs.Msh.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(out_fn)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.write" title="simnibs.Msh.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(out_fn)</p></td>
 <td><p>Writes out the mesh as a “.msh” file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.write_hdf5" title="simnibs.Msh.write_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code></a>(hdf5_fn[, path, compression])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.write_hdf5" title="simnibs.Msh.write_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code></a>(hdf5_fn[, path, compression])</p></td>
 <td><p>Writes a HDF5 file with mesh information</p></td>
 </tr>
 </tbody>

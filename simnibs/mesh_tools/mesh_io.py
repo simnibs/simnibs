@@ -1387,7 +1387,7 @@ class Msh:
             NodeData structure with gaussian curvature for each surface node
 
 
-        Rerefereces
+        Rereferece
         -------------
         https://computergraphics.stackexchange.com/a/1721
         '''

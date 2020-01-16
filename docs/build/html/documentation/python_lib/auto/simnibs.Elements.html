@@ -149,17 +149,29 @@ For the triangles, the fourth element = -1</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.__init__" title="simnibs.Elements.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([triangles, tetrahedra])</p></td>
 <td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.find_all_elements_with_node" title="simnibs.Elements.find_all_elements_with_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_all_elements_with_node</span></code></a>(node_nr)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.add_triangles" title="simnibs.Elements.add_triangles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_triangles</span></code></a>(triangles, tag)</p></td>
+<td><p>Add triangles to mesh in-place</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.connected_components" title="simnibs.Elements.connected_components"><code class="xref py py-obj docutils literal notranslate"><span class="pre">connected_components</span></code></a>([element_indexes])</p></td>
+<td><p>Finds connected components</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.find_adjacent_tetrahedra" title="simnibs.Elements.find_adjacent_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_adjacent_tetrahedra</span></code></a>()</p></td>
+<td><p>Find the tetrahedra adjacent (sharing a face) to each element</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.find_all_elements_with_node" title="simnibs.Elements.find_all_elements_with_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_all_elements_with_node</span></code></a>(node_nr)</p></td>
 <td><p>Finds all elements that have a given node</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.find_neighbouring_nodes" title="simnibs.Elements.find_neighbouring_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_neighbouring_nodes</span></code></a>(node_nr)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.find_neighbouring_nodes" title="simnibs.Elements.find_neighbouring_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_neighbouring_nodes</span></code></a>(node_nr)</p></td>
 <td><p>Finds the nodes that share an element with the specified node</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.get_faces" title="simnibs.Elements.get_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_faces</span></code></a>([tetrahedra_indexes])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.get_faces" title="simnibs.Elements.get_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_faces</span></code></a>([tetrahedra_indexes])</p></td>
 <td><p>Creates a list of nodes in each face and a list of faces in each tetrahedra</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.get_outside_faces" title="simnibs.Elements.get_outside_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_outside_faces</span></code></a>([tetrahedra_indexes])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.get_outside_faces" title="simnibs.Elements.get_outside_faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_outside_faces</span></code></a>([tetrahedra_indexes])</p></td>
 <td><p>Creates a list of nodes in each face that are in the outer volume</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.node_elm_adjacency" title="simnibs.Elements.node_elm_adjacency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_elm_adjacency</span></code></a>()</p></td>
+<td><p>Generates a sparse matrix with element indexes adjacent to each node</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.nodes_with_tag" title="simnibs.Elements.nodes_with_tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_with_tag</span></code></a>(tags)</p></td>
 <td><p>Gets all nodes indexes that are part of at least one element with the given tags</p></td>
