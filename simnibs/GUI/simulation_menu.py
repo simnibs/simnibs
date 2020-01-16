@@ -336,7 +336,7 @@ class SimProgressScreen (QtWidgets.QMainWindow):
 
         self.setWindowTitle('Simulation Progress')
         try:
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.gif')
+            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.gif')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
         except:
             pass

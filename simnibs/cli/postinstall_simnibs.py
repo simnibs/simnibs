@@ -354,12 +354,12 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             "Programs", "SimNIBS"
         )
         gmsh_icon = None
-        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
+        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
 
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
-        gmsh_icon = os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'logo.png')
-        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.png')
+        gmsh_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'gmsh', 'logo.png')
+        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.png')
 
 
     if os.path.isdir(shortcut_folder):
@@ -643,7 +643,7 @@ def uninstaller_setup(install_dir, force, silent):
         _create_shortcut(
             os.path.join(install_dir, 'Uninstall SimNIBS'),
             uninstaller,
-            icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
+            icon=os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
         )
         with winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
@@ -681,7 +681,7 @@ def uninstaller_setup(install_dir, force, silent):
                 )
                 winreg.SetValueEx(
                     reg, 'DisplayIcon', 0, winreg.REG_SZ,
-                    os.path.join(SIMNIBSDIR, "resources", "gui_icon.ico")
+                    os.path.join(SIMNIBSDIR, "resources", "icons", "simnibs", "gui_icon.ico")
                 )
                 winreg.SetValueEx(
                     reg, 'DisplayName', 0, winreg.REG_SZ,
@@ -724,7 +724,7 @@ def activator_setup(install_dir):
         _create_shortcut(
             os.path.join(install_dir, 'Activate SimNIBS'),
             activator,
-            icon=os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.ico')
+            icon=os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
         )
     else:
         _write_unix_sh(
@@ -853,7 +853,7 @@ if GUI:
             self.setLayout(mainLayout)
 
             self.setWindowTitle(f'SimNIBS {__version__} Post-Install Options')
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
         def set_copy_gmsh_options(self, new_value):
@@ -939,7 +939,7 @@ if GUI:
             mainLayout.addWidget(button_box)
             self.setLayout(mainLayout)
             self.setWindowTitle('SimNIBS Uninstaller')
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
     def start_uninstall_gui(install_dir):
