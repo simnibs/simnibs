@@ -3,10 +3,10 @@ GMSH
 
 Files
 --------
-* simnibs/bin/win/gmsh.exe
-* simnibs/bin/linux/gmsh
-* simnibs/bin/osx/gmsh
-* simnibs/resources/gmsh
+* simnibs/external/bin/win/gmsh.exe
+* simnibs/external/bin/linux/gmsh
+* simnibs/external/bin/osx/gmsh
+* simnibs/resources/logos/gmsh
 
 License
 ----------
