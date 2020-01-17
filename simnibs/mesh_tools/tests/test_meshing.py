@@ -259,7 +259,7 @@ def test_mesh_surfaces(surface):
     assert np.isclose(vol_1, 2**3, rtol=1e-1)
 
 def test_remesh(sphere3):
-    mesh = meshing.remesh(sphere3, 10, 10)
+    mesh = meshing.remesh(sphere3, 10, 10, facet_distance=2, optimize=False)
     assert np.allclose(np.min(mesh.nodes[:], axis=0), -95, rtol=1e-2)
     assert np.allclose(np.max(mesh.nodes[:], axis=0), 95, rtol=1e-2)
     vols = volumes(mesh)
@@ -274,12 +274,3 @@ def test_test_sign(sphere3):
         res[i] = meshing.create_mesh.test_sign(nodes_coords, th.astype(np.uint))
     assert np.all(res)
 
-def test_smooth_surfaces(sphere3):
-    mesh = copy.deepcopy(sphere3)
-    tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
-    mesh.nodes.node_coord[tr_nodes - 1] += \
-        np.random.standard_normal((len(tr_nodes), 3)) * 1
-    curvature_before = mesh.gaussian_curvature()[tr_nodes]
-    meshing.smooth_surfaces(mesh, 10)
-    curvature_after = mesh.gaussian_curvature()[tr_nodes]
-    assert np.std(curvature_after) < np.std(curvature_before)

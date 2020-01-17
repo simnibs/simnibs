@@ -2310,6 +2310,81 @@ class Msh:
             self.elm.add_triangles(tr, 1000+tag)
         self.fix_tr_node_ordering()
 
+    def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None):
+        ''' In-place Smoothes the mesh surfaces using Taubin smoothing
+        
+        Can severely decrease tetrahedra quality
+
+        Parameters
+        ------------
+        msh: simnibs.msh.Msh
+            Mesh structure, must have inner triangles
+        n_steps: int
+            number of smoothing steps to perform
+        step_size (optional): float 0<step_size<1
+            Size of each smoothing step. Default: 0.3
+        nodes_mask: ndarray of bool
+            Mask of nodes to be moved. Default: all nodes
+        '''
+        assert step_size > 0 and step_size < 1
+        if nodes_mask is None:
+            nodes_mask = np.ones(self.nodes.nr, dtype=np.bool)
+        if len(nodes_mask) != self.nodes.nr:
+            raise ValueError(
+                'nodes_mask should have the same number of elements as mesh nodes')
+        # Triangle neighbourhood information
+        adj_tr = scipy.sparse.csr_matrix((self.nodes.nr, self.nodes.nr), dtype=bool)
+        tr = self.elm[self.elm.triangles, :3] - 1
+        ones = np.ones(len(tr), dtype=bool)
+        for i in range(3):
+            for j in range(3):
+                adj_tr += scipy.sparse.csr_matrix(
+                    (ones, (tr[:, i], tr[:, j])),
+                    shape=adj_tr.shape
+                )
+        adj_tr -= scipy.sparse.dia_matrix((np.ones(adj_tr.shape[0]), 0), shape=adj_tr.shape)
+
+        # Tetrahedron neighbourhood information
+        th = self.elm[self.elm.tetrahedra] - 1
+        adj_th = scipy.sparse.csr_matrix((self.nodes.nr, len(th)), dtype=bool)
+        th_indices = np.arange(len(th))
+        ones = np.ones(len(th), dtype=bool)
+        for i in range(4):
+            adj_th += scipy.sparse.csr_matrix(
+                (ones, (th[:, i], th_indices)),
+                shape=adj_th.shape
+            )
+
+        surf_nodes = np.unique(tr)
+        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, np.float)
+        for i in range(n_steps):
+            cython_msh.gauss_smooth(
+                surf_nodes.astype(np.uint),
+                nodes_coords,
+                np.ascontiguousarray(th, np.uint),
+                np.ascontiguousarray(adj_tr.indices, np.uint),
+                np.ascontiguousarray(adj_tr.indptr, np.uint),
+                np.ascontiguousarray(adj_th.indices, np.uint),
+                np.ascontiguousarray(adj_th.indptr, np.uint),
+                float(step_size),
+                np.ascontiguousarray(nodes_mask, np.uint)
+            )
+            # Taubin step
+            cython_msh.gauss_smooth(
+                surf_nodes.astype(np.uint),
+                nodes_coords,
+                np.ascontiguousarray(th, np.uint),
+                np.ascontiguousarray(adj_tr.indices, np.uint),
+                np.ascontiguousarray(adj_tr.indptr, np.uint),
+                np.ascontiguousarray(adj_th.indices, np.uint),
+                np.ascontiguousarray(adj_th.indptr, np.uint),
+                -1.05 * float(step_size),
+                np.ascontiguousarray(nodes_mask, np.uint)
+            )
+        self.nodes.node_coord = nodes_coords
+
+
+
 
 class Data(object):
     """Store data in elements or nodes

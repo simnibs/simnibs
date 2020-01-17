@@ -989,6 +989,39 @@ class TestMsh:
         m.reconstruct_surfaces(tags=[4])
         assert ~np.any(np.in1d(m.elm.tag1, [1003, 1005]))
 
+    def test_smooth_without_th(self, sphere3_msh):
+        mesh = sphere3_msh.crop_mesh(elm_type=2)
+        tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
+        mesh.nodes.node_coord[tr_nodes - 1] += \
+            np.random.standard_normal((len(tr_nodes), 3)) * 1
+        curvature_before = mesh.gaussian_curvature()[tr_nodes]
+        mesh.smooth_surfaces(10)
+        curvature_after = mesh.gaussian_curvature()[tr_nodes]
+        assert np.std(curvature_after) < np.std(curvature_before)
+
+    def test_smooth_with_tetrahedra(self, sphere3_msh):
+        mesh = copy.deepcopy(sphere3_msh)
+        tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
+        mesh.nodes.node_coord[tr_nodes - 1] += \
+            np.random.standard_normal((len(tr_nodes), 3)) * 1
+        curvature_before = mesh.gaussian_curvature()[tr_nodes]
+        mesh.smooth_surfaces(10)
+        curvature_after = mesh.gaussian_curvature()[tr_nodes]
+        assert np.std(curvature_after) < np.std(curvature_before)
+
+    def test_smooth_with_mask(self, sphere3_msh):
+        mesh = sphere3_msh.crop_mesh(elm_type=2)
+        tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
+        mesh.nodes.node_coord[tr_nodes - 1] += \
+            np.random.standard_normal((len(tr_nodes), 3)) * 1
+        curvature_before = mesh.gaussian_curvature()
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes[tr_nodes - 1] = True
+        mesh.smooth_surfaces(10, nodes_mask=mask_nodes)
+        curvature_after = mesh.gaussian_curvature()
+        assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
+        assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
+
 
 class TestData:
     def test_read_hdf5_data_matrix_row(self):

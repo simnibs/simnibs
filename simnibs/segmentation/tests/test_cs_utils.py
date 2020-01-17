@@ -6,7 +6,6 @@ import pytest
 
 
 from simnibs.segmentation import _cs_utils
-#from cat_python import vol_resize
 
 FUNCTION_TESTS_FOLDER = os.path.join(
     os.path.dirname(__file__),
