@@ -130,11 +130,11 @@ else:
     raise OSError('OS not supported!')
 
 extension = [
-    Extension('simnibs.msh.cython_msh',
-              ["simnibs/msh/cython_msh.pyx"],
+    Extension('simnibs.mesh_tools.cython_msh',
+              ["simnibs/mesh_tools/cython_msh.pyx"],
               include_dirs=[np.get_include()]),
-    Extension('simnibs.msh._marching_cubes_lewiner_cy',
-              ["simnibs/msh/_marching_cubes_lewiner_cy.pyx"],
+    Extension('simnibs.mesh_tools._marching_cubes_lewiner_cy',
+              ["simnibs/mesh_tools/_marching_cubes_lewiner_cy.pyx"],
               include_dirs=[np.get_include()]),
     Extension('simnibs.segmentation._cs_utils',
               ["simnibs/segmentation/_cs_utils.pyx",

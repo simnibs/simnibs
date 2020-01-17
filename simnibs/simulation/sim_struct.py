@@ -2218,9 +2218,9 @@ class TDCSLEADFIELD(LEADFIELD):
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
 
-    def _place_electrodes(self, fix_th=True):
+    def _place_electrodes(self):
         """ Add the defined electrodes to a mesh """
-        return TDCSLIST._place_electrodes(self, fix_th=fix_th)
+        return TDCSLIST._place_electrodes(self)
 
     def _lf_name(self):
         try:

@@ -1443,7 +1443,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     open_in_gmsh: bool
         If true, opens a Gmsh window with the interpolated fields
     '''
-    from ..msh import mesh_io
+    from ..mesh_tools import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
     names, segtype = get_surface_names_from_folder_structure(m2m_folder)
     if depth < 0. or depth > 1.:
@@ -1659,7 +1659,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
     atlas: dict
         Dictionary where atlas['region'] = roi
     '''
-    from .mesh_io import read_gifti_surface, read_freesurfer_surface
+    from ..mesh_tools.mesh_io import read_msh, read_gifti_surface, read_freesurfer_surface
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
 
