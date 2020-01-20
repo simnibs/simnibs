@@ -170,14 +170,14 @@ logger = logging.getLogger("py.warnings")
 
 
 
- 
+
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
              deform="expand", smooth_mesh=True, skip_lastsmooth=True, 
              smooth_mm2move=True, despike_nonmove=True, fix_faceflips=True,
              log_level=logging.INFO, actualsurf='', ref_fs=None):
     """Deform a mesh by either expanding it in the direction of node normals
     or shinking it in the opposite direction of the normals.
-    
+
     PARAMETERS
     ----------
     vertices : ndarray
@@ -218,15 +218,15 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         logging level (default = logging.INFO).
     actualsurf : string
         string added to the beginning of the logged messages (default = '')
-    
+
     RETURNS
     ----------
     vertices : ndarray
         Vertices describing the expanded mesh.
     """
-    
+
     DEBUG=False # controls writing of additional meshes for debugging
-    #  Note: ref_fs needed for debugging to have correct header information 
+    #  Note: ref_fs needed for debugging to have correct header information
     #        when writing FreeSurfer surfaces
 
     # check inputs
@@ -252,7 +252,9 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
             mm2move=(mm2move_total-dist)/float(nsteps-i)
         mm2move[~move] = 0
         
-        node_normals = get_node_normals(vertices, faces)
+        node_normals = mesh_io.Msh(
+            nodes=mesh_io.Nodes(vertices),
+            elements=mesh_io.Elements(faces+1)).nodes_normals()[:]
         if deform == "shrink":
             node_normals *= -1
         
@@ -276,7 +278,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         # * for the temporarily shifted mesh, one intersection is expected,
         #   as each non-shifted vertex will intersect with its shifted version
             
-        mesh=vertices[faces]
+        mesh = vertices[faces]
         barycenters = np.average(mesh, axis=1)
         bar_tree = cKDTree(barycenters)
         ver_tree = cKDTree(vertices[move])
@@ -359,7 +361,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         
         if DEBUG:
             tmpmsh = mesh_io.Msh(nodes=mesh_io.Nodes(vertices),
-                             elements=mesh_io.Elements(faces+1))
+                         elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
             mesh_io.write_freesurfer_surface(tmpmsh,filename+".fsmesh", ref_fs=ref_fs)
@@ -662,13 +664,13 @@ def get_triangle_normals(mesh):
     return tnormals
 
 
-    
+
 def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
                            posint_ok=None, plane_type="two-sided",
                            mindist2int=-np.inf, maxdist2int=np.inf,
                            return_int_points=False, return_int_dists=False, eps=1e-6):
     """Test intersection between rays and triangles.
-    
+
     PARAMETERS
     ----------
     triangles : ndarray
@@ -723,7 +725,7 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
         the plane spanned by each triangle (default = False).
     eps : float, optional
         Error tolerance (default = 1e-6).
-    
+
     RETURNS
     ----------
     intersect : ndarray
@@ -733,10 +735,10 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     intersect_distances : ndarray, optional
         The distance from ray_origin to the point of interscetion with the
         plane spanned by each triangle.
-        
+
     NOTES
     ----------
-    
+
     """
     # Check inputs
     ray_direction = np.array(ray_direction)
@@ -746,7 +748,7 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
         ray_direction = ray_direction[None,None,:]
     else:
         raise ValueError("ray_direction must be either a single vector or have same dimensions as ray_origin.")
-    
+
     try:
         assert plane_type in ["one-sided", "two-sided"]
     except AssertionError:
@@ -816,7 +818,7 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     # 2nd barycentric (e.g., y) coordinate of intersection point
     #   v = DOT(dir, Q)
     v = np.einsum("ijk,ijk->ij", ray_direction, Q)*inv_det
-    
+
     # Distance from ray_origin to point of intersection in units of
     # ray_direction
     t = np.einsum("ijk,ijk->ij", e2, Q)*inv_det
@@ -844,8 +846,8 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     t[~posint_ok]=np.inf
     if return_int_points:
         # The points where each ray cross the plane of each triangle
-        intersect_points = ray_origin[:,np.newaxis,:]+t[...,np.newaxis]*ray_direction        
-        if return_int_dists:      
+        intersect_points = ray_origin[:, None, :]+t[..., None]*ray_direction
+        if return_int_dists:
             return intersect, intersect_points, t
         else:
             return intersect, intersect_points
