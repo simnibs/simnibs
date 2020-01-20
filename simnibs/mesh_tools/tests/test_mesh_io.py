@@ -1748,6 +1748,27 @@ class TestWriteGeo:
                                 '};\n')
         os.remove('tst.geo')
 
+
+class TestSurfaceIO:
+    @pytest.mark.parametrize('binary', [True, False])
+    def test_stl_io(self, binary, sphere3_msh):
+        surf = sphere3_msh.crop_mesh(1005)
+        mesh_io.write_stl(surf, 'tst.stl', binary)
+        surf_read = mesh_io.read_stl('tst.stl')
+        os.remove('tst.stl')
+        # STL format changes order
+        assert np.allclose(surf.nodes[surf.elm[:, :3]],
+                           surf_read.nodes[surf_read.elm[:, :3]])
+
+    def test_off_io(self, sphere3_msh):
+        surf = sphere3_msh.crop_mesh(1005)
+        mesh_io.write_off(surf, 'tst.off')
+        surf_read = mesh_io.read_off('tst.off')
+        os.remove('tst.off')
+        assert np.allclose(surf.nodes[surf.elm[:, :3]],
+                           surf_read.nodes[surf_read.elm[:, :3]])
+
+
 class TestHashing:
     def test_scalar(self):
         hash_ = mesh_io._hash_rows(np.array([[2]]), dtype=np.int64)

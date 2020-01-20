@@ -30,8 +30,9 @@ import hashlib
 import tempfile
 import subprocess
 import threading
-
+from itertools import islice
 from functools import partial
+
 import numpy as np
 import scipy.spatial
 import scipy.ndimage
@@ -5154,16 +5155,99 @@ def _middle_surface(wm_surface, gm_surface, depth):
 
 
 def read_stl(fn):
-    from .hmutils import mesh_load
-    vertices, faces = mesh_load(fn)
+    ''' Reads mesh surface in a .stl file
+
+    Parameters
+    -----------
+    fn: str
+        Name of file
+
+    Returns:
+    ---------
+    msh: Msh
+        Mesh with surface
+    '''
+    # test if ascii. If not, assume binary
+    with open(fn, "rb") as f:
+        try:
+            if f.readline().decode().split()[0] == "solid":
+                is_binary = False
+            else:
+                is_binary = True
+        except:
+            is_binary = True
+
+    if is_binary:
+        with open(fn, "rb") as f:
+            # Skip the header (80 bytes), read number of triangles (1
+            # byte). The rest is the data.
+            np.fromfile(f, dtype=np.uint8, count=80)
+            np.fromfile(f, dtype=np.uint32, count=1)[0]
+            data = np.fromfile(f, dtype=np.uint16, count=-1)
+        data = data.reshape((-1, 25))[:, :24].copy().view(np.float32)
+        vertices = data[:, 3:].reshape(-1, 3) #  discard the triangle normals
+
+    else:
+        vertices = []
+        with open(fn, "rb") as f:
+            for line in f:
+                line = line.decode().lstrip().split()
+                if line[0] == "vertex":
+                    vertices.append(line[1:])
+        vertices = np.array(vertices, dtype=np.float)
+
+    # The stl format does not contain information about the faces, hence we
+    # will need to figure this out.
+    faces = np.arange(len(vertices)).reshape(-1, 3)
+
+    # Remove vertice duplicates and sort rows by sum
+    sv = np.sum(vertices+vertices*(100*np.random.random(3))[None, :],
+                axis=1)
+    sv_arg = np.argsort(sv)
+    sv_arg_rev = np.argsort(sv_arg)  # reverse indexing for going back
+
+    # Get unique rows, indices of these, and counts. Create the new indices
+    # and repeat them
+    u, u_idx, u_count = np.unique(sv[sv_arg], return_index=True,
+                                  return_counts=True)
+    repeat_idx = np.repeat(np.arange(len(u)), u_count)
+
+    # Retain only unique vertices and modify faces accordingly
+    vertices = vertices[sv_arg][u_idx]
+    faces = repeat_idx[sv_arg_rev][faces]
+
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
     return msh
 
+
 def read_off(fn):
-    from .hmutils import mesh_load
-    vertices, faces = mesh_load(fn)
+    ''' Reads mesh surfaces in a .off file
+
+    Parameters
+    -----------
+    fn: str
+        Name of file
+
+    Returns:
+    ---------
+    msh: Msh
+        Mesh with surface
+    '''
+
+    with open(fn, "rb") as f:
+        # Read header
+        hdr = f.readline().decode().rstrip("\n").lower()
+        assert hdr == "off", ".off files should start with OFF"
+        while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n":
+            hdr = f.readline().decode()
+        hdr = [int(i) for i in hdr.split()]
+
+        # Now read the data
+        vertices = np.genfromtxt(islice(f, 0, hdr[0]))
+        faces = np.genfromtxt(islice(f, 0, hdr[1]),
+                              usecols=(1, 2, 3)).astype(np.uint)
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
@@ -5180,11 +5264,18 @@ def write_off(msh, fn):
     fn: str
         Name of file
     '''
-    from .hmutils import mesh_save
     msh = msh.crop_mesh(elm_type=2)
     vertices = msh.nodes[:]
     faces = msh.elm[:, :3] - 1
-    mesh_save(vertices, faces, fn, file_format="off")
+    with open(fn, "wb") as f:
+        f.write("OFF\n".encode())
+        f.write("# File created by ... \n\n".encode())
+        np.savetxt(f, np.array([len(vertices), len(faces), 0])[None, :], fmt="%u")
+        np.savetxt(f, vertices, fmt="%0.6f")
+        np.savetxt(f, np.concatenate(
+            (np.repeat(faces.shape[1], len(faces))[:, None], faces),
+            axis=1).astype(np.uint), fmt="%u")
+
 
 def write_stl(msh, fn, binary=True):
     ''' Writes mesh surfaces as a .stl file
@@ -5196,11 +5287,36 @@ def write_stl(msh, fn, binary=True):
     fn: str
         Name of file
     '''
-    from .hmutils import mesh_save
     msh = msh.crop_mesh(elm_type=2)
     vertices = msh.nodes[:]
     faces = msh.elm[:, :3] - 1
-    mesh_save(vertices, faces, fn, file_format="stl", binary=binary)
+    tnormals = msh.triangle_normals()[:]
+    mesh = vertices[faces]
+
+    data = np.concatenate((tnormals, np.reshape(mesh, [len(faces), 9])),
+                          axis=1).astype(np.float32)
+
+    if binary:
+        with open(fn, "wb") as f:
+            f.write(np.zeros(80, dtype=np.uint8))
+            f.write(np.uint32(len(faces)))
+            f.write(np.concatenate(
+                (data.astype(np.float32, order="C", copy=False).view(np.uint16),
+                 np.zeros((data.shape[0], 1), dtype=np.uint16)), axis=1).reshape(-1).tobytes())
+    else:
+        with open(fn, "w") as f:
+            f.write("solid MESH\n")
+            for t in range(len(data)):
+                f.write((
+                    " facet normal {0} {1} {2}\n"
+                    "  outer loop\n"
+                    "   vertex {3} {4} {5}\n"
+                    "   vertex {6} {7} {8}\n"
+                    "   vertex {9} {10} {11}\n"
+                    "  endloop\n"
+                    " endfacet\n")
+                    .format(*data[t, :]))
+            f.write("endsolid MESH\n")
 
 
 def read_medit(fn):
