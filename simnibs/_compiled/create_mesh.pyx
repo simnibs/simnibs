@@ -22,6 +22,9 @@ cdef extern from "_mesh.cpp" nogil:
         float facet_angle, float facet_size, float facet_distance,
         float cell_radius_edge_ratio, float cell_size,
         bool optimize)
+    int _check_self_intersections(
+        float *vertices, int n_vertices, int *faces, int n_faces)
+
 
 def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
                float facet_distance, float cell_radius_edge_ratio, float cell_size,
@@ -48,3 +51,9 @@ def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
     )
     return ret
 
+def check_self_intersections(vertices, faces):
+    cdef np.ndarray[float] v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
+    cdef np.ndarray[int] f = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
+    ret = _check_self_intersections(&v[0], len(vertices), &f[0], len(faces))
+
+    return ret

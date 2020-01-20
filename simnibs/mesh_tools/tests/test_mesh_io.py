@@ -1022,6 +1022,10 @@ class TestMsh:
         assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
 
+    def test_check_self_intersections(self, sphere3_msh):
+        intersections = sphere3_msh.surface_self_intersections()
+        assert intersections
+        assert False
 
 class TestData:
     def test_read_hdf5_data_matrix_row(self):

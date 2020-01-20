@@ -46,6 +46,7 @@ from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 from . import cython_msh
+from .._compiled import create_mesh
 
 
 class InvalidMeshError(ValueError):
@@ -2385,6 +2386,10 @@ class Msh:
         self.nodes.node_coord = nodes_coords
 
 
+    def surface_self_intersections(self):
+        return create_mesh.check_self_intersections(
+            self.nodes[:],
+            self.elm[self.elm.elm_type == 2, :3] - 1)
 
 
 class Data(object):

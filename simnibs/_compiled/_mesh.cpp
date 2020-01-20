@@ -6,12 +6,14 @@
 #include <CGAL/Polyhedral_complex_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Image_3.h>
+#include <CGAL/Surface_mesh.h>
 
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/IO/OFF_reader.h>
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 #include <CGAL/Polygon_mesh_processing/orientation.h>
+#include <CGAL/Polygon_mesh_processing/self_intersections.h>
 
 
 #include <cstdlib>
@@ -22,6 +24,7 @@ typedef K::Point_3 Point;
 typedef FT (Function)(const Point&);
 typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain_img;
 typedef CGAL::Polyhedral_complex_mesh_domain_3<K> Mesh_domain_surf;
+typedef CGAL::Surface_mesh<K::Point_3> Surface_mesh;
 #ifdef CGAL_CONCURRENT_MESH_3
 typedef CGAL::Parallel_tag Concurrency_tag;
 #else
@@ -45,7 +48,6 @@ typedef Mesh_criteria_surf::Cell_criteria     Cell_criteria_surf;
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
 // Function
-
 
 
 int _mesh_image(
@@ -83,6 +85,7 @@ int _mesh_image(
   return EXIT_SUCCESS;
 
 }
+
 
 int _mesh_surfaces(
   std::vector<char *>filenames, std::vector<std::pair<int, int> > incident_subdomains,
@@ -133,4 +136,23 @@ int _mesh_surfaces(
   c3t3.output_to_medit(medit_file);
 
   return EXIT_SUCCESS;
+}
+
+
+
+int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n_faces)
+{
+  Surface_mesh m;
+  std::vector<Surface_mesh::Vertex_index> vertex_indices(n_vertices);
+  for(int i = 0; i < n_vertices; ++i) {
+    vertex_indices[i] = m.add_vertex(Point(vertices[3*i], vertices[3*i+1], vertices[3*i+2]));
+  }
+  for(int i = 0; i < n_faces; ++i) {
+    m.add_face(
+        vertex_indices[faces[3*i]],
+        vertex_indices[faces[3*i+1]],
+        vertex_indices[faces[3*i+2]]);
+  }
+  bool intersecting = CGAL::Polygon_mesh_processing::does_self_intersect(m);
+  return intersecting;
 }
