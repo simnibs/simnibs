@@ -24,7 +24,7 @@ typedef K::Point_3 Point;
 typedef FT (Function)(const Point&);
 typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain_img;
 typedef CGAL::Polyhedral_complex_mesh_domain_3<K> Mesh_domain_surf;
-typedef CGAL::Surface_mesh<K::Point_3> Surface_mesh;
+typedef CGAL::Surface_mesh<Point> Surface_mesh;
 #ifdef CGAL_CONCURRENT_MESH_3
 typedef CGAL::Parallel_tag Concurrency_tag;
 #else
@@ -153,6 +153,11 @@ int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n
         vertex_indices[faces[3*i+1]],
         vertex_indices[faces[3*i+2]]);
   }
-  bool intersecting = CGAL::Polygon_mesh_processing::does_self_intersect(m);
-  return intersecting;
+  std::vector<std::pair<boost::graph_traits<Surface_mesh>::face_descriptor, boost::graph_traits<Surface_mesh>::face_descriptor>> intersected_tris;
+  CGAL::Polygon_mesh_processing::self_intersections(m, std::back_inserter(intersected_tris));
+  for( int i =0; i< intersected_tris.size();i++){
+	  std::cout<<intersected_tris[i].first() << "\n";
+
+  }
+  return EXIT_SUCCESS;
 }

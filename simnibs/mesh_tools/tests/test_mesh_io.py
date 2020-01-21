@@ -1023,7 +1023,13 @@ class TestMsh:
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
 
     def test_check_self_intersections(self, sphere3_msh):
-        intersections = sphere3_msh.surface_self_intersections()
+        triangle = mesh_io.Msh(
+            mesh_io.Nodes(np.array(
+                [[-100, -100, 0], [-100, 100, 0], [100, -100, 0], [100, 100, 0]])),
+            mesh_io.Elements(np.array([[1, 2, 3], [2, 3, 4]]))
+        )
+        m = sphere3_msh.join_mesh(triangle)
+        intersections = m.surface_self_intersections()
         assert intersections
         assert False
 
