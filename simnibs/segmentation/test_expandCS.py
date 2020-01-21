@@ -4,8 +4,11 @@ import logging
 import nibabel as nib
 import os
 import shutil
-import surface_functions as sf
 import timeit
+
+from simnibs.utils.simnibs_logger import logger
+import simnibs.segmentation.surface_functions as sf
+from simnibs import mesh_io
 
 subject_dir=""
 config_file="surface_reco.ini" # content would be added to charm.ini somewhere in the simnibs install folder
@@ -20,16 +23,12 @@ ref_fs="C:/Users/axthi/simnibs/simnibs_examples/ernie/m2m_ernie/ref_FS.nii.gz"
 
 # logging
 logging.captureWarnings(True)
-logger = logging.getLogger("py.warnings")
 # use logging.INFO for normal use; logging.DEBUG for development:
 logger.setLevel(logging.DEBUG) 
 
 # log to console and file
-logfile = os.path.join(subject_dir, "charm_log.html")
-logger.addHandler(sf.make_handler("stream", logging.INFO))
-logger.addHandler(sf.make_handler("file", logging.DEBUG, logfile ))
-with open(logfile, 'a') as f_log:
-    f_log.write('<HTML><HEAD><TITLE>headreco report</TITLE></HEAD><BODY><pre>')
+#logger.addHandler(sf.make_handler("stream", logging.INFO))
+#    f_log.write('<HTML><HEAD><TITLE>headreco report</TITLE></HEAD><BODY><pre>')
 
 # log command line call
 # sf.log(" ".join(argv), level=logging.INFO)
@@ -81,7 +80,7 @@ thickness = glob(os.path.join(opt['surffolder'], actualsurf+".thickness"))[0]
 central = nib.load(central)
 cv = central.darrays[0].data
 cf = central.darrays[1].data
-th = sf.read_curv(thickness)
+th = mesh_io.read_curv(thickness)
 
 # expand and save as .gii
 tic = timeit.default_timer()
@@ -97,14 +96,9 @@ sf.mesh_save(cv_pial, cf, Ppial) # replace by saving gifti
 # =============================================================================
 
 # end HTML file
-with open(logfile, 'a') as f_log:
-    f_log.write('</pre></BODY></HTML>')
+#with open(logfile, 'a') as f_log:
+#    f_log.write('</pre></BODY></HTML>')
 
-# remove handlers, otherwise I get duplicate logging lines when calling the script
-# repeatedaly in the IDLE
-while logger.hasHandlers():
-    logger.handlers[0].close()
-    logger.removeHandler(logger.handlers[0])
 logging.shutdown()
 
 

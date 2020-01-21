@@ -11,164 +11,12 @@ from queue import Queue, Empty
 
 import logging
 import numpy as np
-import os
 from scipy.spatial import cKDTree
-import struct
 import sys
 from subprocess import Popen, PIPE
-from itertools import islice
 
-from simnibs import mesh_io
-
-
-logger = logging.getLogger("py.warnings")
-
-
-
-# def deform_mesh(vertices, faces, mm2move, ensure_distance, nsteps,
-#                 deform="expand", plane_type="one-sided", smooth_mesh=False,
-#                 save=None, file_format="off", eps=1e-6, verbose=False):
-#     """Deform a mesh by either expanding it in the direction of node normals
-#     or shinking it in the opposite direction of the normals.
-    
-#     PARAMETERS
-#     ----------
-#     vertices : ndarray
-#         Vertices describing the mesh.
-#     faces : ndarray
-#         Faces describing the mesh.    
-#     mm2move : float
-#         The amount by which to move a vertice each iteration.
-#     ensure_distance : float
-#         Minimum distance to ensure in the mesh.
-#     nsteps : int
-#         The number of steps used to reach the desired distance to move.
-#     deform : {"expand", "shrink"}
-#         Whether to expand or shink the mesh. Expand corresponds to pushing
-#         the nodes outwards (in the direction of the normals) whereas shrink
-#         will pull the nodes inwards (in the direction of minus the normals)
-#         (default = "expand").
-#     plane_type : {"one-sided", "two-sided"}, optional
-#         Which type of intersections to consider. If "one-sided", only
-#         intersections with the face of a triangle are considered (i.e. the
-#         direction of movement and triangle normal are opposite). If
-#         "two-sided", all intersections are considered (default = "one-sided").
-#     smooth_mesh : bool, optional
-#         Local smoothing of the mesh by averaging, for each vertex which has
-#         been moved, the coordinates of itself and all other vertices to which
-#         it is connected weighting the vertex itself higher than the surrounding
-#         vertices (default = True).
-#     save : {"all", "final", None}, optional
-#         Which steps of the process to save (default = None).
-#     file_format : {"off", "stl"}, optional
-#         Which file format to save the mesh to (default = "off").    
-#     eps : float, optional
-#         Epsilon. Error tolerance margin. For numerical stability of results
-#         (default = 1e-6).
-#     verbose : bool
-#         Whether or not to print to console (default = False).
-    
-#     RETURNS
-#     ----------
-#     vertices : ndarray
-#         Vertices describing the expanded mesh.
-#     """
-    
-#     verbosity = logging.DEBUG
-    
-#     # check inputs
-#     assert deform in ["expand", "shrink"]
-#     assert isinstance(nsteps,int)
-#     assert plane_type in ["one-sided", "two-sided"]
-#     assert save in ["all", "final", None]
-#     assert file_format in ["off", "stl"]
-    
-#     mm2move = mm2move/float(nsteps)
-#     n_nodes = len(vertices)
-#     if isinstance(mm2move, (list, tuple, np.ndarray)):
-#         assert len(mm2move) == len(vertices), "The length of mm2move must match that of vertices"
-#         ballsize = max(mm2move)
-#         isarray = True
-#         verts2consider = np.where(mm2move!=0)[0] # no need to consider others
-#     else:
-#         assert isinstance(mm2move,(int,float))
-#         ballsize = mm2move
-#         isarray = False
-#         verts2consider = np.arange(n_nodes)
-        
-#     vertices = vertices.copy() # prevent modification of input "vertices"!
-#     v2f = verts2faces(vertices,faces)
-      
-#     for i in range(nsteps):
-#         #if verbose:
-#         #    log("Step {0}",i+1)
-#         sys.stdout.flush()
-        
-#         mesh = vertices[faces]
-        
-#         # get node normals by averaging normals of the triangles to which the
-#         # node belongs
-#         node_normals = get_node_normals(vertices, faces, verts2consider)
-#         if deform == "shrink":
-#             node_normals *= -1
-        
-#         # testing all nodes against all triangles is slow if the mesh is large,
-#         # thus, find triangles within some distance of each node and test only
-#         # these for intersections. This reduces # of computations dramatically.    
-#         barycenters = np.average(mesh, axis=1)
-#         bar_tree = cKDTree(barycenters)
-#         ver_tree = cKDTree(vertices[verts2consider])
-#         res = ver_tree.query_ball_tree(bar_tree, r=(2+eps)*ballsize+2*ensure_distance,
-#                                         p=2)
-#         # possible intersections
-#         pi, piok = list2numpy(res, dtype=np.int)
-
-#         intersect = ray_triangle_intersect(mesh, vertices[verts2consider],
-#                         node_normals, pi, piok, plane_type, mindist2int=0,
-#                         maxdist2int=ballsize+ensure_distance)
-#         move = ~intersect.any(1)
-#         verts2consider = verts2consider[move]
-        
-#         if verbose:
-#             pad = str(len(str(n_nodes)))
-#             msg = "Moved {:"+pad+"d} of {:d} vertices"
-#             log(msg, (np.sum(move), n_nodes), level=verbosity)
-#             sys.stdout.flush()
-
-#         # update the vertices
-#         if isarray:
-#             vertices[verts2consider] += node_normals[move]*mm2move[verts2consider,None]
-#         else:
-#             vertices[verts2consider] += node_normals[move]*mm2move
-        
-#         if smooth_mesh:
-#             # smooth verts2consider and neighbors
-#             if len(verts2consider) < len(vertices):
-#                 f2c = [v2f[n] for n in verts2consider]
-#                 f2c,f2cok = list2numpy(f2c,dtype=np.int)
-#                 f2c = f2c[f2cok] # faces of verts2consider
-#                 nn, nnok = get_element_neighbors(vertices[faces]) # get neighboring elements
-#                 neighbors = nn[f2c][nnok[f2c]]
-#                 # get neighboring vertices and verts2consider themselves
-#                 v2smooth = np.unique(np.append(faces[neighbors],verts2consider)).astype(np.int)
-#             else:
-#                 v2smooth = verts2consider
-                
-#             smoo = np.zeros_like(vertices[v2smooth])
-#             for i,n in zip(range(len(v2smooth)),v2smooth):
-#                 smoo[i] = np.average(vertices[faces[v2f[n]]], axis=(0,1))
-#             vertices[v2smooth] = smoo
-
-#         if save == "all" or (save == "final" and (i+1)==nsteps):
-#             pad = str(len(str(nsteps))-1)
-#             filename = "mesh_expand_{:0"+pad+"d}_of_{:d}."+file_format
-#             filename = filename.format(i+1, nsteps)
-#             mesh_save(vertices, faces, filename)
-    
-#     return vertices
-
-
-
+from ..mesh_tools import mesh_io
+from ..utils.simnibs_logger import logger
 
 
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
@@ -231,33 +79,33 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
 
     # check inputs
     assert deform in ["expand", "shrink"]
-    assert isinstance(nsteps,int)
+    assert isinstance(nsteps, int)
     assert len(mm2move_total) == len(vertices_org), "The length of mm2move must match that of vertices"
 
     vertices = vertices_org.copy() # prevent modification of input "vertices"
-    move=np.ones(len(vertices),dtype='bool')
-    v2f = verts2faces(vertices,faces)
+    move=np.ones(len(vertices), dtype=bool)
+    v2f = verts2faces(vertices, faces)
     for i in range(nsteps):
         sys.stdout.flush()
-        log(actualsurf+': Iteration '+str(i+1)+' of '+str(nsteps), level=logging.INFO)
+        logger.info(actualsurf+': Iteration '+str(i+1)+' of '+str(nsteps))
         
         # ---------------------------------
         # update mm2move and vertex normals
         # ---------------------------------
-        if i==0:
-            mm2move=mm2move_total/float(nsteps)
+        if i == 0:
+            mm2move = mm2move_total/float(nsteps)
         else:
             # distance adjustment is needed to account for small vertex shifts caused by smoothing
-            dist=np.sqrt(np.sum((vertices-vertices_org)**2, axis=1)) 
-            mm2move=(mm2move_total-dist)/float(nsteps-i)
+            dist = np.sqrt(np.sum((vertices-vertices_org)**2, axis=1))
+            mm2move = (mm2move_total-dist)/float(nsteps-i)
         mm2move[~move] = 0
-        
+
         node_normals = mesh_io.Msh(
             nodes=mesh_io.Nodes(vertices),
             elements=mesh_io.Elements(faces+1)).nodes_normals()[:]
         if deform == "shrink":
             node_normals *= -1
-        
+
         # ------------------------------------------------
         # testing for intersections in the direction of movement
         #
@@ -282,6 +130,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         barycenters = np.average(mesh, axis=1)
         bar_tree = cKDTree(barycenters)
         ver_tree = cKDTree(vertices[move])
+        #GBS: Why are those possible intersections???
         res = ver_tree.query_ball_tree(bar_tree, r=1.001*max(mm2move)+ensure_distance, p=2)
         pi, piok = list2numpy(res, dtype=np.int) # possible intersections
         
@@ -308,8 +157,9 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
                         maxdist2int=mm2move[move,None]+ensure_distance)
                 
         if DEBUG:
-            move_backup=move.copy()        
-        move[move]=(intersect.sum(1)==0)&(intersect2.sum(1)<2)
+            move_backup=move.copy()
+        #GBS: What is this line here doing?
+        move[move] = (intersect.sum(1) == 0) & (intersect2.sum(1) < 2)
 
         # -------------------------------------
         # remove isolated "non-move" vertices
@@ -329,35 +179,35 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         # ----------------------------
         # update the vertex positions, fix flipped faces by local smoothing
         # ----------------------------
-        mm2move[~move]=0
+        mm2move[~move] = 0
         if smooth_mm2move:
-            mm2move=smooth_vertices(mm2move,faces,Niterations=1)
+            mm2move = smooth_vertices(mm2move,faces,Niterations=1)
         
         if DEBUG:
-            vertices_beforemove=vertices.copy()
+            vertices_beforemove = vertices.copy()
             
         vertices += node_normals*mm2move[:,None]
         
         # test for flipped surfaces
-        mesh=vertices[faces]
+        mesh = vertices[faces]
         facenormals_post = get_triangle_normals(mesh)
-        flipped_faces=np.sum(facenormals_post*facenormals_pre,axis=1)<0
-        if fix_faceflips&np.any(flipped_faces):
-            log(actualsurf+': Fixing '+str(np.sum(flipped_faces))+' flipped faces', level=logging.DEBUG)
+        flipped_faces = np.sum(facenormals_post*facenormals_pre, axis=1) < 0
+        if fix_faceflips & np.any(flipped_faces):
+            logger.debug(f'{actualsurf}: Fixing {np.sum(flipped_faces)} flipped faces')
             vertices=smooth_vertices(vertices,faces,verts2consider=np.unique(faces[flipped_faces]),
                                      v2f_map=v2f,Niterations=5,Ndilate=2)
             mesh=vertices[faces]
             facenormals_post = get_triangle_normals(mesh)
-            flipped_faces=np.sum(facenormals_post*facenormals_pre,axis=1)<0
-            log(actualsurf+': '+str(np.sum(flipped_faces))+' flipped faces remaining', level=logging.DEBUG)
+            flipped_faces = np.sum(facenormals_post*facenormals_pre,axis=1) < 0
+            logger.debug(f'{actualsurf}: {np.sum(flipped_faces)} flipped faces remaining')
             
         if smooth_mesh:
             if skip_lastsmooth&(i==nsteps-1):
-                log(actualsurf+': Last iteration: skipping vertex smoothing', level=logging.DEBUG)
+                logger.debug(f'{actualsurf}: Last iteration: skipping vertex smoothing')
             else:
                 vertices=smooth_vertices(vertices,faces,v2f_map=v2f,mask_move=move)
                 
-        log(actualsurf+': Moved '+str(np.sum(move))+' of '+str(len(vertices))+' vertices.', level=logging.INFO)
+        logger.info(f'{actualsurf}: Moved {np.sum(move)} of {len(vertices)} vertices.')
         
         if DEBUG:
             tmpmsh = mesh_io.Msh(nodes=mesh_io.Nodes(vertices),
@@ -427,6 +277,8 @@ def smooth_vertices(vertices,faces,verts2consider=None,v2f_map=None,Niterations=
     if not mask_move is None:
          verts2consider = verts2consider[mask_move[verts2consider]]
         
+    #GBS: This is actually a very aggresive smoothing, and updating everything at the
+    # same time can create problems 
     smoo = vertices.copy()
     for n in verts2consider:
         smoo[n] = np.average(vertices[faces[v2f_map[n]]], axis=(0,1))
@@ -571,78 +423,6 @@ def list2numpy(L, pad_val=0, dtype=np.float):
     return narr, ok
 
 
-
-def get_node_normals(vertices, faces, mask=None, smooth=False,
-                     weigh_by_area=False):
-    """Compute the normal of vertices in a mesh by averaging normals of the 
-    triangles to which the node belongs
-    
-    PARAMETERS
-    ----------
-    vertices : ndarray
-        Vertices describing the mesh.
-    faces : ndarray
-        Faces describing the mesh.
-    mask : array_like
-        Array of indices or boolean array describing which vertices to return
-        the normals of. Returns normals for all vertices by default.
-    smooth : bool, optional
-        Whether or not to smooth vertice normals. A vertice normal is smoothed
-        by taking into consideration also the normals of the neighboring
-        vertices when computing the normal (default = False).
-    weigh_by_area : bool, optional
-        When computing a vertice normal, weight each triangle normal by the
-        area of the triangle so that large triangles contribute more and vice
-        versa (default = False).
-    
-    RETURNS
-    ----------
-    node_normals : ndarray
-        The vertex normals.
-    """
-    verts2consider = np.arange(len(vertices))
-    if not mask is None:
-        verts2consider = verts2consider[mask]
-
-    if smooth:
-        assert len(verts2consider) == len(vertices),"Cannot smooth normals when using mask"
-    v2f = verts2faces(vertices, faces)    
-    triangle_normals = get_triangle_normals(vertices[faces])
-    node_normals = []
-    
-    # Get the node normals
-    if weigh_by_area:
-        mesh = vertices[faces]
-        v0 = mesh[:,0,:]
-        e1 = mesh[:,1,:]-v0
-        e2 = mesh[:,2,:]-v0
-            
-        area = np.linalg.norm(np.cross(e1,e2),axis=1)/2.
-        for n in verts2consider:
-            w = area[v2f[n]]
-            node_normals.append(np.average(triangle_normals[v2f[n]], axis=0,
-                                           weights=w/np.sum(w)))
-    else:
-        for n in verts2consider:
-            node_normals.append(np.average(triangle_normals[v2f[n]], axis=0))
-    
-    # Normalize
-    node_normals  = np.array(node_normals)
-    node_normals /= np.sqrt(np.sum(node_normals**2,1))[:,np.newaxis]
-    
-    # Smooth node normals by averaging neighboring node normals
-    if smooth:
-        s = np.zeros_like(node_normals)
-        for n in verts2consider:
-            s[n] = np.average(node_normals[faces[v2f[n]]], axis=(0,1))
-                
-        node_normals  = s
-        node_normals /= np.sqrt(np.sum(node_normals**2,1))[:,np.newaxis]
-    
-    return node_normals
-
-
-
 def get_triangle_normals(mesh):
     """Get normal vectors for each triangle in the mesh.
 
@@ -757,39 +537,37 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
         posint = []
     if posint_ok is None:
         posint_ok = []
-        
+
     if (len(posint) > 0) & isinstance(posint,list):
         posint, posint_ok = list2numpy(posint, dtype=np.int)
-        
+
     # Get vectors (e1, e2) spanning each triangle from point v0
-    v0 = triangles[:,0,:]
-    e1 = triangles[:,1,:]-v0
-    e2 = triangles[:,2,:]-v0
-    if len(posint)>0:
+    v0 = triangles[:, 0, :]
+    e1 = triangles[:, 1, :] - v0
+    e2 = triangles[:, 2, :] - v0
+    if len(posint) > 0:
         try:
             assert posint.shape == posint_ok.shape
         except AssertionError:
             raise ValueError("posint and posint_ok must have same dimensions!")
-    
-        v0=v0[posint]
-        e1=e1[posint]
-        e2=e2[posint]
-    else:
-        v0=v0[None,...]
-        e1=e1[None,...]
-        e2=e2[None,...]
-    
+
+        v0 = v0[posint]
+        e1 = e1[posint]
+        v0 = v0[None, ...]
+        e1 = e1[None, ...]
+        e2 = e2[None, ...]
+
     # if not specified, consider all intersections possible
     if len(posint_ok) == 0:
         posint_ok = True
-        
+
     # RAY TESTING
     # =======================
     # Implementation of the algorithm presented in
     # 
     # Moeller & Trumbore (1997). Fast, Minimum Storage Ray/Triangle
     # Intersection. Journal of Graphics Tools, 2(1):21--28.
-    
+ 
     # Vector perpendicular to e2 and ray_direction
     #   P = CROSS(dir, e2)
     P = np.cross(ray_direction, e2)
@@ -855,253 +633,6 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
         return intersect, t
     else:
         return intersect
-
-
-
-def mesh_load(fname):
-    """Load a surface mesh in either .off or .stl file format. Return the 
-    vertices and faces of the mesh. If .stl file, assumes only one solid, i.e. 
-    only one mesh per file.
-    
-    PARAMETERS
-    ----------
-    fname : str 
-        Name of the file to be read (.off or .stl file).
-    
-    RETURNS
-    ----------
-    vertices : ndarray
-        Triangle vertices.
-    faces : ndarray
-        Triangle faces (indices into "vertices").
-    """
-    file_format = os.path.splitext(fname)[1].lower()
-    
-    if file_format == ".off":
-        with open(fname, "rb") as f:
-            # Read header
-            hdr = f.readline().decode().rstrip("\n").lower()
-            assert hdr == "off", ".off files should start with OFF"
-            while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n":
-                hdr = f.readline().decode()
-            hdr = [int(i) for i in hdr.split()]
-            
-            # Now read the data
-            vertices = np.genfromtxt(islice(f,0,hdr[0]))
-            faces    = np.genfromtxt(islice(f,0,hdr[1]),
-                                     usecols=(1,2,3)).astype(np.uint)
-        return vertices,faces
-        
-    elif file_format == ".stl":
-        # test if ascii. If not, assume binary        
-        with open(fname, "rb") as f:
-            try:
-                if f.readline().decode().split()[0] == "solid":
-                    is_binary = False
-                else:
-                    is_binary = True
-            except:
-                is_binary = True
-                
-        if is_binary:
-            with open(fname, "rb") as f:
-                # Skip the header (80 bytes), read number of triangles (1
-                # byte). The rest is the data.
-                np.fromfile(f, dtype=np.uint8, count=80)         
-                np.fromfile(f, dtype=np.uint32, count=1)[0]
-                data = np.fromfile(f, dtype=np.uint16, count=-1)
-            data = data.reshape((-1,25))[:,:24].copy().view(np.float32)
-            vertices = data[:,3:].reshape(-1,3) # discard the triangle normals
-            
-        else:
-            vertices = []
-            with open(fname,"rb") as f:
-                for line in f:
-                    line = line.decode().lstrip().split()
-                    if line[0] == "vertex":
-                        vertices.append(line[1:])
-            vertices = np.array(vertices, dtype=np.float)
-        
-        # The stl format does not contain information about the faces, hence we
-        # will need to figure this out.
-        faces = np.arange(len(vertices)).reshape(-1,3)
-
-        # Remove vertice duplicates and sort rows by sum    
-        sv = np.sum(vertices+vertices*(100*np.random.random(3))[np.newaxis,:],
-                    axis=1)
-        sv_arg = np.argsort(sv)
-        sv_arg_rev = np.argsort(sv_arg) # reverse indexing for going back
-        
-        # Get unique rows, indices of these, and counts. Create the new indices
-        # and repeat them
-        u, u_idx, u_count = np.unique(sv[sv_arg],return_index=True,
-                                      return_counts=True)
-        repeat_idx = np.repeat(np.arange(len(u)), u_count)
-        
-        # Retain only unique vertices and modify faces accordingly
-        vertices = vertices[sv_arg][u_idx]
-        faces = repeat_idx[sv_arg_rev][faces]
-        
-        return vertices, faces
-            
-    else:
-        raise IOError("Invalid file format. Only files of type .off and .stl are supported.")
-
-        
-      
-def mesh_save(vertices,faces,fname,file_format="off",binary=True):
-    """Save a surface mesh described by points in space (vertices) and indices
-    into this array (faces) to an .off or .stl file.
-    
-    PARAMETERS
-    ----------
-    vertices : ndarray
-        Array of vertices in the mesh.
-    faces : ndarray, int
-        Array describing the faces of each triangle in the mesh.
-    fname : str
-        Output filename.
-    file_format : str, optional
-        Output file format. Choose between "off" and "stl" (default = "off").
-    binary : bool
-        Only used when file_format="stl". Whether to save file as binary (or
-        ascii) (default = True).
-
-    RETURNS
-    ----------
-    Nothing, saves the surface mesh to disk.
-    """
-    nFaces = len(faces)
-    file_format = file_format.lower()
-    
-    # if file format is specified in filename, use this
-    if fname.split(".")[-1] in ["stl","off"]:
-        file_format = fname.split(".")[-1].lower()
-    else:
-        fname = fname+"."+file_format
-    
-    if file_format == "off":
-        nVertices = len(vertices)
-        with open(fname, "wb") as f:
-            f.write("OFF\n".encode())
-            f.write("# File created by ... \n\n".encode())
-            np.savetxt(f,np.array([nVertices,nFaces,0])[np.newaxis,:],fmt="%u")
-            np.savetxt(f,vertices,fmt="%0.6f")
-            np.savetxt(f,np.concatenate((np.repeat(faces.shape[1],nFaces)[:,np.newaxis],faces),axis=1).astype(np.uint),fmt="%u")
-    
-    elif file_format == "stl":
-        mesh = vertices[faces]
-        tnormals  = get_triangle_normals(mesh)
-        data = np.concatenate((tnormals, np.reshape(mesh, [nFaces,9])),
-                              axis=1).astype(np.float32)
-        
-        if binary:
-            with open(fname, "wb") as f:
-                f.write(np.zeros(80, dtype=np.uint8))
-                f.write(np.uint32(nFaces))
-                f.write(np.concatenate((data.astype(np.float32,order="C",copy=False).view(np.uint16),np.zeros((data.shape[0],1),dtype=np.uint16)),axis=1).reshape(-1).tobytes())
-        else:
-            with open(fname, "w") as f:
-                f.write("solid MESH\n")
-                for t in range(len(data)):
-                    f.write(" facet normal {0} {1} {2}\n  outer loop\n   vertex {3} {4} {5}\n   vertex {6} {7} {8}\n   vertex {9} {10} {11}\n  endloop\n endfacet\n"\
-                    .format(*data[t,:]))
-                f.write("endsolid MESH\n")
-    else:
-        raise IOError("Invalid file format. Please choose off or stl.")
-
-
-
-def read_curv(fname):
-    """Read a FreeSurfer curvature file. This filetype associates one value
-    with each node (e.g., gray matter thickness). Uses big-endian format.
-    
-    PARAMETERS
-    ----------
-    fname : str
-        Name of the file to be read.
-    
-    RETURNS
-    ----------
-    data : ndarray
-        The data in the file.
-    """
-    # if first three bytes equal this number, then it is the "new" curvature
-    # format    
-    NEW_VERSION_MAGIC_NUMBER = 16777215
-    
-    with open(fname,"rb") as f:
-        n_vertices = read_int3(f)
-        if n_vertices == NEW_VERSION_MAGIC_NUMBER:
-            n_vertices, n_faces, vals_per_vertex = np.fromfile(f,">i4",3)
-            data = np.fromfile(f, ">f4", n_vertices)
-        else:
-            read_int3(f) # number of faces
-            data = np.fromfile(f, ">i4", n_vertices)/100.
-    
-    return data
-
-
-
-def read_int3(f):
-    """Read three bytes from the current position in the file as an integer,
-    i.e. int24.
-    
-    PARAMETERS
-    ----------
-    f : file object
-        The file object from which to read.
-        
-    RETURNS
-    ----------
-    val : int
-        The integer read from three bytes in the file.
-    """
-    b1 = struct.unpack('B',f.read(1))[0]
-    b2 = struct.unpack('B',f.read(1))[0]
-    b3 = struct.unpack('B',f.read(1))[0]
-
-    val = (b1 << 16) + (b2 << 8) + b3
-    
-    return val
-  
-
-
-def make_handler(handler_type="stream", level=logging.INFO, filename=None):
-    """Create a stream handler (logging to console) or a file handler (logging
-    to a file) for a logger.
-
-    PARAMETERS
-    ----------
-    handler_type : str
-        The handler type, either "stream" or "file" (default = "stream").
-    level : logging level
-        Logging level (default = logging.INFO)
-    filename : str
-        The name of the file to which to write logs (only applicable if
-        handler_type is "file")
-        
-    RETURNS
-    ---------
-    handler : handler object
-        Handler object which can be added to a logger.
-    """
-    
-    if handler_type == "stream":
-        formatter = logging.Formatter("%(message)s")
-        handler = logging.StreamHandler()
-
-    if handler_type == "file":
-        formatter = logging.Formatter(fmt="%(asctime)s [%(levelname)-5.5s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-        if filename == None:
-            filename = os.path.join(os.getcwd(), "log.log")
-        handler = logging.FileHandler(filename, mode='a')
-
-    handler.setLevel(level)
-    handler.setFormatter(formatter)
-
-    return handler
-
 
 
 def spawn_process(cmd, return_exit_status=False, new_thread=False,
@@ -1185,38 +716,3 @@ def spawn_process(cmd, return_exit_status=False, new_thread=False,
         if return_exit_status:
             return p.wait()
 
-
-
-def log(msg, args=None, level=logging.INFO, width=72):
-    """Log message with formatting.
-    
-    PARAMETERS
-    ----------
-    msg : str
-        The message to log.
-    args : list or str, optional
-        List of arguments. Arguments are applied using .format, hence supplying
-        arguments, msg should contain proper placeholders for these arguments
-        (e.g., {0}, {1}, {:d} or with options such as {:06.2f}) (default = [],
-        i.e. no arguments).        
-    width : int, optional
-        Wrapping width of msg (default = 72)
-        GUILHERME: deprecated this argument, it only makes the log more confusing
-    level : logging level, optional
-        Specify logging level (default = logging.INFO)
-        
-    RETURNS
-    ----------
-    The message logged on logger named "logger".    
-    """
-    if args is None:
-        args = []
-    if type(args) not in [list,tuple]:
-        args = [args]
-        
-    try:
-        logger.log(level, msg.format(*args))
-    # If there is an error in the message formating, logs the raw message
-    except ValueError:
-        logger.log(level, msg)
-        
