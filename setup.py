@@ -48,6 +48,8 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 CGAL_version = '5.0'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 
+is_conda = 'CONDA_PREFIX' in os.environ['CONDA_PREFIX']
+
 if sys.platform == 'win32':
     petsc_libs = ['libpetsc', 'msmpi']
     if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
@@ -68,10 +70,10 @@ if sys.platform == 'win32':
         np.get_include(),
         CGAL_headers,
         'simnibs/external/include/win/mpfr',
-        'simnibs/external/include/win/gmp',
-        # Assuming conda install boost
-        os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')
+        'simnibs/external/include/win/gmp'
     ]
+    if is_conda:
+        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/lib/win']
     cgal_runtime = None
     cgal_compile_args = None
@@ -94,10 +96,10 @@ elif sys.platform == 'linux':
         np.get_include(),
         CGAL_headers,
         'simnibs/external/include/linux/mpfr',
-        'simnibs/external/include/linux/gmp',
-        # Assuming conda install boost
-        os.path.join(os.environ['CONDA_PREFIX'], 'include')
+        'simnibs/external/include/linux/gmp'
     ]
+    if is_conda:
+        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/linux']
     cgal_runtime = ['$ORIGIN/../external/lib/linux']
     cgal_compile_args = ['-Os', '-flto']
@@ -119,8 +121,10 @@ elif sys.platform == 'darwin':
         np.get_include(),
         CGAL_headers,
         'simnibs/external/include/osx/mpfr',
-        'simnibs/external/include/osx/gmp',
+        'simnibs/external/include/osx/gmp'
     ]
+    if is_conda:
+        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
     cgal_compile_args = ['-march=native', '-stdlib=libc++', '-std=c++14']
