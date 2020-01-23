@@ -123,7 +123,7 @@ elif sys.platform == 'darwin':
     ]
     cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
-    cgal_compile_args = None
+    cgal_compile_args = [ '-march=native', '-stdlib=libc++', '-std=c++14']
 
 
 else:

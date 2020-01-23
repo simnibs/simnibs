@@ -156,7 +156,7 @@ int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n
   std::vector<std::pair<boost::graph_traits<Surface_mesh>::face_descriptor, boost::graph_traits<Surface_mesh>::face_descriptor>> intersected_tris;
   CGAL::Polygon_mesh_processing::self_intersections(m, std::back_inserter(intersected_tris));
   for( int i =0; i< intersected_tris.size();i++){
-	  std::cout<<intersected_tris[i].first() << "\n";
+	  //std::cout<<intersected_tris[i].first() << "\n";
 
   }
   return EXIT_SUCCESS;
