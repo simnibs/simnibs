@@ -123,7 +123,7 @@ elif sys.platform == 'darwin':
     ]
     cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
-    cgal_compile_args = [ '-march=native', '-stdlib=libc++', '-std=c++14']
+    cgal_compile_args = ['-march=native', '-stdlib=libc++', '-std=c++14']
 
 
 else:
@@ -207,7 +207,7 @@ def move_libraries(build_folder, operation=shutil.move):
     elif sys.platform == 'win32':
         folder_name = 'win'
 
-    lib_folder = os.path.join(build_folder, 'simnibs', 'lib', folder_name)
+    lib_folder = os.path.join(build_folder, 'simnibs', 'external', 'lib', folder_name)
     compliled_folder = os.path.join(build_folder, 'simnibs', '_compiled')
     for fn in glob.glob(os.path.join(lib_folder, '*')):
         operation(
