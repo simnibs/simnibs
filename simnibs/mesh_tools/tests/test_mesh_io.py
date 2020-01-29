@@ -811,14 +811,23 @@ class TestMsh:
         assert np.allclose(matsimnibs[:3, :3], np.eye(3), atol=1e-2)
         assert np.allclose(matsimnibs[:3, 3], [0., 0., -96.], atol=1e-2)
 
-    def test_intercept_ray(self, sphere3_msh):
+    def test_intersect_segment(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(1005)
-        near = np.array([120, 19, 32])
+        near = np.array([[120, 19, 32], [89, 142, 65]])
         far = -near
-        idx, pos = m.intercept_ray(near, far)
-        proj2surf = near/np.linalg.norm(near)*95
-        assert np.linalg.norm(pos - proj2surf) < 0.3
-        assert np.linalg.norm(m.elements_baricenters()[idx] - pos) < 2
+        idx, pos = m.intersect_segment(near, far)
+        proj2surf = near/np.linalg.norm(near, axis=1)[:, None]*95
+        assert np.all(np.linalg.norm(pos[[0, 2], :] + proj2surf, axis=1) < 0.3)
+        assert np.all(np.linalg.norm(pos[[1, 3], :] - proj2surf, axis=1) < 0.3)
+        assert np.all(np.linalg.norm(m.elements_baricenters()[idx[:, 1]] - pos, axis=1) < 3)
+
+    def test_intersect_segment_no_hit(self, sphere3_msh):
+        m = sphere3_msh.crop_mesh(1005)
+        near = np.array([[120, 19, 32], [89, 142, 65]])
+        far = .99 * near
+        idx, pos = m.intersect_segment(near, far)
+        assert len(idx) == 0
+        assert len(pos) == 0
 
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
@@ -1022,16 +1031,15 @@ class TestMsh:
         assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
 
-    def test_check_self_intersections(self, sphere3_msh):
-        triangle = mesh_io.Msh(
-            mesh_io.Nodes(np.array(
-                [[-100, -100, 0], [-100, 100, 0], [100, -100, 0], [100, 100, 0]])),
-            mesh_io.Elements(np.array([[1, 2, 3], [2, 3, 4]]))
-        )
-        m = sphere3_msh.join_mesh(triangle)
-        intersections = m.surface_self_intersections()
-        assert intersections
-        assert False
+    #def test_check_self_intersections(self, sphere3_msh):
+    #    triangle = mesh_io.Msh(
+    #        mesh_io.Nodes(np.array(
+    #            [[-100, -100, 0], [-100, 100, 0], [100, -100, 0], [100, 100, 0]])),
+    #        mesh_io.Elements(np.array([[1, 2, 3], [2, 3, 4]]))
+    #    )
+    #    m = sphere3_msh.join_mesh(triangle)
+    #    intersections = m.surface_self_intersections()
+    #    assert intersections
 
 class TestData:
     def test_read_hdf5_data_matrix_row(self):

@@ -83,28 +83,36 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
     assert len(mm2move_total) == len(vertices_org), "The length of mm2move must match that of vertices"
 
     vertices = vertices_org.copy() # prevent modification of input "vertices"
-    move=np.ones(len(vertices), dtype=bool)
+    move = np.ones(len(vertices), dtype=bool)
     v2f = verts2faces(vertices, faces)
+
+    edges1 = vertices[faces[:, 0]] - vertices[faces[:, 1]]
+    edges2 = vertices[faces[:, 0]] - vertices[faces[:, 2]]
+    edges3 = vertices[faces[:, 1]] - vertices[faces[:, 2]]
+    edges = np.vstack([edges1, edges2, edges3])
+    avg_edge_len = np.average(np.linalg.norm(edges, axis=1))
+    max_edge_len = np.max(np.linalg.norm(edges, axis=1))
     for i in range(nsteps):
+        node_normals = mesh_io.Msh(
+            nodes=mesh_io.Nodes(vertices),
+            elements=mesh_io.Elements(faces+1)).nodes_normals()[:]
+        if deform == "shrink":
+            node_normals *= -1
+
         sys.stdout.flush()
         logger.info(actualsurf+': Iteration '+str(i+1)+' of '+str(nsteps))
-        
+
         # ---------------------------------
         # update mm2move and vertex normals
         # ---------------------------------
         if i == 0:
             mm2move = mm2move_total/float(nsteps)
         else:
-            # distance adjustment is needed to account for small vertex shifts caused by smoothing
-            dist = np.sqrt(np.sum((vertices-vertices_org)**2, axis=1))
+            # distance adjustment is needed to account for
+            # small vertex shifts caused by smoothing
+            dist = np.sum((vertices-vertices_org) * node_normals, axis=1)
             mm2move = (mm2move_total-dist)/float(nsteps-i)
         mm2move[~move] = 0
-
-        node_normals = mesh_io.Msh(
-            nodes=mesh_io.Nodes(vertices),
-            elements=mesh_io.Elements(faces+1)).nodes_normals()[:]
-        if deform == "shrink":
-            node_normals *= -1
 
         # ------------------------------------------------
         # testing for intersections in the direction of movement
@@ -117,7 +125,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         # and a second time against a temporarily shifted mesh that approximates
         # the new triangle positions after the movement
         # ------------------------------------------------  
-            
+
         # NOTES:
         # * ray_triangle_intersect works only properly for smoothed vc_tst below, 
         #   unclear why!? --> enforcing smoothing here, independent of option settings
@@ -125,118 +133,132 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         #   smoothed to make testing more similar to final movement
         # * for the temporarily shifted mesh, one intersection is expected,
         #   as each non-shifted vertex will intersect with its shifted version
-            
+        # GBS: When the search line goes exactly through the node, the ray tracing
+        # algorithm becomes unstable. I*ve changed from smoothing to adding a small
+        # "noise" term to the nodes in the test surface
+
         mesh = vertices[faces]
         barycenters = np.average(mesh, axis=1)
         bar_tree = cKDTree(barycenters)
         ver_tree = cKDTree(vertices[move])
-        #GBS: Why are those possible intersections???
-        res = ver_tree.query_ball_tree(bar_tree, r=1.001*max(mm2move)+ensure_distance, p=2)
+        res = ver_tree.query_ball_tree(
+            bar_tree,
+            r=max(mm2move)+ensure_distance+max_edge_len, p=2)
         pi, piok = list2numpy(res, dtype=np.int) # possible intersections
-        
+
         facenormals_pre = get_triangle_normals(mesh)
-        
-        intersect = ray_triangle_intersect(mesh, vertices[move],
-                        node_normals[move], pi, piok, plane_type="two-sided", mindist2int=0,
-                        maxdist2int=mm2move[move,None]+ensure_distance)
-        
+
+        intersect = ray_triangle_intersect(
+            mesh, vertices[move],
+            node_normals[move], pi, piok, plane_type="two-sided", mindist2int=0,
+            maxdist2int=mm2move[move,None]+ensure_distance)
+
         # create temporary shifted mesh and test again for intersections
         vc_tst = vertices.copy()
-        vc_tst[move] += node_normals[move]*mm2move[move,None]
-        vc_tst=smooth_vertices(vc_tst,faces,v2f_map=v2f,mask_move=move)
-        
-        mesh=vc_tst[faces]
+        vc_tst[move] += node_normals[move]*mm2move[move, None]
+        vc_tst = smooth_vertices(vc_tst, faces, v2f_map=v2f, mask_move=move)
+        #vc_tst += 0.05 * average_edge_len * np.random.normal(size=vc_tst.shape)
+
+        mesh = vc_tst[faces]
         barycenters = np.average(mesh, axis=1)
         bar_tree = cKDTree(barycenters)
         ver_tree = cKDTree(vertices[move])
-        res = ver_tree.query_ball_tree(bar_tree, r=1.001*max(mm2move)+ensure_distance, p=2)
-        pi, piok = list2numpy(res, dtype=np.int) # possible intersections
-        
-        intersect2 = ray_triangle_intersect(mesh, vertices[move],
-                        node_normals[move], pi, piok, plane_type="two-sided", mindist2int=0,
-                        maxdist2int=mm2move[move,None]+ensure_distance)
-                
-        if DEBUG:
-            move_backup=move.copy()
-        #GBS: What is this line here doing?
-        move[move] = (intersect.sum(1) == 0) & (intersect2.sum(1) < 2)
+        res = ver_tree.query_ball_tree(
+            bar_tree,
+            r=max(mm2move)+ensure_distance+max_edge_len, p=2)
+        pi, piok = list2numpy(res, dtype=np.int)  # possible intersections
 
+        intersect2 = ray_triangle_intersect(
+            mesh, vertices[move],
+            node_normals[move], pi, piok, plane_type="two-sided", mindist2int=0,
+            maxdist2int=mm2move[move, None]+ensure_distance)
+
+        if DEBUG:
+            move_backup = move.copy()
+        move[move] = (intersect.sum(1) == 0) & (intersect2.sum(1) < 2)
         # -------------------------------------
         # remove isolated "non-move" vertices
         # this is needed as the ray-triangle intersection testing
         # returns a few spurious false positives
         # --------------------------------------
-        if despike_nonmove:        
-            Nnomove=np.zeros(len(move),dtype='uint16')
-            Nfaces=np.zeros(len(move),dtype='uint16')
+        if despike_nonmove:
+            Nnomove = np.zeros(len(move), dtype='uint16')
+            Nfaces = np.zeros(len(move), dtype='uint16')
             for j in range(len(move)):
-                Nnomove[j]=np.sum(~move[faces[v2f[j]]])
-                Nfaces[j]=len(v2f[j])
-            # a single vertex reoccurs #faces --> Nnomove>Nfaces will be true 
+                Nnomove[j] = np.sum(~move[faces[v2f[j]]])
+                Nfaces[j] = len(v2f[j])
+            # a single vertex reoccurs #faces --> Nnomove>Nfaces will be true
             # when more than one vertex is marked "non-move"
-            move=~(~move&(Nnomove>Nfaces))
-    
+            move = ~(~move & (Nnomove > Nfaces))
+
         # ----------------------------
         # update the vertex positions, fix flipped faces by local smoothing
         # ----------------------------
         mm2move[~move] = 0
         if smooth_mm2move:
-            mm2move = smooth_vertices(mm2move,faces,Niterations=1)
-        
+            mm2move = smooth_vertices(mm2move, faces, Niterations=1)
+            mm2move[~move] = 0
+            pass
+
         if DEBUG:
             vertices_beforemove = vertices.copy()
-            
-        vertices += node_normals*mm2move[:,None]
-        
+
+        vertices += node_normals*mm2move[:, None]
+
         # test for flipped surfaces
         mesh = vertices[faces]
         facenormals_post = get_triangle_normals(mesh)
         flipped_faces = np.sum(facenormals_post*facenormals_pre, axis=1) < 0
         if fix_faceflips & np.any(flipped_faces):
             logger.debug(f'{actualsurf}: Fixing {np.sum(flipped_faces)} flipped faces')
-            vertices=smooth_vertices(vertices,faces,verts2consider=np.unique(faces[flipped_faces]),
-                                     v2f_map=v2f,Niterations=5,Ndilate=2)
-            mesh=vertices[faces]
+            vertices = smooth_vertices(
+                vertices, faces,
+                verts2consider=np.unique(faces[flipped_faces]),
+                v2f_map=v2f, Niterations=5, Ndilate=2)
+            mesh = vertices[faces]
             facenormals_post = get_triangle_normals(mesh)
             flipped_faces = np.sum(facenormals_post*facenormals_pre,axis=1) < 0
-            logger.debug(f'{actualsurf}: {np.sum(flipped_faces)} flipped faces remaining')
-            
+
+
         if smooth_mesh:
-            if skip_lastsmooth&(i==nsteps-1):
+            if skip_lastsmooth & (i == nsteps-1):
                 logger.debug(f'{actualsurf}: Last iteration: skipping vertex smoothing')
             else:
-                vertices=smooth_vertices(vertices,faces,v2f_map=v2f,mask_move=move)
-                
+                vertices = smooth_vertices(
+                    vertices, faces, v2f_map=v2f, mask_move=move, taubin=True)
+
         logger.info(f'{actualsurf}: Moved {np.sum(move)} of {len(vertices)} vertices.')
-        
+
         if DEBUG:
             tmpmsh = mesh_io.Msh(nodes=mesh_io.Nodes(vertices),
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
             mesh_io.write_freesurfer_surface(tmpmsh,filename+".fsmesh", ref_fs=ref_fs)
-            
-            tmpmsh.add_node_field(move,'move')
-            
-            hlpvar=np.zeros(move.shape)
-            hlpvar[move_backup]=intersect.sum(1)
-            tmpmsh.add_node_field(hlpvar,'intersect.sum(1)')
-            hlpvar[move_backup]=intersect2.sum(1)
-            tmpmsh.add_node_field(hlpvar,'intersect2.sum(1)')
-            tmpmsh.add_node_field(mm2move_total,'mm2move_total')
-                        
+
+            tmpmsh.add_node_field(move, 'move')
+
+            hlpvar = np.zeros(move.shape)
+            hlpvar[move_backup] = intersect.sum(1)
+            tmpmsh.add_node_field(hlpvar, 'intersect.sum(1)')
+            hlpvar[move_backup] = intersect2.sum(1)
+            tmpmsh.add_node_field(hlpvar, 'intersect2.sum(1)')
+            tmpmsh.add_node_field(mm2move_total, 'mm2move_total')
+
             tmpmsh.elm.add_triangles(faces+tmpmsh.nodes.nr+1,3)
-            tmpmsh.nodes.node_coord=np.concatenate((tmpmsh.nodes.node_coord,vertices_beforemove))
+            tmpmsh.nodes.node_coord = np.concatenate((tmpmsh.nodes.node_coord, vertices_beforemove))
             tmpmsh.add_element_field(np.concatenate((flipped_faces,flipped_faces)),'flipped_faces')
-            
-            tmpmsh.elm.tag2=tmpmsh.elm.tag1
+
+            tmpmsh.elm.tag2 = tmpmsh.elm.tag1
             tmpmsh.write(filename+".msh")
-                    
+
     return vertices
-    
 
 
-def smooth_vertices(vertices,faces,verts2consider=None,v2f_map=None,Niterations=1,Ndilate=0,mask_move=None):
+def smooth_vertices(vertices, faces, verts2consider=None,
+                    v2f_map=None, Niterations=1,
+                    Ndilate=0, mask_move=None,
+                    taubin=False):
     """Simple mesh smoothing by averaging vertex coordinates or other data 
     across neighboring vertices.
     
@@ -256,7 +278,8 @@ def smooth_vertices(vertices,faces,verts2consider=None,v2f_map=None,Niterations=
     Ndilate: int
         Number of times the surface region(s) defined by verts2consider are dilated 
         before smoothing
-    
+    taubin: bool
+        Wether to use Taubin smoothing. Defaut:False
     RETURNS
     ----------
     vertices : ndarray
@@ -267,26 +290,32 @@ def smooth_vertices(vertices,faces,verts2consider=None,v2f_map=None,Niterations=
         verts2consider = np.arange(len(vertices))
     if v2f_map is None:
         v2f_map = verts2faces(vertices,faces)
-    
+
     for i in range(Ndilate):
         f2c = [v2f_map[n] for n in verts2consider]
-        f2c,f2cok = list2numpy(f2c,dtype=np.int)
-        f2c = f2c[f2cok] # faces of verts2consider
-        verts2consider=np.unique(faces[f2c])
+        f2c, f2cok = list2numpy(f2c,dtype=np.int)
+        f2c = f2c[f2cok]  # faces of verts2consider
+        verts2consider = np.unique(faces[f2c])
 
-    if not mask_move is None:
+    if mask_move is not None:
          verts2consider = verts2consider[mask_move[verts2consider]]
-        
-    #GBS: This is actually a very aggresive smoothing, and updating everything at the
-    # same time can create problems 
+
     smoo = vertices.copy()
-    for n in verts2consider:
-        smoo[n] = np.average(vertices[faces[v2f_map[n]]], axis=(0,1))
-    for i in range(Niterations-1):
-        smoo2 = smoo.copy()
+    if taubin:
+        m = mesh_io.Msh(nodes=mesh_io.Nodes(smoo),
+                        elements=mesh_io.Elements(faces + 1))
+        vert_mask = np.zeros(len(vertices), dtype=bool)
+        vert_mask[verts2consider] = True
+        m.smooth_surfaces(Niterations, nodes_mask=vert_mask)
+        smoo = m.nodes[:]
+    else:
         for n in verts2consider:
-            smoo[n] = np.average(smoo2[faces[v2f_map[n]]], axis=(0,1))
-    return smoo      
+            smoo[n] = np.average(vertices[faces[v2f_map[n]]], axis=(0,1))
+        for i in range(Niterations-1):
+            smoo2 = smoo.copy()
+            for n in verts2consider:
+                smoo[n] = np.average(smoo2[faces[v2f_map[n]]], axis=(0,1))
+    return smoo
             
 
 
@@ -415,7 +444,7 @@ def list2numpy(L, pad_val=0, dtype=np.float):
     """    
 
     max_neighbors = len(sorted(L, key=len, reverse=True)[0])
-    narr = np.array([r+[np.nan]*(max_neighbors-len(r)) for r in L])    
+    narr = np.array([r+[np.nan]*(max_neighbors-len(r)) for r in L])
     ok = ~np.isnan(narr)
     narr[~ok] = pad_val    
     narr = narr.astype(dtype)
@@ -523,9 +552,9 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     # Check inputs
     ray_direction = np.array(ray_direction)
     if ray_direction.shape == ray_origin.shape:
-        ray_direction = ray_direction[:,None,:]
-    elif ray_direction.size == 3: # broadcast to all ray origins     
-        ray_direction = ray_direction[None,None,:]
+        ray_direction = ray_direction[:, None, :]
+    elif ray_direction.size == 3:  # broadcast to all ray origins     
+        ray_direction = ray_direction[None, None, :]
     else:
         raise ValueError("ray_direction must be either a single vector or have same dimensions as ray_origin.")
 
@@ -553,6 +582,9 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
 
         v0 = v0[posint]
         e1 = e1[posint]
+        e2 = e2[posint]
+
+    else:
         v0 = v0[None, ...]
         e1 = e1[None, ...]
         e2 = e2[None, ...]
@@ -567,7 +599,7 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     # 
     # Moeller & Trumbore (1997). Fast, Minimum Storage Ray/Triangle
     # Intersection. Journal of Graphics Tools, 2(1):21--28.
- 
+
     # Vector perpendicular to e2 and ray_direction
     #   P = CROSS(dir, e2)
     P = np.cross(ray_direction, e2)
@@ -579,20 +611,20 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
     # outer face of the triangle (i.e. the ray and the triangle normal point
     # towards each other); if det<0, they point in the same direction; if
     # det=0, the ray and triangle are parallel.
-    det = np.einsum("ijk,ijk->ij", P, e1)    
+    det = np.einsum("ijk,ijk->ij", P, e1)
     inv_det = 1./(det+1e-10)
-    
+
     # Vector from v0 to ray_origin
     #   T = O-V0
-    tvec = ray_origin[:,None,:] - v0
+    tvec = ray_origin[:, None, :] - v0
 
     # 1st barycentric (e.g., x) coordinate of intersection point, i.e. where 
     # the ray intersects the plane spanned by e1 and e2.
     #   u = DOT(T, P)
     u = np.einsum("ijk,ijk->ij", P, tvec)*inv_det
-    
+    breakpoint()
     Q = np.cross(tvec, e1)
-    
+
     # 2nd barycentric (e.g., y) coordinate of intersection point
     #   v = DOT(dir, Q)
     v = np.einsum("ijk,ijk->ij", ray_direction, Q)*inv_det
@@ -603,14 +635,14 @@ def ray_triangle_intersect(triangles, ray_origin, ray_direction, posint=None,
 
     # CHECK CONDITIONS
     # =======================
-    
+
     # Check that the ray crosses the plane spanned by vectors E1 and E2 in the
     # direction of the ray (one-sided) or if it crosses on either side ()
     if plane_type == "one-sided":
         posint_ok = posint_ok & (det >= eps)
     elif plane_type == "two-sided":
         posint_ok = posint_ok & (np.abs(det) >= eps)
-    
+
     # Check that the ray actually crosses a triangle by testing if the
     # barycentric coordinates fulfills the equation
     #   T(u,v) = (1-u-v)*v0+u*v1+v*v2

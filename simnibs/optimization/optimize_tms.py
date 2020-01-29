@@ -35,18 +35,23 @@ def _create_grid(mesh, pos, distance, radius, resolution_pos):
     coords_plane = coords_plane[np.linalg.norm(coords_plane, axis=1) <= radius]
     coords_plane = np.dot(coords_plane, vh[:, :2].transpose()) + target_skin
 
-    # project grid-points to skin-surface
+    # project grid-points to skin surface
     coords_mapped = []
     coords_normals = []
     normals_roi = msh_roi.triangle_normals(smooth=1)
+
+    q1 = coords_plane + 1e2 * resolution_pos * vh[:, 2]
+    q2 = coords_plane - 1e2 * resolution_pos * vh[:, 2]
+    idx, pos = msh_roi.intersect_segment(q1, q2)
     for i, c in enumerate(coords_plane):
-        # Query points inside/outside the surface
-        q1 = c + 1e2 * vh[:, 2]
-        q2 = c - 1e2 * vh[:, 2]
-        idx, pos = msh_roi.intercept_ray(q1, q2)
-        if idx is not None:
-            coords_normals.append(normals_roi[idx])
-            coords_mapped.append(pos)
+        intersections = idx[:, 0] == i
+        if np.any(intersections):
+            intersect_pos = pos[intersections]
+            intersect_triangles = idx[intersections, 1]
+            dist = np.linalg.norm(c[None, :] - intersect_pos, axis=1)
+            closest = np.argmin(dist)
+            coords_normals.append(normals_roi[intersect_triangles[closest]])
+            coords_mapped.append(intersect_pos[closest])
 
     coords_mapped = np.array(coords_mapped)
     coords_normals = np.array(coords_normals)

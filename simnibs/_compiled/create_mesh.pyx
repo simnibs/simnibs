@@ -24,6 +24,9 @@ cdef extern from "_mesh.cpp" nogil:
         bool optimize)
     int _check_self_intersections(
         float *vertices, int n_vertices, int *faces, int n_faces)
+    pair[vector[int], vector[float]] _segment_triangle_intersection(
+        float* vertices, int n_vertices, int* tris, int n_faces,
+        float* segment_start, float* segment_end, int n_segments)
 
 
 def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
@@ -51,9 +54,24 @@ def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
     )
     return ret
 
-def check_self_intersections(vertices, faces):
-    cdef np.ndarray[float] v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
-    cdef np.ndarray[int] f = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
-    ret = _check_self_intersections(&v[0], len(vertices), &f[0], len(faces))
+#def check_self_intersections(vertices, faces):
+#    #TODO: Fix this, finish implementation
+#    cdef np.ndarray[float] v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
+#    cdef np.ndarray[int] f = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
+#    ret = _check_self_intersections(&v[0], len(vertices), &f[0], len(faces))
+#    return ret
 
-    return ret
+def segment_triangle_intersection(vertices, faces, segment_start, segment_end):
+    ''' Calculates the intersection between a triangular mesh and line segments
+    '''
+    cdef np.ndarray[float] vert = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
+    cdef np.ndarray[int] fac = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
+    cdef np.ndarray[float] ss = np.ascontiguousarray(segment_start, dtype=np.float32).reshape(-1)
+    cdef np.ndarray[float] se = np.ascontiguousarray(segment_end, dtype=np.float32).reshape(-1)
+    cdef pair[vector[int], vector[float]] out
+
+    out = _segment_triangle_intersection(
+        &vert[0], len(vertices), &fac[0], len(faces),
+        &ss[0], &se[0], len(segment_start)
+    )
+    return np.array(out.first).reshape(-1, 2), np.array(out.second).reshape(-1, 3)

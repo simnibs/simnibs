@@ -5,6 +5,7 @@ import nibabel as nib
 import os
 import shutil
 import timeit
+import copy
 
 from simnibs.utils.simnibs_logger import logger
 import simnibs.segmentation.surface_functions as sf
@@ -21,9 +22,6 @@ ref_fs="C:/Users/axthi/simnibs/simnibs_examples/ernie/m2m_ernie/ref_FS.nii.gz"
 # start logging
 # =============================================================================
 
-# logging
-logging.captureWarnings(True)
-# use logging.INFO for normal use; logging.DEBUG for development:
 logger.setLevel(logging.DEBUG) 
 
 # log to console and file
@@ -38,13 +36,13 @@ logger.setLevel(logging.DEBUG)
 # =============================================================================
 # read config file
 # =============================================================================
-sf.log("Reading settings from "+config_file, level=logging.INFO)
+logger.info("Reading settings from "+config_file)
 shutil.copy(config_file, os.path.join(subject_dir, "charm_settings.ini"))
 cfg_raw = configparser.ConfigParser()
 try:
     cfg_raw.read(config_file)
 except:
-    sf.log("error when reading "+config_file, level=logging.ERROR)
+    logger.error("error when reading "+config_file)
     raise IOError('error whenreading config file')
     
 # convert settings from strings to bool, int, float, string, ...
@@ -56,7 +54,7 @@ for section in cfg_raw.sections():
         try:
             config[section][key]=eval(cfg_raw[section][key])
         except:
-            sf.log("error when formatting "+section+" "+key+": "+cfg_raw[section][key], level=logging.ERROR)
+            logger.error("error when formatting "+section+" "+key+": "+cfg_raw[section][key])
             raise IOError('error when parsing config file')
 del cfg_raw           
         
@@ -70,25 +68,28 @@ del cfg_raw
 opt=config['surface_reco']
 opt['surffolder'] = os.path.join(subject_dir,"surf")
                                                             
-actualsurf='lh' # 'lh' or 'rh'
-Ppial=os.path.join(opt['surffolder'],actualsurf+".pial.stl") # has to be replaced by a .gii
+actualsurf = 'lh' # 'lh' or 'rh'
+Ppial = os.path.join(
+    opt['surffolder'],actualsurf+".pial.stl") # has to be replaced by a .gii
 
 # load surface and thickness data
 central = glob(os.path.join(opt['surffolder'], actualsurf+".central.gii"))[0]
 thickness = glob(os.path.join(opt['surffolder'], actualsurf+".thickness"))[0]
 
-central = nib.load(central)
-cv = central.darrays[0].data
-cf = central.darrays[1].data
+central = mesh_io.read_gifti_surface(central)
+cv = central.nodes[:]
+cf = central.elm[:, :3] - 1
 th = mesh_io.read_curv(thickness)
 
 # expand and save as .gii
 tic = timeit.default_timer()
-sf.log(actualsurf+": Expanding ...", level=logging.INFO)
-cv_pial = sf.expandCS(cv,cf,th/2, actualsurf=actualsurf, ref_fs=ref_fs) # ref_fs only for debugging
+logger.info(actualsurf+": Expanding ...")
+cv_pial = sf.expandCS(cv, cf, th/2, actualsurf=actualsurf, ref_fs=ref_fs) # ref_fs only for debugging
 toc = timeit.default_timer()
-sf.log(actualsurf+": Expanding done after "+str(round(toc-tic))+" seconds", level=logging.INFO)
-sf.mesh_save(cv_pial, cf, Ppial) # replace by saving gifti
+logger.info(actualsurf+": Expanding done after "+str(round(toc-tic))+" seconds")
+pial = copy.deepcopy(central)
+pial.nodes.node_coord = cv_pial
+mesh_io.write_stl(pial, Ppial) # replace by saving gifti
 
 
 # =============================================================================
@@ -100,5 +101,3 @@ sf.mesh_save(cv_pial, cf, Ppial) # replace by saving gifti
 #    f_log.write('</pre></BODY></HTML>')
 
 logging.shutdown()
-
-

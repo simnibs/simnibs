@@ -21,6 +21,8 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::FT FT;
 typedef K::Point_3 Point;
+typedef K::Segment_3 Segment;
+typedef K::Vector_3 Vector;
 typedef FT (Function)(const Point&);
 typedef CGAL::Labeled_mesh_domain_3<K> Mesh_domain_img;
 typedef CGAL::Polyhedral_complex_mesh_domain_3<K> Mesh_domain_surf;
@@ -44,7 +46,12 @@ typedef Mesh_criteria_img::Cell_criteria     Cell_criteria_img;
 typedef CGAL::Mesh_criteria_3<Tr_surf> Mesh_criteria_surf;
 typedef Mesh_criteria_surf::Facet_criteria    Facet_criteria_surf;
 typedef Mesh_criteria_surf::Cell_criteria     Cell_criteria_surf;
-
+// Intersection
+typedef CGAL::AABB_face_graph_triangle_primitive<Surface_mesh> Primitive;
+typedef CGAL::AABB_traits<K, Primitive> Traits;
+typedef CGAL::AABB_tree<Traits> Tree;
+typedef boost::optional<Tree::Intersection_and_primitive_id<Segment>::Type> Segment_intersection;
+typedef Tree::Primitive_id Primitive_id;
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
 // Function
@@ -139,8 +146,7 @@ int _mesh_surfaces(
 }
 
 
-
-int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n_faces)
+Surface_mesh _create_surface_mesh(float *vertices, int n_vertices, int *faces, int n_faces)
 {
   Surface_mesh m;
   std::vector<Surface_mesh::Vertex_index> vertex_indices(n_vertices);
@@ -153,11 +159,70 @@ int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n
         vertex_indices[faces[3*i+1]],
         vertex_indices[faces[3*i+2]]);
   }
+  return m;
+}
+
+int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n_faces)
+{
+  Surface_mesh m = _create_surface_mesh(vertices, n_vertices, faces, n_faces);
+  //Surface_mesh m;
+  //std::vector<Surface_mesh::Vertex_index> vertex_indices(n_vertices);
+  //for(int i = 0; i < n_vertices; ++i) {
+  //  vertex_indices[i] = m.add_vertex(Point(vertices[3*i], vertices[3*i+1], vertices[3*i+2]));
+  //}
+  //for(int i = 0; i < n_faces; ++i) {
+  //  m.add_face(
+  //      vertex_indices[faces[3*i]],
+  //      vertex_indices[faces[3*i+1]],
+  //      vertex_indices[faces[3*i+2]]);
+  //}
   std::vector<std::pair<boost::graph_traits<Surface_mesh>::face_descriptor, boost::graph_traits<Surface_mesh>::face_descriptor>> intersected_tris;
   CGAL::Polygon_mesh_processing::self_intersections(m, std::back_inserter(intersected_tris));
-  for( int i =0; i< intersected_tris.size();i++){
-	  //std::cout<<intersected_tris[i].first() << "\n";
-
-  }
+  //for( int i =0; i< intersected_tris.size();i++){
+  //  std::cout<<intersected_tris[i].first() << "\n";
+  //}
   return EXIT_SUCCESS;
+}
+
+
+std::pair<std::vector<int>, std::vector<float>> _segment_triangle_intersection(
+        float* vertices, int n_vertices, int* tris, int n_faces,
+        float* segment_start, float* segment_end, int n_segments)
+
+{
+  // Create mesh
+  Surface_mesh m;
+  std::vector<Surface_mesh::Vertex_index> vertex_indices(n_vertices);
+  for(int i = 0; i < n_vertices; ++i) {
+    vertex_indices[i] = m.add_vertex(Point(vertices[3*i], vertices[3*i+1], vertices[3*i+2]));
+  }
+  for(int i = 0; i < n_faces; ++i) {
+    m.add_face(
+        vertex_indices[tris[3*i]],
+        vertex_indices[tris[3*i+1]],
+        vertex_indices[tris[3*i+2]]);
+  }
+  // Create tree
+  Tree tree(faces(m).first, faces(m).second, m);
+  // Output vectors
+  std::vector<int> indices_pairs;
+  std::vector<float> intersect_positions;
+  for (int i=0; i < n_segments; i++){
+      Segment segment(
+        Point(segment_start[3*i], segment_start[3*i + 1], segment_start[3*i + 2]),
+        Point(segment_end[3*i], segment_end[3*i + 1], segment_end[3*i + 2])
+      );
+      // Test intersections
+      std::list<Segment_intersection> intersections;
+      tree.all_intersections(segment, std::back_inserter(intersections));
+      for (std::list<Segment_intersection>::iterator it=intersections.begin(); it != intersections.end(); ++it){
+          Segment_intersection inter = *it;
+          Point* p = boost::get<Point>(&(inter->first));
+          std::size_t id = boost::get<CGAL::SM_Face_index>(inter->second);
+          indices_pairs.push_back(i);
+          indices_pairs.push_back((int) id);
+          for (int j=0; j<3; j++) intersect_positions.push_back((float) (*p)[j]);
+      }
+  }
+  return std::make_pair(indices_pairs, intersect_positions);
 }

@@ -4,7 +4,7 @@
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2013-2018 Andre Antunes, Guilherme B Saturnino, Kristoffer H Madsen
+    Copyright (C) 2013-2020 Andre Antunes, Guilherme B Saturnino, Kristoffer H Madsen
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -62,6 +62,9 @@ __all__ = [
     'read_curv',
     'write_curv',
     'read_stl',
+    'write_stl',
+    'read_off',
+    'write_off',
     'write_geo_spheres',
     'write_geo_text',
     'Msh',
@@ -2009,70 +2012,40 @@ class Msh:
         return M
 
 
-    def intercept_ray(self, near, far):
-        ''' Finds the triangle (if any) that intercepts a line segment
+    def intersect_segment(self, near, far):
+        ''' Finds the triangle (if any) that intersects a line segment
 
         Parameters
         ------------
-        near: (3,) array
+        near: (N, 3) array
             Start of the line segment
-        far: (3,) array
+        far: (N, 3) array
             end of the line segment
 
         Returns
         --------
-        intercept_elm:
-            Index of the triangle intercepting the ray
-        intercpt_pos:
-            Position of the interception
+        indices: (M, 2) array
+            Pairs of indices with the line segment index and the triangle index
+        intercpt_pos (M, 3) array:
+            Positions where the interceptions occur
         '''
-        # Find point in surface in the near-far line thats nearest to the "near point"
-        # based on http://geomalgorithms.com/a06-_intersect-2.html
-        delta = 1e-6
-        P1 = np.array(near)
-        P0 = np.array(far)
-        if not (P1.shape == (3,) and P0.shape == (3,)):
-            raise ValueError('near and far poins should be arrays of size (3,)')
+        # Using CGAL AABB https://doc.cgal.org/latest/AABB_tree/index.html
+        if near.ndim == 1:
+            near = near[None, :]
+        if far.ndim == 1:
+            far = far[None, :]
+        if not (near.shape[1] == 3 and far.shape[1] == 3):
+            raise ValueError('near and far poins should be arrays of size (N, 3)')
 
-        V0 = self.nodes[self.elm[self.elm.triangles, 0]]
-        V1 = self.nodes[self.elm[self.elm.triangles, 1]]
-        V2 = self.nodes[self.elm[self.elm.triangles, 2]]
-        u = V1 - V0
-        v = V2 - V0
-        normals = self.triangle_normals()[self.elm.triangles]
+        indices, points = create_mesh.segment_triangle_intersection(
+            self.nodes[:],
+            self.elm[self.elm.elm_type == 2, :3] - 1,
+            near, far
+        )
+        if len(indices) > 0:
+            indices[:, 1] = self.elm.triangles[indices[:, 1]]
 
-        ray_dir = P1 - P0
-        w0 = P0 - V0
-        a = -np.sum(normals *  w0, axis=1)
-        b = np.sum(normals * ray_dir, axis=1)
-        # ray parallel or in triangle plane
-        if np.all(np.abs(b) < delta):
-            return None, None
-        r = a/b
-        intersect_point  = P0 + r[:, None] * ray_dir
-        w = intersect_point - V0
-        uu = np.sum(u * u, axis=1)
-        uv = np.sum(u * v, axis=1)
-        vv = np.sum(v * v, axis=1)
-        wu = np.sum(w * u, axis=1)
-        wv = np.sum(w * v, axis=1)
-        D = uv * uv - uu * vv
-        s = (uv * wv - vv * wu) / D
-        t = (uv * wu - uu * wv) / D
-        intersects = np.where(
-            (np.abs(b) > delta) *
-            (r > -delta) * (r < 1 + delta) *
-            (s > -delta) * (s < 1 + delta) *
-            (t > -delta) * (s + t < 1 + delta)
-        )[0]
-
-        if len(intersects) == 0:
-            return None, None
-
-        # if at least one triangle intersects, take the one closest to the near point
-        else:
-            closest = intersects[np.argmax(r[intersects])]
-            return self.elm.triangles[closest], intersect_point[closest]
+        return indices, points
 
 
     def view(self,
@@ -2384,12 +2357,6 @@ class Msh:
                 np.ascontiguousarray(nodes_mask, np.uint)
             )
         self.nodes.node_coord = nodes_coords
-
-
-    def surface_self_intersections(self):
-        return create_mesh.check_self_intersections(
-            self.nodes[:],
-            self.elm[self.elm.elm_type == 2, :3] - 1)
 
 
 class Data(object):
