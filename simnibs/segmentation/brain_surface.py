@@ -14,6 +14,8 @@ import numpy as np
 from scipy.spatial import cKDTree
 import sys
 from subprocess import Popen, PIPE
+import scipy.ndimage.morphology as mrph
+from scipy.ndimage.measurements import label
 
 from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
@@ -462,3 +464,27 @@ def segment_triangle_intersect(vertices, faces, segment_start, segment_end):
     # Go from 1-indexed to 0-indexed
     indices_pairs[:, 1] -= 1
     return indices_pairs, positions
+
+
+def dilate(image,n):
+    se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
+    return mrph.binary_dilation(image,se)>0
+
+def erosion(image,n):
+    return ~dilate(~image,n)
+
+def lab(image):
+    labels, num_features = label(image) 
+    return (labels == np.argmax(np.bincount(labels.flat)[1:])+1)
+
+def close(image,n):
+    image_padded = np.pad(image,n,'constant')
+    image_padded = dilate(image_padded,n)
+    image_padded = erosion(image_padded,n)
+    return image_padded[n:-n,n:-n,n:-n]>0
+        
+
+def labclose(image,n):
+    tmp = close(image,n)
+    return ~lab(~tmp)
+        
