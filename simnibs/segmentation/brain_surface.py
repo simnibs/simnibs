@@ -145,8 +145,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         vc_tst = vertices.copy()
         vc_tst[move] += node_normals[move]*mm2move[move, None]
         # We need to shift the nodes to that the ray tracing becomes stable
-        vc_tst = smooth_vertices(vc_tst, faces, v2f_map=v2f, mask_move=move)
-        #vc_tst += 0.05 * average_edge_len * np.random.normal(size=vc_tst.shape)
+        vc_tst = smooth_vertices(vc_tst, faces, v2f_map=v2f, mask_move=move, taubin=True)
 
         intersect_pairs, _ = segment_triangle_intersect(
             vc_tst, faces,
