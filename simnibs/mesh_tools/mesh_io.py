@@ -5051,6 +5051,42 @@ def read_gifti_surface(fn):
     msh.nodes = Nodes(np.array(nodes, dtype=float))
     return msh
 
+def write_gifti_surface(msh, fn, ref_image=None):
+    ''' Writes mesh surfaces as a gifti file
+
+    Parameters
+    -----------
+    msh: Mesh
+        Mesh object
+    fn: str
+        Name of file
+    '''
+    if ref_image is not None:
+        ref_image = nibabel.load(ref_image)
+        header = ref_image.header
+        coordsys = ref_image.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].coordsys
+    else:
+        header = None
+        coordsys = None
+
+    msh = msh.crop_mesh(elm_type=2)
+    vertices = msh.nodes[:]
+    faces = msh.elm[:, :3] - 1
+    verts_da = nibabel.gifti.gifti.GiftiDataArray(
+        vertices.astype(np.float32), intent='NIFTI_INTENT_POINTSET',
+        coordsys=coordsys
+    )
+    faces_da = nibabel.gifti.gifti.GiftiDataArray(
+        faces.astype(np.int32), intent='NIFTI_INTENT_TRIANGLE',
+    )
+    # as coordsys defaults to unity, we need to overwrite it to None for the triangles
+    faces_da.coordsys = None
+    image = nibabel.GiftiImage(
+        header=header,
+        darrays=[verts_da, faces_da]
+    )
+    nibabel.save(image, fn)
+
 
 def read_curv(fn):
     ''' Reads a freesurfer .curv file

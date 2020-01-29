@@ -8,7 +8,7 @@ import timeit
 import copy
 
 from simnibs.utils.simnibs_logger import logger
-import simnibs.segmentation.surface_functions as sf
+import simnibs.segmentation.brain_surface as sf
 from simnibs import mesh_io
 
 subject_dir=""
@@ -70,7 +70,7 @@ opt['surffolder'] = os.path.join(subject_dir,"surf")
                                                             
 actualsurf = 'lh' # 'lh' or 'rh'
 Ppial = os.path.join(
-    opt['surffolder'],actualsurf+".pial.stl") # has to be replaced by a .gii
+    opt['surffolder'],actualsurf+".pial.gii") # has to be replaced by a .gii
 
 # load surface and thickness data
 central = glob(os.path.join(opt['surffolder'], actualsurf+".central.gii"))[0]
@@ -89,7 +89,7 @@ toc = timeit.default_timer()
 logger.info(actualsurf+": Expanding done after "+str(round(toc-tic))+" seconds")
 pial = copy.deepcopy(central)
 pial.nodes.node_coord = cv_pial
-mesh_io.write_stl(pial, Ppial) # replace by saving gifti
+mesh_io.write_gifti_surface(pial, Ppial) # replace by saving gifti
 
 
 # =============================================================================

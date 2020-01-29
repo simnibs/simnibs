@@ -1786,6 +1786,15 @@ class TestSurfaceIO:
         assert np.allclose(surf.nodes[surf.elm[:, :3]],
                            surf_read.nodes[surf_read.elm[:, :3]])
 
+    def test_gifti_io(self, sphere3_msh):
+        surf = sphere3_msh.crop_mesh(1005)
+        mesh_io.write_gifti_surface(surf, 'tst.gii')
+        surf_read = mesh_io.read_gifti_surface('tst.gii')
+        os.remove('tst.gii')
+        assert np.allclose(surf.nodes[surf.elm[:, :3]],
+                           surf_read.nodes[surf_read.elm[:, :3]])
+
+
 
 class TestHashing:
     def test_scalar(self):
