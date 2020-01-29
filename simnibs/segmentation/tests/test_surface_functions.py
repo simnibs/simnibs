@@ -23,37 +23,30 @@ def sphere_2_surfs():
     return mesh.crop_mesh([1004, 1005])
 
 
-
-class TestRayTriangleIntersect:
-    def test_ray_triangle_intersect(self, sphere_surf):
+class TestSegmentTriangleIntersect:
+    def test_segment_triangle_intersect(self, sphere_surf):
         bar = sphere_surf.elements_baricenters()[:]
         normals = sphere_surf.triangle_normals()[:]
-        intersect, int_points, int_dist = \
-            surface_functions.ray_triangle_intersect(
-                    sphere_surf.nodes[sphere_surf.elm[:, :3]],
-                    (bar[0] + normals[0])[None, :],
-                    -normals[None, 0, :],
-                    return_int_points=True,
-                    return_int_dists=True
+        intersect, int_points = \
+            surface_functions.segment_triangle_intersect(
+                    sphere_surf.nodes[:], sphere_surf.elm[:, :3] - 1,
+                    bar - 1e-1 * normals,
+                    bar + 1e-1 * normals,
                 )
-        assert intersect[0, 0]
-        assert np.allclose(int_points[0, 0], bar[0])
-        assert np.allclose(int_dist[0, 0], 1.)
+        assert np.all(intersect[:, 0] == intersect[:, 1])
+        assert np.allclose(int_points, bar)
 
-        assert np.linalg.norm(int_points[intersect][1] + bar[0]) < 5
-        assert np.allclose(int_dist[intersect][1], 190, rtol=1e-2)
-
-    def test_ray_triangle_no_intersect(self, sphere_surf):
-        intersect, int_points, int_dist = \
-            surface_functions.ray_triangle_intersect(
-                    sphere_surf.nodes[sphere_surf.elm[:, :3]],
-                    np.array([[100, 0, 0]]),
-                    np.array([[0, 1, 0]]),
-                    return_int_points=True,
-                    return_int_dists=True
+    def test_segment_triangle_no_intersect(self, sphere_surf):
+        bar = sphere_surf.elements_baricenters()[:]
+        normals = sphere_surf.triangle_normals()[:]
+        intersect, int_points = \
+            surface_functions.segment_triangle_intersect(
+                    sphere_surf.nodes[:], sphere_surf.elm[:, :3] - 1,
+                    bar + 1e-1 * normals,
+                    bar + 2e-1 * normals,
                 )
 
-        assert not np.any(intersect)
+        assert len(intersect) == 0
 
 
 class TestExpandCS:
@@ -110,8 +103,6 @@ class TestExpandCS:
         shift[nodes_surf2] = 0.
         vertices_e = surface_functions.expandCS(
             vertices, faces, shift, ensure_distance=0.5, nsteps=5)
-        sphere_2_surfs.write('before.msh')
         sphere_2_surfs.nodes.node_coord = vertices_e
-        sphere_2_surfs.write('after.msh')
         assert np.allclose(np.linalg.norm(vertices_e[nodes_surf2], axis=1), 95, atol=1)
         assert np.allclose(np.linalg.norm(vertices_e[nodes_surf1], axis=1), 93, atol=2)

@@ -74,4 +74,7 @@ def segment_triangle_intersection(vertices, faces, segment_start, segment_end):
         &vert[0], len(vertices), &fac[0], len(faces),
         &ss[0], &se[0], len(segment_start)
     )
-    return np.array(out.first).reshape(-1, 2), np.array(out.second).reshape(-1, 3)
+    pairs = np.array(out.first, dtype=int).reshape(-1, 2)
+    positions = np.array(out.second, dtype=float).reshape(-1, 3)
+
+    return pairs, positions
