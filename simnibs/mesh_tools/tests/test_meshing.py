@@ -267,10 +267,3 @@ def test_remesh(sphere3):
     assert np.isclose(vols[1], 4/3*np.pi*(90**3 - 85**3), rtol=1e-1)
     assert np.isclose(vols[2], 4/3*np.pi*(95**3 - 90**3), rtol=1e-1)
 
-def test_test_sign(sphere3):
-    nodes_coords = np.ascontiguousarray(sphere3.nodes.node_coord, np.float)
-    res = np.zeros(len(sphere3.elm.tetrahedra), dtype=bool)
-    for i, th in enumerate(sphere3.elm[sphere3.elm.tetrahedra]-1):
-        res[i] = meshing.create_mesh.test_sign(nodes_coords, th.astype(np.uint))
-    assert np.all(res)
-

@@ -84,7 +84,11 @@ th = mesh_io.read_curv(thickness)
 # expand and save as .gii
 tic = timeit.default_timer()
 logger.info(actualsurf+": Expanding ...")
-cv_pial = sf.expandCS(cv, cf, th/2, actualsurf=actualsurf, ref_fs=ref_fs) # ref_fs only for debugging
+cv_pial = sf.expandCS(
+    cv, cf, th/2, actualsurf=actualsurf,
+    despike_nonmove=False,
+#    ref_fs=ref_fs # ref_fs only for debugging
+) 
 toc = timeit.default_timer()
 logger.info(actualsurf+": Expanding done after "+str(round(toc-tic))+" seconds")
 pial = copy.deepcopy(central)
