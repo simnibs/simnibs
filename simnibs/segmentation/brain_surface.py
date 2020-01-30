@@ -456,6 +456,26 @@ def get_triangle_normals(mesh):
 
 
 def segment_triangle_intersect(vertices, faces, segment_start, segment_end):
+    ''' Computes the intersection between a line segment and a triangulated surface
+
+    Parameters
+    -----------
+    vertices: ndarray
+        Array with mesh vertices positions
+    faces: ndarray
+        Array describing the surface triangles
+    segment_start: ndarray
+        N_lines x 2 array with the start of the line segments
+    segment_end: ndarray
+        N_lines x 2 array with the end of the line segments
+    
+    Returns
+    --------
+    indices_pairs: ndarray
+        Nx2 array of ints with the pair (segment index, face index) for each intersection
+    positions: ndarray
+        Nx3 array of floats with the position of the intersections
+    '''
     m = mesh_io.Msh(
             nodes=mesh_io.Nodes(vertices),
             elements=mesh_io.Elements(faces+1)
@@ -465,13 +485,87 @@ def segment_triangle_intersect(vertices, faces, segment_start, segment_end):
     indices_pairs[:, 1] -= 1
     return indices_pairs, positions
 
+def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
+    '''
+    '''
+    inv_affine = np.linalg.inv(affine)
+    vertices_trafo = inv_affine[:3, :3].dot(vertices.T).T + inv_affine[:3, 3].T
 
-def dilate(image,n):
-    se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
-    return mrph.binary_dilation(image,se)>0
+    # TODO, support also for X and Y traces
+    # The best way to do it is to just switch vertices, dimensions, and affine in the
+    # beginning and then do everything
+    if axis == 'z':
+        out_shape = shape
+    elif axis == 'y':
+        vertices_trafo = vertices_trafo[:, [0, 2, 1]]
+        out_shape = shape[[0, 2, 1]]
+    elif axis == 'z':
+        vertices_trafo = vertices_trafo[:, [2, 1, 0]]
+        out_shape = shape[[2, 1, 0]]
+
+    grid_points = np.array(
+        np.meshgrid(
+            *tuple(map(np.arange, out_shape[:2])), indexing="ij")
+    ).reshape((2, -1)).T
+    # This approach only works if we know this initial grid to be completely outside the
+    # volume. Otherwise, we will get an odd number of crossings
+    # IDEA: change grid_points_near and grid_points_far accoriding to the value range in
+    # "vertices". Afterwards, I can just crop according to the
+    grid_points_near = np.hstack([grid_points, np.zeros((len(grid_points), 1))])
+    grid_points_far = np.hstack([grid_points, shape[2] * np.ones((len(grid_points), 1))])
+    grid_points_near[:, :2] += .5
+    grid_points_far[:, :2] += .5
+
+    # Calculate intersections
+    pairs, positions = segment_triangle_intersect(
+        vertices_trafo, faces, grid_points_near, grid_points_far
+    )
+
+    # Select the intersecting lines
+    lines_intersecting, uq_indices, uq_inverse, counts = np.unique(
+        pairs[:, 0], return_index=True, return_inverse=True, return_counts=True
+    )
+
+    # The count should never be odd
+    if np.any(counts % 2 == 1):
+        logger.warn('Found an odd number of crossings! This could be an open surface '
+                    'or a self-intersection')
+
+    # "z" voxels where intersections occurs
+    inter_z = np.around(positions[:, 2]).astype(np.int)
+
+    # needed to take care of last line
+    uq_indices = np.append(uq_indices, [len(lines_intersecting)])
+
+    # Go through each point in the grid and assign the z coordinates that are in the mesh
+    # (between crossings)
+    mask = np.zeros(shape, dtype=bool)
+    for i, l in enumerate(lines_intersecting):
+        # We can do this because we know that the "pairs" variables is ordered with
+        # respect to the first variable
+        crossings = np.sort(inter_z[uq_indices[i]: uq_indices[i+1]])
+        for j in range(0, len(crossings), 2):
+            enter, leave = crossings[j], crossings[j + 1]
+            if grid_points[l, 0] == 100 and grid_points[l, 1] == 19:
+                #breakpoint()
+                pass
+            mask[grid_points[l, 0], grid_points[l, 1], enter:leave] = True
+
+    if axis == 'z':
+        pass
+    elif axis == 'y':
+        mask = np.swapaxes(mask, 2, 1)
+    elif axis == 'z':
+        mask = np.swapaxes(mask, 2, 0)
+
+    return mask
+
+def dilate(image, n):
+    se = np.ones((2*n+1, 2*n+1, 2*n+1), dtype=bool)
+    return mrph.binary_dilation(image, se) > 0
 
 def erosion(image,n):
-    return ~dilate(~image,n)
+    return ~dilate(~image, n)
 
 def lab(image):
     labels, num_features = label(image) 

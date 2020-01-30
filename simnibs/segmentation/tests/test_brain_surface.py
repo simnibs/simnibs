@@ -106,3 +106,38 @@ class TestExpandCS:
         sphere_2_surfs.nodes.node_coord = vertices_e
         assert np.allclose(np.linalg.norm(vertices_e[nodes_surf2], axis=1), 95, atol=1)
         assert np.allclose(np.linalg.norm(vertices_e[nodes_surf1], axis=1), 93, atol=2)
+
+class TestCreateSurfaceMask:
+
+    @pytest.mark.parametrize('axis', ['z', 'y', 'x'])
+    def test_rasterize_surface(self, axis, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:195])
+        assert np.all(mask[100, 5:195, 100])
+        assert np.all(mask[5:195, 100, 100])
+        assert not np.any(mask[100, 100, :5]) and not np.any(mask[100, 100, 195:])
+        assert not np.any(mask[100, :5, 100]) and not np.any(mask[100, 195:, 100])
+        assert not np.any(mask[:5, 100, 100]) and not np.any(mask[195:, 100, 100])
+
+    @pytest.mark.parametrize('axis', ['z', 'y', 'x'])
+    def test_rasterize_surface_concave(self, axis, sphere_2_surfs):
+        vertices = sphere_2_surfs.nodes[:]
+        faces = sphere_2_surfs.elm[:, :3] - 1
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:10]) and np.all(mask[100, 100, 190:195])
+        assert np.all(mask[100, 5:10, 100]) and np.all(mask[100, 190:195, 100])
+        assert np.all(mask[5:10, 100, 100]) and np.all(mask[190:195, 100, 100])
+        assert not np.any(mask[100, 100, 10:190])
+        assert not np.any(mask[100, 10:190, 100])
+        assert not np.any(mask[10:190, 100, 100])
+
+    # TRY WITH OTHER AFFINES
+    # TRY ON SINGLE SLICE
