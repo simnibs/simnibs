@@ -24,6 +24,7 @@
 
 /* Modifications by Guilherme Saturnin, 2019
  * Removed MATLAB references
+ * Added compatibility 
 */
 
 #include "math.h"
@@ -100,10 +101,10 @@ void vol_pbtp(float *GMT, float *RPM, float * SEG, float *WMD, float *CSFD, int 
   const float   s3 = sqrt(3.0);
   
   // indices of the neighbor Ni (index distance) and euclidean distance NW
-  const int   NI[]  = {  0, -1,-x+1, -x,-x-1,  -xy+1,-xy,-xy-1,  -xy+x+1,-xy+x,-xy+x-1,  -xy-x+1,-xy-x,-xy-x-1};  
+  const int   NI[]  = {  0, -1, -x+1, -x, -x-1, -xy+1, -xy, -xy-1, -xy+x+1, -xy+x, -xy+x-1, -xy-x+1, -xy-x, -xy-x-1};  
   const float ND[]  = {0.0,1.0,  s2,1.0,  s2,     s2,1.0,   s2,       s3,   s2,     s3,       s3,   s2,     s3};
   const int   sN  = sizeof(NI)/4;  
-  float       GMTN[sN],WMDN[sN],SEGN[sN],DNm;
+  float       GMTN[14],WMDN[14],SEGN[14],DNm; // GBS: Changed from sN to 14 for compatibility with Visual Studio compiler
   
   int         ni,u,v,w,nu,nv,nw, WMC=0, CSFC=0;
     

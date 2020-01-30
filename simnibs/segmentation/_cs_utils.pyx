@@ -21,7 +21,6 @@ cdef extern from "cat_vol_eidist.c":
 cdef extern from "cat_vol_localstat.c":
     void vol_localstat(float *M, float *M2, float*M3, float *D, unsigned char *B,  int *sL, int nh, int st, int verb)
 
-
 cdef extern from "cat_vol_pbtp.c":
     void vol_pbtp(float *GMT, float *RMP, float * SEG, float *WMD, float *CSFD, int *sL)
 

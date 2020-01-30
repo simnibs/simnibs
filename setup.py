@@ -48,7 +48,7 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 CGAL_version = '5.0'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 
-is_conda = 'CONDA_PREFIX' in os.environ['CONDA_PREFIX']
+is_conda = 'CONDA_PREFIX' in os.environ
 
 if sys.platform == 'win32':
     petsc_libs = ['libpetsc', 'msmpi']
@@ -74,7 +74,7 @@ if sys.platform == 'win32':
     ]
     if is_conda:
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
-    cgal_dirs = ['simnibs/lib/win']
+    cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
     cgal_compile_args = None
 

@@ -5246,9 +5246,9 @@ def read_off(fn):
 
     with open(fn, "rb") as f:
         # Read header
-        hdr = f.readline().decode().rstrip("\n").lower()
+        hdr = f.readline().decode().rstrip().lower()
         assert hdr == "off", ".off files should start with OFF"
-        while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n":
+        while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n" or hdr == "\r\n":
             hdr = f.readline().decode()
         hdr = [int(i) for i in hdr.split()]
 

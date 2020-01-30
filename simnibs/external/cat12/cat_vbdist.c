@@ -24,7 +24,8 @@
 
 /* Modifications, Guilherme Satutnino, 2019
  * Removed MATLAB references
- *
+ * Added compatibility with MSVC compiler
+
 */
 
 #include "math.h"
@@ -73,7 +74,7 @@ void vbdist(float *D, unsigned int *I, unsigned char *L, float *V, unsigned char
   const int   NI[] = {  0, -1,-x+1, -x,-x-1,  -xy+1,-xy,-xy-1,  -xy+x+1,-xy+x,-xy+x-1,  -xy-x+1,-xy-x,-xy-x-1};  
   const float ND[] = {0.0, s1, s12, s2, s12,    s13, s3,  s13,     s123,  s23,   s123,     s123,  s23,   s123};
   const int   sN = sizeof(NI)/4;    
-  float       DN[sN];
+  float       DN[14]; // GBS: Changed from sN to 14 for compatibility with Visual Studio compiler
   float       DNm = FLT_MAX;
   int i, n, ni, DNi = 0;
 

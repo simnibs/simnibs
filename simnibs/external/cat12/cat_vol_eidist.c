@@ -111,10 +111,6 @@ int sub2ind(int x, int y, int z, int s[]) {
   return (z)*s[0]*s[1] + (y)*s[0] + (x);
 }
 
-float min(float a, float b) {
-  if (a<b) return a; else return b; 
-}
-
 float fpow(float x, float y) {
   return (float) pow((double) x,(double) y); 
 }
