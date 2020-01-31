@@ -217,11 +217,17 @@ std::pair<std::vector<int>, std::vector<float>> _segment_triangle_intersection(
       tree.all_intersections(segment, std::back_inserter(intersections));
       for (std::list<Segment_intersection>::iterator it=intersections.begin(); it != intersections.end(); ++it){
           Segment_intersection inter = *it;
-          Point* p = boost::get<Point>(&(inter->first));
           std::size_t id = boost::get<CGAL::SM_Face_index>(inter->second);
           indices_pairs.push_back(i);
           indices_pairs.push_back((int) id);
-          for (int j=0; j<3; j++) intersect_positions.push_back((float) (*p)[j]);
+          Point* p = boost::get<Point>(&(inter->first));
+          Segment *s = boost::get<Segment>(&(inter->first));
+          if (p) {
+              for (int j=0; j<3; j++) intersect_positions.push_back((float) (*p)[j]);
+           }
+          else if (s) {
+              for (int j=0; j<3; j++) intersect_positions.push_back((float) s->source()[j]);
+          }
       }
   }
   return std::make_pair(indices_pairs, intersect_positions);

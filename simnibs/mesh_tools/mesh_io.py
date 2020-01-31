@@ -59,6 +59,7 @@ __all__ = [
     'read_freesurfer_surface',
     'write_freesurfer_surface',
     'read_gifti_surface',
+    'write_gifti_surface',
     'read_curv',
     'write_curv',
     'read_stl',
@@ -5067,14 +5068,26 @@ def write_gifti_surface(msh, fn, ref_image=None):
         coordsys = ref_image.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].coordsys
     else:
         header = None
-        coordsys = None
+        coordsys = nibabel.gifti.GiftiCoordSystem(0, 3, np.eye(4))
+    # This metadata is needed for FreeView
+    # NOT WORKING! I NEDD TO PUT THESE THINGS IN A CDATA FIELD SOMEHOW
+    metadata = nibabel.gifti.GiftiMetaData.from_dict({
+        'VolGeomWidth': '256', 'VolGeomHeight': '256', 'VolGeomWidth': '256',
+        'VolGeomXsize': '1.0', 'VolGeomYsize': '1.0', 'VolGeomZsize': '1.0',
+        'VolGeomX_R': '-1.0', 'VolGeomX_A': '0.0', 'VolGeomX_S': '0.0',
+        'VolGeomY_R': '0.0', 'VolGeomY_A': '0.0', 'VolGeomY_S': '-1.0',
+        'VolGeomZ_R': '0.0', 'VolGeomZ_A': '1.0', 'VolGeomZ_S': '0.0',
+        'VolGeomC_R': '0.0', 'VolGeomC_A': '1.0', 'VolGeomC_S': '0.0',
+        'SurfaceCenterX': '0.0', 'SurfaceCenterY': '1.0', 'SurfaceCenterZ': '0.0'
+        }
+    )
 
     msh = msh.crop_mesh(elm_type=2)
     vertices = msh.nodes[:]
     faces = msh.elm[:, :3] - 1
     verts_da = nibabel.gifti.gifti.GiftiDataArray(
         vertices.astype(np.float32), intent='NIFTI_INTENT_POINTSET',
-        coordsys=coordsys
+        coordsys=coordsys, meta=metadata
     )
     faces_da = nibabel.gifti.gifti.GiftiDataArray(
         faces.astype(np.int32), intent='NIFTI_INTENT_TRIANGLE',

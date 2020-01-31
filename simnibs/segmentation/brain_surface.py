@@ -486,35 +486,38 @@ def segment_triangle_intersect(vertices, faces, segment_start, segment_end):
     return indices_pairs, positions
 
 def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
-    '''
+    ''' Function to rastherize a given surface given by (vertices, faces) to a volume
     '''
     inv_affine = np.linalg.inv(affine)
     vertices_trafo = inv_affine[:3, :3].dot(vertices.T).T + inv_affine[:3, 3].T
 
-    # TODO, support also for X and Y traces
-    # The best way to do it is to just switch vertices, dimensions, and affine in the
-    # beginning and then do everything
+    # switch vertices, dimensions to align with rastherization axis
     if axis == 'z':
         out_shape = shape
     elif axis == 'y':
         vertices_trafo = vertices_trafo[:, [0, 2, 1]]
-        out_shape = shape[[0, 2, 1]]
-    elif axis == 'z':
+        out_shape = np.array(shape, dtype=int)[[0, 2, 1]]
+    elif axis == 'x':
         vertices_trafo = vertices_trafo[:, [2, 1, 0]]
-        out_shape = shape[[2, 1, 0]]
+        out_shape = np.array(shape, dtype=int)[[2, 1, 0]]
+    else:
+        raise ValueError('"axis" should be x, y, or z')
 
     grid_points = np.array(
         np.meshgrid(
             *tuple(map(np.arange, out_shape[:2])), indexing="ij")
     ).reshape((2, -1)).T
-    # This approach only works if we know this initial grid to be completely outside the
-    # volume. Otherwise, we will get an odd number of crossings
-    # IDEA: change grid_points_near and grid_points_far accoriding to the value range in
-    # "vertices". Afterwards, I can just crop according to the
     grid_points_near = np.hstack([grid_points, np.zeros((len(grid_points), 1))])
-    grid_points_far = np.hstack([grid_points, shape[2] * np.ones((len(grid_points), 1))])
+    grid_points_far = np.hstack([grid_points, out_shape[2] * np.ones((len(grid_points), 1))])
     grid_points_near[:, :2] += .5
     grid_points_far[:, :2] += .5
+
+    # This fixes the search are such that if the volume area to rastherize is smaller
+    # than the mesh, we will still trace rays that cross the whole extension of the mesh
+    if np.min(vertices_trafo[:, 2]) < 0:
+        grid_points_near[:, 2] = 1.1 * np.min(vertices_trafo[:, 2])
+    if np.max(vertices_trafo[:, 2]) > out_shape[2]:
+        grid_points_far[:, 2] = 1.1 * np.max(vertices_trafo[:, 2])
 
     # Calculate intersections
     pairs, positions = segment_triangle_intersect(
@@ -528,57 +531,94 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
 
     # The count should never be odd
     if np.any(counts % 2 == 1):
-        logger.warn('Found an odd number of crossings! This could be an open surface '
-                    'or a self-intersection')
+        logger.warning(
+            'Found an odd number of crossings! This could be an open surface '
+            'or a self-intersection'
+        )
 
     # "z" voxels where intersections occurs
     inter_z = np.around(positions[:, 2]).astype(np.int)
+    inter_z[inter_z < 0] = 0
+    inter_z[inter_z > out_shape[2]] = out_shape[2]
 
     # needed to take care of last line
-    uq_indices = np.append(uq_indices, [len(lines_intersecting)])
+    uq_indices = np.append(uq_indices, [len(pairs)])
 
     # Go through each point in the grid and assign the z coordinates that are in the mesh
     # (between crossings)
-    mask = np.zeros(shape, dtype=bool)
+    mask = np.zeros(out_shape, dtype=bool)
     for i, l in enumerate(lines_intersecting):
         # We can do this because we know that the "pairs" variables is ordered with
         # respect to the first variable
         crossings = np.sort(inter_z[uq_indices[i]: uq_indices[i+1]])
-        for j in range(0, len(crossings), 2):
-            enter, leave = crossings[j], crossings[j + 1]
-            if grid_points[l, 0] == 100 and grid_points[l, 1] == 19:
-                #breakpoint()
-                pass
+        for j in range(0, len(crossings) // 2):
+            enter, leave = crossings[2*j], crossings[2*j + 1]
             mask[grid_points[l, 0], grid_points[l, 1], enter:leave] = True
 
+    # Go back to the original frame
     if axis == 'z':
         pass
     elif axis == 'y':
         mask = np.swapaxes(mask, 2, 1)
-    elif axis == 'z':
+    elif axis == 'x':
         mask = np.swapaxes(mask, 2, 0)
 
     return mask
+
+def mask_from_surface(vertices, faces, affine, shape):
+    """ Creates a binary mask based on a surface
+    
+    Parameters
+    ----------
+    vertices: ndarray
+        Array with mesh vertices positions
+    faces: ndarray
+        Array describing the surface triangles
+    affine: 4x4 ndarray
+        Matrix describing the affine transformation between voxel and world coordinates
+    shape: 3x1 list
+        shape of output mask
+    
+    Returns
+    ----------
+    mask : ndarray of shape 'shape'
+       Volume mask 
+    """
+
+    masks = []
+
+    if len(vertices) == 0 or len(faces) == 0:
+        logger.warning("Surface if empty! Return empty volume")
+        return np.zeros(shape, dtype=bool)
+
+    # Do the rastherization in 3 directions
+    for axis in ['x', 'y', 'z']:
+        masks.append(_rasterize_surface(vertices, faces, affine, shape, axis=axis))
+
+    # Return all voxels which are in at least 2 of the masks
+    # This is done to reduce spurious results caused by bad tolopogy
+    #return np.sum(masks, axis=0) >= 2
+    return masks[0]
 
 def dilate(image, n):
     se = np.ones((2*n+1, 2*n+1, 2*n+1), dtype=bool)
     return mrph.binary_dilation(image, se) > 0
 
-def erosion(image,n):
+def erosion(image, n):
     return ~dilate(~image, n)
 
 def lab(image):
-    labels, num_features = label(image) 
+    labels, num_features = label(image)
     return (labels == np.argmax(np.bincount(labels.flat)[1:])+1)
 
-def close(image,n):
-    image_padded = np.pad(image,n,'constant')
-    image_padded = dilate(image_padded,n)
-    image_padded = erosion(image_padded,n)
-    return image_padded[n:-n,n:-n,n:-n]>0
-        
+def close(image, n):
+    image_padded = np.pad(image, n, 'constant')
+    image_padded = dilate(image_padded, n)
+    image_padded = erosion(image_padded, n)
+    return image_padded[n:-n, n:-n, n:-n] > 0
 
-def labclose(image,n):
-    tmp = close(image,n)
+
+def labclose(image, n):
+    tmp = close(image, n)
     return ~lab(~tmp)
-        
+

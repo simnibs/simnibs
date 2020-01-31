@@ -116,7 +116,7 @@ class TestCreateSurfaceMask:
         affine = np.eye(4)
         affine[:3, 3] = -100
         shape = [200, 200, 200]
-        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 100, 5:195])
         assert np.all(mask[100, 5:195, 100])
         assert np.all(mask[5:195, 100, 100])
@@ -131,7 +131,7 @@ class TestCreateSurfaceMask:
         affine = np.eye(4)
         affine[:3, 3] = -100
         shape = [200, 200, 200]
-        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 100, 5:10]) and np.all(mask[100, 100, 190:195])
         assert np.all(mask[100, 5:10, 100]) and np.all(mask[100, 190:195, 100])
         assert np.all(mask[5:10, 100, 100]) and np.all(mask[190:195, 100, 100])
@@ -139,5 +139,102 @@ class TestCreateSurfaceMask:
         assert not np.any(mask[100, 10:190, 100])
         assert not np.any(mask[10:190, 100, 100])
 
-    # TRY WITH OTHER AFFINES
-    # TRY ON SINGLE SLICE
+    @pytest.mark.parametrize('axis', ['z', 'y', 'x'])
+    def test_rasterize_surface_aniso(self, axis, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        affine = np.diag([1., 1., 2., 1])
+        affine[:3, 3] = -100
+        shape = [200, 200, 100]
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
+        assert np.all(mask[100, 100, 3:97])
+        assert np.all(mask[100, 5:195, 50])
+        assert np.all(mask[5:195, 100, 50])
+        assert not np.any(mask[100, 100, :3]) and not np.any(mask[100, 100, 97:])
+        assert not np.any(mask[100, :5, 50]) and not np.any(mask[100, 195:, 50])
+        assert not np.any(mask[:5, 100, 50]) and not np.any(mask[195:, 100, 50])
+
+
+    @pytest.mark.parametrize('axis', ['z', 'y', 'x'])
+    def test_rasterize_surface_slice(self, axis, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        affine = np.eye(4)
+        affine[:3, 3] = [-100, -100, 0]
+        shape = [200, 200, 1]
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
+        assert np.all(mask[100, 5:195, 0])
+        assert np.all(mask[5:195, 100, 0])
+        assert not np.any(mask[100, :5, 0]) and not np.any(mask[100, 195:, 0])
+        assert not np.any(mask[:5, 100, 0]) and not np.any(mask[195:, 100, 0])
+
+    def test_rasterize_surface_bad_topology(self, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        # Clone part of the faces to create an "outer shell" in part of the sphere
+        faces_bar = np.average(vertices[faces], axis=1)
+        faces_to_clone = faces[faces_bar[:, 2] > 50]
+        verts_to_clone, reverse = np.unique(faces_to_clone, return_inverse=True)
+        verts_cloned = vertices[verts_to_clone] + [0, 0, 2]
+        faces_cloned = reverse.reshape(-1, 3) + len(vertices)
+        faces = np.vstack([faces, faces_cloned])
+        vertices = np.vstack([vertices, verts_cloned])
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:195])
+        assert np.all(mask[100, 5:195, 100])
+        assert np.all(mask[5:195, 100, 100])
+        assert not np.any(mask[100, 100, :5]) and not np.any(mask[100, 100, 195:])
+        assert not np.any(mask[100, :5, 100]) and not np.any(mask[100, 195:, 100])
+        assert not np.any(mask[:5, 100, 100]) and not np.any(mask[195:, 100, 100])
+
+    def test_mask_from_surface(self, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:195])
+        assert np.all(mask[100, 5:195, 100])
+        assert np.all(mask[5:195, 100, 100])
+        assert not np.any(mask[100, 100, :5]) and not np.any(mask[100, 100, 195:])
+        assert not np.any(mask[100, :5, 100]) and not np.any(mask[100, 195:, 100])
+        assert not np.any(mask[:5, 100, 100]) and not np.any(mask[195:, 100, 100])
+
+    def test_mask_from_surface_concave(self, sphere_2_surfs):
+        vertices = sphere_2_surfs.nodes[:]
+        faces = sphere_2_surfs.elm[:, :3] - 1
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:10]) and np.all(mask[100, 100, 190:195])
+        assert np.all(mask[100, 5:10, 100]) and np.all(mask[100, 190:195, 100])
+        assert np.all(mask[5:10, 100, 100]) and np.all(mask[190:195, 100, 100])
+        assert not np.any(mask[100, 100, 10:190])
+        assert not np.any(mask[100, 10:190, 100])
+        assert not np.any(mask[10:190, 100, 100])
+
+    def test_mask_from_surface_bad_topology(self, sphere_surf):
+        vertices = sphere_surf.nodes[:]
+        faces = sphere_surf.elm[:, :3] - 1
+        # Clone part of the faces to create an "outer shell" in part of the sphere
+        faces_bar = np.average(vertices[faces], axis=1)
+        faces_to_clone = faces[faces_bar[:, 2] > 93]
+        verts_to_clone, reverse = np.unique(faces_to_clone, return_inverse=True)
+        verts_cloned = vertices[verts_to_clone] + [0, 0, 3]
+        faces_cloned = reverse.reshape(-1, 3) + len(vertices)
+        faces = np.vstack([faces, faces_cloned])
+        vertices = np.vstack([vertices, verts_cloned])
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        shape = [200, 200, 200]
+        mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
+        assert np.all(mask[100, 100, 5:195])
+        assert np.all(mask[100, 5:195, 100])
+        assert np.all(mask[5:195, 100, 100])
+        assert not np.any(mask[100, :5, 100]) and not np.any(mask[100, 195:, 100])
+        assert not np.any(mask[:5, 100, 100]) and not np.any(mask[195:, 100, 100])
