@@ -47,6 +47,10 @@
 
 #define index(A,B,C,DIM) ((C)*DIM[0]*DIM[1] + (B)*DIM[0] + (A))
 
+#ifndef min
+#define min(a,b) (((a)<(b))?(a):(b))
+#endif
+
 /* qicksort */
 void swap(float *a, float *b)
 {

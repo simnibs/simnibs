@@ -53,7 +53,6 @@ cdef extern from "genus0.h":
     int genus0(genus0parameters * g0)
     void genus0destruct(genus0parameters * g0)
 
-
 cdef extern from "cat_vbdist.c":
     void vbdist(float *D, unsigned int *I, unsigned char *L, float *V, unsigned char *R, int *sL, float *S)
 
@@ -73,6 +72,29 @@ def cat_vol_median3(D, Bi=None, Bn=None, sf=0, Bi_low=-FLT_MAX, Bi_high=FLT_MAX,
                     Bn_low=-FLT_MAX, Bn_high=FLT_MAX):
     ''' Interface to the the cat_vol_median3 function
 
+     Median Filter for a 3d single image D. Bi is used to mask voxels for the 
+     filter process, whereas Bn is used to mask voxels that are used as 
+     neighbors in the filter process. Both mask can changed by intensity 
+     threshold (Bi_low,Bi_high,Bn_low,Bn_high) for D.
+    
+      M = cat_vol_median3(D[,Bi,Bn,sf,Bi_low,Bi_high,Bn_low,Bn_high])
+    
+      D      (single)   3d matrix for filter process 
+      Bi     (logical)  3d matrix that marks voxels that should be filtered
+      Bn     (logical)  3d matrix that marks voxels that are used as neighbors 
+      sf     (double)   threshold that is used to filter the result
+                          sf=0: no filter
+                          sf<0: only smaller changes
+                          sf>0: only bigger changes
+      Bi_low  (double)  low  threshold in D for filtering (add to Bi)
+      Bi_high (double)  high threshold in D for filtering (add to Bi)
+      Bn_low  (double)  low  threshold in D for neighbors (add to Bn)
+      Bn_high (double)  high threshold in D for neighbors (add to Bn)
+    
+     Used slower quicksort for median calculation, because the faster median 
+     of the median application implementation leads to wrong results. 
+
+ 
     Original code by Robert Dahnke, Center of Neuroimaging University Jena
     '''
     # main informations about input data (size, dimensions, ...)
@@ -98,7 +120,7 @@ def cat_vol_median3(D, Bi=None, Bn=None, sf=0, Bi_low=-FLT_MAX, Bi_high=FLT_MAX,
 
     if Bn is not None:
         assert Bn.shape == D.shape
-        Bn_ = np.array(Bn, np.uint8)
+        Bn_ = np.array(Bn, np.uint8, order='F')
         nrhs = 3
     else:
         Bn_ = np.zeros((1,1,1), np.uint8)

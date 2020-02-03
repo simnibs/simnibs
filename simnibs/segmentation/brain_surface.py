@@ -505,7 +505,8 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
 
     grid_points = np.array(
         np.meshgrid(
-            *tuple(map(np.arange, out_shape[:2])), indexing="ij")
+            *tuple(map(np.arange, out_shape[:2])), indexing="ij"
+        )
     ).reshape((2, -1)).T
     grid_points_near = np.hstack([grid_points, np.zeros((len(grid_points), 1))])
     grid_points_far = np.hstack([grid_points, out_shape[2] * np.ones((len(grid_points), 1))])
