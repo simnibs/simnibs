@@ -509,8 +509,6 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
     ).reshape((2, -1)).T
     grid_points_near = np.hstack([grid_points, np.zeros((len(grid_points), 1))])
     grid_points_far = np.hstack([grid_points, out_shape[2] * np.ones((len(grid_points), 1))])
-    grid_points_near[:, :2] += .5
-    grid_points_far[:, :2] += .5
 
     # This fixes the search are such that if the volume area to rastherize is smaller
     # than the mesh, we will still trace rays that cross the whole extension of the mesh
@@ -537,7 +535,8 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
         )
 
     # "z" voxels where intersections occurs
-    inter_z = np.around(positions[:, 2]).astype(np.int)
+    #inter_z = np.around(positions[:, 2]).astype(np.int)
+    inter_z = (positions[:, 2] + 1).astype(np.int)
     inter_z[inter_z < 0] = 0
     inter_z[inter_z > out_shape[2]] = out_shape[2]
 
@@ -597,8 +596,8 @@ def mask_from_surface(vertices, faces, affine, shape):
 
     # Return all voxels which are in at least 2 of the masks
     # This is done to reduce spurious results caused by bad tolopogy
-    #return np.sum(masks, axis=0) >= 2
-    return masks[0]
+    return np.sum(masks, axis=0) >= 2
+    #return masks[2]
 
 def dilate(image, n):
     se = np.ones((2*n+1, 2*n+1, 2*n+1), dtype=bool)

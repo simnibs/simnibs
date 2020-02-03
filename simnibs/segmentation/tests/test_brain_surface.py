@@ -114,7 +114,8 @@ class TestCreateSurfaceMask:
         vertices = sphere_surf.nodes[:]
         faces = sphere_surf.elm[:, :3] - 1
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9 # I need to have a broken number here because the mesh has
+        # nodes aligned with the x, y, and z axis
         shape = [200, 200, 200]
         mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 100, 5:195])
@@ -129,7 +130,7 @@ class TestCreateSurfaceMask:
         vertices = sphere_2_surfs.nodes[:]
         faces = sphere_2_surfs.elm[:, :3] - 1
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 200]
         mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 100, 5:10]) and np.all(mask[100, 100, 190:195])
@@ -144,13 +145,13 @@ class TestCreateSurfaceMask:
         vertices = sphere_surf.nodes[:]
         faces = sphere_surf.elm[:, :3] - 1
         affine = np.diag([1., 1., 2., 1])
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 100]
         mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 100, 3:97])
         assert np.all(mask[100, 5:195, 50])
         assert np.all(mask[5:195, 100, 50])
-        assert not np.any(mask[100, 100, :3]) and not np.any(mask[100, 100, 97:])
+        assert not np.any(mask[100, 100, :3]) and not np.any(mask[100, 100, 98:])
         assert not np.any(mask[100, :5, 50]) and not np.any(mask[100, 195:, 50])
         assert not np.any(mask[:5, 100, 50]) and not np.any(mask[195:, 100, 50])
 
@@ -160,7 +161,7 @@ class TestCreateSurfaceMask:
         vertices = sphere_surf.nodes[:]
         faces = sphere_surf.elm[:, :3] - 1
         affine = np.eye(4)
-        affine[:3, 3] = [-100, -100, 0]
+        affine[:3, 3] = [-99.9, -99.9, 0.1]
         shape = [200, 200, 1]
         mask = brain_surface._rasterize_surface(vertices, faces, affine, shape, axis=axis)
         assert np.all(mask[100, 5:195, 0])
@@ -180,7 +181,7 @@ class TestCreateSurfaceMask:
         faces = np.vstack([faces, faces_cloned])
         vertices = np.vstack([vertices, verts_cloned])
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 200]
         mask = brain_surface._rasterize_surface(vertices, faces, affine, shape)
         assert np.all(mask[100, 100, 5:195])
@@ -194,7 +195,7 @@ class TestCreateSurfaceMask:
         vertices = sphere_surf.nodes[:]
         faces = sphere_surf.elm[:, :3] - 1
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 200]
         mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
         assert np.all(mask[100, 100, 5:195])
@@ -208,7 +209,7 @@ class TestCreateSurfaceMask:
         vertices = sphere_2_surfs.nodes[:]
         faces = sphere_2_surfs.elm[:, :3] - 1
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 200]
         mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
         assert np.all(mask[100, 100, 5:10]) and np.all(mask[100, 100, 190:195])
@@ -230,7 +231,7 @@ class TestCreateSurfaceMask:
         faces = np.vstack([faces, faces_cloned])
         vertices = np.vstack([vertices, verts_cloned])
         affine = np.eye(4)
-        affine[:3, 3] = -100
+        affine[:3, 3] = -99.9
         shape = [200, 200, 200]
         mask = brain_surface.mask_from_surface(vertices, faces, affine, shape)
         assert np.all(mask[100, 100, 5:195])
