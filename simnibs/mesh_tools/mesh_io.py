@@ -2286,10 +2286,10 @@ class Msh:
             self.elm.add_triangles(tr, 1000+tag)
         self.fix_tr_node_ordering()
 
-    def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None):
+    def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
         ''' In-place Smoothes the mesh surfaces using Taubin smoothing
         
-        Can severely decrease tetrahedra quality
+        Can decrease tetrahedra quality
 
         Parameters
         ------------
@@ -2300,7 +2300,10 @@ class Msh:
         step_size (optional): float 0<step_size<1
             Size of each smoothing step. Default: 0.3
         nodes_mask: ndarray of bool
-            Mask of nodes to be moved. Default: all nodes
+            Mask of nodes to be moved. Default: all surface nodes
+        max_gamma: float
+            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., 1994) for
+            a move to be accepted
         '''
         assert step_size > 0 and step_size < 1
         if nodes_mask is None:
@@ -2334,7 +2337,7 @@ class Msh:
         surf_nodes = np.unique(tr)
         nodes_coords = np.ascontiguousarray(self.nodes.node_coord, np.float)
         for i in range(n_steps):
-            cython_msh.gauss_smooth(
+            cf = cython_msh.gauss_smooth(
                 surf_nodes.astype(np.uint),
                 nodes_coords,
                 np.ascontiguousarray(th, np.uint),
@@ -2343,10 +2346,11 @@ class Msh:
                 np.ascontiguousarray(adj_th.indices, np.uint),
                 np.ascontiguousarray(adj_th.indptr, np.uint),
                 float(step_size),
-                np.ascontiguousarray(nodes_mask, np.uint)
+                np.ascontiguousarray(nodes_mask, np.uint),
+                float(max_gamma)
             )
             # Taubin step
-            cython_msh.gauss_smooth(
+            cb = cython_msh.gauss_smooth(
                 surf_nodes.astype(np.uint),
                 nodes_coords,
                 np.ascontiguousarray(th, np.uint),
@@ -2355,10 +2359,33 @@ class Msh:
                 np.ascontiguousarray(adj_th.indices, np.uint),
                 np.ascontiguousarray(adj_th.indptr, np.uint),
                 -1.05 * float(step_size),
-                np.ascontiguousarray(nodes_mask, np.uint)
+                np.ascontiguousarray(nodes_mask, np.uint),
+                float(max_gamma)
             )
         self.nodes.node_coord = nodes_coords
 
+    def gamma_metric(self):
+        """ calculates the (normalized) Gamma quality metric for tetrahedra
+
+        Returns
+        ----------
+        gamma: ElementData
+            Gamma metric from Parthasarathy et al., 1994
+        """
+        vol = self.elements_volumes_and_areas()
+        th = self.elm.elm_type == 4
+        edge_rms = np.zeros(self.elm.nr)
+        for i in range(4):
+            for j in range(i+1, 4):
+                edge_rms[th] += np.sum(
+                    (self.nodes[self.elm[th, i]] - self.nodes[self.elm[th, j]])**2,
+                    axis=1
+                )
+        edge_rms = np.sqrt(edge_rms/6.)
+        gamma = np.zeros(self.elm.nr)
+        gamma[th] = edge_rms[th]**3/vol[th]
+        gamma /= 8.479670
+        return ElementData(gamma, 'gamma', self)
 
 class Data(object):
     """Store data in elements or nodes

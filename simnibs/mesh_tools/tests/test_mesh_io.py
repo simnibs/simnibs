@@ -998,6 +998,35 @@ class TestMsh:
         m.reconstruct_surfaces(tags=[4])
         assert ~np.any(np.in1d(m.elm.tag1, [1003, 1005]))
 
+    def test_smooth_calc_gamma(self):
+        tetrahedra=np.array([0, 1, 2, 3],dtype=np.uint)
+        nodes = np.array(
+            [[1./3. * np.sqrt(3), 0, 0],
+             [-1./6. * np.sqrt(3), 1./2., 0],
+             [0, 0, 1./3. * np.sqrt(6)],
+             [-1./6. * np.sqrt(3), -1./2., 0],
+             [0, 0, 1./3. * np.sqrt(6)]], dtype=np.float)
+        gamma = mesh_io.cython_msh.calc_gamma(nodes, tetrahedra)
+        assert np.isclose(gamma, 1., rtol=1e-3)
+
+    def test_gamma_metric(self):
+        msh = mesh_io.Msh()
+        # 2 regular tetrahedron of edge size 1
+        msh.elm = mesh_io.Elements(
+            tetrahedra=np.array(
+                [[1, 2, 3, 4],
+                 [1, 2, 5, 4]], dtype=int))
+        msh.elm.elm_type = np.array([4, 4])
+        msh.nodes = mesh_io.Nodes(np.array(
+            [[1./3. * np.sqrt(3), 0, 0],
+             [-1./6. * np.sqrt(3), 1./2., 0],
+             [0, 0, 1./3. * np.sqrt(6)],
+             [-1./6. * np.sqrt(3), -1./2., 0],
+             [0, 0, 1./3. * np.sqrt(6)]], dtype=float))
+        gamma = msh.gamma_metric()
+        assert np.allclose(gamma[:], 1, rtol=1e-3)
+
+
     def test_smooth_without_th(self, sphere3_msh):
         mesh = sphere3_msh.crop_mesh(elm_type=2)
         tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
@@ -1031,15 +1060,20 @@ class TestMsh:
         assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
 
-    #def test_check_self_intersections(self, sphere3_msh):
-    #    triangle = mesh_io.Msh(
-    #        mesh_io.Nodes(np.array(
-    #            [[-100, -100, 0], [-100, 100, 0], [100, -100, 0], [100, 100, 0]])),
-    #        mesh_io.Elements(np.array([[1, 2, 3], [2, 3, 4]]))
-    #    )
-    #    m = sphere3_msh.join_mesh(triangle)
-    #    intersections = m.surface_self_intersections()
-    #    assert intersections
+    def test_smooth_quality(self, sphere3_msh):
+        mesh = copy.deepcopy(sphere3_msh)
+        tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
+        mesh.nodes.node_coord[tr_nodes - 1] += \
+            np.random.standard_normal((len(tr_nodes), 3)) * 0.1
+        mesh_before = copy.deepcopy(mesh)
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes[tr_nodes - 1] = True
+        mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=3)
+        curvature_after = mesh.gaussian_curvature()
+        low_q = mesh_before.gamma_metric()[:] >= 3
+        assert np.all(mesh_before.gamma_metric()[~low_q] < 3)
+
+
 
 class TestData:
     def test_read_hdf5_data_matrix_row(self):
