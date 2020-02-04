@@ -6,8 +6,8 @@ import cython
 import scipy
 cimport numpy as np
 from libcpp cimport bool
-from libc.math cimport exp
 from libc.math cimport abs
+from libc.math cimport sqrt
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 cdef inline int int_max(int a, int b): return a if a >= b else b
@@ -273,17 +273,18 @@ def gauss_smooth(
     np.uint_t[::1] adj_th_indices,
     np.uint_t[::1] adj_th_indptr,
     float factor,
-    np.uint_t[::1] nodes_mask
+    np.uint_t[::1] nodes_mask,
+    float max_gamma
     ):
     ''' Gaussian smoothing in-place
-    checks for violations if the volume of the node stays the same before and after the
-    move
+    that tetrahedra dont degenerate too much
     '''
     cdef int count_cancelled = 0
     cdef np.uint_t n
     cdef np.float_t[3] bar
     cdef np.float_t[::1] pos_before
     cdef Py_ssize_t i, j, k
+    cdef float gamma
 
     # for speed, I dont use numpy functions
     for i in range(len(surf_nodes)):
@@ -309,7 +310,8 @@ def gauss_smooth(
 
         # check
         for j in range(adj_th_indptr[n], adj_th_indptr[n+1]):
-            if not _test_sign(nodes_pos, tetrahedra[adj_th_indices[j]]):
+            gamma = _calc_gamma(nodes_pos, tetrahedra[adj_th_indices[j]])
+            if gamma < 0 or gamma > max_gamma:
                 nodes_pos[n] = pos_before
                 count_cancelled += 1
                 break
@@ -340,4 +342,47 @@ def test_sign(
     np.float_t[:, ::1] nodes_pos,
     np.uint_t[:] th):
     return _test_sign(nodes_pos, th)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef float _calc_gamma(
+    np.float_t[:, ::1] nodes_pos,
+    np.uint_t[:] th):
+    '''
+    Gamma measurement from the paper
+    Parthasarathy, V. N., C. M. Graichen, and A. F. Hathaway. "A comparison of
+    tetrahedron quality measures." Finite Elements in Analysis and Design 15.3 (1994):
+    255-261.
+    '''
+    cdef np.float_t[3][3] M
+    cdef Py_ssize_t i, j, k
+    cdef np.float_t det, vol, edge_rms, gamma
+
+    for i in range(3):
+        for j in range(3):
+            M[i][j] = nodes_pos[th[i], j] - nodes_pos[th[3], j]
+    
+    det = M[0][0]*(M[1][1]*M[2][2] - M[2][1]*M[1][2]) - \
+          M[0][1]*(M[1][0]*M[2][2] - M[2][0]*M[1][2]) + \
+          M[0][2]*(M[1][0]*M[2][1] - M[2][0]*M[1][1])
+
+    if det < 0.:
+        return -1.
+
+    vol = 1./6. * det
+
+    edge_rms = 0.
+    for i in range(4):
+        for j in range(i + 1, 4):
+            for k in range(3):
+                edge_rms += (nodes_pos[th[i], k] - nodes_pos[th[j], k])**2
+
+    edge_rms *= 1./6.
+    gamma = (edge_rms ** 1.5)/vol
+    return gamma/8.479670
+
+def calc_gamma(
+    np.float_t[:, ::1] nodes_pos,
+    np.uint_t[:] th):
+    return _calc_gamma(nodes_pos, th)
 

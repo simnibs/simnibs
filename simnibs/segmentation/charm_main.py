@@ -14,6 +14,7 @@ import time
 from simnibs import utils
 from simnibs import SIMNIBSDIR
 from simnibs.utils.simnibs_logger import logger
+from simnibs.utils import file_finder
 
 
 
@@ -83,39 +84,38 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.debug('options: '+options_str)
     logger.info('charm run started: '+time.asctime())
      
+    # initialize subject files
+    sub_files = file_finder.SubjectFiles(subject_dir)
+
     # get subID
-    subID=os.path.basename(subject_dir)
-    idx=[i for i in range(len(subID)) if subID[i] == '_']
-    if not len(idx) or idx[0]+1==len(subID):
-        raise RuntimeError("ERROR: subID could not be determined from subject directory:  "+subject_dir)
-    subID=subID[idx[0]+1:]
+    subID = sub_files.subid
     
     # copy T1 (as nii.gz) if supplied
     if T1 is not None:
         if not os.path.exists(T1):
-            raise FileNotFoundError(T1)
+            raise FileNotFoundError(f'Could not find input T1 file: {T1}')
         if len(T1)>7 and T1[-7:].lower()=='.nii.gz':
-            shutil.copyfile(T1,os.path.join(subject_dir, 'T1.nii.gz'))
+            shutil.copyfile(T1, sub_files.T1)
         else:
-            nib.save(nib.load(T1),os.path.join(subject_dir, 'T1.nii.gz'))
+            nib.save(nib.load(T1), sub_files.T1)
     
     if skipregisterT2 and T2 is not None:
         # skip T2-to-T1 registration, just copy T2 image (as nii.gz)
         registerT2=False
         if not os.path.exists(T2):
-            raise FileNotFoundError(T2)
+            raise FileNotFoundError(f'Could not find input T2 file: {T2}')
         if len(T2)>7 and T2[-7:].lower()=='.nii.gz':
-            shutil.copyfile(T2,os.path.join(subject_dir, 'T2_reg.nii.gz'))
+            shutil.copyfile(T2, sub_files.T2_reg)
         else:
-            nib.save(nib.load(T2),os.path.join(subject_dir, 'T2_reg.nii.gz'))
+            nib.save(nib.load(T2), sub_files.T2_reg)
     
     # read settings and copy settings file
     if usesettings is None:
-        fn_settings=os.path.join(SIMNIBSDIR,'charm.ini')
+        fn_settings=os.path.join(SIMNIBSDIR, 'charm.ini')
     else:
         fn_settings=usesettings
-    settings=utils.settings_reader.read_ini(fn_settings)
-    shutil.copyfile(fn_settings,os.path.join(subject_dir, 'settings.ini'))    
+    settings = utils.settings_reader.read_ini(fn_settings)
+    shutil.copyfile(fn_settings, sub_files.settings)
 
 
     # -------------------------PIPELINE STEPS----------------------------------
@@ -127,11 +127,10 @@ def run(subject_dir=None, T1=None, T2=None,
         local_settings=settings['registerT2']
         
         # check input files
-        T1=os.path.join(subject_dir, 'T1.nii.gz')
-        if not os.path.exists(T1):
-            raise FileNotFoundError(T1)       
-        if not os.path.exists(T2):
-            raise FileNotFoundError(T2)
+        if not os.path.exists(sub_files.T1):
+            raise FileNotFoundError(f'Could not find subject T1 file')       
+        if not os.path.exists(sub_files.T2_reg):
+            raise FileNotFoundError(f'Could not find subject T2 file')
             
         # do your stuff
             
