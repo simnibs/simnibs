@@ -29,6 +29,9 @@
 
 #include "math.h"
 //#include <stdlib.h>
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
 
 struct opt_type {
 	int   CSFD;													/* use CSFD */
@@ -49,46 +52,47 @@ float max(float a, float b) {
 */
 
 // get all values of the voxels which are in WMD-range (children of this voxel)  
-void pmax(const float GMT[], const float RPM[], const float SEG[], const float ND[], const float WMD, const float SEGI, const int sA, float *maximum) {
-  float T[27]; for (int i=0;i<27;i++) T[i]=-1; float n=0.0; maximum[0]=WMD; 
+float pmax(const float GMT[], const float RPM[], const float SEG[], const float ND[], const float WMD, const float SEGI, const int sA) {
+  float T[27];
+  for (int i=0;i<27;i++) T[i]=-1; float n=0.0; float maximum=WMD; 
 
   /* the pure maximum */
   /* (GMT[i]<1e15) && (maximum < GMT[i]) && ((RPM[i]-ND[i]*1.25)<=WMD) && ((RPM[i]-ND[i]*0.5)>WMD) && (SEGI)>=SEG[i] && SEG[i]>1 && SEGI>1.66) */
-  for (int i=0;i<=sA;i++) {
-    if (  ( GMT[i] < 1e15 ) && ( maximum[0] < GMT[i] ) &&                  /* thickness/WMD of neighbors should be larger */
+  for (int i=0;i<sA;i++) { // GBS: FIXED HERE
+    if (  ( GMT[i] < 1e15 ) && ( maximum < GMT[i] ) &&                  /* thickness/WMD of neighbors should be larger */
           ( SEG[i] >= 0.0 ) && ( SEGI>1.2 && SEGI<=2.75 ) &&           /* projection range */
           ( ( ( RPM[i] - ND[i] * 1.2 ) <= WMD ) ) &&                    /* upper boundary - maximum distance */
           ( ( ( RPM[i] - ND[i] * 0.5 ) >  WMD ) || ( SEG[i]<1.5 ) ) &&  /* lower boundary - minimum distance - corrected values outside */
-          ( ( ( (SEGI * MAX(1.0,min(1.2,SEGI-1)) ) >= SEG[i] ) ) || ( SEG[i]<1.5 ) ) )  /* for high values will project data over sulcal gaps */
-      { maximum[0] = GMT[i]; }
+          ( ( ( (SEGI * MAX(1.0, MIN(1.2,SEGI-1)) ) >= SEG[i] ) ) || ( SEG[i]<1.5 ) ) )  /* for high values will project data over sulcal gaps */
+      { maximum = GMT[i]; }
   }
 
   /* the mean of the highest values*/
-  float maximum2=maximum[0]; float m2n=0; 
-  for (int i=0;i<=sA;i++) {
-    if ( ( GMT[i] < 1e15 ) && ( (maximum[0] - 1) < GMT[i] ) && 
+  float maximum2=maximum; float m2n=0; 
+  for (int i=0;i<sA;i++) { //GBS: Fixed Here
+    if ( ( GMT[i] < 1e15 ) && ( (maximum - 1) < GMT[i] ) && 
          ( SEG[i] >= 0.0 ) && ( SEGI>1.2 && SEGI<=2.75 ) && 
          ( ( (RPM[i] - ND[i] * 1.2 ) <= WMD ) ) && 
          ( ( (RPM[i] - ND[i] * 0.5 ) >  WMD ) || ( SEG[i]<1.5 ) ) &&
-         ( ( ( (SEGI * MAX(1.0,min(1.2,SEGI-1)) ) >= SEG[i] ) ) || ( SEG[i]<1.5 ) ) ) 
+         ( ( ( (SEGI * MAX(1.0, MIN(1.2,SEGI-1)) ) >= SEG[i] ) ) || ( SEG[i]<1.5 ) ) ) 
       { maximum2 = maximum2 + GMT[i]; m2n++; } 
   }
-  if ( m2n > 0 )  maximum[0] = (maximum2 - maximum[0])/m2n;
+  if ( m2n > 0 )  maximum = (maximum2 - maximum)/m2n;
+  return maximum;
 
 }
 
 
 
-/* GBS: Already defined in cat_vol_eidist
 // estimate x,y,z position of index i in an array size sx,sxy=sx*sy...
-void ind2sub(int i, int *x, int *y, int *z, int snL, int sxy, int sy) {
+void ind2sub_pbtp(int i, int *x, int *y, int *z, int snL, int sxy, int sy) {
   
   *z = (int)floor( (double)i / (double)sxy ) ; 
    i = i % (sxy);
   *y = (int)floor( (double)i / (double)sy ) ;        
   *x = i % sy ;
 }
-*/
+
 
 // main function
 void vol_pbtp(float *GMT, float *RPM, float * SEG, float *WMD, float *CSFD, int *sL){
@@ -107,7 +111,6 @@ void vol_pbtp(float *GMT, float *RPM, float * SEG, float *WMD, float *CSFD, int 
   float       GMTN[14],WMDN[14],SEGN[14],DNm; // GBS: Changed from sN to 14 for compatibility with Visual Studio compiler
   
   int         ni,u,v,w,nu,nv,nw, WMC=0, CSFC=0;
-    
   
   /*if ( nrhs>1) {
 		tmpint   = (int)mxGetScalar(mxGetField(prhs[1],1,"CSFD"));  printf("X=%d", tmpint);	if ( tmpint!=NULL && (tmpint>=0 && tmpint<=1) ) opt.CSFD = tmpint;   else opt.CSFD 	= 1;
@@ -126,45 +129,43 @@ void vol_pbtp(float *GMT, float *RPM, float * SEG, float *WMD, float *CSFD, int 
     if ( SEG[i]>=opt.HB ) WMC++;
     if ( SEG[i]<=opt.LB ) CSFC++;
   }
-	if (WMC==0)  {printf("ERROR: no WM voxel\n"); exit(1);}
+	if (WMC==0)  {printf("ERROR: no WM voxel\n");}
 	if (CSFC==0) opt.CSFD = 0;
 
-  
   
 // thickness calcuation
 // =============================================================================
   for (int i=0;i<nL;i++) {
     if (SEG[i]>opt.LLB && SEG[i]<opt.HHB) {
-      ind2sub(i,&u,&v,&w,nL,xy,x);
-      
+      ind2sub_pbtp(i,&u,&v,&w,nL,xy,x);
       // read neighbor values
       for (int n=0;n<sN;n++) {
         ni = i + NI[n];
-        ind2sub(ni,&nu,&nv,&nw,nL,xy,x);
+        ind2sub_pbtp(ni,&nu,&nv,&nw,nL,xy,x);
         if ( (ni<0) || (ni>=nL) || (abs(nu-u)>1) || (abs(nv-v)>1) || (abs(nw-w)>1)) ni=i;
         GMTN[n] = GMT[ni]; WMDN[n] = RPM[ni]; SEGN[n] = SEG[ni];
       }
 
       // find minimum distance within the neighborhood
-      pmax(GMTN,WMDN,SEGN,ND,WMD[i],SEG[i],sN, &DNm);
+      DNm = pmax(GMTN,WMDN,SEGN,ND,WMD[i],SEG[i],sN);
       GMT[i] = DNm;
     }
   }
   
   for (int i=nL-1;i>=0;i--) {
     if (SEG[i]>opt.LLB && SEG[i]<opt.HHB) {
-      ind2sub(i,&u,&v,&w,nL,xy,x);
+      ind2sub_pbtp(i,&u,&v,&w,nL,xy,x);
       
       // read neighbor values
       for (int n=0;n<sN;n++) {
         ni = i - NI[n];
-        ind2sub(ni,&nu,&nv,&nw,nL,xy,x);
+        ind2sub_pbtp(ni,&nu,&nv,&nw,nL,xy,x);
         if ( (ni<0) || (ni>=nL) || (abs(nu-u)>1) || (abs(nv-v)>1) || (abs(nw-w)>1)) ni=i;
         GMTN[n] = GMT[ni]; WMDN[n] = RPM[ni]; SEGN[n] = SEG[ni];
       }
 
       // find minimum distance within the neighborhood
-      pmax(GMTN,WMDN,SEGN,ND,WMD[i],SEG[i],sN, &DNm);
+      DNm = pmax(GMTN,WMDN,SEGN,ND,WMD[i],SEG[i],sN);
       if ( GMT[i] < DNm && DNm>0 ) GMT[i] = DNm;
     }
   }
@@ -205,7 +206,6 @@ void vol_pbtp(float *GMT, float *RPM, float * SEG, float *WMD, float *CSFD, int 
 			}
 		} 
 	}
-  
 }
 
 

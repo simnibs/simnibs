@@ -153,6 +153,7 @@ def cat_vol_eidist(B, L, vx_vol=(1, 1, 1), csf=1, euclid=1, setnan=1, verb=0):
 
     '''
     assert B.shape == L.shape, 'Distance and Speed matrix must have the same size'
+
     cdef np.ndarray[float, ndim=3] B_ = np.array(B, np.float32, order='F')
     cdef np.ndarray[float, ndim=3] L_ = np.array(L, np.float32, order='F')
     cdef np.ndarray[int, ndim=1] sL_ = np.array(B.shape, np.int32)
@@ -165,7 +166,6 @@ def cat_vol_eidist(B, L, vx_vol=(1, 1, 1), csf=1, euclid=1, setnan=1, verb=0):
     cdef np.ndarray[float, ndim=3] D = np.zeros_like(B_, order='F')
     cdef np.ndarray[np.uint32_t, ndim=3] I = np.zeros_like(B_, dtype=np.uint32,
                                                            order='F')
-
 
     vol_eidist(&D[0, 0, 0], &I[0, 0, 0],
                &B_[0, 0 ,0], &L_[0, 0 ,0],
@@ -227,6 +227,7 @@ def cat_vol_localstat(V, M, nb=1, stat=1, verb=False):
 
     return np.ascontiguousarray(Out1), np.ascontiguousarray(Out2), np.ascontiguousarray(Out3)
 
+
 def cat_vol_pbtp(SEG, WMD, CSFD):
     ''' Interface to the the cat_vol_pbtp function
     Original code by Robert Dahnke, Center of Neuroimaging University Jena
@@ -261,18 +262,19 @@ def cat_vol_pbtp(SEG, WMD, CSFD):
     assert SEG.shape == WMD.shape
     assert SEG.shape == CSFD.shape
 
+
     cdef np.ndarray[float, ndim=3] SEG_ = np.array(SEG, np.float32, order='F')
     cdef np.ndarray[float, ndim=3] WMD_ = np.array(WMD, np.float32, order='F')
     cdef np.ndarray[float, ndim=3] CSFD_ = np.array(CSFD, np.float32, order='F')
     cdef np.ndarray[int, ndim=1] sL_ = np.array(SEG.shape, np.int32)
 
-    cdef np.ndarray[float, ndim=3] GMT = np.zeros_like(SEG_)
-    cdef np.ndarray[float, ndim=3] RPM = np.zeros_like(SEG_)
+    cdef np.ndarray[float, ndim=3] GMT = np.zeros_like(SEG_, order='F')
+    cdef np.ndarray[float, ndim=3] RPM = np.zeros_like(SEG_, order='F')
 
 
     vol_pbtp(&GMT[0, 0, 0], &RPM[0, 0, 0], &SEG_[0, 0, 0],
              &WMD_[0, 0, 0], &CSFD_[0, 0, 0], &sL_[0])
-
+    
     return np.ascontiguousarray(GMT), np.ascontiguousarray(RPM)
 
 
