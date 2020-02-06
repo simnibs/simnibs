@@ -8,13 +8,9 @@ class TestTemplates:
     def test_find(self):
         templates = file_finder.templates
         for k, fn in templates.__dict__.items():
-            if fn is None:
-                continue
-            else:
-                print(fn)
-                is_file = os.path.isfile(fn)
-                is_dir = os.path.isdir(fn)
-                assert is_file or is_dir
+            is_file = os.path.isfile(fn)
+            is_dir = os.path.isdir(fn)
+            assert is_file or is_dir
 
 @pytest.mark.parametrize('atlas_name', ['a2009s', 'DK40', 'HCP_MMP1'])
 @pytest.mark.parametrize('hemi', ['lh', 'rh', 'both'])

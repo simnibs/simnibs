@@ -32,67 +32,82 @@ class Templates:
 
     Attributes
     ------------
-    cat_templates_surfaces: str
-        Path to the directory with the CAT12 template surfaces (dir)
-    cat_atlases_surfaces: str
-        Path to the directory with the CAT12 atlases surfaces (dir)
-    cat_lh_cortex_ref: str
-        Path to the GifTi surface with the FsAverage lh cortex template (.gii)
-    cat_rh_cortex_ref: str
-        Path to the GifTi surface with the FsAverage lh cortex template (.gii)
-    cat_lh_sphere_ref: str
-        Path to the GifTi surface with the FsAverage lh sphere template (.gii)
-    cat_rh_sphere_ref: str
-        Path to the GifTi surface with the FsAverage lh sphere template (.gii)
+    templates_surfaces: str
+        Path to the directory with the template surfaces (dir)
+    atlases_surfaces: str
+        Path to the directory with the atlases surfaces (dir)
+    lh_central: str
+        Path to the GifTi surface with the FsAverage left central cortex template (.gii)
+    rh_central: str
+        Path to the GifTi surface with the FsAverage right central cortex template (.gii)
+    lh_sphere: str
+        Path to the GifTi surface with the FsAverage left cortical sphere template (.gii)
+    rh_sphere: str
+        Path to the GifTi surface with the FsAverage right cortical sphere template (.gii)
+    lh_inflated: str
+        Path to the GifTi surface with the FsAverage left inflated cortex template (.gii)
+    rh_inflated: str
+        Path to the GifTi surface with the FsAverage right inflated cortex template (.gii)
+
+    lc_central: str
+        Path to the GifTi surface with the FsAverage left central cerebellum template (.gii)
+    rc_cortex: str
+        Path to the GifTi surface with the FsAverage right central cerebellum template (.gii)
+    lc_sphere: str
+        Path to the GifTi surface with the FsAverage left cerebellum sphere template (.gii)
+    rc_sphere: str
+        Path to the GifTi surface with the FsAverage right cerebellum sphere template (.gii)
+
+    lh_mask: str
+        Path to the MASK file for the lh (.mask)
+    rh_mask: str
+        Path to the MASK file for the lh (.mask)
+  
     mni_volume: str
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
-    freesurfer_templates: str
-        Path to the folder with FreeSurfer templates (dir)
-    fs_lh_sphere_ref: str
-        Path to the fs surface file with the reference lh sphere (freesurfer surface)
-    fs_rh_sphere_ref: str
-        Path to the fs surface file with the reference rh sphere (freesurfer surface)
-    fs_lh_cortex_ref: str
-        Path to the fs surface file with the Fsavarage ls pial (freesurfer surface)
-    fs_rh_cortex_ref: str
-        Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
-        self._spm12 = os.path.join(self._resources, 'spm12')
-        # Cat 12 things
-        self.cat_templates_surfaces = os.path.join(
-            self._spm12, 'toolbox', 'cat12', 'templates_surfaces')
-        self.cat_atlases_surfaces = os.path.join(
-            self._spm12, 'toolbox', 'cat12', 'atlases_surfaces')
-        self.cat_lh_cortex_ref = os.path.join(
-            self.cat_templates_surfaces, 'lh.central.freesurfer.gii')
-        self.cat_rh_cortex_ref = os.path.join(
-            self.cat_templates_surfaces, 'rh.central.freesurfer.gii')
-        self.cat_lh_sphere_ref = os.path.join(
-            self.cat_templates_surfaces, 'lh.sphere.freesurfer.gii')
-        self.cat_rh_sphere_ref = os.path.join(
-            self.cat_templates_surfaces, 'rh.sphere.freesurfer.gii')
+        # Surfaces
+        self.templates_surfaces = os.path.join(
+            self._resources, 'templates', 'fsaverage_surf')
+
+        self.atlases_surfaces = os.path.join(
+            self._resources, 'templates', 'fsaverage_atlases')
+
+        self.lh_central = os.path.join(
+            self.templates_surfaces, 'lh.central.freesurfer.gii')
+        self.rh_central = os.path.join(
+            self.templates_surfaces, 'rh.central.freesurfer.gii')
+
+        self.lh_sphere = os.path.join(
+            self.templates_surfaces, 'lh.sphere.freesurfer.gii')
+        self.rh_sphere = os.path.join(
+            self.templates_surfaces, 'rh.sphere.freesurfer.gii')
+
+        self.lh_inflated = os.path.join(
+            self.templates_surfaces, 'lh.inflated.freesurfer.gii')
+        self.rh_inflated = os.path.join(
+            self.templates_surfaces, 'rh.inflated.freesurfer.gii')
+
+        self.lh_mask = os.path.join(
+            self.templates_surfaces, 'lh.mask')
+        self.rh_mask = os.path.join(
+            self.templates_surfaces, 'rh.mask')
+
+        self.lc_sphere = os.path.join(
+            self.templates_surfaces, 'lc.sphere.freesurfer.gii')
+        self.rc_sphere = os.path.join(
+            self.templates_surfaces, 'rc.sphere.freesurfer.gii')
+
+        self.lc_central = os.path.join(
+            self.templates_surfaces, 'lc.central.freesurfer.gii')
+        self.rc_central = os.path.join(
+            self.templates_surfaces, 'rc.central.freesurfer.gii')
+
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
-        # FreeSurfer
-        try:
-            os.environ['FREESURFER_HOME']
-        except KeyError:
-            self.freesurfer_templates = None
-            self.fs_lh_sphere_ref = None
-            self.fs_rh_sphere_ref = None
-            self.fs_lh_cortex_ref = None
-            self.fs_rh_cortex_ref = None
-        else:
-            self.freesurfer_templates = os.path.join(
-                os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'surf')
-            self.fs_lh_sphere_ref = os.path.join(self.freesurfer_templates, 'lh.sphere.reg')
-            self.fs_rh_sphere_ref = os.path.join(self.freesurfer_templates, 'rh.sphere.reg')
-
-            self.fs_lh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
-            self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'rh.pial')
 
 
 templates = Templates()
@@ -136,7 +151,7 @@ def get_atlas(atlas_name, hemi='both'):
     # If only one hemisphere
     if hemi in ['lh', 'rh']:
         fn_atlas = os.path.join(
-            templates.cat_atlases_surfaces,
+            templates.atlases_surfaces,
             f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
         )
         labels, _ , names = nibabel.freesurfer.io.read_annot(fn_atlas)
