@@ -86,7 +86,7 @@ def main():
     for hemi in ['lh', 'rh']:
         # I have a parallel implementation here
         fn_atlas = os.path.join(
-            file_finder.templates.cat_atlases_surfaces,
+            file_finder.templates.atlases_surfaces,
             f'{hemi}.aparc_{args.atlas}.freesurfer.annot'
         )
         labels, colors, names = nibabel.freesurfer.io.read_annot(fn_atlas)
@@ -96,10 +96,10 @@ def main():
             read_fun = read_freesurfer_surface
 
         if hemi == 'lh':
-            ref_surf = read_gifti_surface(file_finder.templates.cat_lh_sphere_ref)
+            ref_surf = read_gifti_surface(file_finder.templates.lh_sphere)
             sub_surf = read_fun(subject_files.lh_reg)
         if hemi == 'rh':
-            ref_surf = read_gifti_surface(file_finder.templates.cat_rh_sphere_ref)
+            ref_surf = read_gifti_surface(file_finder.templates.rh_sphere)
             sub_surf = read_fun(subject_files.rh_reg)
 
         labels_sub, _ = transformations._surf2surf(labels, ref_surf, sub_surf)

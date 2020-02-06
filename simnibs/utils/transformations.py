@@ -1375,11 +1375,11 @@ def get_surface_names_from_folder_structure(m2m_folder):
         names['rh_midgm'] = look_up(sub_files.rh_midgm)
         names['lh_reg'] = look_up(sub_files.lh_reg)
         names['rh_reg'] = look_up(sub_files.rh_reg)
-        names['lh_sphere_ref'] = look_up(templates.cat_lh_sphere_ref)
-        names['rh_sphere_ref'] = look_up(templates.cat_rh_sphere_ref)
+        names['lh_sphere_ref'] = look_up(templates.lh_sphere)
+        names['rh_sphere_ref'] = look_up(templates.rh_sphere)
         names['ref_fs'] = look_up(sub_files.ref_fs)
-        names['lh_cortex_ref'] = look_up(templates.cat_lh_cortex_ref)
-        names['rh_cortex_ref'] = look_up(templates.cat_rh_cortex_ref)
+        names['lh_cortex_ref'] = look_up(templates.lh_central)
+        names['rh_cortex_ref'] = look_up(templates.rh_central)
 
     elif sub_files.seg_type == 'mri2mesh':
         names['subj_id'] = sub_files.subid
@@ -1667,7 +1667,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
 
     if hemi in ['lh', 'rh']:
         fn_atlas = os.path.join(
-            templates.cat_atlases_surfaces,
+            templates.atlases_surfaces,
             f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
         )
         labels, _ , names = nib.freesurfer.io.read_annot(fn_atlas)
@@ -1679,13 +1679,13 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
         if hemi == 'lh':
             labels_sub, _ = _surf2surf(
                 labels,
-                read_gifti_surface(templates.cat_lh_sphere_ref),
+                read_gifti_surface(templates.lh_sphere),
                 read_fun(subject_files.lh_reg)
                 ) 
         if hemi == 'rh':
             labels_sub, _ = _surf2surf(
                 labels,
-                read_gifti_surface(templates.cat_rh_sphere_ref),
+                read_gifti_surface(templates.rh_sphere),
                 read_fun(subject_files.rh_reg)
                 ) 
         atlas = {}
