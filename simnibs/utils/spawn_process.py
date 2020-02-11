@@ -2,16 +2,15 @@ import sys
 from threading import Thread
 from multiprocessing import Process
 from queue import Queue
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, CalledProcessError
 
 import logging
 
 
 from .simnibs_logger import logger
 
-def spawn_process(cmd, new_thread=False,
-                  lvl=logging.INFO, shell=False,
-                  new_process=False):
+def spawn_process(cmd, new_thread=False, lvl=logging.INFO, shell=False,
+                  new_process=False, check=True):
     """Spawn a new process and communicate its output.
     
     PARAMETERS
@@ -29,6 +28,9 @@ def spawn_process(cmd, new_thread=False,
         Whether to use shell mode. Default: False (forced to be True on Windows)
     new_process: bool, optional
         Starts command in a new process. Default: False
+    ckeck: bool, optional
+        If new_thread=False and new_thread=False, checks the output and raises an error
+        if the reurncode is not 0. Default: True
     RETURNS
     ----------
     exit_status : int
@@ -76,5 +78,11 @@ def spawn_process(cmd, new_thread=False,
 
             logger.log(lvl, line)
 
-        return p.wait()
+        p.wait()
+        if check and p.returncode != 0:
+            raise CalledProcessError(
+                p.returncode, cmd
+            )
+
+        return p.returncode
 

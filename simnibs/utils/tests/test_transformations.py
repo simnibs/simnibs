@@ -550,7 +550,7 @@ class TestResample:
         affine = np.eye(4)
         target_res = 0.5
 
-        resampled, new_affine = transformations.resample_vol(
+        resampled, new_affine, orig_res = transformations.resample_vol(
             vol, affine, target_res, order=0
         )
         # OPEN SEPARATELY
@@ -559,6 +559,7 @@ class TestResample:
         #nib.save(vol_nii, 'in.nii.gz')
         #resampled_nii = nib.Nifti1Image(resampled, new_affine)
         #nib.save(resampled_nii, 'out.nii.gz')
+        assert np.allclose(orig_res, 1.)
         assert np.all(resampled.shape == (100, 100, 100))
         for i in range(2):
             for j in range(2):
@@ -576,11 +577,12 @@ class TestResample:
         affine = np.eye(4)
         target_res = 0.5
 
-        resampled, new_affine = transformations.resample_vol(
+        resampled, new_affine, orig_res = transformations.resample_vol(
             vol, affine, target_res, order=1
         )
         #nib.save(nib.Nifti1Image(vol, affine), 'in.nii.gz')
         #nib.save(nib.Nifti1Image(resampled, new_affine), 'out.nii.gz')
+        assert np.allclose(orig_res, 1.)
         assert np.allclose(resampled.shape, (100, 100, 100))
         assert np.allclose(
             resampled[1:-1],
@@ -601,10 +603,11 @@ class TestResample:
              [0, 0, 1]])
         target_res = np.array([1, 1, 1])
 
-        resampled, new_affine = transformations.resample_vol(
+        resampled, new_affine, orig_res = transformations.resample_vol(
             vol, affine, target_res
         )
 
+        assert np.allclose(orig_res, [2, 4, 1])
         assert np.allclose(resampled.shape, (80, 80, 80))
         assert np.allclose(
             resampled[:, 2:-2, :],
@@ -619,11 +622,12 @@ class TestResample:
         affine = np.eye(4)
         target_res = 2
 
-        resampled, new_affine = transformations.resample_vol(
+        resampled, new_affine, orig_res = transformations.resample_vol(
             vol, affine, target_res, order=1
         )
         #nib.save(nib.Nifti1Image(vol, affine), 'in.nii.gz')
         #nib.save(nib.Nifti1Image(resampled, new_affine), 'out.nii.gz')
+        assert np.allclose(orig_res, [1, 1, 1])
         assert np.allclose(resampled.shape, (25, 25, 25))
         assert np.allclose(
             resampled,

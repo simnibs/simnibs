@@ -1326,6 +1326,9 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
 
     new_affine: 4x4 np.ndarray
         Affine tranformation from the resampled volume to world space
+
+    original_res: 3x1 ndarray
+        Resolution of the ORIGINAL image (before resampling)
     '''
     target_res = np.squeeze(target_res)
     if target_res.ndim == 0:
@@ -1353,7 +1356,7 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
         order=order,
         mode=mode
     )
-    return resampled, new_affine
+    return resampled, new_affine, original_res
 
 def get_surface_names_from_folder_structure(m2m_folder):
     # Subject name

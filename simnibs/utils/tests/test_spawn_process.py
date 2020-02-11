@@ -1,4 +1,7 @@
 import sys
+import subprocess
+
+import pytest
 
 from simnibs.utils.spawn_process import spawn_process
 
@@ -8,5 +11,9 @@ def test_spawn_process_0():
     assert ret == 0
 
 def test_spawn_process_1():
-    ret = spawn_process(f'{sys.executable} yeeeeet')
-    assert ret != 1
+    with pytest.raises(subprocess.CalledProcessError):
+        ret = spawn_process(f'{sys.executable} yeeeeet')
+
+def test_spawn_process_2():
+    ret = spawn_process(f'{sys.executable} yeeeeet', check=False)
+    assert ret != 0
