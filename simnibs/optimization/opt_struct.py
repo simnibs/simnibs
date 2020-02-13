@@ -142,7 +142,7 @@ class TMSoptimize():
         return self.__class__.__name__
 
     def _set_logger(self):
-        SESSION._set_logger(self)
+        SESSION._set_logger(self, summary=False)
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
@@ -363,7 +363,8 @@ class TMSoptimize():
         v.add_view(
             CustomMax=1, CustomMin=1,
             VectorType=4, CenterGlyphs=0,
-            Visible=1)
+            Visible=1, ColormapNumber=0
+        )
         v.write_opt(fn_target)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_target, True)
@@ -464,7 +465,7 @@ class TMSoptimize():
         string += 'Coil distance: %s\n' % self.distance
         string += 'Search radius: %s\n' % self.search_radius
         string += 'Spatial resolution: %s\n' % self.spatial_resolution
-        string += 'Seach angle: %s\n' % self.search_angle
+        string += 'Search angle: %s\n' % self.search_angle
         string += 'Angle resolution: %s' % self.angle_resolution
         return string
 
@@ -542,7 +543,7 @@ class TDCSoptimize():
                  max_total_current=2e-3,
                  max_individual_current=1e-3,
                  max_active_electrodes=None,
-                 name='',
+                 name='optimization/tdcs',
                  target=None,
                  avoid=None,
                  open_in_gmsh=True):
@@ -860,7 +861,9 @@ class TDCSoptimize():
             max_el_current=self.max_individual_current,
             max_active_electrodes=self.max_active_electrodes,
             max_angle=max_angle,
-            Qin=Q_target)
+            Qin=Q_target,
+            log_level=10
+        )
 
         logger.log(25, '\n' + self.summary(currents))
 
@@ -868,13 +871,22 @@ class TDCSoptimize():
             fn_out_mesh = os.path.abspath(fn_out_mesh)
             m = self.field_mesh(currents)
             m.write(fn_out_mesh)
-            v = m.view(visible_fields=list(m.field.values())[0].field_name)
-            v.Mesh.SurfaceFaces = 1
+            v = m.view()
+            ## Configure view
+            v.Mesh.SurfaceFaces = 0
+            v.View[0].Visible = 1
+            # Change vector type for target field
+            for i, t in enumerate(self.target):
+                v.View[2 + i].VectorType = 4
+                v.View[2 + i].ArrowSizeMax = 60
+                v.View[2 + i].Visible = 1
+            # Electrode geo file
             el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
             self.electrode_geo(el_geo_fn, currents)
             v.add_merge(el_geo_fn)
             max_c = np.max(np.abs(currents))
-            v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1,
+            v.add_view(Visible=1, RangeType=2,
+                       ColorTable=gmsh_view._coolwarm_cm(),
                        CustomMax=max_c, CustomMin=-max_c)
             v.write_opt(fn_out_mesh)
             if self.open_in_gmsh:
@@ -1044,11 +1056,12 @@ class TDCSoptimize():
         weight_fields = [t.as_field('avoid_{0}'.format(i+1)) for i, t in
                          enumerate(self.avoid)]
         e_field = self.field(currents)
+        e_norm_field = e_field.norm()
         m = copy.deepcopy(self.mesh)
         if self.lf_type == 'node':
-            m.nodedata = [e_field] + target_fields + weight_fields
+            m.nodedata = [e_norm_field, e_field] + target_fields + weight_fields
         elif self.lf_type == 'element':
-            m.elmdata = [e_field] + target_fields + weight_fields
+            m.elmdata = [e_norm_field, e_field] + target_fields + weight_fields
         return m
 
 
@@ -1074,7 +1087,7 @@ class TDCSoptimize():
                 raise ValueError('Please define the electrode names')
 
         assert len(electrode_names) == len(currents)
-        with open(fn_csv, 'w') as f:
+        with open(fn_csv, 'w', newline='') as f:
             writer = csv.writer(f)
             for n, c in zip(electrode_names, currents):
                 writer.writerow([n, c])
@@ -1098,7 +1111,8 @@ class TDCSoptimize():
                 name = 'optimization'
         else:
             name = self.name
-
+        out_folder = os.path.dirname(name)
+        os.makedirs(out_folder, exist_ok=True)
 
         # Set-up logger
         fh = logging.FileHandler(name + '.log', mode='w')
@@ -1215,9 +1229,10 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimied for each mesh point
+        List of Electric field directions to be optimied for each mesh point or the
+        string 'normal', Default: 'normal'
     intensity: float (optional)
-        Target intensity of the electric field component in V/m. Default: 0.3
+        Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
         Maximum angle between electric field and target direction, in degrees. Default:
         No maximum
@@ -1234,17 +1249,10 @@ class TDCStarget:
     lf_type: 'node' or 'element'
         Where the electric field values are defined
 
-    Warning
-    -----------
-    Changing positions or directions after constructing the class
-    can cause unexpected behaviour
     '''
     def __init__(self, positions=None, indexes=None, directions='normal',
                  intensity=0.2, max_angle=None, radius=2, tissues=None,
                  mesh=None, lf_type=None):
-        # Private attributes
-        self._directions = None
-        # Public attributes
         self.lf_type = lf_type
         self.mesh = mesh
         self.radius = radius
@@ -1254,35 +1262,6 @@ class TDCStarget:
         self.directions = directions
         self.intensity = intensity
         self.max_angle = max_angle
-
-    @property
-    def directions(self):
-        if self._directions is 'normal' and self.mesh is not None:
-            if 4 in np.unique(self.mesh.elm.elm_type):
-                raise ValueError("Can't define a normal direction for volumetric data!")
-            if self.lf_type == 'node':
-                normals = self.mesh.nodes_normals()[self.indexes]
-            elif self.lf_type == 'element':
-                normals = self.mesh.triangle_normals()[self.indexes]
-            else:
-                raise ValueError(
-                    "Invalid lf_type: {0} valid types are 'node' and 'element'".format(self.lf_type))
-            self.directions = normals
-
-        return self._directions
-
-    @directions.setter
-    def directions(self, directions):
-        if isinstance(directions, str) and directions == 'normal':
-            self._directions = 'normal'
-        elif directions is None:
-            self._directions = None
-        else:
-            directions = np.atleast_2d(np.array(directions, dtype=float))
-            if directions.shape[1] != 3:
-                directions = directions.T
-            directions /= np.linalg.norm(directions, axis=1)[:, None]
-            self._directions = directions
 
 
     @classmethod
@@ -1358,10 +1337,6 @@ class TDCStarget:
         assert self.mesh is not None, 'Please set a mesh'
         assert self.lf_type is not None, 'Please set a lf_type'
 
-        assert self.directions.ndim == 2, 'directions should be 2-dimensional'
-        assert self.directions.shape[1] == 3,\
-                "directions should be either 'normal' or a Nx3 array"
-
         if self.lf_type == 'node':
             weights = self.mesh.nodes_volumes_or_areas().value
         elif self.lf_type == 'element':
@@ -1378,15 +1353,9 @@ class TDCStarget:
                                          tissues=self.tissues,
                                          radius=self.radius)
 
-        if self.directions.shape[0] == 1:
-            directions = np.tile(self.directions, (len(indexes), 1))
-        elif self.directions.shape[0] == len(indexes):
-            directions = self.directions
-        else:
-            raise ValueError("Please set directions to 'normal', "
-                             "one vector per index, or just one vector")
-
-        directions = directions[mapping]
+        directions = _find_directions(self.mesh, self.lf_type,
+                                      self.directions, indexes,
+                                      mapping)
 
         return optimization_methods.target_matrices(
             leadfield, indexes - 1, directions, weights)
@@ -1423,7 +1392,10 @@ class TDCStarget:
                                          indexes=self.indexes,
                                          tissues=self.tissues,
                                          radius=self.radius)
-        directions = self.directions[mapping]
+
+        directions = _find_directions(self.mesh, self.lf_type,
+                                      self.directions, indexes,
+                                      mapping)
 
         field[indexes-1] = directions * self.intensity
 
@@ -1448,13 +1420,16 @@ class TDCStarget:
         assert self.mesh is not None, 'Please set a mesh'
         assert field.nr_comp == 3, 'Field must have 3 components'
 
-        indexes = np.atleast_1d(np.array(self.indexes, dtype=int))
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
                                          indexes=self.indexes,
                                          tissues=self.tissues,
                                          radius=self.radius)
-        directions = self.directions[mapping]
+
+        directions = _find_directions(self.mesh, self.lf_type,
+                                      self.directions, indexes,
+                                      mapping)
+
         f = field[indexes]
         components = np.sum(f * directions, axis=1)
 
@@ -1488,13 +1463,15 @@ class TDCStarget:
         assert self.mesh is not None, 'Please set a mesh'
         assert field.nr_comp == 3, 'Field must have 3 components'
 
-        indexes = np.atleast_1d(np.array(self.indexes, dtype=int))
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
                                          indexes=self.indexes,
                                          tissues=self.tissues,
                                          radius=self.radius)
-        directions = self.directions[mapping]
+
+        directions = _find_directions(self.mesh, self.lf_type,
+                                      self.directions, indexes,
+                                      mapping)
         if self.intensity < 0:
             directions *= -1
         f = field[indexes]
@@ -1782,7 +1759,6 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
     if (positions is not None) == (indexes is not None): # negative XOR operation
         raise ValueError('Please define either positions or indexes')
 
-
     if indexes is not None:
         indexes = np.atleast_1d(indexes)
         return indexes, np.arange(len(indexes))
@@ -1818,3 +1794,31 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         return mesh_indexes[in_radius], original[uq_idx]
     else:
         return mesh_indexes[indexes],  np.arange(len(indexes))
+
+def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
+    if directions == 'normal':
+        if 4 in np.unique(mesh.elm.elm_type):
+            raise ValueError("Can't define a normal direction for volumetric data!")
+        if lf_type == 'node':
+            directions = -mesh.nodes_normals()[indexes]
+        elif lf_type == 'element':
+            directions = -mesh.triangle_normals()[indexes]
+        return directions
+    else:
+        directions = np.atleast_2d(directions)
+        if directions.shape[1] != 3:
+            raise ValueError(
+                "directions must be the string 'normal' or a Nx3 array"
+            )
+        if mapping is None:
+            if len(directions) == len(indexes):
+                mapping = np.arange(len(indexes))
+            else:
+                raise ValueError('Different number of indexes and directions and no '
+                                 'mapping defined')
+        elif len(directions) == 1:
+            mapping = np.zeros(len(indexes), dtype=int)
+
+        directions = directions/np.linalg.norm(directions, axis=1)[:, None]
+        return directions[mapping]
+

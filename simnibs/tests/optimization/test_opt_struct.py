@@ -180,24 +180,53 @@ class TestFindIndexes:
         assert np.all(np.sort(mapping) == np.sort(mp))
 
 
+class TestFindDirections:
+
+    @pytest.mark.parametrize('idx', [np.array([1]), np.array([1, 2])])
+    @pytest.mark.parametrize('lf_type', ['node', 'element'])
+    def test_find_directions_normal(self, idx, lf_type, sphere_surf):
+        directions = opt_struct._find_directions(
+            sphere_surf, lf_type, 'normal', idx
+        )
+        if lf_type == 'node':
+            normals = sphere_surf.nodes_normals()[idx]
+        elif lf_type == 'element':
+            normals = sphere_surf.triangle_normals()[idx]
+        assert np.allclose(directions, -normals)
+
+
+    def test_find_directions_defined_1d(self):
+        directions = opt_struct._find_directions(
+            None, None, [1, 0, 0], [1]
+        )
+        assert directions.shape == (1, 3)
+        assert np.allclose(directions, [[1, 0, 0]])
+
+    def test_find_directions_defined_2d(self):
+        directions = opt_struct._find_directions(
+            None, None, [[1, 0, 0], [0, 1, 0]], [1, 2]
+        )
+        assert directions.shape == (2, 3)
+        assert np.allclose(directions, [[1, 0, 0], [0, 1, 0]])
+
+    def test_find_directions_defined_1_to_2(self):
+        directions = opt_struct._find_directions(
+            None, None, [1, 0, 0], [1, 2], [1, 2]
+        )
+        assert directions.shape == (2, 3)
+        assert np.allclose(directions, [[1, 0, 0], [1, 0, 0]])
+
+
+    def test_find_directions_defined_map(self):
+        directions = opt_struct._find_directions(
+            None, None, [[1, 0, 0], [0, 1, 0]], [1, 2, 3, 4], [0, 0, 1, 1]
+        )
+        assert directions.shape == (4, 3)
+        assert np.allclose(directions, [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0]])
+
+
 
 class TestTDCSTarget:
-    @pytest.mark.parametrize('idx',
-                             [np.array([1]), np.array([1, 2])])
-    def test_calc_normals_node(self, idx, sphere_surf):
-        t = opt_struct.TDCStarget(
-            indexes=idx, mesh=sphere_surf, lf_type='node', radius=0)
-        normals = sphere_surf.nodes_normals()[idx]
-        assert np.all(np.isclose(t.directions, normals))
-
-    @pytest.mark.parametrize('idx',
-                             [np.array([1]), np.array([1, 2])])
-    def test_calc_normals_elements(self, idx, sphere_surf):
-        t = opt_struct.TDCStarget(
-            indexes=idx, mesh=sphere_surf, lf_type='element', radius=0)
-        normals = sphere_surf.triangle_normals()[idx]
-        assert np.all(np.isclose(t.directions, normals))
-
     def test_create_mat_struct(self):
         targets = [opt_struct.TDCStarget(indexes=1, directions=[0, 1, 0], radius=5),
                    opt_struct.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30,
@@ -250,11 +279,6 @@ class TestTDCSTarget:
         assert t.intensity == .3
         assert t.max_angle == 30
 
-
-    def test_calc_indexes_vol(self, sphere_vol):
-        t = opt_struct.TDCStarget(indexes=[1], mesh=sphere_vol, lf_type='node')
-        with pytest.raises(ValueError):
-            t.directions
 
     def test_calc_target_matrices(self, sphere_surf, leadfield_surf):
         idx = [1]

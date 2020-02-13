@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>TMS Optimization &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <title>TMS Optimization &#8212; SimNIBS 3.1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -57,7 +57,7 @@ coil at various angles.</p>
 <h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Permalink to this headline">¶</a></h2>
 <p>Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
 settings, you need to select the head model, the coil being used and the target position.
-The target position are needed as <a class="reference internal" href="../../documentation/coordinates.html#coords-doc"><span class="std std-ref">SimNIBS coordinates</span></a> and can be
+The target position has to be given in <a class="reference internal" href="../../documentation/coordinates.html#coords-doc"><span class="std std-ref">SimNIBS coordinates</span></a> and can be
 determined using the <em>nifti</em> volumes produced by <a class="reference internal" href="../../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>, <a class="reference internal" href="../../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> or by using the <a class="reference internal" href="../../documentation/command_line/mni2subject_coords.html#mni2subject-coords-docs"><span class="std std-ref">mni2subject_coords</span></a> command line tool.</p>
 <p>For accelerating the simulations, SimNIBS can use the MKL Pardiso direct solver. However, this
 solver uses approximately three times more memory than the standard solver.</p>
@@ -192,14 +192,18 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 </div>
 </div>
-<div class="section" id="acknolowedgements">
-<h2>Acknolowedgements<a class="headerlink" href="#acknolowedgements" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
 <p>We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
 functionality</p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
 <p>Please see <a class="reference internal" href="../../documentation/opt_struct/tmsoptimize.html#tmsoptimize-doc"><span class="std std-ref">TMSoptimize</span></a> for a detail description of all TMS optimization options</p>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://doi.org/10.1101/595603">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603.</a></p>
 </div>
 </div>
 
@@ -249,12 +253,13 @@ functionality</p>
 <li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TES Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>

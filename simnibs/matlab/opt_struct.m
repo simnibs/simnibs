@@ -26,7 +26,7 @@ function S = sim_struct(type)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-validtypes={'TMSoptimize'};
+validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -36,7 +36,6 @@ end
 S.type=type;
 
 switch S.type
- 
     case 'TMSoptimize'
        S.fnamehead=''; % same as ${subID}.msh created by mri2mesh or headreco
        S.subpath = ''; % path to the 'm2m_{subID}' folder created by mri2mesh or headreco (OPTIONAL, filled from fnamehead)
@@ -61,5 +60,31 @@ switch S.type
        S.open_in_gmsh = true; % Wether to open simulation result in Gmsh
        S.solver_options = ''; % FEM solver options
 
+    case 'TDCSoptimize'
+        S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
+        S.name = 'optimization/tdcs'; % Name for the output files
+        S.max_total_current = 2e-3; % Maximum total current injected (in mA), optional
+        S.max_individual_current = 1e-3; % Maximum current injected per electrode (in mA)
+        S.max_active_electrodes = []; % Maximum number of active electrodes in solution, leave empty to unconstrained.
+        S.open_in_gmsh = true; % Wether to open output in Gmsh
+        S.target = opt_struct('TDCStarget'); % optimization target
+        S.avoid = opt_struct('TDCSavoid'); % OPTIONAL: Regions to more strongly avoid
 
+    case 'TDCStarget'
+        S.positions = []; % Target positions, in subject space
+        S.intensity = 0.2; % Electric field to be reached in target (V/m)
+        S.directions = 'normal'; % Electric field direction in target. Cam be either a vector or the string 'normal'
+        S.radius = 2; % Radius of target region, in mm
+        S.max_angle = []; % Maximum angle between electric field and target direction
+        S.indexes = []; % OPTIONAL: Nodes/element indexes of target, overwires "positions"
+        S.tissues = []; % OPTINAL: Tissues where the target is defined
+        
+    case 'TDCSavoid'
+        S.positions = []; % Positions to avoid in subject space
+        S.weight = 1e3; % Weight for the region. The larger the more it will be avoided
+        S.radius = 2; % Radius of avoid region, in mm
+        S.indexes = []; % OPTIONAL: Nodes/element indexes of the region, overwires "positions"
+        S.tissues = []; % OPTINAL: Tissues where the region is defined
+        
 end
+

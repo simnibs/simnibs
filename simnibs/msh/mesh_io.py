@@ -1775,19 +1775,22 @@ class Msh:
         matsimnibs[3, 3] = 1
         return matsimnibs
 
-    def elm2node_matrix(self, th_indices=None):
+    def elm2node_matrix(self, elm_indices=None):
         ''' Calculates a sparse matrix to tranform from ElementData to NodeData
-        Uses Superconvergent patch recovery for volumetric data. Will not work well for discontinuous fields (like E, if
-        several tissues are used)
+        Uses Superconvergent patch recovery for volumetric data. Will not work well for
+        discontinuous fields (like E, if several tissues are used)
 
         Returns
         ---------
         M: scipy.sparse.csc
             Sparse matrix, where M.dot(elm_data) = node_data, elm_data is a vector with
-            element data, and node_data is a vector with node data.
-        th_indices: np.ndarray (optional)
-            Indices of the tetrahedra to be considered in the volume. Default: use all
-            tetrahedra
+            element data, and node_data is a vector with node data. Interpolation is done
+            different for tetrahedra, tetrahedra outside faces, and triangles without an
+            associated tetrahedron
+
+        elm_indices: np.ndarray (optional)
+            Indices of the elements to be considered for interpolation. Default: use all
+            elements
 
         References
         -----------
@@ -1797,95 +1800,142 @@ class Msh:
             Numerical Methods in Engineering 33.7 (1992): 1331-1364.
 
         '''
-        if th_indices is not None:
-            th_indices = np.intersect1d(self.elm.tetrahedra, th_indices)
-        else:
+        if elm_indices is None:
+            tr_indices = self.elm.triangles
             th_indices = self.elm.tetrahedra
-
-        if len(th_indices) == 0:
-            raise ValueError("Can only create elm2node matrices for tetrahedral meshes")
+        else:
+            tr_indices = np.intersect1d(self.elm.triangles, elm_indices)
+            th_indices = np.intersect1d(self.elm.tetrahedra, elm_indices)
 
         # Get the point in the outside surface
-        points_outside = np.unique(self.elm.get_outside_faces(th_indices))
-        outside_points_mask = np.in1d(
-            self.elm[th_indices], points_outside).reshape(-1, 4)
+        if len(th_indices) > 0:
+            points_outside = np.unique(self.elm.get_outside_faces(th_indices))
+        else:
+            points_outside = np.empty(0, dtype=int)
+
+        # Get all points which are only in surfaces
+        nodes_in_tr = np.unique(self.elm[tr_indices, :3])
+        nodes_in_th = np.unique(self.elm[th_indices])
+        only_in_surf = np.setdiff1d(nodes_in_tr, nodes_in_th, assume_unique=True)
+
         # Get indices starting at zero
         points_outside = points_outside - 1
-        th_nodes = self.elm[th_indices] - 1
-        # This will map all points outside to the first position
-        masked_th_nodes = np.copy(th_nodes)
-        masked_th_nodes[outside_points_mask] = -1
-        masked_th_nodes += 1
+        only_in_surf = only_in_surf - 1
 
-        # Calculates the quantities needed for the superconvergent patch recovery
-        baricenters = self.elements_baricenters()[th_indices]
-        volumes = self.elements_volumes_and_areas()[th_indices]
-        baricenters = np.hstack(
-            [np.ones((baricenters.shape[0], 1)), baricenters])
+        # set-up the volumetric interpolation
+        if len(th_indices) > 0:
+            M = scipy.sparse.csr_matrix((self.nodes.nr + 1, self.elm.nr))
+            th_nodes = self.elm[th_indices] - 1
+            outside_points_mask = np.in1d(th_nodes, points_outside).reshape(-1, 4)
+            # This will map all points outside to the first position
+            masked_th_nodes = np.copy(th_nodes)
+            masked_th_nodes[outside_points_mask] = -1
+            masked_th_nodes += 1
 
-        # NOTICE: Bellow, I will add everything in the outer nodes to the
-        # first row. I will remove it afterwards
-        A = np.zeros((self.nodes.nr + 1, 4, 4))
-        for i in range(4):
-            for j in range(i, 4):
-                A[:, i, j] = np.bincount(
-                    masked_th_nodes.reshape(-1),
-                    np.repeat(baricenters[:, i], 4) *
-                    np.repeat(baricenters[:, j], 4),
-                    minlength=self.nodes.nr + 1)
+            # Calculates the quantities needed for the superconvergent patch recovery
+            baricenters = self.elements_baricenters()[th_indices]
+            volumes = self.elements_volumes_and_areas()[th_indices]
+            baricenters = np.hstack(
+                [np.ones((baricenters.shape[0], 1)), baricenters])
 
-        # This here only ensures we can invert
-        outside = np.isclose(A[:, 0, 0], 0)
-        for i in range(4):
-            A[outside, i, i] = 1
+            # NOTICE: Below, I will add everything in the outer nodes to the
+            # first row. I will remove it afterwards
+            A = np.zeros((self.nodes.nr + 1, 4, 4))
+            for i in range(4):
+                for j in range(i, 4):
+                    A[:, i, j] = np.bincount(
+                        masked_th_nodes.reshape(-1),
+                        np.repeat(baricenters[:, i], 4) *
+                        np.repeat(baricenters[:, j], 4),
+                        minlength=self.nodes.nr + 1)
 
-        A[:, 1, 0] = A[:, 0, 1]
-        A[:, 2, 0] = A[:, 0, 2]
-        A[:, 3, 0] = A[:, 0, 3]
-        A[:, 2, 1] = A[:, 1, 2]
-        A[:, 3, 1] = A[:, 1, 3]
-        A[:, 3, 2] = A[:, 2, 3]
+            # This here only ensures we can invert
+            outside = np.isclose(A[:, 0, 0], 0)
+            for i in range(4):
+                A[outside, i, i] = 1
 
-        Ainv = np.linalg.inv(A)
+            A[:, 1, 0] = A[:, 0, 1]
+            A[:, 2, 0] = A[:, 0, 2]
+            A[:, 3, 0] = A[:, 0, 3]
+            A[:, 2, 1] = A[:, 1, 2]
+            A[:, 3, 1] = A[:, 1, 3]
+            A[:, 3, 2] = A[:, 2, 3]
 
-        M = scipy.sparse.csr_matrix((self.nodes.nr + 1, self.elm.nr))
-        node_pos = np.hstack(
-            [np.ones((self.nodes.nr, 1)), self.nodes.node_coord])
-        # Added a dummy to the first position
-        node_pos = np.vstack([np.ones((1, 4)), node_pos])
-        for i in range(4):
-            M += scipy.sparse.csr_matrix(
-                (np.einsum(
-                    'bi, bij, bj -> b',
-                    node_pos[masked_th_nodes[:, i]],
-                    Ainv[masked_th_nodes[:, i]],
-                    baricenters),
-                 (masked_th_nodes[:, i], th_indices - 1)),
-                shape=M.shape)
+            Ainv = np.linalg.inv(A)
 
-        # Assigns the average value to the points in the outside surface
-        masked_th_nodes = np.copy(th_nodes)
-        masked_th_nodes[~outside_points_mask] = -1
-        masked_th_nodes += 1
+            node_pos = np.hstack(
+                [np.ones((self.nodes.nr, 1)), self.nodes.node_coord])
+            # Added a dummy to the first position
+            node_pos = np.vstack([np.ones((1, 4)), node_pos])
+            for i in range(4):
+                M += scipy.sparse.csr_matrix(
+                    (np.einsum(
+                        'bi, bij, bj -> b',
+                        node_pos[masked_th_nodes[:, i]],
+                        Ainv[masked_th_nodes[:, i]],
+                        baricenters),
+                     (masked_th_nodes[:, i], th_indices - 1)),
+                    shape=M.shape)
 
-        for i in range(4):
-            M += scipy.sparse.csr_matrix(
-                 (volumes, (masked_th_nodes[:, i], th_indices - 1)),
-                 shape=M.shape)
+            # Assigns the average value to the points in the outside surface
+            masked_th_nodes = np.copy(th_nodes)
+            masked_th_nodes[~outside_points_mask] = -1
+            masked_th_nodes += 1
 
-        M = M[1:]
+            for i in range(4):
+                M += scipy.sparse.csr_matrix(
+                     (volumes, (masked_th_nodes[:, i], th_indices - 1)),
+                     shape=M.shape)
 
-        node_vols = np.bincount(
-            th_nodes.reshape(-1),
-            np.repeat(volumes, 4),
-            minlength=self.nodes.nr+1)
+            M = M[1:]
 
-        normalization = np.ones(self.nodes.nr)
-        normalization[points_outside] = 1 / node_vols[points_outside]
+            node_vols = np.bincount(
+                th_nodes.reshape(-1),
+                np.repeat(volumes, 4),
+                minlength=self.nodes.nr+1)
 
-        D = scipy.sparse.dia_matrix(
-            (normalization, 0), shape=(self.nodes.nr, self.nodes.nr))
-        M = D.dot(M)
+            normalization = np.ones(self.nodes.nr)
+            normalization[points_outside] = 1 / node_vols[points_outside]
+
+            D = scipy.sparse.dia_matrix(
+                (normalization, 0), shape=(self.nodes.nr, self.nodes.nr))
+            M = D.dot(M)
+
+        # Calculates the interpolation for nodes only in the surfaces
+        if len(only_in_surf) > 0:
+            M_tr = scipy.sparse.csr_matrix((self.nodes.nr + 1, self.elm.nr))
+            areas = self.elements_volumes_and_areas()[tr_indices]
+
+            # Assigns the average value to the points in the outside surface
+            tr_nodes = self.elm[tr_indices] - 1
+            only_surf_mask = np.in1d(tr_nodes, only_in_surf).reshape(-1, 4)
+
+            masked_tr_nodes = np.copy(tr_nodes)
+            masked_tr_nodes[~only_surf_mask] = -1
+            masked_tr_nodes += 1
+
+            for i in range(3):
+                M_tr += scipy.sparse.csr_matrix(
+                     (areas, (masked_tr_nodes[:, i], tr_indices - 1)),
+                     shape=M_tr.shape)
+
+            M_tr = M_tr[1:]
+
+            node_areas = np.bincount(
+                tr_nodes[:, :3].reshape(-1),
+                np.repeat(areas, 3),
+                minlength=self.nodes.nr+1)
+
+            normalization = np.ones(self.nodes.nr)
+            normalization[only_in_surf] = 1 / node_areas[only_in_surf]
+
+            D = scipy.sparse.dia_matrix(
+                (normalization, 0), shape=(self.nodes.nr, self.nodes.nr))
+            M_tr = D.dot(M_tr)
+            if len(th_indices) > 0:
+                M += M_tr
+            else:
+                M = M_tr
 
         return M
 
@@ -2429,7 +2479,7 @@ class Data(object):
             Name of nifti file with reference in the original space. Used to determine
             the dimensions and affine transformation for the initial griding
 
-        Returns:
+        Returns
         --------
         img: nibabel.Nifti1Pair
             Nibabel image object with tranformed field
@@ -3014,7 +3064,7 @@ class ElementData(Data):
         squeeze: bool
             Wether to squeeze the output. Default: True
 
-        Returns:
+        Returns
         -------
         f: np.ndarray
             Value of function in the points
@@ -3533,7 +3583,7 @@ class NodeData(Data):
         containing the point and performing linear interpolation inside the element
 
         Parameters
-        ------
+        ------------
         points: Nx3 ndarray
             List of points where we want to interpolate
         out_fill: float
@@ -3541,8 +3591,9 @@ class NodeData(Data):
             value of th nearest node. (default: NaN)
         squeeze: bool
             Wether to squeeze the output. Default: True
-        Returns:
-        ----
+
+        Returns
+        -------
         f: np.ndarray
             Value of function in the points
         '''

@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.Msh &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <title>simnibs.Msh &#8212; SimNIBS 3.1.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -169,7 +169,7 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.elements_volumes_and_areas" title="simnibs.Msh.elements_volumes_and_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code></a>()</p></td>
 <td><p>Calculates the volumes of tetrahedra and areas of triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.elm2node_matrix" title="simnibs.Msh.elm2node_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code></a>([th_indices])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.elm2node_matrix" title="simnibs.Msh.elm2node_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code></a>([elm_indices])</p></td>
 <td><p>Calculates a sparse matrix to tranform from ElementData to NodeData Uses Superconvergent patch recovery for volumetric data.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.elm_node_coords" title="simnibs.Msh.elm_node_coords"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code></a>([elm_nr, tag, elm_type])</p></td>
@@ -407,17 +407,19 @@ operation</p>
 
 <dl class="method">
 <dt id="simnibs.Msh.elm2node_matrix">
-<code class="sig-name descname">elm2node_matrix</code><span class="sig-paren">(</span><em class="sig-param">th_indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elm2node_matrix" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">elm2node_matrix</code><span class="sig-paren">(</span><em class="sig-param">elm_indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elm2node_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates a sparse matrix to tranform from ElementData to NodeData
-Uses Superconvergent patch recovery for volumetric data. Will not work well for discontinuous fields (like E, if
-several tissues are used)</p>
+Uses Superconvergent patch recovery for volumetric data. Will not work well for
+discontinuous fields (like E, if several tissues are used)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p><ul class="simple">
 <li><p><strong>M</strong> (<em>scipy.sparse.csc</em>) – Sparse matrix, where M.dot(elm_data) = node_data, elm_data is a vector with
-element data, and node_data is a vector with node data.</p></li>
-<li><p><strong>th_indices</strong> (<em>np.ndarray (optional)</em>) – Indices of the tetrahedra to be considered in the volume. Default: use all
-tetrahedra</p></li>
+element data, and node_data is a vector with node data. Interpolation is done
+different for tetrahedra, tetrahedra outside faces, and triangles without an
+associated tetrahedron</p></li>
+<li><p><strong>elm_indices</strong> (<em>np.ndarray (optional)</em>) – Indices of the elements to be considered for interpolation. Default: use all
+elements</p></li>
 </ul>
 </p>
 </dd>
@@ -957,6 +959,7 @@ tetrahedra</p></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>

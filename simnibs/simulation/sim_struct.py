@@ -561,15 +561,22 @@ class SimuList(object):
         file name of nifti with tensor information
     postprocess: property
         fields to be calculated. valid fields are: 'v' , 'E', 'e', 'J', 'j', 'g', 's', 'D', 'q'
-    anisotropy_vol: ndarray
+    anisotropy_vol: ndarray (optional)
         Volume with anisotropy information (lower priority over fn_tensor_nifti)
-    anisotropy_affine: ndarray
+    anisotropy_affine: ndarray (optional)
         4x4 affine matrix describing the transformation from the regular grid to the mesh
         space (lower priority over fn_tensor_nifti)
-    anisotropic_tissues: list
+    anisotropic_tissues: list (optional)
         List with tissues with anisotropic conductivities
-    eeg_cap: str
+    eeg_cap: str (optional)
         Name of csv file with EEG positions
+    aniso_maxratio: float (optional)
+        Maximum ration between the largest and smallest eigenvalue in a conductivity
+        tensor.
+    aniso_cond: float (optional)
+        Maximum eigenvalue of a conductivity tensor.
+    solver_options: str (optional)
+        Options for the FEM solver
     """
 
     def __init__(self, mesh=None):
@@ -587,6 +594,7 @@ class SimuList(object):
         self.eeg_cap = None
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        self.solver_options = None
         self._anisotropy_type = 'scalar'
         self._postprocess = ['e', 'E', 'j', 'J']
 
@@ -677,6 +685,7 @@ class SimuList(object):
         mat_cond['aniso_maxcond'] = remove_None(self.aniso_maxcond)
         # Not really related to the conductivity
         mat_cond['name'] = remove_None(self.name)
+        mat_cond['solver_options'] = remove_None(self.name)
 
         return mat_cond
 
@@ -706,6 +715,10 @@ class SimuList(object):
             mat_struct, 'aniso_maxcond', float, self.aniso_maxcond)
         self.aniso_maxratio = try_to_read_matlab_field(
             mat_struct, 'aniso_maxratio', float, self.aniso_maxratio)
+        self.solver_options = try_to_read_matlab_field(
+            mat_struct, 'solver_options', str, self.solver_options)
+
+
 
     def compare_conductivities(self, other):
         if self.anisotropy_type != other.anisotropy_type:
@@ -1099,7 +1112,7 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     cpus)
+                     solver_options=self.solver_options, n_workers=cpus)
 
         logger.info('Creating visualizations')
         summary = ''
@@ -1553,9 +1566,12 @@ class TDCSLIST(SimuList):
             w_elec, n = el.add_electrode_to_mesh(w_elec)
             electrode_surfaces[i] = n
 
+        w_elec.fix_th_node_ordering()
+        w_elec.fix_tr_node_ordering()
         if fix_th:
             logger.info('Improving mesh quality')
             w_elec.fix_thin_tetrahedra()
+
         gc.collect()
         return w_elec, electrode_surfaces
 
@@ -1598,7 +1614,9 @@ class TDCSLIST(SimuList):
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
-                     np.unique(electrode_surfaces), n_workers=cpus)
+                     np.unique(electrode_surfaces),
+                     solver_options=self.solver_options,
+                     n_workers=cpus)
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)
@@ -1768,6 +1786,13 @@ class ELECTRODE(object):
         self.channelnr = try_to_read_matlab_field(el, 'channelnr', int, self.channelnr)
         self.dimensions_sponge = try_to_read_matlab_field(el, 'dimensions_sponge', list,
                                                           self.dimensions_sponge)
+
+        if self.dimensions is not None and len(self.dimensions) == 1:
+            self.dimensions *= 2
+
+        if self.dimensions_sponge is not None and len(self.dimensions_sponge) == 1:
+            self.dimensions_sponge *= 2
+
         try:
             self.vertices = el['vertices'].tolist()
         except:
@@ -1992,7 +2017,7 @@ class LEADFIELD():
         self.mesh = None
         self.field = 'E'
         self.tissues = [2]
-        self.map_to_surf = False
+        self.map_to_surf = True
         self.cond = cond.standard_cond()
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
@@ -2017,7 +2042,7 @@ class LEADFIELD():
         return self.__class__.__name__
 
     def _set_logger(self):
-        SESSION._set_logger(self)
+        SESSION._set_logger(self, summary=False)
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
@@ -2100,7 +2125,8 @@ class TDCSLEADFIELD(LEADFIELD):
     pathfem: str
         path where the leadfield should be saved
     tissues: list
-        List of tags in the mesh corresponding to the region of interest. Default: [2] (GM)
+        List of tags in the mesh corresponding to the region of interest, id addition to
+        what is defined in map_to_surf. Default: [1006] (eye surfaces)
     map_to_surf: bool
         Wether to map output to middle gray matter. Defaults to True
     cond: list
@@ -2125,9 +2151,9 @@ class TDCSLEADFIELD(LEADFIELD):
 
     def __init__(self, matlab_struct=None):
         super().__init__()
-        # : Date when the session was initiated
         self.eeg_cap = 'EEG10-10_UI_Jurak_2007.csv'
         self.pathfem = 'tdcs_leadfield/'
+        self.tissues = [1006]
         self.electrode = ELECTRODE()
         self.electrode.shape = 'ellipse'
         self.electrode.dimensions = [10, 10]
@@ -2314,9 +2340,15 @@ class TDCSLEADFIELD(LEADFIELD):
             if len(el.thickness) == 3:
                 raise ValueError('Can not run leadfield on sponge electrodes')
 
-        if self.map_to_surf and len(self.tissues) > 1 and self.tissues[0] != 2:
-            logger.warn('Using map_to_surf. Setting tissues=[2]')
-            self.tissues = [2]
+        if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
+            raise ValueError('Mixing Volumes and Surfaces in ROI!')
+
+        if self.map_to_surf:
+            if np.any(np.array(self.tissues) < 1000):
+               raise ValueError("Can't combine volumetric ROI with map_to_surf!")
+            roi = self.tissues + [2]
+        else:
+            roi = self.tissues
 
         if self.field != 'E' and self.field != 'J':
             raise ValueError("field parameter should be E or J. "
@@ -2334,7 +2366,7 @@ class TDCSLEADFIELD(LEADFIELD):
         scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
 
         # Write roi, scalp and electrode surfaces hdf5
-        roi_msh = w_elec.crop_mesh(self.tissues)
+        roi_msh = w_elec.crop_mesh(roi)
         # If mapping to surface
         if self.map_to_surf:
             # Load middle gray matter
@@ -2351,18 +2383,24 @@ class TDCSLEADFIELD(LEADFIELD):
                         wm_surface, gm_surface, .5)
 
             elif segtype == 'headreco':
-                for hemi in ['lh', 'rh']:
+                for i, hemi in enumerate(['lh', 'rh']):
                     middle_surf[hemi] = mesh_io.read_gifti_surface(
                         s_names[hemi + '_midgm'])
+                    middle_surf[hemi].elm.tag1 = (i + 1) * np.ones(
+                        middle_surf[hemi].elm.nr, dtype=int)
+                    middle_surf[hemi].elm.tag2 = (i + 1) * np.ones(
+                        middle_surf[hemi].elm.nr, dtype=int)
+
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
-            mesh_lf.tag1 = 1002
-            mesh_lf.tag2 = 1002
+            if len(self.tissues) > 0:
+                mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
                 mesh_lf.nodes.node_coord,
                 out_fill='nearest',
-                element_wise=True)
-
+                element_wise=True
+            )
             # Define postprocessing operation
             def post(out_field, M):
                 return M.dot(out_field)
@@ -2390,7 +2428,7 @@ class TDCSLEADFIELD(LEADFIELD):
         c = SimuList.cond2elmdata(self, w_elec)
         fem.tdcs_leadfield(
             w_elec, c, electrode_surfaces, fn_hdf5, dset,
-            current=1., roi=self.tissues,
+            current=1., roi=roi,
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
             n_workers=cpus)

@@ -79,23 +79,9 @@ Attributes
     number of electrodes
   * **Default**: No maximum
 
+References
+-----------
 
-Examples
----------
-
-* Run an optimization based on the :file:`tdcs_leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5`.
-  
-  * *Python*
-
-    .. code-block:: python
-    
-         from simnibs import optimization
-         opt = optimization.TDCSoptimize()
-         opt.leadfield_hdf = 'tdcs_leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5'
-         opt.name = 'tdcs_leadfield/motor_cortex'
-         opt.max_total_current = 2e-3
-         opt.max_individual_current = 1e-3
-
-     \
+`Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
 
 

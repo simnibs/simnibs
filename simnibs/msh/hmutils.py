@@ -1092,12 +1092,12 @@ def mesh_load(fname):
     file_format = os.path.splitext(fname)[1].lower()
     
     if file_format == ".off":
-        with open(fname, "rb") as f:
+        with open(fname, "r") as f:
             # Read header
-            hdr = f.readline().decode().rstrip("\n").lower()
+            hdr = f.readline().rstrip("\n").lower()
             assert hdr == "off", ".off files should start with OFF"
             while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n":
-                hdr = f.readline().decode()
+                hdr = f.readline()
             hdr = [int(i) for i in hdr.split()]
             
             # Now read the data

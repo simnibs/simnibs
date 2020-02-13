@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Uncertainty Quantification &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <title>Uncertainty Quantification &#8212; SimNIBS 3.1.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -51,7 +51,7 @@
   <div class="section" id="uncertainty-quantification">
 <span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Permalink to this headline">¶</a></h1>
 <p>Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.</p>
-<p>For that, reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalizer Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values of the fields of interest.</p>
+<p>For that reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
 <p>Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
@@ -231,14 +231,14 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>meshes stored in HDF5 files can be red with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class of with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+<p>meshes stored in HDF5 files can be read with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class or with the <em>mesh_load_hdf5</em> function in MATLAB</p>
 </div>
 </li>
 </ul>
 </div>
 <div class="section" id="more-options">
 <h2>More Options<a class="headerlink" href="#more-options" title="Permalink to this headline">¶</a></h2>
-<p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and post-process results.</p>
+<p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">msh</span><span class="p">,</span> <span class="n">file_finder</span>
@@ -311,13 +311,13 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </pre></div>
 </div>
 </div>
-<div class="section" id="acknolowedgements">
-<h2>Acknolowedgements<a class="headerlink" href="#acknolowedgements" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
 <p>We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc library</a>.</p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018</a></p>
 </div>
 </div>
 
@@ -367,12 +367,13 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TES Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>

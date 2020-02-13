@@ -42,8 +42,9 @@ end
 
 function v = is_mesh_struct(fn, group_name)
     v = true;
-    required_fields = {'/nodes/node_number', '/nodes/node_coord',...
-        '/elm/elm_number', '/elm/node_number_list',...
+    required_fields = {
+        '/nodes/node_coord',...
+        '/elm/node_number_list',...
         '/elm/tag1', '/elm/elm_type'};
     for i = 1:length(required_fields)
         try
@@ -65,16 +66,8 @@ function m = read_group_mesh(fn, group_name)
     m.tetrahedra = zeros(0, 4, 'int32');
     m.tetrahedron_regions = zeros(0, 1, 'int32');
     % Read nodes
-    node_number = h5read(fn, [group_name, '/nodes/node_number']);
-    if any(diff(node_number) ~= 1) || node_number(1) ~= 1
-         error('node numbers have to be a continuous list of indexes starting at 1');
-    end
     m.nodes = h5read(fn, [group_name, '/nodes/node_coord'])';
     % Read elements
-    elm_number = h5read(fn, [group_name, '/elm/elm_number']);
-    if any(diff(elm_number) ~= 1) || elm_number(1) ~= 1
-         error('element numbers have to be a continuous list of indexes starting at 1');
-    end
     elm_types = h5read(fn, [group_name, '/elm/elm_type'])';
     elm_tags = h5read(fn, [group_name, '/elm/tag1'])';
     node_number_list = h5read(fn, [group_name, '/elm/node_number_list'])';

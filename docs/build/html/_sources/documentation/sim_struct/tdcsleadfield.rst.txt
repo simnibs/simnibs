@@ -57,27 +57,35 @@ Attributes
 
   * **Description**: Whether to calculate the electric field *'E'* or current
     density *'J'*.
-  * **Default**: 'J'
+  * **Default**: 'E'
 
 
 * **eeg_cap**: *string (Python)/character array (MATLAB), optional*
 
   * **Description**: Name of *.csv* file with EEG electrode positions.
   * **Default**: Automatically finds the file :file:`subpath/eeg_positions/EEG10-10_UI_Jurak_2007.csv` based on **fnamehead** or **subpath**
-  * **Note**: Only needed when setting TES electrodes of TMS coil positions using EEG electrode names. Only needs to be set by the user if not using the standard *.csv* cap file.
+  * **Note**: Only needs to be set by the user if not using the standard *.csv* cap file.
+
+* **map_to_surf**: *bool, optional*
+
+  * **Description**: Whether to map the fields to the middle gray matter surface.
+  * **Default**: True
+
+  .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
+
+\
 
 * **tissues**: *list (python) or array (MATLAB), optional*
 
-  * **Description**: Tissues numbers of  where to record the electric field. Ignored if
-    **map_to_surf** is set to *True*
+  * **Description**: Tissues numbers of where to record the electric field, in addition to *map_to_surf*. Mixing surfaces and volumes is not allowed.
 
-  * **Default**: [2]
+  * **Default**: [1006] (i.e. eye surfaces)
 
   * **Example**: *Python*
 
   .. code-block:: python
 
-     # Record electric fields in gray and white matter
+     # Example: Record electric fields in gray and white matter
      tdcs_lf.tissues = [1, 2]
 
   \ 
@@ -93,18 +101,10 @@ Attributes
       the shape of the corresponding entry in the list
     * list of :ref:`electrode_struct_doc` structures and **eeg_cap** set to *None* (Python only):
       will use the **centre** and **pos_ydir** attributes of the electrodes to place
-      them.
+      them. This allows to set up electrodes on your own, without using a eeg cap provided by SimNIBS.
 
   * **Default**: Use 1 x 1cm round electrodes with 4mm thickness
 
-* **map_to_surf**: *bool, optional*
-
-  * **Description**: Whether to map the fields to the middle gray matter surface. Only works for *mri2mesh* models and *headreco* models ran with the :code:`--cat` option.
-  * **Default**: False
-
-  .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
-
-\
 
 * **cond**: *list/array of COND structures (Python/MATLAB), optional*
    
@@ -128,4 +128,12 @@ Attributes
   * **Default**: Automatically finds the file :file:`d2c_{subID}/dti_results_T1space/DTI_conf_tensor.nii.gz` based on **fnamehead**.
   * **Note**: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.
 
+* **solver_options**: *string (pytohn) / character array (MATLAB)*
+
+  :ref:`Follow this link <solver_options_doc>`.
+
+References
+-------------
+
+`Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
 

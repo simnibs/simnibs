@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>Setting up and Running Simulations &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <title>Setting up and Running Simulations &#8212; SimNIBS 3.1.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -186,37 +186,39 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <blockquote>
 <div><ul class="simple">
 <li><dl class="simple">
-<dt><strong>v</strong>:</dt><dd><p>Electrical Potential (Voltage)</p>
+<dt><strong>v</strong>:</dt><dd><p>Electrical Potential (Voltage). Units: Volts</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>vector E</strong>:</dt><dd><p>Electric field vector</p>
+<dt><strong>vector E</strong>:</dt><dd><p>Electric field vector. Units: V/m</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>norm E</strong>:</dt><dd><p>Norm (or strength) of the electric field</p>
+<dt><strong>norm E</strong>:</dt><dd><p>Norm (or strength) of the electric field. Units: V/m</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>vector J</strong>:</dt><dd><p>Current density vector</p>
+<dt><strong>vector J</strong>:</dt><dd><p>Current density vector. Units: A/mm²</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>norm J</strong>:</dt><dd><p>Norm of the current density</p>
+<dt><strong>norm J</strong>:</dt><dd><p>Norm of the current density. Units: A/mm²</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>Conductivities</strong>:</dt><dd><p>Conductivity field. For isotropic conductivities, this is a scalar. For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.</p>
+<dt><strong>Conductivities</strong>:</dt><dd><p>Conductivity field. For isotropic conductivities, this is a scalar.
+For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
+Units: S/m</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>dA/dt</strong>:</dt><dd><p>Primary field caused by the coil. TMS only. This is a vector field</p>
+<dt><strong>dA/dt</strong>:</dt><dd><p>Primary field caused by the coil. TMS only. This is a vector field. Units: V/m</p>
 </dd>
 </dl>
 </li>
@@ -353,12 +355,13 @@ selected.</p>
 <li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="optimization.html">TES Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimization.html">TDCS Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>

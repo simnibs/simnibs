@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.ElementData &#8212; SimNIBS 3.1-dev0 documentation</title>
+    <title>simnibs.ElementData &#8212; SimNIBS 3.1.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -381,10 +381,13 @@ baricentric interpolatiom. Default: linear</p></li>
 <li><p><strong>continuous</strong> (<em>bool</em>) – Wether fields is continuous across tissue boundaries. Changes the
 behaviour of the function only if method == ‘linear’. Default: False</p></li>
 <li><p><strong>squeeze</strong> (<em>bool</em>) – Wether to squeeze the output. Default: True</p></li>
-<li><p><strong>Returns</strong> – </p></li>
-<li><p><strong>-------</strong> – </p></li>
-<li><p><strong>f</strong> (<em>np.ndarray</em>) – Value of function in the points</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>f</strong> – Value of function in the points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -553,10 +556,13 @@ target space in the case of non-liner transformations. If the transformation is
 linear, the inverse matrix is used.</p></li>
 <li><p><strong>reference_original</strong> (<em>str</em>) – Name of nifti file with reference in the original space. Used to determine
 the dimensions and affine transformation for the initial griding</p></li>
-<li><p><strong>Returns</strong> – </p></li>
-<li><p><strong>--------</strong> – </p></li>
-<li><p><strong>img</strong> (<em>nibabel.Nifti1Pair</em>) – Nibabel image object with tranformed field</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>img</strong> – Nibabel image object with tranformed field</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nibabel.Nifti1Pair</p>
 </dd>
 </dl>
 </dd></dl>
@@ -710,6 +716,7 @@ This file needs to be merged with a mesh for visualization</p>
 <li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>

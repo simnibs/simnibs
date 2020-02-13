@@ -77,6 +77,11 @@ Attributes
 
   :ref:`Follow this link <aniso_maxcond_doc>`.
 
+* **solver_options**: *string (pytohn) / character array (MATLAB)*
+
+  :ref:`Follow this link <solver_options_doc>`.
+
+
 
 
 Examples

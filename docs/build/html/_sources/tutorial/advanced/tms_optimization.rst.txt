@@ -12,7 +12,7 @@ Basic Setting
 --------------
 Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
 settings, you need to select the head model, the coil being used and the target position.
-The target position are needed as :ref:`SimNIBS coordinates <coords_doc>` and can be
+The target position has to be given in :ref:`SimNIBS coordinates <coords_doc>` and can be
 determined using the *nifti* volumes produced by :ref:`headreco_docs`, :ref:`mri2mesh_docs` or by using the :ref:`mni2subject_coords <mni2subject_coords_docs>` command line tool.
 
 For accelerating the simulations, SimNIBS can use the MKL Pardiso direct solver. However, this
@@ -22,14 +22,14 @@ solver uses approximately three times more memory than the standard solver.
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_optimization.py
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_optimization.m
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.m
    :language: matlab
 
 
@@ -48,18 +48,18 @@ refine the search by precisely specifying the search region, search angles and r
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_opt_refined.py
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/tms_opt_refined.m
+.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.m
    :language: matlab
 
 
-Acknolowedgements
+Acknowledgements
 ------------------
 
 We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
@@ -68,6 +68,11 @@ functionality
 Further Reading
 ------------------
 Please see :ref:`tmsoptimize_doc` for a detail description of all TMS optimization options
+
+References
+------------
+
+`Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603. <https://doi.org/10.1101/595603>`_
 
 
 

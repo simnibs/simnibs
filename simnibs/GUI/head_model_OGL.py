@@ -222,7 +222,6 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         return info
 
     def initializeGL(self):
-        print(self.getOpenglInfo())
         self.setClearColor(WHITE)
         GL.glShadeModel(GL.GL_SMOOTH)
         light_ambient =  [0.0, 0.0, 0.0, 1.0]

@@ -15,13 +15,15 @@ EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 
 @pytest.fixture(scope="module")
 def example_dataset():
-    url = (f'https://github.com/simnibs/example-dataset/'
-            'releases/download/v3.0/simnibs_examples.zip')
-    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'simnibs_examples'))
+    url = (
+        f'https://github.com/simnibs/example-dataset/releases/'
+        'download/v3.0-lowres/ernie_lowres.zip'
+    )
+    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ernie_lowres'))
     tmpname = tempfile.mktemp(".zip")
     urllib.request.urlretrieve(url, tmpname)
     with zipfile.ZipFile(tmpname) as z:
-        z.extractall(os.path.dirname(__file__))
+        z.extractall(os.path.dirname(__file__), )
     os.remove(tmpname)
     yield fn_folder
     shutil.rmtree(fn_folder)
@@ -51,11 +53,15 @@ def replace_gmsh():
     shutil.move(fn_gmsh_tmp, fn_gmsh)
 
 def octave_call(script):
-    cmd = "octave -W --eval "
+    cmd = "octave -W --eval \""
     matlab_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'matlab')
     )
-    cmd += "\"addpath('{0}');".format(matlab_dir)
+    octave_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), 'octave_compatibility')
+    )
+    cmd += "addpath('{0}');".format(matlab_dir)
+    cmd += "addpath('{0}');".format(octave_dir)
     cmd += "try,run('{}');catch ME,rethrow(ME);end,exit;\"".format(script)
     return cmd
 
@@ -79,98 +85,149 @@ def replace_show_surface():
 
 
 class TestPythonErnie:
-    def run_script(self, script_name, clean=None):
+    def run_script(self, script_folder, script_name, clean=None):
         if clean is not None and os.path.exists(clean):
             shutil.rmtree(clean)
-        fn = os.path.join(EXAMPLES_DIR, script_name)
+        fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
         return subprocess.run([sys.executable, fn])
 
     def test_transform_coordinates(self, example_dataset):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('transform_coordinates.py')
+        os.chdir(example_dataset)
+        ret = self.run_script('analysis', 'transform_coordinates.py')
         assert ret.returncode == 0
 
     def test_tDCS(self, example_dataset, replace_gmsh):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('tDCS.py', 'tdcs')
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS.py', 'tdcs')
         assert ret.returncode == 0
 
     def test_roi_analysis_surf(self, example_dataset, replace_gmsh):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
+        os.chdir(example_dataset)
         simnibs.msh.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'
         )
-        ret = self.run_script('roi_analysis_surf.py')
+        ret = self.run_script('analysis', 'roi_analysis_surf.py')
         assert ret.returncode == 0
 
     def test_roi_analysis_mni(self, example_dataset, replace_gmsh):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('roi_analysis_mni.py')
+        os.chdir(example_dataset)
+        ret = self.run_script('analysis', 'roi_analysis_mni.py')
         assert ret.returncode == 0
 
     def test_TMS(self, example_dataset, replace_gmsh):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('TMS.py', 'tms')
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS.py', 'tms')
         assert ret.returncode == 0
 
     def test_tDCS_ring(self, example_dataset, replace_gmsh):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('tDCS_ring.py', 'tdcs_ring')
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS_ring.py', 'tdcs_ring')
+        assert ret.returncode == 0
+
+    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS_MNI.py', 'tms_hand')
+        assert ret.returncode == 0
+
+    def test_leadfield(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'leadfield.py', 'leadfield')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize.py')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_multi_target(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_multi_target.py')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_avoid(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_avoid.py')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_mni.py')
         assert ret.returncode == 0
 
 
 class TestMatlabErnie:
-    def run_script(self, script_name, clean=None):
+    def run_script(self, script_folder, script_name, clean=None):
         if clean is not None and os.path.exists(clean):
             shutil.rmtree(clean)
         shutil.copy(
-            os.path.join(EXAMPLES_DIR, script_name),
+            os.path.join(EXAMPLES_DIR, script_folder, script_name),
             script_name
         )
         return subprocess.run(octave_call(script_name), shell=True)
 
     def test_transform_coordinates(self, example_dataset):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('transform_coordinates.m')
+        os.chdir(example_dataset)
+        ret = self.run_script('analysis', 'transform_coordinates.m')
         assert ret.returncode == 0
 
-    def test_tDCS(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('tDCS.m', 'tdcs')
+    def test_tDCS(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS.m', 'tdcs')
         assert ret.returncode == 0
 
-    ''' Octave does not have the repelms function
     def test_roi_analysis_surf(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
+        os.chdir(example_dataset)
         simnibs.msh.transformations.middle_gm_interpolation(
             'tdcs/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
             'tdcs/subject_overlays'
         )
-        ret = self.run_script('roi_analysis_surf.m')
+        ret = self.run_script('analysis', 'roi_analysis_surf.m')
         assert ret.returncode == 0
-    '''
 
     def test_roi_analysis_mni(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('roi_analysis_mni.m')
+        os.chdir(example_dataset)
+        ret = self.run_script('analysis', 'roi_analysis_mni.m')
         assert ret.returncode == 0
 
     def test_TMS(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('TMS.m', 'tms')
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS.m', 'tms')
         assert ret.returncode == 0
 
     def test_tDCS_ring(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('tDCS_ring.m', 'tdcs_ring')
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS_ring.m', 'tdcs_ring')
         assert ret.returncode == 0
 
-    '''
-    def test_tDCS_advanced(self, example_dataset, replace_show_surface):
-        os.chdir(os.path.join(example_dataset, 'ernie'))
-        ret = self.run_script('tDCS_advanced.m', 'tdcs_simulation')
+    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS_MNI.m', 'tms_hand')
         assert ret.returncode == 0
-    '''
+
+    def test_leadfield(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'leadfield.m', 'leadfield')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_multi_target(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_multi_target.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_avoid(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_avoid.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_mni.m')
+        assert ret.returncode == 0

@@ -64,7 +64,7 @@ Attributes
 
   * **Default**: All tissues
 
-  .. note:: You can leave **positions** and **indexes** empty and only assign **tissues**. In this case, the avoidance region will be the whole tissue.
+  .. note:: You can leave **positions** and **indexes** empty and only assign **tissues**. In this case, the avoidance region will be the whole tissue. This can be useful, e.g. to avoid co-stimulation of the eyes when designing a tACS montage.
 
 
 

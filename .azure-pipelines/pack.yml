@@ -21,11 +21,17 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - bash: |
-      source activate
+      source activate base
       pip install conda-pack
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+    # Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      ./install
+    #      $HOME/SimNIBS/bin/simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -49,11 +55,17 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - bash: |
-      source activate
+      source activate base
       pip install conda-pack
       python pack.py
-      cp simnibs-*-macOS.zip $(Build.ArtifactStagingDirectory)
+      cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+    # Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      ./install
+    #      $HOME/Applications/SimNIBS/bin/simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -79,11 +91,17 @@ jobs:
       python setup.py bdist_wheel
     displayName: Build SimNIBS
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate
+      call $(Agent.BuildDirectory)\CONDA\Scripts\activate base
       pip install conda-pack
       python pack.py
       cp simnibs-*.zip $(Build.ArtifactStagingDirectory)
     displayName: Create SimNIBS pack
+    #  Not testing here for now (GUI required)
+    #  - bash: |
+    #      cd pack
+    #      install
+    #      %LOCALAPPDATA%\SimNIBS\bin\simnibs --version
+    #    displayName: Test
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
