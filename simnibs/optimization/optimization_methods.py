@@ -288,7 +288,7 @@ def _constrained_l0(l, Q, target_mean,
     elif method == 'bb_full':
         x = _constrained_l0_branch_and_bound(
             l, Q, target_mean, max_total_current, max_el_current,
-            max_l0, eps_bb=1e-1, max_bb_iter=200, log_level=log_level)
+            max_l0, eps_bb=1e-1, max_bb_iter=100, log_level=log_level)
 
     elif method == 'bb_compact':
         logger.log(log_level, 'Using the compact Branch-and-bound method')
@@ -299,7 +299,7 @@ def _constrained_l0(l, Q, target_mean,
         x_active = _constrained_l0_branch_and_bound(
             l[:, active], Q[np.ix_(active, active)],
             target_mean, max_total_current, max_el_current,
-            max_l0, eps_bb=1e-1, max_bb_iter=200, log_level=log_level)
+            max_l0, eps_bb=1e-1, max_bb_iter=100, log_level=log_level)
 
         x = np.zeros(l.shape[1])
         x[active] = x_active
@@ -931,137 +931,3 @@ def _constrained_l0_branch_and_bound(
     final_state = _branch_and_bound(init, bf, eps_bb, max_bb_iter, log_level=log_level)
     x = final_state.x_ub
     return x
-
-
-def _constrained_eigenvalue(Q, c):
-    '''
-    Finds the stationary values for
-    maximize x^TQx
-    such that x^Tx = 1
-              c^Tx = 0
-    Q is real and symmetric
-
-    Golub, Gene H. "Some modified matrix eigenvalue problems." Siam Review 15.2 (1973) 318-334.
-    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.454.9868&rep=rep1&type=pdf
-    '''
-    n = Q.shape[0]
-    c = c/np.linalg.norm(c)
-    P = np.eye(n) - np.outer(c, c)
-    K = P.dot(Q).dot(P)
-    eigvals, z = np.linalg.eigh(K)
-    eigvec = P.dot(z)
-    return eigvals, eigvec
-
-
-
-def _maximize_quadratic(Q, bounds=None, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-                        n_x0=None, rel_tol=1e-1):
-
-    ''' Maximizes the quadratic functions
-    
-    maximize  x^T Q x
-    such that A_ub <= b_ub
-              A_eq == b_eq
-
-    Kind of assumes that A_eq == c^T and b_eq == 0
-    uses Convex-Concave Programing. Will use n_x0 initial points, drawn from the
-    eigenvalues of Q
-
-    Returns
-    ---------
-    maxima_vals: np.ndarray of floats
-        Values of the objective at each initial point, sortex
-    maxima_x: np.ndarray of size (n_x0, len(Q))
-        The coresponding x value for each maxima,
-
-    Lipp, Thomas, and Stephen Boyd. "Variations and extension of the convex–concave
-    procedure." Optimization and Engineering 17.2 (2016): 263-287.
-    '''
-    # Calculate contrained eigenvatues to use as initial guesses for the jacobian
-    if A_eq is not None:
-        _, eigvec = _constrained_eigenvalue(Q, A_eq[0])
-    else:
-        _, eigvec = np.linalg.eigh(Q)
-    n = Q.shape[0]
-
-    # Number of starting points
-    if n_x0 is None:
-        n_x0 = n-1
-
-
-    maxima_x = []
-    maxima_vals = []
-    for i in range(n_x0):
-        l = Q.dot(eigvec[:, -1-i])
-        last_min = 1e20
-        # Run the CCP
-        while True:
-            sol = scipy.optimize.linprog(
-                -l, A_ub, b_ub, A_eq, b_eq,
-                bounds=bounds
-            )
-            local_val = sol.x.dot(Q.dot(sol.x))
-            if (last_min - local_val)/local_val < rel_tol:
-                break
-            else:
-                last_min = local_val
-                l = sol.x.dot(Q)
-
-        maxima_vals.append(local_val)
-        maxima_x.append(sol.x)
-
-    maxima_vals = np.array(maxima_vals)
-    maxima_x = np.array(maxima_x)
-
-    order = maxima_vals.argsort()[::-1]
-    maxima_vals = maxima_vals[order]
-    maxima_x = maxima_x[order]
-
-    return maxima_vals, maxima_x
-
-
-def optimize_norm(Qin, Q, target_mean, max_total_current=None,
-                  max_el_current=None, max_active_electrodes=None,
-                  n_init=None, rel_tol=1e-1, log_level=20):
-    # TODO: First try to maximize the quadratic to evaluate feasibility and get initial
-    # points
-
-    # Store the current best values
-    global_x = None
-    global_min = np.inf
-    for i in range(n_init):
-        cur_x = eigvec[:, -1-i]
-        last_min = 1e20
-        # Run the CCP
-        while True:
-            # Project the current solution to the boundary
-            cur_energy_target = cur_x.T.dot(Qin.dot(cur_x))
-            cur_x *= np.sqrt(target_mean**2/cur_energy_target)
-            l = cur_x.T.dot(Qin)
-            # Not sure if this will work, might need to add as inequality constraint
-            x = optimize_focality(
-                l, Q, target_mean**2, max_total_current=max_total_current,
-                max_el_current=max_el_current,
-                max_active_electrodes=max_active_electrodes,
-                log_level=20
-            )
-            energy_total = x.T.dot(Q.dot(x))
-            energy_target = x.T.dot(Qin.dot(x))
-            # infeasible
-            if energy_target < target_mean**2:
-                # Not sure if I should stop here or if it can become feasible after some
-                # iterations
-                break
-            # convergence
-            elif (last_min - energy_total)/energy_total < rel_tol:
-                break
-            else:
-                last_min = energy_total
-                l = x.dot(Qin)
-
-        if energy_total < global_min:
-            global_min = energy_total
-            global_x = x
-
-    return global_x
-
