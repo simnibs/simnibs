@@ -7,6 +7,660 @@ import scipy.linalg
 
 from simnibs.utils.simnibs_logger import logger
 
+
+class TESConstraints:
+    def __init__(self, n, max_total_current, max_el_current):
+        self.max_total_current = max_total_current
+        self.max_el_current = max_el_current
+        self.n = n
+
+    def _bound_contraints(self):
+        # The bound constraints are defined in the extended system
+        # format C_.dot(x_) < d_
+        C_ = np.vstack([np.eye(2 * self.n), -np.eye(2 * self.n)])
+        d_ = np.hstack([self.max_el_current * np.ones(2 * self.n),
+                        np.zeros(2*self.n)])
+        return C_, d_
+
+    def _l1_constraint(self):
+        # The L1 constraints are defined in the extended system
+        # format C_.dot(x_) < d_
+        C_ = np.ones((1, 2 * self.n))
+        d_ = np.array(2 * self.max_total_current)
+        return C_, d_
+
+    def _kirschoff_constraint(self):
+        # Kirschoff law, defined in the extended system
+        # A_.dot(x_) = b_
+        A_ = np.hstack([np.ones((1, self.n)), -np.ones((1, self.n))])
+        b_ = np.array(0.)
+        return A_, b_
+
+class TESOptimizationProblem(TESConstraints):
+    ''' Base class for TES Optimization problems. Provide basic functionality for
+    manipulating leadfields and the quadratic portion of the objective
+
+    Parameters
+    -------------
+    leadfield: N_elec x N_roi x N_comp ndarray
+        Leadfield
+
+    max_total_current: float
+        Maximum total current flow through all electrodes
+
+    max_el_current: float
+        Maximum current flow through each electrode
+    '''
+    def __init__(self, leadfield, max_total_current=1e4, max_el_current=1e4, weights=None):
+        super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
+        self.leadfield = leadfield
+
+        if weights is None:
+            self.weights = np.ones(leadfield.shape[1])
+        else:
+            self.weights = weights
+
+        if len(self.weights) != leadfield.shape[1]:
+            raise ValueError('Define a weight per leadfield element')
+
+        self.Q = self._quadratic_component()
+
+    def _quadratic_component(self):
+        ''' Calculate the energy matrix for optimization
+        x.dot(Q.dot(x)) = e
+        "x" are the electrode currents
+        "e" is the average squared electric field norm
+
+        Returns
+        ----------
+        Q: np.ndarray
+            Quadratic component
+        '''
+        lf = self.leadfield
+        Q = sum(lf[..., i].dot((lf[..., i] * self.weights).T)
+                for i in range(lf.shape[2]))
+        Q /= np.sum(self.weights)
+
+        P = np.linalg.pinv(np.vstack([-np.ones(Q.shape[0]), np.eye(Q.shape[0])]))
+
+        Q = P.T.dot(Q).dot(P)
+        return Q
+
+    def extend_currents(self, x):
+        '''
+         Returns the extended version of the input currents x
+         x_ext = [x, -x]
+         with x_ext > 0
+         This representation in very usefull when dealing with L1 constraints
+
+        Parameters
+        ------------
+        x: ndarray
+            Variable to be extended (normally currents)
+
+        Returns
+        ----------
+        x_: ndarray
+            Extended version
+        '''
+
+        x_ = np.hstack([x, -x])
+        x_[x_ < 0] = 0
+        return x_
+
+
+    def solve(self):
+        raise NotImplementedError()
+
+
+
+class TESLinearConstrained(TESOptimizationProblem):
+    ''' Class for solving the TES Problem with linear constraints
+
+    This corresponds to Problem 8 in Saturnino et al., 2019
+    '''
+    def __init__(self, leadfield, max_total_current=1e5,
+                 max_el_current=1e5, weights=None):
+
+        super().__init__(leadfield, max_total_current, max_el_current, weights)
+        
+        self.l = np.empty((0, self.n), dtype=float)
+        self.target_means = np.empty(0, dtype=float)
+
+    def add_linear_constraint(self, target_indices, target_direction, target_mean):
+        ''' Add a linear constrait to the problem
+
+        Parameters
+        ------------
+        target_indices: list of ints
+            Indices of targets.
+        target_direction: ndarray
+            The electric field direction to be optimized for each target position
+        target_mean: float
+            Target mean electric field in region
+        '''
+        l = _calc_l(self.leadfield, target_indices, target_direction, self.weights)
+        l *= np.sign(target_mean)
+        self.l = np.vstack([self.l, l])
+        self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
+
+
+
+    def solve(self, log_level=20):
+        ''' Solves the optimization problem
+
+        Returns
+        ----------
+        x: np.array
+            Optimized currents
+        '''
+        return _linear_constrained_tes_opt(
+            self.l, self.target_means, self.Q,
+            self.max_el_current, self.max_total_current,
+            log_level=log_level
+        )
+
+    #TODO: Add a "solve_nr_contraint" method to solve with l0 contraint
+
+
+class TESLinearAngleConstrained(TESOptimizationProblem):
+    ''' Class for solving the TES Problem with linear and angle contraints
+
+    This corresponds to Problem 6 in Saturnino et al., 2019
+    '''
+    def __init__(self, target_indices, target_direction, target_mean, max_angle,
+                 leadfield, max_total_current=1e5,
+                 max_el_current=1e5, weights=None):
+
+        super().__init__(leadfield, max_total_current, max_el_current, weights)
+        
+        self.l = np.atleast_2d(
+            _calc_l(leadfield, target_indices, target_direction, self.weights)
+        )
+        self.Qnorm = _calc_Qnorm(leadfield, target_indices, self.weights)
+        self.target_mean = np.atleast_1d(target_mean)
+        self.max_angle = max_angle
+
+    def solve(self, log_level=20):
+
+        return _linear_angle_constrained_tes_opt(
+            self.l, self.target_mean, self.Q,
+            self.max_total_current,
+            self.max_el_current,
+            self.Qnorm, self.max_angle,
+            log_level=log_level
+        )
+
+
+class TESLinearElecConstrained(TESLinearConstrained):
+    ''' Class for solving the TES Problem with linear and number of electrodes
+    constraints
+
+    This corresponds to Problem 10 in Saturnino et al., 2019
+    '''
+    def __init__(self, n_elec, leadfield,
+                 max_total_current=1e5,
+                 max_el_current=1e5, weights=None):
+        super().__init__(leadfield, max_total_current, max_el_current, weights)
+        self.n_elec = n_elec
+
+    def _solve_reduced(self, linear, quadratic, extra_ineq=None):
+        l = linear[0]
+        Q = quadratic[0]
+        x = _linear_constrained_tes_opt(
+            l, self.target_means, Q,
+            self.max_el_current, self.max_total_current,
+            extra_ineq=extra_ineq,
+            log_level=10
+        )
+        if np.any(l.dot(x) < self.target_means*0.99):
+            return x, 1e20
+        else:
+            return x, x.dot(Q).dot(x)
+
+    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy='compact'):
+        # Heuristically eliminate electrodes
+        max_el_current = min(self.max_el_current, self.max_total_current)
+        el = np.arange(self.n)
+        if init_startegy == 'compact':
+            x = _linear_constrained_tes_opt(
+                self.l, self.target_means, self.Q,
+                self.max_el_current, self.max_total_current,
+                log_level=10
+            )
+            active = np.abs(x) > 1e-3 * max_el_current
+            init = bb_state([], el[~active].tolist(), el[active].tolist())
+
+        elif init_startegy == 'full':
+            init = bb_state([], [], el.tolist())
+
+        else:
+            raise ValueError('Invalid initialization strategy')
+
+        bounds_function = functools.partial(
+             _bb_bounds_tes_problem,
+              max_l0=self.n_elec,
+             linear=[self.l],
+             quadratic=[self.Q],
+             max_el_current=max_el_current,
+             func=self._solve_reduced
+         )
+
+        final_state = _branch_and_bound(
+            init, bounds_function,
+            eps_bb, max_bb_iter,
+            log_level=log_level
+        )
+
+        return final_state.x_ub
+
+
+class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
+    ''' Class for solving the TES Problem with linear, angle and number of electrodes
+    constraints
+
+    This corresponds to Problem 7 in Saturnino et al., 2019
+    '''
+    def __init__(self, n_elec,
+                 target_indices, target_direction,
+                 target_mean, max_angle,
+                 leadfield, max_total_current=1e5,
+                 max_el_current=1e5, weights=None):
+
+        super().__init__(
+            target_indices, target_direction,
+            target_mean, max_angle,
+            leadfield, max_total_current,
+            max_el_current, weights)
+
+        self.n_elec = n_elec
+        self._feasible = True
+
+    def _solve_reduced(self, linear, quadratic, extra_ineq=None, feasible=False):
+        l = linear[0]
+        Q = quadratic[0]
+        Qnorm = quadratic[1]
+
+        x = _linear_angle_constrained_tes_opt(
+            l, self.target_mean, Q,
+            self.max_el_current,
+            self.max_total_current,
+            Qnorm, self.max_angle,
+            extra_ineq=extra_ineq,
+            log_level=10, eps_angle=1e-2
+        )
+
+        field = l.dot(x)
+        if not self._feasible:
+            return x, -field
+
+        elif np.any(field < self.target_mean*0.99):
+            return x, 1e20
+
+        else:
+            return x, x.dot(Q).dot(x)
+
+    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy='compact'):
+        # Heuristically eliminate electrodes
+        max_el_current = min(self.max_el_current, self.max_total_current)
+        el = np.arange(self.n)
+        #  first determine if ploblem is feasible
+        x = _linear_angle_constrained_tes_opt(
+            self.l, self.target_mean, self.Q,
+            self.max_el_current, self.max_total_current,
+            self.Qnorm, self.max_angle,
+            log_level=10
+        )
+
+        feasible = np.allclose(self.l.dot(x), self.target_mean, rtol=1e-2)
+        if not feasible:
+            init_startegy = 'full'
+
+        if init_startegy == 'compact':
+            active = np.abs(x) > 1e-3 * max_el_current
+            init = bb_state([], el[~active].tolist(), el[active].tolist())
+
+        elif init_startegy == 'full':
+            init = bb_state([], [], el.tolist())
+
+        else:
+            raise ValueError('Invalid initialization strategy')
+
+        bounds_function = functools.partial(
+             _bb_bounds_tes_problem,
+             max_l0=self.n_elec,
+             linear=[self.l],
+             quadratic=[self.Q, self.Qnorm],
+             max_el_current=max_el_current,
+             func=self._solve_reduced
+         )
+        self._feasible = feasible
+        final_state = _branch_and_bound(
+            init, bounds_function,
+            eps_bb, max_bb_iter,
+            log_level=log_level
+        )
+
+        return final_state.x_ub
+
+def _calc_l(leadfield, target_indices, target_direction, weights):
+    ''' Calculates the matrix "l" (eq. 14 in Saturnino et al. 2019)
+    '''
+    target_indices = np.atleast_1d(target_indices)
+    target_direction = np.atleast_2d(target_direction)
+    if target_direction.shape[1] != 3:
+        target_direction = target_direction.T
+    if len(target_indices) != len(target_direction):
+        raise ValueError('Please define one direction per target')
+    if target_direction.shape[1] != 3:
+        raise ValueError('A direction must have 3 dimentions')
+
+    target_direction = target_direction/\
+        np.linalg.norm(target_direction, axis=1)[:, None]
+
+    lf_t = leadfield[:, target_indices]
+    w_idx = weights[target_indices]
+    lf_t *= w_idx[None, :, None]
+    lf_t /= np.sum(w_idx)
+    l = np.einsum('ijk, jk -> i', lf_t, target_direction)
+
+    P = np.linalg.pinv(
+        np.vstack([-np.ones(len(l)), np.eye(len(l))])
+    )
+
+    return l.dot(P)
+
+
+def _calc_Qnorm(leadfield, target_indices, weights):
+    ''' Calculates the matrix "Qnorm" (like eq. 21 in Saturnino et al. 2019,
+    but for all field components and not just)
+    '''
+    n = leadfield.shape[0]
+    target_indices = np.atleast_1d(target_indices)
+    lf_t = leadfield[:, target_indices]
+    w_idx = weights[target_indices]
+    Q_in = sum(
+        lf_t[..., i].dot((lf_t[..., i]*w_idx[None, :]).T) for i in range(3))
+    Q_in /= np.sum(w_idx)
+
+    P = np.linalg.pinv(
+        np.vstack([-np.ones(n), np.eye(n)])
+    )
+
+    Qnorm = P.T.dot(Q_in).dot(P)
+    return Qnorm
+
+
+def _linear_constrained_tes_opt(l, target_mean, Q,
+                                max_el_current, max_total_current,
+                                extra_ineq=None, extra_eq=None,
+                                log_level=10):
+
+        assert l.shape[0] == target_mean.shape[0], \
+            "Please specify one target mean per target"
+        assert l.shape[1] == Q.shape[0]
+
+
+        n = l.shape[1]
+        tes_constraints = TESConstraints(n, max_total_current, max_el_current)
+        # First solve an LP to get a feasible starting point
+        l_ = np.hstack([l, -l])
+
+        # L1 constaints
+        C_, d_ = tes_constraints._l1_constraint()
+        # Kirschoffs law
+        A_, b_ = tes_constraints._kirschoff_constraint()
+
+        # Inequality constraints
+        if extra_ineq is not None:
+            C_ = np.vstack([C_, extra_ineq[0]])
+            d_ = np.hstack([d_, extra_ineq[1]])
+
+        if extra_eq is not None:
+            A_ = np.vstack([A_, extra_eq[0]])
+            b_ = np.hstack([b_, extra_eq[1]])
+
+        sol = scipy.optimize.linprog(
+            -np.average(l_, axis=0),
+            np.vstack([C_, l_]), np.hstack([d_, target_mean]),
+            A_, b_,
+            bounds=(0, max_el_current)
+        )
+        x_ = sol.x
+
+        # Test if the objective can be reached
+        f = l.dot(x_[:n] - x_[n:])
+
+        if np.any(np.abs(f - target_mean) >= np.abs(1e-2 * target_mean)):
+            logger.log(log_level, 'Could not reach target intensities')
+            return x_[:n] - x_[n:]
+
+        logger.log(log_level, 'Target intensity reached, optimizing focality')
+
+        # Do the QP
+        eps = 1e-3*np.max(np.abs(x_))
+        Q_ = np.vstack([np.hstack([Q, -Q]),
+                        np.hstack([-Q, Q])])
+        C_b, d_b = tes_constraints._bound_contraints()
+
+        x_ = _active_set_QP(
+            np.zeros(2*n), Q_,
+            np.vstack([C_b, C_]), np.hstack([d_b, d_]),
+            x_, eps,
+            np.vstack([A_, l_]), np.hstack([b_, f]) # I use "f" here for numerical
+        )
+
+        x = x_[:n] - x_[n:]
+        return x
+
+
+def _calc_angle(x, Qin, l):
+    tan = np.sqrt(np.abs(x.dot(Qin).dot(x) - l.dot(x) ** 2))
+    return np.abs(np.arctan2(tan, l.dot(x)))[0]
+
+
+def _linear_angle_constrained_tes_opt(
+    l, target_mean, Q,
+    max_el_current, max_total_current,
+    Qin, max_angle,
+    extra_ineq=None,
+    extra_eq=None,
+    eps_linear=1e-5,
+    eps_angle=1e-1, log_level=20):
+
+    max_angle = np.deg2rad(max_angle)
+    logger.log(log_level, 'Running optimization with angle constraint')
+    max_iter = 20
+    # Try to find where we can find values below and above the target
+    it = 0
+    above = 0
+
+    # Check if the maximal focality solution alreay fulfills the constraint
+    x = _linear_constrained_tes_opt(
+        l, target_mean, Q,
+        max_el_current, max_total_current,
+        extra_ineq=extra_ineq, extra_eq=extra_eq,
+        log_level=log_level-10
+    )
+
+    if _calc_angle(x, Qin, l) <= max_angle:
+        logger.log(log_level, 'Max focality solution fullfills angle constraint')
+        return x
+
+    x_above = np.copy(x)
+
+    # calculate the smallest angle, given a fixed intensity
+    def _minimize_angle(alpha):
+        x_l = _linear_constrained_tes_opt(
+            l, alpha*target_mean, Qin,
+            max_el_current, max_total_current,
+            extra_ineq=extra_ineq, extra_eq=extra_eq,
+            log_level=log_level-10
+        )
+        return x_l
+
+    x = _minimize_angle(1.)
+    angle = _calc_angle(x, Qin, l)
+
+    # if we cannot reduce the angle to the target while keeting l^t x at the target
+    # intensity, reduce the target intensity untill it's achievable.
+    if angle > max_angle:
+        logger.log(log_level, "Target intensity can't be reached, reducing it")
+        above = 1.
+        angle_above = angle
+        below = 0
+        angle_below = 0
+        it = 0
+        # Use the secant method
+        while not (angle > max_angle * (1 - eps_angle) and angle < max_angle):
+            alpha = above + \
+                (max_angle * (1 - eps_angle * .5) - angle_above) * \
+                (below - above)/(angle_below - angle_above)
+            x = _minimize_angle(alpha)
+            angle = _calc_angle(x, Qin, l)
+            logger.log(log_level,
+                       '{0} alpha: {1:.3e}, angle: {2:.2e}, max_angle: {3:.2e}'.format(
+                        it, alpha, angle, max_angle))
+            if angle < max_angle:
+                below = alpha
+                angle_below = angle
+                x_below = np.copy(x)
+            else:
+                above = alpha
+                angle_above = angle
+            it += 1
+            if it > max_iter:
+                if below == 0:
+                    return x
+                else:
+                    return x_below
+        return x
+
+    # In this case, we know that by minimizing x^t Qin x while keeping l^t x = t, we can
+    # achieve the bound
+    # find a combination between Q and Qin that maximizes focality while keeping Qin in
+    # the bound
+    else:
+        logger.log(
+            log_level,
+           "Target intensity reached, optimizing focality with angle constraint"
+        )
+        angle_below = angle
+        below = 1.
+        x_below = np.copy(x)
+        angle_above = _calc_angle(x_above, Qin, l)
+        above = 0
+
+        # Start the secant method
+        it = 0
+        alpha = 1
+        while not (angle > max_angle * (1 - eps_angle) and angle < max_angle):
+            alpha = above + \
+                (max_angle * (1 - eps_angle * .5) - angle_above) * \
+                (below - above)/(angle_below - angle_above)
+
+            x = _linear_constrained_tes_opt(
+                l, target_mean, (1 - alpha) * Q + alpha * Qin,
+                max_el_current, max_total_current,
+                extra_ineq=extra_ineq, extra_eq=extra_eq,
+                log_level=log_level-10
+            )
+            angle = _calc_angle(x, Qin, l)
+            logger.log(
+                log_level,
+                f'{it} alpha: {alpha:.2f}, angle: {angle:.2e}, max_angle: {max_angle:.2e}'
+            )
+
+            if angle > max_angle:
+                above = alpha
+                angle_above = angle
+            else:
+                below = alpha
+                angle_below = angle
+                x_below = np.copy(x)
+
+            it += 1
+            if it > max_iter:
+                return x_below
+
+        return x
+
+
+
+def _bb_bounds_tes_problem(state, max_l0, linear, quadratic, max_el_current, func):
+    ''' Returns upper bound, lower bound a child states for a TES optimization problem
+
+    This is meant ro be a general interface for the BB algorithm. It requireas a function
+    "func" with the following call
+        x, objective = func(linear, quadratic, extra_ineq)
+    "linear" is a list of linear factors, quadratic is a list of quadratic factors
+    '''
+    if len(state.active) > max_l0:
+        return 1e20, 1e20, None, None
+
+    n = linear[0].shape[1]
+
+    # Create a list of active + unasigned electrodes
+    ac = np.zeros(n, dtype=bool)
+    if len(state.active) < max_l0:
+        ac[state.active + state.unassigned] = True
+    elif len(state.active) == max_l0:
+        ac[state.active] = True
+
+    ##  Lower bound calculation
+
+    # Create the extra l1 constraint (PS1.6)
+    if len(state.active) > 0 and len(state.active) < max_l0:
+        v = np.ones(n) / max_el_current
+        v[state.active] = 0
+        v = np.tile(v[ac], 2)
+        extra_ineq = (v, max_l0 - len(state.active))
+    else:
+        extra_ineq = None
+
+    # Run problem in reduced system
+    linear_ac = [l[:, ac] for l in linear]
+    quadratic_ac = [Q[np.ix_(ac, ac)] for Q in quadratic]
+    x_ac, objective_lb = func(
+        linear_ac, quadratic_ac,
+        extra_ineq=extra_ineq
+    )
+    x_lb = np.zeros(n)
+    x_lb[ac] = x_ac
+    ## Upper bound calculation
+    # Solve PS2
+    x_ac, _ = func(
+        linear_ac, quadratic_ac
+    )
+    x_ub1 = np.zeros(n)
+    x_ub1[ac] = x_ac
+
+    # Solve problem PS3
+    # Select the "l0 - active" largest unassigned electrodes
+    order_unasigned = np.argsort(-np.abs(x_ub1[state.unassigned]))
+    selected_unasigned = \
+        [state.unassigned[i] for i in order_unasigned[:max_l0-len(state.active)]]
+
+    # Select the active electrodes plus the largest unassigned electrodes
+    s = state.active + selected_unasigned
+    linear_s = [l[:, s] for l in linear]
+    quadratic_s = [Q[np.ix_(s, s)] for Q in quadratic]
+    x_s, objective_ub = func(
+        linear_s, quadratic_s
+    )
+    x_ub = np.zeros(n)
+    x_ub[s] = x_s
+
+    # Split by activating / deactivating the unassigned electrode with the most current
+    split_var = state.unassigned[np.argmax(np.abs(x_ub[state.unassigned]))]
+    child1 = state.activate(split_var)
+    child2 = state.inactivate(split_var)
+    state.x_ub = x_ub
+    state.x_lb = x_lb
+
+    return objective_ub, objective_lb, child1, child2
+
+
 def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
     ''' Solves the problem
     minimize l^T x + 1/2 x^T Q x
@@ -122,137 +776,6 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
 
     return x
 
-
-def _constrained_angle(l, Q, target_mean,
-                       max_total_current,
-                       max_el_current,
-                       Qin, max_angle,
-                       max_active_electrodes=None,
-                       eps=1e-5,
-                       eps_angle=1e-1,
-                       log_level=20):
-    logger.log(log_level, 'Running optimization with angle constraint')
-    max_iter = 20
-    # Try to find where we can find values bellow and above the target
-    it = 0
-    above = 0
-
-    def angle(x):
-        tan = np.sqrt(np.abs(x.dot(Qin).dot(x) - l.dot(x) ** 2))
-        # the abs is here for numerical stability
-        return np.abs(np.arctan2(tan, l.dot(x)))
-
-    # Check if the maximal focality solution alreay fulfills the constraint
-    x = optimize_focality(l, Q,
-                          target_mean, max_total_current,
-                          max_el_current,
-                          max_active_electrodes=max_active_electrodes,
-                          log_level=10)
-
-    if angle(x) <= max_angle:
-        logger.log(log_level, 'Max focality field fullfills angle constraint')
-        return x
-
-    x_above = np.copy(x)
-    target_field = l.dot(x)
-
-    # calculate the smallest angle, given a fixed intensity
-    def calc_smallest_angle(alpha):
-        x_l = optimize_focality(l, Qin,
-                                alpha * target_field, max_total_current,
-                                max_el_current,
-                                max_active_electrodes=max_active_electrodes,
-                                log_level=10)
-        return x_l
-
-    # if the target field is not reached, we don't need to calculate the smallest angle,
-    # as the set of feasible solutions only contains one element
-    if target_field >= target_mean * (1 - eps):
-        x = calc_smallest_angle(1.)
-
-    f = angle(x)
-
-    # if we cannot reduce the angle to the target while keeting l^t x at the target
-    # intensity, reduce the target intensity untill it's achievable.
-    if f > max_angle:
-        logger.log(log_level, "Target intensity can't be reached, reducing it")
-        above = 1.
-        f_above = f
-        bellow = None
-        f_bellow = None
-        # lowers the target mean untill the desired angle can be achieved
-        alpha = 1.
-        it = 0
-        # find lower bound
-        while not (f > max_angle * (1 - eps_angle) and f < max_angle):
-            if bellow is not None:
-                alpha = above + \
-                    (max_angle * (1 - eps_angle * .5) - f_above) * \
-                    (bellow - above)/(f_bellow - f_above)
-            else:
-                alpha *= .8
-            x = calc_smallest_angle(alpha)
-            f = angle(x)
-            logger.log(log_level,
-                       '{0} alpha: {1}, angle: {2}, max_angle: {3}'.format(
-                        it, alpha, f, max_angle))
-            if f < max_angle:
-                bellow = alpha
-                f_bellow = f
-                x_bellow = np.copy(x)
-            else:
-                above = alpha
-                f_above = f
-            it += 1
-            if it > max_iter:
-                if bellow is None:
-                    return x
-                else:
-                    return x_bellow
-        return x
-
-    # In this case, we know that by minimizing x^t Qin x while keeping l^t x = t, we can
-    # achieve the bound
-
-    # find a combination between Q and Qin that maximizes focality while keeping Qin in
-    # the bound
-    else:
-        logger.log(log_level, "Target intensity reached, optimizing focality with angle constraint")
-        f_bellow = f
-        bellow = 1.
-        x_bellow = np.copy(x)
-        f_above = angle(x_above)
-        above = 0
-
-        # Start bisection
-        it = 0
-        alpha = 1
-        while not (f > max_angle * (1 - eps_angle) and f < max_angle):
-            alpha = above + \
-                (max_angle * (1 - eps_angle * .5) - f_above) * \
-                (bellow - above)/(f_bellow - f_above)
-            x = optimize_focality(l, (1 - alpha) * Q + alpha * Qin,
-                                  target_field, max_total_current,
-                                  max_el_current,
-                                  max_active_electrodes=max_active_electrodes,
-                                  log_level=10)
-            f = angle(x)
-            logger.log(log_level,
-                       '{0} alpha: {1}, angle: {2}, max_angle: {3}'.format(
-                        it, alpha, f, max_angle))
-            if f > max_angle:
-                above = alpha
-                f_above = f
-            else:
-                bellow = alpha
-                f_bellow = f
-                x_bellow = np.copy(x)
-
-            it += 1
-            if it > max_iter:
-                return x_bellow
-
-        return x
 
 def _constrained_l0(l, Q, target_mean,
                     max_total_current,
@@ -555,6 +1078,7 @@ def optimize_focality(l, Q, target_mean, max_total_current=None,
         n = l.shape[1]
         l_avg, A_ub, b_ub, A_eq, b_eq, bounds = \
             _lp_variables(l, target_mean, max_total_current, max_el_current)
+
         sol = scipy.optimize.linprog(-l_avg, A_ub, b_ub, A_eq, b_eq,
                                      bounds=bounds)
         x_ = sol.x
@@ -605,61 +1129,6 @@ def optimize_focality(l, Q, target_mean, max_total_current=None,
         raise NotImplementedError(
             'Cant handle angle constraints and maximum number of '
             'electrodes simultaneouly')
-
-
-def optimize_focality_cvxpy(l, Q, target_mean, max_total_current=None,
-                    max_el_current=None, Qin=None, max_angle=None, return_duals=False,
-                    none_on_infeasibility=False):
-    import cvxpy
-
-    if max_total_current is None and max_el_current is None:
-        raise ValueError('Please define a maximal total current or maximal electrode ' +
-                         'current')
-    n = l.shape[0]
-    C = np.vstack([np.eye(n), -np.eye(n)])
-    A = np.ones(n)
-
-    if max_el_current is not None:
-        d = max_el_current * np.ones(C.shape[0])
-        eps = 1e-3 * max_el_current
-    else:
-        d = 1e10 * np.ones(C.shape[0])
-
-    if max_total_current is not None:
-        max_l1 = 2 * max_total_current
-    else:
-        max_l1 = None
-
-    C = np.vstack([C, l])
-    d = np.hstack([d, target_mean])
-    x = cvxpy.Variable(n)
-    p = cvxpy.Problem(cvxpy.Maximize(l * x))
-    p.constraints = [C * x <= d,
-                     A * x == 0]
-    if max_total_current is not None:
-        p.constraints.append(cvxpy.norm(x, 1) <= max_l1)
-    p.solve(solver=cvxpy.SCS)
-    v = np.squeeze(np.array(x.value)).T
-
-    field_component = l.dot(v)
-    if field_component * (1 + 1e-4) < target_mean:
-        return v
-    else:
-        target_field = target_mean
-        # Solve the QP
-        eq_constraints = np.vstack([A, l])
-        b = np.array([0, target_field])
-        C = C[:-1]
-        d = d[:-1]
-        p = cvxpy.Problem(cvxpy.Minimize(cvxpy.quad_form(x, Q)))
-        p.constraints = [C * x <= d,
-                         eq_constraints * x == b]
-        if max_total_current is not None:
-            p.constraints.append(cvxpy.norm(x, 1) <= max_l1)
-        p.solve(solver=cvxpy.SCS)
-        v = np.squeeze(np.array(x.value)).T
-
-        return v
 
 
 def _eq_constrained_QP(l, Q, A, b):
@@ -750,8 +1219,7 @@ def _branch_and_bound(init, function, eps, max_k, log_level=20):
         ub = ub[keep]
         active_nodes = [n for i, n in enumerate(active_nodes) if keep[i]]
         logger.log(log_level,
-                   "{0} Upper Bound: {1}, Lower Bound: {2}".format(
-                    k, ub.min(), lb.min()))
+                   f"{k} Upper Bound: {ub.min():.2e}, Lower Bound: {lb.min():.2e}")
         if ub.min() - lb.min() <= eps * np.abs(lb.min()) or k >= max_k:
             if ub.min() - lb.min() <= eps * np.abs(lb.min()):
                 logger.log(log_level, 'Tolerance reached, returning')
@@ -900,6 +1368,7 @@ def _constrained_l0_branch_and_bound(
         max_el_current, max_l0, eps_bb=1e-1,
         max_bb_iter=100, start_inactive=[], start_active=[],
         log_level=20):
+
     ''' Solves the constrained L0 problem using a branch-and-bound algorithm '''
     logger.log(log_level, "Starting BB")
     max_l0 = int(max_l0)
