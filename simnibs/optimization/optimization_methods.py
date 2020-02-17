@@ -123,11 +123,12 @@ class TESLinearConstrained(TESOptimizationProblem):
                  max_el_current=1e5, weights=None):
 
         super().__init__(leadfield, max_total_current, max_el_current, weights)
-        
         self.l = np.empty((0, self.n), dtype=float)
         self.target_means = np.empty(0, dtype=float)
 
-    def add_linear_constraint(self, target_indices, target_direction, target_mean):
+
+    def add_linear_constraint(self, target_indices, target_direction, target_mean,
+                              target_weights=None):
         ''' Add a linear constrait to the problem
 
         Parameters
@@ -138,12 +139,16 @@ class TESLinearConstrained(TESOptimizationProblem):
             The electric field direction to be optimized for each target position
         target_mean: float
             Target mean electric field in region
+        target_weights: ndarray (optional)
+            Weights (such are areas/volumes) for calculating the mean. Defined for every
+            index
         '''
-        l = _calc_l(self.leadfield, target_indices, target_direction, self.weights)
+        if target_weights is None:
+            target_weights = self.weights
+        l = _calc_l(self.leadfield, target_indices, target_direction, target_weights)
         l *= np.sign(target_mean)
         self.l = np.vstack([self.l, l])
         self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
-
 
 
     def solve(self, log_level=20):
@@ -170,12 +175,14 @@ class TESLinearAngleConstrained(TESOptimizationProblem):
     '''
     def __init__(self, target_indices, target_direction, target_mean, max_angle,
                  leadfield, max_total_current=1e5,
-                 max_el_current=1e5, weights=None):
+                 max_el_current=1e5, weights=None, target_weights=None):
 
         super().__init__(leadfield, max_total_current, max_el_current, weights)
-        
+        if target_weights is None:
+            target_weights = self.weights
+
         self.l = np.atleast_2d(
-            _calc_l(leadfield, target_indices, target_direction, self.weights)
+            _calc_l(leadfield, target_indices, target_direction, target_weights)
         )
         self.Qnorm = _calc_Qnorm(leadfield, target_indices, self.weights)
         self.target_mean = np.atleast_1d(target_mean)
@@ -201,6 +208,7 @@ class TESLinearElecConstrained(TESLinearConstrained):
     def __init__(self, n_elec, leadfield,
                  max_total_current=1e5,
                  max_el_current=1e5, weights=None):
+
         super().__init__(leadfield, max_total_current, max_el_current, weights)
         self.n_elec = n_elec
 
@@ -265,13 +273,14 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
                  target_indices, target_direction,
                  target_mean, max_angle,
                  leadfield, max_total_current=1e5,
-                 max_el_current=1e5, weights=None):
+                 max_el_current=1e5, weights=None,
+                 target_weights=None):
 
         super().__init__(
             target_indices, target_direction,
             target_mean, max_angle,
             leadfield, max_total_current,
-            max_el_current, weights)
+            max_el_current, weights, target_weights)
 
         self.n_elec = n_elec
         self._feasible = True
@@ -287,7 +296,7 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
             self.max_total_current,
             Qnorm, self.max_angle,
             extra_ineq=extra_ineq,
-            log_level=10, eps_angle=1e-2
+            log_level=10,
         )
 
         field = l.dot(x)
@@ -447,7 +456,7 @@ def _linear_constrained_tes_opt(l, target_mean, Q,
             np.zeros(2*n), Q_,
             np.vstack([C_b, C_]), np.hstack([d_b, d_]),
             x_, eps,
-            np.vstack([A_, l_]), np.hstack([b_, f]) # I use "f" here for numerical
+            np.vstack([A_, l_]), np.hstack([b_, f])  # I use "f"
         )
 
         x = x_[:n] - x_[n:]
@@ -775,158 +784,6 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
         pass
 
     return x
-
-
-def _constrained_l0(l, Q, target_mean,
-                    max_total_current,
-                    max_el_current,
-                    max_l0, eps=1e-5,
-                    method='bb_compact',
-                    log_level=20):
-    logger.log(log_level, 'Running optimization with constrained number of electrodes')
-    max_l0 = int(max_l0)
-    if max_total_current is None and max_el_current is None:
-        raise ValueError('at least one of max_total_current or max_el_current must not be None')
-
-    if max_el_current is not None:
-        if max_total_current is not None:
-            max_total_current = min(max_total_current, max_l0 * max_el_current / 2.)
-        else:
-            max_total_current = max_l0 * max_el_current
-    else:
-        max_el_current = max_total_current
-
-    if method == 'proj':
-        x = optimize_focality(l, Q,
-                              target_mean, max_total_current,
-                              max_el_current, log_level=10)
-        active = np.argsort(np.abs(x))[-max_l0:]
-        x_active = optimize_focality(l[:, active], Q[np.ix_(active, active)],
-                                     target_mean, max_total_current,
-                                     max_el_current, log_level=10)
-        x = np.zeros(l.shape[1])
-        x[active] = x_active
-        return x
-
-    elif method == 'bb_full':
-        x = _constrained_l0_branch_and_bound(
-            l, Q, target_mean, max_total_current, max_el_current,
-            max_l0, eps_bb=1e-1, max_bb_iter=100, log_level=log_level)
-
-    elif method == 'bb_compact':
-        logger.log(log_level, 'Using the compact Branch-and-bound method')
-        x = optimize_focality(l, Q,
-                              target_mean, 3 * max_total_current,
-                              max_el_current, log_level=10)
-        active = np.abs(x) > 1e-3 * max_el_current
-        x_active = _constrained_l0_branch_and_bound(
-            l[:, active], Q[np.ix_(active, active)],
-            target_mean, max_total_current, max_el_current,
-            max_l0, eps_bb=1e-1, max_bb_iter=100, log_level=log_level)
-
-        x = np.zeros(l.shape[1])
-        x[active] = x_active
-
-    else:
-        raise Exception('Uknown method')
-
-    return x
-
-
-def target_matrices(leadfield, target_indices, target_direction, weights, avg_reference=True):
-    ''' Calculate a matrices l and Qin such that
-    l.dot(x) = a, x.dot(Qin).dot(x) = "b"
-    "x" are the electrode currents
-    "a" is the average electric in the target_direction across the target_indices.
-    "b" is the average squared electric field norm in the target_indices
-
-    Parameters
-    ------------
-    leadfield: ndarray (n_electrodes x n_points x 3)
-        Leadfield
-    target_indices: list of ints
-        Indices of targets. If a 2 dimensional list the output "l" is also
-        2-dimensional
-    target_direction: ndarray
-        The electric field direction to be optimized for each target
-    weights: array
-        Weight for each element (each leadfield column)
-    avg_reference: bool (optional)
-        Wether or not to re-reference to an average frame. Default: True
-
-    Returns
-    ----------
-    l: np.ndarray
-        Matrix calculating the average electric field
-    Q_in: np.ndarray
-        Matrix calculating the average squared electric field norm
-    '''
-    lf = leadfield
-    target_indices = np.atleast_1d(target_indices)
-    target_direction = np.atleast_2d(target_direction)
-    if target_direction.shape[1] != 3:
-        target_direction = target_direction.T
-    if len(target_indices) != len(target_direction):
-        raise ValueError('Please define one direction per target')
-    if target_direction.shape[1] != 3:
-        raise ValueError('A direction must have 3 dimentions')
-    target_direction = target_direction/np.linalg.norm(target_direction, axis=1)[:, None]
-
-    lf_t = lf[:, target_indices]
-    w_idx = weights[target_indices]
-    Q_in = sum(
-        lf_t[..., i].dot((lf_t[..., i]*w_idx[None, :]).T) for i in range(3))
-    Q_in /= np.sum(w_idx)
-    lf_t *= w_idx[None, :, None]
-    lf_t /= np.sum(w_idx)
-    l = np.einsum('ijk, jk -> i', lf_t, target_direction)
-
-    if avg_reference:
-        P = np.linalg.pinv(
-            np.vstack([-np.ones(len(l)), np.eye(len(l))]))
-        l = l.dot(P)
-        Q_in = P.T.dot(Q_in).dot(P)
-
-    return l, Q_in
-
-
-def energy_matrix(leadfield, weights, avg_reference=True):
-    ''' Calculate the energy matrix for optimization
-    x.dot(Q.dot(x)) = e
-    "x" are the electrode currents
-    "e" is the average squared electric field norm
-
-    Parameters
-    -----------
-    leadfield: ndarray (n_electrodes x n_points x 3)
-        Leadfield
-    weights: array
-        weith for each element (each leadfield column), for example volume or area
-    avg_reference: bool (optional)
-        Wether or not to re-reference to an average frame. Default: True
-
-
-    Returns:
-    ----------
-    l: np.ndarray
-        linear part of objective, the mean field in the target indices and target
-        direction
-    Q_out: np.ndarray
-        Quadratic part of objective, the mean energy in the head
-    Q_in: np.ndarray
-        The squared average of the norm of the field in the target area in the target area
-    '''
-
-    lf = leadfield
-    Q = sum(lf[..., i].dot((lf[..., i] * weights).T) for i in range(3))
-    Q /= np.sum(weights)
-
-    if avg_reference:
-        P = np.linalg.pinv(
-            np.vstack([-np.ones(Q.shape[0]), np.eye(Q.shape[0])]))
-        Q = P.T.dot(Q).dot(P)
-
-    return Q
 
 
 def optimize_field_component(l, max_total_current=None, max_el_current=None):

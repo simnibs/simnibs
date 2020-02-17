@@ -790,41 +790,6 @@ class TestLinearAngleElecConstrained:
         assert np.all(tes_problem.l.dot(x) >= obj_bf)
 
 
-class TestOptimizeTargetIntensity:
-    def test_bound_constraints(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        x = optimization_methods.optimize_field_component(l, max_el_current=m)
-        x_sp = optimize_comp(l, A, m)
-        assert np.all(np.abs(x) <= m+1e-6)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-
-    def test_l1_constraint(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        x = optimization_methods.optimize_field_component(l, max_total_current=m)
-        x_sp = optimize_comp(l, A, max_total_current=m)
-        assert np.linalg.norm(x, 1) <= 2 *m + 1e-4
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-    def test_both_constraints(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 3e-3
-        x = optimization_methods.optimize_field_component(l, max_el_current=m,
-                                                          max_total_current=m1)
-        x_sp = optimize_comp(l, A, m, m1)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m+1e-6)
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-
 class TestOptimizeFocality:
     def test_bound_constraints_feasible(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
