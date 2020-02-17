@@ -280,50 +280,38 @@ class TestTDCSTarget:
         assert t.max_angle == 30
 
 
-    def test_calc_target_matrices(self, sphere_surf, leadfield_surf):
+    def test_get_indexes_and_directions(self, sphere_surf):
         idx = [1]
         directions = [2., 0., 0.]
         t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
-        t_mat, Q_mat = t.calc_target_matrices(leadfield_surf)
-        areas = sphere_surf.nodes_volumes_or_areas().value
-        idx_ = [0]
-        directions_ = [1., 0., 0.]
-        t, Q = methods.target_matrices(leadfield_surf, idx_, directions_, areas)
-        assert np.all(np.isclose(t_mat, t))
-        assert np.all(np.isclose(Q_mat, Q))
+        id_, dir_ = t.get_indexes_and_directions()
+        assert np.all(id_ == [0])
+        assert np.allclose(dir_, [1., 0., 0.])
 
-    def test_calc_target_matrices_2_targets(self, sphere_surf, leadfield_surf):
+
+    def test_get_indexes_and_directions_2_targets(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.], [0., 3., 0.]]
         t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
-            mesh=sphere_surf, lf_type='node', radius=0)
-        t_mat, Q_mat = t.calc_target_matrices(leadfield_surf)
-        areas = sphere_surf.nodes_volumes_or_areas().value
-        idx_ = [0, 1]
-        directions_ = [[1., 0., 0.], [0., 1., 0.]]
-        t, Q = methods.target_matrices(leadfield_surf, idx_, directions_, areas)
-        assert np.all(np.isclose(t_mat, t))
-        assert np.all(np.isclose(Q_mat, Q))
+            mesh=sphere_surf, lf_type='node')
+        id_, dir_ = t.get_indexes_and_directions()
+        assert np.all(id_ == [0, 1])
+        assert np.allclose(dir_, [[1., 0., 0.], [0., 1., 0.]])
 
-    def test_calc_target_matrices_2_targets_1_dir(self, sphere_surf, leadfield_surf):
+    def test_get_indexes_and_directions_2_targets_1_dir(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.]]
         t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
-            mesh=sphere_surf, lf_type='node', radius=0)
-        t_mat, Q_mat = t.calc_target_matrices(leadfield_surf)
-        areas = sphere_surf.nodes_volumes_or_areas().value
-        idx_ = [0, 1]
-        directions_ = [[1., 0., 0.], [1., 0., 0.]]
-        t, Q = methods.target_matrices(leadfield_surf, idx_, directions_, areas)
-        assert np.all(np.isclose(t_mat, t))
-        assert np.all(np.isclose(Q_mat, Q))
+            mesh=sphere_surf, lf_type='node')
+        id_, dir_ = t.get_indexes_and_directions()
+        assert np.all(id_ == [0, 1])
+        assert np.allclose(dir_, [[1., 0., 0.], [1., 0., 0.]])
 
-    def test_calc_target_matrices_radius(self, sphere_vol, leadfield_vol):
-        vols = sphere_vol.elements_volumes_and_areas().value
+    def test_get_indexes_and_directions_radius(self, sphere_vol):
         bar = sphere_vol.elements_baricenters().value
         idx_ = np.where(
             (np.linalg.norm(bar - bar[0], axis=1) < 20) *
@@ -333,12 +321,13 @@ class TestTDCSTarget:
         t = opt_struct.TDCStarget(
             positions=bar[0], directions=directions,
             mesh=sphere_vol, lf_type='element', radius=20, tissues=4)
-        t_mat, Q_mat = t.calc_target_matrices(leadfield_vol)
+
+        id_, dir_ = t.get_indexes_and_directions()
 
         directions_ = [(1., 0., 0.)] * len(idx_)
-        t, Q = methods.target_matrices(leadfield_vol, idx_, directions_, vols)
-        assert np.all(np.isclose(t_mat, t))
-        assert np.all(np.isclose(Q_mat, Q))
+
+        assert np.all(id_ == idx_)
+        assert np.allclose(dir_, directions_)
 
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     @pytest.mark.parametrize('intensity', [0.2, -0.2])
@@ -542,15 +531,8 @@ class TestTDCSoptimize:
         with pytest.raises(ValueError):
             p.lf_type
 
-    def test_calc_energy_matrix_surf(self, fn_surf, sphere_surf, leadfield_surf):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
-        p.mesh = sphere_surf
-        energy_mat = p.calc_energy_matrix()
-        areas = sphere_surf.nodes_volumes_or_areas().value
-        e_matrix = methods.energy_matrix(leadfield_surf, areas)
-        assert np.all(np.isclose(energy_mat, e_matrix))
 
-    def test_get_avoid_field(self, fn_vol, sphere_vol):
+    def test_get_avoid_field_vol(self, fn_vol, sphere_vol):
         p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         t = p.add_avoid()
         t.tissues = 4
@@ -639,6 +621,7 @@ class TestTDCSoptimize:
     @pytest.mark.parametrize('n_targets', [1, 3])
     def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
                       max_angle, n_targets, sphere_surf, fn_surf, leadfield_surf):
+
         p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf,
                               max_individual_current=max_el_c,
                               max_total_current=max_tot_c,

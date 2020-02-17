@@ -721,25 +721,19 @@ class TDCSoptimize():
                    max_individual_current, max_active_electrodes,
                    name, target, avoid, open_in_gmsh)
 
-    def calc_energy_matrix(self):
-        '''Calculates the enery matrix for optimization
-
-        Returns:
-        ----------
-        Q: np.ndarray
-            Energy matrix (N_elec x N_elec)
+    def get_weights(self):
+        ''' Calculates the volumes or areas of the mesh associated with the leadfield
         '''
-        assert self.leadfield is not None, 'Leadfield not defined'
         assert self.mesh is not None, 'Mesh not defined'
         if self.lf_type == 'node':
             weights = self.mesh.nodes_volumes_or_areas().value
         elif self.lf_type == 'element':
             weights = self.mesh.elements_volumes_and_areas().value
         else:
-            raise ValueError('Cant calculate energy matrix: mesh or leadfield not set')
+            raise ValueError('Cant calculate weights: mesh or leadfield not set')
 
         weights *= self._get_avoid_field()
-        return optimization_methods.energy_matrix(self.leadfield, weights)
+        return weights
 
     def _get_avoid_field(self):
         fields = []
@@ -827,43 +821,67 @@ class TDCSoptimize():
         if self.max_active_electrodes is not None:
             assert self.max_active_electrodes > 1, \
                     'The maximum number of active electrodes should be at least 2'
-        if self.max_total_current is not None:
-            assert self.max_total_current > 0,\
-                    'max_total_current should be positive'
-        if self.max_individual_current is not None:
-            assert self.max_individual_current > 0,\
-                    'max_individual_current should be positive'
-        Q_mat = self.calc_energy_matrix()
-        l_mat = np.zeros([len(self.target), Q_mat.shape[1]])
-        target_intensities = np.zeros(len(self.target))
-        max_angle = None
-        Q_target = None
-        self._assign_mesh_lf_type_to_target()
-        for i, t in enumerate(self.target):
-            target_intensities[i] = t.intensity
+
+        if self.max_total_current is None:
+            logger.warn('Maximum total current not set!')
+            max_total_current = 1e3
+
+        else:
+            assert self.max_total_current > 0
+            max_total_current = self.max_total_current
+
+        if self.max_individual_current is None:
+            max_individual_current = max_total_current
+
+        else:
+            assert self.max_individual_current > 0
+            max_individual_current = self.max_individual_current
+
+        weights = self.get_weights()
+
+        # Angle-constrained optimization
+        if np.any([t.max_angle is not None for t in self.target]):
+            if len(self.target) > 1:
+                raise ValueError("Can't apply angle constraints with multiple target")
+            t = self.target[0]
             max_angle = t.max_angle
-            t_mat, Q_target = t.calc_target_matrices(self.leadfield)
-            l_mat[i] = t_mat
-            if t.intensity < 0:
-                target_intensities[i] *= -1.
-                l_mat[i] *= -1.
+            indices, directions = t.get_indexes_and_directions()
+            assert max_angle > 0
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESLinearAngleConstrained(
+                    indices, directions,
+                    t.target_mean, max_angle, self.leadfield,
+                    max_total_current, max_individual_current,
+                    weights=weights, weights_target=t.get_weights()
+                )
 
-        if max_angle is not None and len(self.target) > 1:
-            raise ValueError("Can't apply angle constraints with multiple target (yet)")
+            else:
+                opt_problem = optimization_methods.TESLinearAngleElecConstrained(
+                    self.max_active_electrodes, indices, directions,
+                    t.target_mean, max_angle, self.leadfield,
+                    max_total_current, max_individual_current,
+                    weights, weights_target=t.get_weights()
+                )
 
-        if max_angle is not None:
-            assert max_angle > 0,\
-                    'max_angle should be positive'
+        # NO angle contraint
+        else:
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESLinearConstrained(
+                    self.leadfield, max_total_current,
+                    max_individual_current, weights)
 
-        currents = optimization_methods.optimize_focality(
-            l_mat, Q_mat, target_intensities,
-            max_total_current=self.max_total_current,
-            max_el_current=self.max_individual_current,
-            max_active_electrodes=self.max_active_electrodes,
-            max_angle=max_angle,
-            Qin=Q_target,
-            log_level=10
-        )
+            else:
+                opt_problem = optimization_methods.TESLinearElecConstrained(
+                    self.max_active_electrodes, self.leadfield,
+                    max_total_current, max_individual_current, weights)
+
+            for t in self.target:
+                opt_problem.add_linear_constraint(
+                    *t.get_indexes_and_directions(), t.intensity,
+                    t.get_weights()
+                )
+
+        currents = opt_problem.solve()
 
         logger.log(25, '\n' + self.summary(currents))
 
@@ -1314,27 +1332,7 @@ class TDCStarget:
 
         return cls(positions, indexes, directions, intensity, max_angle, radius, tissues)
 
-    def calc_target_matrices(self, leadfield):
-        ''' Calculates target-specific matrices
-
-        Parameters
-        -----------
-        leadfield: N_elec-1 x M x 3 ndarray
-            Leadfield to be used for calculations
-
-        Returns
-        ----------
-        t_matrix: N_elec x 1 ndarray
-            Array such that t_matrix.dot(x) is the mean electric field in the target
-            region and directions
-        Q_matrix: N_elec x N_elec
-            Matrix that calculates the mean squared norm electric field in the target
-            region
-        '''
-        if (self.positions is None) == (self.indexes is None): # negative XOR operation
-            raise ValueError('Please set either positions or indexes')
-        assert self.directions is not None, 'Please set directions'
-        assert self.mesh is not None, 'Please set a mesh'
+    def get_weights(self):
         assert self.lf_type is not None, 'Please set a lf_type'
 
         if self.lf_type == 'node':
@@ -1345,8 +1343,19 @@ class TDCStarget:
             raise ValueError('Invalid lf_type: {0}, should be '
                              '"element" or "node"'.format(self.lf_type))
 
-        # Use the radius and tissue information to find the final indexes for the
-        # optimization
+        return weights
+
+    def get_indexes_and_directions(self):
+        ''' Calculates the mesh indexes and directions corresponding to this target
+        Returns
+        ----------
+        indexes: (n,) ndarray of ints
+            0-based region indexes
+
+        indexes: (n,3) ndarray of floats
+            Target directions
+        '''
+
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
                                          indexes=self.indexes,
@@ -1356,9 +1365,9 @@ class TDCStarget:
         directions = _find_directions(self.mesh, self.lf_type,
                                       self.directions, indexes,
                                       mapping)
+        
+        return indexes-1, directions
 
-        return optimization_methods.target_matrices(
-            leadfield, indexes - 1, directions, weights)
 
     def as_field(self, name='target_field'):
         ''' Returns the target as an ElementData or NodeData field
