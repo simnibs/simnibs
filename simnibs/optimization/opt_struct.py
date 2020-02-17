@@ -795,7 +795,7 @@ class TDCSoptimize():
             if t.mesh is None: t.mesh = self.mesh
             if t.lf_type is None: t.lf_type = self.lf_type
         for a in self.avoid:
-            if a.mesh is None: a.mesh = self.a
+            if a.mesh is None: a.mesh = self.mesh
             if a.lf_type is None: a.lf_type = self.lf_type
 
     def optimize(self, fn_out_mesh=None, fn_out_csv=None):
@@ -837,6 +837,7 @@ class TDCSoptimize():
             assert self.max_individual_current > 0
             max_individual_current = self.max_individual_current
 
+        self._assign_mesh_lf_type_to_target()
         weights = self.get_weights()
 
         # Angle-constrained optimization
@@ -1355,7 +1356,6 @@ class TDCStarget:
         indexes: (n,3) ndarray of floats
             Target directions
         '''
-
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
                                          indexes=self.indexes,
