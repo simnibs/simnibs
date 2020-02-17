@@ -165,8 +165,6 @@ class TESLinearConstrained(TESOptimizationProblem):
             log_level=log_level
         )
 
-    #TODO: Add a "solve_nr_contraint" method to solve with l0 contraint
-
 
 class TESLinearAngleConstrained(TESOptimizationProblem):
     ''' Class for solving the TES Problem with linear and angle contraints
@@ -595,7 +593,6 @@ def _linear_angle_constrained_tes_opt(
         return x
 
 
-
 def _bb_bounds_tes_problem(state, max_l0, linear, quadratic, max_el_current, func):
     ''' Returns upper bound, lower bound a child states for a TES optimization problem
 
@@ -668,6 +665,179 @@ def _bb_bounds_tes_problem(state, max_l0, linear, quadratic, max_el_current, fun
     state.x_lb = x_lb
 
     return objective_ub, objective_lb, child1, child2
+
+
+def _constrained_eigenvalue(Q):
+    '''
+    Finds the stationary values for the constrained eigenvalue problem
+    Qx = lambda x
+    such that 1^Tx = 0
+    Q is real and symmetric
+
+    Golub, Gene H. "Some modified matrix eigenvalue problems." Siam Review 15.2 (1973) 318-334.
+    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.454.9868&rep=rep1&type=pdf
+    '''
+    n = Q.shape[0]
+    c = 1/np.sqrt(n)*np.ones(n)
+    P = np.eye(n) - np.outer(c, c)
+    K = P.dot(Q).dot(P)
+    eigvals, z = np.linalg.eigh(K)
+    eigvec = P.dot(z)
+    return eigvals, eigvec
+
+
+def _norm_constrained_tes_opt(
+    Qnorm, target_norm, Q,
+    max_el_current, max_total_current,
+    extra_ineq=None, extra_eq=None,
+    log_level=20):
+    ''' Convex-concave algorithm to solve the problem
+    minimize   x^T Q x
+    subject to x^T Q_{i} x = t_i^2,  i = 1, 2, ...
+               |x| <= I_ind
+               |x|_1 <= 2I_tot
+
+    Based on algorithm 3.1 fro Lipp and Boyd, Optim. Eng. (2016)n{align}
+    '''
+    if Qnorm.ndim == 2:
+        Qnorm = Qnorm[None, ...]
+
+    # TODO: Try various starting positions?
+    _, eigvec = _constrained_eigenvalue(np.sum(Qnorm, axis=0))
+    x0 = eigvec[:, -1]
+
+    x = x0.copy()
+    n = len(x)
+    n_eqs = Qnorm.shape[0]
+
+    l1norm_x0 = np.linalg.norm(x, 1)
+    if l1norm_x0 > max_total_current*2:
+        x *= (max_total_current*2)/l1norm_x0
+
+    linfnorm_x0 = np.linalg.norm(x, np.inf)
+    if linfnorm_x0 > max_el_current:
+        x *= max_el_current/linfnorm_x0
+
+    lqnorm_x0 = np.sqrt(x.dot(Qnorm).dot(x))
+    if np.any(lqnorm_x0 > target_norm):
+        x *= np.min(target_norm/lqnorm_x0)
+
+    x_init = x.copy()
+    # First pass: Tries to maximize the quatratic
+    # This is used just to evaluate feasibility
+
+    tes_constraints = TESConstraints(n, max_total_current, max_el_current)
+
+    # L1 constaints
+    C_, d_ = tes_constraints._l1_constraint()
+    # Kirschoffs law
+    A_, b_ = tes_constraints._kirschoff_constraint()
+
+    # Extra constraints
+    if extra_ineq is not None:
+        C_ = np.vstack([C_, extra_ineq[0]])
+        d_ = np.hstack([d_, extra_ineq[1]])
+
+    if extra_eq is not None:
+        A_ = np.vstack([A_, extra_eq[0]])
+        b_ = np.hstack([b_, extra_eq[1]])
+
+    # First of all, see if the norm can be reached
+    n_iter = 0
+    max_iter = 100
+    cur_min = np.inf
+    while n_iter < max_iter:
+        l = x.dot(Qnorm)
+        l_ = np.hstack([l , -l])
+        sol = scipy.optimize.linprog(
+            -np.average(l_, axis=0),
+            np.vstack([C_, l_]), np.hstack([d_, target_norm**2]),
+            A_, b_,
+            bounds=(0, max_el_current)
+        )
+        x = sol.x[:n] - sol.x[n:]
+        if (cur_min - sol.fun) < 1e-3*np.abs(sol.fun):
+            break
+        else:
+            cur_min = sol.fun
+            n_iter += 1
+
+    # Test if the norm constraint is not fulfilled, quit
+    if np.any(np.sqrt(x.dot(Qnorm).dot(x)) < target_norm*0.9):
+        logger.log(log_level, 'Target norm could not be reached')
+        return x
+
+
+    # notice, I reset x on purpose
+    x = x_init
+    # Slack term penalty
+    tau = 1e-2*x.dot(Q).dot(x) / np.sum(x.dot(Qnorm).dot(x))
+    # How much tau gets multiplied per iteration
+    mu = 2
+    # Maximum value
+    max_tau = 1e4*tau
+    # Stuff to observe the iterations
+    prev_energy = np.inf
+    prev_norms = 0
+    n_iter = 0
+
+    ## Preparations for the QPs
+    Q_ = np.vstack([np.hstack([Q, -Q]), np.hstack([-Q, Q])])
+
+    # Bound constraints
+    C_b, d_b = tes_constraints._bound_contraints()
+    C_ = np.vstack([C_, C_b])
+    d_ = np.hstack([d_, d_b])
+
+    # Add slack variables
+    x_ = np.hstack([x, -x, np.zeros(n_eqs)])
+    x_[x_ < 0] = 0
+    # Linear portion of the objective
+    a_ = np.zeros(2*n + n_eqs)
+    # Quadratic part of the objective
+    Q_ = np.hstack([Q_, np.zeros((Q_.shape[0], n_eqs))])
+    Q_ = np.vstack([Q_, np.zeros((n_eqs, Q_.shape[1]))])
+    # Inequality
+    C_ = np.vstack([C_, np.zeros((2*n_eqs, C_.shape[1]))])
+    C_ = np.hstack([C_, np.zeros((C_.shape[0], n_eqs))])
+    C_[-2*n_eqs:-n_eqs, -n_eqs:] = -np.eye(n_eqs)
+    C_[-n_eqs:, -n_eqs:] = -np.eye(n_eqs)
+    d_ = np.hstack([d_, np.zeros(2*n_eqs)])
+    # Equality
+    A_ = np.hstack([A_, np.zeros((A_.shape[0], n_eqs))])
+
+    while n_iter < max_iter:
+        l = -2*x.dot(Qnorm)
+        current_norm = x.dot(Qnorm).dot(x)
+        # Add the slack variables
+        x_[-n_eqs:] = (target_norm**2) - current_norm
+        # Update the penalty
+        a_[-n_eqs:] = tau
+        # Inequalily Cx < d
+        C_[-n_eqs:, :2*n] = np.hstack([l, -l])
+        d_[-n_eqs:] = -current_norm - (target_norm**2)
+        # Run the QP
+        x_ = _active_set_QP(
+            a_, Q_, C_, d_, x_, A=A_, b=b_, eps=1e-3*np.max(np.abs(x))
+        )
+        x = x_[:n] - x_[n:2*n]
+        energy = x.dot(Q).dot(x)
+        norms = np.sqrt(x.dot(Qnorm).dot(x))
+        # 2 Stoping criteria: Energy should stop decreasing and the norm should start increasing
+        norms_str = np.array2string(norms, formatter={'float_kind':lambda x: "%.2e" % x})
+        logger.log(
+            log_level,
+            f'{n_iter}: Energy: {energy: .2e} Norms: {norms_str}'
+        )
+        if (prev_energy - energy) < 1e-3 * energy and np.all(norms - prev_norms < 1e-3*norms):
+            break
+        else:
+            tau = min(mu*tau, max_tau)
+            prev_energy = energy
+            prev_norms = norms
+            n_iter += 1
+
+    return x
 
 
 def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):

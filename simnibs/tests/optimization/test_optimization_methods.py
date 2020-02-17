@@ -5,6 +5,7 @@ import numpy as np
 import scipy.optimize
 import pytest
 from simnibs.optimization import optimization_methods
+from simnibs.simulation.analytical_solutions.sphere import fibonacci_sphere
 
 @pytest.fixture()
 def optimization_variables():
@@ -815,3 +816,147 @@ class TestEqConstrained:
         assert np.isclose(objective(l, Q, 0, x), objective(l, Q, 0, x_sp),
                           rtol=1e-4, atol=1e-4)
         assert np.allclose(x, x_sp, rtol=1e-4)
+
+
+class TestConstrainedEigenvalue:
+    def test_constrained_eigv(self):
+        A = np.random.rand(5, 100)
+        Q = A.dot(A.T)
+        eigvals, eigvec = optimization_methods._constrained_eigenvalue(Q)
+        assert np.allclose(np.sum(eigvec, axis=0), 0)
+        assert np.allclose(eigvec.T.dot(eigvec)[1:, 1:], np.eye(4))
+        assert np.allclose(eigvals, np.diagonal(eigvec.T.dot(Q).dot(eigvec)))
+
+
+class TestNormConstrained:
+    def test_norm_constrained_tes_opt(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = 0.1
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        energy_bf = np.inf
+        directions = fibonacci_sphere(51)
+        directions = directions[directions[:, 2] > 0]
+        for d in directions:
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
+            x_ = optimization_methods._linear_constrained_tes_opt(
+                l[None, :], np.atleast_1d(target_norm),
+                Q, max_el_current,
+                max_total_current, log_level=0
+            )
+            norm_ = np.sqrt(x_.dot(Qnorm).dot(x_))
+            energy_ = x_.dot(Q).dot(x_)
+            if np.isclose(norm_, target_norm, rtol=1e-1) and energy_ < energy_bf:
+                energy_bf = energy_
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+        assert x.dot(Q).dot(x) < energy_bf
+
+    def test_norm_constrained_tes_opt_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = 20
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm[None, ...], target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        norm_bf = -np.inf
+        directions = fibonacci_sphere(51)
+        directions = directions[directions[:, 2] > 0]
+        for d in directions:
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
+            x_ = optimization_methods._linear_constrained_tes_opt(
+                l[None, :], np.atleast_1d(target_norm),
+                Q, max_el_current,
+                max_total_current, log_level=0
+            )
+            norm_ = np.sqrt(x_.dot(Qnorm).dot(x_))
+            if norm_ > norm_bf:
+                norm_bf = norm_
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.sqrt(x.dot(Qnorm).dot(x)) > norm_bf*0.999
+
+
+    def test_norm_constrained_tes_opt_multi(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm = np.stack([Qnorm1, Qnorm2])
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.1])
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+
+
+    def test_norm_constrained_tes_opt_multi_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm = np.stack([Qnorm1, Qnorm2])
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.2])
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        assert np.all(np.abs(x) <= max_el_current*1.001)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current*1.001)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_norm[0], rtol=1e-1)
