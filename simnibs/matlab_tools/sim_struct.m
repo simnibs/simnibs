@@ -88,6 +88,7 @@ switch S.type
         S.anisotropy_type = 'scalar'; % can be 'scalar' (use isotropic values), 'dir' (direct mapping),'mc' (mean conductivity from direct mapping),'vn' (volume normalized); optional
         S.aniso_maxratio = 10; % maximal ratio between largest eigenvalue and the two other eigenvalues of conductivity tensor
         S.aniso_maxcond = 2; % maximal directional conductivity in [S/m] (i.e. max eigenvalue of conductivity tensor)
+        S.solver_options = ''; % Options to be used by the FEM solver (default is CG+AMG)
         
     case 'TMSLIST'
         S=sim_struct('LIST');
@@ -170,6 +171,7 @@ switch S.type
         S.anisotropy_type = 'scalar'; % can be 'scalar' (use isotropic values), 'dir' (direct mapping),'mc' (mean conductivity from direct mapping),'vn' (volume normalized); optional
         S.aniso_maxratio = 10; % maximal ratio between largest eigenvalue and the two other eigenvalues of conductivity tensor
         S.aniso_maxcond = 2; % maximal directional conductivity in [S/m] (i.e. max eigenvalue of conductivity tensor)
+        S.solver_options = ''; % Options to be used by the FEM solver (default is CG+AMG)
 
     case 'TDCSLEADFIELD'
         S=sim_struct('LEADFIELD');

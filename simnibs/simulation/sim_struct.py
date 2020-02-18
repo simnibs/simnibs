@@ -562,15 +562,22 @@ class SimuList(object):
         file name of nifti with tensor information
     postprocess: property
         fields to be calculated. valid fields are: 'v' , 'E', 'e', 'J', 'j', 'g', 's', 'D', 'q'
-    anisotropy_vol: ndarray
+    anisotropy_vol: ndarray (optional)
         Volume with anisotropy information (lower priority over fn_tensor_nifti)
-    anisotropy_affine: ndarray
+    anisotropy_affine: ndarray (optional)
         4x4 affine matrix describing the transformation from the regular grid to the mesh
         space (lower priority over fn_tensor_nifti)
-    anisotropic_tissues: list
+    anisotropic_tissues: list (optional)
         List with tissues with anisotropic conductivities
-    eeg_cap: str
+    eeg_cap: str (optional)
         Name of csv file with EEG positions
+    aniso_maxratio: float (optional)
+        Maximum ration between the largest and smallest eigenvalue in a conductivity
+        tensor.
+    aniso_cond: float (optional)
+        Maximum eigenvalue of a conductivity tensor.
+    solver_options: str (optional)
+        Options for the FEM solver
     """
 
     def __init__(self, mesh=None):
@@ -588,6 +595,7 @@ class SimuList(object):
         self.eeg_cap = None
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        self.solver_options = None
         self._anisotropy_type = 'scalar'
         self._postprocess = ['e', 'E', 'j', 'J']
 
@@ -678,6 +686,7 @@ class SimuList(object):
         mat_cond['aniso_maxcond'] = remove_None(self.aniso_maxcond)
         # Not really related to the conductivity
         mat_cond['name'] = remove_None(self.name)
+        mat_cond['solver_options'] = remove_None(self.name)
 
         return mat_cond
 
@@ -707,6 +716,10 @@ class SimuList(object):
             mat_struct, 'aniso_maxcond', float, self.aniso_maxcond)
         self.aniso_maxratio = try_to_read_matlab_field(
             mat_struct, 'aniso_maxratio', float, self.aniso_maxratio)
+        self.solver_options = try_to_read_matlab_field(
+            mat_struct, 'solver_options', str, self.solver_options)
+
+
 
     def compare_conductivities(self, other):
         if self.anisotropy_type != other.anisotropy_type:
@@ -1100,7 +1113,7 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     cpus)
+                     solver_options=self.solver_options, n_workers=cpus)
 
         logger.info('Creating visualizations')
         summary = ''
@@ -1599,7 +1612,9 @@ class TDCSLIST(SimuList):
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
-                     np.unique(electrode_surfaces), n_workers=cpus)
+                     np.unique(electrode_surfaces),
+                     solver_options=self.solver_options,
+                     n_workers=cpus)
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)
@@ -1769,6 +1784,13 @@ class ELECTRODE(object):
         self.channelnr = try_to_read_matlab_field(el, 'channelnr', int, self.channelnr)
         self.dimensions_sponge = try_to_read_matlab_field(el, 'dimensions_sponge', list,
                                                           self.dimensions_sponge)
+
+        if self.dimensions is not None and len(self.dimensions) == 1:
+            self.dimensions *= 2
+
+        if self.dimensions_sponge is not None and len(self.dimensions_sponge) == 1:
+            self.dimensions_sponge *= 2
+
         try:
             self.vertices = el['vertices'].tolist()
         except:
@@ -2369,7 +2391,10 @@ class TDCSLEADFIELD(LEADFIELD):
 
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
             if len(self.tissues) > 0:
-                mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                try:
+                    mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                except ValueError:
+                    logger.warning(f'Could not find tissues number {self.tissues}')
 
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
@@ -2413,7 +2438,7 @@ class TDCSLEADFIELD(LEADFIELD):
             f[dset].attrs['electrode_names'] = [el.name.encode() for el in self.electrode]
             f[dset].attrs['reference_electrode'] = self.electrode[0].name
             f[dset].attrs['electrode_pos'] = [el.centre for el in self.electrode]
-            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode()
+            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode() if self.eeg_cap is not None else 'none'
             f[dset].attrs['electrode_tags'] = electrode_surfaces
             f[dset].attrs['tissues'] = self.tissues
             f[dset].attrs['field'] = self.field

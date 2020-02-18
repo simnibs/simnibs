@@ -1,7 +1,8 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 1
   
-trigger: none
+trigger:
+- master
 
 jobs:
 - job: Linux

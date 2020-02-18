@@ -1152,7 +1152,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
     if geo_names is None:
         geo_names = [None for i in range(n_sims)]
 
-    S = FEMSystem.tms(mesh, cond)
+    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
     if n_workers == 1:
         _set_up_global_solver(S)
         for matsimnibs, didt, fn_out, fn_geo in zip(
@@ -1387,7 +1387,7 @@ def _finalize_tdcs_global_solver():
     global tdcs_global_post_pro
     del tdcs_global_post_pro
 
-#### Finished functionr to tun tDCS leadfields in parallel ####
+
 def tms_many_simulations(
     mesh, cond, fn_coil, matsimnibs_list, didt_list,
     fn_hdf5, dataset, roi=None, field='E', post_pro=None,
