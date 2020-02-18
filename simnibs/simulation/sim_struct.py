@@ -2393,7 +2393,10 @@ class TDCSLEADFIELD(LEADFIELD):
 
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
             if len(self.tissues) > 0:
-                mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                try:
+                    mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                except ValueError:
+                    logger.warning(f'Could not find tissues number {self.tissues}')
 
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
