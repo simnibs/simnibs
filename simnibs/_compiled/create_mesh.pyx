@@ -78,12 +78,6 @@ def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
     )
     return ret
 
-#def check_self_intersections(vertices, faces):
-#    #TODO: Fix this, finish implementation
-#    cdef np.ndarray[float] v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
-#    cdef np.ndarray[int] f = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
-#    ret = _check_self_intersections(&v[0], len(vertices), &f[0], len(faces))
-#    return ret
 
 def segment_triangle_intersection(vertices, faces, segment_start, segment_end):
     ''' Calculates the intersection between a triangular mesh and line segments
