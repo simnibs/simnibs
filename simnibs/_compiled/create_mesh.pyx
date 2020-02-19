@@ -16,6 +16,11 @@ cdef extern from "_mesh.cpp" nogil:
         float facet_size, float facet_distance,
         float cell_radius_edge_ratio, float cell_size,
         bool optimize)
+    int _mesh_image_sizing_field(
+        char *fn_image, char *fn_out, float facet_angle,
+        float facet_size, float facet_distance,
+        float cell_radius_edge_ratio, float *sizing_field,
+        bool optimize)
     int _mesh_surfaces(
         vector[char *]filenames, vector[pair[int, int]] incident_subdomains,
         char *fn_out,
@@ -39,6 +44,25 @@ def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
         optimize
     )
     return ret
+
+
+def mesh_image_sizing_field(
+    fn_image, fn_out, float facet_angle, float facet_size,
+   float facet_distance, float cell_radius_edge_ratio, sizing_field,
+   bool optimize):
+
+    cdef np.ndarray[float, ndim=3] sizing_field_ = np.array(
+        sizing_field, dtype=np.float32, order='F'
+    )
+
+    ret =  _mesh_image_sizing_field(
+        fn_image, fn_out, facet_angle,
+        facet_size, facet_distance,
+        cell_radius_edge_ratio, &sizing_field_[0, 0, 0],
+        optimize
+    )
+    return ret
+
 
 def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
                   float facet_angle, float facet_size,

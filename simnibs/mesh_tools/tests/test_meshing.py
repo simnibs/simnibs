@@ -245,6 +245,46 @@ class TestImage2mesh():
         assert np.isclose(vol_2, 1e3, rtol=1e-1)
         assert np.isclose(vol_1, (30 * 20 * 10) - 1e3, rtol=1e-1)
 
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    def test_sizing_field(self, axis):
+        label_image = np.zeros((50, 50, 50), dtype=np.uint8)
+        label_image[10:40, 10:40, 10:40] = 1
+        affine = np.eye(4)
+        sizing_field = np.ones_like(label_image) * 10
+        if axis == 0:
+            sizing_field[25:, ...] = 3
+        elif axis == 1:
+            sizing_field[:, 25:, :] = 3
+        elif axis == 2:
+            sizing_field[..., 25:] = 3
+        mesh = meshing.image2mesh(label_image, affine, facet_size=10, cell_size=sizing_field)
+        assert np.allclose(np.min(mesh.nodes[:], axis=0), 9.5, rtol=1e-2)
+        assert np.allclose(np.max(mesh.nodes[:], axis=0), 39.5, rtol=1e-2)
+        vols = mesh.elements_volumes_and_areas()[mesh.elm.tetrahedra]
+        bar = mesh.elements_baricenters()[mesh.elm.tetrahedra]
+        assert np.average(vols[bar[:, axis] < 25]) > np.average(vols[bar[:, axis] > 25])
+
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    def test_sizing_field_scaling(self, axis):
+        label_image = np.zeros((50, 50, 50), dtype=np.uint8)
+        label_image[10:40, 10:40, 10:40] = 1
+        affine = np.eye(4)
+        affine[axis, axis] = 2
+        sizing_field = np.ones_like(label_image) * 10
+        if axis == 0:
+            sizing_field[25:, ...] = 3
+        elif axis == 1:
+            sizing_field[:, 25:, :] = 3
+        elif axis == 2:
+            sizing_field[..., 25:] = 3
+        mesh = meshing.image2mesh(label_image, affine, facet_size=10, cell_size=sizing_field)
+        mesh.crop_mesh(elm_type=4).write('tmp.msh')
+        vols = mesh.elements_volumes_and_areas()[mesh.elm.tetrahedra]
+        bar = mesh.elements_baricenters()[mesh.elm.tetrahedra]
+        assert np.average(vols[bar[:, axis] < 50]) > np.average(vols[bar[:, axis] > 50])
+
+
+
 def test_mesh_surfaces(surface):
     surface2 = copy.deepcopy(surface)
     surface2.nodes.node_coord *= 2

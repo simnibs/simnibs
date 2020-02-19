@@ -46,19 +46,31 @@ def _mesh_image(image, voxel_dims, facet_angle,
                 facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
                 optimize):
+
     with tempfile.TemporaryDirectory() as tmpdir:
         fn_image = os.path.join(tmpdir, 'image.inr')
         fn_mesh = os.path.join(tmpdir, 'mesh.mesh')
         _write_inr(image, voxel_dims, fn_image)
-        ret = create_mesh.mesh_image(
-                fn_image.encode(), fn_mesh.encode(),
-                facet_angle, facet_size, facet_distance,
-                cell_radius_edge_ratio, cell_size,
-                optimize
-             )
+        if type(cell_size) is np.ndarray:
+            ret = create_mesh.mesh_image_sizing_field(
+                    fn_image.encode(), fn_mesh.encode(),
+                    facet_angle, facet_size, facet_distance,
+                    cell_radius_edge_ratio, cell_size,
+                    optimize
+                 )
+        else:
+            ret = create_mesh.mesh_image(
+                    fn_image.encode(), fn_mesh.encode(),
+                    facet_angle, facet_size, facet_distance,
+                    cell_radius_edge_ratio, cell_size,
+                    optimize
+                 )
+
         if ret != 0:
             raise MeshingError('There was an error while meshing the image')
+
         mesh = mesh_io.read_medit(fn_mesh)
+
     return mesh
 
 def _decompose_affine(affine):
@@ -160,6 +172,9 @@ def image2mesh(image, affine, facet_angle=30,
 
     if cell_size is None:
         cell_size = min(voxel_dims)
+
+    if type(cell_size) is np.ndarray:
+        assert cell_size.shape == image.shape
 
     mesh = _mesh_image(
         image, voxel_dims,

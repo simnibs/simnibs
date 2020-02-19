@@ -93,6 +93,76 @@ int _mesh_image(
 
 }
 
+struct Sizing_field
+{
+    typedef ::FT FT;
+    typedef Point Point_3;
+    typedef Mesh_domain_img::Index Index; 
+    double tx, ty, tz;
+    double vx, vy, vz;
+    std::size_t sx, sy, sz;
+    float *sizing_field_image;
+
+    FT operator()(const Point_3 &p, const int, const Index&) const
+    {
+        // I add 0.5 offset because CGAL assumes centered voxels
+        const std::size_t i = (p.x() - tx)/vx + 0.5;
+        const std::size_t j = (p.y() - ty)/vy + 0.5;
+        const std::size_t k = (p.z() - tz)/vz + 0.5;
+        if (i < 0 || j < 0 || k < 0) {
+            std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
+            return 0;
+        }
+        if (i >= sx || j >= sy || k >= sz){
+            std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
+            return 0;
+        }
+        //std::cout << "x:" << p.x() << " y:" << p.y() << " z:" << p.z() << " i:" << i << " j:" << j << " k:" << k << "\n";
+        return sizing_field_image[i + sx*j + sx*sy*k];
+    };
+};
+
+int _mesh_image_sizing_field(
+  char *fn_image, char *fn_out,
+  float facet_angle, float facet_size, float facet_distance,
+  float cell_radius_edge_ratio, float *sizing_field,
+  bool optimize
+)
+{
+  /// Load image
+  CGAL::Image_3 image;
+  if(!image.read(fn_image)){
+    std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
+    return EXIT_FAILURE;
+  }
+  // Mesh domain
+  Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
+
+  // Mesh criteria
+  Sizing_field sizing_field_ = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     sizing_field
+  };
+  Facet_criteria_img facet_criteria(facet_angle, facet_size, facet_distance);
+  Cell_criteria_img cell_criteria(cell_radius_edge_ratio, sizing_field_);
+  Mesh_criteria_img criteria(facet_criteria, cell_criteria);
+  
+  // Mesh generation
+  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
+ 
+  if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  CGAL::perturb_mesh_3(c3t3, domain);
+  CGAL::exude_mesh_3(c3t3);
+  
+
+  // Output
+  std::ofstream medit_file(fn_out);
+  c3t3.output_to_medit(medit_file);
+  return EXIT_SUCCESS;
+
+}
 
 int _mesh_surfaces(
   std::vector<char *>filenames, std::vector<std::pair<int, int> > incident_subdomains,
@@ -162,6 +232,7 @@ Surface_mesh _create_surface_mesh(float *vertices, int n_vertices, int *faces, i
   return m;
 }
 
+/*
 int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n_faces)
 {
   Surface_mesh m = _create_surface_mesh(vertices, n_vertices, faces, n_faces);
@@ -183,7 +254,7 @@ int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n
   //}
   return EXIT_SUCCESS;
 }
-
+*/
 
 std::pair<std::vector<int>, std::vector<float>> _segment_triangle_intersection(
         float* vertices, int n_vertices, int* tris, int n_faces,
