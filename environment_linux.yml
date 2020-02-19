@@ -14,4 +14,4 @@ dependencies:
   - freeglut
   - pip
   - pip:
-    - nibabel==2.3.*
+    - nibabel==3.0.*

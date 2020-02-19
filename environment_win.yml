@@ -14,5 +14,5 @@ dependencies:
   - vs2015_runtime
   - pip
   - pip:
-    - nibabel==2.3.*
+    - nibabel==3.0.*
     - pyqt5==5.9.*

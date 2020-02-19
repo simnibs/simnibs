@@ -5112,11 +5112,11 @@ def write_gifti_surface(msh, fn, ref_image=None):
     msh = msh.crop_mesh(elm_type=2)
     vertices = msh.nodes[:]
     faces = msh.elm[:, :3] - 1
-    verts_da = nibabel.gifti.gifti.GiftiDataArray(
+    verts_da = nibabel.gifti.GiftiDataArray(
         vertices.astype(np.float32), intent='NIFTI_INTENT_POINTSET',
         coordsys=coordsys, meta=metadata
     )
-    faces_da = nibabel.gifti.gifti.GiftiDataArray(
+    faces_da = nibabel.gifti.GiftiDataArray(
         faces.astype(np.int32), intent='NIFTI_INTENT_TRIANGLE',
     )
     # as coordsys defaults to unity, we need to overwrite it to None for the triangles
