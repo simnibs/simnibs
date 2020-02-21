@@ -45,7 +45,7 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 
 '''
 
-CGAL_version = '5.0'
+CGAL_version = '5.0'  # I tried 5.0.1 but tests fail!
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 
 is_conda = 'CONDA_PREFIX' in os.environ

@@ -264,6 +264,33 @@ class TestImage2mesh():
         bar = mesh.elements_baricenters()[mesh.elm.tetrahedra]
         assert np.average(vols[bar[:, axis] < 25]) > np.average(vols[bar[:, axis] > 25])
 
+    def test_sizing_field_facet_size(self):
+        label_image = np.zeros((50, 50, 50), dtype=np.uint8)
+        label_image[10:40, 10:40, 10:40] = 1
+        affine = np.eye(4)
+        sizing_field = np.ones_like(label_image) * 10
+        sizing_field[25:, ...] = 5
+        mesh = meshing.image2mesh(label_image, affine, facet_size=sizing_field, cell_size=10)
+        assert np.allclose(np.min(mesh.nodes[:], axis=0), 9.5, rtol=1e-2)
+        assert np.allclose(np.max(mesh.nodes[:], axis=0), 39.5, rtol=1e-2)
+        areas = mesh.elements_volumes_and_areas()[mesh.elm.triangles]
+        bar = mesh.elements_baricenters()[mesh.elm.triangles]
+        assert np.average(areas[bar[:, 0] < 25]) > np.average(areas[bar[:, 0] > 25])
+
+    def test_sizing_field_facet_distance(self):
+        label_image = np.zeros((50, 50, 50), dtype=np.uint8)
+        label_image[10:40, 10:40, 10:40] = 1
+        affine = np.eye(4)
+        sizing_field = np.ones_like(label_image, dtype=np.float32) * 1
+        sizing_field[25:, ...] = .7
+        mesh = meshing.image2mesh(label_image, affine, facet_size=10, cell_size=10,
+                                  facet_distance=sizing_field)
+        assert np.allclose(np.min(mesh.nodes[:], axis=0), 9.5, rtol=1e-2)
+        assert np.allclose(np.max(mesh.nodes[:], axis=0), 39.5, rtol=1e-2)
+        areas = mesh.elements_volumes_and_areas()[mesh.elm.triangles]
+        bar = mesh.elements_baricenters()[mesh.elm.triangles]
+        assert np.average(areas[bar[:, 0] < 25]) > np.average(areas[bar[:, 0] > 25])
+
     @pytest.mark.parametrize('axis', [0, 1, 2])
     def test_sizing_field_scaling(self, axis):
         label_image = np.zeros((50, 50, 50), dtype=np.uint8)
@@ -278,7 +305,6 @@ class TestImage2mesh():
         elif axis == 2:
             sizing_field[..., 25:] = 3
         mesh = meshing.image2mesh(label_image, affine, facet_size=10, cell_size=sizing_field)
-        mesh.crop_mesh(elm_type=4).write('tmp.msh')
         vols = mesh.elements_volumes_and_areas()[mesh.elm.tetrahedra]
         bar = mesh.elements_baricenters()[mesh.elm.tetrahedra]
         assert np.average(vols[bar[:, axis] < 50]) > np.average(vols[bar[:, axis] > 50])

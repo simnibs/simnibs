@@ -173,8 +173,24 @@ def image2mesh(image, affine, facet_angle=30,
     if cell_size is None:
         cell_size = min(voxel_dims)
 
-    if type(cell_size) is np.ndarray:
-        assert cell_size.shape == image.shape
+    if type(cell_size) is np.ndarray or\
+       type(facet_size) is np.ndarray or \
+       type(facet_distance) is np.ndarray:
+
+        if type(cell_size) is np.ndarray:
+            assert cell_size.shape == image.shape
+        else:
+            cell_size = cell_size * np.ones_like(image, dtype=np.float32, order='F') 
+
+        if type(facet_size) is np.ndarray:
+            assert facet_size.shape == facet_size.shape
+        else:
+            facet_size = facet_size * np.ones_like(image, dtype=np.float32, order='F') 
+
+        if type(facet_distance) is np.ndarray:
+            assert facet_distance.shape == facet_distance.shape
+        else:
+            facet_distance = facet_distance * np.ones_like(image, dtype=np.float32, order='F') 
 
     mesh = _mesh_image(
         image, voxel_dims,
@@ -220,6 +236,7 @@ def _mesh_surfaces(surfaces, subdomains, facet_angle,
             raise MeshingError('There was an error while meshing the surfaces')
         mesh = mesh_io.read_medit(fn_mesh)
     return mesh
+
 
 def remesh(mesh, facet_size, cell_size,
            facet_angle=30, facet_distance=0.1,

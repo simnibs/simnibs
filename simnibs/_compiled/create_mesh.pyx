@@ -18,8 +18,8 @@ cdef extern from "_mesh.cpp" nogil:
         bool optimize)
     int _mesh_image_sizing_field(
         char *fn_image, char *fn_out, float facet_angle,
-        float facet_size, float facet_distance,
-        float cell_radius_edge_ratio, float *sizing_field,
+        float *facet_size, float *facet_distance,
+        float cell_radius_edge_ratio, float *cell_size,
         bool optimize)
     int _mesh_surfaces(
         vector[char *]filenames, vector[pair[int, int]] incident_subdomains,
@@ -47,18 +47,27 @@ def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
 
 
 def mesh_image_sizing_field(
-    fn_image, fn_out, float facet_angle, float facet_size,
-   float facet_distance, float cell_radius_edge_ratio, sizing_field,
-   bool optimize):
+    fn_image, fn_out, float facet_angle, facet_size,
+    facet_distance, float cell_radius_edge_ratio, cell_size,
+    bool optimize):
 
-    cdef np.ndarray[float, ndim=3] sizing_field_ = np.array(
-        sizing_field, dtype=np.float32, order='F'
+    cdef np.ndarray[float, ndim=3] sf_facet_size = np.array(
+        facet_size, dtype=np.float32, order='F', copy=False
+    )
+    cdef np.ndarray[float, ndim=3] sf_cell_size = np.array(
+        cell_size, dtype=np.float32, order='F', copy=False
+    )
+
+    cdef np.ndarray[float, ndim=3] sf_facet_distance = np.array(
+        facet_distance, dtype=np.float32, order='F', copy=False
     )
 
     ret =  _mesh_image_sizing_field(
         fn_image, fn_out, facet_angle,
-        facet_size, facet_distance,
-        cell_radius_edge_ratio, &sizing_field_[0, 0, 0],
+        &sf_facet_size[0, 0, 0],
+        &sf_facet_distance[0, 0, 0],
+        cell_radius_edge_ratio,
+        &sf_cell_size[0, 0, 0],
         optimize
     )
     return ret

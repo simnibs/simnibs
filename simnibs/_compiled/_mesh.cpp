@@ -124,8 +124,8 @@ struct Sizing_field
 
 int _mesh_image_sizing_field(
   char *fn_image, char *fn_out,
-  float facet_angle, float facet_size, float facet_distance,
-  float cell_radius_edge_ratio, float *sizing_field,
+  float facet_angle, float *facet_size, float *facet_distance,
+  float cell_radius_edge_ratio, float *cell_size,
   bool optimize
 )
 {
@@ -139,14 +139,33 @@ int _mesh_image_sizing_field(
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
 
   // Mesh criteria
-  Sizing_field sizing_field_ = {
+  Sizing_field sizing_field_cell = {
      image.tx(), image.ty(), image.tz(),
      image.vx(), image.vy(), image.vz(),
      image.xdim(), image.ydim(), image.zdim(),
-     sizing_field
+     cell_size
   };
-  Facet_criteria_img facet_criteria(facet_angle, facet_size, facet_distance);
-  Cell_criteria_img cell_criteria(cell_radius_edge_ratio, sizing_field_);
+  Sizing_field sizing_field_facet_distance = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     facet_distance
+  };
+  Sizing_field sizing_field_facet_size = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     facet_size
+  };
+  Facet_criteria_img facet_criteria(
+          facet_angle,
+          sizing_field_facet_size,
+          sizing_field_facet_distance
+  );
+  Cell_criteria_img cell_criteria(
+          cell_radius_edge_ratio,
+          sizing_field_cell
+  );
   Mesh_criteria_img criteria(facet_criteria, cell_criteria);
   
   // Mesh generation
