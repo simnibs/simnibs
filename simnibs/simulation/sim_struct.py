@@ -2204,7 +2204,8 @@ class TDCSLEADFIELD(LEADFIELD):
         if count_struct != count_csv:
             raise IOError(
                 'The number of electrodes in the structure is'
-                ' not 0, 1 or the same number as in the CSV file')
+                ' not 0, 1 or the same number as in the CSV file'
+            )
         i = 0
         ref_idx = None
         for t, c, e, n in zip(type_, coordinates, extra, name):
