@@ -402,7 +402,7 @@ def cat_vbdist(P, R=None, S=(1, 1, 1)):
     if R is None:
         R = np.ones_like(P, dtype=np.uint8)
     else:
-        assert P.shape == R.shape
+        assert P.shape == R.shape, 'P and R should have the same shape'
 
     cdef np.ndarray[float, ndim=3] P_ = np.array(P, np.float32, order='F')
     cdef np.ndarray[unsigned char, ndim=3] R_ = np.array(R, np.uint8, order='F')
