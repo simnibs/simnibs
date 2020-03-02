@@ -2236,10 +2236,10 @@ class TDCSLEADFIELD(LEADFIELD):
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
-            if not self.cond[99 + i].name:
+            if self.cond[99 + i].value is None:
                 self.cond[99 + i].name = 'el' + str(i)
                 self.cond[99 + i].value = self.cond[99].value
-            if not self.cond[499 + i].name:
+            if self.cond[499 + i].value is None:
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
 
