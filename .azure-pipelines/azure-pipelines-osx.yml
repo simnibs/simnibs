@@ -16,8 +16,8 @@ jobs:
        versionSpec: '3.7' 
     displayName: 'Use Python 3.7'
   - bash: |
-      pip install numpy==1.16 cython setuptools
-    displayName: Install build dependensices
+      pip install numpy==1.16 cython setuptools wheel
+    displayName: Install build dependencies
   - bash: |
       python setup.py bdist_wheel
       cp dist/* $(Build.ArtifactStagingDirectory)
