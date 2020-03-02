@@ -367,7 +367,7 @@ class Elements:
         Returns
         -------------
         faces: np.ndarray
-            List of nodes in faces, in arbitrary order
+            Outside faces
         '''
         if tetrahedra_indexes is None:
             tetrahedra_indexes = self.tetrahedra
@@ -1343,11 +1343,14 @@ class Msh:
         return NodeData(nd, 'areas')
 
 
-    def nodes_normals(self, smooth=0):
+    def nodes_normals(self, triangles=None, smooth=0):
         ''' Normals for all nodes in a surface
 
         Parameters
         ------------
+        triangles: list of ints
+            List of triangles to be taken into consideration for calculating the normals
+
         smooth: int (optional)
             Number of smoothing cycles to perform. Default: 0
 
@@ -1358,7 +1361,10 @@ class Msh:
 
         '''
         nodes = np.unique(self.elm[self.elm.triangles, :3])
-        elements = self.elm.triangles
+        if triangles is None:
+            elements = self.elm.triangles
+        else:
+            elements = triangles
 
         nd = np.zeros((self.nodes.nr, 3))
 
@@ -2302,12 +2308,14 @@ class Msh:
         nodes_mask: ndarray of bool
             Mask of nodes to be moved. Default: all surface nodes
         max_gamma: float
-            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., 1994) for
+            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., Finite
+            Elements ins Analysis and Design, 1994) for
             a move to be accepted
         '''
         assert step_size > 0 and step_size < 1
         if nodes_mask is None:
             nodes_mask = np.ones(self.nodes.nr, dtype=np.bool)
+
         if len(nodes_mask) != self.nodes.nr:
             raise ValueError(
                 'nodes_mask should have the same number of elements as mesh nodes')
@@ -2362,6 +2370,8 @@ class Msh:
                 np.ascontiguousarray(nodes_mask, np.uint),
                 float(max_gamma)
             )
+            print(np.sum(nodes_mask), cb, cf)
+
         self.nodes.node_coord = nodes_coords
 
     def gamma_metric(self):

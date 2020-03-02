@@ -24,8 +24,10 @@ def sphere3_msh():
 class TestDrawElectrodes:
     def test_get_transformation(self, sphere3_msh):
         # Notice, the coordinate system is left-handed for coherence with the GUI
+        triangles = sphere3_msh.elm[sphere3_msh.elm.tag1==1005, :3]
         affine, c = electrode_placement._get_transform(
-             [0., 0., 100.], None, sphere3_msh)
+             [0., 0., 100.], None, sphere3_msh, triangles
+        )
         assert np.allclose(c, [0., 0., 95.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 0., 1.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 1., 0.], atol=1e-2)
@@ -34,7 +36,8 @@ class TestDrawElectrodes:
                            rtol=1e-1)
 
         affine, c = electrode_placement._get_transform(
-             [0., 100., 0.], [0., 100., 2.], sphere3_msh)
+             [0., 100., 0.], [0., 100., 2.], sphere3_msh, triangles
+        )
         assert np.allclose(c, [0., 95., 0.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 1., 0.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 0., 1.], atol=1e-2)
@@ -43,7 +46,8 @@ class TestDrawElectrodes:
                            rtol=1e-1)
 
         affine, c = electrode_placement._get_transform(
-             [0., 100., 0.], [0., 100., 2.], sphere3_msh)
+             [0., 100., 0.], [0., 100., 2.], sphere3_msh, triangles
+        )
         assert np.allclose(c, [0., 95., 0.])
         assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 1., 0.], atol=1e-2)
         assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 0., 1.], atol=1e-2)
@@ -54,8 +58,10 @@ class TestDrawElectrodes:
 
 
     def test_get_roi(self, sphere3_msh):
+        triangles = sphere3_msh.elm[sphere3_msh.elm.tag1==1005, :3]
         roi_triangles, roi_nodes, roi_triangles_reordering = electrode_placement._get_roi(
-             [0., 0., 95.], 15, sphere3_msh)
+             [0., 0., 95.], 15, sphere3_msh, triangles,
+        )
         bar = sphere3_msh.elements_baricenters()
         assert np.all(np.linalg.norm(bar[roi_triangles] - [0., 0., 95.], axis=1) < 21)
         assert np.all(np.linalg.norm(sphere3_msh.nodes[roi_nodes] - [0., 0., 95.],
@@ -400,9 +406,12 @@ class TestDrawElectrodes:
         tri = scipy.spatial.Delaunay(nodes[:, :2])
         mesh = mesh_io.Msh()
         mesh.elm = mesh_io.Elements(triangles=tri.simplices+1)
+        triangles = tri.simplices + 1
         mesh.nodes = mesh_io.Nodes(nodes)
-        w_elec = electrode_placement._build_electrode_on_mesh(c, ydir, poly, h, mesh, el_vol_tag=2,
-                                                              el_surf_tag=1002, on_top_of=1)
+        w_elec = electrode_placement._build_electrode_on_mesh(
+            c, ydir, poly, h, mesh, 2,
+            1002, triangles
+        )
 
         #mesh_io.write_msh(w_elec, '~/Tests/electrode.msh')
         vols = w_elec.elements_volumes_and_areas().value
@@ -413,10 +422,13 @@ class TestDrawElectrodes:
         mesh = mesh_io.Msh()
         mesh.elm = mesh_io.Elements(triangles=tri.simplices+1)
         mesh.nodes = mesh_io.Nodes(nodes)
-        w_elec = electrode_placement._build_electrode_on_mesh(c, ydir, poly, h,
-                                                              copy.deepcopy(mesh),
-                                                              el_vol_tag=[2, 3],
-                                                              el_surf_tag=[1002, 1003], on_top_of=1)
+        w_elec = electrode_placement._build_electrode_on_mesh(
+            c, ydir, poly, h,
+            copy.deepcopy(mesh),
+            [2, 3],
+            [1002, 1003],
+            triangles
+        )
 
         vols = w_elec.elements_volumes_and_areas().value
         assert np.isclose(vols[w_elec.elm.tag1 == 2].sum(), 100 * 5)
@@ -425,13 +437,15 @@ class TestDrawElectrodes:
         assert np.isclose(vols[w_elec.elm.tag1 == 1003].sum(), 100)
 
         plug = np.array([[2, 2], [2, -2], [-2, -2], [-2, 2]])
-        w_elec = electrode_placement._build_electrode_on_mesh(c, ydir, poly, h,
-                                                              copy.deepcopy(mesh),
-                                                              el_vol_tag=[2, 3],
-                                                              el_surf_tag=[1002, 1003],
-                                                              on_top_of=1,
-                                                              plug=plug,
-                                                              plug_tag=2003)
+        w_elec = electrode_placement._build_electrode_on_mesh(
+            c, ydir, poly, h,
+            copy.deepcopy(mesh),
+            el_vol_tag=[2, 3],
+            el_surf_tag=[1002, 1003],
+            triangles=triangles,
+            plug=plug,
+            plug_tag=2003
+        )
 
         vols = w_elec.elements_volumes_and_areas().value
         assert np.isclose(vols[w_elec.elm.tag1 == 2].sum(), 100 * 5)
@@ -447,12 +461,14 @@ class TestDrawElectrodes:
         mesh = mesh_io.Msh()
         mesh.elm = mesh_io.Elements(triangles=tri.simplices+1)
         mesh.nodes = mesh_io.Nodes(nodes)
-        w_elec = electrode_placement._build_electrode_on_mesh(c, ydir, poly, h,
-                                                              copy.deepcopy(mesh),
-                                                              el_vol_tag=[2, 3],
-                                                              el_surf_tag=[1002, 1003],
-                                                              on_top_of=1,
-                                                              middle_layer=middle_layer)
+        w_elec = electrode_placement._build_electrode_on_mesh(
+            c, ydir, poly, h,
+            copy.deepcopy(mesh),
+            el_vol_tag=[2, 3],
+            el_surf_tag=[1002, 1003],
+            triangles=triangles,
+            middle_layer=middle_layer
+        )
 
         vols = w_elec.elements_volumes_and_areas().value
         assert np.isclose(vols[w_elec.elm.tag1 == 2].sum(), 100 * 6 + (100 - 16) * 3)

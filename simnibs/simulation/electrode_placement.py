@@ -28,16 +28,9 @@ import numpy as np
 import scipy.spatial
 from ..mesh_tools.mesh_io import _hash_rows
 
-def _get_nodes_in_surface(mesh, surface_tags):
-    tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
-    nodes_in_surface = np.unique(mesh.elm.node_number_list[tr_of_interest, :3])
-    return nodes_in_surface
 
-
-def _find_closest_surface_pos(pos, mesh, surface_tags):
-    nodes_in_surface = _get_nodes_in_surface(mesh, surface_tags)
-    if len(nodes_in_surface) == 0:
-        raise ValueError('Surface with tags: {0} not found'.format(surface_tags))
+def _find_closest_surface_pos(pos, mesh, triangles):
+    nodes_in_surface = np.unique(triangles)
     kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
     _, center_idx = kd_tree.query(pos)
     #center_idx = np.argmin(np.linalg.norm(mesh.nodes[nodes_in_surface] - pos))
@@ -45,21 +38,20 @@ def _find_closest_surface_pos(pos, mesh, surface_tags):
     return pos
 
 
-def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relative',
+def _get_transform(center, y_axis, mesh, triangles, y_type='relative',
                    nodes_roi=None):
     ''' Finds the transformation to make  '''
     center = np.array(center, dtype=float)
 
-    c = _find_closest_surface_pos(center, mesh, mesh_surface)
+    c = _find_closest_surface_pos(center, mesh, triangles)
 
     if nodes_roi is None:
-        nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
+        nodes_in_surface = np.unique(triangles)
         kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
         _, center_idx = kd_tree.query(center)
-        #center_idx = np.argmin(np.linalg.norm(mesh.nodes[nodes_in_surface] - center))
         normal = mesh.nodes_normals().value[nodes_in_surface - 1][center_idx]
     else:
-        normal = np.average(
+        normal = np.nanmean(
             mesh.nodes_normals().value[nodes_roi - 1],
             axis=0)
 
@@ -82,7 +74,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
         alpha = 0
         nr_iter = 0
         y_ref = c
-        nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
+        nodes_in_surface = np.unique(triangles)
         kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
         while np.linalg.norm(c - y_ref) < 1e-5:
             _, y_ref_idx = kd_tree.query(y_axis + alpha * (y_axis - center))
@@ -103,7 +95,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
                              'Y axis perpendicular to surface?')
         y_axis /= np.linalg.norm(y_axis)
 
-    x_axis = np.cross(y_axis, -z_axis) # For coherence with the GUI
+    x_axis = np.cross(y_axis, -z_axis)  #  For coherence with the GUI
     affine = np.zeros((4, 4), dtype=float)
     affine[0, :3] = x_axis
     affine[1, :3] = y_axis
@@ -113,25 +105,26 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
     return affine, c
 
 
-def _get_roi(center, radius, mesh, mesh_surface=[5, 1005], min_cos=.1):
+def _get_roi(center, radius, mesh, triangles, min_cos=.1):
     ''' Defines the region of interest of a given radius. Around a given center. Only
     node with normals pointing in the given direction are
     considered. Returns a list of triangles with at least 1 element in the ROI'''
     center = np.array(center, dtype=float)
-    nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
-    if len(nodes_in_surface) == 0:
-        raise ValueError('Could not find surface {0} in mesh'.format(mesh_surface))
+    nodes_in_surface = np.unique(triangles)
     distances = np.linalg.norm(center - mesh.nodes[nodes_in_surface], axis=1)
     normals = mesh.nodes_normals()[nodes_in_surface]
     center_normal = normals[np.argmin(distances)]
-    in_roi = nodes_in_surface[(distances <= radius) *
-                              (center_normal.dot(normals.T) > min_cos)]
+    in_roi = nodes_in_surface[
+        (distances <= radius) *
+        (center_normal.dot(normals.T) > min_cos)
+    ]
     tr_in_roi = np.any(
         np.in1d(mesh.elm[mesh.elm.triangles, :3], in_roi).reshape(-1, 3), axis=1)
+
     roi_nodes, roi_triangles_reordering = \
         np.unique(mesh.elm[mesh.elm.triangles[tr_in_roi], :3], return_inverse=True)
-    return mesh.elm.triangles[tr_in_roi], roi_nodes, roi_triangles_reordering.reshape(-1,
-                                                                                      3)
+
+    return mesh.elm.triangles[tr_in_roi], roi_nodes, roi_triangles_reordering.reshape(-1,3)
 
 def _point_inside_polygon(vertices, points, tol=1e-3):
     '''uses the line-tracing algorithm Known issues: if the point is right in the edge,
@@ -694,9 +687,8 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
 
 
 def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_tag,
-                             on_top_of=[5, 1005], holes=[], plug=None, plug_tag=None,
+                             triangles, holes=[], plug=None, plug_tag=None,
                              middle_layer=None):
-
     ''' Given the spatial localization of the electrode and the polygon description, add
     it to the mesh '''
     # Get Roi
@@ -715,24 +707,27 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
         assert plug_tag is not None
 
     R = np.linalg.norm(poly, axis=1).max() * 1.2
-    roi_triangles, roi_nodes, triangles = _get_roi(
-             center, R, mesh, mesh_surface=on_top_of)
+    _, roi_nodes, roi_triangles = _get_roi(
+             center, R, mesh, triangles
+    )
     nodes = mesh.nodes[roi_nodes]
     affine, _ = _get_transform(
         center, ydir, mesh,
-        mesh_surface=on_top_of,
-        nodes_roi=roi_nodes)
+        triangles,
+        nodes_roi=roi_nodes
+    )
     nodes = _apply_affine(affine, nodes)
     #nodes = affine[:3, :3].dot(nodes.T).T + affine[:3, 3]
     nodes_z = nodes[:, 2]
     nodes = nodes[:, :2]
     # Build the electrode
     out = _build_electrode(
-        poly, h, nodes, triangles, holes=holes, plug=plug, middle_layer=middle_layer)
+        poly, h, nodes, roi_triangles, holes=holes, plug=plug, middle_layer=middle_layer
+    )
     if out is None:
         return mesh
     else:
-        new_nodes, tetrahedra, triangles, corresponding, in_surf, th_tag, tr_tag = out
+        new_nodes, tetrahedra, roi_triangles, corresponding, in_surf, th_tag, tr_tag = out
     ### Add electrodes to mesh
     # Transform the nodes back
     inv_affine = np.linalg.inv(affine)
@@ -777,7 +772,7 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
 
     # Make the triangles
     s = np.min(np.where(mesh.elm.elm_type==4)[0])
-    tr = node_dict[triangles]
+    tr = node_dict[roi_triangles]
     tr = np.concatenate((tr, -1 * np.ones((len(tr), 1), dtype=int)), axis=1)
 
     surf_tags = np.ones_like(tr_tag, dtype=int)
@@ -803,10 +798,11 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
 
     mesh.elm.node_number_list = np.insert(
        mesh.elm.node_number_list, s,  tr, axis=0)
+
     return mesh
 
 
-def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
+def _create_polygon_from_elec(elec, mesh, triangles):
     if elec.definition == 'plane':
         if elec.shape in ['rect', 'rectangle', 'ellipse']:
             if elec.dimensions is None or len(elec.dimensions) == 0:
@@ -842,7 +838,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
             if elec.pos_ydir is not None and len(elec.pos_ydir) == 2:
                 raise NotImplementedError('Relative y axis not implemented yet')
         elif len(center) == 3:
-            center = _find_closest_surface_pos(center, mesh, skin_tag)
+            center = _find_closest_surface_pos(center, mesh, triangles)
         else:
             raise ValueError('Wrong dimension of electrode centre: it should be 1x3 (or 1x2 for plugs)')
 
@@ -854,7 +850,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
         if pos_y:
             y_axis = np.array(elec.pos_ydir, dtype=float)
             if len(y_axis) == 3:
-                y_axis = _find_closest_surface_pos(y_axis, mesh, skin_tag)
+                y_axis = _find_closest_surface_pos(y_axis, mesh, triangles)
         else:
             y_axis = None
 
@@ -866,9 +862,13 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
         center = np.average(v, axis=0)
         R = np.linalg.norm(center - v, axis=1).max() * 1.2
         _, roi_nodes, _ = _get_roi(
-            center, R, mesh, mesh_surface=skin_tag)
-        transform, c = _get_transform(center, None, mesh, mesh_surface=skin_tag,
-                                      nodes_roi=roi_nodes)
+            center, R, mesh, triangles
+        )
+        transform, c = _get_transform(
+            center, None, mesh,
+            triangles,
+            nodes_roi=roi_nodes
+        )
         center = c
         y_axis = None
         poly = _apply_affine(transform, v)
@@ -879,7 +879,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
 
     return poly, center, y_axis
 
-def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=400,
+def put_electrode_on_mesh(elec, mesh, elec_tag, triangles, extra_add=400,
                           surf_add=1000, plug_add=2000):
     ''' Places an electrode in the given mesh
 
@@ -891,8 +891,8 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
         Mesh where the electrode is to be placed
     elec_tag: int
         Tag for the electrode volume.
-    skin_tag: int or list of ints (optional)
-    Tags where the electrode is to be placed. Default: [5, 1005]
+    triangles: ndarray of size Nx3
+        Triangles to be considered when placing electrode
     extra_add: int
         Number to be added to electrode_tag to designate gel/sponge. Default:400
     surf_add:
@@ -911,12 +911,12 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
     # Generate the polygon
     elec = copy.deepcopy(elec)
     elec.substitute_positions_from_cap()
-    elec_poly, elec_center, ydir = _create_polygon_from_elec(elec, mesh, skin_tag=skin_tag)
+    elec_poly, elec_center, ydir = _create_polygon_from_elec(elec, mesh, triangles)
     thick = np.atleast_1d(elec.thickness)
     holes_poly = []
     for h in elec.holes:
         holes_poly.append(
-            _create_polygon_from_elec(h, mesh, skin_tag=skin_tag)[0])
+            _create_polygon_from_elec(h, mesh, triangles)[0])
 
     if elec.plug in [[], None]:
         plug_poly = None
@@ -928,7 +928,7 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
         except (IndexError, TypeError):
             plug = elec.plug
         plug_poly, plug_center, plug_ydir = \
-            _create_polygon_from_elec(plug, mesh, skin_tag=skin_tag)
+            _create_polygon_from_elec(plug, mesh, triangles)
 
     if elec.dimensions_sponge is not None and len(elec.dimensions_sponge) > 0:
         if elec.definition != 'plane':
@@ -943,7 +943,7 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
         has_sponge = True
         sponge_el = copy.deepcopy(elec)
         sponge_el.dimensions = elec.dimensions_sponge
-        sponge_poly = _create_polygon_from_elec(sponge_el, mesh, skin_tag=skin_tag)[0]
+        sponge_poly = _create_polygon_from_elec(sponge_el, mesh, triangles)[0]
 
     else:
         has_sponge = False
@@ -952,12 +952,13 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
         R = np.linalg.norm(sponge_poly, axis=1).max() * 1.2
     else:
         R = np.linalg.norm(elec_poly, axis=1).max() * 1.2
-    roi_triangles, roi_nodes, triangles = _get_roi(
-        elec_center, R, mesh, mesh_surface=skin_tag)
+    roi_triangles, roi_nodes, roi_tr = _get_roi(
+        elec_center, R, mesh, triangles
+    )
     nodes = mesh.nodes[roi_nodes]
     affine, elec_center = _get_transform(
         elec_center, ydir, mesh,
-        mesh_surface=skin_tag,
+        triangles,
         nodes_roi=roi_nodes)
     nodes = _apply_affine(affine, nodes)
     nodes_z = nodes[:, 2]
@@ -966,13 +967,13 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
     moved = []
     ends = elec.shape != 'ellipse'
     nodes, m = _draw_polygon_2D(
-            elec_poly, nodes, triangles, ends=ends)
+            elec_poly, nodes, roi_tr, ends=ends)
     moved.append(m)
 
     for h_p, h in zip(holes_poly, elec.holes):
         ends = h.shape != 'ellipse'
         nodes, m = _draw_polygon_2D(
-            h_p, nodes, triangles, ends=ends)
+            h_p, nodes, roi_tr, ends=ends)
         moved.append(m)
 
     if plug_poly is not None:
@@ -981,19 +982,19 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
             plug_center = _apply_affine(affine, plug_center[None, :])[0, :2]
             plug_poly += plug_center
         nodes, m = _draw_polygon_2D(
-            plug_poly, nodes, triangles, ends=ends)
+            plug_poly, nodes, roi_tr, ends=ends)
         moved.append(m)
 
     if has_sponge:
         ends = sponge_el.shape != 'ellipse'
         nodes, m = _draw_polygon_2D(
-            sponge_poly, nodes, triangles, ends=ends)
+            sponge_poly, nodes, roi_tr, ends=ends)
         moved.append(m)
 
     # Optimize positions
     moved = [n for m in moved for n in m]
 
-    nodes = _optimize_2D(nodes, triangles, stay=moved)
+    nodes = _optimize_2D(nodes, roi_tr, stay=moved)
     # Change the mesh
     nodes = np.vstack([nodes.T, nodes_z]).T
     inv_affine = np.linalg.inv(affine)
@@ -1009,14 +1010,14 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
         mesh = _build_electrode_on_mesh(
             elec_center, ydir, elec_poly, thick, mesh,
             elec_tag + extra_add, elec_tag + extra_add + surf_add,
-            on_top_of=skin_tag, holes=holes_poly, plug=plug_poly, plug_tag=elec_tag + plug_add)
+            triangles, holes=holes_poly, plug=plug_poly, plug_tag=elec_tag + plug_add)
 
     elif len(thick) == 2:
         mesh = _build_electrode_on_mesh(
             elec_center, ydir, elec_poly, thick, mesh,
             [elec_tag + extra_add, elec_tag],
             [elec_tag + extra_add + surf_add, elec_tag + surf_add],
-            on_top_of=skin_tag, holes=holes_poly, plug=plug_poly, plug_tag=elec_tag + plug_add)
+            triangles, holes=holes_poly, plug=plug_poly, plug_tag=elec_tag + plug_add)
 
     elif len(thick) == 3:
         if not has_sponge:
@@ -1026,7 +1027,7 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
             elec_center, ydir, sponge_poly, thick, mesh,
             [elec_tag + extra_add, elec_tag],
             [elec_tag + extra_add + surf_add, elec_tag + surf_add],
-            on_top_of=skin_tag, holes=holes_poly, plug=plug_poly,
+            triangles, holes=holes_poly, plug=plug_poly,
             plug_tag=elec_tag + plug_add,
             middle_layer=elec_poly)
     else:
