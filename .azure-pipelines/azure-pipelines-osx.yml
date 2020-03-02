@@ -11,15 +11,14 @@ jobs:
     maxParallel: 4
 
   steps:
+  - task: UsePythonVersion@0
+    inputs:
+       versionSpec: '3.7' 
+    displayName: 'Use Python 3.7'
   - bash: |
-      echo "##vso[task.prependpath]$CONDA/bin"
-      sudo chown -R $USER $CONDA
-    displayName: Add conda to PATH
+      pip install numpy==1.16 cython setuptools wheel
+    displayName: Install build dependencies
   - bash: |
-      conda env create -f environment_macOS.yml
-    displayName: Create Conda environment
-  - bash: |
-      source activate simnibs_env
       python setup.py bdist_wheel
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
