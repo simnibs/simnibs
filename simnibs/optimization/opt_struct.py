@@ -1693,7 +1693,7 @@ class TDCSavoid:
         s = ('positions: {0}\n'
              'indexes: {1}\n'
              'radius: {2}\n'
-             'weights: {3:.1e}\n'
+             'weight: {3:.1e}\n'
              'tissues: {4}\n'
              .format(
                  str(self.positions),
