@@ -2206,7 +2206,8 @@ class TDCSLEADFIELD(LEADFIELD):
         if count_struct != count_csv:
             raise IOError(
                 'The number of electrodes in the structure is'
-                ' not 0, 1 or the same number as in the CSV file')
+                ' not 0, 1 or the same number as in the CSV file'
+            )
         i = 0
         ref_idx = None
         for t, c, e, n in zip(type_, coordinates, extra, name):
@@ -2237,10 +2238,10 @@ class TDCSLEADFIELD(LEADFIELD):
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
-            if not self.cond[99 + i].name:
+            if self.cond[99 + i].value is None:
                 self.cond[99 + i].name = 'el' + str(i)
                 self.cond[99 + i].value = self.cond[99].value
-            if not self.cond[499 + i].name:
+            if self.cond[499 + i].value is None:
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
 

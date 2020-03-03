@@ -1,7 +1,7 @@
 static const char *petscmachineinfo = "\n"
 "-----------------------------------------\n"
-"Libraries compiled on 2019-05-15 07:38:32 on Guilhermes-MacBook-Pro.local \n"
-"Machine characteristics: Darwin-18.6.0-x86_64-i386-64bit\n"
+"Libraries compiled on 2020-03-02 17:52:15 on Guilhermes-MacBook-Pro.local \n"
+"Machine characteristics: Darwin-18.7.0-x86_64-i386-64bit\n"
 "Using PETSc directory: /Users/gbs/Downloads/petsc-3.9.4\n"
 "Using PETSc arch: simnibs_petsc_arch\n"
 "-----------------------------------------\n";
