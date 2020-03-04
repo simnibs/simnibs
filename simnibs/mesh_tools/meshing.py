@@ -71,6 +71,10 @@ def _mesh_image(image, voxel_dims, facet_angle,
 
         mesh = mesh_io.read_medit(fn_mesh)
 
+    # In concurrent meshing there might be some spurious nodes
+    used_nodes = np.unique(mesh.elm[:])[1:]
+    mesh = mesh.crop_mesh(nodes=used_nodes)
+
     return mesh
 
 def _decompose_affine(affine):
@@ -235,6 +239,11 @@ def _mesh_surfaces(surfaces, subdomains, facet_angle,
         if ret != 0:
             raise MeshingError('There was an error while meshing the surfaces')
         mesh = mesh_io.read_medit(fn_mesh)
+
+    # In concurrent meshing there might be some spurious nodes
+    used_nodes = np.unique(mesh.elm[:])[1:]
+    mesh = mesh.crop_mesh(nodes=used_nodes)
+
     return mesh
 
 

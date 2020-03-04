@@ -48,6 +48,9 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 CGAL_version = '5.0'  # I tried 5.0.1 but tests fail!
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 
+eigen_version = '3.3.7'
+eigen_headers = os.path.abspath(f'eigen-{eigen_version}')
+
 is_conda = 'CONDA_PREFIX' in os.environ
 
 if sys.platform == 'win32':
@@ -69,6 +72,7 @@ if sys.platform == 'win32':
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
         'simnibs/external/include/win/mpfr',
         'simnibs/external/include/win/gmp'
     ]
@@ -95,6 +99,7 @@ elif sys.platform == 'linux':
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
         'simnibs/external/include/linux/mpfr',
         'simnibs/external/include/linux/gmp'
     ]
@@ -102,7 +107,25 @@ elif sys.platform == 'linux':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/linux']
     cgal_runtime = ['$ORIGIN/../external/lib/linux']
-    cgal_compile_args = ['-Os', '-flto']
+    # TODO: setup compile args in other platforms
+    cgal_compile_args = [
+        '-Os', '-flto',
+        '-DCGAL_CONCURRENT_MESH_3',
+        '-DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
+        '-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
+        '-DNOMINMAX',
+        '-DCGAL_EIGEN3_ENABLED',
+        '-DCGAL_LINKED_WITH_TBB',
+        '-frounding-math',
+        '-std=gnu++14',
+
+    ]
+    # TODO: Add libtbb
+    cgal_link_args = [
+        '/usr/lib/x86_64-linux-gnu/libtbb.so',
+        '/usr/lib/x86_64-linux-gnu/libtbbmalloc.so',
+        '-lpthread'
+    ]
 
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -120,6 +143,7 @@ elif sys.platform == 'darwin':
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
         'simnibs/external/include/osx/mpfr',
         'simnibs/external/include/osx/gmp'
     ]
@@ -159,7 +183,7 @@ extension = [
               library_dirs=cgal_dirs,
               runtime_library_dirs=cgal_runtime,
               extra_compile_args=cgal_compile_args,
-              extra_link_args=cgal_compile_args),
+              extra_link_args=cgal_link_args),
 ]
 
 
@@ -187,12 +211,8 @@ gui_scripts = [
 ]
 
 
-def download_cgal():
-    CGAL_url = (
-        'https://github.com/CGAL/cgal/releases/download/'
-        'releases/CGAL-{0}/CGAL-{0}-library.zip'.format(CGAL_version)
-    )
-    with urllib.request.urlopen(CGAL_url) as response:
+def download_and_extract(url):
+    with urllib.request.urlopen(url) as response:
         with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
             shutil.copyfileobj(response, tmpf)
             tmpname = tmpf.name
@@ -201,7 +221,6 @@ def download_cgal():
         z.extractall()
 
     os.remove(tmpname)
-
 
 def move_libraries(build_folder, operation=shutil.move):
     if sys.platform == 'darwin':
@@ -219,15 +238,24 @@ def move_libraries(build_folder, operation=shutil.move):
             os.path.join(compliled_folder, os.path.basename(fn))
         )
 
-
 class build_ext_(build_ext):
     def run(self):
         from Cython.Build import cythonize
         self.extension = cythonize(self.extensions)
-        download_cgal()
+        download_and_extract(
+            f'https://github.com/CGAL/cgal/releases/download/'
+            f'releases/CGAL-{CGAL_version}/'
+            f'CGAL-{CGAL_version}-library.zip'
+        )
+
+        download_and_extract(
+            f'https://gitlab.com/libeigen/eigen/-/'
+            f'archive/{eigen_version}/eigen-{eigen_version}.zip'
+        )
         build_ext.run(self)
         # Remove unescessary binary files
         shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
+        shutil.rmtree(f'eigen-{eigen_version}', ignore_errors=True)
         linux_folders = [
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'linux'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'linux'),
