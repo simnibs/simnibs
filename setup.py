@@ -168,7 +168,24 @@ elif sys.platform == 'darwin':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
-    cgal_compile_args = ['-march=native', '-stdlib=libc++', '-std=c++14']
+    cgal_compile_args = [
+        '-std=gnu++14',
+        '-stdlib=libc++',
+        '-DBOOST_ADD_NO_LIB',
+        '-DCGAL_CONCURRENT_MESH_3',
+        '-DCGAL_EIGEN3_ENABLED',
+        '-DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
+        '-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
+        '-DNDEBUG',
+        '-DCGAL_LINKED_WITH_TBB',
+        '-DNOMINMAX',
+        '-DCGAL_USE_ZLIB=1',
+    ]
+    cgal_link_args = [
+        '/usr/local/lib/libtbb.dylib',
+        '/usr/local/lib/libtbbmalloc.dylib',
+        '-stdlib=libc++'
+    ]
 
 
 else:
