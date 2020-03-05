@@ -47,10 +47,27 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 
 CGAL_version = '5.0'  # I tried 5.0.1 but tests fail!
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
+CGAL_url = (
+    f'https://github.com/CGAL/cgal/releases/download/'
+    f'releases/CGAL-{CGAL_version}/'
+    f'CGAL-{CGAL_version}-library.zip'
+)
 
 eigen_version = '3.3.7'
 eigen_headers = os.path.abspath(f'eigen-{eigen_version}')
+eigen_url = (
+    f'https://gitlab.com/libeigen/eigen/-/'
+    f'archive/{eigen_version}/eigen-{eigen_version}.zip'
+)
 
+tbb_version = '2020.1'
+tbb_os = {'win32': 'win', 'linux': 'lin', 'darwin': 'mac'}[sys.platform]
+tbb_extension = 'zip' if sys.platform == 'win32' else 'tgz'
+tbb_headers = os.path.abspath(f'tbb-{tbb_version}-{tbb_os}/tbb/include/')
+tbb_url = (
+    f'https://github.com/intel/tbb/releases/download/'
+    f'v{tbb_version}/tbb-{tbb_version}-{tbb_os}.{tbb_extension}'
+)
 is_conda = 'CONDA_PREFIX' in os.environ
 
 if sys.platform == 'win32':
@@ -242,16 +259,8 @@ class build_ext_(build_ext):
     def run(self):
         from Cython.Build import cythonize
         self.extension = cythonize(self.extensions)
-        download_and_extract(
-            f'https://github.com/CGAL/cgal/releases/download/'
-            f'releases/CGAL-{CGAL_version}/'
-            f'CGAL-{CGAL_version}-library.zip'
-        )
-
-        download_and_extract(
-            f'https://gitlab.com/libeigen/eigen/-/'
-            f'archive/{eigen_version}/eigen-{eigen_version}.zip'
-        )
+        download_and_extract(CGAL_url)
+        download_and_extract(eigen_url)
         build_ext.run(self)
         # Remove unescessary binary files
         shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
