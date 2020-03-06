@@ -42,6 +42,14 @@ CGAL_url = (
     f'releases/CGAL-{CGAL_version}/'
     f'CGAL-{CGAL_version}-library.zip'
 )
+cgal_macros = [
+    ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
+    ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
+    ('CGAL_CONCURRENT_MESH_3', None),
+    ('CGAL_LINKED_WITH_TBB', None),
+    ('CGAL_EIGEN3_ENABLED', None),
+    ('CGAL_USE_ZLIB', 1),
+]
 
 # Information for eigen download
 eigen_version = '3.3.7'
@@ -117,27 +125,8 @@ if sys.platform == 'win32':
     if is_conda:
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
-    #TODO
     cgal_runtime = None
-    '''
-    cgal_compile_args = [
-        '/D CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
-        '/D CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
-        '/D CGAL_CONCURRENT_MESH_3',
-        '/D CGAL_EIGEN3_ENABLED',
-        '/D CGAL_USE_ZLIB=1',
-        '/D BOOST_ALL_DYN_LINK=1'
-    ]
-    '''
     cgal_compile_args = None
-    cgal_macros = [
-        ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
-        ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
-        ('CGAL_CONCURRENT_MESH_3', None),
-        ('CGAL_EIGEN3_ENABLED', None),
-        ('CGAL_USE_ZLIB', 1),
-        ('BOOST_ALL_DYN_LINK', 1),
-    ]
     cgal_link_args = None
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
@@ -163,16 +152,10 @@ elif sys.platform == 'linux':
     cgal_runtime = ['$ORIGIN/../external/lib/linux']
     cgal_compile_args = [
         '-Os', '-flto',
-        '-DCGAL_CONCURRENT_MESH_3',
-        '-DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
-        '-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
-        '-DNOMINMAX',
-        '-DCGAL_EIGEN3_ENABLED',
-        '-DCGAL_LINKED_WITH_TBB',
-        '-DCGAL_USE_ZLIB=1',
         '-frounding-math',
         '-std=gnu++14',
     ]
+    cgal_macros += [('NOMINMAX', None)]
     cgal_link_args = None
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -199,15 +182,8 @@ elif sys.platform == 'darwin':
     cgal_compile_args = [
         '-std=gnu++14',
         '-stdlib=libc++',
-        '-DBOOST_ADD_NO_LIB',
-        '-DCGAL_CONCURRENT_MESH_3',
-        '-DCGAL_EIGEN3_ENABLED',
-        '-DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
-        '-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
-        '-DCGAL_LINKED_WITH_TBB',
-        '-DNOMINMAX',
-        '-DCGAL_USE_ZLIB=1',
     ]
+    cgal_macros += [('NOMINMAX', None)]
     cgal_link_args = [
         '-stdlib=libc++'
     ]
