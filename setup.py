@@ -105,7 +105,7 @@ if sys.platform == 'win32':
     petsc_dirs = ['simnibs/external/lib/win']
     petsc_runtime = None
 
-    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib']
+    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib', 'tbb', 'tbbmalloc']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
@@ -119,8 +119,26 @@ if sys.platform == 'win32':
     cgal_dirs = ['simnibs/external/lib/win']
     #TODO
     cgal_runtime = None
+    '''
+    cgal_compile_args = [
+        '/D CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
+        '/D CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
+        '/D CGAL_CONCURRENT_MESH_3',
+        '/D CGAL_EIGEN3_ENABLED',
+        '/D CGAL_USE_ZLIB=1',
+        '/D BOOST_ALL_DYN_LINK=1'
+    ]
+    '''
     cgal_compile_args = None
-
+    cgal_macros = [
+        ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
+        ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
+        ('CGAL_CONCURRENT_MESH_3', None),
+        ('CGAL_EIGEN3_ENABLED', None),
+        ('CGAL_USE_ZLIB', 1),
+        ('BOOST_ALL_DYN_LINK', 1),
+    ]
+    cgal_link_args = None
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
     petsc_include = [
@@ -156,7 +174,6 @@ elif sys.platform == 'linux':
         '-std=gnu++14',
     ]
     cgal_link_args = None
-
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
     petsc_include = [
@@ -192,8 +209,6 @@ elif sys.platform == 'darwin':
         '-DCGAL_USE_ZLIB=1',
     ]
     cgal_link_args = [
-        '/usr/local/lib/libtbb.dylib',
-        '/usr/local/lib/libtbbmalloc.dylib',
         '-stdlib=libc++'
     ]
 
@@ -234,7 +249,8 @@ create_mesh = Extension(
     library_dirs=cgal_dirs,
     runtime_library_dirs=cgal_runtime,
     extra_compile_args=cgal_compile_args,
-    extra_link_args=cgal_link_args
+    extra_link_args=cgal_link_args,
+    define_macros=cgal_macros
 )
 
 
