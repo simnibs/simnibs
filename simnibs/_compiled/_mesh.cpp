@@ -15,7 +15,6 @@
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 
-
 #include <cstdlib>
 // Domain
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
