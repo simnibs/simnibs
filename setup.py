@@ -35,7 +35,7 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 '''
 
 # Information for CGAL download
-CGAL_version = '5.0'  # I tried 5.0.1 but tests fail!
+CGAL_version = '5.0.2'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 CGAL_url = (
     f'https://github.com/CGAL/cgal/releases/download/'
@@ -151,7 +151,6 @@ elif sys.platform == 'linux':
         '-DNOMINMAX',
         '-DCGAL_EIGEN3_ENABLED',
         '-DCGAL_LINKED_WITH_TBB',
-        '-DNDEBUG',
         '-DCGAL_USE_ZLIB=1',
         '-frounding-math',
         '-std=gnu++14',
@@ -188,7 +187,6 @@ elif sys.platform == 'darwin':
         '-DCGAL_EIGEN3_ENABLED',
         '-DCGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS',
         '-DCGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX',
-        '-DNDEBUG',
         '-DCGAL_LINKED_WITH_TBB',
         '-DNOMINMAX',
         '-DCGAL_USE_ZLIB=1',

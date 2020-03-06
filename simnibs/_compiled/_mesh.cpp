@@ -15,6 +15,7 @@
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 
+#include <tbb/task_scheduler_init.h>
 
 #include <cstdlib>
 // Domain
@@ -54,7 +55,6 @@ typedef boost::optional<Tree::Intersection_and_primitive_id<Segment>::Type> Segm
 typedef Tree::Primitive_id Primitive_id;
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
-// Function
 
 
 int _mesh_image(
@@ -109,13 +109,9 @@ struct Sizing_field
         const std::size_t i = (p.x() - tx)/vx + 0.5;
         const std::size_t j = (p.y() - ty)/vy + 0.5;
         const std::size_t k = (p.z() - tz)/vz + 0.5;
-        if (i < 0 || j < 0 || k < 0) {
+        if (i < 0 || j < 0 || k < 0 || i >= sx || j >= sy || k >= sz) {
             std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
-            return 0;
-        }
-        if (i >= sx || j >= sy || k >= sz){
-            std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
-            return 0;
+            return 1;
         }
 	FT val = sizing_field_image[i + sx*j + sx*sy*k];
         return val;
@@ -126,9 +122,10 @@ int _mesh_image_sizing_field(
   char *fn_image, char *fn_out,
   float facet_angle, float *facet_size, float *facet_distance,
   float cell_radius_edge_ratio, float *cell_size,
-  bool optimize
+  bool optimize, int n_threads
 )
 {
+  tbb::task_scheduler_init tsi(n_threads);
   /// Load image
   CGAL::Image_3 image;
   if(!image.read(fn_image)){

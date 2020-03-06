@@ -53,7 +53,8 @@ def _get_transform(center, y_axis, mesh, triangles, y_type='relative',
     else:
         normal = np.nanmean(
             mesh.nodes_normals().value[nodes_roi - 1],
-            axis=0)
+            axis=0
+        )
 
     z_axis = normal / np.linalg.norm(normal)
     normal = z_axis

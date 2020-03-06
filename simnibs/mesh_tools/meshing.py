@@ -56,7 +56,7 @@ def _mesh_image(image, voxel_dims, facet_angle,
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize
+                    optimize, 1 # Hard-coding number of threads
                  )
         else:
             ret = create_mesh.mesh_image(
@@ -70,7 +70,6 @@ def _mesh_image(image, voxel_dims, facet_angle,
             raise MeshingError('There was an error while meshing the image')
 
         mesh = mesh_io.read_medit(fn_mesh)
-
     # In concurrent meshing there might be some spurious nodes
     used_nodes = np.unique(mesh.elm[:])[1:]
     mesh = mesh.crop_mesh(nodes=used_nodes)
