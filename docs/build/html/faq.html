@@ -55,10 +55,10 @@
 <p>Yes! Frequencies used in TACS are usually low, so we can employ a <em>quasi-static approximation</em>. This means that if we have a sinusoidal current with a frequency <img class="math" src="_images/math/5b7752c757e0b691a80ab8227eadb8a8389dc58a.png" alt="f"/> and amplitude <img class="math" src="_images/math/adcd782280d325715f28dea464d7791b13dfe769.png" alt="I_0"/></p>
 <div class="math">
 <p><img src="_images/math/3f1385ce8d60363de73b43d22eb449c856b7671d.png" alt="I(t) = I_0\sin\left(2 \pi f t\right)"/></p>
-</div><p>The Electric Field will vary in times in phase and with the same frequency of the input current</p>
+</div><p>The electric field will vary in time and with the same frequency of the input current and with the same phase:</p>
 <div class="math">
 <p><img src="_images/math/d1d656d8fb4737bbea3ca039927143aaed7a9a17.png" alt="\boldsymbol E (t) = \boldsymbol E_0\sin\left(2 \pi f t\right)"/></p>
-</div><p>Where <img class="math" src="_images/math/866196af9ae2c885ef10c40a4d4892c8762cf767.png" alt="\boldsymbol E_0"/> is the electric field obtained with the current <img class="math" src="_images/math/adcd782280d325715f28dea464d7791b13dfe769.png" alt="I_0"/>.</p>
+</div><p>Where <img class="math" src="_images/math/866196af9ae2c885ef10c40a4d4892c8762cf767.png" alt="\boldsymbol E_0"/> is the electric field obtained with the current <img class="math" src="_images/math/adcd782280d325715f28dea464d7791b13dfe769.png" alt="I_0"/>. In practice, this means you can just simulate the electric field obtained at peak currents, and the temporal variations of the current will just scale the field, and not change its distribution in the brain.</p>
 <p>When multiple channels are involved, and especially when they are out of phase, more care needs to be taken. Please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2017.09.024">(Saturnino et. al., 2017)</a> for a more detailed discussion</p>
 </div>
 <div class="section" id="what-is-the-di-dt-in-tms-simulations">
