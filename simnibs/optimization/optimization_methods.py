@@ -187,7 +187,6 @@ class TESLinearAngleConstrained(TESOptimizationProblem):
         self.max_angle = max_angle
 
     def solve(self, log_level=20):
-
         return _linear_angle_constrained_tes_opt(
             self.l, self.target_mean, self.Q,
             self.max_total_current,
@@ -235,6 +234,8 @@ class TESLinearElecConstrained(TESLinearConstrained):
                 log_level=10
             )
             active = np.abs(x) > 1e-3 * max_el_current
+            if not np.any(active):
+                active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
 
         elif init_startegy == 'full':
@@ -325,6 +326,8 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
 
         if init_startegy == 'compact':
             active = np.abs(x) > 1e-3 * max_el_current
+            if not np.any(active):
+                active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
 
         elif init_startegy == 'full':
@@ -349,6 +352,117 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
         )
 
         return final_state.x_ub
+
+class TESNormConstrained(TESOptimizationProblem):
+    ''' Class for solving the TES Problem with norm-type constraints
+    '''
+    def __init__(self, leadfield, max_total_current=1e5, max_el_current=1e5, weights=None):
+        super().__init__(leadfield, max_total_current, max_el_current, weights)
+        self.Qnorm = np.empty((0, self.n, self.n), dtype=float)
+        self.target_means = np.empty(0, dtype=float)
+
+
+    def add_norm_constraint(self, target_indices, target_mean, target_weights=None):
+        ''' Add a norm contraint of the type
+        x^T Q x = t^2
+        where x^T Q x is the squared field norm in target_indices and t is taret_mean
+
+        Parameters
+        ------------
+        target_indices: list of ints
+            Indices of targets.
+        target_mean: float
+            Target mean electric field norm in region
+        target_weights: ndarray (optional)
+            Weights (such are areas/volumes) for calculating the mean. Defined for every
+            index
+        '''
+        if target_weights is None:
+            target_weights = self.weights
+        Qnorm = _calc_Qnorm(self.leadfield, target_indices, target_weights)
+        self.Qnorm = np.concatenate([self.Qnorm, Qnorm[None, ...]])
+        self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
+
+
+    def solve(self, log_level=20):
+        ''' Solves the optimization problem
+
+        Returns
+        ----------
+        x: np.array
+            Optimized currents
+        '''
+        return _norm_constrained_tes_opt(
+            self.Qnorm, self.target_means, self.Q,
+            self.max_el_current, self.max_total_current,
+            log_level=log_level
+        )
+
+
+class TESNormElecConstrained(TESNormConstrained):
+    ''' Class for solving the TES Problem with norm-type and number of electrodes
+    constraints
+    '''
+    def __init__(self, n_elec, leadfield,
+                 max_total_current=1e5,
+                 max_el_current=1e5, weights=None):
+
+        super().__init__(leadfield, max_total_current, max_el_current, weights)
+        self.n_elec = n_elec
+
+    def _solve_reduced(self, linear, quadratic, extra_ineq=None):
+        Q = quadratic[0]
+        Qnorm = np.stack(quadratic[1:]) # It should be stack here
+
+        x = _norm_constrained_tes_opt(
+            Qnorm, self.target_means, Q,
+            self.max_el_current, self.max_total_current,
+            log_level=10
+        )
+        if np.any(np.sqrt(x.T.dot(Qnorm).dot(x)) < self.target_means**0.99):
+            return x, 1e20
+        else:
+            return x, x.dot(Q).dot(x)
+
+    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy='compact'):
+        # Heuristically eliminate electrodes
+        max_el_current = min(self.max_el_current, self.max_total_current)
+        el = np.arange(self.n)
+        if init_startegy == 'compact':
+            x = _norm_constrained_tes_opt(
+                self.Qnorm, self.target_means, self.Q,
+                self.max_el_current, self.max_total_current,
+                log_level=10
+            )
+            active = np.abs(x) > 1e-3 * max_el_current
+            if not np.any(active):
+                active = np.ones(self.n, dtype=bool)
+            init = bb_state([], el[~active].tolist(), el[active].tolist())
+
+        elif init_startegy == 'full':
+            init = bb_state([], [], el.tolist())
+
+        else:
+            raise ValueError('Invalid initialization strategy')
+
+        bounds_function = functools.partial(
+             _bb_bounds_tes_problem,
+             max_l0=self.n_elec,
+             linear=[np.zeros((1, self.n))],
+             quadratic=np.concatenate([self.Q[None, ...], self.Qnorm]),
+             max_el_current=max_el_current,
+             func=self._solve_reduced
+         )
+
+        final_state = _branch_and_bound(
+            init, bounds_function,
+            eps_bb, max_bb_iter,
+            log_level=log_level
+        )
+
+        return final_state.x_ub
+
+
 
 def _calc_l(leadfield, target_indices, target_direction, weights):
     ''' Calculates the matrix "l" (eq. 14 in Saturnino et al. 2019)
@@ -767,7 +881,6 @@ def _norm_constrained_tes_opt(
         logger.log(log_level, 'Target norm could not be reached')
         return x
 
-
     # notice, I reset x on purpose
     x = x_init
     # Slack term penalty
@@ -824,7 +937,7 @@ def _norm_constrained_tes_opt(
         energy = x.dot(Q).dot(x)
         norms = np.sqrt(x.dot(Qnorm).dot(x))
         # 2 Stoping criteria: Energy should stop decreasing and the norm should start increasing
-        norms_str = np.array2string(norms, formatter={'float_kind':lambda x: "%.2e" % x})
+        norms_str = np.array2string(norms, formatter={'float_kind': lambda x: "%.2e" % x})
         logger.log(
             log_level,
             f'{n_iter}: Energy: {energy: .2e} Norms: {norms_str}'

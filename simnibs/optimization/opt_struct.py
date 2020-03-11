@@ -839,15 +839,16 @@ class TDCSoptimize():
 
         self._assign_mesh_lf_type_to_target()
         weights = self.get_weights()
+        norm_constrained = [t.directions is None for t in self.target]
 
         # Angle-constrained optimization
-        if np.any([t.max_angle is not None for t in self.target]):
+        if any([t.max_angle is not None for t in self.target]):
             if len(self.target) > 1:
                 raise ValueError("Can't apply angle constraints with multiple target")
             t = self.target[0]
             max_angle = t.max_angle
             indices, directions = t.get_indexes_and_directions()
-            assert max_angle > 0
+            assert max_angle > 0, 'max_angle must be >= 0'
             if self.max_active_electrodes is None:
                 opt_problem = optimization_methods.TESLinearAngleConstrained(
                     indices, directions,
@@ -864,7 +865,28 @@ class TDCSoptimize():
                     weights, weights_target=t.get_weights()
                 )
 
-        # NO angle contraint
+        # Norm-constrained optimization
+        elif any(norm_constrained):
+            if not all(norm_constrained):
+                raise ValueError("Can't mix norm and linear constrained optimization")
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESNormConstrained(
+                        self.leadfield, max_total_current,
+                        max_individual_current, weights
+                )
+            else:
+                opt_problem = optimization_methods.TESNormElecConstrained(
+                        self.max_active_electrodes,
+                        self.leadfield, max_total_current,
+                        max_individual_current, weights
+                )
+            for t in self.target:
+                opt_problem.add_norm_constraint(
+                    t.get_indexes_and_directions()[0], t.intensity,
+                    t.get_weights()
+                )
+
+        # Simple QP-style optimization
         else:
             if self.max_active_electrodes is None:
                 opt_problem = optimization_methods.TESLinearConstrained(
@@ -1248,8 +1270,8 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimied for each mesh point or the
-        string 'normal', Default: 'normal'
+        List of Electric field directions to be optimied for each mesh point, the string
+        'normal' or None (for norm optimization), Default: 'normal'
     intensity: float (optional)
         Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
@@ -1262,7 +1284,7 @@ class TDCStarget:
         Tissues included in the target. Either a list of integer with tissue tags or None
         for all tissues. Default: None
 
-    THE ONES BELOW SHOULD NOT BE FILLED BY THE USERS IN NORMAL CIRCUNTANCES:
+    THE ONES BELOW SHOULD NOT BE FILED BY THE USERS IN NORMAL CIRCUNTANCES:
     mesh: simnibs.msh.mesh_io.Msh (optional)
         Mesh where the target is defined. Set by the TDCSoptimize methods
     lf_type: 'node' or 'element'
@@ -1272,15 +1294,37 @@ class TDCStarget:
     def __init__(self, positions=None, indexes=None, directions='normal',
                  intensity=0.2, max_angle=None, radius=2, tissues=None,
                  mesh=None, lf_type=None):
+
         self.lf_type = lf_type
         self.mesh = mesh
         self.radius = radius
         self.tissues = tissues
         self.positions = positions
         self.indexes = indexes
-        self.directions = directions
         self.intensity = intensity
         self.max_angle = max_angle
+        self.directions = directions
+
+    @property
+    def directions(self):
+        return self._directions
+
+    @directions.setter
+    def directions(self, value):
+        if value == 'normal':
+            pass
+        elif value == 'none':
+            value = None
+        elif isinstance(value, str):
+            raise ValueError(
+                'Invalid value for directions: f{directions} '
+                'valid arguments are "normal", "none" or an array'
+            )
+        if value is None and self.max_angle is not None:
+            raise ValueError(
+                "Can't constrain angle in norm optimizations"
+            )
+        self._directions = value
 
 
     @classmethod
@@ -1386,11 +1430,16 @@ class TDCStarget:
 
         assert self.mesh is not None, 'Please set a mesh'
 
+        if self.directions is None:
+            nr_comp = 1
+        else:
+            nr_comp = 3
+
         if self.lf_type == 'node':
-            field = np.zeros((self.mesh.nodes.nr, 3))
+            field = np.zeros((self.mesh.nodes.nr, nr_comp))
             field_type = mesh_io.NodeData
         elif self.lf_type == 'element':
-            field = np.zeros((self.mesh.elm.nr, 3))
+            field = np.zeros((self.mesh.elm.nr, nr_comp))
             field_type = mesh_io.ElementData
         else:
             raise ValueError("lf_type must be 'node' or 'element'."
@@ -1402,11 +1451,15 @@ class TDCStarget:
                                          tissues=self.tissues,
                                          radius=self.radius)
 
-        directions = _find_directions(self.mesh, self.lf_type,
-                                      self.directions, indexes,
-                                      mapping)
-
-        field[indexes-1] = directions * self.intensity
+        if self.directions is None:
+            field[indexes-1] = self.intensity
+        else:
+            directions = _find_directions(
+                self.mesh, self.lf_type,
+                self.directions, indexes,
+                mapping
+            )
+            field[indexes-1] = directions * self.intensity
 
         return field_type(field, name, mesh=self.mesh)
 
@@ -1435,12 +1488,16 @@ class TDCStarget:
                                          tissues=self.tissues,
                                          radius=self.radius)
 
-        directions = _find_directions(self.mesh, self.lf_type,
-                                      self.directions, indexes,
-                                      mapping)
-
         f = field[indexes]
-        components = np.sum(f * directions, axis=1)
+        if self.directions is None:
+            components = np.linalg.norm(f, axis=1)
+
+        else:
+            directions = _find_directions(self.mesh, self.lf_type,
+                                          self.directions, indexes,
+                                          mapping)
+
+            components = np.sum(f * directions, axis=1)
 
         if self.lf_type == 'node':
             weights = self.mesh.nodes_volumes_or_areas()[indexes]
@@ -1471,6 +1528,8 @@ class TDCStarget:
 
         assert self.mesh is not None, 'Please set a mesh'
         assert field.nr_comp == 3, 'Field must have 3 components'
+        if self.directions is None:
+            return np.nan
 
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
@@ -1805,6 +1864,8 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         return mesh_indexes[indexes],  np.arange(len(indexes))
 
 def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
+    if directions is None:
+        return None
     if directions == 'normal':
         if 4 in np.unique(mesh.elm.elm_type):
             raise ValueError("Can't define a normal direction for volumetric data!")

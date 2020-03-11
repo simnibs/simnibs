@@ -828,7 +828,7 @@ class TestConstrainedEigenvalue:
         assert np.allclose(eigvals, np.diagonal(eigvec.T.dot(Q).dot(eigvec)))
 
 
-class TestNormConstrained:
+class TestTESNormContrained:
     def test_norm_constrained_tes_opt(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
@@ -960,3 +960,105 @@ class TestNormConstrained:
         assert np.all(np.linalg.norm(x) <= 2*max_total_current*1.001)
         assert np.isclose(np.sum(x), 0)
         assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_norm[0], rtol=1e-1)
+
+    def test_add_norm_constaint(self):
+        A = np.random.random((2, 5, 3))
+        targets = [0, 1]
+        volumes = np.array([1, 2, 2, 2, 2])
+        tes_problem = optimization_methods.TESNormConstrained(
+            A, weights=volumes
+        )
+        tes_problem.add_norm_constraint(targets, 0.2)
+        currents = np.array([-2, 1, 1])
+        field_norm = np.linalg.norm(A.T.dot(currents[1:]), axis=0)
+        avg_sq = np.average(field_norm[[0, 1]]**2, weights=[1, 2])
+        assert np.allclose(avg_sq, currents.T @ tes_problem.Qnorm @ currents)
+        assert np.allclose(0.2, tes_problem.target_means)
+
+    def test_solve_norm_constraint(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.1])
+
+        tes_opt = optimization_methods.TESNormConstrained(
+            leadfield, max_total_current, max_el_current
+        )
+        tes_opt.add_norm_constraint(0, target_norm[0])
+        tes_opt.add_norm_constraint(1, target_norm[1])
+        x = tes_opt.solve()
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(np.sqrt(x.dot(tes_opt.Qnorm).dot(x)), target_norm, rtol=1e-1)
+
+
+class TestNormElecConstrained:
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 5e-2
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESNormElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_norm_constraint(targets, target_mean)
+
+        x = tes_problem.solve(init_startegy=init_startegy)
+
+        x_bf = None
+        obj_bf = np.inf
+        for c in itertools.combinations(range(6),  n_elec):
+            Qnorm_ = tes_problem.Qnorm[0][np.ix_(c, c)]
+            Q_ = tes_problem.Q[np.ix_(c, c)]
+            x_ = optimization_methods._norm_constrained_tes_opt(
+                Qnorm_, tes_problem.target_means,
+                Q_, max_el_current,
+                max_total_current, log_level=0
+            )
+            obj = x_.dot(Q_).dot(x_)
+            if np.all(np.sqrt(x_.dot(Qnorm_).dot(x_)) > target_mean*0.99) and obj < obj_bf:
+                obj_bf = obj
+                x_bf = np.zeros(6)
+                x_bf[list(c)] = x_
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(np.sqrt(x @ tes_problem.Qnorm @ x), target_mean, rtol=1e-2)
+        assert np.allclose(x_bf, x) or np.allclose(x_bf, -x)
+
+    def test_solve_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 20
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESNormElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_norm_constraint(targets, target_mean)
+
+        x = tes_problem.solve()
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
