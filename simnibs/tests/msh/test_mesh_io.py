@@ -1645,6 +1645,17 @@ class TestNodeData:
         tangent = nd.tangent()
         assert np.allclose(tangent[outer_nodes] / nd.norm()[outer_nodes], 0, atol=1e-1)
 
+    def test_from_data_grid(self, sphere3_msh):
+        X, Y, Z = np.meshgrid(np.linspace(-100, 100, 201),
+                              np.linspace(-100, 100, 201),
+                              np.linspace(-100, 100, 201),
+                              indexing='ij')
+        affine = np.array([[1, 0, 0, -100],
+                           [0, 1, 0, -100],
+                           [0, 0, 1, -100],
+                           [0, 0, 0, 1]], dtype=float)
+        nd = mesh_io.NodeData.from_data_grid(sphere3_msh, X, affine)
+        assert np.allclose(sphere3_msh.nodes[:, 0], nd.value)
 
 
 
