@@ -56,7 +56,7 @@ def _mesh_image(image, voxel_dims, facet_angle,
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize, 1 # Hard-coding number of threads
+                    optimize
                  )
         else:
             ret = create_mesh.mesh_image(
