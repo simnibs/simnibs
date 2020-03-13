@@ -66,8 +66,12 @@ def parse_str(s):
     """ 
     s = s.strip()
     if not len(s): return s
-    if (s[0] == '\'') and (s[-1] == '\''): s = s[1:-1]
-    if (s[0] == '\"') and (s[-1] == '\"'): s = s[1:-1]
+    if (s[0] == '\'') and (s[-1] == '\''):
+        s = s[1:-1]
+        if not len(s): return s
+    if (s[0] == '\"') and (s[-1] == '\"'): 
+        s = s[1:-1]
+        if not len(s): return s
     if (s[0] == '[') and (s[-1] == ']'):
         # split s and parse subparts separately
         s=split_str(s)
