@@ -5018,9 +5018,11 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     fn: str
         output file name
 
-    ref_fs: str
-        Name of ref_fs file, Used to set the tail
+    ref_fs: bool or str
+        if set to True, a standard LIA orientation string will be written to tail
+        if set to Name of a ref_fs file, the orientation of that file will be set
     '''
+    
     def write_3byte_integer(f, n):
         b1 = struct.pack('B', (n >> 16) & 255)
         b2 = struct.pack('B', (n >> 8) & 255)
@@ -5036,15 +5038,24 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     vnum = m.nodes.nr
     fnum = m.elm.nr
 
-    if ref_fs is not None:
+    if ref_fs is True:
+        affine= np.array([[-1.0, 0.0, 0.0],
+                          [ 0.0, 0.0, -1.0],
+                          [ 0.0, 1.0, 0.0]])
+        voxelsize=np.array([1.0, 1.0, 1.0])
+        filename_str='filename = {0}\n'.format('fake.nii.gz').encode('ascii')
+        volume_str=b'volume = 256 256 256\n'
+        write_tail = True
+    elif type(ref_fs) is str:
         ref_vol = nibabel.load(ref_fs)
         affine = ref_vol.affine.copy()[:3, :3]
         volume = ref_vol.header['dim'][1:4]
         voxelsize = np.sqrt(np.sum(affine ** 2, axis=0))
         affine /= voxelsize[None, :]
         affine = np.linalg.inv(affine)
+        filename_str='filename = {0}\n'.format(ref_fs).encode('ascii')
+        volume_str='volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii')
         write_tail = True
-
     else:
         write_tail = False
 
@@ -5059,8 +5070,8 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
         if write_tail:
             f.write(b'\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x14')
             f.write(b'valid = 1  # volume info valid\n')
-            f.write('filename = {0}\n'.format(ref_fs).encode('ascii'))
-            f.write('volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii'))
+            f.write(filename_str)
+            f.write(volume_str)
             f.write('voxelsize = {0:.15e} {1:.15e} {2:.15e}\n'.format(*voxelsize).encode('ascii'))
             f.write('xras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[0, :]).encode('ascii'))
             f.write('yras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[1, :]).encode('ascii'))
@@ -5131,10 +5142,15 @@ def write_gifti_surface(msh, fn, ref_image=None):
     )
     # as coordsys defaults to unity, we need to overwrite it to None for the triangles
     faces_da.coordsys = None
-    image = nibabel.GiftiImage(
+    
+    image = nibabel.gifti.GiftiImage(
         header=header,
         darrays=[verts_da, faces_da]
     )
+    # image = nibabel.GiftiImage(
+    #     header=header,
+    #     darrays=[verts_da, faces_da]
+    # )
     nibabel.save(image, fn)
 
 
