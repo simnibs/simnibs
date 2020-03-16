@@ -125,14 +125,15 @@ if sys.platform == 'win32':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
-    cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Od', '/Ob0', '/Oy']
+    cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy']
     cgal_link_args = None
     cgal_macros += [
         ('BOOST_ALL_DYN_LINK', 1),
         ('WIN32', None),
         ('_WINDOWS', None),
         ('_SCL_SECURE_NO_DEPRECATE', None),
-        ('_SCL_SECURE_NO_WARNINGS', None)
+        ('_SCL_SECURE_NO_WARNINGS', None),
+        #('CGAL_LINKED_WITH_TBB', None) This is causing the compilation to crash
     ]
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
