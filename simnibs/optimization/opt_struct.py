@@ -823,7 +823,7 @@ class TDCSoptimize():
                     'The maximum number of active electrodes should be at least 2'
 
         if self.max_total_current is None:
-            logger.warn('Maximum total current not set!')
+            logger.warning('Maximum total current not set!')
             max_total_current = 1e3
 
         else:
@@ -1187,6 +1187,7 @@ class TDCSoptimize():
         logger.removeHandler(fh)
         logger.removeHandler(fh_s)
 
+        return fn_out_mesh
 
     def __str__(self):
         s = 'Optimization set-up\n'

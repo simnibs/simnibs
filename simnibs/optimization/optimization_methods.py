@@ -419,7 +419,7 @@ class TESNormElecConstrained(TESNormConstrained):
             self.max_el_current, self.max_total_current,
             log_level=10
         )
-        if np.any(np.sqrt(x.T.dot(Qnorm).dot(x)) < self.target_means**0.99):
+        if np.any(np.sqrt(x.T.dot(Qnorm).dot(x)) < self.target_means*0.99):
             return x, 1e20
         else:
             return x, x.dot(Q).dot(x)
@@ -804,7 +804,7 @@ def _norm_constrained_tes_opt(
     Qnorm, target_norm, Q,
     max_el_current, max_total_current,
     extra_ineq=None, extra_eq=None,
-    log_level=20):
+    log_level=20, n_start=5, eigval_cutoff=1e-6):
     ''' Convex-concave algorithm to solve the problem
     minimize   x^T Q x
     subject to x^T Q_{i} x = t_i^2,  i = 1, 2, ...
@@ -815,10 +815,44 @@ def _norm_constrained_tes_opt(
     '''
     if Qnorm.ndim == 2:
         Qnorm = Qnorm[None, ...]
+    assert eigval_cutoff > 0 and eigval_cutoff < 1
+    # Statring positions given by constrained eigenvalue problem
+    eigval, eigvec = _constrained_eigenvalue(np.sum(Qnorm, axis=0))
+    # select n_start positions
+    eigval = eigval[:-(n_start + 1): -1]
+    starting_x = eigvec[:, :-(n_start + 1): -1]
+    # Use the eigenvalues to cut-off small (ofter problematic) eigenvectors
+    starting_x = starting_x[:, eigval > eigval_cutoff*np.max(eigval)]
+    # Run optimizations
+    max_norm = 0
+    x_max_norm = None
+    min_energy = np.inf
+    x_min_energy = None
+    for i, x0 in enumerate(starting_x.T):
+        x, energy, norm = _norm_opt_x0(
+            x0, Qnorm, target_norm, Q,
+            max_el_current, max_total_current,
+            extra_ineq=extra_ineq,
+            extra_eq=extra_eq,
+            log_level=log_level-10
+        )
+        if np.sum(norm) > np.sum(max_norm):
+            max_norm = np.sum(norm)
+            x_max_norm = x
+        if np.all(norm > target_norm*0.99) and energy < min_energy:
+            min_energy = energy
+            x_min_energy = x
 
-    # TODO: Try various starting positions?
-    _, eigvec = _constrained_eigenvalue(np.sum(Qnorm, axis=0))
-    x0 = eigvec[:, -1]
+    if x_min_energy is None:
+        return x_max_norm
+    else:
+        return x_min_energy
+
+def _norm_opt_x0(
+    x0, Qnorm, target_norm, Q,
+    max_el_current, max_total_current,
+    extra_ineq=None, extra_eq=None,
+    log_level=20):
 
     x = x0.copy()
     n = len(x)
@@ -879,7 +913,7 @@ def _norm_constrained_tes_opt(
     # Test if the norm constraint is not fulfilled, quit
     if np.any(np.sqrt(x.dot(Qnorm).dot(x)) < target_norm*0.9):
         logger.log(log_level, 'Target norm could not be reached')
-        return x
+        return x, x.dot(Q).dot(x), np.sqrt(x.dot(Qnorm).dot(x))
 
     # notice, I reset x on purpose
     x = x_init
@@ -921,6 +955,8 @@ def _norm_constrained_tes_opt(
 
     while n_iter < max_iter:
         l = -2*x.dot(Qnorm)
+        x_ = np.hstack([x, -x, np.zeros(n_eqs)])
+        x_[x_ < 0] = 0
         current_norm = x.dot(Qnorm).dot(x)
         # Add the slack variables
         x_[-n_eqs:] = (target_norm**2) - current_norm
@@ -934,9 +970,14 @@ def _norm_constrained_tes_opt(
             a_, Q_, C_, d_, x_, A=A_, b=b_, eps=1e-3*np.max(np.abs(x))
         )
         x = x_[:n] - x_[n:2*n]
+        norms = np.sqrt(x.dot(Qnorm).dot(x))
+        if np.any(norms > target_norm):
+            x *= np.min(target_norm/norms)
         energy = x.dot(Q).dot(x)
         norms = np.sqrt(x.dot(Qnorm).dot(x))
-        # 2 Stoping criteria: Energy should stop decreasing and the norm should start increasing
+        # 2 Stoping criteria:
+        # Energy should stop decreasing
+        # Norm should start increasing
         norms_str = np.array2string(norms, formatter={'float_kind': lambda x: "%.2e" % x})
         logger.log(
             log_level,
@@ -950,7 +991,7 @@ def _norm_constrained_tes_opt(
             prev_norms = norms
             n_iter += 1
 
-    return x
+    return x, energy, norms
 
 
 def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
