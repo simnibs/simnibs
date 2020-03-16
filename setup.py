@@ -46,7 +46,6 @@ cgal_macros = [
     ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
     ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
     ('CGAL_CONCURRENT_MESH_3', None),
-    ('CGAL_LINKED_WITH_TBB', None),
     ('CGAL_EIGEN3_ENABLED', None),
     ('CGAL_USE_ZLIB', 1),
 ]
@@ -69,10 +68,10 @@ if sys.platform == 'win32':
         f'v{tbb_version}/tbb-{tbb_version}-win.zip'
     )
     tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14_uwp', 'tbb.def'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14_uwp', 'tbb.lib'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14_uwp', 'tbbmalloc.lib'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14_uwp', 'tbbmalloc.def'),
+        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbb.dll'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbb.lib'),
+        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbbmalloc.dll'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbbmalloc.lib'),
     ]
 elif sys.platform == 'linux':
     tbb_url = (
@@ -126,8 +125,15 @@ if sys.platform == 'win32':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
-    cgal_compile_args = None
+    cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Od', '/Ob0', '/Oy']
     cgal_link_args = None
+    cgal_macros += [
+        ('BOOST_ALL_DYN_LINK', 1),
+        ('WIN32', None),
+        ('_WINDOWS', None),
+        ('_SCL_SECURE_NO_DEPRECATE', None),
+        ('_SCL_SECURE_NO_WARNINGS', None)
+    ]
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
     petsc_include = [
@@ -155,7 +161,7 @@ elif sys.platform == 'linux':
         '-frounding-math',
         '-std=gnu++14',
     ]
-    cgal_macros += [('NOMINMAX', None)]
+    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
     cgal_link_args = None
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -183,7 +189,7 @@ elif sys.platform == 'darwin':
         '-std=gnu++14',
         '-stdlib=libc++',
     ]
-    cgal_macros += [('NOMINMAX', None)]
+    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
     cgal_link_args = [
         '-stdlib=libc++'
     ]
