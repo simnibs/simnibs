@@ -20,6 +20,7 @@ jobs:
     displayName: Create Conda environment
   - bash: |
       source activate simnibs_env
+      export MACOSX_DEPLOYMENT_TARGET=10.9
       python setup.py bdist_wheel
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)

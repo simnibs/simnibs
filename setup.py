@@ -6,23 +6,13 @@ import shutil
 import urllib
 import tempfile
 import zipfile
+import tarfile
 from setuptools.command.build_ext import build_ext
 from setuptools.command.develop import develop
-from distutils.core import setup, Command
+from distutils.dep_util import newer_group
 import numpy as np
 
 ''' C extensions
-
-PETSc Linking
--------------
-
-If you want to setup SimNIBS to use your own locally compiled PETSC, you can call
-setup.py with the SIMNIBS_PETSC_INCLUDE and SIMNIBS_PETSC_DIR environment variables, for
-example
-
-export SIMNIBS_PETSC_DIR="/path/to/petsc/simnibs_petsc_arch/lib"
-export SIMNIBS_PETSC_INCLUDE="/path/to/petsc/simnibs_direct_petsc_arch/include"
-python setup.py develop
 
 CGAL Compilation
 -----------------
@@ -38,37 +28,96 @@ Boost can be instaled with
     Ubuntu: sudo apt install libboost-all-dev
     MacOS: brew install boost
     Windows: conda install boost
-
     Boost is also header-only, so we only need it during compile time
 
 For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 
 '''
 
-CGAL_version = '5.0'
+# Information for CGAL download
+CGAL_version = '5.0.2'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
+CGAL_url = (
+    f'https://github.com/CGAL/cgal/releases/download/'
+    f'releases/CGAL-{CGAL_version}/'
+    f'CGAL-{CGAL_version}-library.zip'
+)
+cgal_macros = [
+    ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
+    ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
+    ('CGAL_CONCURRENT_MESH_3', None),
+    ('CGAL_EIGEN3_ENABLED', None),
+    ('CGAL_USE_ZLIB', 1),
+]
 
+# Information for eigen download
+eigen_version = '3.3.7'
+eigen_headers = os.path.abspath(f'eigen-{eigen_version}')
+eigen_url = (
+    f'https://gitlab.com/libeigen/eigen/-/'
+    f'archive/{eigen_version}/eigen-{eigen_version}.zip'
+)
+
+# Information for Intel TBB download
+tbb_version = '2020.1'
+tbb_path = os.path.abspath('tbb')
+tbb_headers = os.path.join(tbb_path, 'tbb', 'include')
+if sys.platform == 'win32':
+    tbb_url = (
+        f'https://github.com/intel/tbb/releases/download/'
+        f'v{tbb_version}/tbb-{tbb_version}-win.zip'
+    )
+    tbb_libs = [
+        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbb.dll'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbb.lib'),
+        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbbmalloc.dll'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbbmalloc.lib'),
+    ]
+elif sys.platform == 'linux':
+    tbb_url = (
+        f'https://github.com/intel/tbb/releases/download/'
+        f'v{tbb_version}/tbb-{tbb_version}-lin.tgz'
+    )
+    tbb_libs = [
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so.2'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so.2'),
+    ]
+elif sys.platform == 'darwin':
+    tbb_url = (
+        f'https://github.com/intel/tbb/releases/download/'
+        f'v{tbb_version}/tbb-{tbb_version}-mac.tgz'
+    )
+    tbb_libs = [
+        os.path.join(tbb_path, 'tbb', 'lib', 'libtbb.dylib'),
+        os.path.join(tbb_path, 'tbb', 'lib', 'libtbbmalloc.dylib'),
+    ]
+else:
+    raise OSError('OS not supported!')
+
+
+# Setup compilation
 is_conda = 'CONDA_PREFIX' in os.environ
 
+# Windows compilation
 if sys.platform == 'win32':
     petsc_libs = ['libpetsc', 'msmpi']
-    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
-        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(';')
-    else:
-        petsc_include = [np.get_include(),
-                         'simnibs/external/include/win/petsc',
-                         'simnibs/external/include/win/hypre',
-                         'simnibs/external/include/win/mpi']
-    if 'SIMNIBS_PETSC_DIR' in os.environ:
-        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
-    else:
-        petsc_dirs = ['simnibs/external/lib/win']
+    petsc_include = [
+        np.get_include(),
+        'simnibs/external/include/win/petsc',
+        'simnibs/external/include/win/hypre',
+        'simnibs/external/include/win/mpi'
+    ]
+    petsc_dirs = ['simnibs/external/lib/win']
     petsc_runtime = None
 
-    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib']
+    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib', 'tbb', 'tbbmalloc']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
+        tbb_headers,
         'simnibs/external/include/win/mpfr',
         'simnibs/external/include/win/gmp'
     ]
@@ -76,25 +125,31 @@ if sys.platform == 'win32':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
-    cgal_compile_args = None
-
+    cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy']
+    cgal_link_args = None
+    cgal_macros += [
+        ('BOOST_ALL_DYN_LINK', 1),
+        ('WIN32', None),
+        ('_WINDOWS', None),
+        ('_SCL_SECURE_NO_DEPRECATE', None),
+        ('_SCL_SECURE_NO_WARNINGS', None),
+        #('CGAL_LINKED_WITH_TBB', None) This is causing the compilation to crash
+    ]
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
-    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
-        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
-    else:
-        petsc_include = [np.get_include(), 'simnibs/external/include/linux/petsc']
-    if 'SIMNIBS_PETSC_DIR' in os.environ:
-        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
-        petsc_runtime = petsc_dirs
-    else:
-        petsc_dirs = ['simnibs/external/lib/linux']
-        petsc_runtime = ['$ORIGIN/../external/lib/linux']
+    petsc_include = [
+        np.get_include(),
+        'simnibs/external/include/linux/petsc'
+    ]
+    petsc_dirs = ['simnibs/external/lib/linux']
+    petsc_runtime = ['$ORIGIN/../external/lib/linux']
 
-    cgal_libs = ['mpfr', 'gmp', 'z']
+    cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
+        tbb_headers,
         'simnibs/external/include/linux/mpfr',
         'simnibs/external/include/linux/gmp'
     ]
@@ -102,24 +157,28 @@ elif sys.platform == 'linux':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/linux']
     cgal_runtime = ['$ORIGIN/../external/lib/linux']
-    cgal_compile_args = ['-Os', '-flto']
-
+    cgal_compile_args = [
+        '-Os', '-flto',
+        '-frounding-math',
+        '-std=gnu++14',
+    ]
+    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_link_args = None
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
-    if 'SIMNIBS_PETSC_INCLUDE' in os.environ:
-        petsc_include = [np.get_include()] + os.environ['SIMNIBS_PETSC_INCLUDE'].split(':')
-    else:
-        petsc_include = [np.get_include(), 'simnibs/external/include/osx/petsc']
-    if 'SIMNIBS_PETSC_DIR' in os.environ:
-        petsc_dirs = [os.environ['SIMNIBS_PETSC_DIR']]
-    else:
-        petsc_dirs = ['simnibs/external/lib/osx']
+    petsc_include = [
+        np.get_include(),
+        'simnibs/external/include/osx/petsc'
+    ]
+    petsc_dirs = ['simnibs/external/lib/osx']
     petsc_runtime = None
 
-    cgal_libs = ['mpfr', 'gmp', 'z']
+    cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
     cgal_include = [
         np.get_include(),
         CGAL_headers,
+        eigen_headers,
+        tbb_headers,
         'simnibs/external/include/osx/mpfr',
         'simnibs/external/include/osx/gmp'
     ]
@@ -127,42 +186,64 @@ elif sys.platform == 'darwin':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/osx']
     cgal_runtime = None
-    cgal_compile_args = ['-march=native', '-stdlib=libc++', '-std=c++14']
-
+    cgal_compile_args = [
+        '-std=gnu++14',
+        '-stdlib=libc++',
+    ]
+    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_link_args = [
+        '-stdlib=libc++'
+    ]
 
 else:
     raise OSError('OS not supported!')
 
-extension = [
-    Extension('simnibs.mesh_tools.cython_msh',
-              ["simnibs/mesh_tools/cython_msh.pyx"],
-              include_dirs=[np.get_include()]),
-    Extension('simnibs.mesh_tools._marching_cubes_lewiner_cy',
-              ["simnibs/mesh_tools/_marching_cubes_lewiner_cy.pyx"],
-              include_dirs=[np.get_include()]),
-    Extension('simnibs.segmentation._cs_utils',
-              ["simnibs/segmentation/_cs_utils.pyx",
-               "simnibs/external/cat12/genus0.c"],
-              include_dirs=[np.get_include(),
-                            'simnibs/external/cat12']),
-    Extension('simnibs._compiled.petsc_solver',
-              ["simnibs/_compiled/petsc_solver.pyx"],
-              include_dirs=petsc_include,
-              library_dirs=petsc_dirs,
-              libraries=petsc_libs,
-              runtime_library_dirs=petsc_runtime),
-    Extension('simnibs._compiled.create_mesh',
-              sources=["simnibs/_compiled/create_mesh.pyx"],
-              language='c++',
-              include_dirs=cgal_include,
-              libraries=cgal_libs,
-              library_dirs=cgal_dirs,
-              runtime_library_dirs=cgal_runtime,
-              extra_compile_args=cgal_compile_args,
-              extra_link_args=cgal_compile_args),
+cython_msh = Extension(
+    'simnibs.mesh_tools.cython_msh',
+    ["simnibs/mesh_tools/cython_msh.pyx"],
+    include_dirs=[np.get_include()]
+)
+marching_cubes_lewiner_cy = Extension(
+    'simnibs.mesh_tools._marching_cubes_lewiner_cy',
+    ["simnibs/mesh_tools/_marching_cubes_lewiner_cy.pyx"],
+    include_dirs=[np.get_include()]
+)
+cs_utils = Extension(
+    'simnibs.segmentation._cs_utils',
+    ["simnibs/segmentation/_cs_utils.pyx", "simnibs/external/cat12/genus0.c"],
+    include_dirs=[np.get_include(), 'simnibs/external/cat12']
+)
+petsc_solver = Extension(
+    'simnibs._compiled.petsc_solver',
+    sources=["simnibs/_compiled/petsc_solver.pyx"],
+    depends=["simnibs/_compiled/_solver.c"],
+    include_dirs=petsc_include,
+    library_dirs=petsc_dirs,
+    libraries=petsc_libs,
+    runtime_library_dirs=petsc_runtime
+)
+create_mesh = Extension(
+    'simnibs._compiled.create_mesh',
+    sources=["simnibs/_compiled/create_mesh.pyx"],
+    depends=["simnibs/_compiled/_mesh.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
+    define_macros=cgal_macros
+)
+
+
+extensions = [
+    cython_msh,
+    marching_cubes_lewiner_cy,
+    cs_utils,
+    petsc_solver,
+    create_mesh
 ]
-
-
 ####################################################
 # Add all scripts in the cli folder and a bit more #
 ####################################################
@@ -187,23 +268,45 @@ gui_scripts = [
 ]
 
 
-def download_cgal():
-    CGAL_url = (
-        'https://github.com/CGAL/cgal/releases/download/'
-        'releases/CGAL-{0}/CGAL-{0}-library.zip'.format(CGAL_version)
-    )
-    with urllib.request.urlopen(CGAL_url) as response:
+def download_and_extract(url, path='.'):
+    ''' Downloads and extracts a zip or tar-gz folder '''
+    with urllib.request.urlopen(url) as response:
         with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
             shutil.copyfileobj(response, tmpf)
             tmpname = tmpf.name
 
-    with zipfile.ZipFile(tmpname) as z:
-        z.extractall()
+    if url.endswith('.zip'):
+        with zipfile.ZipFile(tmpname) as z:
+            z.extractall(path)
+
+    elif url.endswith('.tgz') or url.endswith('.tar.gz'):
+        with tarfile.open(tmpname, 'r:gz') as z:
+            z.extractall(path)
+    else:
+        raise IOError('Could not extract file, unrecognized extension')
 
     os.remove(tmpname)
 
 
+def install_lib(url, path, libs):
+    ''' Downloads a compiled library from the internet and move to "lib" folder '''
+    download_and_extract(url, path)
+    if sys.platform == 'darwin':
+        folder_name = 'osx'
+    elif sys.platform == 'linux':
+        folder_name = 'linux'
+    elif sys.platform == 'win32':
+        folder_name = 'win'
+    for l in libs:
+        shutil.copy(
+            l, f'simnibs/external/lib/{folder_name}',
+            follow_symlinks=False
+        )
+
 def move_libraries(build_folder, operation=shutil.move):
+    '''
+        Move librariessimnibs/external/lib -> simnibs/_compiled
+    '''
     if sys.platform == 'darwin':
         folder_name = 'osx'
     elif sys.platform == 'linux':
@@ -221,33 +324,45 @@ def move_libraries(build_folder, operation=shutil.move):
 
 
 class build_ext_(build_ext):
+    '''
+        Build the extension, download some dependencies and remove stuff from other OS
+    '''
     def run(self):
         from Cython.Build import cythonize
+        ## Cythonize
         self.extension = cythonize(self.extensions)
-        download_cgal()
+        ## Download requirements
+        changed_meshing = newer_group(
+            create_mesh.sources + create_mesh.depends,
+            self.get_ext_fullpath(create_mesh.name),
+            'newer'
+        )
+        if self.force or changed_meshing:
+            download_and_extract(CGAL_url)
+            download_and_extract(eigen_url)
+            install_lib(tbb_url, tbb_path, tbb_libs)
+        # Compile
         build_ext.run(self)
+        # cleanup downloads
+        if self.force or changed_meshing:
+            shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
+            shutil.rmtree(f'eigen-{eigen_version}', ignore_errors=True)
+            shutil.rmtree(tbb_path, ignore_errors=True)
         # Remove unescessary binary files
-        shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
         linux_folders = [
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'linux'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'linux'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'linux'),
-            os.path.join(self.build_lib, 'simnibs', 'resources',
-                         'spm12', 'toolbox', 'cat12', 'CAT.glnx86'),
         ]
         osx_folders = [
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'osx'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'osx'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'osx'),
-            os.path.join(self.build_lib, 'simnibs', 'resources',
-                         'spm12', 'toolbox', 'cat12', 'CAT.maci64'),
         ]
         win_folders = [
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'win'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'win'),
             os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'win'),
-            os.path.join(self.build_lib, 'simnibs', 'resources',
-                         'spm12', 'toolbox', 'cat12', 'CAT.w32'),
         ]
         if sys.platform == 'linux':
             [shutil.rmtree(f, True) for f in osx_folders]
@@ -272,6 +387,7 @@ class develop_(develop):
         if sys.platform == 'darwin':
             move_libraries('.', shutil.copy)
 
+
 setup(name='simnibs',
       version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
       description='www.simnibs.org',
@@ -279,7 +395,7 @@ setup(name='simnibs',
       author_email='support@simnibs.org',
       packages=find_packages(),
       license='GPL3',
-      ext_modules=extension,
+      ext_modules=extensions,
       include_package_data=True,
       cmdclass={
           'build_ext': build_ext_,

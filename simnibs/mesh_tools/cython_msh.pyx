@@ -8,7 +8,6 @@ cimport numpy as np
 from libcpp cimport bool
 from libc.math cimport abs
 from libc.math cimport sqrt
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 cdef inline int int_max(int a, int b): return a if a >= b else b
 cdef inline int int_min(int a, int b): return a if a <= b else b

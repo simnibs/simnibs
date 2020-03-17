@@ -1,6 +1,5 @@
 # distutils: language = c++
 # cython: language_level=3
-
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.pair cimport pair
@@ -15,6 +14,11 @@ cdef extern from "_mesh.cpp" nogil:
         char *fn_image, char *fn_out, float facet_angle,
         float facet_size, float facet_distance,
         float cell_radius_edge_ratio, float cell_size,
+        bool optimize)
+    int _mesh_image_sizing_field(
+        char *fn_image, char *fn_out, float facet_angle,
+        float *facet_size, float *facet_distance,
+        float cell_radius_edge_ratio, float *cell_size,
         bool optimize)
     int _mesh_surfaces(
         vector[char *]filenames, vector[pair[int, int]] incident_subdomains,
@@ -32,6 +36,7 @@ cdef extern from "_mesh.cpp" nogil:
 def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
                float facet_distance, float cell_radius_edge_ratio, float cell_size,
                bool optimize):
+
     ret =  _mesh_image(
         fn_image, fn_out, facet_angle,
         facet_size, facet_distance,
@@ -39,6 +44,34 @@ def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
         optimize
     )
     return ret
+
+
+def mesh_image_sizing_field(
+    fn_image, fn_out, float facet_angle, facet_size,
+    facet_distance, float cell_radius_edge_ratio, cell_size,
+    bool optimize):
+
+    cdef np.ndarray[float, ndim=3] sf_facet_size = np.array(
+        facet_size, dtype=np.float32, order='F', copy=False
+    )
+    cdef np.ndarray[float, ndim=3] sf_cell_size = np.array(
+        cell_size, dtype=np.float32, order='F', copy=False
+    )
+
+    cdef np.ndarray[float, ndim=3] sf_facet_distance = np.array(
+        facet_distance, dtype=np.float32, order='F', copy=False
+    )
+
+    ret =  _mesh_image_sizing_field(
+        fn_image, fn_out, facet_angle,
+        &sf_facet_size[0, 0, 0],
+        &sf_facet_distance[0, 0, 0],
+        cell_radius_edge_ratio,
+        &sf_cell_size[0, 0, 0],
+        optimize
+    )
+    return ret
+
 
 def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
                   float facet_angle, float facet_size,
@@ -54,12 +87,6 @@ def mesh_surfaces(fn_surfaces, incident_subdomains, fn_out,
     )
     return ret
 
-#def check_self_intersections(vertices, faces):
-#    #TODO: Fix this, finish implementation
-#    cdef np.ndarray[float] v = np.ascontiguousarray(vertices, dtype=np.float32).reshape(-1)
-#    cdef np.ndarray[int] f = np.ascontiguousarray(faces, dtype=np.int32).reshape(-1)
-#    ret = _check_self_intersections(&v[0], len(vertices), &f[0], len(faces))
-#    return ret
 
 def segment_triangle_intersection(vertices, faces, segment_start, segment_end):
     ''' Calculates the intersection between a triangular mesh and line segments

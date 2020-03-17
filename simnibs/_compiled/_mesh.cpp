@@ -15,6 +15,10 @@
 #include <CGAL/Polygon_mesh_processing/orientation.h>
 #include <CGAL/Polygon_mesh_processing/self_intersections.h>
 
+#ifdef CGAL_CONCURRENT_MESH_3
+#include "tbb/task_arena.h"
+#include "tbb/task_group.h"
+#endif
 
 #include <cstdlib>
 // Domain
@@ -54,7 +58,6 @@ typedef boost::optional<Tree::Intersection_and_primitive_id<Segment>::Type> Segm
 typedef Tree::Primitive_id Primitive_id;
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
-// Function
 
 
 int _mesh_image(
@@ -79,10 +82,30 @@ int _mesh_image(
   Mesh_criteria_img criteria(facet_criteria, cell_criteria);
   
   // Mesh generation
+  std::cout << "Began meshing \n";
   C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
- 
-  if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+
+  std::cout << "Lloyd \n";
+  // Run Lloyd optimization using single core as it often fails in parallel
+  // https://github.com/CGAL/cgal/issues/4566
+  // When the bug gets fixed, please remove this whole block and only keep the simple version below
+  // if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #ifdef CGAL_CONCURRENT_MESH_3
+    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+    tbb::task_group tg;
+    limited.execute([&]{ // Use at most 2 threads for this job.
+        tg.run([&]{ // run in task group
+            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+        });
+    });
+    // Wait for completion of the task group in the limited arena.
+    limited.execute([&]{ tg.wait(); });
+  #else
+    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #endif
+  std::cout << "Perturb \n";
   CGAL::perturb_mesh_3(c3t3, domain);
+  std::cout << "Exude \n";
   CGAL::exude_mesh_3(c3t3);
   
 
@@ -93,6 +116,111 @@ int _mesh_image(
 
 }
 
+struct Sizing_field
+{
+    typedef ::FT FT;
+    typedef Point Point_3;
+    typedef Mesh_domain_img::Index Index; 
+    double tx, ty, tz;
+    double vx, vy, vz;
+    std::size_t sx, sy, sz;
+    float *sizing_field_image;
+
+    FT operator()(const Point_3 &p, const int, const Index&) const
+    {
+        // I add 0.5 offset because CGAL assumes centered voxels
+        const std::size_t i = (p.x() - tx)/vx + 0.5;
+        const std::size_t j = (p.y() - ty)/vy + 0.5;
+        const std::size_t k = (p.z() - tz)/vz + 0.5;
+        if (i < 0 || j < 0 || k < 0 || i >= sx || j >= sy || k >= sz) {
+            std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
+            return 1;
+        }
+	FT val = sizing_field_image[i + sx*j + sx*sy*k];
+        return val;
+    };
+};
+
+int _mesh_image_sizing_field(
+  char *fn_image, char *fn_out,
+  float facet_angle, float *facet_size, float *facet_distance,
+  float cell_radius_edge_ratio, float *cell_size,
+  bool optimize
+)
+{
+  /// Load image
+  CGAL::Image_3 image;
+  if(!image.read(fn_image)){
+    std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
+    return EXIT_FAILURE;
+  }
+  // Mesh domain
+  Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
+
+  // Mesh criteria
+  Sizing_field sizing_field_cell = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     cell_size
+  };
+  Sizing_field sizing_field_facet_distance = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     facet_distance
+  };
+  Sizing_field sizing_field_facet_size = {
+     image.tx(), image.ty(), image.tz(),
+     image.vx(), image.vy(), image.vz(),
+     image.xdim(), image.ydim(), image.zdim(),
+     facet_size
+  };
+  Facet_criteria_img facet_criteria(
+          facet_angle,
+          sizing_field_facet_size,
+          sizing_field_facet_distance
+  );
+  Cell_criteria_img cell_criteria(
+          cell_radius_edge_ratio,
+          sizing_field_cell
+  );
+  Mesh_criteria_img criteria(facet_criteria, cell_criteria);
+  
+  // Mesh generation
+  std::cout << "Began meshing \n";
+  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
+ 
+  std::cout << "Lloyd \n";
+  // Run Lloyd optimization using single core as it often fails in parallel
+  // https://github.com/CGAL/cgal/issues/4566
+  // When the bug gets fixed, please remove this whole block and only keep the simple version
+  // if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #ifdef CGAL_CONCURRENT_MESH_3
+    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+    tbb::task_group tg;
+    limited.execute([&]{ // Use at most 2 threads for this job.
+        tg.run([&]{ // run in task group
+            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+        });
+    });
+    // Wait for completion of the task group in the limited arena.
+    limited.execute([&]{ tg.wait(); });
+  #else
+    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #endif
+  std::cout << "Perturb \n";
+  CGAL::perturb_mesh_3(c3t3, domain);
+  std::cout << "Exude \n";
+  CGAL::exude_mesh_3(c3t3);
+  
+
+  // Output
+  std::ofstream medit_file(fn_out);
+  c3t3.output_to_medit(medit_file);
+  return EXIT_SUCCESS;
+
+}
 
 int _mesh_surfaces(
   std::vector<char *>filenames, std::vector<std::pair<int, int> > incident_subdomains,
@@ -133,7 +261,19 @@ int _mesh_surfaces(
 
   // Mesh generation
   C3t3_surf c3t3 = CGAL::make_mesh_3<C3t3_surf>(domain, criteria, no_perturb(), no_exude());
-  if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #ifdef CGAL_CONCURRENT_MESH_3
+    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+    tbb::task_group tg;
+    limited.execute([&]{ // Use at most 2 threads for this job.
+        tg.run([&]{ // run in task group
+            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+        });
+    });
+    // Wait for completion of the task group in the limited arena.
+    limited.execute([&]{ tg.wait(); });
+  #else
+    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  #endif
   CGAL::perturb_mesh_3(c3t3, domain);
   CGAL::exude_mesh_3(c3t3);
 
@@ -162,6 +302,7 @@ Surface_mesh _create_surface_mesh(float *vertices, int n_vertices, int *faces, i
   return m;
 }
 
+/*
 int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n_faces)
 {
   Surface_mesh m = _create_surface_mesh(vertices, n_vertices, faces, n_faces);
@@ -183,7 +324,7 @@ int _check_self_intersections(float *vertices, int n_vertices, int *faces, int n
   //}
   return EXIT_SUCCESS;
 }
-
+*/
 
 std::pair<std::vector<int>, std::vector<float>> _segment_triangle_intersection(
         float* vertices, int n_vertices, int* tris, int n_faces,

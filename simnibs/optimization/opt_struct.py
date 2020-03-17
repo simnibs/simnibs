@@ -108,7 +108,10 @@ class TMSoptimize():
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
-        self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
+        self.anisotropic_tissues = [1, 2]
+        # If set, they have priority over fname_tensor
+        self.anisotropy_vol = None  # 4-d data with anisotropy information
+        self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         # Optimization stuff
         self.target = None
         self.tissues = [2]
@@ -124,6 +127,8 @@ class TMSoptimize():
 
         self.open_in_gmsh = True
         self.solver_options = ''
+
+        self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
         self._log_handlers = []
         if matlab_struct:
@@ -146,6 +151,9 @@ class TMSoptimize():
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
+
+    def _get_vol_info(self):
+        return SimuList._get_vol_info(self)
 
     def _prepare(self):
         """Prepares Leadfield for simulations
@@ -1685,7 +1693,7 @@ class TDCSavoid:
         s = ('positions: {0}\n'
              'indexes: {1}\n'
              'radius: {2}\n'
-             'weights: {3:.1e}\n'
+             'weight: {3:.1e}\n'
              'tissues: {4}\n'
              .format(
                  str(self.positions),

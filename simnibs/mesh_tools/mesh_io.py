@@ -367,7 +367,7 @@ class Elements:
         Returns
         -------------
         faces: np.ndarray
-            List of nodes in faces, in arbitrary order
+            Outside faces
         '''
         if tetrahedra_indexes is None:
             tetrahedra_indexes = self.tetrahedra
@@ -1343,11 +1343,14 @@ class Msh:
         return NodeData(nd, 'areas')
 
 
-    def nodes_normals(self, smooth=0):
+    def nodes_normals(self, triangles=None, smooth=0):
         ''' Normals for all nodes in a surface
 
         Parameters
         ------------
+        triangles: list of ints
+            List of triangles to be taken into consideration for calculating the normals
+
         smooth: int (optional)
             Number of smoothing cycles to perform. Default: 0
 
@@ -1358,7 +1361,10 @@ class Msh:
 
         '''
         nodes = np.unique(self.elm[self.elm.triangles, :3])
-        elements = self.elm.triangles
+        if triangles is None:
+            elements = self.elm.triangles
+        else:
+            elements = triangles
 
         nd = np.zeros((self.nodes.nr, 3))
 
@@ -2302,12 +2308,14 @@ class Msh:
         nodes_mask: ndarray of bool
             Mask of nodes to be moved. Default: all surface nodes
         max_gamma: float
-            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., 1994) for
+            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., Finite
+            Elements ins Analysis and Design, 1994) for
             a move to be accepted
         '''
         assert step_size > 0 and step_size < 1
         if nodes_mask is None:
             nodes_mask = np.ones(self.nodes.nr, dtype=np.bool)
+
         if len(nodes_mask) != self.nodes.nr:
             raise ValueError(
                 'nodes_mask should have the same number of elements as mesh nodes')
@@ -2362,6 +2370,8 @@ class Msh:
                 np.ascontiguousarray(nodes_mask, np.uint),
                 float(max_gamma)
             )
+            print(np.sum(nodes_mask), cb, cf)
+
         self.nodes.node_coord = nodes_coords
 
     def gamma_metric(self):
@@ -5008,9 +5018,11 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     fn: str
         output file name
 
-    ref_fs: str
-        Name of ref_fs file, Used to set the tail
+    ref_fs: bool or str
+        if set to True, a standard LIA orientation string will be written to tail
+        if set to Name of a ref_fs file, the orientation of that file will be set
     '''
+    
     def write_3byte_integer(f, n):
         b1 = struct.pack('B', (n >> 16) & 255)
         b2 = struct.pack('B', (n >> 8) & 255)
@@ -5026,15 +5038,24 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     vnum = m.nodes.nr
     fnum = m.elm.nr
 
-    if ref_fs is not None:
+    if ref_fs is True:
+        affine= np.array([[-1.0, 0.0, 0.0],
+                          [ 0.0, 0.0, -1.0],
+                          [ 0.0, 1.0, 0.0]])
+        voxelsize=np.array([1.0, 1.0, 1.0])
+        filename_str='filename = {0}\n'.format('fake.nii.gz').encode('ascii')
+        volume_str=b'volume = 256 256 256\n'
+        write_tail = True
+    elif type(ref_fs) is str:
         ref_vol = nibabel.load(ref_fs)
         affine = ref_vol.affine.copy()[:3, :3]
         volume = ref_vol.header['dim'][1:4]
         voxelsize = np.sqrt(np.sum(affine ** 2, axis=0))
         affine /= voxelsize[None, :]
         affine = np.linalg.inv(affine)
+        filename_str='filename = {0}\n'.format(ref_fs).encode('ascii')
+        volume_str='volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii')
         write_tail = True
-
     else:
         write_tail = False
 
@@ -5049,8 +5070,8 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
         if write_tail:
             f.write(b'\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x14')
             f.write(b'valid = 1  # volume info valid\n')
-            f.write('filename = {0}\n'.format(ref_fs).encode('ascii'))
-            f.write('volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii'))
+            f.write(filename_str)
+            f.write(volume_str)
             f.write('voxelsize = {0:.15e} {1:.15e} {2:.15e}\n'.format(*voxelsize).encode('ascii'))
             f.write('xras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[0, :]).encode('ascii'))
             f.write('yras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[1, :]).encode('ascii'))
@@ -5121,10 +5142,15 @@ def write_gifti_surface(msh, fn, ref_image=None):
     )
     # as coordsys defaults to unity, we need to overwrite it to None for the triangles
     faces_da.coordsys = None
-    image = nibabel.GiftiImage(
+    
+    image = nibabel.gifti.GiftiImage(
         header=header,
         darrays=[verts_da, faces_da]
     )
+    # image = nibabel.GiftiImage(
+    #     header=header,
+    #     darrays=[verts_da, faces_da]
+    # )
     nibabel.save(image, fn)
 
 
