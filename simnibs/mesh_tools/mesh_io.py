@@ -608,7 +608,7 @@ class Elements:
 
 class Msh:
     """class to handle the meshes.
-    Gatters Nodes, Elements and Data
+    Gathers Nodes, Elements and Data
 
     Parameters
     -------------------------
@@ -3389,7 +3389,7 @@ class ElementData(Data):
 
     @classmethod
     def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
-        ''' Defines an ElementData field form a mesh and gridded data
+        ''' Defines an ElementData field from a mesh and gridded data
 
         Parameters
         ---------
@@ -3771,6 +3771,40 @@ class NodeData(Data):
         gc.collect()
         return image
 
+    @classmethod
+    def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
+        ''' Defines an NodeData field from a mesh and gridded data
+
+        Parameters
+        ---------
+        mesh: Msh()
+            Mesh structure where the field is to be interpolated
+        data_grid: ndarray
+            Array of 3 or 4 dimensions with data
+        affine: 4x4 ndarray
+            Array describing the affine transformation from the data grid to the mesh
+            space
+        kwargs: see the scipy.ndimage.map_coordinates documentation
+        '''
+        assert len(data_grid.shape) in [3, 4], \
+                'The data grid must have 3 or 4 dimensions'
+                
+        pos=mesh.nodes.node_coord.T
+        iM = np.linalg.inv(affine)
+        coords = iM[:3, :3].dot(pos) + iM[:3, 3, None]
+        f = partial(
+            scipy.ndimage.map_coordinates, coordinates=coords,
+            output=data_grid.dtype, **kwargs)
+        if len(data_grid.shape) == 4:
+            indim = data_grid.shape[3]
+            outdata = np.array(
+                [f(data_grid[..., i]) for i in range(indim)]).T
+        elif len(data_grid.shape) == 3:
+            outdata = f(data_grid)
+
+        nd = cls(outdata, name=field_name, mesh=mesh)
+        return nd
+    
     def norm(self, ord=2):
         ''' Calculate the norm of the field
 
