@@ -1003,8 +1003,8 @@ class TestMsh:
         nodes = np.array(
             [[1./3. * np.sqrt(3), 0, 0],
              [-1./6. * np.sqrt(3), 1./2., 0],
-             [0, 0, 1./3. * np.sqrt(6)],
              [-1./6. * np.sqrt(3), -1./2., 0],
+             [0, 0, 1./3. * np.sqrt(6)],
              [0, 0, 1./3. * np.sqrt(6)]], dtype=np.float)
         gamma = mesh_io.cython_msh.calc_gamma(nodes, tetrahedra)
         assert np.isclose(gamma, 1., rtol=1e-3)
@@ -1043,7 +1043,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 1
         curvature_before = mesh.gaussian_curvature()[tr_nodes]
-        mesh.smooth_surfaces(10)
+        mesh.smooth_surfaces(10, max_gamma=100)
         curvature_after = mesh.gaussian_curvature()[tr_nodes]
         assert np.std(curvature_after) < np.std(curvature_before)
 
@@ -1055,7 +1055,7 @@ class TestMsh:
         curvature_before = mesh.gaussian_curvature()
         mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
         mask_nodes[tr_nodes - 1] = True
-        mesh.smooth_surfaces(10, nodes_mask=mask_nodes)
+        mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=100)
         curvature_after = mesh.gaussian_curvature()
         assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
@@ -1406,7 +1406,7 @@ class TestElmData:
         tempf2.close()
         np.savetxt(tempf2.name, affine)
         interp = f.to_deformed_grid(fn2, fn, method='assign')
-        interp = interp.get_data()
+        interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 4)
         assert np.isclose(interp[193, 5, 0], 5)
@@ -1433,7 +1433,7 @@ class TestElmData:
         tempf.close()
         nibabel.save(img, fn)
         interp = f.to_deformed_grid(fn, fn, method='assign')
-        interp = interp.get_data()
+        interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 4)
         assert np.isclose(interp[193, 5, 0], 5)
@@ -1459,7 +1459,7 @@ class TestElmData:
         tempf.close()
         nibabel.save(img, fn)
         interp = f.to_deformed_grid(fn, fn, tags=3, method='assign')
-        interp = interp.get_data()
+        interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 0)
         assert np.isclose(interp[193, 5, 0], 0)
@@ -1486,7 +1486,7 @@ class TestElmData:
         nibabel.save(img, fn)
         interp = f.to_deformed_grid(fn, fn, order=1,
                                     method='linear', continuous=True)
-        interp = interp.get_data()
+        interp = np.asanyarray(interp.dataobj)
         '''
         import matplotlib.pyplot as plt
         plt.figure()
@@ -1520,7 +1520,7 @@ class TestElmData:
         tempf.close()
         nibabel.save(img, fn)
         interp = f.to_deformed_grid(fn, fn, tags=3, order=1)
-        interp = interp.get_data()
+        interp = np.asanyarray(interp.dataobj)
         '''
         import matplotlib.pyplot as plt
         plt.figure()

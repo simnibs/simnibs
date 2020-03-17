@@ -279,7 +279,7 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
     '''
     if isinstance(image, str):
         image = nib.load(image)
-        im_data = image.get_data()
+        im_data = np.asanyarray(image.dataobj)
         im_affine = image.affine.copy()
         im_data = np.nan_to_num(im_data, copy=False)
     else:
@@ -288,7 +288,7 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
     reference_nifti = nib.load(ref)
     if mask is not None:
         mask = nib.load(mask)
-        mask_data = mask.get_data()
+        mask_data = np.asanyarray(mask.dataobj)
         mask_data[np.isnan(mask_data)] = 0
         if not np.allclose(mask.affine, im_affine):
             raise ValueError('Could not apply mask: the affine transformation must be '
@@ -320,11 +320,11 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
         warp_nifti = nib.load(warp)
         if inverse_warp is not None:
             inverse_warp = nib.load(inverse_warp)
-            inverse_warp = (inverse_warp.get_data(), inverse_warp.affine)
-
+            inverse_warp = (np.asanyarray(inverse_warp.dataobj),
+                            inverse_warp.affine)
         image = volumetric_nonlinear(
             (im_data, im_affine),
-            (warp_nifti.get_data(), warp_nifti.affine),
+            (np.asanyarray(warp_nifti.dataobj), warp_nifti.affine),
             target_space_affine=reference_nifti.affine,
             target_dimensions=reference_nifti.header['dim'][1:4],
             intorder=order,
@@ -1068,7 +1068,7 @@ def warp_coordinates(coordinates, m2m_folder,
     if transformation_type == 'nonl':
         ttype = 'nonl'
         image = nib.load(warp)
-        warp = (image.get_data(), image.affine)
+        warp = (np.asanyarray(image.dataobj), image.affine)
         simple = coordinates_nonlinear
     else:
         ttype = 'affine'

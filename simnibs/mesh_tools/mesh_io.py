@@ -1288,7 +1288,7 @@ class Msh:
             n = np.cross(sideA, sideB)
             normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
         elif smooth > 0:
-            normals_nodes = self.nodes_normals(smooth)
+            normals_nodes = self.nodes_normals(smooth=smooth)
             tr = self.elm[tr_indexes, :3]
             n = np.mean(normals_nodes[tr], axis=1)
             normals[tr_indexes] = n / np.linalg.norm(n, axis=1)[:, None]
