@@ -78,11 +78,10 @@ def fn_vol(sphere_vol, leadfield_vol):
 
 
 @pytest.fixture()
-def fn_elec(sphere_elec, sphere_vol, leadfield_elec):
+def fn_elec(sphere_vol, leadfield_elec):
     fn_hdf5 = 'tmp_elec.hdf5'
     if os.path.isfile(fn_hdf5):
         os.remove(fn_hdf5)
-    sphere_elec.write_hdf5(fn_hdf5, 'mesh_electrodes')
     sphere_vol.write_hdf5(fn_hdf5, 'mesh_leadfield')
     dset = '/mesh_leadfield/leadfields/tdcs_leadfield'
     with h5py.File(fn_hdf5, 'a') as f:

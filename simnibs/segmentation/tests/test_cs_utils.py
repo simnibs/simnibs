@@ -64,7 +64,11 @@ class TestMedian3:
     def test_cube_mask(self, cube_image):
         img = cube_image
         noisy = cube_image + 0.1*np.random.normal(size=cube_image.shape)
-        filtered = _cs_utils.cat_vol_median3(noisy, img, img)
+        filtered = _cs_utils.cat_vol_median3(
+            noisy,
+            np.zeros_like(img),
+            np.zeros_like(img)
+        )
         assert np.allclose(noisy, filtered)
 
 
