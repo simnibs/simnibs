@@ -966,9 +966,13 @@ def _norm_opt_x0(
         C_[-n_eqs:, :2*n] = np.hstack([l, -l])
         d_[-n_eqs:] = -current_norm - (target_norm**2)
         # Run the QP
-        x_ = _active_set_QP(
-            a_, Q_, C_, d_, x_, A=A_, b=b_, eps=1e-3*np.max(np.abs(x))
-        )
+        # Sometimes due to numerical instabilities this can fail
+        try:
+            x_ = _active_set_QP(
+                a_, Q_, C_, d_, x_, A=A_, b=b_, eps=1e-3*np.max(np.abs(x))
+            )
+        except ValueError:
+            return None, np.inf, 0
         x = x_[:n] - x_[n:2*n]
         norms = np.sqrt(x.dot(Qnorm).dot(x))
         if np.any(norms > target_norm):
