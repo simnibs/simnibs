@@ -359,11 +359,12 @@ cdef float _calc_gamma(
 
     for i in range(3):
         for j in range(3):
-            M[i][j] = nodes_pos[th[i], j] - nodes_pos[th[3], j]
+            M[i][j] = nodes_pos[th[i + 1], j] - nodes_pos[th[0], j]
     
     det = M[0][0]*(M[1][1]*M[2][2] - M[2][1]*M[1][2]) - \
           M[0][1]*(M[1][0]*M[2][2] - M[2][0]*M[1][2]) + \
           M[0][2]*(M[1][0]*M[2][1] - M[2][0]*M[1][1])
+
 
     if det < 0.:
         return -1.
