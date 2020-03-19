@@ -108,7 +108,9 @@ class Templates:
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
-
+        
+        #CHARM atlas path
+        self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
 templates = Templates()
 
@@ -148,7 +150,7 @@ def get_atlas(atlas_name, hemi='both'):
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
 
-    # If only one hemisphere
+        
     if hemi in ['lh', 'rh']:
         fn_atlas = os.path.join(
             templates.atlases_surfaces,
@@ -210,6 +212,12 @@ class SubjectFiles:
 
     eeg_cap_folder: str
         Path to the folder with EEG caps (dir)
+        
+    segmentation_folder: str
+        Path to the output from the segmentation
+    
+    label_prep_folder: str
+        Path to the output from upsampling    
 
     eeg_cap_1010: str
         Path to the EEG 10-10 electrode file (.csv)
@@ -270,6 +278,36 @@ class SubjectFiles:
 
     T1: str
         T1 image after applying transformations
+        
+    T2_reg: str
+        T2 image after rigid co-registration to T1
+    
+    T1_denoised: str
+        T1 image after running filtering (optional)
+        
+    T2_reg_denoised: str
+        T2 image after co-registration and filtering (optional)
+    
+    T1_bias_corrected: str
+        T1 image after bias correction
+    
+    T2_reg_bias_corrected: str
+        T2 image after bias correction
+    
+    labeling: str
+        Output segmentation from samseg
+    
+    template_coregistered: str
+        Affine mapping from atlas voxel space to T1 voxel space
+    
+    T1_upsampled: str
+        Bias corrected T1 upsampled to 0.5mm^3 resolution
+        
+    T2_upsampled: str
+        Bias corrected T2 upsampled to 0.5mm^3 resolution
+        
+    tissue_labeling_upsampled: str
+        Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution
     
     Warning
     --------
@@ -309,6 +347,10 @@ class SubjectFiles:
 
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
         self.eeg_cap_1010 = self.get_eeg_cap()
+        
+        self.segmentation_folder = os.path.join(self.subpath, 'segmentation')
+        
+        self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
 
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
@@ -368,6 +410,15 @@ class SubjectFiles:
             self.subpath, self.subid + '_masks_contr.nii.gz')
         self.T1 = os.path.join(self.subpath, 'T1.nii.gz')
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
+        self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
+        self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T1_reg_denoised.nii.gz')
+        self.T1_bias_corrected = os.path.join(self.segmentation_folder, 'T1_bias_corrected.nii.gz')
+        self.T2_bias_corrected = os.path.join(self.segmentation_folder, 'T2_bias_corrected.nii.gz')
+        self.labeling = os.path.join(self.subpath, 'labeling.nii.gz')
+        self.template_coregistered =  os.path.join(self.segmentation_folder, 'template_coregistered.nii.gz')
+        self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
+        self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
+        self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
