@@ -213,6 +213,11 @@ cs_utils = Extension(
     ["simnibs/segmentation/_cs_utils.pyx", "simnibs/external/cat12/genus0.c"],
     include_dirs=[np.get_include(), 'simnibs/external/cat12']
 )
+cs_utils = Extension(
+    'simnibs.segmentation._thickness',
+    ["simnibs/segmentation/_thickness.pyx"],
+    include_dirs=[np.get_include()]
+)
 petsc_solver = Extension(
     'simnibs._compiled.petsc_solver',
     sources=["simnibs/_compiled/petsc_solver.pyx"],

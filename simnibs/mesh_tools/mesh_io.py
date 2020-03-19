@@ -2370,7 +2370,6 @@ class Msh:
                 np.ascontiguousarray(nodes_mask, np.uint),
                 float(max_gamma)
             )
-            print(np.sum(nodes_mask), cb, cf)
 
         self.nodes.node_coord = nodes_coords
 

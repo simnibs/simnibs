@@ -136,27 +136,44 @@ def image2mesh(image, affine, facet_angle=30,
         scaling matrix (shearing not accepted).
 
     facet_angle: float (optional)
-        See https://doc.cgal.org/latest/Mesh_3/index.html#title10. Default: 30
+        This parameter controls the shape of surface facets. Specifically, it is a lower
+        bound for the angle (in degrees) of surface facets. When boundary surfaces are
+        smooth, the termination of the meshing process is guaranteed if this angular bound is
+        at most 30 degrees. Default: 30
 
-    facet_size: float (optional)
-        See https://doc.cgal.org/latest/Mesh_3/index.html#title10. Default: minimum voxel
-        size
+    facet_size: float or ndarray wih same shape as image(optional)
+        This parameter controls the size of surface facets. Each surface facet has a surface
+        Delaunay ball which is a ball circumscribing the surface facet and centered on the
+        surface patch. The parameter facet_size is either a constant or a spatially variable
+        scalar field, providing an upper bound for the radii of surface Delaunay balls.
+        Default: minimum voxel size (very low!)
 
-    facet_distance: float (optional)
-        See https://doc.cgal.org/latest/Mesh_3/index.html#title10. Default: minimum voxel
-        size
+    facet_distance: float or ndarray with same shape as image(optional)
+        This parameter controls the approximation error of boundary and subdivision surfaces.
+        Specifically, it is either a constant or a spatially variable scalar field. It
+        provides an upper bound for the distance between the circumcenter of a surface facet
+        and the center of a surface Delaunay ball of this facet. Default: minimum voxel size
 
     cell_radius_edge_ratio: float (optional)
-        See https://doc.cgal.org/latest/Mesh_3/index.html#title10. Default: 3
+        This parameter controls the shape of mesh cells (but can't filter slivers, as we
+        discussed earlier). It is an upper bound for the ratio between the circumradius of a
+        mesh tetrahedron and its shortest edge. There is a theoretical bound for this
+        parameter: the Delaunay refinement process is guaranteed to terminate for values of
+        cell_radius_edge_ratio bigger than 2. Default: 3
 
-    cell_size: float (optional)
-        See https://doc.cgal.org/latest/Mesh_3/index.html#title10. Default: minimum voxel
-        size
+    cell_size: float or ndarray with same shape as image(optional)
+        This parameter controls the size of mesh tetrahedra. It is either a scalar or a
+        spatially variable scalar field. It provides an upper bound on the circumradii of the
+        mesh tetrahedra. Default: minimum voxel size (very low!)
 
     Returns
     ----------
     msh: simnibs.Msh
         Mesh structure
+
+    References
+    -----------
+    https://doc.cgal.org/latest/Mesh_3/index.html
     '''
 
     if image.dtype not in [np.uint8, np.uint16]:
@@ -323,7 +340,7 @@ def remesh(mesh, facet_size, cell_size,
 
 def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2,
                    log_level=logging.DEBUG, adj_th=None, relabel_tol=1e-6,
-                    max_iter=20):
+                   max_iter=20):
     ''' Relabels the spikes in a mesh volume, in-place
 
     A spike is defined as a tetrahedron in "label_a" or "label_b"
@@ -346,11 +363,11 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2,
     target_label: int
         Volume label where the spikes are locate
     adj_threshold: int (optional)
-        Threshhold of number of adjacent faces for being considered a spike 
+        Threshhold of number of adjacent faces for being considered a spike
     adj_th: list (optional)
        value of m.elm.find_adjacent_tetrahedra(), can be passed to accelerate
     relabel_tol: float (optional)
-        Fraction of the elements that indicates convergence,
+        Fraction of the elements that indicates convergence
     max_iter: int
         Maximum number of relabeling iterations
     '''
@@ -417,3 +434,41 @@ def _with_label(m, label):
         axis=1
     )
     return with_label_nodes
+
+def despike(msh, adj_threshold=2,
+            relabel_tol=1e-6,
+            max_iter=20,
+            log_level=logging.DEBUG):
+    ''' Goes through the mesh removing spiles
+
+    A spike is defined as a tetrahedron in a volume "a"
+    which has at least one node in the other volume "b" and
+    at least "adj_threshold" faces adjacent to tetrahedra in a volume "c"
+
+    Parameters
+    -----------
+    m: simnibs.Msh
+       Mesh structure
+    adj_threshold: int (optional)
+        Threshhold of number of adjacent faces for being considered a spike
+    relabel_tol: float (optional)
+        Fraction of the elements that indicates convergence
+    max_iter: int
+        Maximum number of relabeling iterations
+    '''
+    tags = np.unique(msh.elm.tag1)
+    adj_th = msh.elm.find_adjacent_tetrahedra()
+    for i, t1 in enumerate(np.unique(tags)):
+        for t2 in np.unique(tags)[i+1:]:
+            if t1 == t2:
+                continue
+            for t3 in np.unique(tags):
+                if t1 == t3 or t2 == t3:
+                    continue
+                relabel_spikes(
+                    msh, t1, t2, t3,
+                    relabel_tol=relabel_tol,
+                    adj_threshold=adj_threshold,
+                    adj_th=adj_th, max_iter=max_iter,
+                    log_level=log_level
+                )

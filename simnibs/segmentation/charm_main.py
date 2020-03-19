@@ -10,16 +10,19 @@ import logging
 import os
 import shutil
 import time
-from simnibs import utils
-from simnibs import SIMNIBSDIR
-from simnibs.utils.simnibs_logger import logger
-from simnibs.utils import file_finder
-from simnibs.segmentation import samseg
 import nibabel as nib
-from simnibs.segmentation._cs_utils import sanlm
 import numpy as np
 from scipy import ndimage
-from simnibs.utils.transformations import resample_vol
+
+from .. import utils
+from .. import SIMNIBSDIR
+from ..utils.simnibs_logger import logger
+from ..utils import file_finder
+from ..utils import transformations
+#from . import samseg # GBS: temporarely disabled so that I can test
+from ._cs_utils import sanlm
+from ..mesh_tools import meshing
+from . import _thickness
 
 def _register_atlas_to_input_affine(T1, template_file_name, affine_mesh_collection_name, mesh_level1, mesh_level2, save_path, template_coregistered_name, visualizer, init_transform = None, world_to_world_transform_matrix = None):
     #Import the affine registration function
@@ -43,9 +46,14 @@ def _register_atlas_to_input_affine(T1, template_file_name, affine_mesh_collecti
     affine.adjust_neck(T1, template_coregistered_name, mesh_level1, mesh_level2, visualizer)
     logger.info('Neck adjustment done.')
 
-def morphological_operations(fn, out):
-    img = nib.load(fn)
-    label_img = np.array(img.dataobj)
+def _morphological_operations(label_img):
+    ''' Does morphological operations to ensure
+        1. A CSF layer between GM and Skull and beteween GM and CSF
+        2. Outer bone layers are compact bone
+
+        works in-place
+    '''
+    # Ensuring a CSF layer beteen GM and Skull and GM and Blood
     # Relabel regions in the expanded GM which are in skull or blood to CSF
     GM = label_img == 2
     C_BONE = label_img == 7
@@ -62,11 +70,6 @@ def morphological_operations(fn, out):
         (C_BONE + S_BONE), ndimage.generate_binary_structure(3, 2)
     )
     label_img[SKULL_outer] = 7
-    nib.save(
-        nib.Nifti1Image(label_img.astype(np.uint8), img.affine),
-        out
-    )
-    return label_img
 
 
 def view(subject_dir):
@@ -339,7 +342,7 @@ def run(subject_dir=None, T1=None, T2=None,
         for multiResolutionLevel, item in enumerate(optimizationSummary):
             logger.info('atlasRegistrationLevel%d %d %f\n' % (multiResolutionLevel, item['numberOfIterations'], item['perVoxelCost']))
             
-        #Okay now the parameters have been estimated, and we can segment the scan
+        # Okay now the parameters have been estimated, and we can segment the scan
         #However, we need to also do this at an upsampled resolution, so first write out
         #the bias corrected scan, and the segmentation.
         bias_corrected_image_names = [sub_files.T1_bias_corrected]
@@ -360,9 +363,11 @@ def run(subject_dir=None, T1=None, T2=None,
         upsampled_image_names = [sub_files.T1_upsampled, sub_files.T2_upsampled]
         for input_number, bias_corrected in enumerate(bias_corrected_image_names):
             corrected_input = nib.load(bias_corrected)
-            resampled_input, new_affine, orig_res = resample_vol(corrected_input.get_data(), 
-                                                                 corrected_input.affine, 
-                                                                 0.5, order=3)
+            resampled_input, new_affine, orig_res = transformations.resample_vol(
+                corrected_input.get_data(),
+                corrected_input.affine,
+                0.5, order=3
+            )
             upsampled = nib.Nifti1Image(resampled_input,new_affine)
             nib.save(upsampled, upsampled_image_names[input_number])
             
@@ -391,5 +396,159 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
-    
-    
+
+
+def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
+         distance_slope=0.5, distance_range=(0.1, 3),
+         optimize=True, remove_spikes=True, smooth_steps=5):
+    ''' Creates a mesh from a labeled image
+
+    The maximum element sizes (CGAL facet_size and cell_size) is given by:
+        size = size_slope * thickness
+        size[size < size_range[0]] = size_range[0]
+        size[size > size_range[1]] = size_range[1]
+
+    where "thickness" is the local tissue thickness.
+    The distance (CGAL facet_distance) parameter is calcualted in a similar way.
+    This allows for the meshing to adjust sizes according to local needs.
+
+    Parameters
+    -----------
+    label_img: 3D np.ndarray in uint8 format
+        Labeled image from segmentation
+    affine: 4x4 np.ndarray
+        Affine transformation from voxel coordinates to world coordinates
+    size_slope: float (optinal)
+        relationship between thickness and slopes. The largest this value,
+        the larger the elements will be. Default: 1
+    size_range: 2-element list (optional)
+        Minimum and maximum values for element sizes, in mm. Default: (1, 5)
+    distance_slope: float (optinal)
+        relationship between thickness and facet_distance. At small distance
+        values, the meshing will follow the original image more strictly. This
+        also means more elements. Default: 0.5
+    size_range: 2-element list (optional)
+        Minimum and maximum values for facet_distance, in mm. Default: (0.1, 3)
+    optimize: bool (optional)
+        Whether to run lloyd optimization on the mesh. Default: True
+    remove_spikes: bool (optional)
+        Whether to remove spikes to create smoother meshes. Default: True
+    smooth_steps: int (optional)
+        Number of smoothing steps to apply to the final mesh surfaces. Default: 5
+
+    Returns
+    --------
+    msh: simnibs.Msh
+        Mesh structure
+    '''
+    # Calculate thickness
+    logger.info('Calculating tissue thickness')
+    thickness = _calc_thickness(label_img)
+    # I set the background thickness to some large value
+    thickness[thickness < .5] = 100
+    # Scale thickenss with voxel size
+    voxel_size = transformations.get_vox_size(affine)
+    if not np.allclose(np.diff(voxel_size), 0):
+        logger.warn('Anisotropic image, meshing may contain extra artifacts')
+    thickness *= np.average(voxel_size)
+
+    # Define size field and distance field
+    size_field = _sizing_field_from_thickness(
+        thickness, size_slope, size_range
+    )
+    distance_field = _sizing_field_from_thickness(
+        thickness, distance_slope, distance_range
+    )
+    # Run meshing
+    logger.info('Meshing')
+    start = time.time()
+    mesh = meshing.image2mesh(
+        label_img,
+        affine,
+        facet_size=size_field,
+        facet_distance=distance_field,
+        cell_size=size_field,
+        optimize=optimize
+    )
+    logger.info(
+        'Time to mesh: ' +
+        utils.simnibs_logger.format_time(time.time()-start)
+    )
+    start = time.time()
+    # Separate out tetrahedron (will reconstruct triangles later)
+    mesh = mesh.crop_mesh(elm_type=4)
+    # Assign the right labels to the mesh as CGAL modifies them
+    indices_seg = np.unique(label_img)[1:]
+    new_tags = np.copy(mesh.elm.tag1)
+    for i, t in enumerate(indices_seg):
+        new_tags[mesh.elm.tag1 == i+1] = t
+    mesh.elm.tag1 = new_tags
+    mesh.elm.tag2 = new_tags.copy()
+    # Remove spikes from mesh
+    if remove_spikes:
+        logger.info('Removing Spikes')
+        meshing.despike(
+            mesh, relabel_tol=1e-5,
+            adj_threshold=2
+        )
+    # Reconctruct the mesh surfaces
+    logger.info('Reconstructing Surfaces')
+    mesh.fix_th_node_ordering()
+    mesh.reconstruct_surfaces()
+    # Smooth the mesh
+    if smooth_steps > 0:
+        logger.info('Smoothing Mesh Surfaces')
+        mesh.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
+
+    logger.info(
+        'Time to post-process mesh: ' +
+        utils.simnibs_logger.format_time(time.time()-start)
+    )
+    return mesh
+
+
+def _calc_thickness(label_img):
+    ''' Calculates the thichkess of each layer in a 3D binary image'''
+    thickness = np.zeros_like(label_img, dtype=np.float32)
+    for t in np.unique(label_img):
+        if t == 0:
+            continue
+        else:
+            thickness += _thickness_3d_binary_image(
+                (label_img == t).astype(np.uint8)
+            )
+    # If for some reason a voxel had unasigned thickness
+    thickness[np.isinf(thickness)] = 1
+    return thickness
+
+
+def _thickness_3d_binary_image(image):
+    ''' Calculate thicness in a 3D binary image '''
+    thickness = np.zeros_like(image, dtype=np.float32)
+    thickness[image > 0] = np.inf
+    # Calculate thickess per-slice along 3 different cuts
+    # and take the smallest one
+    for i in range(3):
+        thickness_ax = np.zeros(
+            image.swapaxes(0, i).shape, dtype=np.float32
+        )
+        for j, slice_ in enumerate(image.swapaxes(0, i)):
+            if not np.any(slice_):
+                continue
+            thick_slice = _thickness._thickness_slice(slice_)
+            thickness_ax[j, ...] = thick_slice
+        thickness_ax = thickness_ax.swapaxes(0, i)
+        thickness_ax[(thickness_ax < 1e-3) * (image > 0)] = np.inf
+        thickness = np.min([thickness, thickness_ax], axis=0)
+
+    return thickness
+
+
+def _sizing_field_from_thickness(thickness, slope, ranges):
+    ''' Calculates a sizing field from thickness '''
+    if ranges[0] > ranges[1]:
+        raise ValueError('Ranges value should be in format (min, max)')
+    field = np.array(slope*thickness, dtype=np.float32, order='F')
+    field[field < ranges[0]] = ranges[0]
+    field[field > ranges[1]] = ranges[1]
+    return field
