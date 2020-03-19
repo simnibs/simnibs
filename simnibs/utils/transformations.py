@@ -23,8 +23,6 @@
 import warnings
 import os
 from functools import partial
-import csv
-import re
 import gc
 
 import numpy as np
@@ -1348,14 +1346,17 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
         new_affine[:3, :3].dot(corner)
     )
     new_affine[:3, 3] += offset
-    resampled = scipy.ndimage.affine_transform(
-        vol,
-        transform,
-        offset=(transform - 1)/2.,  # the voxel coordinates define the center of the voxels
-        output_shape=(vol.shape/transform).astype(int),
-        order=order,
-        mode=mode
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        resampled = scipy.ndimage.affine_transform(
+            vol,
+            transform,
+            offset=(transform - 1)/2.,  # the voxel coordinates define the center of the voxels
+            output_shape=(vol.shape/transform).astype(int),
+            order=order,
+            mode=mode
+        )
+
     return resampled, new_affine, original_res
 
 def get_surface_names_from_folder_structure(m2m_folder):
