@@ -1,0 +1,16 @@
+1 5 Air_internal          0  0  0  0
+2 4 Artery                204    0    0  255
+3 12 Cerebrum_grey_matter  128  128  128  255
+4 11 Cerebrum_white_matter 230  230  230  255
+5 7 Cerebrospinal_fluid   120  133  217  255
+6 14 Eyes                  230  189   66  255
+7 2 Other_tissues         250  250   51  255
+8 13 Rectus_muscles        190   50   73  255
+9 10 Mucosa                255  160  188  255
+10 15 Visual_nerve          0  191  122  255
+11 1 Skin                  190  156  120  255
+12 9 Spinal_cord           0  187  169  255
+14 3 Vein                  0   84  255  255
+15 6 Bone_cortical         238  215  150  255
+16 8 Bone_cancellous       237  199  154  255
+17 0 Background            0  168  255  255
