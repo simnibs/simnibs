@@ -321,12 +321,17 @@ def remesh(mesh, facet_size, cell_size,
     return mesh
 
 
-def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2, log_level=logging.DEBUG):
+def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2,
+                   log_level=logging.DEBUG, adj_th=None, relabel_tol=1e-6,
+                    max_iter=20):
     ''' Relabels the spikes in a mesh volume, in-place
 
-    A spike is defined as a tetrahedron in "label_a" or "label_b" which has at least one
-    node in the other volume and at least "adj_threshold" faces adjacent to tetrahedra in
-    "tarrget_label". For example, for relabeling GM and Skull spikes going through CSF,
+    A spike is defined as a tetrahedron in "label_a" or "label_b"
+    which has at least one node in the other volume and
+    at least "adj_threshold" faces adjacent to tetrahedra in
+    "target_label".
+    For example, for relabeling GM and Skull spikes going through CSF,
+
     one can use
     relabel_spikes(m, 2, 4, 3)
 
@@ -342,17 +347,24 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2, log_level
         Volume label where the spikes are locate
     adj_threshold: int (optional)
         Threshhold of number of adjacent faces for being considered a spike 
+    adj_th: list (optional)
+       value of m.elm.find_adjacent_tetrahedra(), can be passed to accelerate
+    relabel_tol: float (optional)
+        Fraction of the elements that indicates convergence,
+    max_iter: int
+        Maximum number of relabeling iterations
     '''
-    logger.log(log_level, f'relabeling sipkes in {label_a} and {label_b} to {target_label}')
+    logger.log(
+        log_level,
+        f'Relabeling spikes in {label_a} and {label_b} to {target_label}'
+    )
     def find_spikes():
-        # First, get all tetrahedra which have a node that is shared between the tissues
-        shared_nodes = m.find_shared_nodes([label_a, label_b])
-        with_shared_nodes = (
-            np.in1d(m.elm[:], shared_nodes)
-            .reshape(-1, 4)
-            .sum(axis=1, dtype=bool)
-        )
-        # Now, select the tetrahedra with at least adj_th faces adjacent to the tissue
+        # First, get all tetrahedra which have a
+        # node that is shared between the tissues
+        with_shared_nodes = with_label_a_nodes * with_label_b_nodes
+
+        # Now, select the tetrahedra with at least
+        #adj_th faces adjacent to the tissue
         # with holes
         adj_labels = m.elm.tag1[adj_th - 1]
         adj_labels[adj_th == -1] = -1
@@ -360,21 +372,48 @@ def relabel_spikes(m, label_a, label_b, target_label, adj_threshold=2, log_level
             (np.sum(adj_labels == target_label, axis=1) >= adj_threshold)
         return spikes
 
-    adj_th = m.elm.find_adjacent_tetrahedra()
-    relabeled = True
-    while np.any(relabeled):
+    if adj_th is None:
+        adj_th = m.elm.find_adjacent_tetrahedra()
+
+    with_label_a_nodes = _with_label(m, label_a)
+    with_label_b_nodes = _with_label(m, label_b)
+    if not np.any(with_label_a_nodes * with_label_b_nodes):
+        return
+
+    for i in range(max_iter):
         # Relabel tissue A
         A_to_relabel = (m.elm.tag1 == label_a) * find_spikes()
         frac_A_relabeled = np.sum(A_to_relabel)/np.sum(m.elm.tag1 == label_a)
         m.elm.tag1[A_to_relabel] = target_label
         m.elm.tag2[A_to_relabel] = target_label
+        with_label_a_nodes = _with_label(m, label_a)
         # Relabel tissue B
         B_to_relabel = (m.elm.tag1 == label_b) * find_spikes()
         frac_B_relabeled = np.sum(B_to_relabel)/np.sum(m.elm.tag1 == label_b)
         m.elm.tag1[B_to_relabel] = target_label
         m.elm.tag2[B_to_relabel] = target_label
-        relabeled = A_to_relabel + B_to_relabel
+        with_label_b_nodes = _with_label(m, label_b)
+
         logger.log(log_level,
-            f'Relabeled {frac_A_relabeled:.2%} of elements from {label_a} '
-            f'and {frac_B_relabeled:.2%} of elements from {label_b}'
+            f'Relabeled {np.sum(A_to_relabel)} from {label_a} '
+            f'and {np.sum(B_to_relabel)} from {label_b}'
         )
+        if frac_A_relabeled < relabel_tol and frac_B_relabeled < relabel_tol:
+            break
+
+
+def _with_label(m, label):
+    ''' Returns all elements in the mesh which have a node that is in
+        a region with the given label
+    '''
+    nodes_label = np.bincount(
+        m.elm[m.elm.elm_type == 4].reshape(-1),
+        np.repeat(m.elm.tag1[m.elm.elm_type == 4] == label, 4),
+        minlength=m.nodes.nr + 1
+    ).astype(bool)
+
+    with_label_nodes = np.any(
+        nodes_label[m.elm[:]],
+        axis=1
+    )
+    return with_label_nodes
