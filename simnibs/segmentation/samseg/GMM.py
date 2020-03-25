@@ -174,6 +174,7 @@ class GMM:
 
         #
         return likelihoods
+    
 
     def getPosteriors(self, data, priors, fractionsTable):
 

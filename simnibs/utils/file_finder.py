@@ -217,7 +217,10 @@ class SubjectFiles:
         Path to the output from the segmentation
     
     label_prep_folder: str
-        Path to the output from upsampling    
+        Path to the output from upsampling   
+    
+    mni_transf_folder: str
+        Path to MNI transformations
 
     eeg_cap_1010: str
         Path to the EEG 10-10 electrode file (.csv)
@@ -354,23 +357,23 @@ class SubjectFiles:
 
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
-        mni_transf = os.path.join(self.subpath, 'toMNI')
+        self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
-        self.mni2conf_nonl = os.path.join(mni_transf, 'MNI2Conform_nonl.nii')
+        self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
         if os.path.isfile(self.mni2conf_nonl + '.gz'):
             self.mni2conf_nonl += '.gz'
 
-        self.conf2mni_nonl = os.path.join(mni_transf, 'Conform2MNI_nonl.nii')
+        self.conf2mni_nonl = os.path.join(self.mni_transf_folder, 'Conform2MNI_nonl.nii')
         if os.path.isfile(self.conf2mni_nonl + '.gz'):
             self.conf2mni_nonl += '.gz'
 
-        self.mni2conf_6dof = os.path.join(mni_transf, 'MNI2conform_6DOF')
+        self.mni2conf_6dof = os.path.join(self.mni_transf_folder, 'MNI2conform_6DOF')
         if os.path.isfile(self.mni2conf_6dof + '.txt'):
             self.mni2conf_6dof += '.txt'
         if os.path.isfile(self.mni2conf_6dof + '.mat'):
             self.mni2conf_6dof += '.mat'
 
-        self.mni2conf_12dof = os.path.join(mni_transf, 'MNI2conform_12DOF')
+        self.mni2conf_12dof = os.path.join(self.mni_transf_folder, 'MNI2conform_12DOF')
         if os.path.isfile(self.mni2conf_12dof + '.txt'):
             self.mni2conf_12dof += '.txt'
         if os.path.isfile(self.mni2conf_12dof + '.mat'):

@@ -550,6 +550,7 @@ class Samseg:
 
         # End resolution level loop
 
+#    @profile
     def segment(self):
         # Get the final mesh
         mesh = self.probabilisticAtlas.getMesh(self.modelSpecifications.atlasFileName, self.transform,
@@ -558,7 +559,7 @@ class Samseg:
 
         # Get the priors as dictated by the current mesh position
         priors = mesh.rasterize(self.imageBuffers.shape[0:3], -1)
-        priors = priors[self.mask, :]
+        priors = priors[self.mask, :]/65535.0
 
         # Get bias field corrected data
         # Make sure that the bias field basis function are not downsampled
