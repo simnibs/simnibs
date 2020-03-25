@@ -5,20 +5,22 @@ Created on Sat Nov 23 18:35:47 2019
 @author: axthi
 """
 
-from threading import Thread
-from multiprocessing import Process
-from queue import Queue, Empty
-
+import gc
 import logging
+from multiprocessing import Process
 import numpy as np
+from queue import Queue, Empty
 from scipy.spatial import cKDTree
 import sys
 from subprocess import Popen, PIPE
 import scipy.ndimage.morphology as mrph
 from scipy.ndimage.measurements import label
+from threading import Thread
+import time
 
 from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
+from . import _cs_utils
 
 
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
@@ -485,6 +487,7 @@ def segment_triangle_intersect(vertices, faces, segment_start, segment_end):
     indices_pairs[:, 1] -= 1
     return indices_pairs, positions
 
+
 def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
     ''' Function to rastherize a given surface given by (vertices, faces) to a volume
     '''
@@ -565,6 +568,7 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
 
     return mask
 
+
 def mask_from_surface(vertices, faces, affine, shape):
     """ Creates a binary mask based on a surface
     
@@ -608,15 +612,18 @@ def dilate(image,n):
     se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
     return mrph.binary_dilation(image,se)>0
 
+
 def erosion(image,n):
     image = image > 0.5
     nan_inds = np.isnan(image)
     image[nan_inds] = 0
     return ~dilate(~image,n)
 
+
 def lab(image):
     labels, num_features = label(image) 
     return (labels == np.argmax(np.bincount(labels.flat)[1:])+1)
+
 
 def close(image,n):
     image = image > 0.5
@@ -636,4 +643,313 @@ def labclose(image,n):
     return ~lab(~tmp)
         
 
+def cat_vol_pbt_AT(Ymf, resV, debug=False):
+    """ Estimate cortical thickness and surface position using pbt2x
 
+    PARAMETERS
+    ----------       
+       Ymf    : tissue segment image or better the noise, bias, and
+                intensity corrected
+       resV   : voxel resolution (only isotropic)
+
+       --> optional parameters:
+       debug  : bool
+                (default = False)       
+
+    RETURNS
+    ----------
+       Ygmt   : GM thickness map
+       Ypp    : percentage position map
+
+    NOTES
+    ----------  
+       This function is adapted from cat_vol_pbt.m of CAT12 
+       (version 2019-03-22, http://www.neuro.uni-jena.de/cat/). 
+
+       This python version fixed a side effect caused by unintended 
+       modification of variables. The problem is due to the C language
+       does not use the passby-value scheme as Matlab when passing arrays, 
+       so an unintended modification to a dummy array in the C function
+       can cause side effects. See the parameters Ywmd, Ycsfd, Ygmt, Ygmt1, 
+       Ygmt2 in lines 86, 130, 134, 156, 157, 172, 179, 182, 189 in the matlab
+       function cat_vol_pbt_AT.m when calling the C function 
+       "cat_vol_localstat.c".
+
+       The python version also fixed a bug called array index out of bound. 
+       The index used to address array items in the C function 
+       "cat_vol_pbtp.cpp" exceeds the allowed value by 1. It causes 
+       undefined behavior in the C function "cat_vol_pbtp.cpp". See lines 52 
+       and 63 in the updated file "cat_vol_pbtp.cpp".
+
+     Reference
+     ----------    
+       Dahnke, R; Yotter R; Gaser C.
+       Cortical thickness and central surface estimation.
+       NeuroImage 65 (2013) 226-248.
+
+    """
+
+    if (np.sum(np.round(np.asanyarray(Ymf).reshape(-1, 1)) == np.asanyarray(Ymf).reshape(-1, 1)) / np.asarray(Ymf).size) > 0.9:
+        binary = True
+    else:
+        binary = False
+
+    minfdist = 2
+
+    debug=int(debug)
+
+    
+    #  WM distance
+    #  Estimate WM distance Ywmd and the outer CSF distance Ycsfdc to correct
+    #  the values in CSF area are to limit the Ywmd to the maximum value that
+    #  is possible within the cortex.
+    #  The increasement of this area allow a more accurate and robust projection.
+    #  cat_vol_eidist used speed map to align voxel to the closer gyrus
+    #  that is not required for the correction map.
+
+    #  RD 201803:
+    #  The speed map weighting "max(0.5,min(1,Ymf/2))" is not strong enough to
+    #  support asymmetric structures. The map "max(eps,min(1,((Ymf-1)/1.1).^4))"
+    #  works much better but it leads to much higher thickness results (eg. in
+    #  the Insula).
+
+    stimet = time.time()
+    stimet2 = stimet
+
+    YMM = np.logical_or(erosion(Ymf < 1.5, 1), np.isnan(Ymf))
+    F = np.fmax(0.5, np.fmin(1, Ymf / 2))
+
+    YM = np.fmax(0, np.fmin(1, (Ymf - 2)))
+    YM[YMM] = np.nan
+    Ywmd = _cs_utils.cat_vol_eidist(
+        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
+    F = np.fmax(1.0, np.fmin(1, Ymf / 2))
+
+    YM = np.fmax(0, np.fmin(1, (Ymf - 1)))
+    YM[YMM] = np.nan
+    Ycsfdc = _cs_utils.cat_vol_eidist(
+        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
+
+    del F, YMM
+    gc.collect()
+
+    if not binary:
+        # limit the distance values outside the GM/CSF boudary to the distance possible in the GM
+        notnan = ~np.isnan(Ywmd)
+        YM = np.full(Ywmd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= 1.5))
+        Ywmd[YM] = Ywmd[YM] - Ycsfdc[YM]
+        Ywmd[np.isinf(Ywmd)] = 0
+        del Ycsfdc
+        gc.collect()
+
+        # smoothing of distance values inside the GM
+        notnan = ~np.isnan(Ywmd)
+        YM = np.full(Ywmd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] > 1.5))
+        YwmdM = np.array(Ywmd, copy=True)
+        YwmdM = _cs_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
+        Ywmd[YM] = YwmdM[YM]
+
+        # smoothing of distance values outside the GM
+        notnan = ~np.isnan(Ywmd)
+        YM = np.full(Ywmd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= 1.5))
+        YwmdM = np.array(Ywmd, copy=True)
+        for i in np.arange(1, 3):
+            YwmdM = _cs_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
+        Ywmd[YM] = YwmdM[YM]
+
+        # reducing outliers in the GM/CSF area
+        notnan = ~np.isnan(Ywmd)
+        YM = np.full(Ywmd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] < 2.0))
+        YwmdM = np.array(Ywmd, copy=True)
+        YwmdM = _cs_utils.cat_vol_median3(YwmdM, YM, YM)
+        Ywmd[YM] = YwmdM[YM]
+        del YwmdM, YM
+        gc.collect()
+
+    logger.info(f'WM distance: ' +
+                time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    #  CSF distance
+    #  Similar to the WM distance, but keep in mind that this map is
+    #  incorrect in blurred sulci that is handled by PBT
+    stimet = time.time()
+
+    YMM = np.any((erosion(Ymf < 1.5, 1), erosion(
+        Ymf > 2.5, 1), np.isnan(Ymf)), axis=0)
+
+    F = np.fmax(0.5, np.fmin(1, (4 - Ymf) / 2))
+
+    YM = np.fmax(0, np.fmin(1, (2 - Ymf)))
+    YM[YMM] = np.nan
+    Ycsfd = _cs_utils.cat_vol_eidist(
+        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
+    F = np.fmax(1, np.fmin(1, (4 - Ymf) / 2))
+
+    YM = np.fmax(0, np.fmin(1, (3 - Ymf)))
+    YM[YMM] = np.nan
+    Ywmdc = _cs_utils.cat_vol_eidist(
+        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
+    YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
+    YM[YMM] = np.nan
+    Ywmdx = _cs_utils.cat_vol_eidist(
+        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.3
+    del F, YMM
+    gc.collect()
+
+    Ywmdc = np.fmin(Ywmdc, Ywmdx)
+
+    if not binary:
+        notnan = ~np.isnan(Ycsfd)
+        YM = np.full(Ycsfd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
+        Ycsfd[YM] = Ycsfd[YM] - Ywmdc[YM]
+        Ycsfd[np.isinf(- Ycsfd)] = 0
+        del Ywmdc
+        gc.collect()
+        notnan = ~np.isnan(Ycsfd)
+        YM = np.full(Ycsfd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] < 2.5))
+        YcsfdM = np.array(Ycsfd, copy=True)
+        YcsfdM = _cs_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
+        Ycsfd[YM] = YcsfdM[YM]
+        notnan = ~np.isnan(Ycsfd)
+        YM = np.full(Ycsfd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
+        YcsfdM = np.array(Ycsfd, copy=True)
+        for i in np.arange(1, 3):
+            YcsfdM = _cs_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
+        Ycsfd[YM] = YcsfdM[YM]
+        notnan = ~np.isnan(Ycsfd)
+        YM = np.full(Ycsfd.shape, False, dtype=bool)
+        YM[notnan] = np.logical_and(
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] > 2.0))
+        YcsfdM = np.array(Ycsfd, copy=True)
+        YcsfdM = _cs_utils.cat_vol_median3(YcsfdM, YM, YM)
+        Ycsfd[YM] = YcsfdM[YM]
+        del YcsfdM, YM
+        gc.collect()
+
+    logger.info(f'CSF distance: ' +
+                time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    # PBT thickness mapping using pbt2x
+    # --------------------
+    stimet = time.time()
+
+    # add 1 to keep the iteration number the same as matlab
+    iterator = 1 / np.mean((np.squeeze(resV)).flatten()) + 1
+
+    # Estimation of the cortical thickness with sulcus (Ygmt1) and gyri
+    # correction (Ygmt2) to create the final thickness as the minimum map
+    # of both.
+
+    # estimate thickness with PBT approach
+    YcsfdM = np.array(Ycsfd, copy=True)
+    Ygmt1 = _cs_utils.cat_vol_pbtp(Ymf, Ywmd, YcsfdM)[0]
+    YwmdM = np.array(Ywmd, copy=True)
+    Ygmt2 = _cs_utils.cat_vol_pbtp(4 - Ymf, Ycsfd, YwmdM)[0]
+    del YcsfdM, YwmdM
+    gc.collect()
+
+    # avoid meninges !
+    Ygmt1 = np.fmin(Ygmt1, Ycsfd + Ywmd)
+    Ygmt2 = np.fmin(Ygmt2, Ycsfd + Ywmd)
+
+    # median filter to remove outliers
+    notnan = ~np.isnan(Ygmt1)
+    YM = np.full(Ygmt1.shape, False, dtype=bool)
+    YM[notnan] = Ygmt1[notnan] > 0
+
+    Ygmt1 = _cs_utils.cat_vol_median3(Ygmt1, YM, YM)
+
+    notnan = ~np.isnan(Ygmt2)
+    YM = np.full(Ygmt2.shape, False, dtype=bool)
+    YM[notnan] = Ygmt2[notnan] > 0
+
+    Ygmt2 = _cs_utils.cat_vol_median3(Ygmt2, YM, YM)
+
+    # estimation of Ypp for further GM filtering without sulcul blurring
+    Ygmt = np.fmin(Ygmt1, Ygmt2)
+    YM = np.logical_and((Ymf >= 1.5), (Ymf < 2.5))
+    Ypp = np.zeros(Ymf.shape, dtype=np.float32)
+    Ypp[Ymf >= 2.5] = 1
+    eps = np.finfo(float).eps
+    Ypp[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM]) / (Ygmt[YM] + eps)
+    Ypp[Ypp > 2] = 0
+    notnan = ~np.logical_or(np.isnan(Ywmd), np.isnan(Ygmt))
+    YM = np.full(Ywmd.shape, False, dtype=bool)
+    YM[notnan] = np.squeeze((Ygmt[notnan] <= resV) & (
+        Ywmd[notnan] <= resV) & (Ygmt[notnan] > 0))
+    Ypp[YM] = (Ymf[YM] - 1) / 2
+    Ygmts = np.array(Ygmt, copy=True)
+    for i in np.arange(1, iterator):
+        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, Ygmt1 > 0, 1, 1)[0]
+
+    Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
+
+    # filter result
+    Ygmts = np.array(Ygmt1, copy=True)
+    for i in np.arange(1, iterator):
+        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+
+    Ygmt1[Ygmts > 0] = Ygmts[Ygmts > 0]
+    Ygmts = np.array(Ygmt2, copy=True)
+    for i in np.arange(1, iterator):
+        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+
+    Ygmt2[Ygmts > 0] = Ygmts[Ygmts > 0]
+
+    # mix result
+    # only minimum possible, because Ygmt2 is incorrect in blurred sulci
+    Ygmt = np.fmin(Ygmt1, Ygmt2)
+
+    Ygmts = np.array(Ygmt, copy=True)
+    for i in np.arange(1, iterator):
+        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+            Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+
+    Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
+
+    # Estimation of a mixed percentual possion map Ypp.
+    YM = ((Ymf >= 1.5) & (Ymf < 2.5) & (Ygmt > eps))
+    Ycsfdc = np.array(Ycsfd, copy=True)
+    Ycsfdc[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM])
+    Ypp = np.zeros(Ymf.shape, dtype=np.float32)
+    Ypp[Ymf >= 2.5] = 1
+    Ypp[YM] = Ycsfdc[YM] / (Ygmt[YM] + eps)
+    Ypp[Ypp > 2] = 0
+    notnan = ~np.logical_or(np.isnan(Ywmd), np.isnan(Ygmt))
+    YM = np.full(Ywmd.shape, False, dtype=bool)
+    YM[notnan] = np.squeeze((Ygmt[notnan] <= resV) & (
+        Ywmd[notnan] <= resV) & (Ygmt[notnan] > 0))
+    Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
+
+    Ypp[np.isnan(Ypp)] = 0
+    Ypp[Ypp < 0] = 0
+
+    # Final corrections for thickness map with thickness limit of 10 mm.
+    # Resolution correction of the thickness map after all other operations,
+    # because PBT actually works only with the voxel-distance (isotropic 1 mm)
+    Ygmt = Ygmt * resV
+    Ygmt[Ygmt > 10] = 10
+
+    logger.info(f'PBT2x thickness: ' +
+                time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    logger.info(f'Cortical thickness and surface position estimation: {debug}: ' + time.strftime(
+                '%H:%M:%S', time.gmtime(time.time() - stimet2)))
+
+    return Ygmt, Ypp
