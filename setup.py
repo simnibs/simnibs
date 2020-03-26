@@ -204,8 +204,8 @@ cython_msh = Extension(
     include_dirs=[np.get_include()]
 )
 marching_cubes_lewiner_cy = Extension(
-    'simnibs.mesh_tools._marching_cubes_lewiner_cy',
-    ["simnibs/mesh_tools/_marching_cubes_lewiner_cy.pyx"],
+    'simnibs.segmentation._marching_cubes_lewiner_cy',
+    ["simnibs/segmentation/_marching_cubes_lewiner_cy.pyx"],
     include_dirs=[np.get_include()]
 )
 cs_utils = Extension(
