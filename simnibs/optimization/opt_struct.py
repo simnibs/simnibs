@@ -1694,7 +1694,7 @@ class TDCSavoid:
         '''
         assert self.mesh is not None, 'Please set a mesh'
         assert self.lf_type is not None, 'Please set a lf_type'
-        assert self.weight > 0, 'Weights must be > 0'
+        assert self.weight >= 0, 'Weights must be >= 0'
         if self.lf_type == 'node':
             f = np.ones(self.mesh.nodes.nr)
         elif self.lf_type == 'element':
@@ -1705,6 +1705,8 @@ class TDCSavoid:
 
         indexes = self._get_avoid_region()
         f[indexes - 1] = self.weight
+        if len(indexes) == 0:
+            raise ValueError('Empty avoid region!')
 
         return f
 

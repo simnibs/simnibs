@@ -33,7 +33,7 @@ class TESConstraints:
         # Kirschoff law, defined in the extended system
         # A_.dot(x_) = b_
         A_ = np.hstack([np.ones((1, self.n)), -np.ones((1, self.n))])
-        b_ = np.array(0.)
+        b_ = np.array([0.])
         return A_, b_
 
 class TESOptimizationProblem(TESConstraints):
@@ -247,7 +247,7 @@ class TESLinearElecConstrained(TESLinearConstrained):
         bounds_function = functools.partial(
              _bb_bounds_tes_problem,
               max_l0=self.n_elec,
-             linear=[self.l],
+             linear=[self.l[None, :]],
              quadratic=[self.Q],
              max_el_current=max_el_current,
              func=self._solve_reduced
@@ -450,6 +450,142 @@ class TESNormElecConstrained(TESNormConstrained):
              max_l0=self.n_elec,
              linear=[np.zeros((1, self.n))],
              quadratic=np.concatenate([self.Q[None, ...], self.Qnorm]),
+             max_el_current=max_el_current,
+             func=self._solve_reduced
+         )
+
+        final_state = _branch_and_bound(
+            init, bounds_function,
+            eps_bb, max_bb_iter,
+            log_level=log_level
+        )
+
+        return final_state.x_ub
+
+class TESDistributed(TESConstraints):
+    ''' Class defining TES Oprimization problems with distributed sources
+
+    Basd in the defiition by
+    Ruffini et al. "Optimization of multifocal transcranial current stimulation for
+    weighted cortical pattern targeting from realistic modeling of electric fields",
+    NeuroImage, 2014.
+
+    Parameters
+    -------------
+    leadfield: N_elec x N_roi x 3 ndarray
+        Leadfield
+
+    normals: N_roi x 1
+        Normals at each node/element
+
+    t_map: N_roi x 1 ndarray
+        t-value for each ROI node/element
+
+    t_min: float
+        cut-off value for the t-map
+
+    target_field: floar
+        E_0 value from Ruffini, 2014
+
+    max_total_current: float
+        Maximum total current flow through all electrodes
+
+    max_el_current: float
+        Maximum current flow through each electrode
+    '''
+    def __init__(self, leadfield, normals, t_map, t_min, target_field,
+                 max_total_current=1e4, max_el_current=1e4):
+        super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
+        self.leadfield = leadfield
+        
+        assert t_min >= 0, 't_min value should be >= 0'
+        self.l, self.Q = self._calc_l_Q(normals, t_map, t_min, target_field)
+
+
+    def _calc_l_Q(self, normals, t_map, t_min, target_field):
+        ''' Calculates the linear and quadratic parts of the optimization problem
+        '''
+        W = np.abs(t_map)
+        W[np.abs(t_map) < t_min] = t_min
+        y = t_map.copy()
+        y[np.abs(t_map) < t_min] = 0
+        # For coherence with the Ruffini paper, I only take into account the normal componene
+        A = np.einsum('ijk, jk -> ij', self.leadfield, normals)
+        l = (-2*target_field*A*W).dot(y)
+        Q = A.dot((A*W**2).T)
+
+        P = np.linalg.pinv(np.vstack([-np.ones(len(l)), np.eye(len(l))]))
+        l = l.dot(P)
+        Q = P.T.dot(Q).dot(P)
+
+        # For numerical reasons
+        l /= np.sum(W**2)
+        Q /= np.sum(W**2)
+        return l, Q
+
+    def solve(self, log_level=20):
+        ''' Solves the optimization problem
+
+        Returns
+        ----------
+        x: np.array
+            Optimized currents
+        '''
+        return _least_squares_tes_opt(
+            self.l, self.Q,
+            self.max_el_current, self.max_total_current,
+            log_level=log_level
+        )
+
+class TESDistributedElecConstrained(TESDistributed):
+    ''' Class for solving the TES Distributed Problem with number of electrodes
+    constraints
+
+    '''
+    def __init__(self, n_elec, leadfield, normals, t_map, t_min, target_field,
+                 max_total_current=1e4, max_el_current=1e4):
+
+        super().__init__(leadfield, normals, t_map, t_min, target_field,
+                         max_total_current, max_el_current)
+        self.n_elec = n_elec
+
+    def _solve_reduced(self, linear, quadratic, extra_ineq=None):
+        l = linear[0]
+        Q = quadratic[0]
+        x = _least_squares_tes_opt(
+            l, Q,
+            self.max_el_current, self.max_total_current,
+            extra_ineq=extra_ineq,
+            log_level=10
+        )
+        return x, l.dot(x) + x.dot(Q).dot(x)
+
+    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy='compact'):
+        # Heuristically eliminate electrodes
+        max_el_current = min(self.max_el_current, self.max_total_current)
+        el = np.arange(self.n)
+        if init_startegy == 'compact':
+            x = _least_squares_tes_opt(
+                self.l, self.Q,
+                self.max_el_current, self.max_total_current,
+                log_level=10
+            )
+            active = np.abs(x) > 1e-3 * max_el_current
+            if not np.any(active):
+                active = np.ones(self.n, dtype=bool)
+            init = bb_state([], el[~active].tolist(), el[active].tolist())
+
+        elif init_startegy == 'full':
+            init = bb_state([], [], el.tolist())
+
+        else:
+            raise ValueError('Invalid initialization strategy')
+
+        bounds_function = functools.partial(
+             _bb_bounds_tes_problem,
+              max_l0=self.n_elec,
+             linear=[self.l[None, :]],
+             quadratic=[self.Q],
              max_el_current=max_el_current,
              func=self._solve_reduced
          )
@@ -997,6 +1133,49 @@ def _norm_opt_x0(
 
     return x, energy, norms
 
+def _least_squares_tes_opt(l, Q,
+                           max_el_current, max_total_current,
+                           extra_ineq=None, extra_eq=None,
+                           log_level=10):
+        n = Q.shape[1]
+        tes_constraints = TESConstraints(n, max_total_current, max_el_current)
+        # First solve an LP to get a feasible starting point
+        l_ = np.hstack([l, -l])
+
+        # L1 constaints
+        C_, d_ = tes_constraints._l1_constraint()
+        # Kirschoffs law
+        A_, b_ = tes_constraints._kirschoff_constraint()
+
+        # Inequality constraints
+        if extra_ineq is not None:
+            C_ = np.vstack([C_, extra_ineq[0]])
+            d_ = np.hstack([d_, extra_ineq[1]])
+
+        if extra_eq is not None:
+            A_ = np.vstack([A_, extra_eq[0]])
+            b_ = np.hstack([b_, extra_eq[1]])
+
+        Q_ = np.vstack([np.hstack([Q, -Q]),
+                        np.hstack([-Q, Q])])
+
+        x_ = _eq_constrained_QP(np.squeeze(l_), Q_, A_, b_)
+        if np.linalg.norm(x_, 1) > 2*max_total_current:
+            x_ *= 2*max_total_current/np.linalg.norm(x_, 1)
+        if np.linalg.norm(x_, np.inf) > max_el_current:
+            x_ *= max_el_current/np.linalg.norm(x_, np.inf)
+        # Do the QP
+        eps = 1e-3*min(max_total_current, max_el_current, 1e-1)
+        C_b, d_b = tes_constraints._bound_contraints()
+
+        x_ = _active_set_QP(
+            l_, 2*Q_,
+            np.vstack([C_b, C_]), np.hstack([d_b, d_]),
+            x_, eps, A_, b_
+        )
+
+        x = x_[:n] - x_[n:]
+        return x
 
 def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
     ''' Solves the problem
