@@ -20,7 +20,7 @@ import time
 
 from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
-from . import _cs_utils
+from . import _cat_c_utils
 
 
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
@@ -721,13 +721,13 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     YM = np.fmax(0, np.fmin(1, (Ymf - 2)))
     YM[YMM] = np.nan
-    Ywmd = _cs_utils.cat_vol_eidist(
+    Ywmd = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
     F = np.fmax(1.0, np.fmin(1, Ymf / 2))
 
     YM = np.fmax(0, np.fmin(1, (Ymf - 1)))
     YM[YMM] = np.nan
-    Ycsfdc = _cs_utils.cat_vol_eidist(
+    Ycsfdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
 
     del F, YMM
@@ -750,7 +750,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         YM[notnan] = np.logical_and(
             (Ywmd[notnan] > minfdist), (Ymf[notnan] > 1.5))
         YwmdM = np.array(Ywmd, copy=True)
-        YwmdM = _cs_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
+        YwmdM = _cat_c_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
         Ywmd[YM] = YwmdM[YM]
 
         # smoothing of distance values outside the GM
@@ -760,7 +760,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
             (Ywmd[notnan] > minfdist), (Ymf[notnan] <= 1.5))
         YwmdM = np.array(Ywmd, copy=True)
         for i in np.arange(1, 3):
-            YwmdM = _cs_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
+            YwmdM = _cat_c_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
         Ywmd[YM] = YwmdM[YM]
 
         # reducing outliers in the GM/CSF area
@@ -769,7 +769,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         YM[notnan] = np.logical_and(
             (Ywmd[notnan] > minfdist), (Ymf[notnan] < 2.0))
         YwmdM = np.array(Ywmd, copy=True)
-        YwmdM = _cs_utils.cat_vol_median3(YwmdM, YM, YM)
+        YwmdM = _cat_c_utils.cat_vol_median3(YwmdM, YM, YM)
         Ywmd[YM] = YwmdM[YM]
         del YwmdM, YM
         gc.collect()
@@ -789,17 +789,17 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     YM = np.fmax(0, np.fmin(1, (2 - Ymf)))
     YM[YMM] = np.nan
-    Ycsfd = _cs_utils.cat_vol_eidist(
+    Ycsfd = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
     F = np.fmax(1, np.fmin(1, (4 - Ymf) / 2))
 
     YM = np.fmax(0, np.fmin(1, (3 - Ymf)))
     YM[YMM] = np.nan
-    Ywmdc = _cs_utils.cat_vol_eidist(
+    Ywmdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
     YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
     YM[YMM] = np.nan
-    Ywmdx = _cs_utils.cat_vol_eidist(
+    Ywmdx = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.3
     del F, YMM
     gc.collect()
@@ -820,7 +820,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         YM[notnan] = np.logical_and(
             (Ycsfd[notnan] > minfdist), (Ymf[notnan] < 2.5))
         YcsfdM = np.array(Ycsfd, copy=True)
-        YcsfdM = _cs_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
+        YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
         Ycsfd[YM] = YcsfdM[YM]
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
@@ -828,14 +828,14 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
             (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
         YcsfdM = np.array(Ycsfd, copy=True)
         for i in np.arange(1, 3):
-            YcsfdM = _cs_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
+            YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
         Ycsfd[YM] = YcsfdM[YM]
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
             (Ycsfd[notnan] > minfdist), (Ymf[notnan] > 2.0))
         YcsfdM = np.array(Ycsfd, copy=True)
-        YcsfdM = _cs_utils.cat_vol_median3(YcsfdM, YM, YM)
+        YcsfdM = _cat_c_utils.cat_vol_median3(YcsfdM, YM, YM)
         Ycsfd[YM] = YcsfdM[YM]
         del YcsfdM, YM
         gc.collect()
@@ -856,9 +856,9 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     # estimate thickness with PBT approach
     YcsfdM = np.array(Ycsfd, copy=True)
-    Ygmt1 = _cs_utils.cat_vol_pbtp(Ymf, Ywmd, YcsfdM)[0]
+    Ygmt1 = _cat_c_utils.cat_vol_pbtp(Ymf, Ywmd, YcsfdM)[0]
     YwmdM = np.array(Ywmd, copy=True)
-    Ygmt2 = _cs_utils.cat_vol_pbtp(4 - Ymf, Ycsfd, YwmdM)[0]
+    Ygmt2 = _cat_c_utils.cat_vol_pbtp(4 - Ymf, Ycsfd, YwmdM)[0]
     del YcsfdM, YwmdM
     gc.collect()
 
@@ -871,13 +871,13 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     YM = np.full(Ygmt1.shape, False, dtype=bool)
     YM[notnan] = Ygmt1[notnan] > 0
 
-    Ygmt1 = _cs_utils.cat_vol_median3(Ygmt1, YM, YM)
+    Ygmt1 = _cat_c_utils.cat_vol_median3(Ygmt1, YM, YM)
 
     notnan = ~np.isnan(Ygmt2)
     YM = np.full(Ygmt2.shape, False, dtype=bool)
     YM[notnan] = Ygmt2[notnan] > 0
 
-    Ygmt2 = _cs_utils.cat_vol_median3(Ygmt2, YM, YM)
+    Ygmt2 = _cat_c_utils.cat_vol_median3(Ygmt2, YM, YM)
 
     # estimation of Ypp for further GM filtering without sulcul blurring
     Ygmt = np.fmin(Ygmt1, Ygmt2)
@@ -894,20 +894,20 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     Ypp[YM] = (Ymf[YM] - 1) / 2
     Ygmts = np.array(Ygmt, copy=True)
     for i in np.arange(1, iterator):
-        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, Ygmt1 > 0, 1, 1)[0]
+        Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, Ygmt1 > 0, 1, 1)[0]
 
     Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
 
     # filter result
     Ygmts = np.array(Ygmt1, copy=True)
     for i in np.arange(1, iterator):
-        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+        Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
             Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt1[Ygmts > 0] = Ygmts[Ygmts > 0]
     Ygmts = np.array(Ygmt2, copy=True)
     for i in np.arange(1, iterator):
-        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+        Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
             Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt2[Ygmts > 0] = Ygmts[Ygmts > 0]
@@ -918,7 +918,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     Ygmts = np.array(Ygmt, copy=True)
     for i in np.arange(1, iterator):
-        Ygmts = _cs_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+        Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
             Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
