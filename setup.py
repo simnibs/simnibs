@@ -208,7 +208,7 @@ marching_cubes_lewiner_cy = Extension(
     ["simnibs/segmentation/_marching_cubes_lewiner_cy.pyx"],
     include_dirs=[np.get_include()]
 )
-cs_utils = Extension(
+cat_c_utils = Extension(
     'simnibs.segmentation._cat_c_utils',
     ["simnibs/segmentation/_cat_c_utils.pyx", "simnibs/segmentation/cat_c_utils/genus0.c"],
     include_dirs=[np.get_include(), 'simnibs/segmentation/cat_c_utils']
@@ -245,7 +245,8 @@ create_mesh = Extension(
 extensions = [
     cython_msh,
     marching_cubes_lewiner_cy,
-    cs_utils,
+    cat_c_utils,
+    thickness,
     petsc_solver,
     create_mesh
 ]
