@@ -5,28 +5,42 @@ Created on Sat Nov 23 18:35:47 2019
 @author: axthi
 """
 
+
 import gc
 import logging
-from multiprocessing import Process
+from math import log, sqrt
+#from multiprocessing import Process
+import nibabel as nib
 import numpy as np
-from queue import Queue, Empty
+import os
+#from queue import Queue, Empty
 from scipy.spatial import cKDTree
-import sys
-from subprocess import Popen, PIPE
+from scipy.special import erf
+import scipy.ndimage as ndimage
 import scipy.ndimage.morphology as mrph
 from scipy.ndimage.measurements import label
-from threading import Thread
+#from subprocess import Popen, PIPE
+import sys
+#from threading import Thread
 import time
 
-from ..mesh_tools import mesh_io
-from ..utils.simnibs_logger import logger
 from . import _cat_c_utils
+from .marching_cube import marching_cube
+from ..mesh_tools import mesh_io
+from ..utils import file_finder
+from ..utils.simnibs_logger import logger
+from ..utils.spawn_process import spawn_process
+from ..utils.transformations import resample_vol, crop_vol
 
+
+
+# --------------- expansion from central to pial surface ------------------
 
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
              deform="expand", smooth_mesh=True, skip_lastsmooth=True,
              smooth_mm2move=True, despike_nonmove=True, fix_faceflips=True,
-             log_level=logging.INFO, actualsurf='', ref_fs=None):
+             actualsurf='', ref_fs=None):
+             #log_level=logging.INFO, actualsurf='', ref_fs=None): # log_level unused
     """Deform a mesh by either expanding it in the direction of node normals
     or shinking it in the opposite direction of the normals.
 
@@ -66,8 +80,6 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         Changes in the face orientations > 90° indicate that an expansion step 
         created surface self intersections. These are resolved by local smoothing
         (default = True).
-    log_level : integer
-        logging level (default = logging.INFO).
     actualsurf : string
         string added to the beginning of the logged messages (default = '')
 
@@ -283,7 +295,7 @@ def smooth_vertices(vertices, faces, verts2consider=None,
         verts2consider = np.unique(faces[f2c])
 
     if mask_move is not None:
-         verts2consider = verts2consider[mask_move[verts2consider]]
+        verts2consider = verts2consider[mask_move[verts2consider]]
 
     smoo = vertices.copy()
     if taubin:
@@ -527,7 +539,7 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
     )
 
     # Select the intersecting lines
-    lines_intersecting, uq_indices, uq_inverse, counts = np.unique(
+    lines_intersecting, uq_indices, _, counts = np.unique(
         pairs[:, 0], return_index=True, return_inverse=True, return_counts=True
     )
 
@@ -605,42 +617,282 @@ def mask_from_surface(vertices, faces, affine, shape):
     #return masks[2]
 
 
-def dilate(image,n):
-    image = image > 0.5
-    nan_inds = np.isnan(image)
-    image[nan_inds] = 0
-    se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
-    return mrph.binary_dilation(image,se)>0
+# --------------- central surface creation ------------------
+
+def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf, 
+             surffolder, fsavgDir, vdist=[1.0, 0.75], voxsize_pbt=[0.5, 0.25],
+             voxsize_refineCS=[0.75, 0.5], th_initial=0.714, no_selfintersections=True, 
+             add_parahipp=0.1, close_parahipp=False):
+    """ reconstruction of cortical surfaces based on probalistic label image
+    
+    PARAMETERS
+    ----------
+        Ymf : float32
+            image prepared for surface reconstruction
+        Yleft : uint8
+            binary mask to distinguish between left and right parts of brain
+        Ymaskhemis : uint8
+            volume with the following labels: lh - 1, rh - 2, lc - 3, rc - 4 
+        Ymaskparahipp : uint8
+            binary volume mask of hippocampi and gyri parahippocampalis, used to
+            "fix" the cutting of the surfaces in these regsions
+        vox2mm : 4x4 array of float
+            affine transformation from voxel indices to mm space
+        actualsurf : str
+            surface to be reconstructed ('lh', 'rh', 'lc' or 'rc')
+        surffolder : str
+            path for storing results
+        fsavgDir : str
+            directory containing fsaverage templates
+            
+        --> optional parameters:
+        vdist : list of float 
+            final surface resolution (distance between vertices)
+            for cerebrum (1. value) and cerebellum (2. value) surfaces
+            (default = [1.0, 0.75])
+        voxsize_pbt : list of float 
+            internal voxel size used for pbt calculation and creation of 
+            initial central surface by marching cubes for cerebrum and 
+            cerebellum surfaces
+            (default=[0.5, 0.25])      
+        voxsize_refineCS : list of float 
+             internal voxel size of GM percentage position image used during 
+             expansion of central surface for cerebrum and cerebellum surfaces
+             (default=[0.75, 0.5])             
+        th_initial : float
+             Intensity threshold for the initial central surface. Values closer
+             to 1 moves the intial central surface closer to the WM boundary
+             (WM-GM boundary corresponds to 1, final CS to 0.5, pial surface to 0)
+             (default = 0.714)
+        no_selfintersections : bool
+            if True:
+                1. CAT_DeformSurf is run with the option to avoid selfintersections 
+                during surface expansion. Helps in particular for the cerebellum 
+                central surfaces, but is not perfect.
+                2. meshfix is used to remove selfintersections after 
+                surface expansion. CAT_FixTopology can cut away large parts 
+                of the initial surface. CAT_DeformSurf tries to expand the 
+                surface again, which is instable and can result in selfintersections 
+                even when CAT_DeformSurf is run with the option listed in 1.
+            (default = True)
+        fix_selfintersections : bool
+            remove self-intersections after surface expansion using meshfix.
+            CAT_FixTopology can cut away large parts of the initial surface.
+            CAT_DeformSurf tries to expand the surface again, which is 
+            instable and can result in selfintersections  
+            (default = True)
+            
+        --> these parameters will likely be skipped ...
+        add_parahipp : float 
+            increases the intensity values in the parahippocampal area to prevent 
+            large cuts in the parahippocampal gyrus. Higher values for 
+            add_parahipp will shift the initial surface in this area
+            closer to GM/CSF border.
+            If the parahippocampal gyrus is still cut you can try to increase 
+            this value (start with 0.15).
+            (default = 0.1)
+        close_parahipp : bool
+            optionally applies  closing inside mask for parahippocampal gyrus 
+            to get rid of the holes that lead to large cuts in gyri after 
+            topology correction. However, this may also lead to poorer quality 
+            of topology correction for other data and should be only used if 
+            large cuts in the parahippocampal areas occur.
+            (AT: improved results in some parts of that area, but made it less
+             accurate in others for ernie)
+            (default = False)
+            
+    RETURNS
+    ----------
+        Pcentral : string
+            Filename (including path) of the final central surface (gifti)
+        Pspherereg : string
+            Filename of the spherical registration to the fsaverage template (gifti)
+        Pthick : string
+            Filename of the cortical thickness (stored as freesurfer curvature file)
+        EC : int
+            surface Euler characteristics of initial, uncorrected surface (should be 2) 
+        defect_size : float
+            overall size of topology defects of initial, uncorrected surface
+            
+    NOTES
+    ----------        
+        This function is adapted from cat_surf_createCS.m of CAT12
+        (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).  
+    """
+    
+    debug=False # keep intermediate results if set to True
+    
+    # add surface name to logger
+    formatter_list=[]
+    for i in range(len(logger.handlers)):
+        formatter_list.append(logger.handlers[i].formatter._fmt)        
+        formatter = logging.Formatter(f'{actualsurf} '+logger.handlers[i].formatter._fmt)
+        logger.handlers[i].setFormatter(formatter)
+    
+    logger.info(f'Processing {actualsurf}')
+
+    
+    # ------- crop and upsample subvolume -------
+    if 'lh' == actualsurf.lower():
+        Ymfs=np.multiply(Ymf,(Ymaskhemis == 1))
+        Yside=np.array(Yleft, copy=True)
+
+    elif 'rh' == actualsurf.lower():
+        Ymfs=np.multiply(Ymf,(Ymaskhemis == 2))
+        Yside=np.logical_not(Yleft)
+
+    elif 'lc' == actualsurf.lower():
+        Ymfs=np.multiply(Ymf,(Ymaskhemis == 3))
+        Yside=np.array(Yleft, copy=True)
+
+    elif 'rc' == actualsurf.lower():
+        Ymfs=np.multiply(Ymf,(Ymaskhemis == 4))
+        Yside=np.logical_not(Yleft)
+
+    else:
+        logger.error(f'Unknown value of actualsurf: {actualsurf}\\n')
+        raise ValueError('error: unknown surface name')
+
+    iscerebellum = (actualsurf.lower() == 'lc') or (actualsurf.lower() == 'rc')
+    vdist=vdist[int(iscerebellum)]
+    voxsize_pbt=voxsize_pbt[int(iscerebellum)]
+    voxsize_refineCS=voxsize_refineCS[int(iscerebellum)]
+    
+    logger.debug(f'iscerebellum: {iscerebellum}, vdist: {vdist}, voxsize_pbt: {voxsize_pbt}, voxsize_refineCS: {voxsize_refineCS}')
+            
+    # crop
+    mask = ndimage.uniform_filter(Ymfs, 3) > 1.5
+    Ymfs, vox2mm_cropped, _ = crop_vol(Ymfs, vox2mm, mask, 4)
+    Yside = crop_vol(Yside, vox2mm, mask, 4)[0]
+    if not iscerebellum:
+        mask_parahipp = dilate(Ymaskparahipp,6)
+        mask_parahipp = crop_vol(mask_parahipp, vox2mm, mask, 4)[0]
+
+    # upsample using linear interpolation (linear is better than cubic for small thicknesses)
+    Ymfs, vox2mm_upsampled, _ =resample_vol(np.maximum(1,Ymfs), vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')
+    Ymfs=np.minimum(3,np.maximum(1,Ymfs))
+    Yside=resample_vol(Yside, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
+    if not iscerebellum:
+        mask_parahipp = resample_vol(mask_parahipp, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
 
 
-def erosion(image,n):
-    image = image > 0.5
-    nan_inds = np.isnan(image)
-    image[nan_inds] = 0
-    return ~dilate(~image,n)
-
-
-def lab(image):
-    labels, num_features = label(image) 
-    return (labels == np.argmax(np.bincount(labels.flat)[1:])+1)
-
-
-def close(image,n):
-    image = image > 0.5
-    nan_inds = np.isnan(image)
-    image[nan_inds] = 0
-    image_padded = np.pad(image,n,'constant')
-    image_padded = dilate(image_padded,n)
-    image_padded = erosion(image_padded,n)
-    return image_padded[n:-n,n:-n,n:-n]>0
+    #  -------- pbt calculation and some postprocessing of thickness -------- 
+    #  ----------------  and GM percentage position map ---------------- 
+    stimet = time.time()
+    
+    # NOTE: Yth1i is the cortical thickness map
+    #       Yppi is the percentage position map: 1 is WM, 0 is GM surface
+    Yth1i, Yppi = cat_vol_pbt_AT(Ymfs, voxsize_pbt, debug)
+    del Ymfs
+    gc.collect()
         
+    # post-process THICKNESS map and save to disk
+    # the thickness will later be interpolated onto the central surface (in refineCS)
+    Yth1i[Yth1i > 10]=0
+    Yppi[np.isnan(Yppi)]=0
+    I=_cat_c_utils.cat_vbdist(Yth1i,Yside)[1]
+    Yth1i=Yth1i.T.flatten()[I-1]   
+    Yth1t, vox2mm_Yth1t, _ = resample_vol(Yth1i, vox2mm_upsampled, voxsize_refineCS, order=1, mode='nearest')
+    Vthk = nib.Nifti1Image(Yth1t, vox2mm_Yth1t)
+    fname_thkimg=os.path.join(surffolder,actualsurf+'_thk.nii')
+    nib.save(Vthk, fname_thkimg)     
+    del I, Yside, Yth1i, Yth1t, Vthk
+    gc.collect()    
+    
+    # post-process PERCENTAGE POSITION map
+    # Replace isolated voxels and holes in Ypp by its median value
+    # indicate isolated holes and replace by median of the neighbors
+    Yppi[((Yppi < 0.35)  & np.logical_not(lab(Yppi < 1)))]=1
+    Ymsk=(Yppi == 0) & (dilate(Yppi > 0.9,1))
+    Yppi=_cat_c_utils.cat_vol_median3(np.float32(Yppi),Ymsk,np.logical_not(Ymsk))
 
-def labclose(image,n):
-    image = image > 0.5
-    nan_inds = np.isnan(image)
-    image[nan_inds] = 0
-    tmp = close(image,n)
-    return ~lab(~tmp)
+    # indicate isolated objects and replace by median of the neighbors
+    Yppi[((Yppi > 0.65) & lab(Yppi == 0))]=0
+    Ymsk=((Yppi > 0.95) & dilate((Yppi < 0.1),1))
+    Yppi=_cat_c_utils.cat_vol_median3(np.float32(Yppi),Ymsk,np.logical_not(Ymsk))
+    del Ymsk
+    gc.collect()    
+        
+    # save to disk
+    # this image will later be used by the CAT12 binaries (in refineCS)
+    Yppt, vox2mm_Yppt, _  = resample_vol(Yppi, vox2mm_upsampled, voxsize_refineCS, order=1, mode='nearest')
+    # #AT!!!
+    # #print('for testing')
+    # #offset=0.04
+    # #Yppt=(Yppt-offset)/(1.0-offset)
+    Yppt[np.isnan(Yppt)]=1
+    Yppt[Yppt>1]=1
+    Yppt[Yppt<0]=0
+    Vpp = nib.Nifti1Image(np.uint8(np.rint(Yppt*255)), vox2mm_Yppt)
+    Vpp.header['scl_slope'] = 1/255
+    Vpp.header['scl_inter'] = 0
+    fname_ppimg=os.path.join(surffolder,actualsurf+'_pp.nii')
+    nib.save(Vpp, fname_ppimg)
+    del Yppt, Vpp
+    gc.collect()
+    
+    logger.info(f'Thickness estimation ({"{0:.2f}".format(voxsize_pbt)} mm{chr(179)})...'+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    
+    # ---------- generation of initial central surface (using Yppi) -------
+    stimet = time.time()
+
+    # some more tweaking of parahippocampal area in Yppi
+    if not iscerebellum:
+        Yppi = Yppi + add_parahipp * spm_smooth(np.float32(mask_parahipp), [8., 8., 8.])
+    Yppi[Yppi < 0] = 0    
+
+    # optionally apply closing inside mask for parahippocampal gyrus to get rid of the holes that lead to large cuts in gyri
+    # after topology correction
+    if close_parahipp and not iscerebellum:
+        tmp=labclose(Yppi, 1)
+        Yppi[mask_parahipp]=tmp[mask_parahipp]
+        del tmp
+        gc.collect()
+
+    if debug:
+        Vppi = nib.Nifti1Image(Yppi, vox2mm_upsampled)
+        fname=os.path.join(surffolder,actualsurf+'_Yppi.nii')
+        nib.save(Vppi, fname)
+        del Vppi
+        gc.collect()
+     
+    # generate intial surface and save as gifti
+    CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial, 
+                           step_size=round(vdist/voxsize_pbt), only_largest_component=True)
+    Praw=os.path.join(surffolder,actualsurf+'.central.nofix.gii')
+    mesh_io.write_gifti_surface(CS, Praw)
+    del Yppi, CS
+    gc.collect()    
+    
+    logger.info(f'Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    
+    
+    # -------- refine intial surface and register to fsaverage template -------- 
+    Pcentral, Pspherereg, Pthick, defect_size = refineCS(Praw, fname_thkimg, fname_ppimg, 
+                                                         fsavgDir, vdist, no_selfintersections, debug)
+    
+    logger.info(f'Surface Euler number: {EC}')
+    logger.info(f'Overall size of topology defects: {defect_size}')
+        
+    
+    # -------- remove temporary files -------- 
+    if not debug:
+        if os.path.isfile(Praw):
+            os.remove(Praw)
+    
+        if os.path.isfile(fname_ppimg):
+            os.remove(fname_ppimg)
+            
+        if os.path.isfile(fname_thkimg):
+            os.remove(fname_thkimg)
+            
+    # restore logger
+    for i in range(len(logger.handlers)):
+        formatter = logging.Formatter(formatter_list[i])
+        logger.handlers[i].setFormatter(formatter)
+    
+    return Pcentral, Pspherereg, Pthick, EC, defect_size
         
 
 def cat_vol_pbt_AT(Ymf, resV, debug=False):
@@ -953,3 +1205,388 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
                 '%H:%M:%S', time.gmtime(time.time() - stimet2)))
 
     return Ygmt, Ypp
+
+
+def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfintersections=True, debug=False):
+    """ wrapper around the CAT12 binaries to refine the initial central surface
+        and register it to the fsaverage template.
+        
+    Roughly, it goes through the following steps:
+        * detection and removal of topological defects
+        * surface expansion until 0.5 in the perc. position image is reached
+        * interpolation of the cortical thickness image at the surface nodes
+        * spherical registration to the fsaverage template
+    
+    PARAMETERS
+    ----------
+    Praw : string
+        Filename (including path) of the initial central surface created by 
+        marching cubes. File has to be in gifti format. The letters until
+        the first '.' have to indicate the surface name.
+        (e.g. path_to_file/lh.rest_of_name)
+    fname_thkimg : string
+        Filename of cortical thickness image (nifti)
+    fname_ppimg : string
+        Filename of percentage position image
+    fsavgDir : string
+        Directory containing the fsaverage template surfaces
+    vdist : float
+        Desired vertex distance. Smaller numbers give denser meshes.
+        (default = 1.0)
+    no_selfintersections : bool
+        if True:
+            1. CAT_DeformSurf is run with the option to avoid selfintersections 
+            during surface expansion. Helps in particular for the cerebellum 
+            central surfaces, but is not perfect.
+            2. meshfix is used to remove selfintersections after 
+            surface expansion. CAT_FixTopology can cut away large parts 
+            of the initial surface. CAT_DeformSurf tries to expand the 
+            surface again, which is instable and can result in selfintersections 
+            even when CAT_DeformSurf is run with the option listed in 1.
+        (default = True)
+    debug : bool
+        Save intermediate results for debugging
+        (default = False)
+
+    RETURNS
+    -------
+    Pcentral : string
+        Filename (including path) of the final central surface (gifti)
+    Pspherereg : string
+        Filename of the spherical registration to the fsaverage template (gifti)
+    Pthick : string
+        Filename of the cortical thickness (stored as freesurfer curvature file)
+    defect_sizeOut : float
+        total size of areas with topological defects
+
+    """
+
+    # ---------------- get surface filenames ----------------
+    [surffolder,actualsurf]=os.path.split(Praw)
+    actualsurf=actualsurf.split('.',1)[0]
+
+    Pcentral=os.path.join(surffolder,actualsurf+'.central.gii')
+    
+    Pthick=os.path.join(surffolder,actualsurf+'.thickness')
+    Pdefects0=os.path.join(surffolder,actualsurf+'.defects')
+
+    Psphere0=os.path.join(surffolder,actualsurf+'.sphere.nofix.gii')
+    Psphere=os.path.join(surffolder,actualsurf+'.sphere.gii')
+    Pspherereg=os.path.join(surffolder,actualsurf+'.sphere.reg.gii')
+    
+    Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.freesurfer.gii')
+    Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.freesurfer.gii')
+    
+    if debug:
+        Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
+        # contains:
+        # region 1: initial surface with defects (as node data)
+        # region 2: spherical version of initial surface with defects (as node data)
+        # region 3: surface after topology correction 
+        # region 4: pre-final surface with thickness and perc. positions (as node data)
+        # region 5: final surface
+
+
+    # ------- mark topological defects -------- 
+    stimet = time.time()
+    
+    # spherical surface mapping 1 of the uncorrected surface for topology correction
+    cmd = f'\"{file_finder.path2bin("CAT_Surf2Sphere")}\" \"{Praw}\" \"{Psphere0}\" 5' 
+    spawn_process(cmd)
+
+    # estimate size of topology defects (in relation to number of vertices and mean brain with 100000 vertices)
+    cmd = f'\"{file_finder.path2bin("CAT_MarkDefects")}\" \"{Praw}\" \"{Psphere0}\" \"{Pdefects0}\"'     
+    spawn_process(cmd)
+
+    defect_sizes=mesh_io.read_curv(Pdefects0)
+    defect_sizeOut=np.rint( 100000 * np.sum(defect_sizes.flatten() > 0) / defect_sizes.flatten().size)
+
+    if debug:
+        # add initial surface and spherical version with defects to .msh for later viewing in gmsh
+        CS_dbg = mesh_io.read_gifti_surface(Praw)
+        CS = mesh_io.read_gifti_surface(Psphere0)
+        CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,2)
+        CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
+        CS_dbg.add_node_field(np.hstack((defect_sizes,defect_sizes)),'defects on surfs 1 and 2')        
+        del CS
+    del defect_sizes
+    gc.collect()       
+
+    if os.path.isfile(Pdefects0):
+        os.remove(Pdefects0)
+        
+    logger.info(f'Preparing surface improvment: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+
+    # --------- topology correction ---------
+    stimet = time.time()
+    
+    cmd=f'\"{file_finder.path2bin("CAT_FixTopology")}\" -lim 128 -bw 512 -n 81920 -refine_length {2 * vdist} \"{Praw}\" \"{Psphere0}\" \"{Pcentral}\"' 
+    spawn_process(cmd)
+    
+    if debug:
+        # add surface after topology correction to .msh for later viewing in gmsh
+        CS = mesh_io.read_gifti_surface(Pcentral)
+        CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,3)
+        CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
+        del CS
+        gc.collect()
+    
+    logger.info(f'Topology correction: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    
+    # --------- surface refinement by deformation based on the PP map --------- 
+    stimet = time.time()
+    
+    if no_selfintersections: 
+        force_no_selfintersections = 1
+    else:
+        force_no_selfintersections = 0
+        
+    cmd=f'\"{file_finder.path2bin("CAT_DeformSurf")}\" \"{fname_ppimg}\" none 0 0 0 \"{Pcentral}\" \"{Pcentral}\" none 0 1 -1 .1 avg -0.1 0.1 .2 .1 5 0 0.5 0.5 n 0 0 0 150 0.01 0.0 {force_no_selfintersections}' 
+    spawn_process(cmd)
+    
+    if no_selfintersections:
+        # remove self-intersections using meshfix
+        CS = mesh_io.read_gifti_surface(Pcentral)
+        mesh_io.write_off(CS, Pcentral+'.off')
+        
+        cmd=f'\"{file_finder.path2bin("meshfix")}\"  \"{Pcentral+".off"}\" -o \"{Pcentral+".off"}\"'
+        spawn_process(cmd)
+        
+        CS = mesh_io.read_off(Pcentral+'.off')
+        mesh_io.write_gifti_surface(CS,Pcentral)
+        if os.path.isfile(Pcentral+'.off'):
+            os.remove(Pcentral+'.off')
+        del CS
+        gc.collect()
+        
+    # need some more refinement because some vertices are distorted after CAT_DeformSurf
+    cmd=f'\"{file_finder.path2bin("CAT_RefineMesh")}\" \"{Pcentral}\" \"{Pcentral}\" {"%.2f" % (1.5 * vdist )} 0' 
+    spawn_process(cmd)
+
+    cmd=f'\"{file_finder.path2bin("CAT_DeformSurf")}\" \"{fname_ppimg}\" none 0 0 0 \"{Pcentral}\" \"{Pcentral}\" none 0 1 -1 .2 avg -0.05 0.05 .1 .1 5 0 0.5 0.5 n 0 0 0 50 0.01 0.0 {force_no_selfintersections}' 
+    spawn_process(cmd)
+        
+    # map thickness data on final surface  
+    CS = mesh_io.read_gifti_surface(Pcentral)
+    Vthk=nib.load(fname_thkimg)
+    nd = mesh_io.NodeData.from_data_grid(CS, Vthk.get_data(), Vthk.affine, 'thickness')
+    mesh_io.write_curv(Pthick, nd.value, nd.nr) 
+    
+    if debug:
+        # add prefinal surface with thickness and pp data to .msh
+        thickness=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
+        # Yppt sampled on the final surface should be distributed sharply around 0.5
+        Vpp = nib.load(fname_ppimg)
+        nd = mesh_io.NodeData.from_data_grid(CS, Vpp.get_data(), Vpp.affine, 'pp')
+        pponsurf=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
+        
+        CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,4)
+        CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
+        CS_dbg.add_node_field(thickness,'thickness on surf 4')
+        CS_dbg.add_node_field(pponsurf,'perc. position on surf 4')
+        del Vpp, thickness, pponsurf        
+    del CS, Vthk, nd
+    gc.collect()
+    
+    logger.info(f'Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+
+    # ---- final correction of central surface in highly folded areas -------- 
+    # ----------------  with high mean curvature -------------- 
+    stimet = time.time()
+
+    cmd = f'\"{file_finder.path2bin("CAT_Central2Pial")}\" -equivolume -weight 0.3 \"{Pcentral}\" \"{Pthick}\" \"{Pcentral}\" 0' 
+    spawn_process(cmd)
+    
+    if debug:
+        # add final central surface to .msh and save .msh
+        CS = mesh_io.read_gifti_surface(Pcentral)
+        CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,5)
+        CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
+        mesh_io.write_msh(CS_dbg,Pdebug)
+        del CS
+        gc.collect()
+
+    logger.info(f'Correction of central surface in highly folded areas 2: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+
+    # -------- registration to FSAVERAGE template --------
+    stimet = time.time()
+    
+    # spherical surface mapping 2 of corrected surface    
+    cmd = f'\"{file_finder.path2bin("CAT_Surf2Sphere")}\" \"{Pcentral}\" \"{Psphere}\" 10' 
+    spawn_process(cmd)
+    
+    # spherical registration to fsaverage template
+    cmd = f'\"{file_finder.path2bin("CAT_WarpSurf")}\" -steps 2 -avg -i \"{Pcentral}\" -is \"{Psphere}\" -t \"{Pfsavg}\" -ts \"{Pfsavgsph}\" -ws \"{Pspherereg}\"' 
+    spawn_process(cmd)
+
+    logger.info(f'Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+
+    
+    # -------- remove unnecessary files -------- 
+    if not debug:
+        if os.path.isfile(Psphere0):
+            os.remove(Psphere0)    
+            
+        if os.path.isfile(Pdefects0):
+            os.remove(Pdefects0)
+            
+        if os.path.isfile(Psphere):
+            os.remove(Psphere)
+            
+    return Pcentral, Pspherereg, Pthick, defect_sizeOut
+
+
+def dilate(image,n):
+    image = image > 0.5
+    nan_inds = np.isnan(image)
+    image[nan_inds] = 0
+    se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
+    return mrph.binary_dilation(image,se)>0
+
+
+def erosion(image,n):
+    image = image > 0.5
+    nan_inds = np.isnan(image)
+    image[nan_inds] = 0
+    return ~dilate(~image,n)
+
+
+def lab(image):
+    labels, _ = label(image) 
+    return (labels == np.argmax(np.bincount(labels.flat)[1:])+1)
+
+
+def close(image,n):
+    image = image > 0.5
+    nan_inds = np.isnan(image)
+    image[nan_inds] = 0
+    image_padded = np.pad(image,n,'constant')
+    image_padded = dilate(image_padded,n)
+    image_padded = erosion(image_padded,n)
+    return image_padded[n:-n,n:-n,n:-n]>0
+        
+
+def labclose(image,n):
+    image = image > 0.5
+    nan_inds = np.isnan(image)
+    image[nan_inds] = 0
+    tmp = close(image,n)
+    return ~lab(~tmp)
+
+
+def spm_smoothkern(fwhm, t=1):
+    """  Generate a Gaussian smoothing kernel
+
+    PARAMETERS
+    ----------
+        fwhm : full width at half maximum
+
+        --> optional parameters:
+        t    : either 0 (nearest neighbour) or 1 (linear).
+            [Default: 1]
+
+    RETURNS
+    ----------
+        krn  : value of kernel at position x
+
+    NOTES
+    ----------      
+        This function returns a Gaussian convolved with a triangular (1st 
+        degree B-spline) basis function.
+
+        It is adapted from spm_smoothkern.m of SPM12
+        (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
+
+     Reference
+     ----------
+        John Ashburner
+        $Id: spm_smoothkern.m 7460 2018-10-29 15:55:12Z john $
+
+        Martin TB, Prunet S, Drissen L. Optimal fitting of Gaussian-apodized
+        or under-resolved emission lines in Fourier transform spectra
+        providing new insights on the velocity structure of NGC 6720. Monthly
+        Notices of the Royal Astronomical Society. 2016 Sep 14;463(4):4223-38.
+
+    """
+
+    length = np.rint(3 * fwhm / sqrt(2*log(2)))
+    x = np.arange(-length, length+1, 1)
+
+    # Variance from FWHM
+    s = fwhm ** 2 / (8*log(2)) + np.finfo(float).eps
+
+    if t == 0:
+        # Gaussian convolved with 0th degree B-spline
+        w1 = 1.0 / sqrt(2*s)
+        krn = 0.5*(erf(w1 * (x + 0.5)) - erf(w1 * (x - 0.5)))
+
+    elif t == 1:
+        # Gaussian convolved with 1st degree B-spline
+        w1 = 0.5 * sqrt(2/s)
+        w2 = - 0.5 / s
+        w3 = sqrt(s * 0.5 / np.pi)
+        krn = 0.5*(erf(w1 * (x + 1)) * (x + 1) + erf(w1 * (x - 1)) * (x - 1) - 2 * erf(w1 * x) * x) + \
+            w3 * (np.exp(w2 * ((x + 1) ** 2)) + np.exp(w2 *
+                                                       ((x - 1) ** 2)) - 2*np.exp(w2 * (x ** 2)))
+    else:
+        logger.error(
+            f'Only defined for nearest neighbour and linear interpolation.')
+        raise ValueError('spm_smoothkern only supports zero and first order')
+
+    krn[krn < 0] = 0
+    krn = krn / np.sum(krn)
+    return krn
+        
+
+def spm_smooth(P, s):
+    """ Convolve a three dimensional image
+
+    PARAMETERS
+    ----------    
+        P     : 3D array to be smoothed
+        s     : [sx sy sz] Gaussian filter width {FWHM} in edges
+
+    RETURNS
+    ----------
+        Q     : 3D array of the smoothed image (or 3D array)    
+
+    NOTES
+    ----------   
+        spm_smooth is used to smooth or convolve image. This function is
+        adapted from spm_smooth.m and smooth1.m of SPM12
+        (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
+
+        The sum of kernel coeficients are set to unity.  Boundary
+        conditions assume data does not exist outside the image in z (i.e.
+        the kernel is truncated in z at the boundaries of the image space). S
+        can be a vector of 3 FWHM values that specifiy an anisotropic
+        smoothing.
+
+        The inconsistencies in dealing with the convolution in the x/y 
+        direction and z direction in the C function spm_conv_vol.c is removed 
+        from the python version spm_smooth(P, s).
+
+     Reference
+     ----------        
+        John Ashburner & Tom Nichols
+        $Id: spm_smooth.m 4419 2011-08-03 18:42:35Z guillaume $
+
+    """
+
+    x = spm_smoothkern(s[0], 1)
+    y = spm_smoothkern(s[1], 1)
+    z = spm_smoothkern(s[2], 1)
+
+    # Convolve the image in dimension x, y and z iteratively
+    Q = P.copy()
+    Q[np.isinf(Q)] = 0
+    for i, k in enumerate((x.flatten(), y.flatten(), z.flatten())):
+        Q = ndimage.convolve1d(
+            Q, k, axis=i, mode='constant', cval=0.0, origin=0)
+
+    return Q
+
