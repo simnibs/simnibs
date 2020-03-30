@@ -1766,6 +1766,159 @@ class TDCSavoid:
                  str(self.tissues)))
         return s
 
+class TDCSDistributedOptimize():
+    ''' Defines a tdcs optimization problem
+
+    Parameters
+    --------------
+    leadfield_hdf: str (optional)
+        Name of file with leadfield
+    max_total_current: float (optional)
+        Maximum current across all electrodes (in Amperes). Default: 2e-3
+    max_individual_current: float (optional)
+        Maximum current for any single electrode (in Amperes). Default: 1e-3
+    max_active_electrodes: int (optional)
+        Maximum number of active electrodes. Default: no maximum
+    name: str (optional)
+        Name of optimization problem. Default: optimization
+    target: list of TDCStarget objects (optional)
+        Targets for the optimization. Default: no target
+    avoid: list of TDCSavoid objects
+        list of TDCSavoid objects defining regions to avoid
+
+
+    Attributes
+    --------------
+    leadfield_hdf: str
+        Name of file with leadfield
+    max_total_current: float (optional)
+        Maximum current across all electrodes (in Amperes). Default: 2e-3
+    max_individual_current: float
+        Maximum current for any single electrode (in Amperes). Default: 1e-3
+    max_active_electrodes: int
+        Maximum number of active electrodes. Default: no maximum
+    ledfield_path: str
+        Path to the leadfield in the hdf5 file. Default: '/mesh_leadfield/leadfields/tdcs_leadfield'
+    mesh_path: str
+        Path to the mesh in the hdf5 file. Default: '/mesh_leadfield/'
+
+    The two above are used to define:
+
+    mesh: simnibs.msh.mesh_io.Msh
+        Mesh with problem geometry
+
+    leadfield: np.ndarray
+        Leadfield matrix (N_elec -1 x M x 3) where M is either the number of nodes or the
+        number of elements in the mesh. We assume that there is a reference electrode
+
+    Alternatively, you can set the three attributes above and not leadfield_path,
+    mesh_path and leadfield_hdf
+
+    lf_type: None, 'node' or 'element'
+        Type of leadfield.
+
+    name: str
+        Name for the optimization problem. Defaults tp 'optimization'
+
+
+    open_in_gmsh: bool (optional)
+        Whether to open the result in Gmsh after the calculations. Default: False
+
+    Warning
+    -----------
+    Changing leadfield_hdf, leadfield_path and mesh_path after constructing the class
+    can cause unexpected behaviour
+    '''
+    def __init__(self, leadfield_hdf=None,
+                 max_total_current=2e-3,
+                 max_individual_current=1e-3,
+                 max_active_electrodes=None,
+                 name='optimization/tdcs',
+                 target_image=None,
+                 mni_space=True,
+                 subpath=None,
+                 open_in_gmsh=True):
+
+        self.leadfield_hdf = leadfield_hdf
+        self.max_total_current = max_total_current
+        self.max_individual_current = max_individual_current
+        self.max_active_electrodes = max_active_electrodes
+        self.leadfield_path = '/mesh_leadfield/leadfields/tdcs_leadfield'
+        self.mesh_path = '/mesh_leadfield/'
+        self.target_image = target_image
+        self.mni_space = mni_space
+        self.open_in_gmsh = open_in_gmsh
+        self.subpath = subpath
+        self.name = name
+        self._tdcs_opt_obj = TDCSoptimize(
+            leadfield_hdf=leadfield_hdf,
+            max_total_current=max_total_current,
+            max_individual_current=max_individual_current,
+            max_active_electrodes=max_active_electrodes,
+            name=name,
+            target=[],
+            avoid=[],
+            open_in_gmsh=open_in_gmsh
+        )
+
+    @property
+    def lf_type(self):
+        self._tdcs_opt_obj.mesh = self.mesh
+        self._tdcs_opt_obj.leadfield = self.leadfield
+
+        return self._tdcs_opt_obj.lf_type
+
+    @property
+    def leadfield(self):
+        ''' Reads the leadfield from the HDF5 file'''
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj._leadfield
+
+    @leadfield.setter
+    def leadfield(self, leadfield):
+        self._tdcs_opt_obj.leadfield = leadfield
+
+    @property
+    def mesh(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj.mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._tdcs_opt_obj.mesh = mesh
+
+    @property
+    def field_name(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj._field_name
+
+
+    @field_name.setter
+    def field_name(self, field_name):
+        self._tdcs_opt_obj._field_name = field_name
+
+    @property
+    def field_units(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj._field_units
+
+    def target_field(self):
+        assert self.mesh is not None, 'Please set a mesh'
+        assert self.lf_type is not None, 'Please set a lf_type'
+        if self.lf_type == 'node':
+            pos = self.mesh.nodes[:]
+        elif self.lf_type == 'element':
+            pos = self.mesh.elements_baricenters()[:]
+        else:
+            raise ValueError("lf_type must be 'node' or 'element'."
+                             " Got: {0} instead".format(self.lf_type))
+        
+        # Load field
+        field, affine = self.target_image
+        mesh_io.NodeData.from_
+        # Transform to MNI space
+        return f
+
 
 def _save_TDCStarget_mat(target):
     target_dt = np.dtype(

@@ -1159,17 +1159,21 @@ def _least_squares_tes_opt(l, Q,
         Q_ = np.vstack([np.hstack([Q, -Q]),
                         np.hstack([-Q, Q])])
 
-        x_ = _eq_constrained_QP(np.squeeze(l_), Q_, A_, b_)
-        if np.linalg.norm(x_, 1) > 2*max_total_current:
-            x_ *= 2*max_total_current/np.linalg.norm(x_, 1)
-        if np.linalg.norm(x_, np.inf) > max_el_current:
-            x_ *= max_el_current/np.linalg.norm(x_, np.inf)
+        x = _eq_constrained_QP(np.squeeze(l), Q, A_[:, :n], b_)
+        x_ = np.hstack([x, -x])
+        x_[x_ < 0] = 0
+        # I leave some gap just so that I don't start with too many
+        # active contraints
+        if np.linalg.norm(x_, 1) > 1.8*max_total_current:
+            x_ *= 1.8*max_total_current/np.linalg.norm(x_, 1)
+        if np.linalg.norm(x_, np.inf) > 0.9*max_el_current:
+            x_ *= 0.9*max_el_current/np.linalg.norm(x_, np.inf)
         # Do the QP
         eps = 1e-3*min(max_total_current, max_el_current, 1e-1)
         C_b, d_b = tes_constraints._bound_contraints()
 
         x_ = _active_set_QP(
-            l_, 2*Q_,
+            np.squeeze(l_), 2*Q_,
             np.vstack([C_b, C_]), np.hstack([d_b, d_]),
             x_, eps, A_, b_
         )
@@ -1214,12 +1218,6 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
 
     Y = ZY[:, :n_active]
     Z = ZY[:, n_active:]
-    '''
-    if n_active >= n:
-        L = None
-    else:
-        L = np.linalg.cholesky(Z.T.dot(Q).dot(Z))
-    '''
     while n_iter <= max_iter:
         l_i = l + Q.dot(x)
         Y = ZY[:, :n_active]
