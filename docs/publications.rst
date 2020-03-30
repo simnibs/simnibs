@@ -35,6 +35,7 @@ Uncertainty Quantification
 
 * `Saturnino, G. B., Thielscher, A., Madsen, K. H., Knösche, T. R., & Weise, K. (2019). A principled approach to conductivity uncertainty analysis in electric field calculations. NeuroImage, 188, 821-834. <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
 
+* `Weise, K., Poßner, L., Müller, E., Gast, R., & Knösche, T. R. (2020). Pygpc: A sensitivity and uncertainty analysis toolbox for Python. SoftwareX, 11, 100450 <https://doi.org/10.1016/j.softx.2020.100450>`_
 
 
 Version 2.1

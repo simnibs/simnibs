@@ -731,7 +731,10 @@ def smoothfill(vols, unassign, protect=None):
         protect = [protect]
     noprotect = list(set(range(len(vols)))-set(protect))
     
-    while unassign.sum()>0: # for as long as there are unassigned voxels
+    sum_of_unassigned = np.inf
+    # for as long as the number of unassigned is changing
+    while unassign.sum() < sum_of_unassigned:
+        sum_of_unassigned = unassign.sum()
         for i in noprotect:
             cs = gaussian_filter(vols[i].astype(np.float),1)
             cs[vols[i]==1] = 1
