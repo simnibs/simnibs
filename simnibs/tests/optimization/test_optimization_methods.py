@@ -148,6 +148,37 @@ def optimize_focality(l, Q, b,
         constraints=constraints)
     return res.x
 
+def optimize_lstsq(A, b,
+                   max_el_current=None,
+                   max_total_current=None,
+                   atol=1e-5):
+    objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
+    x0 = np.zeros(A.shape[1])
+    #jac = lambda x: b.dot(A) + x.dot(Q)
+    jac = None
+
+    e_constraint = {}
+    e_constraint['type'] = 'eq'
+    e_constraint['fun'] = lambda x: np.sum(x)
+    e_constraint['jac'] = lambda x: np.ones_like(x)
+    constraints = (e_constraint, )
+
+    if max_el_current is not None:
+        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
+    else:
+        bounds = None
+    if max_total_current is not None:
+        iq_constraint = {}
+        iq_constraint['type'] = 'ineq'
+        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
+        constraints += (iq_constraint, )
+
+    res = scipy.optimize.minimize(
+        objective, x0, jac=jac,
+        bounds=bounds,
+        constraints=constraints)
+
+    return res.x
 
 class TestActiveSetQp:
     def test_inactive_constraints(self, optimization_variables):
@@ -1062,3 +1093,110 @@ class TestNormElecConstrained:
         assert np.linalg.norm(x, 0) <= n_elec
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0)
+
+
+class TestDistributed:
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-4])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-4])
+    def test_least_squares_opt(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        A = np.random.rand(30, 5)
+        b = np.random.rand(30)
+        np.random.seed(None)
+
+        Q = A.T.dot(A)
+        l = -2*b.dot(A)
+
+        x = optimization_methods._least_squares_tes_opt(
+            l, Q,
+            max_el_current,
+            max_total_current,
+        )
+        x_sp = optimize_lstsq(A, b, max_el_current, max_total_current)
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+
+    def test_calc_l_Q(self):
+        leadfield = np.zeros((5, 30, 3))
+        for i in range(5):
+            leadfield[i, i, :] = 1
+        normals = np.zeros((30, 3))
+        normals[:, 1] = 1.
+
+        t_map = np.zeros(30)
+        t_map[0] = 2
+        t_min = 1
+
+        target_field = 10
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, normals, t_map, t_min, target_field
+        )
+        x = optimization_methods._eq_constrained_QP(
+            tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
+        )
+        field = leadfield[:, :, 1].T.dot(x[1:])
+        assert np.isclose(field[0], target_field)
+        assert np.allclose(field[1:], 0)
+
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
+    def test_solve(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        for i in range(5):
+            leadfield[i, i, :] = 1
+        normals = np.zeros((30, 3))
+        normals[:, 1] = 1.
+        t_map = np.random.random(30)
+        np.random.seed(None)
+        t_map[0] = 2
+        t_min = 0
+
+        target_field = 10
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, normals, t_map, t_min, target_field, max_total_current,
+            max_el_current
+        )
+        x = tes_problem.solve()
+
+        P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        x_sp = optimize_lstsq(
+            t_map[:, None] * leadfield[..., 1].T.dot(P),
+            target_field * t_map,
+            max_el_current, max_total_current
+        )
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0, atol=1e-6)
+        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+
+
+class TestDistributedElec:
+
+    @pytest.mark.parametrize('max_el_current', [1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e-2])
+    def test_solve(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        normals = np.zeros((30, 3))
+        normals[:, 1] = 1.
+        t_map = np.random.random(30)
+        np.random.seed(None)
+
+        t_min = 0
+        target_field = 10
+        tes_problem = optimization_methods.TESDistributedElecConstrained(
+            4, leadfield, normals, t_map, t_min,
+            target_field, max_total_current,
+            max_el_current
+        )
+        x = tes_problem.solve()
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= 3
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
