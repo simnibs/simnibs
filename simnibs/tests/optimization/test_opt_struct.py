@@ -756,3 +756,67 @@ class TestTDCSoptimize:
         assert csv_rows[1][0] == 'B'
         assert np.isclose(float(csv_rows[1][1]), currents[1])
 
+
+
+class TestTDCSDistributedoptimize:
+    def test_prepare_read_mesh_surf(self, fn_surf, sphere_surf):
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
+        assert np.all(np.isclose(
+            p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
+        assert np.all(
+            p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
+
+    def test_prepare_read_mesh_vol(self, fn_vol, sphere_vol):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        assert np.all(np.isclose(
+            p.mesh.nodes.node_coord, sphere_vol.nodes.node_coord))
+        assert np.all(
+            p.mesh.elm.node_number_list==sphere_vol.elm.node_number_list)
+
+    def test_prepare_set_mesh_vol(self, fn_vol, sphere_surf):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p.mesh = sphere_surf
+        assert np.all(np.isclose(
+            p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
+        assert np.all(
+            p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
+
+    def test_read_lf(self, fn_surf, leadfield_surf):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        assert np.all(np.isclose(p.leadfield, leadfield_surf))
+        p.leadfield
+
+    def test_set_lf(self, fn_surf, leadfield_vol):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        p.leadfield = leadfield_vol
+        assert np.all(np.isclose(p.leadfield, leadfield_vol))
+
+    def test_read_lftype(self, fn_surf):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        assert p.lf_type == 'node'
+
+    def test_read_lftype_elm(self, fn_vol):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        assert p.lf_type == 'element'
+
+    def test_read_lftype_wrong(self, fn_vol, sphere_surf):
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p.mesh = sphere_surf
+        with pytest.raises(ValueError):
+            p.lf_type
+
+    def test_target_field(self, sphere_surf, fn_surf):
+        target_field = np.moveaxis(np.meshgrid(
+            np.arange(-100, 100) + .5,
+            np.arange(-100, 100) + .5,
+            np.arange(-100, 100) + .5,
+            indexing='ij'
+        ), 0, -1)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        p = opt_struct.TDCSoptimize(
+            leadfield_hdf=fn_surf,
+            target_image=(target_field, affine)
+        )
+        field = p.target_field()
+        assert np.allclose(field, 

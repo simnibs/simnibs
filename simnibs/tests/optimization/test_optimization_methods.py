@@ -1177,9 +1177,8 @@ class TestDistributed:
 
 
 class TestDistributedElec:
-
-    @pytest.mark.parametrize('max_el_current', [1e-2])
-    @pytest.mark.parametrize('max_total_current', [1e-2])
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
     def test_solve(self, max_el_current, max_total_current):
         np.random.seed(1)
         leadfield = np.random.rand(5, 30, 3)
@@ -1198,5 +1197,5 @@ class TestDistributedElec:
         x = tes_problem.solve()
 
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
-        assert np.linalg.norm(x, 0) <= 3
+        assert np.linalg.norm(x, 0) <= 4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
