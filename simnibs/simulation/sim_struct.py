@@ -2204,7 +2204,8 @@ class TDCSLEADFIELD(LEADFIELD):
         if count_struct != count_csv:
             raise IOError(
                 'The number of electrodes in the structure is'
-                ' not 0, 1 or the same number as in the CSV file')
+                ' not 0, 1 or the same number as in the CSV file'
+            )
         i = 0
         ref_idx = None
         for t, c, e, n in zip(type_, coordinates, extra, name):
@@ -2235,10 +2236,10 @@ class TDCSLEADFIELD(LEADFIELD):
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
-            if not self.cond[99 + i].name:
+            if self.cond[99 + i].value is None:
                 self.cond[99 + i].name = 'el' + str(i)
                 self.cond[99 + i].value = self.cond[99].value
-            if not self.cond[499 + i].name:
+            if self.cond[499 + i].value is None:
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
 
@@ -2393,7 +2394,10 @@ class TDCSLEADFIELD(LEADFIELD):
 
             mesh_lf = middle_surf['lh'].join_mesh(middle_surf['rh'])
             if len(self.tissues) > 0:
-                mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                try:
+                    mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
+                except ValueError:
+                    logger.warning(f'Could not find tissues number {self.tissues}')
 
             # Create interpolation matrix
             M = roi_msh.interp_matrix(
@@ -2437,7 +2441,7 @@ class TDCSLEADFIELD(LEADFIELD):
             f[dset].attrs['electrode_names'] = [el.name.encode() for el in self.electrode]
             f[dset].attrs['reference_electrode'] = self.electrode[0].name
             f[dset].attrs['electrode_pos'] = [el.centre for el in self.electrode]
-            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode()
+            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode() if self.eeg_cap is not None else 'none'
             f[dset].attrs['electrode_tags'] = electrode_surfaces
             f[dset].attrs['tissues'] = self.tissues
             f[dset].attrs['field'] = self.field

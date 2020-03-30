@@ -3478,6 +3478,41 @@ class NodeData(Data):
     def as_nodedata(self):
         return self
 
+    @classmethod
+    def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
+        ''' Defines a NodeData field form a mesh and gridded data
+
+        Parameters
+        ---------
+        mesh: Msh()
+            Mesh structure where the field is to be interpolated
+        data_grid: ndarray
+            Array of 3 or 4 dimensions with data
+        affine: 4x4 ndarray
+            Array describing the affine transformation from the data grid to the mesh
+            space
+        kwargs: see the scipy.ndimage.map_coordinates documentation
+        '''
+        assert len(data_grid.shape) in [3, 4], \
+                'The data grid must have 3 or 4 dimensions'
+        p = mesh.nodes[:].T
+        iM = np.linalg.inv(affine)
+        coords = iM[:3, :3].dot(p) + iM[:3, 3, None]
+        f = partial(
+            scipy.ndimage.map_coordinates, coordinates=coords,
+            output=data_grid.dtype, **kwargs
+        )
+        if len(data_grid.shape) == 4:
+            indim = data_grid.shape[3]
+            outdata = np.array(
+                [f(data_grid[..., i]) for i in range(indim)]).T
+        elif len(data_grid.shape) == 3:
+            outdata = f(data_grid)
+
+        nd = cls(outdata, name=field_name, mesh=mesh)
+        return nd
+
+
     def node_data2elm_data(self):
         """Transforms an ElementData field into a NodeData field
         the value in the element is the average of the value in the nodes

@@ -38,7 +38,7 @@ Attributes
     information <positions_attribute_doc>`).
 
 
-* **weights**: *float*
+* **weight**: *float*
 
   * **Description**: Weight to be given to this avoid region. The largest the weight the
     more SimNIBS will avoid this region. Must be :math:`> 1`. 

@@ -14,13 +14,13 @@ Yes! Frequencies used in TACS are usually low, so we can employ a *quasi-static 
 
    I(t) = I_0\sin\left(2 \pi f t\right)
 
-The Electric Field will vary in times in phase and with the same frequency of the input current
+The electric field will vary in time and with the same frequency of the input current and with the same phase:
 
 .. math::
 
    \boldsymbol E (t) = \boldsymbol E_0\sin\left(2 \pi f t\right)
 
-Where :math:`\boldsymbol E_0` is the electric field obtained with the current :math:`I_0`.
+Where :math:`\boldsymbol E_0` is the electric field obtained with the current :math:`I_0`. In practice, this means you can just simulate the electric field obtained at peak currents, and the temporal variations of the current will just scale the field, and not change its distribution in the brain.
 
 When multiple channels are involved, and especially when they are out of phase, more care needs to be taken. Please see `(Saturnino et. al., 2017) <https://doi.org/10.1016/j.neuroimage.2017.09.024>`_ for a more detailed discussion
 

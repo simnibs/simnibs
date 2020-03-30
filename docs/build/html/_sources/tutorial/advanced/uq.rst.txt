@@ -113,3 +113,4 @@ Further Reading
 ----------------
 `Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
 
+`Weise, et al. Pygpc: A sensitivity and uncertainty analysis toolbox for Python, SoftwareX 11, 2020 <https://doi.org/10.1016/j.softx.2020.100450>`_

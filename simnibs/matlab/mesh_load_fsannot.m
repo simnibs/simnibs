@@ -83,6 +83,10 @@ if any(region_idx == 2)
     start_idx=[start_idx min(hlpIdx(:))];
     fnames={fnames{:} [pnameIn filesep 'rh.' fnameIn]};
     prefix={prefix{:} 'rh.'};
+% This here handles when both hemispheres are together as a .msh file
+elseif (surf_idx == 1002)
+    fnames={fnames{:} [pnameIn filesep 'rh.' fnameIn]};
+    prefix={prefix{:} 'rh.'};
 end
 if ~load_lh&&~load_rh; error('mesh has to contain triangle regions 1 or 2'); end
 for i=1:length(fnames)
@@ -111,7 +115,6 @@ for i=1:length(fnames)
         % add labels from annotation file to node_data field
         [vertices, label, colortable] = read_annotation(fnames{i});
         vertices=int32(vertices)+start_idx(i); % FS indexing starts at 0
-
         label_remap=zeros(size(label)); % remap labeling to be 1,2,3,4,...
         for j=1:length(colortable.table(:,5))
             label_remap(label==colortable.table(j,5))=j+N_struct_name;
@@ -122,6 +125,10 @@ for i=1:length(fnames)
         for j=1:length(colortable.struct_names)
             struct_names{N_struct_name+j}=[prefix{i} colortable.struct_names{j}];
         end
+    end
+    % This is an ugly hack dot the loading to work with the CS meshes
+    if surf_idx == 1002
+        start_idx=[start_idx max(vertices) + 1];
     end
 end
 end
