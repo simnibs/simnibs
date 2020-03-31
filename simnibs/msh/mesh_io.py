@@ -3318,16 +3318,24 @@ class ElementData(Data):
         '''
         assert len(data_grid.shape) in [3, 4], \
                 'The data grid must have 3 or 4 dimensions'
+        # Transform elements baricenters to voxel coordinates
         bar = mesh.elements_baricenters().value.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(bar) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
-            output=data_grid.dtype, **kwargs)
+            output=data_grid.dtype, **kwargs
+        )
         if len(data_grid.shape) == 4:
             indim = data_grid.shape[3]
             outdata = np.array(
-                [f(data_grid[..., i]) for i in range(indim)]).T
+                [f(data_grid[..., i]) for i in range(indim)]
+            ).T
         elif len(data_grid.shape) == 3:
             outdata = f(data_grid)
 
@@ -3498,6 +3506,11 @@ class NodeData(Data):
         p = mesh.nodes[:].T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(p) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
             output=data_grid.dtype, **kwargs

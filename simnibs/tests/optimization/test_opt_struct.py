@@ -1,12 +1,16 @@
 import os
 import csv
 from mock import patch, call
+import shutil
+
 import pytest
 import numpy as np
+import nibabel
 import h5py
 import scipy.io
 
 import simnibs.msh.mesh_io as mesh_io
+from simnibs.utils import file_finder
 from simnibs.optimization import opt_struct
 import simnibs.optimization.optimization_methods as methods
 
@@ -767,14 +771,14 @@ class TestTDCSDistributedoptimize:
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_prepare_read_mesh_vol(self, fn_vol, sphere_vol):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_vol.nodes.node_coord))
         assert np.all(
             p.mesh.elm.node_number_list==sphere_vol.elm.node_number_list)
 
     def test_prepare_set_mesh_vol(self, fn_vol, sphere_surf):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
@@ -782,41 +786,105 @@ class TestTDCSDistributedoptimize:
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_read_lf(self, fn_surf, leadfield_surf):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         assert np.all(np.isclose(p.leadfield, leadfield_surf))
         p.leadfield
 
     def test_set_lf(self, fn_surf, leadfield_vol):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         p.leadfield = leadfield_vol
         assert np.all(np.isclose(p.leadfield, leadfield_vol))
 
     def test_read_lftype(self, fn_surf):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         assert p.lf_type == 'node'
 
     def test_read_lftype_elm(self, fn_vol):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         assert p.lf_type == 'element'
 
     def test_read_lftype_wrong(self, fn_vol, sphere_surf):
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         with pytest.raises(ValueError):
             p.lf_type
 
-    def test_target_field(self, sphere_surf, fn_surf):
+    def test_target_field_subject(self, sphere_surf, fn_surf):
         target_field = np.moveaxis(np.meshgrid(
-            np.arange(-100, 100) + .5,
-            np.arange(-100, 100) + .5,
-            np.arange(-100, 100) + .5,
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            np.arange(-100, 100),
             indexing='ij'
         ), 0, -1)
+        target_field = target_field.astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
-        p = opt_struct.TDCSoptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
-            target_image=(target_field, affine)
+            target_image=(target_field, affine),
+            mni_space=False
         )
         field = p.target_field()
-        assert np.allclose(field, 
+        assert np.allclose(field, sphere_surf.nodes[:])
+
+    def test_target_field_subject_file(self, sphere_surf, fn_surf):
+        target_field = np.moveaxis(np.meshgrid(
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            indexing='ij'
+        ), 0, -1)
+        target_field = target_field.astype(float)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        fn_nii = 'tmp.nii.gz'
+        nibabel.save(
+            nibabel.Nifti1Image(target_field, affine),
+            fn_nii
+        )
+        p = opt_struct.TDCSDistributedOptimize(
+            leadfield_hdf=fn_surf,
+            target_image=fn_nii,
+            mni_space=False
+        )
+        field = p.target_field()
+        os.remove(fn_nii)
+        assert np.allclose(field, sphere_surf.nodes[:])
+
+    def test_target_field_subject_elm(self, sphere_vol, fn_vol):
+        target_field = np.moveaxis(np.meshgrid(
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            indexing='ij'
+        ), 0, -1)
+        target_field = target_field.astype(float)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        p = opt_struct.TDCSDistributedOptimize(
+            leadfield_hdf=fn_vol,
+            target_image=(target_field, affine),
+            mni_space=False
+        )
+        field = p.target_field()
+        assert np.allclose(field, sphere_vol.elements_baricenters()[:])
+
+    @patch('simnibs.msh.transformations.subject2mni_coords')
+    def test_terget_field_mni(self, s2mni_coords_mock, sphere_surf, fn_surf):
+        target_field = np.moveaxis(np.meshgrid(
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            np.arange(-100, 100),
+            indexing='ij'
+        ), 0, -1)
+        target_field = target_field.astype(float)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        s2mni_coords_mock.return_value = -sphere_surf.nodes[:]
+        p = opt_struct.TDCSDistributedOptimize(
+            leadfield_hdf=fn_surf,
+            target_image=(target_field, affine),
+            subpath=''
+        )
+        field = p.target_field()
+        assert np.allclose(field, -sphere_surf.nodes[:])

@@ -34,13 +34,14 @@ import logging
 import numpy as np
 import scipy.spatial
 import h5py
+import nibabel
 
 from . import optimize_tms
 from . import optimization_methods
 from ..simulation import cond
 from ..simulation import fem
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
-from ..msh import mesh_io, gmsh_view
+from ..msh import mesh_io, gmsh_view, transformations
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
@@ -1847,17 +1848,6 @@ class TDCSDistributedOptimize():
                  subpath=None,
                  open_in_gmsh=True):
 
-        self.leadfield_hdf = leadfield_hdf
-        self.max_total_current = max_total_current
-        self.max_individual_current = max_individual_current
-        self.max_active_electrodes = max_active_electrodes
-        self.leadfield_path = '/mesh_leadfield/leadfields/tdcs_leadfield'
-        self.mesh_path = '/mesh_leadfield/'
-        self.target_image = target_image
-        self.mni_space = mni_space
-        self.open_in_gmsh = open_in_gmsh
-        self.subpath = subpath
-        self.name = name
         self._tdcs_opt_obj = TDCSoptimize(
             leadfield_hdf=leadfield_hdf,
             max_total_current=max_total_current,
@@ -1868,6 +1858,17 @@ class TDCSDistributedOptimize():
             avoid=[],
             open_in_gmsh=open_in_gmsh
         )
+        self.max_total_current = max_total_current
+        self.max_individual_current = max_individual_current
+        self.max_active_electrodes = max_active_electrodes
+        self.leadfield_path = '/mesh_leadfield/leadfields/tdcs_leadfield'
+        self.mesh_path = '/mesh_leadfield/'
+        self.target_image = target_image
+        self.mni_space = mni_space
+        self.open_in_gmsh = open_in_gmsh
+        self.subpath = subpath
+        self.name = name
+
 
     @property
     def lf_type(self):
@@ -1877,10 +1878,42 @@ class TDCSDistributedOptimize():
         return self._tdcs_opt_obj.lf_type
 
     @property
+    def leadfield_hdf(self):
+        return self._tdcs_opt_obj.leadfield_hdf
+
+    @leadfield_hdf.setter
+    def leadfield_hdf(self, leadfield_hdf):
+        self._tdcs_opt_obj.leadfield_hdf = leadfield_hdf
+
+    @property
+    def leadfield_path(self):
+        return self._tdcs_opt_obj.leadfield_path
+
+    @leadfield_path.setter
+    def leadfield_path(self, leadfield_path):
+        self._tdcs_opt_obj.leadfield_path = leadfield_path
+
+    @property
+    def mesh_path(self):
+        return self._tdcs_opt_obj.mesh_path
+
+    @mesh_path.setter
+    def mesh_path(self, mesh_path):
+        self._tdcs_opt_obj.mesh_path = mesh_path
+
+    @property
+    def name(self):
+        return self._tdcs_opt_obj.name
+
+    @name.setter
+    def name(self, name):
+        self._tdcs_opt_obj.name = name
+
+    @property
     def leadfield(self):
         ''' Reads the leadfield from the HDF5 file'''
         self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
-        return self._tdcs_opt_obj._leadfield
+        return self._tdcs_opt_obj.leadfield
 
     @leadfield.setter
     def leadfield(self, leadfield):
@@ -1913,19 +1946,34 @@ class TDCSDistributedOptimize():
     def target_field(self):
         assert self.mesh is not None, 'Please set a mesh'
         assert self.lf_type is not None, 'Please set a lf_type'
+        # load image
+        if isinstance(self.target_image, str):
+            img = nibabel.load(self.target_image)
+            vol = np.array(img.dataobj)
+            affine = img.affine
+        else:
+            vol, affine = self.target_image
+        # if in MNI space, tranfrom coordinates
+        if self.mni_space:
+            if self.subpath is None:
+                raise ValueError('subpath not set!')
+            nodes_mni = transformations.subject2mni_coords(
+                self.mesh.nodes[:], self.subpath
+            )
+            orig_nodes = np.copy(self.mesh.nodes[:])
+            self.mesh.nodes.node_coord = nodes_mni
+        # Interpolate
         if self.lf_type == 'node':
-            pos = self.mesh.nodes[:]
+            field = mesh_io.NodeData.from_data_grid(self.mesh, vol, affine)
         elif self.lf_type == 'element':
-            pos = self.mesh.elements_baricenters()[:]
+            field = mesh_io.ElementData.from_data_grid(self.mesh, vol, affine)
         else:
             raise ValueError("lf_type must be 'node' or 'element'."
                              " Got: {0} instead".format(self.lf_type))
-        
-        # Load field
-        field, affine = self.target_image
-        mesh_io.NodeData.from_
-        # Transform to MNI space
-        return f
+        if self.mni_space:
+            self.mesh.nodes.node_coord = orig_nodes
+
+        return field[:]
 
 
 def _save_TDCStarget_mat(target):
@@ -1951,7 +1999,6 @@ def _save_TDCStarget_mat(target):
              dtype=target_dt)
 
     return target_mat
-
 
 
 def _save_TDCSavoid_mat(avoid):
