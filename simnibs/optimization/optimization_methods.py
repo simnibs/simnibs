@@ -247,7 +247,7 @@ class TESLinearElecConstrained(TESLinearConstrained):
         bounds_function = functools.partial(
              _bb_bounds_tes_problem,
               max_l0=self.n_elec,
-             linear=[self.l[None, :]],
+             linear=[self.l],
              quadratic=[self.Q],
              max_el_current=max_el_current,
              func=self._solve_reduced
