@@ -951,7 +951,6 @@ class TDCSoptimize():
     def field(self, currents):
         ''' Outputs the electric fields caused by the current combination
 
-        f[dset].attrs['d_type'] = 'node_data'
         Parameters
         -----------
         currents: N_elec x 1 ndarray
@@ -1043,48 +1042,6 @@ class TDCSoptimize():
                 mesh_io.write_geo_text(
                     elec_pos, elec_names,
                     fn_out, name="electrode_names", mode='ba')
-
-
-    def electrode_geo_old(self, fn_out, currents=None, elec_pos=None, elec_names=None):
-        ''' Creates a .geo file with electrodes currents/positions and/or names
-
-        Parameters
-        -------------
-        fn_out: str
-            Output name of .geo file
-        ALL THE BELOW ARE AUTOMATICALLY FILLED BY THE LEADFIELD
-        currents: Nx1 ndarray (optional)
-            Currents through the electrodes. If set, will create spheres with the
-            currents in the .geo file
-        elec_pos: Nx3 ndarray (optional)
-            Electrode positions in the subject space. If not set will look into the
-            leadfield
-        elec_names: list with names of the electrdes (optional)
-            Names of the electrodes
-        '''
-        if self.leadfield_hdf is not None:
-            if elec_pos is None:
-                with h5py.File(self.leadfield_hdf, 'r') as f:
-                    elec_pos = f[self.leadfield_path].attrs['electrode_pos']
-
-            if elec_names is None:
-                with h5py.File(self.leadfield_hdf, 'r') as f:
-                    try:
-                        elec_names = f[self.leadfield_path].attrs['electrode_names']
-                        elec_names = [n.decode() for n in elec_names]
-                    except KeyError:
-                        pass
-
-        if elec_pos is None:
-            raise ValueError('please define either elec_pos or a valid leadfield')
-
-        if os.path.isfile(fn_out):
-            os.remove(fn_out)
-
-        if currents is not None:
-            mesh_io.write_geo_spheres(
-                elec_pos, fn_out,
-                values=currents, name="Electrode Currents", mode='bw')
 
 
 
@@ -1846,6 +1803,8 @@ class TDCSDistributedOptimize():
                  target_image=None,
                  mni_space=True,
                  subpath=None,
+                 intensity=None,
+                 t_min=0,
                  open_in_gmsh=True):
 
         self._tdcs_opt_obj = TDCSoptimize(
@@ -1869,6 +1828,11 @@ class TDCSDistributedOptimize():
         self.subpath = subpath
         self.name = name
 
+        self.intensity = intensity
+        self.t_min = t_min
+
+        if t_min < 0:
+            raise ValueError('t_min must be > 0')
 
     @property
     def lf_type(self):
@@ -1943,9 +1907,17 @@ class TDCSDistributedOptimize():
         self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
         return self._tdcs_opt_obj._field_units
 
-    def target_field(self):
+    def _target_distribution(self):
+        ''' Gets the y and W fields, by interpolating the target_image
+        
+        Based on Eq. 1 from
+        Ruffini et al. "Optimization of multifocal transcranial current
+        stimulation for weighted cortical pattern targeting from realistic modeling of
+        electric fields", NeuroImage, 2014 
+        '''
         assert self.mesh is not None, 'Please set a mesh'
-        assert self.lf_type is not None, 'Please set a lf_type'
+        assert self.t_min >= 0, 't_min must be >= 0'
+        assert self.intensity is not None, 'intensity not set'
         # load image
         if isinstance(self.target_image, str):
             img = nibabel.load(self.target_image)
@@ -1967,13 +1939,212 @@ class TDCSDistributedOptimize():
             field = mesh_io.NodeData.from_data_grid(self.mesh, vol, affine)
         elif self.lf_type == 'element':
             field = mesh_io.ElementData.from_data_grid(self.mesh, vol, affine)
-        else:
-            raise ValueError("lf_type must be 'node' or 'element'."
-                             " Got: {0} instead".format(self.lf_type))
+
         if self.mni_space:
             self.mesh.nodes.node_coord = orig_nodes
 
-        return field[:]
+        field = field[:]
+
+        W = np.abs(field)
+        W[np.abs(field) < self.t_min] = self.t_min
+        y = field[:].copy()
+        y[np.abs(field) < self.t_min] = 0
+        y *= self.intensity
+
+        if np.all(np.abs(field) < self.t_min):
+            raise ValueError('Target image values are below t_min!')
+
+        return y, W
+
+    def normal_directions(self):
+        assert self.mesh is not None, 'Please set a mesh'
+        assert self.lf_type is not None, 'Please set a lf_type'
+
+        if 4 in self.mesh.elm.elm_type:
+            raise ValueError("Can't define a normal direction for volumetric data!")
+
+        if self.lf_type == 'node':
+            normals = self.mesh.nodes_normals()[:]
+        elif self.lf_type == 'element':
+            normals = self.mesh.triangle_normals()[:]
+
+        return -normals
+
+    def field(self, currents):
+        ''' Outputs the electric fields caused by the current combination
+
+        Parameters
+        -----------
+        currents: N_elec x 1 ndarray
+            Currents going through each electrode, in A. Usually from the optimize
+            method. The sum should be approximately zero
+
+        Returns
+        ----------
+        E: simnibs.mesh.NodeData or simnibs.mesh.ElementData
+            NodeData or ElementData with the field caused by the currents
+        '''
+        return self._tdcs_opt_obj.field(currents)
+
+    def field_mesh(self, currents):
+        ''' Creates showing the targets and the field
+        Parameters
+        -------------
+        currents: N_elec x 1 ndarray
+            Currents going through each electrode, in A. Usually from the optimize
+            method. The sum should be approximately zero
+
+        Returns
+        ---------
+        results: simnibs.msh.mesh_io.Msh
+            Mesh file
+        ''' 
+        e_field = self.field(currents)
+        e_norm_field = e_field.norm()
+        normals = self.normal_directions()
+        e_normal_field = np.sum(e_field[:]*normals, axis=1)
+        target_map, _ = self._target_distribution()
+
+        m = copy.deepcopy(self.mesh)
+        if self.lf_type == 'node':
+            add_field = m.add_node_field
+        elif self.lf_type == 'element':
+            add_field = m.add_element_field
+
+        add_field(e_field, e_field.field_name)
+        add_field(e_norm_field, e_norm_field.field_name)
+        add_field(e_normal_field, 'normal' + e_field.field_name)
+        add_field(target_map, 'target_map')
+
+        return m
+
+    def optimize(self, fn_out_mesh=None, fn_out_csv=None):
+        ''' Runs the optimization problem
+
+        Parameters
+        -------------
+        fn_out_mesh: str
+            If set, will write out the electric field and currents to the mesh
+
+        fn_out_mesh: str
+            If set, will write out the currents and electrode names to a CSV file
+
+
+        Returns
+        ------------
+        currents: N_elec x 1 ndarray
+            Optimized currents. The first value is the current in the reference electrode
+        '''
+        assert self.leadfield is not None, 'Leadfield not defined'
+        assert self.mesh is not None, 'Mesh not defined'
+        if self.max_active_electrodes is not None:
+            assert self.max_active_electrodes > 1, \
+                'The maximum number of active electrodes should be at least 2'
+
+        if self.max_total_current is None:
+            logger.warning('Maximum total current not set!')
+            max_total_current = 1e3
+        else:
+            assert self.max_total_current > 0
+            max_total_current = self.max_total_current
+
+        if self.max_individual_current is None:
+            max_individual_current = max_total_current
+
+        else:
+            assert self.max_individual_current > 0
+            max_individual_current = self.max_individual_current
+
+        assert self.t_min is not None, 't_min not set'
+        assert self.intensity is not None, 'intensity not set'
+
+        y, W = self._target_distribution()
+        normals = self.normal_directions()
+        weights = np.sqrt(self._tdcs_opt_obj.get_weights())
+
+        if self.max_active_electrodes is None:
+            opt_problem = optimization_methods.TESDistributed(
+                W[None, :, None] * self.leadfield,
+                y[:, None]*normals, weights[:, None]*normals,
+                max_total_current,
+                max_individual_current
+            )
+        else:
+            opt_problem = optimization_methods.TESDistributedElecConstrained(
+                self.max_active_electrodes,
+                W[None, :, None] * self.leadfield,
+                y[:, None]*normals, weights[:, None]*normals,
+                max_total_current,
+                max_individual_current
+            )
+
+        currents = opt_problem.solve()
+
+        logger.log(25, '\n' + self.summary(currents))
+
+        #if fn_out_mesh is not None:
+        #    fn_out_mesh = os.path.abspath(fn_out_mesh)
+        #    m = self.field_mesh(currents)
+        #    m.write(fn_out_mesh)
+        #    v = m.view()
+        #    ## Configure view
+        #    v.Mesh.SurfaceFaces = 0
+        #    v.View[0].Visible = 1
+        #    # Change vector type for target field
+        #    for i, t in enumerate(self.target):
+        #        v.View[2 + i].VectorType = 4
+        #        v.View[2 + i].ArrowSizeMax = 60
+        #        v.View[2 + i].Visible = 1
+        #    # Electrode geo file
+        #    el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
+        #    self.electrode_geo(el_geo_fn, currents)
+        #    v.add_merge(el_geo_fn)
+        #    max_c = np.max(np.abs(currents))
+        #    v.add_view(Visible=1, RangeType=2,
+        #               ColorTable=gmsh_view._coolwarm_cm(),
+        #               CustomMax=max_c, CustomMin=-max_c)
+        #    v.write_opt(fn_out_mesh)
+        #    if self.open_in_gmsh:
+        #        mesh_io.open_in_gmsh(fn_out_mesh, True)
+
+
+        #if fn_out_csv is not None:
+        #    self.write_currents_csv(currents, fn_out_csv)
+
+        return currents
+
+    def __str__(self):
+        s = 'Optimization set-up\n'
+        s += '===========================\n'
+        s += 'Leadfield file: {0}\n'.format(self.leadfield_hdf)
+        s += 'Max. total current: {0} (A)\n'.format(self.max_total_current)
+        s += 'Max. individual current: {0} (A)\n'.format(self.max_individual_current)
+        s += 'Max. active electrodes: {0}\n'.format(self.max_active_electrodes)
+        s += 'Name: {0}\n'.format(self.name)
+        s += '----------------------\n'
+        s += 'Target image: {0}\n'.format(self.target_image)
+        s += 'Target intensity: {0}\n'.format(self.target_intensity)
+        s += 't_min: {0}\n'.format(self.t_min)
+        return s
+
+
+    def summary(self, currents):
+        ''' Returns a string with a summary of the optimization
+
+        Parameters
+        ------------
+        field: ElementData or NodeData
+            Field of interest
+
+        Returns
+        ------------
+        summary: str
+            Summary of field
+        '''
+        s = self._tdcs_opt_obj.summary(currents)
+        field = self.field(currents)
+        # Calculate erri
+        return s
 
 
 def _save_TDCStarget_mat(target):

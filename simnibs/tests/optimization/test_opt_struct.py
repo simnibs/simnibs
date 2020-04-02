@@ -809,82 +809,186 @@ class TestTDCSDistributedoptimize:
         with pytest.raises(ValueError):
             p.lf_type
 
-    def test_target_field_subject(self, sphere_surf, fn_surf):
-        target_field = np.moveaxis(np.meshgrid(
-            np.arange(-100, 100),
-            np.arange(-100, 100),
-            np.arange(-100, 100),
+    def test_target_distribution_subject(self, sphere_surf, fn_surf):
+        target_image = np.meshgrid(
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
             indexing='ij'
-        ), 0, -1)
-        target_field = target_field.astype(float)
+        )[0].astype(np.float)
         affine = np.eye(4)
         affine[:3, 3] = -100
+        affine[:3, :3] *= 2
+        t_min = 10
         p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
-            target_image=(target_field, affine),
-            mni_space=False
+            target_image=(target_image, affine),
+            mni_space=False,
+            t_min=t_min,
+            intensity=2
         )
-        field = p.target_field()
-        assert np.allclose(field, sphere_surf.nodes[:])
+        field, W = p._target_distribution()
+        assert np.allclose(
+            field[np.abs(field) > t_min],
+            2*sphere_surf.nodes[np.abs(field) > t_min, 0],
+            atol=1e-2
+        )
+        assert np.allclose(
+            field[np.abs(sphere_surf.nodes[:, 0]) < t_min], 0
+        )
+        assert np.allclose(
+            W[np.abs(sphere_surf.nodes[:, 0]) > t_min],
+            np.abs(sphere_surf.nodes[np.abs(sphere_surf.nodes[:, 0]) > t_min, 0]),
+            atol=1e-2
+        )
+        assert np.allclose(
+            W[np.abs(sphere_surf.nodes[:, 0]) < t_min], t_min
+        )
 
-    def test_target_field_subject_file(self, sphere_surf, fn_surf):
-        target_field = np.moveaxis(np.meshgrid(
-            np.arange(-100, 100),
-            np.arange(-100, 100),
-            np.arange(-100, 100),
+    def test_target_distribution_subject_file(self, sphere_surf, fn_surf):
+        target_image = np.meshgrid(
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
             indexing='ij'
-        ), 0, -1)
-        target_field = target_field.astype(float)
+        )[0].astype(np.float)
         affine = np.eye(4)
         affine[:3, 3] = -100
+        affine[:3, :3] *= 2
         fn_nii = 'tmp.nii.gz'
         nibabel.save(
-            nibabel.Nifti1Image(target_field, affine),
+            nibabel.Nifti1Image(target_image, affine),
             fn_nii
         )
         p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=fn_nii,
-            mni_space=False
+            mni_space=False,
+            t_min=0,
+            intensity=1
         )
-        field = p.target_field()
+        field, W = p._target_distribution()
         os.remove(fn_nii)
-        assert np.allclose(field, sphere_surf.nodes[:])
+        assert np.allclose(field, sphere_surf.nodes[:, 0], atol=1e-3)
+        assert np.allclose(W, np.abs(sphere_surf.nodes[:, 0]), atol=1e-3)
 
-    def test_target_field_subject_elm(self, sphere_vol, fn_vol):
-        target_field = np.moveaxis(np.meshgrid(
-            np.arange(-100, 100),
-            np.arange(-100, 100),
-            np.arange(-100, 100),
+    def test_target_distribution_subject_elm(self, sphere_vol, fn_vol):
+        target_image = np.meshgrid(
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
             indexing='ij'
-        ), 0, -1)
-        target_field = target_field.astype(float)
+        )[0].astype(np.float)
         affine = np.eye(4)
         affine[:3, 3] = -100
+        affine[:3, :3] *= 2
         p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_vol,
-            target_image=(target_field, affine),
-            mni_space=False
+            target_image=(target_image, affine),
+            mni_space=False,
+            t_min=0,
+            intensity=1
         )
-        field = p.target_field()
-        assert np.allclose(field, sphere_vol.elements_baricenters()[:])
+        field, _ = p._target_distribution()
+        assert np.allclose(field, sphere_vol.elements_baricenters()[:, 0], atol=1e-1)
 
     @patch('simnibs.msh.transformations.subject2mni_coords')
     def test_terget_field_mni(self, s2mni_coords_mock, sphere_surf, fn_surf):
-        target_field = np.moveaxis(np.meshgrid(
-            np.arange(-100, 100),
-            np.arange(-100, 100),
-            np.arange(-100, 100),
+        target_image = np.meshgrid(
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
             indexing='ij'
-        ), 0, -1)
-        target_field = target_field.astype(float)
+        )[0].astype(np.float)
         affine = np.eye(4)
         affine[:3, 3] = -100
+        affine[:3, :3] *= 2
         s2mni_coords_mock.return_value = -sphere_surf.nodes[:]
         p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
-            target_image=(target_field, affine),
-            subpath=''
+            target_image=(target_image, affine),
+            subpath='',
+            t_min=0,
+            intensity=1
         )
-        field = p.target_field()
-        assert np.allclose(field, -sphere_surf.nodes[:])
+        field, _ = p._target_distribution()
+        assert np.allclose(field, -sphere_surf.nodes[:, 0], atol=1e-2)
+
+    def test_normals_surf(self, fn_surf, sphere_surf):
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
+        n = p.normal_directions()
+        assert np.allclose(n, -sphere_surf.nodes_normals()[:])
+
+    def test_normals_vol(self, fn_vol, sphere_vol):
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
+        with pytest.raises(ValueError):
+            p.normal_directions()
+
+    def test_field_node(self, leadfield_surf, fn_surf):
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
+        c = [1., -1., 0, 0., 0.]
+        E = p.field(c)
+        assert isinstance(E, mesh_io.NodeData)
+        assert np.allclose(E.value, -leadfield_surf[0])
+
+    def test_field_msh_node(self, leadfield_surf, fn_surf, sphere_surf):
+        target_distribution = np.meshgrid(
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            np.arange(-100, 100, 2),
+            indexing='ij'
+        )[0].astype(np.float)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        affine[:3, :3] *= 2
+        p = opt_struct.TDCSDistributedOptimize(
+            leadfield_hdf=fn_surf,
+            target_image=(target_distribution, affine),
+            mni_space=False,
+            t_min=0.,
+            intensity=1,
+        )
+        c = [1., -1., 0, 0., 0.]
+        m = p.field_mesh(c)
+        normals = sphere_surf.nodes_normals()[:]
+        assert isinstance(m.field['Field'], mesh_io.NodeData)
+        assert np.allclose(m.field['Field'][:], -leadfield_surf[0])
+        assert np.allclose(m.field['normField'][:], np.linalg.norm(leadfield_surf[0], axis=1))
+        assert np.allclose(m.field['normalField'][:], np.sum(leadfield_surf[0]*normals, axis=1))
+        assert np.allclose(m.field['target_map'][:], sphere_surf.nodes[:, 0], atol=1e-3)
+
+    @pytest.mark.parametrize('intensity', [3e-5, -2e-5])
+    @pytest.mark.parametrize('max_el_c', [1e-3, None])
+    @pytest.mark.parametrize('max_tot_c', [2e-3, None])
+    @pytest.mark.parametrize('max_ac', [None, 3])
+    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
+                      sphere_surf, fn_surf, leadfield_surf):
+
+        target_img = np.random.rand(100, 100, 100)
+        affine = np.eye(4)
+        affine[:3, 3] = -100
+        affine[:3, :3] *= 2
+
+        p = opt_struct.TDCSDistributedOptimize(
+            leadfield_hdf=fn_surf,
+            max_individual_current=max_el_c,
+            max_total_current=max_tot_c,
+            max_active_electrodes=max_ac,
+            target_image=(target_img, affine),
+            intensity=intensity,
+            t_min=0,
+            mni_space=False
+        )
+
+        if max_el_c is None and max_tot_c is None:
+            pass
+        else:
+            currents = p.optimize()
+            assert np.isclose(np.sum(currents), 0, atol=1e-6)
+            if max_el_c is not None:
+                assert np.max(np.abs(currents)) < max_el_c * 1.05
+            if max_tot_c is not None:
+                assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
+            if max_ac is not None:
+                assert np.linalg.norm(currents, 0) <= max_ac
+

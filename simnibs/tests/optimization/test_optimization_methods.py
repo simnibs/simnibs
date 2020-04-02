@@ -1123,23 +1123,39 @@ class TestDistributed:
         leadfield = np.zeros((5, 30, 3))
         for i in range(5):
             leadfield[i, i, :] = 1
-        normals = np.zeros((30, 3))
-        normals[:, 1] = 1.
 
-        t_map = np.zeros(30)
-        t_map[0] = 2
-        t_min = 1
-
-        target_field = 10
+        target_field = np.zeros((30, 3))
+        target_field[0, 0] = 1
 
         tes_problem = optimization_methods.TESDistributed(
-            leadfield, normals, t_map, t_min, target_field
+            leadfield, target_field
         )
         x = optimization_methods._eq_constrained_QP(
             tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
         )
-        field = leadfield[:, :, 1].T.dot(x[1:])
-        assert np.isclose(field[0], target_field)
+        field = leadfield.T.dot(x[1:]).T
+        assert np.allclose(field[0], 1/3)
+        assert np.allclose(field[1:], 0)
+
+    def test_calc_l_Q_weighted(self):
+        leadfield = np.zeros((5, 30, 3))
+        for i in range(5):
+            leadfield[i, i, :] = 1
+
+        target_field = np.zeros((30, 3))
+        target_field[0, 0] = 1
+
+        weights = np.ones((30, 3))
+        weights[0] = [-2, -1, -1]
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field, weights
+        )
+        x = optimization_methods._eq_constrained_QP(
+            tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
+        )
+        field = leadfield.T.dot(x[1:]).T
+        assert np.allclose(field[0], 1/2)
         assert np.allclose(field[1:], 0)
 
     @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
@@ -1147,26 +1163,23 @@ class TestDistributed:
     def test_solve(self, max_el_current, max_total_current):
         np.random.seed(1)
         leadfield = np.random.rand(5, 30, 3)
-        for i in range(5):
-            leadfield[i, i, :] = 1
-        normals = np.zeros((30, 3))
-        normals[:, 1] = 1.
-        t_map = np.random.random(30)
+        target_field = np.random.rand(30, 3)
         np.random.seed(None)
-        t_map[0] = 2
-        t_min = 0
 
-        target_field = 10
+        weights = np.zeros((30, 3))
+        weights[:, 1] = 1.
+
         tes_problem = optimization_methods.TESDistributed(
-            leadfield, normals, t_map, t_min, target_field, max_total_current,
+            leadfield, target_field, weights, max_total_current,
             max_el_current
         )
+
         x = tes_problem.solve()
 
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
         x_sp = optimize_lstsq(
-            t_map[:, None] * leadfield[..., 1].T.dot(P),
-            target_field * t_map,
+            leadfield[..., 1].T.dot(P),
+            target_field[:, 1],
             max_el_current, max_total_current
         )
 
@@ -1182,16 +1195,15 @@ class TestDistributedElec:
     def test_solve(self, max_el_current, max_total_current):
         np.random.seed(1)
         leadfield = np.random.rand(5, 30, 3)
-        normals = np.zeros((30, 3))
-        normals[:, 1] = 1.
-        t_map = np.random.random(30)
+        target_field = np.random.rand(30, 3)
         np.random.seed(None)
 
-        t_min = 0
-        target_field = 10
+        weights = np.zeros((30, 3))
+        weights[:, 1] = 1.
+
         tes_problem = optimization_methods.TESDistributedElecConstrained(
-            4, leadfield, normals, t_map, t_min,
-            target_field, max_total_current,
+            4, leadfield, target_field,
+            weights, max_total_current,
             max_el_current
         )
         x = tes_problem.solve()

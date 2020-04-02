@@ -465,62 +465,55 @@ class TESNormElecConstrained(TESNormConstrained):
 class TESDistributed(TESConstraints):
     ''' Class defining TES Oprimization problems with distributed sources
 
-    Basd in the defiition by
-    Ruffini et al. "Optimization of multifocal transcranial current stimulation for
-    weighted cortical pattern targeting from realistic modeling of electric fields",
-    NeuroImage, 2014.
+
+    minimize (W(target_field - leadfield x))^2
 
     Parameters
     -------------
     leadfield: N_elec x N_roi x 3 ndarray
         Leadfield
 
-    normals: N_roi x 1
-        Normals at each node/element
+    target_field: N_roi x 3
+        Target electric field
 
-    t_map: N_roi x 1 ndarray
-        t-value for each ROI node/element
-
-    t_min: float
-        cut-off value for the t-map
-
-    target_field: floar
-        E_0 value from Ruffini, 2014
+    directions: N_roi x 3
+        Field directions to be used for optimization
 
     max_total_current: float
         Maximum total current flow through all electrodes
 
     max_el_current: float
         Maximum current flow through each electrode
+
+    weights: N_roi x 3 ndarray
+        Weight for each element / field component
     '''
-    def __init__(self, leadfield, normals, t_map, t_min, target_field,
-                 max_total_current=1e4, max_el_current=1e4):
+    def __init__(self, leadfield, target_field,
+                 weights=None,
+                 max_total_current=1e4,
+                 max_el_current=1e4):
         super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
-        self.leadfield = leadfield
-        
-        assert t_min >= 0, 't_min value should be >= 0'
-        self.l, self.Q = self._calc_l_Q(normals, t_map, t_min, target_field)
+        if weights is None:
+            weights = np.ones((leadfield.shape[1], 3))
+        else:
+            weights = weights
+        weights *= 2
+        self.l, self.Q = self._calc_l_Q(leadfield, target_field, weights)
 
 
-    def _calc_l_Q(self, normals, t_map, t_min, target_field):
+    def _calc_l_Q(self, leadfield, target_field, weights):
         ''' Calculates the linear and quadratic parts of the optimization problem
         '''
-        W = np.abs(t_map)
-        W[np.abs(t_map) < t_min] = t_min
-        y = t_map.copy()
-        y[np.abs(t_map) < t_min] = 0
-        # For coherence with the Ruffini paper, I only take into account the normal componene
-        A = np.einsum('ijk, jk -> ij', self.leadfield, normals)
-        l = (-2*target_field*A*W).dot(y)
-        Q = A.dot((A*W**2).T)
-
+        A = np.einsum('ijk, jk -> ij', leadfield, weights)
+        Q = A.dot(A.T)
+        l = -2*np.sum(target_field*weights, axis=1).dot(A.T)
+        # For numerical reasons
         P = np.linalg.pinv(np.vstack([-np.ones(len(l)), np.eye(len(l))]))
         l = l.dot(P)
         Q = P.T.dot(Q).dot(P)
 
-        # For numerical reasons
-        l /= np.sum(W**2)
-        Q /= np.sum(W**2)
+        l /= np.sum(weights**2)
+        Q /= np.sum(weights**2)
         return l, Q
 
     def solve(self, log_level=20):
@@ -541,11 +534,15 @@ class TESDistributedElecConstrained(TESDistributed):
     ''' Class for solving the TES Distributed Problem with number of electrodes
     constraints
 
-    '''
-    def __init__(self, n_elec, leadfield, normals, t_map, t_min, target_field,
-                 max_total_current=1e4, max_el_current=1e4):
 
-        super().__init__(leadfield, normals, t_map, t_min, target_field,
+    '''
+    def __init__(self, n_elec,
+                 leadfield, target_field,
+                 weights=None,
+                 max_total_current=1e4,
+                 max_el_current=1e4):
+
+        super().__init__(leadfield, target_field, weights,
                          max_total_current, max_el_current)
         self.n_elec = n_elec
 
@@ -940,7 +937,7 @@ def _norm_constrained_tes_opt(
     Qnorm, target_norm, Q,
     max_el_current, max_total_current,
     extra_ineq=None, extra_eq=None,
-    log_level=20, n_start=5, eigval_cutoff=1e-6):
+    log_level=20, n_start=20, eigval_cutoff=1e-6):
     ''' Convex-concave algorithm to solve the problem
     minimize   x^T Q x
     subject to x^T Q_{i} x = t_i^2,  i = 1, 2, ...
@@ -955,6 +952,7 @@ def _norm_constrained_tes_opt(
     # Statring positions given by constrained eigenvalue problem
     eigval, eigvec = _constrained_eigenvalue(np.sum(Qnorm, axis=0))
     # select n_start positions
+    n_start = min(len(eigval), n_start)
     eigval = eigval[:-(n_start + 1): -1]
     starting_x = eigvec[:, :-(n_start + 1): -1]
     # Use the eigenvalues to cut-off small (ofter problematic) eigenvectors
