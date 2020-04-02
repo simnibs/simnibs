@@ -443,7 +443,7 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     '''
     # Calculate thickness
     logger.info('Calculating tissue thickness')
-    thickness = _calc_thickness(label_img)
+    thickness = _thickness._calc_thickness(label_img)
     # I set the background thickness to some large value
     thickness[thickness < .5] = 100
     # Scale thickenss with voxel size
@@ -506,42 +506,6 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     )
     return mesh
 
-
-def _calc_thickness(label_img):
-    ''' Calculates the thichkess of each layer in a 3D binary image'''
-    thickness = np.zeros_like(label_img, dtype=np.float32)
-    for t in np.unique(label_img):
-        if t == 0:
-            continue
-        else:
-            thickness += _thickness_3d_binary_image(
-                (label_img == t).astype(np.uint8)
-            )
-    # If for some reason a voxel had unasigned thickness
-    thickness[np.isinf(thickness)] = 1
-    return thickness
-
-
-def _thickness_3d_binary_image(image):
-    ''' Calculate thicness in a 3D binary image '''
-    thickness = np.zeros_like(image, dtype=np.float32)
-    thickness[image > 0] = np.inf
-    # Calculate thickess per-slice along 3 different cuts
-    # and take the smallest one
-    for i in range(3):
-        thickness_ax = np.zeros(
-            image.swapaxes(0, i).shape, dtype=np.float32
-        )
-        for j, slice_ in enumerate(image.swapaxes(0, i)):
-            if not np.any(slice_):
-                continue
-            thick_slice = _thickness._thickness_slice(slice_)
-            thickness_ax[j, ...] = thick_slice
-        thickness_ax = thickness_ax.swapaxes(0, i)
-        thickness_ax[(thickness_ax < 1e-3) * (image > 0)] = np.inf
-        thickness = np.min([thickness, thickness_ax], axis=0)
-
-    return thickness
 
 
 def _sizing_field_from_thickness(thickness, slope, ranges):
