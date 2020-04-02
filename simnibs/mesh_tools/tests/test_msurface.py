@@ -3,8 +3,8 @@ import os
 import pytest
 import numpy as np
 
-from simnibs import SIMNIBSDIR
-from simnibs.mesh_tools import mesh_io, surface
+from ... import SIMNIBSDIR
+from .. import mesh_io, surface
 
 
 @pytest.fixture(scope='module')

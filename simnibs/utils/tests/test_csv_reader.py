@@ -1,7 +1,7 @@
 import tempfile
 import numpy as np
 
-from simnibs.utils import csv_reader
+from .. import csv_reader
 
 class TestCSV:
     def test_read_csv_generic(self):

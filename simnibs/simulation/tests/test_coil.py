@@ -4,9 +4,9 @@ import nibabel as nib
 import pytest
 from mock import Mock, patch, call
 
-from simnibs import SIMNIBSDIR
-import simnibs.simulation.coil_numpy as coil
-import simnibs.mesh_tools.mesh_io as mesh_io
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import coil_numpy as coil
 
 @pytest.fixture(scope='module')
 def sphere3_msh():

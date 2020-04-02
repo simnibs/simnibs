@@ -1,6 +1,6 @@
 import numpy as np
 
-from simnibs.segmentation import _thickness
+from .. import _thickness
 
 def create_rings(radii, img_size):
     img_size = 100

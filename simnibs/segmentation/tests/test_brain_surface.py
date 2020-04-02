@@ -5,8 +5,9 @@ import scipy.io
 import pytest
 
 
-from simnibs import SIMNIBSDIR, mesh_io
-from simnibs.segmentation import brain_surface
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import brain_surface
 
 @pytest.fixture
 def sphere_surf():

@@ -10,9 +10,9 @@ import scipy.io
 import numpy as np
 import nibabel
 
-from simnibs import SIMNIBSDIR
-import simnibs.simulation.sim_struct as sim_struct
-import simnibs.mesh_tools.mesh_io as mesh_io
+from ... import SIMNIBSDIR
+from .. import sim_struct
+from ...mesh_tools import mesh_io
 
 @pytest.fixture(scope='module')
 def sphere3_fn():

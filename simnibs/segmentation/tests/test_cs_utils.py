@@ -5,7 +5,7 @@ import scipy.io
 import pytest
 
 
-from simnibs.segmentation import _cs_utils
+from .. import _cs_utils
 
 @pytest.fixture
 def cube_image():

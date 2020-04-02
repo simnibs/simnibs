@@ -7,7 +7,8 @@ Created on Mon Mar 23 20:28:04 2020
 
 import pytest
 import numpy as np
-from simnibs.segmentation.marching_cube import marching_cube
+
+from ..marching_cube import marching_cube
 
 def two_spheres_image():
     """

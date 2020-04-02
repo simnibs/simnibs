@@ -6,10 +6,10 @@ from mock import Mock, patch, call
 
 import pytest
 
-from simnibs import SIMNIBSDIR
-import simnibs.simulation.gpc as simnibs_gpc
-import simnibs.simulation.sim_struct as sim_struct
-import simnibs.mesh_tools.mesh_io as mesh_io
+from ... import SIMNIBSDIR
+from .. import gpc as simnibs_gpc
+from .. import sim_struct
+from .. import mesh_io
 
 
 @pytest.fixture(scope='module')

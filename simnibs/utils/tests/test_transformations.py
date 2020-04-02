@@ -1,12 +1,11 @@
 import os
-import tempfile
 
 import numpy as np
 import pytest
 
-from simnibs import SIMNIBSDIR
-import simnibs.mesh_tools.mesh_io as mesh_io
-from simnibs import transformations
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import transformations
 
 
 @pytest.fixture

@@ -4,8 +4,8 @@ import tempfile
 import pytest
 import numpy as np
 
-from simnibs import SIMNIBSDIR
-from simnibs.mesh_tools import meshing, mesh_io
+from ... import SIMNIBSDIR
+from .. import meshing, mesh_io
 
 
 @pytest.fixture
