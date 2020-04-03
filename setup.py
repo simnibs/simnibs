@@ -50,13 +50,10 @@ cgal_macros = [
     ('CGAL_USE_ZLIB', 1),
 ]
 
-# Information for eigen download
+# Information for eigen library
+# I don't download it because gitlab does not allow it
 eigen_version = '3.3.7'
-eigen_headers = os.path.abspath(f'eigen-{eigen_version}')
-eigen_url = (
-    f'https://gitlab.com/libeigen/eigen/-/'
-    f'archive/{eigen_version}/eigen-{eigen_version}.zip'
-)
+eigen_headers = os.path.abspath(f'simnibs/external/include/eigen-{eigen_version}')
 
 # Information for Intel TBB download
 tbb_version = '2020.1'
@@ -276,6 +273,7 @@ gui_scripts = [
 
 def download_and_extract(url, path='.'):
     ''' Downloads and extracts a zip or tar-gz folder '''
+    print(url)
     with urllib.request.urlopen(url) as response:
         with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
             shutil.copyfileobj(response, tmpf)
@@ -345,7 +343,6 @@ class build_ext_(build_ext):
         )
         if self.force or changed_meshing:
             download_and_extract(CGAL_url)
-            download_and_extract(eigen_url)
             install_lib(tbb_url, tbb_path, tbb_libs)
         # Compile
         build_ext.run(self)
