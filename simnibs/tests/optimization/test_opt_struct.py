@@ -819,30 +819,30 @@ class TestTDCSDistributedoptimize:
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
-        t_min = 10
+        min_img_value = 10
         p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=(target_image, affine),
             mni_space=False,
-            t_min=t_min,
+            min_img_value=min_img_value,
             intensity=2
         )
         field, W = p._target_distribution()
         assert np.allclose(
-            field[np.abs(field) > t_min],
-            2*sphere_surf.nodes[np.abs(field) > t_min, 0],
+            field[np.abs(field) > min_img_value],
+            2*sphere_surf.nodes[np.abs(field) > min_img_value, 0],
             atol=1e-2
         )
         assert np.allclose(
-            field[np.abs(sphere_surf.nodes[:, 0]) < t_min], 0
+            field[np.abs(sphere_surf.nodes[:, 0]) < min_img_value], 0
         )
         assert np.allclose(
-            W[np.abs(sphere_surf.nodes[:, 0]) > t_min],
-            np.abs(sphere_surf.nodes[np.abs(sphere_surf.nodes[:, 0]) > t_min, 0]),
+            W[np.abs(sphere_surf.nodes[:, 0]) > min_img_value],
+            np.abs(sphere_surf.nodes[np.abs(sphere_surf.nodes[:, 0]) > min_img_value, 0]),
             atol=1e-2
         )
         assert np.allclose(
-            W[np.abs(sphere_surf.nodes[:, 0]) < t_min], t_min
+            W[np.abs(sphere_surf.nodes[:, 0]) < min_img_value], min_img_value
         )
 
     def test_target_distribution_subject_file(self, sphere_surf, fn_surf):
@@ -864,7 +864,7 @@ class TestTDCSDistributedoptimize:
             leadfield_hdf=fn_surf,
             target_image=fn_nii,
             mni_space=False,
-            t_min=0,
+            min_img_value=0,
             intensity=1
         )
         field, W = p._target_distribution()
@@ -886,7 +886,7 @@ class TestTDCSDistributedoptimize:
             leadfield_hdf=fn_vol,
             target_image=(target_image, affine),
             mni_space=False,
-            t_min=0,
+            min_img_value=0,
             intensity=1
         )
         field, _ = p._target_distribution()
@@ -908,7 +908,7 @@ class TestTDCSDistributedoptimize:
             leadfield_hdf=fn_surf,
             target_image=(target_image, affine),
             subpath='',
-            t_min=0,
+            min_img_value=0,
             intensity=1
         )
         field, _ = p._target_distribution()
@@ -945,7 +945,7 @@ class TestTDCSDistributedoptimize:
             leadfield_hdf=fn_surf,
             target_image=(target_distribution, affine),
             mni_space=False,
-            t_min=0.,
+            min_img_value=0.,
             intensity=1,
         )
         c = [1., -1., 0, 0., 0.]
@@ -976,7 +976,7 @@ class TestTDCSDistributedoptimize:
             max_active_electrodes=max_ac,
             target_image=(target_img, affine),
             intensity=intensity,
-            t_min=0,
+            min_img_value=0,
             mni_space=False
         )
 

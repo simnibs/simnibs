@@ -1733,7 +1733,19 @@ class TDCSavoid:
         return s
 
 class TDCSDistributedOptimize():
-    ''' Defines a tdcs optimization problem
+    ''' Defines a tdcs optimization problem with distributed sources
+
+    This function uses the problem setup from
+
+    Ruffini et al. "Optimization of multifocal transcranial current
+    stimulation for weighted cortical pattern targeting from realistic modeling of
+    electric fields", NeuroImage, 2014 
+    
+    And the algorithm from
+
+    Saturnino et al. "Accessibility of cortical regions to focal TES:
+    Dependence on spatial position, safety, and practical constraints."
+    NeuroImage, 2019
 
     Parameters
     --------------
@@ -1747,11 +1759,19 @@ class TDCSDistributedOptimize():
         Maximum number of active electrodes. Default: no maximum
     name: str (optional)
         Name of optimization problem. Default: optimization
-    target: list of TDCStarget objects (optional)
-        Targets for the optimization. Default: no target
-    avoid: list of TDCSavoid objects
-        list of TDCSavoid objects defining regions to avoid
-
+    target_image: str or pair (array, affine)
+        Image to be "reproduced" via the optimization
+    mni_space: bool (optional)
+        Wether the image is in MNI space. Default True
+    subpath: str (optional)
+        Path to the subject "m2m" folder. Needed if mni_space=True
+    intensity: float
+        Target field intensity
+    min_img_value: float >= 0 (optional)
+        minimum image (for example t value) to be considered. Corresponds to T_min in
+        Ruffini et al. 2014. Default: 0
+    open_in_gmsh: bool (optional)
+        Whether to open the result in Gmsh after the calculations. Default: False
 
     Attributes
     --------------
@@ -1786,6 +1806,21 @@ class TDCSDistributedOptimize():
     name: str
         Name for the optimization problem. Defaults tp 'optimization'
 
+    target_image: str or pair (array, affine)
+        Image to be "reproduced" via the optimization
+
+    mni_space: bool (optional)
+        Wether the image is in MNI space. Default True
+
+    subpath: str (optional)
+        Path to the subject "m2m" folder. Needed if mni_space=True
+
+    intensity: float
+        Target field intensity
+
+    min_img_value: float >= 0 (optional)
+        minimum image (for example t value) to be considered. Corresponds to T_min in
+        Ruffini et al. 2014. Default: 0
 
     open_in_gmsh: bool (optional)
         Whether to open the result in Gmsh after the calculations. Default: False
@@ -1804,7 +1839,7 @@ class TDCSDistributedOptimize():
                  mni_space=True,
                  subpath=None,
                  intensity=None,
-                 t_min=0,
+                 min_img_value=0,
                  open_in_gmsh=True):
 
         self._tdcs_opt_obj = TDCSoptimize(
@@ -1829,10 +1864,10 @@ class TDCSDistributedOptimize():
         self.name = name
 
         self.intensity = intensity
-        self.t_min = t_min
+        self.min_img_value = min_img_value
 
-        if t_min < 0:
-            raise ValueError('t_min must be > 0')
+        if min_img_value < 0:
+            raise ValueError('min_img_value must be > 0')
 
     @property
     def lf_type(self):
@@ -1916,7 +1951,7 @@ class TDCSDistributedOptimize():
         electric fields", NeuroImage, 2014 
         '''
         assert self.mesh is not None, 'Please set a mesh'
-        assert self.t_min >= 0, 't_min must be >= 0'
+        assert self.min_img_value >= 0, 'min_img_value must be >= 0'
         assert self.intensity is not None, 'intensity not set'
         # load image
         if isinstance(self.target_image, str):
@@ -1946,13 +1981,13 @@ class TDCSDistributedOptimize():
         field = field[:]
 
         W = np.abs(field)
-        W[np.abs(field) < self.t_min] = self.t_min
+        W[np.abs(field) < self.min_img_value] = self.min_img_value
         y = field[:].copy()
-        y[np.abs(field) < self.t_min] = 0
+        y[np.abs(field) < self.min_img_value] = 0
         y *= self.intensity
 
-        if np.all(np.abs(field) < self.t_min):
-            raise ValueError('Target image values are below t_min!')
+        if np.all(np.abs(field) < self.min_img_value):
+            raise ValueError('Target image values are below min_img_value!')
 
         return y, W
 
@@ -2055,7 +2090,7 @@ class TDCSDistributedOptimize():
             assert self.max_individual_current > 0
             max_individual_current = self.max_individual_current
 
-        assert self.t_min is not None, 't_min not set'
+        assert self.min_img_value is not None, 'min_img_value not set'
         assert self.intensity is not None, 'intensity not set'
 
         y, W = self._target_distribution()
@@ -2082,34 +2117,29 @@ class TDCSDistributedOptimize():
 
         logger.log(25, '\n' + self.summary(currents))
 
-        #if fn_out_mesh is not None:
-        #    fn_out_mesh = os.path.abspath(fn_out_mesh)
-        #    m = self.field_mesh(currents)
-        #    m.write(fn_out_mesh)
-        #    v = m.view()
-        #    ## Configure view
-        #    v.Mesh.SurfaceFaces = 0
-        #    v.View[0].Visible = 1
-        #    # Change vector type for target field
-        #    for i, t in enumerate(self.target):
-        #        v.View[2 + i].VectorType = 4
-        #        v.View[2 + i].ArrowSizeMax = 60
-        #        v.View[2 + i].Visible = 1
-        #    # Electrode geo file
-        #    el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
-        #    self.electrode_geo(el_geo_fn, currents)
-        #    v.add_merge(el_geo_fn)
-        #    max_c = np.max(np.abs(currents))
-        #    v.add_view(Visible=1, RangeType=2,
-        #               ColorTable=gmsh_view._coolwarm_cm(),
-        #               CustomMax=max_c, CustomMin=-max_c)
-        #    v.write_opt(fn_out_mesh)
-        #    if self.open_in_gmsh:
-        #        mesh_io.open_in_gmsh(fn_out_mesh, True)
+        if fn_out_mesh is not None:
+            fn_out_mesh = os.path.abspath(fn_out_mesh)
+            m = self.field_mesh(currents)
+            m.write(fn_out_mesh)
+            v = m.view()
+            ## Configure view
+            v.Mesh.SurfaceFaces = 0
+            v.View[2].Visible = 1
+            # Electrode geo file
+            el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
+            self._tdcs_opt_obj.electrode_geo(el_geo_fn, currents)
+            v.add_merge(el_geo_fn)
+            max_c = np.max(np.abs(currents))
+            v.add_view(Visible=1, RangeType=2,
+                       ColorTable=gmsh_view._coolwarm_cm(),
+                       CustomMax=max_c, CustomMin=-max_c)
+            v.write_opt(fn_out_mesh)
+            if self.open_in_gmsh:
+                mesh_io.open_in_gmsh(fn_out_mesh, True)
 
 
-        #if fn_out_csv is not None:
-        #    self.write_currents_csv(currents, fn_out_csv)
+        if fn_out_csv is not None:
+            self._tdcs_opt_obj.write_currents_csv(currents, fn_out_csv)
 
         return currents
 
@@ -2123,8 +2153,9 @@ class TDCSDistributedOptimize():
         s += 'Name: {0}\n'.format(self.name)
         s += '----------------------\n'
         s += 'Target image: {0}\n'.format(self.target_image)
-        s += 'Target intensity: {0}\n'.format(self.target_intensity)
-        s += 't_min: {0}\n'.format(self.t_min)
+        s += 'MNI space: {0}\n'.format(self.mni_space)
+        s += 'Min. image value: {0}\n'.format(self.min_img_value)
+        s += 'Target intensity: {0}\n'.format(self.intensity)
         return s
 
 
@@ -2142,9 +2173,28 @@ class TDCSDistributedOptimize():
             Summary of field
         '''
         s = self._tdcs_opt_obj.summary(currents)
-        field = self.field(currents)
         # Calculate erri
+        field = self.field(currents)[:]
+        normals = self.normal_directions()
+        field_normal = np.sum(field * normals, axis=1)
+        y, W = self._target_distribution()
+        erri =  np.sum((y - field_normal * W)**2 - y**2)
+        erri *= len(y) /np.sum(W**2)
+        # add Erri to messaga
+        s += f'Error Relative to Non Intervention (ERNI): {erri:.2e}\n'
         return s
+
+
+    def run(self, cpus=1):
+        ''' Interface to use with the run_simnibs function
+
+        Parameters
+        ---------------
+        cpus: int (optional)
+            Does not do anything, it is just here for the common interface with the
+            simulation's run function
+        '''
+        return TDCSoptimize.run(self)
 
 
 def _save_TDCStarget_mat(target):
