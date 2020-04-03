@@ -91,7 +91,7 @@ Funding Sources
 
 We would like to thank our funding sources
 
-.. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_
+.. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_ |nimh|_
 
 
 .. |lundbeck| image:: ./images/lundbeckfonden.png
@@ -114,5 +114,8 @@ We would like to thank our funding sources
    :height: 50
 .. _if: https://innovationsfonden.dk/en
 
+.. |nimh| image:: ./images/NIH-NIMH-logo-new.png
+   :height: 50
+.. _nimh: https://www.nimh.nih.gov/index.shtml
 
 
