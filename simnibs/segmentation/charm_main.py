@@ -10,35 +10,44 @@ import logging
 import os
 import shutil
 import time
-from simnibs import utils
+from .. import utils
 from simnibs import SIMNIBSDIR
-from simnibs.utils.simnibs_logger import logger
-from simnibs.utils import file_finder
-from simnibs.segmentation import samseg
+from ..utils.simnibs_logger import logger
+from ..utils import file_finder
+from . import samseg
 import nibabel as nib
-from simnibs.segmentation._cs_utils import sanlm
+from ._cs_utils import sanlm
 import numpy as np
 from scipy import ndimage
-from simnibs.utils.transformations import resample_vol
+from ..utils.transformations import resample_vol
 
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
                                     mesh_level2, save_path,
-                                    template_coregistered_name, visualizer,
+                                    template_coregistered_name,
+                                    init_atlas_settings, visualizer,
                                     init_transform=None,
                                     world_to_world_transform_matrix=None):
 
     # Import the affine registration function
-    affine = samseg.AffineWholeHead()
+    scales = init_atlas_settings['affine_scales']
+    thetas = init_atlas_settings['affine_rotations']
+    neck_search_bounds = init_atlas_settings['neck_search_bounds']
+    ds_factor = init_atlas_settings['dowsampling_factor_affine']
+    affine = samseg.AffineWholeHead(scalingFactors=scales,
+                                    thetas_rad=thetas,
+                                    neck_bounds=neck_search_bounds,
+                                    targetDownsampledVoxelSpacing=ds_factor)
 
-    _, optimizationSummary = affine.registerAtlas(T1,
-                                                  affine_mesh_collection_name,
-                                                  template_file_name,save_path,
-                                                  template_coregistered_name,
-                                                  visualizer,
-                                                  world_to_world_transform_matrix,
-                                                  init_transform)
+    _, optimizationSummary = affine.registerAtlas(
+            T1,
+            affine_mesh_collection_name,
+            template_file_name, save_path,
+            template_coregistered_name,
+            visualizer,
+            world_to_world_transform_matrix,
+            init_transform)
     logger.info('Template registration summary.')
     logger.info('Number of Iterations: %d, Cost: %f\n' %
                 (optimizationSummary['numberOfIterations'],
@@ -78,17 +87,17 @@ def _estimate_parameters(path_to_segment_folder,
                                    'maximumNumberOfIterations': 100,
                                    'estimateBiasField': True}]}
 
-    user_model_specifications = {'biasFieldSmoothingKernelSize': 70}
+    user_model_specifications = {'atlasFileName': os.path.join(
+            path_to_segment_folder, 'atlas_level2.txt.gz'),
+                                 'biasFieldSmoothingKernelSize': 70}
     if len(input_images) > 1:
-        user_model_specifications = {'biasFieldSmoothingKernelSize': 50}
+        user_model_specifications = {'atlasFileName': os.path.join(
+            path_to_segment_folder, 'atlas_level2.txt.gz'),
+                                 'biasFieldSmoothingKernelSize': 50}
 
-    # If this one is empty the code defaults to parameters defined in the
-    # SamsegUtility file
-    # TODO: Are we okay with having it there or do we want to have the
-    # settings somewhere else?
-    user_optimization_options = {}
-    # THIS IS TO MAKE TESTING FASTER, REMOVE LATER
-    if 1:
+
+    #TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
+    if 0:
         user_optimization_options = {'multiResolutionSpecification':
                                      [{'atlasFileName':
                                        os.path.join(path_to_segment_folder,
@@ -103,39 +112,40 @@ def _estimate_parameters(path_to_segment_folder,
                                        'maximumNumberOfIterations': 1,
                                        'estimateBiasField': True}]}
 
-        samseg_kwargs = dict(
-            imageFileNames=input_images,
-            atlasDir=path_to_atlas_folder,
-            savePath=path_to_segment_folder,
-            transformedTemplateFileName=template_coregistered_name,
-            userModelSpecifications=user_model_specifications,
-            userOptimizationOptions=user_optimization_options,
-            visualizer=visualizer,
-            saveHistory=False,
-            saveMesh=False,
-            savePosteriors=False,
-            saveWarp=True)
+    samseg_kwargs = dict(
+        imageFileNames=input_images,
+        atlasDir=path_to_atlas_folder,
+        savePath=path_to_segment_folder,
+        transformedTemplateFileName=template_coregistered_name,
+        userModelSpecifications=user_model_specifications,
+        userOptimizationOptions=user_optimization_options,
+        visualizer=visualizer,
+        saveHistory=False,
+        saveMesh=False,
+        savePosteriors=False,
+        saveWarp=True)
 
-        logger.info('Starting segmentation.')
-        samsegment = samseg.SamsegWholeHead(**samseg_kwargs)
-        samsegment.preProcess()
-        samsegment.process()
+    logger.info('Starting segmentation.')
+    samsegment = samseg.SamsegWholeHead(**samseg_kwargs)
+    samsegment.preProcess()
+    samsegment.process()
 
-        # Print optimization summary
-        optimizationSummary = samsegment.getOptimizationSummary()
-        for multiResolutionLevel, item in enumerate(optimizationSummary):
-            logger.info('atlasRegistrationLevel%d %d %f\n' %
-                        (multiResolutionLevel, item['numberOfIterations'],
-                         item['perVoxelCost']))
+    # Print optimization summary
+    optimizationSummary = samsegment.getOptimizationSummary()
+    for multiResolutionLevel, item in enumerate(optimizationSummary):
+        logger.info('atlasRegistrationLevel%d %d %f\n' %
+                    (multiResolutionLevel, item['numberOfIterations'],
+                     item['perVoxelCost']))
 
-        return samsegment
+    return samsegment.saveParametersAndInput()
 
 
 def _post_process_segmentation(bias_corrected_image_names,
                                upsampled_image_names,
                                tissue_labeling_upsampled,
-                               segmenter,
-                               tissue_settings):
+                               tissue_settings,
+                               parameters_and_inputs,
+                               transformed_template_name):
     logger.info('Upsampling bias corrected images.')
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
         corrected_input = nib.load(bias_corrected)
@@ -148,12 +158,16 @@ def _post_process_segmentation(bias_corrected_image_names,
 
         # Next we need to reconstruct the segmentation with the upsampled data
         # and map it into the simnibs tissues
-        segmenter.segmentUpsampled(upsampled_image_names, tissue_settings)
-        
-        # Map to conductivity labels
-        
+        samseg.simnibs_segmentation_utils.segmentUpsampled(
+                upsampled_image_names,
+                tissue_labeling_upsampled,
+                tissue_settings,
+                parameters_and_inputs,
+                transformed_template_name)
+
         # Do morphological operations
-        
+
+
 def morphological_operations(fn, out):
     img = nib.load(fn)
     label_img = np.array(img.dataobj)
@@ -307,7 +321,8 @@ def run(subject_dir=None, T1=None, T2=None,
         # denoise if needed
         if denoise_settings['denoise']:
             logger.info('Denoising the registered T2 and saving.')
-            _denoise_input_and_save(sub_files.T2_reg, sub_files.T2_reg_denoised)
+            _denoise_input_and_save(sub_files.T2_reg,
+                                    sub_files.T2_reg_denoised)
 
     # Set-up samseg related things before calling the affine registration
     # and/or segmentation
@@ -323,7 +338,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
     # TODO: Setup the visualization tool. This needs some pyqt stuff to be
     # installed. Don't know if we want to expose this in the .ini
-    showFigs = True
+    showFigs = False
     showMovies = False
     visualizer = samseg.initVisualizer(showFigs, showMovies)
 
@@ -352,12 +367,15 @@ def run(subject_dir=None, T1=None, T2=None,
             input_image = sub_files.T1_denoised
         else:
             input_image = T1
+
+        init_atlas_settings = settings['initatlas']
         _register_atlas_to_input_affine(input_image, template_name,
                                         atlas_affine_name,
                                         atlas_level1,
                                         atlas_level2,
                                         sub_files.segmentation_folder,
                                         sub_files.template_coregistered,
+                                        init_atlas_settings,
                                         visualizer)
 
     if segment:
@@ -381,10 +399,11 @@ def run(subject_dir=None, T1=None, T2=None,
                 input_images.append(sub_files.T2_reg)
 
         logger.info('Estimating parameters.')
-        segmenter = _estimate_parameters(sub_files.segmentation_folder,
-                                         sub_files.template_coregistered,
-                                         atlas_path, input_images,
-                                         visualizer)
+        segment_parameters_and_inputs = _estimate_parameters(
+                sub_files.segmentation_folder,
+                sub_files.template_coregistered,
+                atlas_path, input_images,
+                visualizer)
 
         # Okay now the parameters have been estimated, and we can segment the
         # scan. However, we need to also do this at an upsampled resolution,
@@ -395,15 +414,19 @@ def run(subject_dir=None, T1=None, T2=None,
             bias_corrected_image_names.append(sub_files.T2_bias_corrected)
 
         logger.info('Writing out bias corrected images and labeling.')
-        segmenter.writeBiasCorrectedImagesAndSegmentation(
-                bias_corrected_image_names, sub_files.labeling)
+        samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+                bias_corrected_image_names,
+                sub_files.labeling,
+                segment_parameters_and_inputs)
 
         # Write out MNI warps
         logger.info('Writing out MNI warps.')
         os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
-        segmenter.saveWarpFieldSimNIBS(template_name,
-                                       sub_files.conf2mni_nonl,
-                                       sub_files.mni2conf_nonl)
+        samseg.simnibs_segmentation_utils.saveWarpField(
+                template_name,
+                sub_files.conf2mni_nonl,
+                sub_files.mni2conf_nonl,
+                segment_parameters_and_inputs)
 
         # Run post-processing
         logger.info('Post-processing segmentation')
@@ -416,8 +439,9 @@ def run(subject_dir=None, T1=None, T2=None,
         _post_process_segmentation(bias_corrected_image_names,
                                    upsampled_image_names,
                                    sub_files.tissue_labeling_upsampled,
-                                   segmenter,
-                                   tissue_settings)
+                                   tissue_settings,
+                                   segment_parameters_and_inputs,
+                                   sub_files.template_coregistered)
 
 
     if mesh:

@@ -5,7 +5,6 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 import logging
 
-#import freesurfer as fs
 from . import gems
 
 from .utilities import requireNumpyArray
@@ -13,29 +12,33 @@ from .figures import initVisualizer
 from .SamsegUtility import readCroppedImages
 eps = np.finfo(float).eps
 
+
 class AffineWholeHead:
     def __init__(self,
-                 scalingFactors=[[0.8,0.8,0.85],[0.9,0.9,0.9],[0.95,0.95,0.9]], 
-                 thetas=[np.pi / 180 * theta for theta in [-7,-3.5,0,3.5,7]],
+                 scalingFactors=[[0.8, 0.8, 0.8],
+                                 [0.9, 0.9, 0.9],
+                                 [0.95, 0.95, 0.9]],
+                 thetas_rad=[-7, -3.5, 0, 3.5, 7],
+                 neck_bounds=(-0.1, 0.3),
                  K=1e-7,
                  targetDownsampledVoxelSpacing=3.0,
                  maximalDeformationStopCriterion=0.005):
         self.scalingFactors = scalingFactors
-        self.thetas = thetas
+        self.thetas = [np.pi / 180 * theta for theta in thetas_rad]
+        self.neck_bounds = neck_bounds
         self.targetDownsampledVoxelSpacing = targetDownsampledVoxelSpacing
         self.maximalDeformationStopCriterion = maximalDeformationStopCriterion
 
     def registerAtlas(self,
-            imageFileName,
-            meshCollectionFileName,
-            templateFileName,
-            savePath,
-            template_coregistered_name,
-            visualizer=None,
-            worldToWorldTransformMatrix=None,
-            initTransform=None,
-            K=1e-7,
-        ):
+                      imageFileName,
+                      meshCollectionFileName,
+                      templateFileName,
+                      savePath,
+                      template_coregistered_name,
+                      visualizer=None,
+                      worldToWorldTransformMatrix=None,
+                      initTransform=None,
+                      K=1e-7,):
         
        
         # ------ Setup ------
@@ -401,12 +404,12 @@ class AffineWholeHead:
         # We should be able to compute the gradient for this simple thing, so something smarter should be used
         initial_node_positions = mesh.points
        
-        res = minimize_scalar(self._neck_cost,None,None,
+        res = minimize_scalar(self._neck_cost, None, self.neck_bounds,
                               (initial_node_positions,
                                deformation_field,
                                calculator,mesh,
                                image_buffer,
-                               visualizer))
+                               visualizer), method='Bounded')
         
         mesh.points = initial_node_positions - res.x*deformation_field
     

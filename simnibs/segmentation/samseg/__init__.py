@@ -9,3 +9,4 @@ from .Samseg import Samseg
 from .figures import initVisualizer
 from .SamsegWholeHead import SamsegWholeHead
 from .AffineWholeHead import AffineWholeHead
+from .simnibs_segmentation_utils import *
