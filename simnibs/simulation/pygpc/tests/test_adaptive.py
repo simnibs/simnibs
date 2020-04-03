@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import functools
-from simnibs.external.pygpc import adaptive, grid
+from simnibs.simulation.pygpc import adaptive, grid
 
 @pytest.fixture
 def uniform_dist():

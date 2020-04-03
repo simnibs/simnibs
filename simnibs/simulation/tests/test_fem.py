@@ -8,12 +8,12 @@ import numpy as np
 import scipy.sparse.linalg as spalg
 import scipy.sparse as sparse
 
-from simnibs import SIMNIBSDIR
-import simnibs.simulation.fem as fem
-import simnibs.simulation.coil_numpy as coil_lib
-import simnibs.mesh_tools.mesh_io as mesh_io
-import simnibs.simulation.analytical_solutions.sphere as analytical_solutions
-from simnibs._compiled import petsc_solver
+from ... import SIMNIBSDIR
+from .. import fem
+from .. import analytical_solutions
+from .. import coil_numpy as coil_lib
+from ...mesh_tools import mesh_io
+from ..._compiled import petsc_solver
 
 fem._initialize_petsc()
 

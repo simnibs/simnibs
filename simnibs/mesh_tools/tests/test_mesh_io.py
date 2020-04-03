@@ -7,8 +7,8 @@ import numpy as np
 import h5py
 import pytest
 
-from simnibs import SIMNIBSDIR
-import simnibs.mesh_tools.mesh_io as mesh_io
+from ... import SIMNIBSDIR
+from .. import mesh_io
 
 
 @pytest.fixture(scope='module')

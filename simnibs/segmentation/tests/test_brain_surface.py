@@ -5,8 +5,9 @@ import scipy.io
 import pytest
 
 
-from simnibs import SIMNIBSDIR, mesh_io
-from simnibs.segmentation import brain_surface
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import brain_surface
 
 @pytest.fixture
 def sphere_surf():
@@ -21,6 +22,52 @@ def sphere_2_surfs():
             SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     mesh = mesh_io.read_msh(fn)
     return mesh.crop_mesh([1004, 1005])
+
+
+def one_sphere_image():
+    """
+    create image with 1 sphere in center (WM is 3, GM is 2, CSF is 1)
+
+    Returns
+    -------
+    img : 3d image
+    vox2mm : affine trafo
+    radius_wm : radius of WM-GM boundary
+    radius_gm : radius of GM-CSF boundary
+    radius_csf : radius of CSF-background boundary
+
+    """  
+
+    imgsize=[161, 141, 141]
+    voxsize=0.25
+    
+    radius_wm=8
+    radius_gm=12
+    radius_csf=15
+    
+    vox2mm=np.float32(([voxsize, 0, 0, -voxsize*(imgsize[0]-1)/2],
+                       [0, voxsize, 0, -voxsize*(imgsize[1]-1)/2],
+                       [0, 0, voxsize, -voxsize*(imgsize[2]-1)/2],
+                       [0, 0, 0, 1]))
+    
+    G = np.meshgrid(np.arange(imgsize[0]), np.arange(imgsize[1]), 
+                    np.arange(imgsize[2]), indexing='ij')
+    
+    xyz_mm=np.inner(vox2mm, np.vstack((G[0].flatten(),
+                                       G[1].flatten(),
+                                       G[2].flatten(),
+                                       np.ones_like(G[0].flatten()))).T
+                    )[0:3]
+    
+    R_sp = np.linalg.norm(xyz_mm, axis=0)
+    
+    img=np.zeros_like(R_sp)
+    img[R_sp<radius_csf]=1
+    img[R_sp<radius_gm]=2
+    img[R_sp<radius_wm]=3
+    img=img.reshape(imgsize)
+
+    return img, vox2mm, radius_wm, radius_gm, radius_csf
 
 
 class TestSegmentTriangleIntersect:
@@ -239,3 +286,18 @@ class TestCreateSurfaceMask:
         assert np.all(mask[5:195, 100, 100])
         assert not np.any(mask[100, :5, 100]) and not np.any(mask[100, 195:, 100])
         assert not np.any(mask[:5, 100, 100]) and not np.any(mask[195:, 100, 100])
+
+
+class Test_cat_vol_pbt_AT:
+    def test_with_spheres(self):
+        testdata=one_sphere_image()
+        img=testdata[0]
+        vox2mm=testdata[1]
+        
+        Yth, Ypp = brain_surface.cat_vol_pbt_AT(img, 0.25, False)
+    
+        # test for 2.5% accuracy in volume-average of GM thickness and percent position profile
+        assert abs(1-Yth[img==2].mean()/4) < 0.025
+        assert abs(1-Ypp[img==2].mean()/0.4342) < 0.025 
+        # volume average of profile varying lineary from 1 to 0 
+        # should be 0.4342... for r_wm=12, r_gm=8

@@ -14,12 +14,16 @@ from .. import utils
 from simnibs import SIMNIBSDIR
 from ..utils.simnibs_logger import logger
 from ..utils import file_finder
+from ..utils import transformations
 from . import samseg
 import nibabel as nib
 from ._cs_utils import sanlm
 import numpy as np
 from scipy import ndimage
 from ..utils.transformations import resample_vol
+from ..mesh_tools import meshing
+from . import _thickness
+from ..mesh_tools.mesh_io import write_mesh
 
 
 def _register_atlas_to_input_affine(T1, template_file_name,
@@ -97,7 +101,7 @@ def _estimate_parameters(path_to_segment_folder,
 
 
     #TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
-    if 0:
+    if 1:
         user_optimization_options = {'multiResolutionSpecification':
                                      [{'atlasFileName':
                                        os.path.join(path_to_segment_folder,
@@ -142,10 +146,10 @@ def _estimate_parameters(path_to_segment_folder,
 
 def _post_process_segmentation(bias_corrected_image_names,
                                upsampled_image_names,
-                               tissue_labeling_upsampled,
                                tissue_settings,
                                parameters_and_inputs,
                                transformed_template_name):
+
     logger.info('Upsampling bias corrected images.')
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
         corrected_input = nib.load(bias_corrected)
@@ -156,42 +160,45 @@ def _post_process_segmentation(bias_corrected_image_names,
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
         nib.save(upsampled, upsampled_image_names[input_number])
 
-        # Next we need to reconstruct the segmentation with the upsampled data
-        # and map it into the simnibs tissues
-        samseg.simnibs_segmentation_utils.segmentUpsampled(
-                upsampled_image_names,
-                tissue_labeling_upsampled,
-                tissue_settings,
-                parameters_and_inputs,
-                transformed_template_name)
+    # Next we need to reconstruct the segmentation with the upsampled data
+    # and map it into the simnibs tissues
+    upsampled_tissues = samseg.simnibs_segmentation_utils.segmentUpsampled(
+                        upsampled_image_names,
+                        tissue_settings,
+                        parameters_and_inputs,
+                        transformed_template_name)
 
-        # Do morphological operations
+    # Do morphological operations
+    simnibs_tissues = tissue_settings['simnibs_tissues']
+    _morphological_operations(upsampled_tissues, simnibs_tissues)
+
+    return upsampled_tissues
 
 
-def morphological_operations(fn, out):
-    img = nib.load(fn)
-    label_img = np.array(img.dataobj)
+def _morphological_operations(label_img, simnibs_tissues):
+    ''' Does morphological operations to ensure
+        1. A CSF layer between GM and Skull and beteween GM and CSF
+        2. Outer bone layers are compact bone
+
+        works in-place
+    '''
+    # Ensuring a CSF layer beteen GM and Skull and GM and Blood
     # Relabel regions in the expanded GM which are in skull or blood to CSF
-    GM = label_img == 2
-    C_BONE = label_img == 7
-    S_BONE = label_img == 8
-    BLOOD = label_img == 9
+    GM = label_img == simnibs_tissues["GM"]
+    C_BONE = label_img == simnibs_tissues["Compact_bone"]
+    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
+    BLOOD = label_img == simnibs_tissues["Blood"]
     GM_dilated = ndimage.morphology.binary_dilation(
         GM, ndimage.generate_binary_structure(3, 2)
     )
-    label_img[GM_dilated * (C_BONE + S_BONE + BLOOD)] = 3
+    label_img[GM_dilated * (C_BONE + S_BONE + BLOOD)] = simnibs_tissues["CSF"]
     # Ensure the outer skull label is compact bone
-    C_BONE = label_img == 7
-    S_BONE = label_img == 8
+    C_BONE = label_img == simnibs_tissues["Compact_bone"]
+    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
     SKULL_outer = (C_BONE + S_BONE) * ~ndimage.morphology.binary_erosion(
         (C_BONE + S_BONE), ndimage.generate_binary_structure(3, 2)
     )
-    label_img[SKULL_outer] = 7
-    nib.save(
-        nib.Nifti1Image(label_img.astype(np.uint8), img.affine),
-        out
-    )
-    return label_img
+    label_img[SKULL_outer] = simnibs_tissues["Compact_bone"]
 
 
 def view(subject_dir):
@@ -431,22 +438,35 @@ def run(subject_dir=None, T1=None, T2=None,
         # Run post-processing
         logger.info('Post-processing segmentation')
         os.makedirs(sub_files.label_prep_folder, exist_ok=True)
+
         upsampled_image_names = [sub_files.T1_upsampled]
         if len(bias_corrected_image_names) > 1:
             upsampled_image_names.append(sub_files.T2_upsampled)
 
         tissue_settings = atlas_settings['conductivity_mapping']
-        _post_process_segmentation(bias_corrected_image_names,
-                                   upsampled_image_names,
-                                   sub_files.tissue_labeling_upsampled,
-                                   tissue_settings,
-                                   segment_parameters_and_inputs,
-                                   sub_files.template_coregistered)
+        cleaned_upsampled_tissues = _post_process_segmentation(
+                                    bias_corrected_image_names,
+                                    upsampled_image_names,
+                                    tissue_settings,
+                                    segment_parameters_and_inputs,
+                                    sub_files.template_coregistered)
 
+        # Write to disk
+        upsampled_image = nib.load(sub_files.T1_upsampled)
+        affine_upsampled = upsampled_image.affine
+        upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues,
+                                            affine_upsampled)
+        nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
 
     if mesh:
         # create mesh from label image
-        logger.info('starting mesh')
+        logger.info('Starting mesh')
+        label_image = nib.load(sub_files.tissue_labeling_upsampled)
+        label_buffer = label_image.get_data()
+        label_affine = label_image.affine
+        final_mesh = mesh(label_buffer, label_affine)
+        logger.info('Writing mesh')
+        write_mesh(final_mesh, sub_files.head_mesh)
 
     # -------------------------TIDY UP-----------------------------------------
 
@@ -463,3 +483,122 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
+
+
+def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
+         distance_slope=0.5, distance_range=(0.1, 3),
+         optimize=True, remove_spikes=True, smooth_steps=5):
+    ''' Creates a mesh from a labeled image
+
+    The maximum element sizes (CGAL facet_size and cell_size) is given by:
+        size = size_slope * thickness
+        size[size < size_range[0]] = size_range[0]
+        size[size > size_range[1]] = size_range[1]
+
+    where "thickness" is the local tissue thickness.
+    The distance (CGAL facet_distance) parameter is calcualted in a similar way.
+    This allows for the meshing to adjust sizes according to local needs.
+
+    Parameters
+    -----------
+    label_img: 3D np.ndarray in uint8 format
+        Labeled image from segmentation
+    affine: 4x4 np.ndarray
+        Affine transformation from voxel coordinates to world coordinates
+    size_slope: float (optinal)
+        relationship between thickness and slopes. The largest this value,
+        the larger the elements will be. Default: 1
+    size_range: 2-element list (optional)
+        Minimum and maximum values for element sizes, in mm. Default: (1, 5)
+    distance_slope: float (optinal)
+        relationship between thickness and facet_distance. At small distance
+        values, the meshing will follow the original image more strictly. This
+        also means more elements. Default: 0.5
+    size_range: 2-element list (optional)
+        Minimum and maximum values for facet_distance, in mm. Default: (0.1, 3)
+    optimize: bool (optional)
+        Whether to run lloyd optimization on the mesh. Default: True
+    remove_spikes: bool (optional)
+        Whether to remove spikes to create smoother meshes. Default: True
+    smooth_steps: int (optional)
+        Number of smoothing steps to apply to the final mesh surfaces. Default: 5
+
+    Returns
+    --------
+    msh: simnibs.Msh
+        Mesh structure
+    '''
+    # Calculate thickness
+    logger.info('Calculating tissue thickness')
+    thickness = _thickness._calc_thickness(label_img)
+    # I set the background thickness to some large value
+    thickness[thickness < .5] = 100
+    # Scale thickenss with voxel size
+    voxel_size = transformations.get_vox_size(affine)
+    if not np.allclose(np.diff(voxel_size), 0):
+        logger.warn('Anisotropic image, meshing may contain extra artifacts')
+    thickness *= np.average(voxel_size)
+
+    # Define size field and distance field
+    size_field = _sizing_field_from_thickness(
+        thickness, size_slope, size_range
+    )
+    distance_field = _sizing_field_from_thickness(
+        thickness, distance_slope, distance_range
+    )
+    # Run meshing
+    logger.info('Meshing')
+    start = time.time()
+    mesh = meshing.image2mesh(
+        label_img,
+        affine,
+        facet_size=size_field,
+        facet_distance=distance_field,
+        cell_size=size_field,
+        optimize=optimize
+    )
+    logger.info(
+        'Time to mesh: ' +
+        utils.simnibs_logger.format_time(time.time()-start)
+    )
+    start = time.time()
+    # Separate out tetrahedron (will reconstruct triangles later)
+    mesh = mesh.crop_mesh(elm_type=4)
+    # Assign the right labels to the mesh as CGAL modifies them
+    indices_seg = np.unique(label_img)[1:]
+    new_tags = np.copy(mesh.elm.tag1)
+    for i, t in enumerate(indices_seg):
+        new_tags[mesh.elm.tag1 == i+1] = t
+    mesh.elm.tag1 = new_tags
+    mesh.elm.tag2 = new_tags.copy()
+    # Remove spikes from mesh
+    if remove_spikes:
+        logger.info('Removing Spikes')
+        meshing.despike(
+            mesh, relabel_tol=1e-5,
+            adj_threshold=2
+        )
+    # Reconctruct the mesh surfaces
+    logger.info('Reconstructing Surfaces')
+    mesh.fix_th_node_ordering()
+    mesh.reconstruct_surfaces()
+    # Smooth the mesh
+    if smooth_steps > 0:
+        logger.info('Smoothing Mesh Surfaces')
+        mesh.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
+
+    logger.info(
+        'Time to post-process mesh: ' +
+        utils.simnibs_logger.format_time(time.time()-start)
+    )
+    return mesh
+
+
+def _sizing_field_from_thickness(thickness, slope, ranges):
+    ''' Calculates a sizing field from thickness '''
+    if ranges[0] > ranges[1]:
+        raise ValueError('Ranges value should be in format (min, max)')
+    field = np.array(slope*thickness, dtype=np.float32, order='F')
+    field[field < ranges[0]] = ranges[0]
+    field[field > ranges[1]] = ranges[1]
+    return field

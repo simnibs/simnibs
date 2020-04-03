@@ -312,6 +312,9 @@ class SubjectFiles:
     tissue_labeling_upsampled: str
         Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution
     
+    head_mesh: str
+        Final head mesh
+    
     Warning
     --------
     This class does not check for existance of the files
@@ -423,6 +426,7 @@ class SubjectFiles:
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
+        self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject

@@ -1,12 +1,10 @@
-import copy
 import os
 import numpy as np
 import pytest
-import nibabel
 
-from simnibs import SIMNIBSDIR
-import simnibs.simulation.cond as cond
-import simnibs.mesh_tools.mesh_io as mesh_io
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import cond
 
 @pytest.fixture
 def sphere3_msh():

@@ -64,8 +64,7 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                segmentation, cropping, exampleImage)
 
 
-def segmentUpsampled(input_bias_corrected,
-                     tissues_upsampled, tissue_settings,
+def segmentUpsampled(input_bias_corrected, tissue_settings,
                      parameters_and_inputs, transformedTemplateFileName):
 
     # We need an init of the probabilistic segmentation class
@@ -123,7 +122,7 @@ def segmentUpsampled(input_bias_corrected,
                                 dtype=np.uint16)
     segmentation = FreeSurferLabels[upsampledStructureNumbers]
     segmentation = segmentation.reshape(imageBuffersUpsampled.shape[0:3])
-    
+
     simnibs_tissues = tissue_settings['simnibs_tissues']
     segmentation_tissues = tissue_settings['segmentation_tissues']
 
@@ -131,11 +130,7 @@ def segmentUpsampled(input_bias_corrected,
     for t, label in simnibs_tissues.items():
         tissue_labeling[np.isin(segmentation, segmentation_tissues[t])] = label
 
-    # TODO: Writing to disk for checking
-    exampleImage = gems.KvlImage(input_bias_corrected[0])
-
-    writeImage(tissues_upsampled, tissue_labeling,
-               croppingUpsampled, exampleImage)
+    return tissue_labeling
 
 
 def saveWarpField(template_name, warp_to_mni,

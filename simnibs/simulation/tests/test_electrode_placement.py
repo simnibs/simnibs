@@ -7,10 +7,9 @@ import scipy.spatial
 import pytest
 
 
-from simnibs import SIMNIBSDIR
-import simnibs.mesh_tools.mesh_io as mesh_io
-import simnibs.simulation.electrode_placement as electrode_placement
-import simnibs.simulation.sim_struct as sim_struct
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import electrode_placement
 
 
 @pytest.fixture(scope='module')

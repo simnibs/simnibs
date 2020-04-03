@@ -4,8 +4,8 @@ import tempfile
 import pytest
 import numpy as np
 
-from simnibs import SIMNIBSDIR
-from simnibs.mesh_tools import meshing, mesh_io
+from ... import SIMNIBSDIR
+from .. import meshing, mesh_io
 
 
 @pytest.fixture
@@ -334,3 +334,25 @@ def test_remesh(sphere3):
     assert np.isclose(vols[1], 4/3*np.pi*(90**3 - 85**3), rtol=1e-1)
     assert np.isclose(vols[2], 4/3*np.pi*(95**3 - 90**3), rtol=1e-1)
 
+class TestRelabelSpiles:
+    def test_relabel_spikes(self, sphere3):
+        mesh = copy.deepcopy(sphere3)
+        mesh.elm.tag1[9033] = 3
+        mesh.elm.tag2[9033] = 3
+        mesh.elm.tag1[8343] = 5
+        mesh.elm.tag2[8343] = 5
+        meshing.relabel_spikes(
+            mesh, 3, 5, 4
+        )
+        assert np.all(mesh.elm.tag1 == sphere3.elm.tag1)
+        assert np.all(mesh.elm.tag2 == sphere3.elm.tag2)
+
+    def test_despike(self, sphere3):
+        mesh = copy.deepcopy(sphere3)
+        mesh.elm.tag1[9033] = 3
+        mesh.elm.tag2[9033] = 3
+        mesh.elm.tag1[8343] = 5
+        mesh.elm.tag2[8343] = 5
+        meshing.despike(mesh, adj_threshold=3)
+        assert np.all(mesh.elm.tag1 == sphere3.elm.tag1)
+        assert np.all(mesh.elm.tag2 == sphere3.elm.tag2)

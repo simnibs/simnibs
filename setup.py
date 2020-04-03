@@ -204,14 +204,19 @@ cython_msh = Extension(
     include_dirs=[np.get_include()]
 )
 marching_cubes_lewiner_cy = Extension(
-    'simnibs.mesh_tools._marching_cubes_lewiner_cy',
-    ["simnibs/mesh_tools/_marching_cubes_lewiner_cy.pyx"],
+    'simnibs.segmentation._marching_cubes_lewiner_cy',
+    ["simnibs/segmentation/_marching_cubes_lewiner_cy.pyx"],
     include_dirs=[np.get_include()]
 )
-cs_utils = Extension(
-    'simnibs.segmentation._cs_utils',
-    ["simnibs/segmentation/_cs_utils.pyx", "simnibs/external/cat12/genus0.c"],
-    include_dirs=[np.get_include(), 'simnibs/external/cat12']
+cat_c_utils = Extension(
+    'simnibs.segmentation._cat_c_utils',
+    ["simnibs/segmentation/_cat_c_utils.pyx", "simnibs/segmentation/cat_c_utils/genus0.c"],
+    include_dirs=[np.get_include(), 'simnibs/segmentation/cat_c_utils']
+)
+thickness = Extension(
+    'simnibs.segmentation._thickness',
+    ["simnibs/segmentation/_thickness.pyx"],
+    include_dirs=[np.get_include()]
 )
 petsc_solver = Extension(
     'simnibs._compiled.petsc_solver',
@@ -240,7 +245,8 @@ create_mesh = Extension(
 extensions = [
     cython_msh,
     marching_cubes_lewiner_cy,
-    cs_utils,
+    cat_c_utils,
+    thickness,
     petsc_solver,
     create_mesh
 ]
@@ -350,19 +356,19 @@ class build_ext_(build_ext):
             shutil.rmtree(tbb_path, ignore_errors=True)
         # Remove unescessary binary files
         linux_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'linux'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'linux'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'bin', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'include', 'linux'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'lib', 'linux'),
         ]
         osx_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'osx'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'osx'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'bin', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'include', 'osx'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'lib', 'osx'),
         ]
         win_folders = [
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'bin', 'win'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'include', 'win'),
-            os.path.join(self.build_lib, 'simnibs', 'extenal', 'lib', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'bin', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'include', 'win'),
+            os.path.join(self.build_lib, 'simnibs', 'external', 'lib', 'win'),
         ]
         if sys.platform == 'linux':
             [shutil.rmtree(f, True) for f in osx_folders]

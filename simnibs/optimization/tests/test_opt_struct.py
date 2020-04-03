@@ -6,10 +6,10 @@ import numpy as np
 import h5py
 import scipy.io
 
-from simnibs import SIMNIBSDIR
-import simnibs.mesh_tools.mesh_io as mesh_io
-from simnibs.optimization import opt_struct
-import simnibs.optimization.optimization_methods as methods
+from ... import SIMNIBSDIR
+from ...mesh_tools import mesh_io
+from .. import opt_struct
+from .. import optimization_methods as methods
 
 
 @pytest.fixture()
