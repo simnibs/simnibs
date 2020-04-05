@@ -2,7 +2,8 @@ import functools
 import numpy as np
 import scipy.optimize
 import pytest
-from simnibs.optimization import optimization_methods
+
+from .. import optimization_methods
 
 @pytest.fixture()
 def optimization_variables():

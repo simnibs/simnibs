@@ -1,7 +1,7 @@
-import scipy.sparse.linalg as sp_linalg
 import scipy.sparse as sp
 import numpy as np
-import simnibs.simulation.pardiso as pardiso
+
+from .. import pardiso
 
 def create_matrix(dim, alpha=0.95, smallest_coef=0.1, largest_coef=.9):
     ''' Based o scikit-learn make_sparse_spd_matrix'''

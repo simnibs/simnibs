@@ -1,4 +1,3 @@
-#!/usr/bin/python2.7 -u
 # -*- coding: utf-8 -*-\
 '''
     Generalized Polynomial Chaos things for SimNIBS

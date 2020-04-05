@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import pytest
-from simnibs.utils import file_finder
+
+from .. import file_finder
 
 
 class TestTemplates:

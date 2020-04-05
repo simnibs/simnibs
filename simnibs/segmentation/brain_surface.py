@@ -719,7 +719,6 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         This function is adapted from cat_surf_createCS.m of CAT12
         (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).  
     """
-    
     debug=False # keep intermediate results if set to True
     
     # add surface name to logger
