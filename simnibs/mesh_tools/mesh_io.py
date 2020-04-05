@@ -2090,6 +2090,53 @@ class Msh:
         return indices, points
 
 
+
+    def intersect_ray(self, points, directions):
+        ''' Finds the triangle (if any) that intersects with the rays starting
+            at points and pointing into directions
+        
+        Parameters
+        ------------
+        points: (N, 3) array
+            start points
+        directions: (N, 3) array
+            direction vectors
+
+        Returns
+        --------
+        indices: (M, 2) array
+            Pairs of indices with the line segment index and the triangle index
+        intercpt_pos (M, 3) array:
+            Positions where the interceptions occur
+        '''
+        # Using CGAL AABB https://doc.cgal.org/latest/AABB_tree/index.html
+        if points.ndim == 1:
+            points = points[None, :]
+        if directions.ndim == 1:
+            directions = directions[None, :]
+        if not (points.shape[1] == 3 and directions.shape[1] == 3):
+            raise ValueError('near and far poins should be arrays of size (N, 3)')
+
+        idx,far = self._intersect_segment_getfarpoint(points, directions)
+
+        if len(idx)>0:
+            indices, intercpt_pos = create_mesh.segment_triangle_intersection(
+                self.nodes[:],
+                self.elm[self.elm.elm_type == 2, :3] - 1,
+                points[idx,:], far
+            )
+            
+            if len(indices) > 0:
+                indices[:, 1] = self.elm.triangles[indices[:, 1]]
+                indices[:, 0] = idx[indices[:, 0]]
+                
+        else:
+            indices = [] 
+            intercpt_pos = []
+
+        return indices, intercpt_pos
+
+
     def _intersect_segment_getfarpoint(self, points, directions):
         """ Gives back the indices of the rays that intersect with the bounding
             box of the mesh. For intersecting rays, also the end points at the 
