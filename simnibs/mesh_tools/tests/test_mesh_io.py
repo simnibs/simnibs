@@ -6,6 +6,7 @@ import tempfile
 import numpy as np
 import h5py
 import pytest
+from scipy.spatial import ConvexHull
 
 from simnibs import SIMNIBSDIR
 import simnibs.mesh_tools.mesh_io as mesh_io
@@ -829,6 +830,30 @@ class TestMsh:
         assert len(idx) == 0
         assert len(pos) == 0
 
+    def test_intersect_segment_getfarpoint(self):
+        vertices=np.array([[-1,-3,-5],[2,-3,-5],[2,4,-5],[-1,4,-5],
+                           [-1,-3,6], [2,-3,6], [2,4,6], [-1,4,6]])
+        hull = ConvexHull(vertices)
+        elements=hull.simplices+1
+        S=mesh_io.Msh(mesh_io.Nodes(vertices),mesh_io.Elements(triangles=elements))
+        
+        points=np.random.uniform(-10, 10, size=(100000,3))
+        directions=np.random.uniform(-1, 1, size=(100000,3))
+        idx,endpoints = S._intersect_segment_getfarpoint(points, directions)
+        
+        eps=0.01 # internal eps in _intersect_segment_getfarpoint to create ROI
+        ROI=np.array([[-1-eps,2+eps],[-3-eps,4+eps],[-5-eps,6+eps]])
+        
+        eps=100*np.finfo(float).eps
+        if len(idx)>0:
+            nhits = (np.abs(endpoints[:,0] - ROI[0,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,0] - ROI[0,1]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,1] - ROI[1,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,1] - ROI[1,1]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,2] - ROI[2,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,2] - ROI[2,1]) < eps).astype(int)                
+            assert np.all(nhits == 1)
+        
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
         M = m.elm2node_matrix()
