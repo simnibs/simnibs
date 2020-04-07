@@ -23,7 +23,7 @@ from scipy import ndimage
 from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
-from ..mesh_tools.mesh_io import write_mesh
+from ..mesh_tools.mesh_io import write_msh
 
 
 def _register_atlas_to_input_affine(T1, template_file_name,
@@ -101,7 +101,7 @@ def _estimate_parameters(path_to_segment_folder,
 
 
     #TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
-    if 1:
+    if 0:
         user_optimization_options = {'multiResolutionSpecification':
                                      [{'atlasFileName':
                                        os.path.join(path_to_segment_folder,
@@ -463,10 +463,12 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.info('Starting mesh')
         label_image = nib.load(sub_files.tissue_labeling_upsampled)
         label_buffer = label_image.get_data()
+        # Cast to uint16, otherwise meshing complains
+        label_buffer = label_buffer.astype(np.uint16)
         label_affine = label_image.affine
-        final_mesh = mesh(label_buffer, label_affine)
+        final_mesh = _mesh(label_buffer, label_affine)
         logger.info('Writing mesh')
-        write_mesh(final_mesh, sub_files.head_mesh)
+        write_msh(final_mesh, sub_files.head_mesh)
 
     # -------------------------TIDY UP-----------------------------------------
 
@@ -485,9 +487,9 @@ def run(subject_dir=None, T1=None, T2=None,
         f.close()
 
 
-def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
-         distance_slope=0.5, distance_range=(0.1, 3),
-         optimize=True, remove_spikes=True, smooth_steps=5):
+def _mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
+          distance_slope=0.5, distance_range=(0.1, 3),
+          optimize=True, remove_spikes=True, smooth_steps=5):
     ''' Creates a mesh from a labeled image
 
     The maximum element sizes (CGAL facet_size and cell_size) is given by:

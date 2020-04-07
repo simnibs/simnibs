@@ -130,7 +130,12 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
     for t, label in simnibs_tissues.items():
         tissue_labeling[np.isin(segmentation, segmentation_tissues[t])] = label
 
-    return tissue_labeling
+    example_image = gems.KvlImage(input_bias_corrected[0])
+    uncropped_tissue_labeling = np.zeros(
+            example_image.getImageBuffer().shape, dtype=np.float32, order='F')
+    uncropped_tissue_labeling[croppingUpsampled] = tissue_labeling
+
+    return uncropped_tissue_labeling
 
 
 def saveWarpField(template_name, warp_to_mni,
