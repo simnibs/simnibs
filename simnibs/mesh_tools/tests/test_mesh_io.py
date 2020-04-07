@@ -6,6 +6,7 @@ import tempfile
 import numpy as np
 import h5py
 import pytest
+from scipy.spatial import ConvexHull
 
 from ... import SIMNIBSDIR
 from .. import mesh_io
@@ -829,6 +830,71 @@ class TestMsh:
         assert len(idx) == 0
         assert len(pos) == 0
 
+    def test_intersect_segment_getfarpoint(self):
+        # generate cuboid
+        vertices=np.array([[-1,-3,-5],[2,-3,-5],[2,4,-5],[-1,4,-5],
+                           [-1,-3,6], [2,-3,6], [2,4,6], [-1,4,6]])
+        hull = ConvexHull(vertices)
+        elements=hull.simplices+1
+        S=mesh_io.Msh(mesh_io.Nodes(vertices),mesh_io.Elements(triangles=elements))
+        
+        # generate random points and directions
+        points=np.random.uniform(-10, 10, size=(100000,3))
+        directions=np.random.uniform(-1, 1, size=(100000,3))
+        
+        idx,endpoints = S._intersect_segment_getfarpoint(points, directions)
+        
+        # test whether all intersection points are on the surface of the
+        # internally used bounding box
+        eps=0.01 # internal eps in _intersect_segment_getfarpoint to create ROI
+        ROI=np.array([[-1-eps,2+eps],[-3-eps,4+eps],[-5-eps,6+eps]])
+        
+        eps=100*np.finfo(float).eps
+        if len(idx)>0:
+            nhits = (np.abs(endpoints[:,0] - ROI[0,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,0] - ROI[0,1]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,1] - ROI[1,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,1] - ROI[1,1]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,2] - ROI[2,0]) < eps).astype(int) + \
+                    (np.abs(endpoints[:,2] - ROI[2,1]) < eps).astype(int)                
+            assert np.all(nhits == 1)
+        
+    def test_intersect_ray(self):
+        # generate cuboid and fix triangle orientations
+        vertices=np.array([[-1,-3,-5],[2,-3,-5],[2,4,-5],[-1,4,-5],
+                           [-1,-3,6], [2,-3,6], [2,4,6], [-1,4,6]])
+        hull = ConvexHull(vertices)
+        elements=hull.simplices+1
+        S=mesh_io.Msh(mesh_io.Nodes(vertices),
+                      mesh_io.Elements(triangles=elements))
+        
+        normals = S.triangle_normals()[:]
+        baricenters = S.elements_baricenters()[:]
+        baricenters -= np.mean(baricenters,axis=0)
+        dotp = np.einsum('ij, ij -> i', normals, baricenters)
+        switch = dotp < 0
+        buffer=S.elm.node_number_list[switch,1]
+        S.elm.node_number_list[switch,1] = S.elm.node_number_list[switch,2]
+        S.elm.node_number_list[switch,2] = buffer
+
+        # generate random points and directions
+        points=np.random.uniform(-10, 10, size=(100000,3))
+        directions=np.random.uniform(-1, 1, size=(100000,3))
+
+        idx,inters_pos = S.intersect_ray(points, directions)
+
+        # test whether all intersection points are on the cuboid surface
+        ROI=np.array([[-1,2],[-3,4],[-5,6]])
+        eps=100*np.finfo(float).eps
+        if len(idx)>0:
+            nhits = (np.abs(inters_pos[:,0] - ROI[0,0]) < eps).astype(int) + \
+                    (np.abs(inters_pos[:,0] - ROI[0,1]) < eps).astype(int) + \
+                    (np.abs(inters_pos[:,1] - ROI[1,0]) < eps).astype(int) + \
+                    (np.abs(inters_pos[:,1] - ROI[1,1]) < eps).astype(int) + \
+                    (np.abs(inters_pos[:,2] - ROI[2,0]) < eps).astype(int) + \
+                    (np.abs(inters_pos[:,2] - ROI[2,1]) < eps).astype(int)
+            assert np.all(nhits == 1)
+        
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
         M = m.elm2node_matrix()

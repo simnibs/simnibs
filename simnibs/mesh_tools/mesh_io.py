@@ -388,7 +388,42 @@ class Elements:
 
         outside_faces = faces[idx[count == 1]]
         return outside_faces
-
+    
+    
+    def get_surface_outline(self, triangle_indices=None):
+        """ returns the outline of a non-closed surface
+        
+        Parameters
+        ----------------
+        triangle_indices: np.ndarray (optional)
+            Indices of the triangles for which the outline should be determined
+            (1-based element indices, default: all triangles)
+    
+        Returns
+        -------------
+        edges: np.ndarray
+            Nx2 array of node indices
+    
+        """
+        if triangle_indices is None:
+            triangle_indices = self.triangles        
+        tr = self[triangle_indices][:,0:3]
+        
+        edges = tr[:, [[0, 1], [1, 2], [2, 0]]]
+        edges = edges.reshape(-1, 2)
+        
+        _, idx, count = np.unique(
+                np.sort(edges, axis=1),
+                return_index=True,
+                return_counts=True,
+                axis=0)
+        
+        if np.any(count > 2):
+            warnings.warn('Found an edge with more than 2 adjacent triangles!')
+    
+        return edges[idx[count == 1]]
+    
+    
     def nodes_with_tag(self, tags):
         ''' Gets all nodes indexes that are part of at least one element with the given
         tags
@@ -808,25 +843,25 @@ class Msh:
             assert len(nd.value) == self.nodes.nr
             pad_length = [(0, other.nodes.nr)] + [(0, 0)] * (nd.value.ndim - 1)
             new_values = np.pad(nd.value.astype(float), pad_length, 'constant', constant_values=np.nan)
-            joined.nodedata.append(NodeData(new_values, nd.field_name))
+            joined.nodedata.append(NodeData(new_values, nd.field_name, mesh=joined))
 
         for ed in self.elmdata:
             assert len(ed.value) == self.elm.nr
             pad_length = [(0, other.elm.nr)] + [(0, 0)] * (ed.value.ndim - 1)
             new_values = np.pad(ed.value.astype(float), pad_length, 'constant', constant_values=np.nan)
-            joined.elmdata.append(ElementData(new_values[new_elm_order], ed.field_name))
+            joined.elmdata.append(ElementData(new_values[new_elm_order], ed.field_name, mesh=joined))
 
         for nd in other.nodedata:
             assert len(nd.value) == other.nodes.nr
             pad_length = [(self.nodes.nr, 0)] + [(0, 0)] * (nd.value.ndim - 1)
             new_values = np.pad(nd.value.astype(float), pad_length, 'constant', constant_values=np.nan)
-            joined.nodedata.append(NodeData(new_values, nd.field_name))
+            joined.nodedata.append(NodeData(new_values, nd.field_name, mesh=joined))
 
         for ed in other.elmdata:
             assert len(ed.value) == other.elm.nr
             pad_length = [(self.elm.nr, 0)] + [(0, 0)] * (ed.value.ndim - 1)
             new_values = np.pad(ed.value.astype(float), pad_length, 'constant', constant_values=np.nan)
-            joined.elmdata.append(ElementData(new_values[new_elm_order], ed.field_name))
+            joined.elmdata.append(ElementData(new_values[new_elm_order], ed.field_name, mesh=joined))
 
         return joined
 
@@ -2053,6 +2088,119 @@ class Msh:
             indices[:, 1] = self.elm.triangles[indices[:, 1]]
 
         return indices, points
+
+
+
+    def intersect_ray(self, points, directions):
+        ''' Finds the triangle (if any) that intersects with the rays starting
+            at points and pointing into directions
+        
+        Parameters
+        ------------
+        points: (N, 3) array
+            start points
+        directions: (N, 3) array
+            direction vectors
+
+        Returns
+        --------
+        indices: (M, 2) array
+            Pairs of indices with the line segment index and the triangle index
+        intercpt_pos (M, 3) array:
+            Positions where the interceptions occur
+        '''
+        # Using CGAL AABB https://doc.cgal.org/latest/AABB_tree/index.html
+        if points.ndim == 1:
+            points = points[None, :]
+        if directions.ndim == 1:
+            directions = directions[None, :]
+        if not (points.shape[1] == 3 and directions.shape[1] == 3):
+            raise ValueError('near and far poins should be arrays of size (N, 3)')
+
+        idx,far = self._intersect_segment_getfarpoint(points, directions)
+
+        if len(idx)>0:
+            indices, intercpt_pos = create_mesh.segment_triangle_intersection(
+                self.nodes[:],
+                self.elm[self.elm.elm_type == 2, :3] - 1,
+                points[idx,:], far
+            )
+            
+            if len(indices) > 0:
+                indices[:, 1] = self.elm.triangles[indices[:, 1]]
+                indices[:, 0] = idx[indices[:, 0]]
+                
+        else:
+            indices = [] 
+            intercpt_pos = []
+
+        return indices, intercpt_pos
+
+
+    def _intersect_segment_getfarpoint(self, points, directions):
+        """ Gives back the indices of the rays that intersect with the bounding
+            box of the mesh. For intersecting rays, also the end points at the 
+            boundaries of the bounding box after traversing the ROI will be 
+            returned.
+       
+        Parameters
+        ----------
+        msh : simnibs mesh
+        points : array_like Nx3
+            start points
+        directions : array_like Nx3
+            direction vectors.
+    
+        Returns
+        -------
+        idx_vec : (N,) array
+            indices of intersecting rays
+        end_points : (N, 3) array
+            end points of the intersecting rays
+        
+        """ 
+    
+        eps=0.01
+        ROI = [[np.min(self.nodes.node_coord[:,0])-eps, np.max(self.nodes.node_coord[:,0])+eps],
+               [np.min(self.nodes.node_coord[:,1])-eps, np.max(self.nodes.node_coord[:,1])+eps],
+               [np.min(self.nodes.node_coord[:,2])-eps, np.max(self.nodes.node_coord[:,2])+eps]]
+        
+        has_far = np.zeros(points.shape[0], dtype=bool)
+        scale = np.zeros(points.shape[0])
+        
+        plane_idx=[[1,2],[0,2],[0,1]]
+        for k in range(3):
+            # lower bound    
+            idx=np.logical_and(directions[:,k] < 0, points[:,k]>ROI[k][0])
+            s=(ROI[k][0] - points[idx,k]) / directions[idx,k]
+            p=points[idx,:]+s.reshape(-1,1)*directions[idx,:]
+            
+            inside_rect =   (p[:, plane_idx[k][0] ] >= ROI[ plane_idx[k][0] ][0]) * \
+                            (p[:, plane_idx[k][0] ] <= ROI[ plane_idx[k][0] ][1]) * \
+                            (p[:, plane_idx[k][1] ] >= ROI[ plane_idx[k][1] ][0]) * \
+                            (p[:, plane_idx[k][1] ] <= ROI[ plane_idx[k][1] ][1])
+            idx[idx]=inside_rect
+            
+            has_far[idx]=True
+            scale[idx]=s[inside_rect]
+            
+            # upper bound    
+            idx=np.logical_and(directions[:,k] > 0, points[:,k]<ROI[k][1])
+            s=(ROI[k][1] - points[idx,k]) / directions[idx,k]
+            p=points[idx,:]+s.reshape(-1,1)*directions[idx,:]
+            
+            inside_rect =   (p[:, plane_idx[k][0] ] >= ROI[ plane_idx[k][0] ][0]) * \
+                            (p[:, plane_idx[k][0] ] <= ROI[ plane_idx[k][0] ][1]) * \
+                            (p[:, plane_idx[k][1] ] >= ROI[ plane_idx[k][1] ][0]) * \
+                            (p[:, plane_idx[k][1] ] <= ROI[ plane_idx[k][1] ][1])
+            idx[idx]=inside_rect
+            has_far[idx]=True
+            scale[idx]=s[inside_rect]
+            
+        # get end points
+        far = points[has_far] + scale[has_far].reshape(-1,1) * directions[has_far]
+    
+        return np.where(has_far)[0], far
 
 
     def view(self,
