@@ -4,6 +4,14 @@ Publications
 =============
 The main publications documenting SimNIBS development are
 
+Version 3.2
+-----------
+
+Magnetic Field Calculations
+'''''''''''''''''''''''''''
+* `Yazdanian, H., Saturnino, G. B., Thielscher, A., & Knudsen, K. (2020). Fast evaluation of the Biot-Savart integral using FFT for electrical conductivity imaging. Journal of Computational Physics, 109408. <https://doi.org/10.1016/j.jcp.2020.109408>`_
+
+
 Version 3.1
 -----------
 
