@@ -5,7 +5,7 @@
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2019 Hassan Yazdanin, Guilherme B Saturnino
+    Copyright (C) 2019 Hassan Yazdanian, Guilherme B Saturnino
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

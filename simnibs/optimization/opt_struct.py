@@ -890,6 +890,8 @@ class TDCSoptimize():
                         max_individual_current, weights
                 )
             for t in self.target:
+                if t.intensity < 0:
+                    raise ValueError('Intensity must be > 0')
                 opt_problem.add_norm_constraint(
                     t.get_indexes_and_directions()[0], t.intensity,
                     t.get_weights()
@@ -1838,7 +1840,7 @@ class TDCSDistributedOptimize():
                  target_image=None,
                  mni_space=True,
                  subpath=None,
-                 intensity=None,
+                 intensity=0.2,
                  min_img_value=0,
                  open_in_gmsh=True):
 
@@ -2038,7 +2040,9 @@ class TDCSDistributedOptimize():
         e_norm_field = e_field.norm()
         normals = self.normal_directions()
         e_normal_field = np.sum(e_field[:]*normals, axis=1)
-        target_map, _ = self._target_distribution()
+        target_map, W = self._target_distribution()
+        erni = (target_map - W*e_normal_field) ** 2 - target_map ** 2
+        erni *= len(target_map)/np.sum(W)
 
         m = copy.deepcopy(self.mesh)
         if self.lf_type == 'node':
@@ -2050,6 +2054,7 @@ class TDCSDistributedOptimize():
         add_field(e_norm_field, e_norm_field.field_name)
         add_field(e_normal_field, 'normal' + e_field.field_name)
         add_field(target_map, 'target_map')
+        add_field(erni, 'ERNI')
 
         return m
 

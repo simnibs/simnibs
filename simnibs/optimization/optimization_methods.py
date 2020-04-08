@@ -557,7 +557,7 @@ class TESDistributedElecConstrained(TESDistributed):
         )
         return x, l.dot(x) + x.dot(Q).dot(x)
 
-    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy='compact'):
+    def solve(self, log_level=20, eps_bb=1e-1, max_bb_iter=500, init_startegy='compact'):
         # Heuristically eliminate electrodes
         max_el_current = min(self.max_el_current, self.max_total_current)
         el = np.arange(self.n)

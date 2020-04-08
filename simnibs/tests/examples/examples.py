@@ -156,6 +156,11 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_mni.py')
         assert ret.returncode == 0
 
+    def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_strength.py')
+        assert ret.returncode == 0
+
 
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
@@ -230,4 +235,9 @@ class TestMatlabErnie:
     def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tdcs_optimize_mni.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_strength.m')
         assert ret.returncode == 0
