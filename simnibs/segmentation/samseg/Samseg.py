@@ -550,6 +550,7 @@ class Samseg:
 
         # End resolution level loop
 
+#    @profile
     def segment(self):
         # Get the final mesh
         mesh = self.probabilisticAtlas.getMesh(self.modelSpecifications.atlasFileName, self.transform,

@@ -1440,17 +1440,17 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
 
 
 def dilate(image,n):
-    image = image > 0.5
     nan_inds = np.isnan(image)
     image[nan_inds] = 0
+    image = image > 0.5
     se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
     return mrph.binary_dilation(image,se)>0
 
 
 def erosion(image,n):
-    image = image > 0.5
     nan_inds = np.isnan(image)
     image[nan_inds] = 0
+    image = image > 0.5
     return ~dilate(~image,n)
 
 
@@ -1460,9 +1460,9 @@ def lab(image):
 
 
 def close(image,n):
-    image = image > 0.5
     nan_inds = np.isnan(image)
     image[nan_inds] = 0
+    image = image > 0.5
     image_padded = np.pad(image,n,'constant')
     image_padded = dilate(image_padded,n)
     image_padded = erosion(image_padded,n)
@@ -1470,9 +1470,9 @@ def close(image,n):
         
 
 def labclose(image,n):
-    image = image > 0.5
     nan_inds = np.isnan(image)
     image[nan_inds] = 0
+    image = image > 0.5
     tmp = close(image,n)
     return ~lab(~tmp)
 

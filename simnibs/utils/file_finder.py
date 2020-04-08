@@ -217,7 +217,10 @@ class SubjectFiles:
         Path to the output from the segmentation
     
     label_prep_folder: str
-        Path to the output from upsampling    
+        Path to the output from upsampling   
+    
+    mni_transf_folder: str
+        Path to MNI transformations
 
     eeg_cap_1010: str
         Path to the EEG 10-10 electrode file (.csv)
@@ -309,6 +312,9 @@ class SubjectFiles:
     tissue_labeling_upsampled: str
         Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution
     
+    head_mesh: str
+        Final head mesh
+    
     Warning
     --------
     This class does not check for existance of the files
@@ -354,23 +360,23 @@ class SubjectFiles:
 
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
-        mni_transf = os.path.join(self.subpath, 'toMNI')
+        self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
-        self.mni2conf_nonl = os.path.join(mni_transf, 'MNI2Conform_nonl.nii')
+        self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
         if os.path.isfile(self.mni2conf_nonl + '.gz'):
             self.mni2conf_nonl += '.gz'
 
-        self.conf2mni_nonl = os.path.join(mni_transf, 'Conform2MNI_nonl.nii')
+        self.conf2mni_nonl = os.path.join(self.mni_transf_folder, 'Conform2MNI_nonl.nii')
         if os.path.isfile(self.conf2mni_nonl + '.gz'):
             self.conf2mni_nonl += '.gz'
 
-        self.mni2conf_6dof = os.path.join(mni_transf, 'MNI2conform_6DOF')
+        self.mni2conf_6dof = os.path.join(self.mni_transf_folder, 'MNI2conform_6DOF')
         if os.path.isfile(self.mni2conf_6dof + '.txt'):
             self.mni2conf_6dof += '.txt'
         if os.path.isfile(self.mni2conf_6dof + '.mat'):
             self.mni2conf_6dof += '.mat'
 
-        self.mni2conf_12dof = os.path.join(mni_transf, 'MNI2conform_12DOF')
+        self.mni2conf_12dof = os.path.join(self.mni_transf_folder, 'MNI2conform_12DOF')
         if os.path.isfile(self.mni2conf_12dof + '.txt'):
             self.mni2conf_12dof += '.txt'
         if os.path.isfile(self.mni2conf_12dof + '.mat'):
@@ -420,6 +426,7 @@ class SubjectFiles:
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
+        self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
