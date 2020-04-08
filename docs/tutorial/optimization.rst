@@ -9,6 +9,7 @@ There are two steps for performing the optimizations.
 1. Create a *leadfield*. 
 2. Set-up an optimization based on the *leadfield*.
 
+.. _tutorial_leadfield:
 
 Leadfield Calculations
 -----------------------
@@ -117,6 +118,7 @@ To maximize intensity at the target, disregarding field focality, simply use a l
 
 \
 
+
 Using MNI Coordinates 
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -157,7 +159,26 @@ To optimize multiple distant targets simultaneously, just use multiple **target*
 
 \
 
-By using multiple targets, SimNIBS will try to hit each target with its intensity, whereas setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the many positions.
+By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the many positions.
+
+
+Electric Field Strength
+~~~~~~~~~~~~~~~~~~~~~~~
+For using electric field strength (norm) rather than an specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB)
+
+* *Python*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_strength.py
+     :language: python
+
+\
+
+* *MATLAB*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_strength.m
+     :language: matlab
+
+\
 
 
 Avoidance Regions

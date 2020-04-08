@@ -29,6 +29,8 @@ Initialization
 Attributes
 -----------
 
+.. _leadfield_hdf_doc:
+
 * **leadfield_hdf**: *string (Python)/character array (MATLAB)*
 
   * **Desctiption**: Name of HDF5 file with leadfield (see :ref:`tdcsleadfield_doc`)
@@ -40,11 +42,14 @@ Attributes
 
   \ 
 
+.. _opt_name_doc:
+
 * **name**: *string (Python)/character array (MATLAB)*
 
   * **Desctiption**: Name of the optimization problem. Gives the path and the prefix to
     the output files
   * **Example**: *Python/MATLAB*
+
     To have the output files from the optimization in the :file:`tdcs_leadfield/` folder
     and the :file:`motor_cortex` prefix
 
@@ -65,12 +70,12 @@ Attributes
 
 * **max_total_current**: *float, optional*
 
-  * **Description**: Maximum total injected current, in mA
+  * **Description**: Maximum total injected current, in A
   * **Default**: 2e-3
 
 * **max_individual_current**: *float, optional*
 
-  * **Description**: Maximum current injected in each electrode, in mA
+  * **Description**: Maximum current injected in each electrode, in A
   * **Default**: 1e-3
 
 * **max_active_electrodes**: *int, optional*
