@@ -77,7 +77,10 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
         components = surface.elm.connected_components()
         components.sort(key=len,reverse=True)
         surface = surface.crop_mesh(elements=components[0])
-     
+    
+    # ensure outwards pointing triangles
+    surface.fix_surface_orientation()    
+    
     # estimate Euler characteristics: EC = #vertices + #faces - #edges
     M = np.sort(surface.elm.node_number_list[:,0:3], axis=1)
     mesh_edges=np.unique(np.vstack((M[:,[0,1]],M[:,[1,2]],M[:,[0,2]])), axis=0)

@@ -1635,6 +1635,25 @@ class Msh:
         change = (self.elm.elm_type == 2) * (self.elm.tag2 < 1000)
         self.elm.tag2[change] += 1000
 
+
+    def fix_surface_orientation(self):
+        ''' Ensure that the majority of triangle normals point outwards.
+            If this is not the case, the orientation of all triangles will
+            be inversed.
+        '''
+        idx_tr = self.elm.elm_type == 2
+        normals = self.triangle_normals()[:]
+        baricenters = self.elements_baricenters()[idx_tr]
+        CoG = np.mean(baricenters, axis=0)
+        
+        nr_inward = sum(np.einsum("ij,ij->i", normals, baricenters-CoG)<0)
+        
+        if nr_inward/sum(idx_tr) > 0.5:
+            buffer = self.elm.node_number_list[idx_tr, 1].copy()
+            self.elm.node_number_list[idx_tr, 1] = self.elm.node_number_list[idx_tr, 2]
+            self.elm.node_number_list[idx_tr, 2] = buffer
+
+
     def compact_ordering(self, node_number):
         ''' Changes the node and element ordering so that it goes from 1 to nr_nodes
         
@@ -2105,7 +2124,8 @@ class Msh:
         Returns
         --------
         indices: (M, 2) array
-            Pairs of indices with the line segment index and the triangle index
+            Pairs of indices with the points index and the triangle index
+            NOTE: points indices are 0-based, triangle indices are 1-based!
         intercpt_pos (M, 3) array:
             Positions where the interceptions occur
         '''
@@ -2577,7 +2597,7 @@ class Data(object):
         self.mesh = mesh
 
         if value.ndim > 2:
-            raise ValueError('Can only hadle 1 and 2 dimensional fields '
+            raise ValueError('Can only handle 1 and 2 dimensional fields '
                              'Tensors should be given as a Nx9 array')
 
         if self.nr_comp > self.nr:
