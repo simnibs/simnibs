@@ -856,9 +856,10 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         del Vppi
         gc.collect()
      
-    # generate intial surface and save as gifti
-    CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial, 
-                           step_size=round(vdist/voxsize_pbt), only_largest_component=True)
+    # generate intial surface and save as gifti  
+    CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial,
+                           step_size=round(vdist/voxsize_pbt), only_largest_component=True, n_uniform=2)
+                           
     Praw=os.path.join(surffolder,actualsurf+'.central.nofix.gii')
     mesh_io.write_gifti_surface(CS, Praw)
     del Yppi, CS
@@ -1284,7 +1285,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         # region 3: surface after topology correction 
         # region 4: pre-final surface with thickness and perc. positions (as node data)
         # region 5: final surface
-
+        
 
     # ------- mark topological defects -------- 
     stimet = time.time()

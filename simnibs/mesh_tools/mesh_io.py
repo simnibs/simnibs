@@ -2564,6 +2564,21 @@ class Msh:
         gamma /= 8.479670
         return ElementData(gamma, 'gamma', self)
 
+
+    def surface_EC(self):
+        """ return euler characteristic of surfaces """
+        idx_tr = self.elm.elm_type == 2
+        
+        nr_tr = np.sum(idx_tr)
+        nr_node_tr = np.unique(self.elm.node_number_list[idx_tr,0:3].flatten()).shape[0]
+        
+        M = np.sort(self.elm.node_number_list[idx_tr,0:3], axis=1)
+        nr_edges = np.unique(np.vstack( (M[:,[0,1]], M[:,[1,2]], M[:,[0,2]]) ), axis=0).shape[0]
+        
+        EC = nr_node_tr + nr_tr - nr_edges
+        return EC
+
+
 class Data(object):
     """Store data in elements or nodes
 

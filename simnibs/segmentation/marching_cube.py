@@ -6,19 +6,23 @@ Created on Mon Mar 16 19:14:50 2020
 """
 
 import sys
+import tempfile
 import numpy as np
+import os
 import base64
 if sys.version_info >= (3, ):
     base64decode = base64.decodebytes
 else:
     base64decode = base64.decodestring
 
-from simnibs import mesh_io
-from simnibs.segmentation import _marching_cubes_lewiner_luts as mcluts
-import simnibs.segmentation._marching_cubes_lewiner_cy as _marching_cubes_lewiner_cy
+from ..mesh_tools import mesh_io
+from . import _marching_cubes_lewiner_luts as mcluts
+from . import _marching_cubes_lewiner_cy as _marching_cubes_lewiner_cy
+from ..utils.spawn_process import spawn_process
+from ..utils import file_finder
 
 
-def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_component=False):
+def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_component=False, n_uniform=0):
     """ wrapper around marching_cube_lewiner, adapted from from scikit-image
     
     PARAMETERS
@@ -39,6 +43,12 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
     only_largest_component : bool
         Extract and return only largest component
         (default = False)
+    n_uniform : int 
+        Number of uniform remesh steps (using meshfix) after initial 
+        surface creation. The marching cube algoritm approximates the
+        surface smoothly, but this results in ill-shaped triangles.
+        Note: Meshfix will only keep the largest component
+        (default = 0; recommanded: 2)
     
     RETURNS
     -------
@@ -78,13 +88,23 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
         components.sort(key=len,reverse=True)
         surface = surface.crop_mesh(elements=components[0])
     
+    # run uniform remeshing
+    if n_uniform > 0:
+        surface.fix_surface_orientation()
+        with tempfile.NamedTemporaryFile(suffix='.off') as f:
+            mesh_fn = f.name
+        mesh_io.write_off(surface, mesh_fn)
+        cmd=f'\"{file_finder.path2bin("meshfix")}\" \"{mesh_fn}\" -u {n_uniform} -a 2.0 -q -o \"{mesh_fn}\"'
+        spawn_process(cmd)
+        surface = mesh_io.read_off(mesh_fn)
+        if os.path.isfile(mesh_fn):
+            os.remove(mesh_fn)
+            
     # ensure outwards pointing triangles
     surface.fix_surface_orientation()    
     
     # estimate Euler characteristics: EC = #vertices + #faces - #edges
-    M = np.sort(surface.elm.node_number_list[:,0:3], axis=1)
-    mesh_edges=np.unique(np.vstack((M[:,[0,1]],M[:,[1,2]],M[:,[0,2]])), axis=0)
-    EC=surface.nodes.nr + surface.elm.nr - mesh_edges.shape[0]
+    EC=surface.surface_EC()
     
     return surface, EC
 
