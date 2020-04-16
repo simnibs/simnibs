@@ -5475,36 +5475,22 @@ def read_stl(fn):
             np.fromfile(f, dtype=np.uint32, count=1)[0]
             data = np.fromfile(f, dtype=np.uint16, count=-1)
         data = data.reshape((-1, 25))[:, :24].copy().view(np.float32)
-        vertices = data[:, 3:].reshape(-1, 3) #  discard the triangle normals
+        mesh_flat = data[:, 3:].reshape(-1, 3) #  discard the triangle normals
 
     else:
-        vertices = []
+        mesh_flat = []
         with open(fn, "rb") as f:
             for line in f:
                 line = line.decode().lstrip().split()
                 if line[0] == "vertex":
-                    vertices.append(line[1:])
-        vertices = np.array(vertices, dtype=np.float)
+                    mesh_flat.append(line[1:])
+        mesh_flat = np.array(mesh_flat, dtype=np.float)
 
-    # The stl format does not contain information about the faces, hence we
-    # will need to figure this out.
-    faces = np.arange(len(vertices)).reshape(-1, 3)
-
-    # Remove vertice duplicates and sort rows by sum
-    sv = np.sum(vertices+vertices*(100*np.random.random(3))[None, :],
-                axis=1)
-    sv_arg = np.argsort(sv)
-    sv_arg_rev = np.argsort(sv_arg)  # reverse indexing for going back
-
-    # Get unique rows, indices of these, and counts. Create the new indices
-    # and repeat them
-    u, u_idx, u_count = np.unique(sv[sv_arg], return_index=True,
-                                  return_counts=True)
-    repeat_idx = np.repeat(np.arange(len(u)), u_count)
-
-    # Retain only unique vertices and modify faces accordingly
-    vertices = vertices[sv_arg][u_idx]
-    faces = repeat_idx[sv_arg_rev][faces]
+    _, uidx, iidx = np.unique(mesh_flat, axis=0, return_index=True,
+                              return_inverse=True)
+    q = np.argsort(uidx)
+    vertices = mesh_flat[uidx[q]]
+    faces = np.argsort(q)[iidx].reshape(-1, 3)
 
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
