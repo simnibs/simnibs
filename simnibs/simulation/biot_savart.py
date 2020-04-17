@@ -67,7 +67,6 @@ def calc_B(J, n_voxels, affine, calc_res=2., mask=False):
         (B_vol, affine_vol), np.eye(4), affine, n_voxels,
         intorder=1, keep_vector_length=False
     )
-
     if mask:
         msk = mesh_io.ElementData(np.ones(mesh.elm.nr), mesh=mesh)
         msk = msk.interpolate_to_grid(n_voxels, affine, method='assign')
@@ -91,7 +90,7 @@ def _voxelize(J, domain, res):
     domain_size = domain[1] - domain[0]
     affine = np.eye(4)
     affine[:3, :3] *= res
-    affine[:3, 3] = -domain_size/2
+    affine[:3, 3] = domain[0]
     nvox = np.ceil(domain_size/res).astype(int)
     nvox += nvox % 2
     J_v = J.interpolate_to_grid(nvox, affine, method='linear', continuous=False)
