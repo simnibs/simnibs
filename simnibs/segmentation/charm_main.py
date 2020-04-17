@@ -66,6 +66,9 @@ def _register_atlas_to_input_affine(T1, template_file_name,
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
     img = input_raw.get_data()
+    # Sometimes the images have an extra unit dimension,
+    # squeeze that out if it's there.
+    img = img.squeeze()
     img_smoothed = sanlm(img, 3, 1)
     output_smoothed = nib.Nifti1Image(img_smoothed, input_raw.affine)
     nib.save(output_smoothed, output_name)
@@ -325,11 +328,11 @@ def run(subject_dir=None, T1=None, T2=None,
 
         # write QA results
 
-        # denoise if needed
-        if denoise_settings['denoise']:
-            logger.info('Denoising the registered T2 and saving.')
-            _denoise_input_and_save(sub_files.T2_reg,
-                                    sub_files.T2_reg_denoised)
+    # denoise if needed
+    if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg):
+        logger.info('Denoising the registered T2 and saving.')
+        _denoise_input_and_save(sub_files.T2_reg,
+                                sub_files.T2_reg_denoised)
 
     # Set-up samseg related things before calling the affine registration
     # and/or segmentation
