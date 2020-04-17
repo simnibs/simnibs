@@ -719,7 +719,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         This function is adapted from cat_surf_createCS.m of CAT12
         (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).  
     """
-    debug=False # keep intermediate results if set to True
+    debug=True # keep intermediate results if set to True
     
     # add surface name to logger
     formatter_list=[]
@@ -856,9 +856,10 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         del Vppi
         gc.collect()
      
-    # generate intial surface and save as gifti
-    CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial, 
-                           step_size=round(vdist/voxsize_pbt), only_largest_component=True)
+    # generate intial surface and save as gifti  
+    CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial,
+                           step_size=round(vdist/voxsize_pbt), only_largest_component=True, n_uniform=2)
+                           
     Praw=os.path.join(surffolder,actualsurf+'.central.nofix.gii')
     mesh_io.write_gifti_surface(CS, Praw)
     del Yppi, CS
@@ -1284,7 +1285,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         # region 3: surface after topology correction 
         # region 4: pre-final surface with thickness and perc. positions (as node data)
         # region 5: final surface
-
+        
 
     # ------- mark topological defects -------- 
     stimet = time.time()

@@ -1635,6 +1635,25 @@ class Msh:
         change = (self.elm.elm_type == 2) * (self.elm.tag2 < 1000)
         self.elm.tag2[change] += 1000
 
+
+    def fix_surface_orientation(self):
+        ''' Ensure that the majority of triangle normals point outwards.
+            If this is not the case, the orientation of all triangles will
+            be inversed.
+        '''
+        idx_tr = self.elm.elm_type == 2
+        normals = self.triangle_normals()[:]
+        baricenters = self.elements_baricenters()[idx_tr]
+        CoG = np.mean(baricenters, axis=0)
+        
+        nr_inward = sum(np.einsum("ij,ij->i", normals, baricenters-CoG)<0)
+        
+        if nr_inward/sum(idx_tr) > 0.5:
+            buffer = self.elm.node_number_list[idx_tr, 1].copy()
+            self.elm.node_number_list[idx_tr, 1] = self.elm.node_number_list[idx_tr, 2]
+            self.elm.node_number_list[idx_tr, 2] = buffer
+
+
     def compact_ordering(self, node_number):
         ''' Changes the node and element ordering so that it goes from 1 to nr_nodes
         
@@ -2105,7 +2124,8 @@ class Msh:
         Returns
         --------
         indices: (M, 2) array
-            Pairs of indices with the line segment index and the triangle index
+            Pairs of indices with the points index and the triangle index
+            NOTE: points indices are 0-based, triangle indices are 1-based!
         intercpt_pos (M, 3) array:
             Positions where the interceptions occur
         '''
@@ -2544,6 +2564,21 @@ class Msh:
         gamma /= 8.479670
         return ElementData(gamma, 'gamma', self)
 
+
+    def surface_EC(self):
+        """ return euler characteristic of surfaces """
+        idx_tr = self.elm.elm_type == 2
+        
+        nr_tr = np.sum(idx_tr)
+        nr_node_tr = np.unique(self.elm.node_number_list[idx_tr,0:3].flatten()).shape[0]
+        
+        M = np.sort(self.elm.node_number_list[idx_tr,0:3], axis=1)
+        nr_edges = np.unique(np.vstack( (M[:,[0,1]], M[:,[1,2]], M[:,[0,2]]) ), axis=0).shape[0]
+        
+        EC = nr_node_tr + nr_tr - nr_edges
+        return EC
+
+
 class Data(object):
     """Store data in elements or nodes
 
@@ -2577,7 +2612,7 @@ class Data(object):
         self.mesh = mesh
 
         if value.ndim > 2:
-            raise ValueError('Can only hadle 1 and 2 dimensional fields '
+            raise ValueError('Can only handle 1 and 2 dimensional fields '
                              'Tensors should be given as a Nx9 array')
 
         if self.nr_comp > self.nr:
@@ -5440,36 +5475,22 @@ def read_stl(fn):
             np.fromfile(f, dtype=np.uint32, count=1)[0]
             data = np.fromfile(f, dtype=np.uint16, count=-1)
         data = data.reshape((-1, 25))[:, :24].copy().view(np.float32)
-        vertices = data[:, 3:].reshape(-1, 3) #  discard the triangle normals
+        mesh_flat = data[:, 3:].reshape(-1, 3) #  discard the triangle normals
 
     else:
-        vertices = []
+        mesh_flat = []
         with open(fn, "rb") as f:
             for line in f:
                 line = line.decode().lstrip().split()
                 if line[0] == "vertex":
-                    vertices.append(line[1:])
-        vertices = np.array(vertices, dtype=np.float)
+                    mesh_flat.append(line[1:])
+        mesh_flat = np.array(mesh_flat, dtype=np.float)
 
-    # The stl format does not contain information about the faces, hence we
-    # will need to figure this out.
-    faces = np.arange(len(vertices)).reshape(-1, 3)
-
-    # Remove vertice duplicates and sort rows by sum
-    sv = np.sum(vertices+vertices*(100*np.random.random(3))[None, :],
-                axis=1)
-    sv_arg = np.argsort(sv)
-    sv_arg_rev = np.argsort(sv_arg)  # reverse indexing for going back
-
-    # Get unique rows, indices of these, and counts. Create the new indices
-    # and repeat them
-    u, u_idx, u_count = np.unique(sv[sv_arg], return_index=True,
-                                  return_counts=True)
-    repeat_idx = np.repeat(np.arange(len(u)), u_count)
-
-    # Retain only unique vertices and modify faces accordingly
-    vertices = vertices[sv_arg][u_idx]
-    faces = repeat_idx[sv_arg_rev][faces]
+    _, uidx, iidx = np.unique(mesh_flat, axis=0, return_index=True,
+                              return_inverse=True)
+    q = np.argsort(uidx)
+    vertices = mesh_flat[uidx[q]]
+    faces = np.argsort(q)[iidx].reshape(-1, 3)
 
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
