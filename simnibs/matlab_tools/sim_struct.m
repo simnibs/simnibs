@@ -164,7 +164,6 @@ switch S.type
         S.pathfem='';   % path to save the results (OPTIONAL, filled from fnamehead)
         S.field='E';   % Field to be stored in the leadfield. Possible options are 'E'and 'J'
         S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
-        S.map_to_surf=true; % map results on individual surface (read out in middle of GM sheet)
         S.interpolation='middle gm'; % interpolate solution to surface(s). Valid args are '' or [] (no interp), 'middle gm' (interp to middle gm layer) [default], cell array of filenames defining surfaces to interp to 
         S.tissues = 1006; % list, tissues where to store the leadfield in addition to interpolation
         S.name=''; % string; name of simulation, will be used as part of the names of the output files; optional
