@@ -9,7 +9,7 @@ from .utilities import requireNumpyArray, Specification
 from .BiasField import BiasField
 from .ProbabilisticAtlas import ProbabilisticAtlas
 from .GMM import GMM
-from .Affine import Affine
+from .AffineWholeHead import AffineWholeHead
 from .SamsegUtility import *
 from .merge_alphas import kvlMergeAlphas, kvlGetMergingFractionsTable
 from . import gems
@@ -34,7 +34,7 @@ class Samseg:
         self.targetSearchStrings = targetSearchStrings
 
         # Initialize some objects
-        self.affine = Affine()
+        self.affine = AffineWholeHead()
         self.probabilisticAtlas = ProbabilisticAtlas()
 
         # Get full model specifications and optimization options (using default unless overridden by user)
