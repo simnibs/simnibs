@@ -2098,8 +2098,7 @@ class LEADFIELD():
         self.fname_tensor = try_to_read_matlab_field(mat, 'fname_tensor', str, self.fname_tensor)
         self.map_to_surf = try_to_read_matlab_field(mat, 'map_to_surf', bool, self.map_to_surf)
         # interpolation takes different kinds of arguments so loading it is a
-        # little more complex
-        mat = loadmat(sorted(glob.glob(r'C:\Users\jdue\Desktop\interp_test\*.mat'))[4])      
+        # little more complex   
         if len(mat['interpolation']) == 0:
             self.interpolation = None
         elif isinstance(mat['interpolation'][0], str):
