@@ -209,7 +209,7 @@ def view(subject_dir):
 
 
 def run(subject_dir=None, T1=None, T2=None,
-        registerT2=False, initatlas=False, segment=False, mesh=False,
+        registerT2=False, initatlas=False, segment=False, mesh_image=False,
         skipregisterT2=False, usesettings=None, options_str=None):
     """charm pipeline
 
@@ -229,7 +229,7 @@ def run(subject_dir=None, T1=None, T2=None,
         run affine registration of atlas to input images (default = False)
     segment : bool
         run volume and surface segmentation (default = False)
-    mesh : bool
+    mesh_image : bool
         run tetrahedral meshing (default = False)
     --> further parameters:
     skipregisterT2 : bool
@@ -461,7 +461,7 @@ def run(subject_dir=None, T1=None, T2=None,
                                             affine_upsampled)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
 
-    if mesh:
+    if mesh_image:
         # create mesh from label image
         logger.info('Starting mesh')
         label_image = nib.load(sub_files.tissue_labeling_upsampled)
@@ -469,7 +469,20 @@ def run(subject_dir=None, T1=None, T2=None,
         # Cast to uint16, otherwise meshing complains
         label_buffer = label_buffer.astype(np.uint16)
         label_affine = label_image.affine
-        final_mesh = _mesh(label_buffer, label_affine)
+        # Read in settings for meshing
+        mesh_settings = settings['mesh']
+        size_slope = mesh_settings['size_slope']
+        size_range = mesh_settings['size_range']
+        distance_slope = mesh_settings['distance_slope']
+        distance_range = mesh_settings['distance_range']
+        optimize = mesh_settings['optimize']
+        remove_spikes = mesh_settings['remove_spikes']
+        smooth_steps = mesh_settings['smooth_steps']
+        final_mesh = mesh(label_buffer, label_affine, size_slope=size_slope,
+                          size_range=size_range, distance_slope=distance_slope,
+                          distance_range=distance_range, optimize=optimize,
+                          remove_spikes=remove_spikes,
+                          smooth_steps=smooth_steps)
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.head_mesh)
 
@@ -490,9 +503,9 @@ def run(subject_dir=None, T1=None, T2=None,
         f.close()
 
 
-def _mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
-          distance_slope=0.5, distance_range=(0.1, 3),
-          optimize=True, remove_spikes=True, smooth_steps=5):
+def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
+         distance_slope=0.5, distance_range=(0.1, 3),
+         optimize=True, remove_spikes=True, smooth_steps=5):
     ''' Creates a mesh from a labeled image
 
     The maximum element sizes (CGAL facet_size and cell_size) is given by:
