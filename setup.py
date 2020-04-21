@@ -42,7 +42,7 @@ CGAL_url = (
     f'releases/CGAL-{CGAL_version}/'
     f'CGAL-{CGAL_version}-library.zip'
 )
-cgal_macros = [
+cgal_mesh_macros = [
     ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
     ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
     ('CGAL_CONCURRENT_MESH_3', None),
@@ -124,7 +124,7 @@ if sys.platform == 'win32':
     cgal_runtime = None
     cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy']
     cgal_link_args = None
-    cgal_macros += [
+    cgal_mesh_macros += [
         ('BOOST_ALL_DYN_LINK', 1),
         ('WIN32', None),
         ('_WINDOWS', None),
@@ -159,7 +159,7 @@ elif sys.platform == 'linux':
         '-frounding-math',
         '-std=gnu++14',
     ]
-    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_mesh_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
     cgal_link_args = None
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -187,7 +187,7 @@ elif sys.platform == 'darwin':
         '-std=gnu++14',
         '-stdlib=libc++',
     ]
-    cgal_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_mesh_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
     cgal_link_args = [
         '-stdlib=libc++'
     ]
@@ -224,10 +224,13 @@ petsc_solver = Extension(
     libraries=petsc_libs,
     runtime_library_dirs=petsc_runtime
 )
-create_mesh = Extension(
-    'simnibs._compiled.create_mesh',
-    sources=["simnibs/_compiled/create_mesh.pyx"],
-    depends=["simnibs/_compiled/_mesh.cpp"],
+# I separated the CGAL functions into several files for two reasons
+# 1. Reduce memory consumption during compilation in Linux
+# 2. Fix some compilation problems in Windows
+create_mesh_surf = Extension(
+    'simnibs._compiled._create_mesh_surf',
+    sources=["simnibs/_compiled/_create_mesh_surf.pyx"],
+    depends=["simnibs/_compiled/_mesh_surfaces.cpp"],
     language='c++',
     include_dirs=cgal_include,
     libraries=cgal_libs,
@@ -235,7 +238,32 @@ create_mesh = Extension(
     runtime_library_dirs=cgal_runtime,
     extra_compile_args=cgal_compile_args,
     extra_link_args=cgal_link_args,
-    define_macros=cgal_macros
+    define_macros=cgal_mesh_macros
+)
+create_mesh_vol = Extension(
+    'simnibs._compiled._create_mesh_vol',
+    sources=["simnibs/_compiled/_create_mesh_vol.pyx"],
+    depends=["simnibs/_compiled/_mesh_volumes.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
+    define_macros=cgal_mesh_macros
+)
+cgal_misc = Extension(
+    'simnibs._compiled._cgal_misc',
+    sources=["simnibs/_compiled/_cgal_misc.pyx"],
+    depends=["simnibs/_compiled/_cgal_intersect.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
 )
 
 
@@ -245,7 +273,9 @@ extensions = [
     cat_c_utils,
     thickness,
     petsc_solver,
-    create_mesh
+    create_mesh_surf,
+    create_mesh_vol,
+    cgal_misc
 ]
 ####################################################
 # Add all scripts in the cli folder and a bit more #
@@ -336,10 +366,22 @@ class build_ext_(build_ext):
         ## Cythonize
         self.extension = cythonize(self.extensions)
         ## Download requirements
-        changed_meshing = newer_group(
-            create_mesh.sources + create_mesh.depends,
-            self.get_ext_fullpath(create_mesh.name),
-            'newer'
+        changed_meshing = (
+            newer_group(
+                create_mesh_surf.sources + create_mesh_surf.depends,
+                self.get_ext_fullpath(create_mesh_surf.name),
+                'newer'
+            ) or
+            newer_group(
+                create_mesh_vol.sources + create_mesh_vol.depends,
+                self.get_ext_fullpath(create_mesh_vol.name),
+                'newer'
+            ) or
+            newer_group(
+                cgal_misc.sources + cgal_misc.depends,
+                self.get_ext_fullpath(cgal_misc.name),
+                'newer'
+            )
         )
         if self.force or changed_meshing:
             download_and_extract(CGAL_url)

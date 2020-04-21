@@ -7,7 +7,8 @@ import scipy.ndimage
 
 from . import mesh_io
 from ..utils.simnibs_logger import logger
-from .._compiled import create_mesh
+from .._compiled._create_mesh_surf import mesh_surfaces
+from .._compiled._create_mesh_vol import mesh_image, mesh_image_sizing_field
 
 
 class MeshingError(ValueError):
@@ -52,14 +53,14 @@ def _mesh_image(image, voxel_dims, facet_angle,
         fn_mesh = os.path.join(tmpdir, 'mesh.mesh')
         _write_inr(image, voxel_dims, fn_image)
         if type(cell_size) is np.ndarray:
-            ret = create_mesh.mesh_image_sizing_field(
+            ret = mesh_image_sizing_field(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
                     optimize
                  )
         else:
-            ret = create_mesh.mesh_image(
+            ret = mesh_image(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
@@ -246,7 +247,7 @@ def _mesh_surfaces(surfaces, subdomains, facet_angle,
             fn_surfaces.append(fn.encode())
             sd_formated.append((sd[0], sd[1]))
         fn_mesh = os.path.join(tmpdir, 'mesh.mesh')
-        ret = create_mesh.mesh_surfaces(
+        ret = mesh_surfaces(
                 fn_surfaces, sd_formated, fn_mesh.encode(),
                 facet_angle, facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
