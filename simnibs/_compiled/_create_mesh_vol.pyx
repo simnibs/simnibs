@@ -9,7 +9,7 @@ import numpy as np
 cimport numpy as np
 
 
-cdef extern from "_mesh.cpp" nogil:
+cdef extern from "_mesh_volumes.cpp" nogil:
     int _mesh_image(
         char *fn_image, char *fn_out, float facet_angle,
         float facet_size, float facet_distance,

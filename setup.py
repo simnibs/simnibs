@@ -48,6 +48,7 @@ cgal_mesh_macros = [
     ('CGAL_CONCURRENT_MESH_3', None),
     ('CGAL_EIGEN3_ENABLED', None),
     ('CGAL_USE_ZLIB', 1),
+    ('CGAL_LINKED_WITH_TBB', None)
 ]
 
 # Information for eigen library
@@ -122,16 +123,13 @@ if sys.platform == 'win32':
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
-    cgal_compile_args = ['/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy']
-    cgal_link_args = None
-    cgal_mesh_macros += [
-        ('BOOST_ALL_DYN_LINK', 1),
-        ('WIN32', None),
-        ('_WINDOWS', None),
-        ('_SCL_SECURE_NO_DEPRECATE', None),
-        ('_SCL_SECURE_NO_WARNINGS', None),
-        #('CGAL_LINKED_WITH_TBB', None) This is causing the compilation to crash
+    cgal_compile_args = [
+        '/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy',
+        '/D WIN32', '/D _WINDOWS', '/D _SCL_SECURE_NO_DEPRECATE',
+        '/D _SCL_SECURE_NO_WARNINGS', '/D BOOST_ALL_DYN_LINK=1'
     ]
+    cgal_link_args = None
+
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
     petsc_include = [
@@ -159,7 +157,7 @@ elif sys.platform == 'linux':
         '-frounding-math',
         '-std=gnu++14',
     ]
-    cgal_mesh_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -187,7 +185,7 @@ elif sys.platform == 'darwin':
         '-std=gnu++14',
         '-stdlib=libc++',
     ]
-    cgal_mesh_macros += [('NOMINMAX', None), ('CGAL_LINKED_WITH_TBB', None)]
+    cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = [
         '-stdlib=libc++'
     ]
