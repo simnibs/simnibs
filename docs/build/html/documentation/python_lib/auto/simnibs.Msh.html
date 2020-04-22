@@ -4,14 +4,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.Msh &#8212; SimNIBS 3.1.2 documentation</title>
+    <title>simnibs.Msh &#8212; SimNIBS 4.0b0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -55,7 +55,7 @@
 <em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Msh</code><span class="sig-paren">(</span><em class="sig-param">nodes=None</em>, <em class="sig-param">elements=None</em>, <em class="sig-param">fn=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>class to handle the meshes.
-Gatters Nodes, Elements and Data</p>
+Gathers Nodes, Elements and Data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -205,8 +205,8 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.gaussian_curvature" title="simnibs.Msh.gaussian_curvature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code></a>()</p></td>
 <td><p>Calculates the Gaussian curvature at each node</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.intercept_ray" title="simnibs.Msh.intercept_ray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept_ray</span></code></a>(near, far)</p></td>
-<td><p>Finds the triangle (if any) that intercepts a line segment</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Msh.intercept_ray</span></code></p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.interp_matrix" title="simnibs.Msh.interp_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code></a>(pos[, out_fill, th_indices, …])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
@@ -217,7 +217,7 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_areas" title="simnibs.Msh.nodes_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code></a>()</p></td>
 <td><p>Areas for all nodes in a surface</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_normals" title="simnibs.Msh.nodes_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code></a>([smooth])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_normals" title="simnibs.Msh.nodes_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code></a>([triangles, smooth])</p></td>
 <td><p>Normals for all nodes in a surface</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_volumes_or_areas" title="simnibs.Msh.nodes_volumes_or_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code></a>()</p></td>
@@ -581,6 +581,14 @@ triangulation.” International Journal of Foundations of Computer Science 13.02
 </dd></dl>
 
 <dl class="method">
+<dt id="simnibs.Msh.fix_surface_orientation">
+<code class="sig-name descname">fix_surface_orientation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_surface_orientation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure that the majority of triangle normals point outwards.
+If this is not the case, the orientation of all triangles will
+be inversed.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="simnibs.Msh.fix_th_node_ordering">
 <code class="sig-name descname">fix_th_node_ordering</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_th_node_ordering" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixes the node ordering of tetrahedra in-place</p>
@@ -601,6 +609,20 @@ iterations</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="simnibs.Msh.gamma_metric">
+<code class="sig-name descname">gamma_metric</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.gamma_metric" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculates the (normalized) Gamma quality metric for tetrahedra</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>gamma</strong> – Gamma metric from Parthasarathy et al., 1994</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData">ElementData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="simnibs.Msh.gaussian_curvature">
 <code class="sig-name descname">gaussian_curvature</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.gaussian_curvature" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the Gaussian curvature at each node</p>
@@ -613,27 +635,6 @@ iterations</p>
 </dd>
 </dl>
 <p><a class="reference external" href="https://computergraphics.stackexchange.com/a/1721">https://computergraphics.stackexchange.com/a/1721</a></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.intercept_ray">
-<code class="sig-name descname">intercept_ray</code><span class="sig-paren">(</span><em class="sig-param">near</em>, <em class="sig-param">far</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.intercept_ray" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the triangle (if any) that intercepts a line segment</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>near</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – Start of the line segment</p></li>
-<li><p><strong>far</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – end of the line segment</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>intercept_elm</em> – Index of the triangle intercepting the ray</p></li>
-<li><p><em>intercpt_pos</em> – Position of the interception</p></li>
-</ul>
-</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="method">
@@ -658,6 +659,52 @@ tetrahedra</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>scipy.sparse.csc</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="simnibs.Msh.intersect_ray">
+<code class="sig-name descname">intersect_ray</code><span class="sig-paren">(</span><em class="sig-param">points</em>, <em class="sig-param">directions</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.intersect_ray" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Finds the triangle (if any) that intersects with the rays starting</dt><dd><p>at points and pointing into directions</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>(</em><em>N</em><em>, </em><em>3</em><em>) </em><em>array</em>) – start points</p></li>
+<li><p><strong>directions</strong> (<em>(</em><em>N</em><em>, </em><em>3</em><em>) </em><em>array</em>) – direction vectors</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>indices</strong> (<em>(M, 2) array</em>) – Pairs of indices with the points index and the triangle index
+NOTE: points indices are 0-based, triangle indices are 1-based!</p></li>
+<li><p><em>intercpt_pos (M, 3) array</em> – Positions where the interceptions occur</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="simnibs.Msh.intersect_segment">
+<code class="sig-name descname">intersect_segment</code><span class="sig-paren">(</span><em class="sig-param">near</em>, <em class="sig-param">far</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.intersect_segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the triangle (if any) that intersects a line segment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>near</strong> (<em>(</em><em>N</em><em>, </em><em>3</em><em>) </em><em>array</em>) – Start of the line segment</p></li>
+<li><p><strong>far</strong> (<em>(</em><em>N</em><em>, </em><em>3</em><em>) </em><em>array</em>) – end of the line segment</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>indices</strong> (<em>(M, 2) array</em>) – Pairs of indices with the line segment index and the triangle index</p></li>
+<li><p><em>intercpt_pos (M, 3) array</em> – Positions where the interceptions occur</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -695,11 +742,14 @@ tetrahedra</p></li>
 
 <dl class="method">
 <dt id="simnibs.Msh.nodes_normals">
-<code class="sig-name descname">nodes_normals</code><span class="sig-paren">(</span><em class="sig-param">smooth=0</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.nodes_normals" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">nodes_normals</code><span class="sig-paren">(</span><em class="sig-param">triangles=None</em>, <em class="sig-param">smooth=0</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.nodes_normals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normals for all nodes in a surface</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>smooth</strong> (<em>int</em><em> (</em><em>optional</em><em>)</em>) – Number of smoothing cycles to perform. Default: 0</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>triangles</strong> (<em>list of ints</em>) – List of triangles to be taken into consideration for calculating the normals</p></li>
+<li><p><strong>smooth</strong> (<em>int</em><em> (</em><em>optional</em><em>)</em>) – Number of smoothing cycles to perform. Default: 0</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>nd</strong> – NodeData structure with normals for each surface node</p>
@@ -799,6 +849,32 @@ operation</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="simnibs.Msh.smooth_surfaces">
+<code class="sig-name descname">smooth_surfaces</code><span class="sig-paren">(</span><em class="sig-param">n_steps</em>, <em class="sig-param">step_size=0.3</em>, <em class="sig-param">nodes_mask=None</em>, <em class="sig-param">max_gamma=3</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.smooth_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>In-place Smoothes the mesh surfaces using Taubin smoothing</p>
+<p>Can decrease tetrahedra quality</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>msh</strong> (<em>simnibs.msh.Msh</em>) – Mesh structure, must have inner triangles</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – number of smoothing steps to perform</p></li>
+<li><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>step_size</em>) – Size of each smoothing step. Default: 0.3</p></li>
+<li><p><strong>nodes_mask</strong> (<em>ndarray of bool</em>) – Mask of nodes to be moved. Default: all surface nodes</p></li>
+<li><p><strong>max_gamma</strong> (<em>float</em>) – Maximum gamma tetrahedron quality metric (see Parthasarathy et al., Finite
+Elements ins Analysis and Design, 1994) for
+a move to be accepted</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="simnibs.Msh.surface_EC">
+<code class="sig-name descname">surface_EC</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.surface_EC" title="Permalink to this definition">¶</a></dt>
+<dd><p>return euler characteristic of surfaces</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="simnibs.Msh.test_inside_volume">
 <code class="sig-name descname">test_inside_volume</code><span class="sig-paren">(</span><em class="sig-param">points</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.test_inside_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests if points are iside the volume using the Möller–Trumbore intersection
@@ -883,7 +959,7 @@ tetrahedra</p></li>
 </dd>
 </dl>
 <p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">msh</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">msh</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">vis</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">vis</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -1003,7 +1079,7 @@ tetrahedra</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -1020,7 +1096,7 @@ tetrahedra</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

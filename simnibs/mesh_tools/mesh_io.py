@@ -5533,6 +5533,43 @@ def read_off(fn):
     msh.nodes = Nodes(vertices)
     return msh
 
+def read(fn):
+    """Read a mesh from disk. Reads gii,[ mesh,] msh, off, stl, and freesurface
+    surface files.
+
+    PARAMETERS
+    ----------
+    fn : str
+        Name of file to read.
+
+    RETURNS
+    ----------
+    msh : Msh
+        File content as Msh.
+    """
+    assert os.path.isfile(fn), "File does not exist."
+    _, ext = os.path.splitext(fn)
+    ext = ext.lower()
+
+    if ext == ".gii":
+        msh = read_gifti_surface(fn)
+    #elif ext == ".mesh":
+    #    msh = read_medit(fn)
+    elif ext == ".msh":
+        msh = read_msh(fn) # m arg not supported...
+    elif ext == ".off":
+        msh = read_off(fn)
+    elif ext == ".stl":
+        msh = read_stl(fn)
+    else: # freesurfer files have all sorts of extentions
+        try:
+            msh = read_freesurfer_surface(fn)
+        except OSError:
+            # if the "magic number" is invalid, this is not a freesurfer file
+            raise ValueError("Cannot read file {}.".format(fn))
+
+    return msh
+
 
 def write_off(msh, fn):
     ''' Writes mesh surfaces as an .off file

@@ -4,14 +4,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.SubjectFiles &#8212; SimNIBS 3.1.2 documentation</title>
+    <title>simnibs.SubjectFiles &#8212; SimNIBS 4.0b0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -124,6 +124,39 @@ preference when it comes to finding other files</p></li>
 <dt id="simnibs.SubjectFiles.eeg_cap_folder">
 <code class="sig-name descname">eeg_cap_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the folder with EEG caps (dir)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.segmentation_folder">
+<code class="sig-name descname">segmentation_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.segmentation_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the output from the segmentation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.label_prep_folder">
+<code class="sig-name descname">label_prep_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.label_prep_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the output from upsampling</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.mni_transf_folder">
+<code class="sig-name descname">mni_transf_folder</code><a class="headerlink" href="#simnibs.SubjectFiles.mni_transf_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to MNI transformations</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -351,6 +384,127 @@ preference when it comes to finding other files</p></li>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T2_reg">
+<code class="sig-name descname">T2_reg</code><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg" title="Permalink to this definition">¶</a></dt>
+<dd><p>T2 image after rigid co-registration to T1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T1_denoised">
+<code class="sig-name descname">T1_denoised</code><a class="headerlink" href="#simnibs.SubjectFiles.T1_denoised" title="Permalink to this definition">¶</a></dt>
+<dd><p>T1 image after running filtering (optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T2_reg_denoised">
+<code class="sig-name descname">T2_reg_denoised</code><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg_denoised" title="Permalink to this definition">¶</a></dt>
+<dd><p>T2 image after co-registration and filtering (optional)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T1_bias_corrected">
+<code class="sig-name descname">T1_bias_corrected</code><a class="headerlink" href="#simnibs.SubjectFiles.T1_bias_corrected" title="Permalink to this definition">¶</a></dt>
+<dd><p>T1 image after bias correction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T2_reg_bias_corrected">
+<code class="sig-name descname">T2_reg_bias_corrected</code><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg_bias_corrected" title="Permalink to this definition">¶</a></dt>
+<dd><p>T2 image after bias correction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.labeling">
+<code class="sig-name descname">labeling</code><a class="headerlink" href="#simnibs.SubjectFiles.labeling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output segmentation from samseg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.template_coregistered">
+<code class="sig-name descname">template_coregistered</code><a class="headerlink" href="#simnibs.SubjectFiles.template_coregistered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Affine mapping from atlas voxel space to T1 voxel space</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T1_upsampled">
+<code class="sig-name descname">T1_upsampled</code><a class="headerlink" href="#simnibs.SubjectFiles.T1_upsampled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bias corrected T1 upsampled to 0.5mm^3 resolution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.T2_upsampled">
+<code class="sig-name descname">T2_upsampled</code><a class="headerlink" href="#simnibs.SubjectFiles.T2_upsampled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bias corrected T2 upsampled to 0.5mm^3 resolution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.tissue_labeling_upsampled">
+<code class="sig-name descname">tissue_labeling_upsampled</code><a class="headerlink" href="#simnibs.SubjectFiles.tissue_labeling_upsampled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.SubjectFiles.head_mesh">
+<code class="sig-name descname">head_mesh</code><a class="headerlink" href="#simnibs.SubjectFiles.head_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Final head mesh</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>This class does not check for existance of the files</p>
@@ -484,7 +638,7 @@ preference when it comes to finding other files</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -501,7 +655,7 @@ preference when it comes to finding other files</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

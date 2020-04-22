@@ -66,9 +66,14 @@ Attributes
   * **Default**: Automatically finds the file :file:`subpath/eeg_positions/EEG10-10_UI_Jurak_2007.csv` based on **fnamehead** or **subpath**
   * **Note**: Only needs to be set by the user if not using the standard *.csv* cap file.
 
-* **map_to_surf**: *bool, optional*
+* **interpolate**: *'middle gm', None/[], or list/cell array of strings (Python/MATLAB), optional. Default: 'middle gm'*
 
-  * **Description**: Whether to map the fields to the middle gray matter surface.
+  * **Description**: Where to interpolate fields
+
+    * *'middle_gm'*: Interpolate fields in the middle Gray Matter surface obtained from the head segmentation. Default value
+    * *None/[]*: Do not interpolate the field anywhere, just store it in the region defined by the **tissues** attribute.
+    * *list/cell array of strings*: List of mesh files in *'.stl'*, *'.gii'*, *'.off'* or *'.msh'* format. The files will be loaded and the fields will be interpolated at the mesh nodes.
+
   * **Default**: True
 
   .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
@@ -77,7 +82,7 @@ Attributes
 
 * **tissues**: *list (python) or array (MATLAB), optional*
 
-  * **Description**: Tissues numbers of where to record the electric field, in addition to *map_to_surf*. Mixing surfaces and volumes is not allowed.
+  * **Description**: Tissues numbers of where to record the electric field, in addition to **interpolate**. Mixing surfaces and volumes is not allowed.
 
   * **Default**: [1006] (i.e. eye surfaces)
 
