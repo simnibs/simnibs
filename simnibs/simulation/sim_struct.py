@@ -2117,7 +2117,6 @@ class LEADFIELD():
         mat['pathfem'] = remove_None(self.pathfem)
         mat['field'] = remove_None(self.field)
         mat['fname_tensor'] = remove_None(self.fname_tensor)
-        mat['map_to_surf'] = remove_None(self.map_to_surf)
         mat['interpolation'] = remove_None(self.interpolation)
         mat['tissues'] = remove_None(self.tissues)
         mat['solver_options'] = remove_None(self.solver_options)
@@ -2369,7 +2368,7 @@ class TDCSLEADFIELD(LEADFIELD):
         if self.interpolation:
             if np.any(np.array(self.tissues) < 1000):
                 raise ValueError("Cannot combine volumetric ROI with interpolation!")
-            roi = self.tissues + [2]
+            roi = self.tissues + [2]  # add GM volume here
         else:
             roi = self.tissues
 
@@ -2421,7 +2420,7 @@ class TDCSLEADFIELD(LEADFIELD):
                 raise ValueError('"interpolation" must be either None, str, list, or tuple.')
                 
             # Join meshes
-            for i,m in enumerate(interp_to):
+            for i, m in enumerate(interp_to):
                 m.elm.tag1 = (i+1)*np.ones(m.elm.nr)
                 m.elm.tag2 = m.elm.tag1.copy()
             mesh_lf = interp_to[0]

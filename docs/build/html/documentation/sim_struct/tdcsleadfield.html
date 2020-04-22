@@ -4,14 +4,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>TDCSLEADFIELD &#8212; SimNIBS 3.1.2 documentation</title>
+    <title>TDCSLEADFIELD &#8212; SimNIBS 4.0b0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -106,9 +106,15 @@ density <em>‘J’</em>.</p></li>
 <li><p><strong>Note</strong>: Only needs to be set by the user if not using the standard <em>.csv</em> cap file.</p></li>
 </ul>
 </li>
-<li><p><strong>map_to_surf</strong>: <em>bool, optional</em></p>
+<li><p><strong>interpolate</strong>: <em>‘middle gm’, None/[], or list/cell array of strings (Python/MATLAB), optional. Default: ‘middle gm’</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Whether to map the fields to the middle gray matter surface.</p></li>
+<li><p><strong>Description</strong>: Where to interpolate fields</p>
+<ul>
+<li><p><em>‘middle_gm’</em>: Interpolate fields in the middle Gray Matter surface obtained from the head segmentation. Default value</p></li>
+<li><p><em>None/[]</em>: Do not interpolate the field anywhere, just store it in the region defined by the <strong>tissues</strong> attribute.</p></li>
+<li><p><em>list/cell array of strings</em>: List of mesh files in <em>‘.stl’</em>, <em>‘.gii’</em>, <em>‘.off’</em> or <em>‘.msh’</em> format. The files will be loaded and the fields will be interpolated at the mesh nodes.</p></li>
+</ul>
+</li>
 <li><p><strong>Default</strong>: True</p></li>
 </ul>
 <div class="admonition note">
@@ -121,7 +127,7 @@ density <em>‘J’</em>.</p></li>
 <ul>
 <li><p><strong>tissues</strong>: <em>list (python) or array (MATLAB), optional</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Tissues numbers of where to record the electric field, in addition to <em>map_to_surf</em>. Mixing surfaces and volumes is not allowed.</p></li>
+<li><p><strong>Description</strong>: Tissues numbers of where to record the electric field, in addition to <strong>interpolate</strong>. Mixing surfaces and volumes is not allowed.</p></li>
 <li><p><strong>Default</strong>: [1006] (i.e. eye surfaces)</p></li>
 <li><p><strong>Example</strong>: <em>Python</em></p></li>
 </ul>
@@ -261,7 +267,7 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -278,7 +284,7 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
