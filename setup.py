@@ -95,10 +95,9 @@ else:
     raise OSError('OS not supported!')
 
 
-# Setup compilation
+#### Setup compilation arguments
 is_conda = 'CONDA_PREFIX' in os.environ
 
-# Windows compilation
 if sys.platform == 'win32':
     petsc_libs = ['libpetsc', 'msmpi']
     petsc_include = [
@@ -126,7 +125,8 @@ if sys.platform == 'win32':
     cgal_compile_args = [
         '/Zi', '/WX-', '/diagnostics:classic', '/Ob0', '/Oy',
         '/D WIN32', '/D _WINDOWS', '/D _SCL_SECURE_NO_DEPRECATE',
-        '/D _SCL_SECURE_NO_WARNINGS', '/D BOOST_ALL_DYN_LINK=1'
+        '/D _SCL_SECURE_NO_WARNINGS', '/D BOOST_ALL_DYN_LINK=1',
+        '/D _MBCS'
     ]
     cgal_link_args = None
 
@@ -159,6 +159,7 @@ elif sys.platform == 'linux':
     ]
     cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
+
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
     petsc_include = [
@@ -301,7 +302,7 @@ gui_scripts = [
 
 def download_and_extract(url, path='.'):
     ''' Downloads and extracts a zip or tar-gz folder '''
-    print(url)
+    print('Downloading:', url)
     with urllib.request.urlopen(url) as response:
         with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
             shutil.copyfileobj(response, tmpf)
