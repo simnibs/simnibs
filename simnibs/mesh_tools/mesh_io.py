@@ -30,7 +30,6 @@ import hashlib
 import tempfile
 import subprocess
 import threading
-from itertools import islice
 from functools import partial
 
 import numpy as np
@@ -5516,18 +5515,24 @@ def read_off(fn):
         Mesh with surface
     '''
 
-    with open(fn, "rb") as f:
-        # Read header
-        hdr = f.readline().decode().rstrip().lower()
-        assert hdr == "off", ".off files should start with OFF"
-        while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n" or hdr == "\r\n":
-            hdr = f.readline().decode()
-        hdr = [int(i) for i in hdr.split()]
-
+    with open(fn) as f:
+        # Read first line. This should be "OFF"
+        line = f.readline().strip()
+        assert line == "OFF", ".off files should start with OFF"
+        
+        # Read empty lines and comments (#)
+        while True:
+            line = f.readline().strip()
+            if line and not line.startswith("#"):
+                break
+        n_verts, n_faces, _ = list(map(int, line.split()))
+        
         # Now read the data
-        vertices = np.genfromtxt(islice(f, 0, hdr[0]))
-        faces = np.genfromtxt(islice(f, 0, hdr[1]),
-                              usecols=(1, 2, 3)).astype(np.uint)
+        vertices = np.fromfile(f, dtype=float, count=3*n_verts, sep=' ')
+        vertices = vertices.reshape(n_verts, 3)
+        faces = np.fromfile(f, dtype=int, count=4*n_faces, sep=' ')
+        faces = faces.reshape(n_faces, 4)[:, 1:]
+        
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
