@@ -485,7 +485,7 @@ class TESDistributed(TESConstraints):
     max_el_current: float
         Maximum current flow through each electrode
 
-    weights: N_roi x 3 ndarray
+    weights: N_roi x 1 or N_roi x 3 ndarray
         Weight for each element / field component
     '''
     def __init__(self, leadfield, target_field,
@@ -494,19 +494,34 @@ class TESDistributed(TESConstraints):
                  max_el_current=1e4):
         super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
         if weights is None:
-            weights = np.ones((leadfield.shape[1], 3))
+            weights = np.ones(leadfield.shape[1])
         else:
             weights = weights
-        weights *= 2
         self.l, self.Q = self._calc_l_Q(leadfield, target_field, weights)
-
 
     def _calc_l_Q(self, leadfield, target_field, weights):
         ''' Calculates the linear and quadratic parts of the optimization problem
+
         '''
-        A = np.einsum('ijk, jk -> ij', leadfield, weights)
-        Q = A.dot(A.T)
-        l = -2*np.sum(target_field*weights, axis=1).dot(A.T)
+        if weights.ndim == 1:
+            Q = sum(
+                leadfield[..., i].dot(
+                    (leadfield[..., i] * weights**2).T)
+                for i in range(leadfield.shape[2])
+            )
+            l = -2*np.einsum(
+                'ijk, jk -> i', leadfield,
+                target_field*weights[:, None]**2
+            )
+
+        elif weights.ndim == 2 and weights.shape[1] == 3:
+            A = np.einsum('ijk, jk -> ij', leadfield, weights)
+            Q = A.dot(A.T)
+            l = -2*np.sum(target_field*weights, axis=1).dot(A.T)
+
+        else:
+            raise ValueError('Invalid shape for weights')
+
         # For numerical reasons
         P = np.linalg.pinv(np.vstack([-np.ones(len(l)), np.eye(len(l))]))
         l = l.dot(P)

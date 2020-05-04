@@ -1160,7 +1160,36 @@ class TestDistributed:
 
     @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
     @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
-    def test_solve(self, max_el_current, max_total_current):
+    def test_solve_scalar_w(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        target_field = np.random.rand(30, 3)
+        np.random.seed(None)
+
+        weights = np.ones(30)
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field, weights, max_total_current,
+            max_el_current
+        )
+
+        x = tes_problem.solve()
+
+        P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        x_sp = optimize_lstsq(
+            leadfield.reshape(5, -1).T.dot(P),
+            target_field.reshape(-1),
+            max_el_current, max_total_current
+        )
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0, atol=1e-6)
+        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+
+
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
+    def test_solve_vector_w(self, max_el_current, max_total_current):
         np.random.seed(1)
         leadfield = np.random.rand(5, 30, 3)
         target_field = np.random.rand(30, 3)
@@ -1182,7 +1211,7 @@ class TestDistributed:
             target_field[:, 1],
             max_el_current, max_total_current
         )
-
+        #print(np.linalg.lstsq(leadfield[..., 1].T, target_field[..., 1])[0])
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0, atol=1e-6)
