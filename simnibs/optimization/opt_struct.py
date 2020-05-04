@@ -1944,6 +1944,82 @@ class TDCSDistributedOptimize():
         self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
         return self._tdcs_opt_obj._field_units
 
+    def to_mat(self):
+        """ Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+
+        Returns
+        --------------------
+        dict
+            Dictionaty for usage with scipy.io.savemat
+        """
+        mat = {}
+        mat['type'] = 'TDCSDistributedOptimize'
+        mat['leadfield_hdf'] = remove_None(self.leadfield_hdf)
+        mat['max_total_current'] = remove_None(self.max_total_current)
+        mat['max_individual_current'] = remove_None(self.max_individual_current)
+        mat['max_active_electrodes'] = remove_None(self.max_active_electrodes)
+        mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
+        mat['name'] = remove_None(self.name)
+        mat['target_image'] = remove_None(self.target_image)
+        mat['mni_space'] = remove_None(self.mni_space)
+        mat['subpath'] = remove_None(self.subpath)
+        mat['intensity'] = remove_None(self.intensity)
+        mat['min_img_value'] = remove_None(self.min_img_value)
+
+        return mat
+
+    @classmethod
+    def read_mat_struct(cls, mat):
+        '''Reads a .mat structure
+
+        Parameters
+        -----------
+        mat: dict
+            Dictionary from scipy.io.loadmat
+
+        Returns
+        ----------
+        p: TDCSoptimize
+            TDCSoptimize structure
+        '''
+        t = cls()
+        leadfield_hdf = try_to_read_matlab_field(
+            mat, 'leadfield_hdf', str, t.leadfield_hdf)
+        max_total_current = try_to_read_matlab_field(
+            mat, 'max_total_current', float, t.max_total_current)
+        max_individual_current = try_to_read_matlab_field(
+            mat, 'max_individual_current', float, t.max_individual_current)
+        max_active_electrodes = try_to_read_matlab_field(
+            mat, 'max_active_electrodes', int, t.max_active_electrodes)
+        open_in_gmsh = try_to_read_matlab_field(
+            mat, 'open_in_gmsh', bool, t.open_in_gmsh)
+        name = try_to_read_matlab_field(
+            mat, 'name', str, t.name)
+        target_image = try_to_read_matlab_field(
+            mat, 'target_image', str, t.target_image)
+        mni_space = try_to_read_matlab_field(
+            mat, 'mni_space', bool, t.mni_space)
+        subpath = try_to_read_matlab_field(
+            mat, 'subpath', str, t.subpath)
+        intensity = try_to_read_matlab_field(
+            mat, 'intensity', float, t.intensity)
+        min_img_value = try_to_read_matlab_field(
+            mat, 'min_img_value', float, t.min_img_value)
+
+        return cls(
+            leadfield_hdf=leadfield_hdf,
+            max_total_current=max_total_current,
+            max_individual_current=max_individual_current,
+            max_active_electrodes=max_active_electrodes,
+            name=name,
+            target_image=target_image,
+            mni_space=mni_space,
+            subpath=subpath,
+            intensity=intensity,
+            min_img_value=min_img_value,
+            open_in_gmsh=open_in_gmsh
+        )
+
     def _target_distribution(self):
         ''' Gets the y and W fields, by interpolating the target_image
         
@@ -1990,7 +2066,6 @@ class TDCSDistributedOptimize():
 
         if np.all(np.abs(field) < self.min_img_value):
             raise ValueError('Target image values are below min_img_value!')
-
         return y, W
 
     def normal_directions(self):
@@ -2055,7 +2130,6 @@ class TDCSDistributedOptimize():
         add_field(e_normal_field, 'normal' + e_field.field_name)
         add_field(target_map, 'target_map')
         add_field(erni, 'ERNI')
-
         return m
 
     def optimize(self, fn_out_mesh=None, fn_out_csv=None):
