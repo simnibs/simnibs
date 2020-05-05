@@ -63,7 +63,7 @@ def build():
     # Create bash or bat file for installation
     if sys.platform == 'win32':
         with open(os.path.join('pack/install.cmd'), 'w') as f:
-            f.write(f'SET INSTALL_DIR=%LOCALAPPDATA%\SimNIBS\n')
+            f.write(f'SET INSTALL_DIR=%USERPROFILE%\SimNIBS\n')
             f.write('mkdir "%INSTALL_DIR%\simnibs_env"\n')
             f.write('powershell.exe -nologo -noprofile -command "& '
                     '{ Add-Type -A \'System.IO.Compression.FileSystem\'; '

@@ -662,7 +662,7 @@ class TestTDCSoptimize:
         assert p.name == 'aaa'
 
 
-    @pytest.mark.parametrize('intensity', [3e-5, -2e-5])
+    @pytest.mark.parametrize('intensity', [3e-4, -3e-4])
     @pytest.mark.parametrize('max_el_c', [1e-3, None])
     @pytest.mark.parametrize('max_tot_c', [2e-3, None])
     @pytest.mark.parametrize('max_ac', [None, 3])

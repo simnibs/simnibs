@@ -693,7 +693,8 @@ def _linear_constrained_tes_opt(l, target_mean, Q,
             -np.average(l_, axis=0),
             np.vstack([C_, l_]), np.hstack([d_, target_mean]),
             A_, b_,
-            bounds=(0, max_el_current)
+            bounds=(0, max_el_current),
+            method='interior-point'
         )
         x_ = sol.x
 
@@ -1050,7 +1051,8 @@ def _norm_opt_x0(
             -np.average(l_, axis=0),
             np.vstack([C_, l_]), np.hstack([d_, target_norm**2]),
             A_, b_,
-            bounds=(0, max_el_current)
+            bounds=(0, max_el_current),
+            method='interior-point'
         )
         x = sol.x[:n] - sol.x[n:]
         if (cur_min - sol.fun) < 1e-3*np.abs(sol.fun):
