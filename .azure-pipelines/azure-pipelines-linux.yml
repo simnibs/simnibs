@@ -11,7 +11,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: simnibs/simnibs-testing:centos6
+  container: simnibs/simnibs-testing:centos7
   steps:
   - bash: |
       sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
@@ -36,8 +36,6 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      centos6:
-        containerImage: simnibs/simnibs-testing:centos6
       centos7:
         containerImage: simnibs/simnibs-testing:centos7
       ubuntu16:
