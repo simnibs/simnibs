@@ -37,6 +37,8 @@ jobs:
     matrix:
       MacOSX-10.14:
         vmImage: 'macOS-10.14'
+      MacOSX-10.15:
+        vmImage: 'macOS-10.15'
 
   pool:
     vmImage: $(vmImage)
