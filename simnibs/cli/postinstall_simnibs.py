@@ -986,8 +986,6 @@ def install(install_dir,
         links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
-    if add_to_path:
-        path_setup(scripts_dir, force, silent)
     test_call = [
         os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
         '-k', 'TestSolve', '-q', '-W', 'ignore'
@@ -998,6 +996,8 @@ def install(install_dir,
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     copy_scripts(scripts_dir)
+    if add_to_path:
+        path_setup(scripts_dir, force, silent)
 
 def uninstall(install_dir):
     path_cleanup()
