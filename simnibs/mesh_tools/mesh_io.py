@@ -30,7 +30,6 @@ import hashlib
 import tempfile
 import subprocess
 import threading
-from itertools import islice
 from functools import partial
 
 import numpy as np
@@ -46,7 +45,7 @@ from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 from . import cython_msh
-from .._compiled import create_mesh
+from .._compiled import _cgal_misc
 
 
 class InvalidMeshError(ValueError):
@@ -2098,7 +2097,7 @@ class Msh:
         if not (near.shape[1] == 3 and far.shape[1] == 3):
             raise ValueError('near and far poins should be arrays of size (N, 3)')
 
-        indices, points = create_mesh.segment_triangle_intersection(
+        indices, points = _cgal_misc.segment_triangle_intersection(
             self.nodes[:],
             self.elm[self.elm.elm_type == 2, :3] - 1,
             near, far
@@ -2137,32 +2136,33 @@ class Msh:
         if not (points.shape[1] == 3 and directions.shape[1] == 3):
             raise ValueError('near and far poins should be arrays of size (N, 3)')
 
-        idx,far = self._intersect_segment_getfarpoint(points, directions)
+        idx, far = self._intersect_segment_getfarpoint(points, directions)
 
-        if len(idx)>0:
-            indices, intercpt_pos = create_mesh.segment_triangle_intersection(
+        if len(idx) > 0:
+            indices, intercpt_pos = _cgal_misc.segment_triangle_intersection(
                 self.nodes[:],
                 self.elm[self.elm.elm_type == 2, :3] - 1,
-                points[idx,:], far
+                points[idx, :], far
             )
-            
+
             if len(indices) > 0:
                 indices[:, 1] = self.elm.triangles[indices[:, 1]]
                 indices[:, 0] = idx[indices[:, 0]]
-                
+
         else:
-            indices = [] 
+            indices = []
             intercpt_pos = []
 
         return indices, intercpt_pos
 
 
     def _intersect_segment_getfarpoint(self, points, directions):
-        """ Gives back the indices of the rays that intersect with the bounding
-            box of the mesh. For intersecting rays, also the end points at the 
-            boundaries of the bounding box after traversing the ROI will be 
-            returned.
-       
+        """
+        Gives back the indices of the rays that intersect with the bounding
+        box of the mesh. For intersecting rays, also the end points at the 
+        boundaries of the bounding box after traversing the ROI will be 
+        returned.
+
         Parameters
         ----------
         msh : simnibs mesh
@@ -2170,56 +2170,59 @@ class Msh:
             start points
         directions : array_like Nx3
             direction vectors.
-    
+
         Returns
         -------
         idx_vec : (N,) array
             indices of intersecting rays
         end_points : (N, 3) array
             end points of the intersecting rays
-        
+
         """ 
-    
+
         eps=0.01
-        ROI = [[np.min(self.nodes.node_coord[:,0])-eps, np.max(self.nodes.node_coord[:,0])+eps],
-               [np.min(self.nodes.node_coord[:,1])-eps, np.max(self.nodes.node_coord[:,1])+eps],
-               [np.min(self.nodes.node_coord[:,2])-eps, np.max(self.nodes.node_coord[:,2])+eps]]
-        
+        ROI = [
+            [np.min(self.nodes.node_coord[:,0])-eps, np.max(self.nodes.node_coord[:,0])+eps],
+            [np.min(self.nodes.node_coord[:,1])-eps, np.max(self.nodes.node_coord[:,1])+eps],
+            [np.min(self.nodes.node_coord[:,2])-eps, np.max(self.nodes.node_coord[:,2])+eps]
+        ]
+
         has_far = np.zeros(points.shape[0], dtype=bool)
         scale = np.zeros(points.shape[0])
-        
-        plane_idx=[[1,2],[0,2],[0,1]]
+
+        plane_idx = [[1, 2], [0, 2], [0, 1]]
         for k in range(3):
-            # lower bound    
-            idx=np.logical_and(directions[:,k] < 0, points[:,k]>ROI[k][0])
-            s=(ROI[k][0] - points[idx,k]) / directions[idx,k]
-            p=points[idx,:]+s.reshape(-1,1)*directions[idx,:]
-            
-            inside_rect =   (p[:, plane_idx[k][0] ] >= ROI[ plane_idx[k][0] ][0]) * \
-                            (p[:, plane_idx[k][0] ] <= ROI[ plane_idx[k][0] ][1]) * \
-                            (p[:, plane_idx[k][1] ] >= ROI[ plane_idx[k][1] ][0]) * \
-                            (p[:, plane_idx[k][1] ] <= ROI[ plane_idx[k][1] ][1])
-            idx[idx]=inside_rect
-            
-            has_far[idx]=True
-            scale[idx]=s[inside_rect]
-            
-            # upper bound    
-            idx=np.logical_and(directions[:,k] > 0, points[:,k]<ROI[k][1])
-            s=(ROI[k][1] - points[idx,k]) / directions[idx,k]
-            p=points[idx,:]+s.reshape(-1,1)*directions[idx,:]
-            
-            inside_rect =   (p[:, plane_idx[k][0] ] >= ROI[ plane_idx[k][0] ][0]) * \
-                            (p[:, plane_idx[k][0] ] <= ROI[ plane_idx[k][0] ][1]) * \
-                            (p[:, plane_idx[k][1] ] >= ROI[ plane_idx[k][1] ][0]) * \
-                            (p[:, plane_idx[k][1] ] <= ROI[ plane_idx[k][1] ][1])
-            idx[idx]=inside_rect
-            has_far[idx]=True
-            scale[idx]=s[inside_rect]
-            
+            # lower bound
+            idx = np.logical_and(directions[:, k] < 0, points[:, k] > ROI[k][0])
+            s = (ROI[k][0] - points[idx, k]) / directions[idx, k]
+            p = points[idx, :]+s.reshape(-1, 1)*directions[idx, :]
+
+            inside_rect = (p[:, plane_idx[k][0]] >= ROI[plane_idx[k][0]][0]) * \
+                          (p[:, plane_idx[k][0]] <= ROI[plane_idx[k][0]][1]) * \
+                          (p[:, plane_idx[k][1]] >= ROI[plane_idx[k][1]][0]) * \
+                          (p[:, plane_idx[k][1]] <= ROI[plane_idx[k][1]][1])
+            idx[idx] = inside_rect
+
+            has_far[idx] = True
+            scale[idx] = s[inside_rect]
+
+            # upper bound
+            idx = np.logical_and(directions[:, k] > 0, points[:, k] < ROI[k][1])
+            s = (ROI[k][1] - points[idx, k]) / directions[idx, k]
+            p = points[idx, :]+s.reshape(-1, 1)*directions[idx, :]
+
+            inside_rect = (p[:, plane_idx[k][0]] >= ROI[plane_idx[k][0]][0]) * \
+                          (p[:, plane_idx[k][0]] <= ROI[plane_idx[k][0]][1]) * \
+                          (p[:, plane_idx[k][1]] >= ROI[plane_idx[k][1]][0]) * \
+                          (p[:, plane_idx[k][1]] <= ROI[plane_idx[k][1]][1])
+
+            idx[idx] = inside_rect
+            has_far[idx] = True
+            scale[idx] = s[inside_rect]
+
         # get end points
-        far = points[has_far] + scale[has_far].reshape(-1,1) * directions[has_far]
-    
+        far = points[has_far] + scale[has_far].reshape(-1, 1) * directions[has_far]
+
         return np.where(has_far)[0], far
 
 
@@ -5512,21 +5515,64 @@ def read_off(fn):
         Mesh with surface
     '''
 
-    with open(fn, "rb") as f:
-        # Read header
-        hdr = f.readline().decode().rstrip().lower()
-        assert hdr == "off", ".off files should start with OFF"
-        while hdr.lower() == "off" or hdr[0] == "#" or hdr == "\n" or hdr == "\r\n":
-            hdr = f.readline().decode()
-        hdr = [int(i) for i in hdr.split()]
-
+    with open(fn) as f:
+        # Read first line. This should be "OFF"
+        line = f.readline().strip()
+        assert line == "OFF", ".off files should start with OFF"
+        
+        # Read empty lines and comments (#)
+        while True:
+            line = f.readline().strip()
+            if line and not line.startswith("#"):
+                break
+        n_verts, n_faces, _ = list(map(int, line.split()))
+        
         # Now read the data
-        vertices = np.genfromtxt(islice(f, 0, hdr[0]))
-        faces = np.genfromtxt(islice(f, 0, hdr[1]),
-                              usecols=(1, 2, 3)).astype(np.uint)
+        vertices = np.fromfile(f, dtype=float, count=3*n_verts, sep=' ')
+        vertices = vertices.reshape(n_verts, 3)
+        faces = np.fromfile(f, dtype=int, count=4*n_faces, sep=' ')
+        faces = faces.reshape(n_faces, 4)[:, 1:]
+        
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
+    return msh
+
+def read(fn):
+    """Read a mesh from disk. Reads gii,[ mesh,] msh, off, stl, and freesurface
+    surface files.
+
+    PARAMETERS
+    ----------
+    fn : str
+        Name of file to read.
+
+    RETURNS
+    ----------
+    msh : Msh
+        File content as Msh.
+    """
+    assert os.path.isfile(fn), "File does not exist."
+    _, ext = os.path.splitext(fn)
+    ext = ext.lower()
+
+    if ext == ".gii":
+        msh = read_gifti_surface(fn)
+    #elif ext == ".mesh":
+    #    msh = read_medit(fn)
+    elif ext == ".msh":
+        msh = read_msh(fn) # m arg not supported...
+    elif ext == ".off":
+        msh = read_off(fn)
+    elif ext == ".stl":
+        msh = read_stl(fn)
+    else: # freesurfer files have all sorts of extentions
+        try:
+            msh = read_freesurfer_surface(fn)
+        except OSError:
+            # if the "magic number" is invalid, this is not a freesurfer file
+            raise ValueError("Cannot read file {}.".format(fn))
+
     return msh
 
 

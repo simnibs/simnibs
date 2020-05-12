@@ -4,14 +4,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.templates &#8212; SimNIBS 3.1.2 documentation</title>
+    <title>simnibs.templates &#8212; SimNIBS 4.0b0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -55,9 +55,9 @@
 <code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">templates</code><em class="property"> = &lt;simnibs.utils.file_finder.Templates object&gt;</em><a class="headerlink" href="#simnibs.templates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the Templates for file names used in SimNIBS</p>
 <dl class="attribute">
-<dt id="simnibs.cat_templates_surfaces">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_templates_surfaces</code><a class="headerlink" href="#simnibs.cat_templates_surfaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the directory with the CAT12 template surfaces (dir)</p>
+<dt id="simnibs.templates_surfaces">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">templates_surfaces</code><a class="headerlink" href="#simnibs.templates_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the directory with the template surfaces (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -66,9 +66,9 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="simnibs.cat_atlases_surfaces">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_atlases_surfaces</code><a class="headerlink" href="#simnibs.cat_atlases_surfaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the directory with the CAT12 atlases surfaces (dir)</p>
+<dt id="simnibs.atlases_surfaces">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">atlases_surfaces</code><a class="headerlink" href="#simnibs.atlases_surfaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the directory with the atlases surfaces (dir)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -77,9 +77,9 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="simnibs.cat_lh_cortex_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_lh_cortex_ref</code><a class="headerlink" href="#simnibs.cat_lh_cortex_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the GifTi surface with the FsAverage lh cortex template (.gii)</p>
+<dt id="simnibs.lh_central">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lh_central</code><a class="headerlink" href="#simnibs.lh_central" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage left central cortex template (.gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -88,9 +88,9 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="simnibs.cat_rh_cortex_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_rh_cortex_ref</code><a class="headerlink" href="#simnibs.cat_rh_cortex_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the GifTi surface with the FsAverage lh cortex template (.gii)</p>
+<dt id="simnibs.rh_central">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rh_central</code><a class="headerlink" href="#simnibs.rh_central" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage right central cortex template (.gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -99,9 +99,9 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="simnibs.cat_lh_sphere_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_lh_sphere_ref</code><a class="headerlink" href="#simnibs.cat_lh_sphere_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the GifTi surface with the FsAverage lh sphere template (.gii)</p>
+<dt id="simnibs.lh_sphere">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lh_sphere</code><a class="headerlink" href="#simnibs.lh_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage left cortical sphere template (.gii)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -110,9 +110,97 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="simnibs.cat_rh_sphere_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">cat_rh_sphere_ref</code><a class="headerlink" href="#simnibs.cat_rh_sphere_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the GifTi surface with the FsAverage lh sphere template (.gii)</p>
+<dt id="simnibs.rh_sphere">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rh_sphere</code><a class="headerlink" href="#simnibs.rh_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage right cortical sphere template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.lh_inflated">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lh_inflated</code><a class="headerlink" href="#simnibs.lh_inflated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage left inflated cortex template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.rh_inflated">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rh_inflated</code><a class="headerlink" href="#simnibs.rh_inflated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage right inflated cortex template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.lc_central">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lc_central</code><a class="headerlink" href="#simnibs.lc_central" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage left central cerebellum template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.rc_cortex">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rc_cortex</code><a class="headerlink" href="#simnibs.rc_cortex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage right central cerebellum template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.lc_sphere">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lc_sphere</code><a class="headerlink" href="#simnibs.lc_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage left cerebellum sphere template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.rc_sphere">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rc_sphere</code><a class="headerlink" href="#simnibs.rc_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the GifTi surface with the FsAverage right cerebellum sphere template (.gii)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.lh_mask">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">lh_mask</code><a class="headerlink" href="#simnibs.lh_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the MASK file for the lh (.mask)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="simnibs.rh_mask">
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">rh_mask</code><a class="headerlink" href="#simnibs.rh_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to the MASK file for the lh (.mask)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -124,61 +212,6 @@
 <dt id="simnibs.mni_volume">
 <code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">mni_volume</code><a class="headerlink" href="#simnibs.mni_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.freesurfer_templates">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">freesurfer_templates</code><a class="headerlink" href="#simnibs.freesurfer_templates" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the folder with FreeSurfer templates (dir)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.fs_lh_sphere_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">fs_lh_sphere_ref</code><a class="headerlink" href="#simnibs.fs_lh_sphere_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the fs surface file with the reference lh sphere (freesurfer surface)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.fs_rh_sphere_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">fs_rh_sphere_ref</code><a class="headerlink" href="#simnibs.fs_rh_sphere_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the fs surface file with the reference rh sphere (freesurfer surface)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.fs_lh_cortex_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">fs_lh_cortex_ref</code><a class="headerlink" href="#simnibs.fs_lh_cortex_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the fs surface file with the Fsavarage ls pial (freesurfer surface)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.fs_rh_cortex_ref">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">fs_rh_cortex_ref</code><a class="headerlink" href="#simnibs.fs_rh_cortex_ref" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -273,7 +306,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -290,7 +323,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

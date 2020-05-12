@@ -17,7 +17,7 @@ from ..utils import file_finder
 from ..utils import transformations
 from . import samseg
 import nibabel as nib
-from ._cs_utils import sanlm
+from ._cat_c_utils import sanlm
 import numpy as np
 from scipy import ndimage
 from ..utils.transformations import resample_vol
