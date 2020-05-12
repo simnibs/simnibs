@@ -39,7 +39,8 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
 
     mesh = probabilisticAtlas.getMesh(
             modelSpecifications.atlasFileName,
-            transform,
+            transform=transform,
+            K=modelSpecifications.K,
             initialDeformation=deformation,
             initialDeformationMeshCollectionFileName=deformationAtlasFileName)
 
@@ -51,7 +52,7 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
     mixtureWeights = GMMparameters['mixtureWeights']
 
     structureNumbers = _calculateSegmentationLoop(
-                imageBuffers-biasFields,
+                imageBuffers - biasFields,
                 mask, fractionsTable, mesh,
                 numberOfGaussiansPerClass,
                 means, variances, mixtureWeights)
@@ -272,7 +273,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
         # and cast to float from uint8
-        nonNormalized = mesh.rasterize_1a(mask.shape, structureNumber)
+        nonNormalized = mesh.rasterize_1a(mask.shape, structureNumber)/65535.0
         prior = nonNormalized[mask]
 
         # Find which classes we need to look at

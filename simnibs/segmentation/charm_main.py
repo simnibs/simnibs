@@ -96,11 +96,13 @@ def _estimate_parameters(path_to_segment_folder,
 
     user_model_specifications = {'atlasFileName': os.path.join(
             path_to_segment_folder, 'atlas_level2.txt.gz'),
-                                 'biasFieldSmoothingKernelSize': 70}
+                                 'biasFieldSmoothingKernelSize': 70,
+                                 'brainMaskingThreshold': 0.01}
     if len(input_images) > 1:
         user_model_specifications = {'atlasFileName': os.path.join(
             path_to_segment_folder, 'atlas_level2.txt.gz'),
-                                 'biasFieldSmoothingKernelSize': 50}
+                                 'biasFieldSmoothingKernelSize': 50,
+                                 'brainMaskingThreshold': 0.01}
 
 
     #TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
@@ -110,13 +112,13 @@ def _estimate_parameters(path_to_segment_folder,
                                        os.path.join(path_to_segment_folder,
                                                     'atlas_level1.txt.gz'),
                                        'targetDownsampledVoxelSpacing': 3.0,
-                                       'maximumNumberOfIterations': 1,
+                                       'maximumNumberOfIterations': 10,
                                        'estimateBiasField': True},
                                       {'atlasFileName':
                                           os.path.join(path_to_segment_folder,
                                                        'atlas_level2.txt.gz'),
                                        'targetDownsampledVoxelSpacing': 2.0,
-                                       'maximumNumberOfIterations': 1,
+                                       'maximumNumberOfIterations': 10,
                                        'estimateBiasField': True}]}
 
     samseg_kwargs = dict(
@@ -143,7 +145,7 @@ def _estimate_parameters(path_to_segment_folder,
         logger.info('atlasRegistrationLevel%d %d %f\n' %
                     (multiResolutionLevel, item['numberOfIterations'],
                      item['perVoxelCost']))
-
+        
     return samsegment.saveParametersAndInput()
 
 

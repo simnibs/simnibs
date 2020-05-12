@@ -5,7 +5,7 @@ from .Samseg import Samseg
 from .SamsegUtility import writeImage
 from . import gems
 eps = np.finfo(float).eps
-
+from .simnibs_segmentation_utils import _calculateSegmentationLoop
 
 class SamsegWholeHead(Samseg):
 
@@ -29,7 +29,7 @@ class SamsegWholeHead(Samseg):
     def getOptimizationSummary(self):
         return self.optimizationSummary
 
-    def saveMesh(self, output_name):
+    def writeMesh(self, output_name):
         mesh = self.probabilisticAtlas.getMesh(
                 self.modelSpecifications.atlasFileName,
                 self.transform,
