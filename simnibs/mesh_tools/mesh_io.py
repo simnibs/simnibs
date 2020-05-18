@@ -231,7 +231,7 @@ class Elements:
                 self.node_number_list = np.vstack(
                     (self.node_number_list, tetrahedra.astype('int32')))
                 self.elm_type = np.append(
-                    self.elm_type, np.ones((self.nr,), dtype='int32') * 4)
+                    self.elm_type, np.ones(len(tetrahedra), dtype='int32') * 4)
 
         if len(self.node_number_list) > 0:
             self.tag1 = np.ones((self.nr,), dtype='int32')
