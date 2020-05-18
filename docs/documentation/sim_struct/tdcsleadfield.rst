@@ -74,7 +74,7 @@ Attributes
     * *None/[]*: Do not interpolate the field anywhere, just store it in the region defined by the **tissues** attribute.
     * *list/cell array of strings*: List of mesh files in *'.stl'*, *'.gii'*, *'.off'* or *'.msh'* format. The files will be loaded and the fields will be interpolated at the mesh nodes.
 
-  * **Default**: True
+  * **Default**: *'middle_gm'*
 
   .. note:: Does not work for *headreco* models ran with the :code:`--no-cat` option.
 
@@ -94,6 +94,12 @@ Attributes
      tdcs_lf.tissues = [1, 2]
 
   \ 
+
+* **interpolation_tissue**:  *list (python) or array (MATLAB), optional*
+
+  * **Description**: Tissues numbers to use as a base for the interpolation procedure. Nodes in the interpolated surfaces outside of the region defined by **interpolation_tissue** will be extrapolated using nearest neighbor. Ignored if **interpolation** is set to *None/[]*. Must correspond to a volume.
+
+  * **Default**: [2] (i.e. gray matter surface)
 
 * **electrode**: *ELECTRODE structure or list/array of ELECTRODE structures, optional*
 
