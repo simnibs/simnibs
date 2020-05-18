@@ -459,12 +459,24 @@ def despike(msh, adj_threshold=2,
     '''
     tags = np.unique(msh.elm.tag1)
     adj_th = msh.elm.find_adjacent_tetrahedra()
-    for i, t1 in enumerate(np.unique(tags)):
-        for t2 in np.unique(tags)[i+1:]:
+    nodes_label = []
+    for t in tags:
+        nodes_label.append(np.bincount(
+            msh.elm[msh.elm.elm_type == 4].reshape(-1),
+            np.repeat(msh.elm.tag1[msh.elm.elm_type == 4] == t, 4),
+            minlength=msh.nodes.nr + 1
+        ).astype(bool))
+
+    for i, t1 in enumerate(tags):
+        for j, t2 in enumerate(tags[i+1:]):
             if t1 == t2:
                 continue
-            for t3 in np.unique(tags):
+            if not np.any(nodes_label[i] * nodes_label[j]):
+                continue
+            for k, t3 in enumerate(tags):
                 if t1 == t3 or t2 == t3:
+                    continue
+                if not np.any(nodes_label[i] * nodes_label[j] * nodes_label[k]):
                     continue
                 relabel_spikes(
                     msh, t1, t2, t3,
