@@ -2178,7 +2178,6 @@ class TDCSLEADFIELD(LEADFIELD):
             self.eeg_cap = sub_files.get_eeg_cap(self.eeg_cap)
 
         logger.info('EEG Cap: {0}'.format(self.eeg_cap))
-        self.mesh = mesh_io.read_msh(self.fnamehead)
 
     def _add_electrodes_from_cap(self):
         ''' Reads a csv file and adds the electrodes defined to the tdcslist
