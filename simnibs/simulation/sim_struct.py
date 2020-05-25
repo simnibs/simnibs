@@ -2022,6 +2022,12 @@ class LEADFIELD():
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        # The 2 variables bellow are set when the _get_vol() method is called
+        # If set, they have priority over fn_tensor_nifti
+        self.anisotropy_vol = None  # 4-d data with anisotropy information
+        self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
+        self.anisotropic_tissues = [1, 2]  # if an anisotropic conductivity is to be used,
+
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
@@ -2046,6 +2052,10 @@ class LEADFIELD():
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
+
+    def _get_vol_info(self):
+        return SimuList._get_vol_info(self)
+
 
     def _prepare(self):
         """Prepares Leadfield for simulations
