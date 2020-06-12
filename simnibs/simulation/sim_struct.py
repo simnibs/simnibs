@@ -1320,8 +1320,8 @@ class POSITION(object):
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
-            return self.matsimnibs
-        else:
+            self.matsimnibs = np.array(self.matsimnibs)
+        else: 
             logger.info('Calculating Coil position from (centre, pos_y, distance)')
             if not isinstance(self.centre, np.ndarray) and not self.centre:
                 raise ValueError('Coil centre not set!')
@@ -1336,8 +1336,15 @@ class POSITION(object):
                 raise ValueError('Coil pos_ydir must be 3-dimensional')
             self.matsimnibs = msh.calc_matsimnibs(
                 self.centre, self.pos_ydir, self.distance, msh_surf=msh_surf)
-            logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
-            return self.matsimnibs
+
+        logger.info('matsimnibs: \n{0}'.format(self.matsimnibs))
+        if 1002 in msh.elm.tag1:
+            cc_distance = np.min(np.linalg.norm(
+                msh.elements_baricenters()[msh.elm.tag1==1002] - self.matsimnibs[:3, 3],
+                axis=1)
+            )
+            logger.info(f'coil-cortex distance: {cc_distance:.2f}')
+        return self.matsimnibs
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
