@@ -55,6 +55,8 @@ def get_libmkl():
     if sys.platform == 'darwin':
         return ctypes.CDLL('libmkl_rt.dylib')
     elif sys.platform == 'win32':
+        dllspath = os.path.join(os.path.dirname(sys.executable), 'Library', 'bin')
+        ctypes.windll.kernel32.SetDllDirectoryW(dllspath)
         return ctypes.CDLL('mkl_rt.dll')
     else:
         return ctypes.CDLL('libmkl_rt.so')
