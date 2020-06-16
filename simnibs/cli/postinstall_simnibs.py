@@ -291,7 +291,7 @@ def matlab_prepare():
 
     with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
         if sys.platform == 'win32':
-            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
+            python_call = f'call "{_get_activate_bin()}" {_get_conda_env()} && python -E -u '
         else:
             python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
@@ -643,7 +643,7 @@ def activator_setup(install_dir):
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            activator, gui=True, commands=f'-d {install_dir}')
+            activator, gui=True, commands=f'-d "{install_dir}"')
 
         _create_shortcut(
             os.path.join(install_dir, 'Activate SimNIBS'),
@@ -653,7 +653,7 @@ def activator_setup(install_dir):
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            activator, commands=f'-d {install_dir}')
+            activator, commands=f'-d "{install_dir}"')
 
 
 def _download_manager(blocknum, blocksize, totalsize, start_time=None, timeout=None):

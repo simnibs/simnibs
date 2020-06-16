@@ -41,22 +41,21 @@ def build():
     conda_pack.pack(
         name='simnibs_env_tmp',
         dest_prefix='simnibs_env',
-        output=os.path.join(pack_dir, 'simnibs_env.tar.gz'),
+        output=os.path.join(pack_dir, 'simnibs_env.zip'),
         compress_level=0,
         force=True
     )
     shutil.unpack_archive(
-        os.path.join(pack_dir, 'simnibs_env.tar.gz'),
+        os.path.join(pack_dir, 'simnibs_env.zip'),
         os.path.join(pack_dir, 'simnibs_env'),
     )
-    os.remove(os.path.join(pack_dir, 'simnibs_env.tar.gz'))
+    os.remove(os.path.join(pack_dir, 'simnibs_env.zip'))
     # Remove temporary env
     subprocess.run(
         'conda env remove -y --name simnibs_env_tmp',
         check=True,
         shell=True
     )
-
     # Copy wheel
     wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
     if len(wheels) == 0:
@@ -64,44 +63,43 @@ def build():
     for f in wheels:
         shutil.copy(f, pack_dir)
 
+    # Copy documentation
+    shutil.copytree('../docs/build/html', os.path.join(pack_dir, 'documentation'))
+
     # Create bash or bat file for installation
     if sys.platform == 'win32':
-        print('TODO')
-        '''
-        with open(os.path.join('pack/install.cmd'), 'w') as f:
-            f.write(f'SET INSTALL_DIR=%USERPROFILE%\SimNIBS\n')
-            f.write('mkdir "%INSTALL_DIR%\simnibs_env"\n')
-            f.write('powershell.exe -nologo -noprofile -command "& '
-                    '{ Add-Type -A \'System.IO.Compression.FileSystem\'; '
-                    '[IO.Compression.ZipFile]::ExtractToDirectory(\'%~dp0simnibs_env.zip\', \'%INSTALL_DIR%\simnibs_env\'); }"\n'
+        shutil.copy('../simnibs/resources/gui_icon.ico', os.path.join(pack_dir, 'gui_icon.ico'))
+        fn_script = os.path.join(pack_dir, 'installer.nsi')
+        with open('installer.nsi', 'r') as f:
+            install_script = Template(f.read()).render(
+                version='.'.join(version.split('.')[:2]),
+                full_version=version
             )
-            f.write('call "%INSTALL_DIR%\simnibs_env\\Scripts\\activate"\n')
-            f.write('python -m pip install simnibs --no-cache-dir --no-index --upgrade --find-links=./\n')
-            f.write('postinstall_simnibs -d "%INSTALL_DIR%" --copy-matlab --setup-links --no-extra-coils')
-        '''
-    else:
-        if sys.platform == 'darwin':
-            print('TODO')
-            '''
-            fn_script = os.path.join('pack', 'install')
-            install_dir = "$HOME/Applications/SimNIBS"
-            '''
-        else:
-            fn_script = os.path.join(pack_dir, 'install')
-            install_dir = "$HOME/SimNIBS"
-            with open('install', 'r') as f:
-                install_script = Template(f.read()).render(
-                    version='.'.join(version.split('.')[:2])
-                )
-            with open(fn_script, 'w') as f:
-                f.write(install_script)
-
-            os.chmod(fn_script,
-                     os.stat(fn_script).st_mode |
-                     stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-
-    # zip the whole thing
-    shutil.make_archive(f'simnibs-{version}-{os_name}', 'zip', pack_dir)
+        with open(fn_script, 'w') as f:
+            f.write(install_script)
+        print('Creating ')
+        subprocess.run(
+            fr'"%programfiles(x86)%\NSIS\makensis.exe" {fn_script}',
+            check=True,
+            shell=True
+        )
+    if sys.platform == 'darwin':
+        print('TODO')
+    elif sys.platform=='linux':
+        fn_script = os.path.join(pack_dir, 'install')
+        with open('install', 'r') as f:
+            install_script = Template(f.read()).render(
+                version='.'.join(version.split('.')[:2])
+            )
+        with open(fn_script, 'w') as f:
+            f.write(install_script)
+        os.chmod(
+            fn_script,
+            os.stat(fn_script).st_mode |
+            stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+        )
+        # zip the whole thing
+        shutil.make_archive(f'simnibs-{version}-{os_name}', 'zip', pack_dir)
 
 if __name__ == '__main__':
     build()
