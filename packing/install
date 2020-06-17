@@ -1,4 +1,6 @@
 #! /bin/bash -e
+set -o pipefail
+
 show_help() {
 cat << EOF
 Usage: ${0##*/} [-hs] [-t INSTALL_DIR] ...
@@ -12,6 +14,7 @@ EOF
 
 # Initialize our own variables:
 INSTALL_DIR="$HOME/SimNIBS-{{ version }}"
+INSTALL_LOG="$HOME/SimNIBS-{{ version }}/install.log"
 silent=""
 
 OPTIND=1
@@ -35,7 +38,7 @@ while getopts hst: opt; do
     esac
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
-
+(
 echo "Installing to ${INSTALL_DIR}"
 CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 mkdir -p "$INSTALL_DIR"
@@ -45,7 +48,8 @@ fi
 if [ $REMOVE == y || $REMOVE == Y ]; then
     rm -r "$INSTALL_DIR/simnibs_env"
 fi
-mv "$CUR_DIR/simnibs_env" "$INSTALL_DIR/simnibs_env"
+cp -R "$CUR_DIR/simnibs_env" "$INSTALL_DIR/simnibs_env"
 source "$INSTALL_DIR/simnibs_env/bin/activate"
-python -m pip install simnibs --no-cache-dir --no-index --upgrade --find-links="$CUR_DIR"
-postinstall_simnibs -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils $silent
+python "$CUR_DIR/postinstall_simnibs.py" -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils $silent
+find "$INSTALL_DIR/simnibs_env/bin/" -type f -exec grep -Iq . {} \; -exec sed -i 's+#!simnibs_env/bin/python+#!'"$INSTALL_DIR/simnibs_env/bin/python"'+' {} +
+) 2>&1 | tee "$INSTALL_LOG"

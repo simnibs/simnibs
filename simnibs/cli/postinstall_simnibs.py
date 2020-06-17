@@ -35,7 +35,6 @@ import urllib.request
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
-from simnibs.utils import _system_path
 try:
     from PyQt5 import QtCore, QtWidgets, QtGui
     GUI = True
@@ -212,12 +211,17 @@ def _get_win_simnibs_env_vars():
                 simnibs_env_vars[var_name] = value
     return simnibs_env_vars
 
-def path_setup(scripts_dir, force=False, silent=False):
+def path_setup(scripts_dir, force=False, silent=False, shell_type='bash'):
     ''' Modifies the bash startup path and postpends SimNIBS to the PATH '''
     scripts_dir = os.path.abspath(scripts_dir)
     silent = silent and GUI
     if sys.platform in ['linux', 'darwin']:
-        bashrc, _ = _get_bashrc()
+        if shell_type == 'bash':
+            bashrc, _ = _get_bashrc()
+        elif shell_type =='zsh':
+            bashrc = os.path.expanduser('~/.zprofile')
+        else:
+            raise OSError('Invalid shell type')
         if os.path.exists(bashrc):
             has_simnibs = (
                 re.search('simnibs', open(bashrc, 'r').read(), re.IGNORECASE)
@@ -237,12 +241,12 @@ def path_setup(scripts_dir, force=False, silent=False):
                 silent)
 
         if not overwrite:
-            print('Not Adding the current SimNIBS install to the PATH')
-            return
+            print(f'Not Adding the current SimNIBS install to the {shell_type} PATH')
+            return False
 
-        path_cleanup()
+        path_cleanup(scripts_dir, shell_type=shell_type)
 
-    print(f'Postpending {scripts_dir} to the PATH')
+    print(f'Postpending {scripts_dir} to the {shell_type} PATH')
     if sys.platform in ['linux', 'darwin']:
         with open(bashrc, 'a') as f:
             f.write('\n')
@@ -251,19 +255,25 @@ def path_setup(scripts_dir, force=False, silent=False):
             f.write('export PATH=${PATH}:${SIMNIBS_BIN}')
 
     else:
+        from simnibs.utils import _system_path
         _system_path.add_to_system_path(scripts_dir, allusers=False)
         _system_path.broadcast_environment_settings_change()
 
-def path_cleanup(scripts_dir):
+    return True
+
+def path_cleanup(scripts_dir, shell_type='bash'):
     ''' Removes SIMNIBS from PATH '''
     if sys.platform in ['linux', 'darwin']:
-        bashrc, backup_file = _get_bashrc()
-
+        if shell_type == 'bash':
+            bashrc, backup_file = _get_bashrc()
+        if shell_type == 'zsh':
+            bashrc = os.path.expanduser('~/.zprofile')
+            backup_file = os.path.expanduser('~/.zprofile_simnibs_bk')
         if not os.path.isfile(bashrc):
             print('Could not find bashrc file')
             return
 
-        print('Removing SimNIBS install from PATH')
+        print(f'Removing SimNIBS install from {shell_type} PATH')
         print(f'Backing up the bashrc file at {backup_file}')
         _copy_and_log(bashrc, backup_file)
         with open(backup_file, 'r') as fin:
@@ -278,6 +288,8 @@ def path_cleanup(scripts_dir):
             # These are leftovers from previous (3F.0, 3.1) installs
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
                 winreg.DeleteValue(reg, key)
+                
+        from simnibs.utils import _system_path
         _system_path.remove_from_system_path(scripts_dir, allusers=False)
         _system_path.broadcast_environment_settings_change()
 
@@ -390,7 +402,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         )
         _create_shortcut(
              os.path.join(shortcut_folder, 'SimNIBS Prompt'),
-             '%windir%\System32\cmd.exe',
+             r'%windir%\System32\cmd.exe',
              arguments=f'/K ""{_get_activate_bin()}"" {_get_conda_env()}')
     if sys.platform == 'linux':
         try:
@@ -921,10 +933,14 @@ def install(install_dir,
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     copy_scripts(scripts_dir)
     if add_to_path:
-        path_setup(scripts_dir, force, silent)
+        added_to_path = path_setup(scripts_dir, force, silent)
+        if sys.platform == 'darwin' and added_to_path:
+            path_setup(scripts_dir, force=True, silent=True, shell_type='zsh')
 
 def uninstall(install_dir):
     path_cleanup(os.path.join(install_dir, 'bin'))
+    if sys.platform == 'darwin':
+        path_cleanup(os.path.join(install_dir, 'bin'), shell_type='zsh')
     shortcut_icons_clenup()
     file_associations_cleanup()
     uninstaller_cleanup()

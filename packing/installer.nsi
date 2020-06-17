@@ -1,6 +1,6 @@
 !define PRODUCT_NAME "SimNIBS-{{ version }}"
 !define PRODUCT_VERSION "{{ full_version }}"
-!define INSTALLER_NAME "SimNIBS-{{ version }}.exe"
+!define INSTALLER_NAME "simnibs_installer_windows.exe"
 !define PRODUCT_ICON "gui_icon.ico"
 
 ; Marker file to tell the uninstaller that it's a user installation
@@ -36,7 +36,7 @@ SetCompressor lzma
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_LANGUAGE "English"
 
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+Name "${PRODUCT_NAME} v${PRODUCT_VERSION}"
 OutFile "${INSTALLER_NAME}"
 ShowInstDetails show
 
@@ -66,6 +66,9 @@ Section "!${PRODUCT_NAME}" sec_app
   SetOutPath "$INSTDIR"
     File "_install.bat"
 
+  SetOutPath "$INSTDIR"
+    File "postinstall_simnibs.py"
+
   ; Marker file for per-user install
   StrCmp $MultiUser.InstallMode CurrentUser 0 +3
     FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
@@ -76,8 +79,8 @@ Section "!${PRODUCT_NAME}" sec_app
   DetailPrint "Installing SimNIBS package..."
   nsExec::ExecToLog '$INSTDIR\_install.bat "$INSTDIR"'
   
-  Delete "$INSTDIR\*.whl"
   Delete "$INSTDIR\_install.bat"
+  Delete "$INSTDIR\postinstall_simnibs.py"
 
   WriteUninstaller $INSTDIR\uninstall.exe
   ; Add ourselves to Add/remove programs

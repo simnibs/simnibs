@@ -15,6 +15,7 @@ def build():
     import conda_pack
     version = open("../simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'")
     pack_dir = os.path.abspath('pack')
+    env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
     # Create a new environment
     if os.path.dirname(__file__):
         os.chdir(os.path.dirname(__file__))
@@ -32,42 +33,55 @@ def build():
     env = os.path.join(
         os.path.dirname(__file__), '..', f'environment_{os_name}.yml'
     )
+    # Install requirements
     subprocess.run(
-        f'conda env create -n simnibs_env_tmp -f {env}',
+        f'conda env create -p {env_prefix} -f {env} --force',
+        check=True,
+        shell=True
+    )
+    # Install SimNIBS
+    wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
+    if len(wheels) == 0:
+        raise FileNotFoundError(f'Did not find any wheels for version {version}')
+    if sys.platform == 'win32':
+        env_pip = os.path.join(env_prefix, 'Scripts', 'pip.exe')
+    else:
+        env_pip = os.path.join(env_prefix, 'bin', 'pip') 
+    subprocess.run(
+        f'{env_pip} install simnibs --no-cache-dir --no-index --upgrade --find-links=../dist',
         check=True,
         shell=True
     )
     # Pack
+    # I use .tar because MacOS erases the execute permission in .zip
     conda_pack.pack(
-        name='simnibs_env_tmp',
+        prefix=env_prefix,
         dest_prefix='simnibs_env',
-        output=os.path.join(pack_dir, 'simnibs_env.zip'),
+        output=os.path.join(pack_dir, 'simnibs_env.tar'),
         compress_level=0,
         force=True
     )
     shutil.unpack_archive(
-        os.path.join(pack_dir, 'simnibs_env.zip'),
+        os.path.join(pack_dir, 'simnibs_env.tar'),
         os.path.join(pack_dir, 'simnibs_env'),
     )
-    os.remove(os.path.join(pack_dir, 'simnibs_env.zip'))
+    os.remove(os.path.join(pack_dir, 'simnibs_env.tar'))
     # Remove temporary env
     subprocess.run(
-        'conda env remove -y --name simnibs_env_tmp',
+        f'conda env remove -y -p {env_prefix}',
         check=True,
         shell=True
     )
-    # Copy wheel
-    wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
-    if len(wheels) == 0:
-        raise FileNotFoundError(f'Did not find any wheels for version {version}')
-    for f in wheels:
-        shutil.copy(f, pack_dir)
 
     # Copy documentation
     shutil.copytree('../docs/build/html', os.path.join(pack_dir, 'documentation'))
 
-    # Create bash or bat file for installation
+    # Copy postinstall script
+    shutil.copy('../simnibs/cli/postinstall_simnibs.py', pack_dir) 
+
+    # Create OS-specific installer
     if sys.platform == 'win32':
+        #Use the installer.nsi template to create an NSIS installer
         shutil.copy('../simnibs/resources/gui_icon.ico', os.path.join(pack_dir, 'gui_icon.ico'))
         fn_script = os.path.join(pack_dir, 'installer.nsi')
         with open('installer.nsi', 'r') as f:
@@ -84,7 +98,18 @@ def build():
             shell=True
         )
     if sys.platform == 'darwin':
-        print('TODO')
+        subprocess.run([
+            'pkgbuild',
+            '--root', pack_dir,
+            '--identifier', f'org.SimNIBS.{version}',
+            '--version', version,
+            '--scripts', 'macOS_scripts/', 
+            '--install-location', 
+            '/Applications/SimNIBS-'+ '.'.join(version.split('.')[:2]),
+            'simnibs_installer_macos.pkg'
+            ],
+            check=True,
+        )
     elif sys.platform=='linux':
         fn_script = os.path.join(pack_dir, 'install')
         with open('install', 'r') as f:
@@ -99,7 +124,7 @@ def build():
             stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
         )
         # zip the whole thing
-        shutil.make_archive(f'simnibs-{version}-{os_name}', 'zip', pack_dir)
+        shutil.make_archive(f'simnibs_installer_linux', 'zip', pack_dir)
 
 if __name__ == '__main__':
     build()

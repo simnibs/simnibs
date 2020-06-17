@@ -1,0 +1,12 @@
+#!/bin/bash
+set -o pipefail
+(
+    # Activate environment
+    source "$2/simnibs_env/bin/activate" &&
+    # Install SimNIBS
+    python "$2/postinstall_simnibs.py" -d "$2" --copy-matlab --setup-links --no-extra-coils &&
+    # Fix shebangs
+    LC_CTYPE=C find "$2/simnibs_env/bin/" -type f -exec grep -Iq . {} \; -exec sed -i '' 's+#!simnibs_env/bin/python+#!'"$2/simnibs_env/bin/python"'+' {} +
+    # Remove the postinstall script
+    rm "$2/postinstall_simnibs.py"
+) 2>&1 | tee "$2/install.log"
