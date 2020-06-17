@@ -114,7 +114,8 @@ def build():
         fn_script = os.path.join(pack_dir, 'install')
         with open('install', 'r') as f:
             install_script = Template(f.read()).render(
-                version='.'.join(version.split('.')[:2])
+                version='.'.join(version.split('.')[:2]),
+                full_version=version
             )
         with open(fn_script, 'w') as f:
             f.write(install_script)

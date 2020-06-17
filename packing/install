@@ -13,6 +13,7 @@ EOF
 }
 
 # Initialize our own variables:
+FULL_VERSION="{{ full_version }}"
 INSTALL_DIR="$HOME/SimNIBS-{{ version }}"
 INSTALL_LOG="$HOME/SimNIBS-{{ version }}/install.log"
 silent=""
@@ -38,18 +39,22 @@ while getopts hst: opt; do
     esac
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
-(
-echo "Installing to ${INSTALL_DIR}"
-CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 mkdir -p "$INSTALL_DIR"
+touch "$INSTALL_LOG"
+(
+echo "Installing SimNIBS ${FULL_VERSION} to ${INSTALL_DIR}"
+CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
 if [ -d "$INSTALL_DIR/simnibs_env" ]; then
-    read -p "Found another SimNIBS installation in $INSTALL_DIR. Remove it? [y/N] :" REMOVE
-fi
-if [ $REMOVE == y || $REMOVE == Y ]; then
-    rm -r "$INSTALL_DIR/simnibs_env"
+    read -p "Found another SimNIBS installation in $INSTALL_DIR. Remove it? [y/N] :" REPLY
+    if [[ $REPLY =~ [Yy]$ ]]; then
+        rm -r "$INSTALL_DIR/simnibs_env"
+        rm -r "$INSTALL_DIR/documentation"
+    else
+        echo "Aborting Installation"; exit 1
+    fi
 fi
 cp -R "$CUR_DIR/simnibs_env" "$INSTALL_DIR/simnibs_env"
-source "$INSTALL_DIR/simnibs_env/bin/activate"
-python "$CUR_DIR/postinstall_simnibs.py" -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils $silent
+cp -R "$CUR_DIR/documentation" "$INSTALL_DIR/documentation"
+"$INSTALL_DIR/simnibs_env/bin/python" "$CUR_DIR/postinstall_simnibs.py" -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils $silent
 find "$INSTALL_DIR/simnibs_env/bin/" -type f -exec grep -Iq . {} \; -exec sed -i 's+#!simnibs_env/bin/python+#!'"$INSTALL_DIR/simnibs_env/bin/python"'+' {} +
 ) 2>&1 | tee "$INSTALL_LOG"
