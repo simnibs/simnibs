@@ -56,5 +56,6 @@ fi
 cp -R "$CUR_DIR/simnibs_env" "$INSTALL_DIR/simnibs_env"
 cp -R "$CUR_DIR/documentation" "$INSTALL_DIR/documentation"
 "$INSTALL_DIR/simnibs_env/bin/python" "$CUR_DIR/postinstall_simnibs.py" -d "$INSTALL_DIR" --copy-matlab --setup-links --no-extra-coils $silent
+# Find all the text files and replace shebang
 find "$INSTALL_DIR/simnibs_env/bin/" -type f -exec grep -Iq . {} \; -exec sed -i 's+#!simnibs_env/bin/python+#!'"$INSTALL_DIR/simnibs_env/bin/python"'+' {} +
 ) 2>&1 | tee "$INSTALL_LOG"

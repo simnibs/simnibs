@@ -91,6 +91,7 @@ def build():
             )
         with open(fn_script, 'w') as f:
             f.write(install_script)
+        shutil.copy('_install.bat', pack_dir)
         print('Creating ')
         subprocess.run(
             fr'"%programfiles(x86)%\NSIS\makensis.exe" {fn_script}',
