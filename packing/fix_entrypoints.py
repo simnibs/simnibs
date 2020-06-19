@@ -109,20 +109,27 @@ def fix_all_scripts_win(scripts_folder, python_prefix):
 def fix_all_scripts_posix(scripts_folder, python_prefix):
     scripts_folder = os.path.abspath(scripts_folder)
     python_prefix = os.path.normpath(os.path.abspath(python_prefix))
+    # This shoud match shebangs invoking python, pytohnX, pythonX.Y and pythonX.Ym
+    shebang_pattern = re.compile(r'^#!.*(/python[\d\.]*m?)$', flags=re.M)
     for script in glob.glob(os.path.join(scripts_folder, '*')):
         try:
             with open(script, 'r+') as f:
                 file_contents = f.read()
-                # This will update the path to the python interpreter in the shebang, if any
+                # Update the path to the python interpreter in the shebangs
                 updated_file = re.sub(
-                    r'(^#!)([^.]*)(/python\d*\n.*)$',
-                    r'#!' + python_prefix + r'\3',
+                    shebang_pattern, 
+                    r'#!' + python_prefix + r'\1',
                     file_contents
                 )
                 if updated_file != file_contents:
+                    f.seek(0)
                     f.write(updated_file)
+                    f.truncate() # I need to truncate the file
         # If it's a binary, I will get unicode decode errors
         except UnicodeDecodeError:
+            pass
+        # If I try to open the interpreter itself, I get an OSError
+        except OSError:
             pass
 
 def parse_arguments(argv):

@@ -14,13 +14,13 @@ from jinja2 import Template
 def build():
     import conda_pack
     version = open("../simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'")
-    pack_dir = os.path.abspath('sssimnibs_installer')
+    pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
     # Create a new environment
     if os.path.dirname(__file__):
         os.chdir(os.path.dirname(__file__))
-    if not os.path.isdir(pack_dir):
-        os.mkdir(pack_dir)
+    if os.path.isdir(pack_dir):
+        shutil.rmtree(pack_dir)
     if sys.platform == 'linux':
         os_name = 'linux'
     elif sys.platform == 'darwin':
@@ -39,6 +39,14 @@ def build():
         check=True,
         shell=True
     )
+    # Install Spyder
+    ''' Too heavy on Linux
+    subprocess.run(
+        f'conda install -p {env_prefix} spyder -y',
+        check=True,
+        shell=True
+    )
+    '''
     # Install SimNIBS
     wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
     if len(wheels) == 0:
@@ -54,7 +62,6 @@ def build():
     )
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
-    # However, apparently .tar can't handle > 2GB. This is not a problem for now.
     conda_pack.pack(
         prefix=env_prefix,
         dest_prefix='simnibs_env',
@@ -94,13 +101,14 @@ def build():
             )
         with open(fn_script, 'w') as f:
             f.write(install_script)
-        print('Creating ')
+        print('Creating NSIS installer')
         subprocess.run(
             fr'"%programfiles(x86)%\NSIS\makensis.exe" {fn_script}',
             check=True,
             shell=True
         )
     if sys.platform == 'darwin':
+        print('Running pkgbuild')
         subprocess.run([
             'pkgbuild',
             '--root', pack_dir,
@@ -114,6 +122,7 @@ def build():
             check=True,
         )
     elif sys.platform=='linux':
+        # Write the install script
         fn_script = os.path.join(pack_dir, 'install')
         with open('install', 'r') as f:
             install_script = Template(f.read()).render(
@@ -127,8 +136,15 @@ def build():
             os.stat(fn_script).st_mode |
             stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
         )
-        # zip the whole thing
-        shutil.make_archive(f'simnibs_installer_linux', 'zip', pack_dir)
+        print('compressing')
+        shutil.make_archive(
+            'simnibs_installer_linux',
+            'gztar',
+            # I use root_dir and base_dir so that it decompresses into a folder called
+            # simnibs_installer
+            root_dir='.',
+            base_dir=os.path.relpath(pack_dir)
+        )
 
 if __name__ == '__main__':
     build()
