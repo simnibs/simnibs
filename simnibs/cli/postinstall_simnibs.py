@@ -51,6 +51,24 @@ def copy_scripts(dest_dir):
     We need to write sh/cmd scripts due to the way python handles DLLs
     Additionaly, creates a 'simnibs' command in the matlab folder
     '''
+    # On windows, copy the sitecustomize script
+    # in order to be able to use the python interpreter without activating the environment
+    if sys.platform == 'win32':
+        simnibs_sitecustomize = os.path.join(SIMNIBSDIR, 'utils', 'sitecustomize.py')
+        env_sitecustomize = os.path.join(os.path.dirname(sys.executable), 'Lib', 'site-packages', 'sitecustomize.py')
+        write_sitecustomize =True
+        with open(simnibs_sitecustomize, 'r') as f:
+            simnibs_sitecustomize_contents = f.read()
+        # Check if there is a sitecustomize file alread present and if it is identical ti the SimNIBS one
+        if os.path.isfile(env_sitecustomize):
+            with open(env_sitecustomize, 'r') as f:
+                env_sitecustomize_contents = f.read()
+            # If it's alteady there, will not append the PATH
+            write_sitecustomize = not(simnibs_sitecustomize_contents in env_sitecustomize_contents)
+        if write_sitecustomize:
+            with open(env_sitecustomize, 'a') as f:
+                f.write('\n')
+                f.write(simnibs_sitecustomize_contents)
     scripts = glob.glob(os.path.join(SIMNIBSDIR, 'cli', '[!_]*.py'))
     if not os.path.isdir(dest_dir):
         os.makedirs(dest_dir)
@@ -107,16 +125,15 @@ def _write_unix_sh(python_cli, bash_cli, commands='"$@"'):
 
 def _write_windows_cmd(python_cli, bash_cli, gui=False, commands='%*'):
     bash_cli = bash_cli + '.cmd'
-    # I need to activate the environment first
+    executables_dir = os.path.dirname(sys.executable)
     if gui:
-        python_interpreter = 'start pythonw'
+        python_interpreter = f'start "Loading SimNIBS" "{os.path.join(executables_dir, "pythonw.exe")}"'
     else:
-        python_interpreter = 'python'
+        python_interpreter = f'"{os.path.join(executables_dir, "python.exe")}"'
     with open(bash_cli, 'w') as f:
         f.write("@echo off\n")
-        f.write(f'call "{_get_activate_bin()}" {_get_conda_env()}\n')
         if python_cli is None:
-            f.write(f'{python_interpreter} %*')
+            f.write(f'"{python_interpreter}" %*')
         else:
             f.write(f'{python_interpreter} -E -u "{python_cli}"  {commands}')
 
@@ -302,10 +319,7 @@ def matlab_prepare():
         f.write("end\n")
 
     with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
-        if sys.platform == 'win32':
-            python_call = f'call "{_get_activate_bin()}" {_get_conda_env()} && python -E -u '
-        else:
-            python_call = f'"{sys.executable}" -E -u '
+        python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"python_call='{python_call}';\n")

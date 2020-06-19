@@ -14,7 +14,7 @@ from jinja2 import Template
 def build():
     import conda_pack
     version = open("../simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'")
-    pack_dir = os.path.abspath('pack')
+    pack_dir = os.path.abspath('sssimnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
     # Create a new environment
     if os.path.dirname(__file__):
@@ -54,6 +54,7 @@ def build():
     )
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
+    # However, apparently .tar can't handle > 2GB. This is not a problem for now.
     conda_pack.pack(
         prefix=env_prefix,
         dest_prefix='simnibs_env',
@@ -76,11 +77,13 @@ def build():
     # Copy documentation
     shutil.copytree('../docs/build/html', os.path.join(pack_dir, 'documentation'))
 
-    # Copy postinstall script
-    shutil.copy('../simnibs/cli/postinstall_simnibs.py', pack_dir) 
-
+    # Copy the fix_entrypoints script and the postinstall script
+    shutil.copy('fix_entrypoints.py', os.path.join(pack_dir, 'simnibs_env'))
     # Create OS-specific installer
     if sys.platform == 'win32':
+        # Move the sitecustomize.py file to the site-packages directory
+        # This should allow for using the python interpreter without activating the environment
+        shutil.copy('../simnibs/utils/sitecustomize.py', os.path.join(pack_dir, 'simnibs_env', 'Lib', 'site-packages'))
         #Use the installer.nsi template to create an NSIS installer
         shutil.copy('../simnibs/resources/gui_icon.ico', os.path.join(pack_dir, 'gui_icon.ico'))
         fn_script = os.path.join(pack_dir, 'installer.nsi')
@@ -91,7 +94,6 @@ def build():
             )
         with open(fn_script, 'w') as f:
             f.write(install_script)
-        shutil.copy('_install.bat', pack_dir)
         print('Creating ')
         subprocess.run(
             fr'"%programfiles(x86)%\NSIS\makensis.exe" {fn_script}',

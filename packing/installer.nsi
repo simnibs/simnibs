@@ -6,7 +6,7 @@
 ; Marker file to tell the uninstaller that it's a user installation
 !define USER_INSTALL_MARKER _user_install_marker
 
-;SetCompressor lzma
+SetCompressor lzma
 
 !if "${NSIS_PACKEDVERSION}" >= 0x03000000
   Unicode true
@@ -46,7 +46,11 @@
 !define /IfNDef LVM_GETITEMTEXT ${LVM_GETITEMTEXTA}
 !endif
 
-Name "SimNIBS v${PRODUCT_VERSION}"
+!include LogicLib.nsh
+!include x64.nsh
+
+
+Name "SimNIBS ${PRODUCT_VERSION}"
 OutFile "${INSTALLER_NAME}"
 ShowInstDetails show
 
@@ -60,6 +64,11 @@ SectionEnd
 
 Section "!${PRODUCT_NAME}" sec_app
   SetRegView 64
+  ;Check byteness
+  ${IfNot} ${RunningX64}
+    MessageBox MB_ICONSTOP "32 Bit Windows Detected. Can not install SimNIBS"
+    Abort
+  ${EndIf} 
   SectionIn RO
   File ${PRODUCT_ICON}
   SetOutPath "$INSTDIR\simnibs_env"
@@ -70,24 +79,36 @@ Section "!${PRODUCT_NAME}" sec_app
     File /r "documentation\*.*"
   SetOutPath "$INSTDIR"
 
-  SetOutPath "$INSTDIR"
-    File "_install.bat"
-
-  SetOutPath "$INSTDIR"
-    File "postinstall_simnibs.py"
-
   ; Marker file for per-user install
   StrCmp $MultiUser.InstallMode CurrentUser 0 +3
     FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
     FileClose $0
     SetFileAttributes "$INSTDIR\${USER_INSTALL_MARKER}" HIDDEN
 
-  ; Install the SimNIBS Wheel
-  DetailPrint "Installing SimNIBS package..."
-  nsExec::ExecToLog '$INSTDIR\_install.bat "$INSTDIR"'
-  
-  Delete "$INSTDIR\_install.bat"
-  Delete "$INSTDIR\postinstall_simnibs.py"
+  ; Run Scripts
+  ; These steps rely on the fix_entrypoints.py and postinstall_simnibs.py being moved to the simnibs_env dir
+  ; The sitecustomize.py also needs to be moved to simnibs_env/Lib/site-packages in order for the postinstall_simnibs.py to run
+  DetailPrint "Fixing Scripts"
+  nsExec::ExecToLog '"$INSTDIR\simnibs_env\python.exe" "$INSTDIR\simnibs_env\fix_entrypoints.py" "$INSTDIR\simnibs_env\Scripts"  "$INSTDIR\simnibs_env"'
+  Pop $0
+  ${IfNot} $0 == 0
+      MessageBox MB_ICONSTOP "There was an error installing SimNIBS"
+      StrCpy $0 "$INSTDIR\install.log"
+      Push $0
+      Call DumpLog
+      Abort
+  ${EndIf}
+  DetailPrint "Installing the SimNIBS package..."
+  nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --copy-matlab --setup-links --no-extra-coils'
+  Pop $0
+  ${IfNot} $0 == 0
+      MessageBox MB_ICONSTOP "There was an error installing SimNIBS"
+      StrCpy $0 "$INSTDIR\install.log"
+      Push $0
+      Call DumpLog
+      Abort
+  ${EndIf}
+
 
   WriteUninstaller $INSTDIR\uninstall.exe
   ; Add ourselves to Add/remove programs
@@ -113,7 +134,9 @@ Section "!${PRODUCT_NAME}" sec_app
       Reboot
   noreboot:
 
-
+  StrCpy $0 "$INSTDIR\install.log"
+  Push $0
+  Call DumpLog
 
 SectionEnd
 
@@ -125,15 +148,16 @@ Section "Uninstall"
     Delete "$INSTDIR\${USER_INSTALL_MARKER}"
 
   ; Run the postinstall uninstaller to remove from PATH and Start Menu
+  ; The uninstall_simnibs.cmd is created by the postinstall script
   nsExec::ExecToLog '"$INSTDIR\uninstall_simnibs.cmd"'
 
   Delete "$INSTDIR\${PRODUCT_ICON}"
   ; Uninstall directories
   RMDir /r "$INSTDIR\simnibs_env"
   RMDir /r "$INSTDIR\documentation"
-
-  Delete $INSTDIR\uninstall.exe
-  Delete $INSTDIR\uninstall_simnibs.cmd
+  Delete "$INSTDIR\install.log"
+  Delete "$INSTDIR\uninstall.exe"
+  Delete "$INSTDIR\uninstall_simnibs.cmd"
 
   RMDir $INSTDIR
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
@@ -167,20 +191,6 @@ Function correct_prog_files
   ; folder for 64-bit applications. Override the install dir it set.
   StrCmp $MultiUser.InstallMode AllUsers 0 +2
     StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
-FunctionEnd
-  
-  
-; Setup logging
-Function .onInstSuccess
-  StrCpy $0 "$INSTDIR\install.log"
-  Push $0
-  Call DumpLog
-FunctionEnd
-
-Function .onInstFail
-  StrCpy $0 "$INSTDIR\install.log"
-  Push $0
-  Call DumpLog
 FunctionEnd
 
 ; Logging function from https://nsis.sourceforge.io/Dump_log_to_file
