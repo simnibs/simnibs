@@ -13,4 +13,4 @@ dependencies:
   - pip
   - pip:
     - nibabel==2.3.*
-    - pyqt5==5.9.*
+    - pyqt5==5.12.*
