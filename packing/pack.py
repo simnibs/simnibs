@@ -7,6 +7,7 @@ import argparse
 import os
 import subprocess
 import shutil
+import tempfile
 
 from jinja2 import Template
 
@@ -30,6 +31,7 @@ def build():
     else:
         raise OSError('OS not supported!')
     # Create temporary environment
+
     env = os.path.join(
         os.path.dirname(__file__), '..', f'environment_{os_name}.yml'
     )
@@ -39,14 +41,6 @@ def build():
         check=True,
         shell=True
     )
-    # Install Spyder
-    ''' Too heavy on Linux
-    subprocess.run(
-        f'conda install -p {env_prefix} spyder -y',
-        check=True,
-        shell=True
-    )
-    '''
     # Install SimNIBS
     wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
     if len(wheels) == 0:
@@ -86,6 +80,7 @@ def build():
 
     # Copy the fix_entrypoints script and the postinstall script
     shutil.copy('fix_entrypoints.py', os.path.join(pack_dir, 'simnibs_env'))
+
     # Create OS-specific installer
     if sys.platform == 'win32':
         # Move the sitecustomize.py file to the site-packages directory
@@ -108,19 +103,40 @@ def build():
             shell=True
         )
     if sys.platform == 'darwin':
-        print('Running pkgbuild')
-        subprocess.run([
-            'pkgbuild',
-            '--root', pack_dir,
-            '--identifier', f'org.SimNIBS.{version}',
-            '--version', version,
-            '--scripts', 'macOS_scripts/', 
-            '--install-location', 
-            '/Applications/SimNIBS-'+ '.'.join(version.split('.')[:2]),
-            'simnibs_installer_macos.pkg'
-            ],
-            check=True,
-        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for fn in glob.glob('macOS_installer/*'):
+                fn_out = os.path.join(tmpdir, os.path.basename(fn))
+                with open(fn, 'r') as f:
+                    template = Template(f.read()).render(
+                        version='.'.join(version.split('.')[:2]),
+                        full_version=version
+                    )
+                with open(fn_out, 'w') as f:
+                    f.write(template)
+                os.chmod(fn_out, os.stat(fn).st_mode)
+            print('Running pkgbuild')
+            subprocess.run([
+                'pkgbuild',
+                '--root', pack_dir,
+                '--identifier', f'org.SimNIBS.{version}',
+                '--version', version,
+                '--scripts', tmpdir, 
+                '--install-location', 
+                '/Applications/SimNIBS-'+ '.'.join(version.split('.')[:2]),
+                os.path.join(tmpdir, 'simnibs_installer_macos.pkg')
+                ],
+                check=True,
+            )
+            print('Running productbuid')
+            subprocess.run([
+                'productbuild',
+                '--distribution', os.path.join(tmpdir, 'Distribution'),
+                '--package-path', tmpdir,
+                '--resources', tmpdir,
+                'simnibs_installer_macos.pkg'
+                ],
+                check=True
+            )
     elif sys.platform=='linux':
         # Write the install script
         fn_script = os.path.join(pack_dir, 'install')
