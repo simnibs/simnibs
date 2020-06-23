@@ -947,9 +947,12 @@ def install(install_dir,
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     copy_scripts(scripts_dir)
     if add_to_path:
-        added_to_path = path_setup(scripts_dir, force, silent)
-        if sys.platform == 'darwin' and added_to_path:
-            path_setup(scripts_dir, force=True, silent=True, shell_type='zsh')
+        try:
+            added_to_path = path_setup(scripts_dir, force, silent)
+            if sys.platform == 'darwin' and added_to_path:
+                path_setup(scripts_dir, force=True, silent=True, shell_type='zsh')
+        except:
+            print('Could not add SimNIBS to the system PATH')
 
 def uninstall(install_dir):
     path_cleanup(os.path.join(install_dir, 'bin'))
@@ -1021,6 +1024,7 @@ def main():
                         action='store_false', help='Do not create file associations')
     parser.add_argument('-u', "--uninstall", required=False, action='store_true',
                         help="Ignores all other arguments and uninstall SimNIBS")
+    parser.add_argument('--version', action='version', version=__version__)
     args = parser.parse_args(sys.argv[1:])
     install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if args.uninstall:

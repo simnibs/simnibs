@@ -12,6 +12,7 @@ dependencies:
   - mock
   - freeglut
   - pip
+  - requests
   - pip:
     - nibabel==2.3.*
     - pyqt5==5.12.*
