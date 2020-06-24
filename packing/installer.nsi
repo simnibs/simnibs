@@ -99,7 +99,11 @@ Section "!${PRODUCT_NAME}" sec_app
       Abort
   ${EndIf}
   DetailPrint "Installing the SimNIBS package..."
-  nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --copy-matlab --setup-links --no-extra-coils'
+  ${If} ${Silent}
+    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --copy-matlab --setup-links --no-extra-coils'
+  ${Else}
+    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --copy-matlab --setup-links --no-extra-coils'
+  ${EndIf}
   Pop $0
   ${IfNot} $0 == 0
       MessageBox MB_ICONSTOP "There was an error installing SimNIBS"
@@ -112,21 +116,20 @@ Section "!${PRODUCT_NAME}" sec_app
 
   WriteUninstaller $INSTDIR\uninstall.exe
   ; Add ourselves to Add/remove programs
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "DisplayName" "${PRODUCT_NAME}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "InstallLocation" "$INSTDIR"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "DisplayIcon" "$INSTDIR\${PRODUCT_ICON}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "DisplayVersion" "${PRODUCT_VERSION}"
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "NoModify" 1
-  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" \
                    "NoRepair" 1
-
 
   StrCpy $0 "$INSTDIR\install.log"
   Push $0
@@ -136,14 +139,9 @@ SectionEnd
 
 Section "Uninstall"
   SetRegView 64
-  SetShellVarContext all
-  IfFileExists "$INSTDIR\${USER_INSTALL_MARKER}" 0 +3
-    SetShellVarContext current
-    Delete "$INSTDIR\${USER_INSTALL_MARKER}"
-
   ; Run the postinstall uninstaller to remove from PATH and Start Menu
   ; The uninstall_simnibs.cmd is created by the postinstall script
-  nsExec::ExecToLog '"$INSTDIR\uninstall_simnibs.cmd"'
+  nsExec::ExecToLog '"$INSTDIR\uninstall_simnibs.cmd" --silent'
 
   Delete "$INSTDIR\${PRODUCT_ICON}"
   ; Uninstall directories
@@ -152,9 +150,9 @@ Section "Uninstall"
   Delete "$INSTDIR\install.log"
   Delete "$INSTDIR\uninstall.exe"
   Delete "$INSTDIR\uninstall_simnibs.cmd"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 
   RMDir $INSTDIR
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 SectionEnd
 
 

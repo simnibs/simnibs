@@ -302,7 +302,7 @@ def path_cleanup(scripts_dir, shell_type='bash'):
         simnibs_env_vars = _get_win_simnibs_env_vars()
         for key, value in simnibs_env_vars.items():
             # Remove environments variables with SimNIBS in their names.
-            # These are leftovers from previous (3F.0, 3.1) installs
+            # These are leftovers from previous (3.0, 3.1) installs
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
                 winreg.DeleteValue(reg, key)
                 
@@ -536,7 +536,7 @@ def shortcut_icons_clenup():
         shortcut_folder=os.path.join(
             os.environ['APPDATA'],
             "Microsoft", "Windows", "Start Menu",
-            "Programs", "SimNIBS"
+            "Programs", f"SimNIBS {MINOR_VERSION}"
         )
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
@@ -653,17 +653,6 @@ def uninstaller_setup(install_dir, force, silent):
                 f'; rm -rf {simnibs_env_dir} '
                 f'; rm "{uninstaller}" '
                 f'; rm -rf "{install_dir}"')
-
-def uninstaller_cleanup():
-    if sys.platform == 'win32':
-        try:
-            with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-                    access=winreg.KEY_WRITE) as reg:
-                winreg.DeleteKey(reg, 'SimNIBS')
-        except FileNotFoundError:
-            pass
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')
@@ -961,7 +950,6 @@ def uninstall(install_dir):
         path_cleanup(os.path.join(install_dir, 'bin'), shell_type='zsh')
     shortcut_icons_clenup()
     file_associations_cleanup()
-    uninstaller_cleanup()
     shutil.rmtree(os.path.join(install_dir, 'documentation'), True)
     shutil.rmtree(os.path.join(install_dir, 'matlab'), True)
     shutil.rmtree(os.path.join(install_dir, 'bin'), True)
