@@ -569,26 +569,25 @@ def setup_file_association(force=False, silent=False):
         return
 
     if sys.platform == 'win32':
-        # We need to run with admin privileges
-        # So a write a .cmd script and run it with administrative privileges
-        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'call assoc {ext}=gmsh.simnibs\n') for ext, val in associate.items() if val]
-            f.write(f'call ftype gmsh.simnibs="{gmsh_bin}" "%1"')
-            temp_fn = f.name
-        # I need to run as admin for some reason
-        # using a very ugly trick to get "%1" through
-        # I have to use %1 as an argument so "%1" in the script becomes literal
-        ret = subprocess.run(
-            'powershell.exe -noprofile -executionpolicy bypass -Command '
-            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"'
-            f' -ArgumentList "%1"',
-            shell=True)
-        try:
-            ret.check_returncode()
-        except subprocess.CalledProcessError:
-            print('Could not associate files')
-        finally:
-            os.remove(temp_fn)
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes', access=winreg.KEY_WRITE) as reg:
+            winreg.CreateKey(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command')
+            winreg.SetValue(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command', winreg.REG_SZ, f'"{gmsh_bin}" "%1"')
+            for ext in extensions:
+                try:
+                    value = winreg.QueryValue(reg, ext)
+                except FileNotFoundError:
+                    register = True
+                else:
+                    if value:
+                        register = _get_input(
+                            f'Found other association for "{ext}" files, overwrite it?',
+                            silent
+                        )
+                    else:
+                        register = True
+                if register:
+                    winreg.CreateKey(reg, ext)
+                    winreg.SetValue(reg, ext, winreg.REG_SZ, fr'SimNIBS.Gmsh.v{MINOR_VERSION}')
 
 def _is_associated(ext):
     if sys.platform == 'win32':
@@ -604,34 +603,36 @@ def _is_associated(ext):
             return False
 
 def file_associations_cleanup():
-    # Linux file associations are done together with desktop items
-    if sys.platform == 'linux':
-        return
     extensions = ['.msh', '.geo', '.stl']
-    associate = dict.fromkeys(extensions)
-    for ext in extensions:
-        ass = _is_associated(ext)
-        associate[ext] = (ass and 'simnibs' in ass)
-    if not any(associate.values()):
+    # Linux file associations are done together with desktop items
+    # MacOS file associations are set using the .app files
+    if sys.platform in ['linux', 'darwin']:
         return
     
     if sys.platform == 'win32':
-        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'call assoc {ext}=\n') for ext, val in associate.items() if val]
-            f.write(f'call ftype gmsh.simnibs=')
-            temp_fn = f.name
-
-        # I need to run as shell for some reason
-        ret = subprocess.run(
-        'powershell.exe -noprofile -executionpolicy bypass -Command '
-            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"',
-            shell=True)
-        try:
-            ret.check_returncode()
-        except subprocess.CalledProcessError:
-            print('Could not cleanup file associations')
-        finally:
-            os.remove(temp_fn)
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes', access=winreg.KEY_WRITE) as reg:
+            # Remove SimNIBS Gmsh call from the registry
+            try:
+                winreg.QueryValue(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command')
+            except FileNotFoundError:
+                pass
+            else:
+                # Delete recursivelly
+                paths = rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command'.split('\\')
+                for i in reversed(range(len(paths))):
+                    try:
+                        winreg.DeleteKey(reg, '\\'.join(paths[:i+1]))
+                    except OSError:
+                        break
+            # Remove the extensions from the registry
+            for ext in extensions:
+                try:
+                    entry = winreg.QueryValue(reg, ext)
+                except FileNotFoundError:
+                    pass
+                else:
+                    if entry == fr'SimNIBS.Gmsh.v{MINOR_VERSION}':
+                        winreg.SetValue(reg, ext, winreg.REG_SZ, '')
 
 def uninstaller_setup(install_dir, force, silent):
     uninstaller = os.path.join(install_dir, 'uninstall_simnibs')
@@ -992,9 +993,6 @@ def uninstall(install_dir):
         if sys.platform == 'darwin':
             shutil.rmtree(os.path.join(install_dir, 'SimNIBS GUI.app'), True)
             shutil.rmtree(os.path.join(install_dir, 'Gmsh.app'), True)
-
-    try_remove(os.path.join(install_dir, 'simnibs_install_log.txt'))
-
 
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
