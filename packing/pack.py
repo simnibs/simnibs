@@ -8,18 +8,25 @@ import os
 import subprocess
 import shutil
 import tempfile
+import argparse
 
 from jinja2 import Template
+import conda_pack
 
 
-def build():
-    import conda_pack
-    version = open("../simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'")
+
+def build(simnibs_dist_dir, include_spyder=False):
+    simnibs_root_dir = os.path.normpath(os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        '..'
+    ))
+    version = open(os.path.join(
+        simnibs_root_dir, "simnibs", "_version.py")
+    ).readlines()[-1].split()[-1].strip("\"'")
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
+    simnibs_dist_dir = os.path.abspath(simnibs_dist_dir)
     # Create a new environment
-    if os.path.dirname(__file__):
-        os.chdir(os.path.dirname(__file__))
     if os.path.isdir(pack_dir):
         shutil.rmtree(pack_dir)
     if sys.platform == 'linux':
@@ -33,7 +40,7 @@ def build():
     # Create temporary environment
 
     env = os.path.join(
-        os.path.dirname(__file__), '..', f'environment_{os_name}.yml'
+        simnibs_root_dir, f'environment_{os_name}.yml'
     )
     # Install requirements
     subprocess.run(
@@ -42,7 +49,9 @@ def build():
         shell=True
     )
     # Install SimNIBS
-    wheels = glob.glob(f'../dist/simnibs-{version}*.whl')
+    wheels = glob.glob(
+        os.path.join(simnibs_dist_dir, f'simnibs-{version}*.whl')
+    )
     if len(wheels) == 0:
         raise FileNotFoundError(f'Did not find any wheels for version {version}')
     if sys.platform == 'win32':
@@ -50,10 +59,17 @@ def build():
     else:
         env_pip = os.path.join(env_prefix, 'bin', 'pip') 
     subprocess.run(
-        f'{env_pip} install simnibs --no-cache-dir --no-index --upgrade --find-links=../dist',
+        f'{env_pip} install simnibs --no-cache-dir --no-index --upgrade --find-links={simnibs_dist_dir}',
         check=True,
         shell=True
     )
+    if include_spyder:
+        # Needs to be tested!
+        subprocess.run(
+            f'{env_pip} install --upgrade pyqt5==5.12 pyqtwebengine==5.12 spyder==4.1',
+            check=True,
+            shell=True
+        )
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
     conda_pack.pack(
@@ -76,20 +92,32 @@ def build():
     )
 
     # Copy documentation
-    shutil.copytree('../docs/build/html', os.path.join(pack_dir, 'documentation'))
+    shutil.copytree(
+        os.path.join(simnibs_root_dir, 'docs', 'build', 'html'),
+        os.path.join(pack_dir, 'documentation')
+    )
 
     # Copy the fix_entrypoints script and the postinstall script
-    shutil.copy('fix_entrypoints.py', os.path.join(pack_dir, 'simnibs_env'))
+    shutil.copy(
+        os.path.join(simnibs_root_dir, 'packing', 'fix_entrypoints.py'),
+        os.path.join(pack_dir, 'simnibs_env')
+    )
 
     # Create OS-specific installer
     if sys.platform == 'win32':
         # Move the sitecustomize.py file to the site-packages directory
         # This should allow for using the python interpreter without activating the environment
-        shutil.copy('../simnibs/utils/sitecustomize.py', os.path.join(pack_dir, 'simnibs_env', 'Lib', 'site-packages'))
+        shutil.copy(
+            os.path.join(simnibs_root_dir, 'simnibs', 'utils', 'sitecustomize.py'),
+            os.path.join(pack_dir, 'simnibs_env', 'Lib', 'site-packages')
+        )
         #Use the installer.nsi template to create an NSIS installer
-        shutil.copy('../simnibs/resources/gui_icon.ico', os.path.join(pack_dir, 'gui_icon.ico'))
+        shutil.copy(
+            os.path.join(simnibs_root_dir, 'simnibs', 'resources', 'gui_icon.ico'),
+            os.path.join(pack_dir, 'gui_icon.ico')
+        )
         fn_script = os.path.join(pack_dir, 'installer.nsi')
-        with open('installer.nsi', 'r') as f:
+        with open(os.path.join(simnibs_root_dir, 'packing', 'installer.nsi'), 'r') as f:
             install_script = Template(f.read()).render(
                 version='.'.join(version.split('.')[:2]),
                 full_version=version
@@ -102,9 +130,13 @@ def build():
             check=True,
             shell=True
         )
+        shutil.move(
+            os.path.join(pack_dir, 'simnibs_installer_windows.exe'),
+            'simnibs_installer_windows.exe'
+        )
     if sys.platform == 'darwin':
         with tempfile.TemporaryDirectory() as tmpdir:
-            for fn in glob.glob('macOS_installer/*'):
+            for fn in glob.glob(os.path.join(simnibs_root_dir, 'macOS_installer', '*')):
                 fn_out = os.path.join(tmpdir, os.path.basename(fn))
                 with open(fn, 'r') as f:
                     template = Template(f.read()).render(
@@ -140,7 +172,7 @@ def build():
     elif sys.platform=='linux':
         # Write the install script
         fn_script = os.path.join(pack_dir, 'install')
-        with open('install', 'r') as f:
+        with open(os.path.join(simnibs_root_dir, 'packing', 'install'), 'r') as f:
             install_script = Template(f.read()).render(
                 version='.'.join(version.split('.')[:2]),
                 full_version=version
@@ -163,4 +195,12 @@ def build():
         )
 
 if __name__ == '__main__':
-    build()
+    parser = argparse.ArgumentParser(
+        prog="simnibs-pack",
+        description="Prepare a SimNIBS intaller"
+    )
+    parser.add_argument("dist_dir", help="Directory with the SimNIBS wheels to be packed")
+    parser.add_argument("--include-spyder", action="store_true",
+                        help="Includes the Spyder IDE")
+    args = parser.parse_args(sys.argv[1:])
+    build(args.dist_dir, args.include_spyder)

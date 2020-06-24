@@ -13,13 +13,7 @@ SetCompressor lzma
   ManifestDPIAware true
 !endif
 
-!define MULTIUSER_EXECUTIONLEVEL Highest
-!define MULTIUSER_INSTALLMODE_DEFAULT_CURRENTUSER
-!define MULTIUSER_MUI
-!define MULTIUSER_INSTALLMODE_COMMANDLINE
-!define MULTIUSER_INSTALLMODE_INSTDIR "SimNIBS-{{ version }}"
-!define MULTIUSER_INSTALLMODE_FUNCTION correct_prog_files
-!include MultiUser.nsh
+RequestExecutionLevel user
 !include FileFunc.nsh
 
 ; Modern UI installer stuff
@@ -30,7 +24,6 @@ SetCompressor lzma
 
 ; UI pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -78,12 +71,6 @@ Section "!${PRODUCT_NAME}" sec_app
   SetOutPath "$INSTDIR\documentation"
     File /r "documentation\*.*"
   SetOutPath "$INSTDIR"
-
-  ; Marker file for per-user install
-  StrCmp $MultiUser.InstallMode CurrentUser 0 +3
-    FileOpen $0 "$INSTDIR\${USER_INSTALL_MARKER}" w
-    FileClose $0
-    SetFileAttributes "$INSTDIR\${USER_INSTALL_MARKER}" HIDDEN
 
   ; Run Scripts
   ; These steps rely on the fix_entrypoints.py and postinstall_simnibs.py being moved to the simnibs_env dir
@@ -172,17 +159,6 @@ Function .onInit
   ; Change default to HOME folder
   InitPluginsDir
   StrCpy $INSTDIR "$PROFILE\${PRODUCT_NAME}"
-FunctionEnd
-
-Function un.onInit
-  !insertmacro MULTIUSER_UNINIT
-FunctionEnd
-
-Function correct_prog_files
-  ; The multiuser machinery doesn't know about the different Program files
-  ; folder for 64-bit applications. Override the install dir it set.
-  StrCmp $MultiUser.InstallMode AllUsers 0 +2
-    StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
 FunctionEnd
 
 ; Logging function from https://nsis.sourceforge.io/Dump_log_to_file
