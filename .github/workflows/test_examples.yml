@@ -10,19 +10,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup Miniconda
-      uses: goanpeca/setup-miniconda@v1.6.0
-    - name: Install dependencies
-    - shell: bash -l {0}
-      run: |
+    - name: Install Octave
+    - run: |
         sudo apt-get update
         sudo apt-get install -y octave
-        conda env create --file environment_linux.yml
-        source activate simnibs_env
-        python setup.py install
-        postinstall_simnibs -d . -s --no-extra-coils 
+        octave -v
+    - uses: goanpeca/setup-miniconda@v1
+      with:
+        activate-environment: simnibs_env
+        environment-file: environment_linux.yml
     - shell: bash -l {0}
       run: |
-       source activate simnibs_env
-       pytest simnibs/tests/examples/examples.py -v -s -x --junit-xml=test-results.xml
-   
+        python setup.py install
+        postinstall_simnibs -d . -s --no-extra-coils
+        pytest simnibs/tests/examples/examples.py -v -s -x --junit-xml=test-results.xml
