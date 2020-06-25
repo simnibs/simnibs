@@ -64,12 +64,16 @@ def build(simnibs_dist_dir, include_spyder=False):
         shell=True
     )
     if include_spyder:
-        # Needs to be tested!
         subprocess.run(
-            f'{env_pip} install --upgrade pyqt5==5.12 pyqtwebengine==5.12 spyder==4.1',
+            f'{env_pip} install --upgrade '
+            'pyqt5==5.12 '
+            'pyqtwebengine==5.12 '
+            'pyflakes==2.2 '
+            'spyder==4.1',
             check=True,
             shell=True
         )
+        # Spyder can be started with simnibs_python -m spyder.app.start
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
     conda_pack.pack(

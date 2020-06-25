@@ -15,7 +15,7 @@ EOF
 # Initialize our own variables:
 FULL_VERSION="{{ full_version }}"
 INSTALL_DIR="$HOME/SimNIBS-{{ version }}"
-INSTALL_LOG="$HOME/SimNIBS-{{ version }}/install.log"
+INSTALL_LOG="$INSTALL_DIR/install.log"
 silent=""
 
 OPTIND=1
