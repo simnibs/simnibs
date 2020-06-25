@@ -18,7 +18,7 @@ Windows
 
   .. code-block:: bash
   
-      conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml
+      conda create -n simnibs_env--file https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
@@ -43,7 +43,7 @@ Linux
   .. code-block:: bash
   
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml
+      conda create -n simnibs_env --file https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
@@ -69,7 +69,7 @@ MacOS
   .. code-block:: bash
   
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml
+      conda create -n simnibs_env --file https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 

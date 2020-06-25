@@ -1,4 +1,3 @@
-name: simnibs_env
 channels:
   - defaults
 dependencies:
