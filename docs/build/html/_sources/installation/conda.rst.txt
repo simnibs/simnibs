@@ -12,7 +12,7 @@ Windows
 
 1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Open  *Anaconda Prompt*, which can be found in the *Star Menu*.
+2. Open  *Anaconda Prompt*, which can be found in the *Start Menu*.
 
 3. Run in the Prompt:
 
