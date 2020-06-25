@@ -17,7 +17,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y octave
         conda env create --file environment_linux.yml
-        conda activate simnibs_env
+        source activate simnibs_env
         python setup.py install
         postinstall_simnibs -d . -s --no-extra-coils 
     - name: Run Examples Tests
