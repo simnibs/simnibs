@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install Octave
-    - run: |
+      run: |
         sudo apt-get update
         sudo apt-get install -y octave
         octave -v
@@ -19,7 +19,8 @@ jobs:
       with:
         activate-environment: simnibs_env
         environment-file: environment_linux.yml
-    - shell: bash -l {0}
+    - name: Test Examples
+      shell: bash -l {0}
       run: |
         python setup.py install
         postinstall_simnibs -d . -s --no-extra-coils
