@@ -2305,7 +2305,6 @@ class Msh:
             elm_in_tag = (self.elm.tag1 == t) * (self.elm.elm_type == 4)
             tr_to_add.append(self.elm.get_outside_faces(elm_in_tag))
 
-
         for tr, tag in zip(tr_to_add, unique_tags):
             self.elm.add_triangles(tr, 1000+tag)
         self.fix_tr_node_ordering()

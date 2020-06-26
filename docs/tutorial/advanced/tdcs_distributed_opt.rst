@@ -19,6 +19,9 @@ To run an optimiztion, please start by :ref:`Creating a Leadfield <tutorial_lead
 Optimiztion
 ------------
 
+The networks 
+
+
 References
 ------------
 `Ruffini, G., Fox, M. D., Ripolles, O., Miranda, P. C., & Pascual-Leone, A. (2014). Optimization of multifocal transcranial current stimulation for weighted cortical pattern targeting from realistic modeling of electric fields. Neuroimage, 89, 216-225. <https://doi.org/10.1016/j.neuroimage.2013.12.002>`_

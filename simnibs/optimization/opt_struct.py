@@ -25,7 +25,6 @@ import copy
 import csv
 import re
 import os
-from collections import OrderedDict
 import time
 import glob
 import functools
@@ -939,7 +938,8 @@ class TDCSoptimize():
             max_c = np.max(np.abs(currents))
             v.add_view(Visible=1, RangeType=2,
                        ColorTable=gmsh_view._coolwarm_cm(),
-                       CustomMax=max_c, CustomMin=-max_c)
+                       CustomMax=max_c, CustomMin=-max_c,
+                       PointSize=10)
             v.write_opt(fn_out_mesh)
             if self.open_in_gmsh:
                 mesh_io.open_in_gmsh(fn_out_mesh, True)
@@ -976,7 +976,8 @@ class TDCSoptimize():
 
         return E
 
-    def electrode_geo(self, fn_out, currents=None, mesh_elec=None, elec_tags=None):
+    def electrode_geo(self, fn_out, currents=None, mesh_elec=None, elec_tags=None,
+                      elec_positions=None):
         ''' Creates a mesh with the electrodes and their currents
 
         Parameters
@@ -988,28 +989,64 @@ class TDCSoptimize():
             self.leadfield_hdf
         elec_tags: N_elec x 1 ndarray of ints (optional)
             Tags of the electrodes corresponding to each leadfield column. The first is
-            the reference electrode. Default: lood at the attribute electrode_tags in the
+            the reference electrode. Default: load at the attribute electrode_tags in the
             leadfield dataset
+        elec_positions: N_elec x 3 ndarray of floats (optional)
+            Positions of the electrodes in the head. If mesh_elec is not defined, will
+            create small sphres at those positions instead.
+            Default: load at the attribute electrode_pos in the leadfield dataset
+
         '''
+        # First try to set the electrode visualizations using meshed electrodes
         if mesh_elec is None:
             if self.leadfield_hdf is not None:
                 try:
                     mesh_elec = mesh_io.Msh.read_hdf5(self.leadfield_hdf, 'mesh_electrodes')
                 except KeyError:
-                    raise IOError('Could not find mesh_electrodes in '
-                                  '{0}'.format(self.leadfield_hdf))
+                    pass
             else:
                 raise ValueError('Please define a mesh with the electrodes')
 
-        if elec_tags is None:
+        if elec_tags is None and mesh_elec is not None:
             if self.leadfield_hdf is not None:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
                     elec_tags = f[self.leadfield_path].attrs['electrode_tags']
             else:
                 raise ValueError('Please define the electrode tags')
+        
+        # If not, use point electrodes
+        if mesh_elec is None and elec_positions is None:
+            if self.leadfield_hdf is not None:
+                with h5py.File(self.leadfield_hdf, 'r') as f:
+                    elec_positions = f[self.leadfield_path].attrs['electrode_pos']
+            else:
+                raise ValueError('Please define the electrode positions')
 
+        if mesh_elec is not None:
+            elec_pos = self._electrode_geo_triangles(fn_out, currents, mesh_elec, elec_tags)
+            # elec_pos is used for writing electrode names
+        elif elec_positions is not None:
+            self._electrode_geo_points(fn_out, currents, elec_positions)
+            elec_pos = elec_positions
+        else:
+            raise ValueError('Neither mesh_elec nor elec_positions defined')
+        if self.leadfield_hdf is not None:
+            with h5py.File(self.leadfield_hdf, 'r') as f:
+                try:
+                    elec_names = f[self.leadfield_path].attrs['electrode_names']
+                    elec_names = [n.decode() for n in elec_names]
+                except KeyError:
+                    elec_names = None
+
+            if elec_names is not None:
+                mesh_io.write_geo_text(
+                    elec_pos, elec_names,
+                    fn_out, name="electrode_names", mode='ba')
+
+    def _electrode_geo_triangles(self, fn_out, currents, mesh_elec, elec_tags):
         if currents is None:
             currents = np.ones(len(elec_tags))
+
         assert len(elec_tags) == len(currents), 'Define one current per electrode'
 
         triangles = []
@@ -1032,18 +1069,14 @@ class TDCSoptimize():
             triangles - 1, mesh_elec.nodes.node_coord,
             fn_out, values, 'electrode_currents')
 
-        if self.leadfield_hdf is not None:
-            with h5py.File(self.leadfield_hdf, 'r') as f:
-                try:
-                    elec_names = f[self.leadfield_path].attrs['electrode_names']
-                    elec_names = [n.decode() for n in elec_names]
-                except KeyError:
-                    elec_names = None
+        return elec_pos
 
-            if elec_names is not None:
-                mesh_io.write_geo_text(
-                    elec_pos, elec_names,
-                    fn_out, name="electrode_names", mode='ba')
+    def _electrode_geo_points(self, fn_out, currents, elec_positions):
+        if currents is None:
+            currents = np.ones(len(elec_positions))
+
+        assert len(elec_positions) == len(currents), 'Define one current per electrode'
+        mesh_io.write_geo_spheres(elec_positions, fn_out, currents, "electrode_currents")
 
 
 

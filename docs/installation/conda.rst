@@ -82,5 +82,4 @@ MacOS
      mkdir -p $HOME/Applications/SimNIBS
      postinstall_simnibs --copy-matlab --setup-links -d $HOME/Applications/SimNIBS
 
-  \  
-
+  \ 
