@@ -11,7 +11,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: simnibs/simnibs-testing:centos6
+  container: simnibs/simnibs-testing:centos7
   steps:
   - bash: |
       conda update -y conda
@@ -35,7 +35,7 @@ jobs:
     displayName: Publish Artifact
 
 # Test SimNIBS in a series of containers
-- job: 'Test'
+- job: Test
   dependsOn: Build
   strategy:
     matrix:
@@ -59,12 +59,12 @@ jobs:
       downloadType: 'single'
       artifactName: 'linux'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download SimNIBS
 
   - bash: |
       tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
-      simnibs_installer/install -t simnibs_installed -s
-      simnibs_installed/bin/simnibs_python pytest simnibs/tests --junit-xml=test-results.xml
+      simnibs_installer/install -s -t simnibs_installed
+      simnibs_installed/bin/simnibs_python -m pytest simnibs/tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
   
   - task: PublishTestResults@2

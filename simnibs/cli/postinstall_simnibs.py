@@ -165,8 +165,6 @@ def setup_gmsh_options(force=False, silent=False):
         target = os.path.expanduser('~/.gmsh-options')
     else:
         target = os.path.join(os.getenv('APPDATA'), 'gmsh-options')
-
-    silent = silent and GUI
     copy = True
     if os.path.isfile(target):
         if force:
@@ -231,7 +229,6 @@ def _get_win_simnibs_env_vars():
 def path_setup(scripts_dir, force=False, silent=False, shell_type='bash'):
     ''' Modifies the bash startup path and postpends SimNIBS to the PATH '''
     scripts_dir = os.path.abspath(scripts_dir)
-    silent = silent and GUI
     if sys.platform in ['linux', 'darwin']:
         if shell_type == 'bash':
             bashrc, _ = _get_bashrc()

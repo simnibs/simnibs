@@ -15,7 +15,6 @@ EOF
 # Initialize our own variables:
 FULL_VERSION="{{ full_version }}"
 INSTALL_DIR="$HOME/SimNIBS-{{ version }}"
-INSTALL_LOG="$INSTALL_DIR/install.log"
 silent=""
 
 OPTIND=1
@@ -40,6 +39,7 @@ while getopts hst: opt; do
 done
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
 mkdir -p "$INSTALL_DIR"
+INSTALL_LOG="$INSTALL_DIR/install.log"
 touch "$INSTALL_LOG"
 (
 echo "Installing SimNIBS ${FULL_VERSION} to ${INSTALL_DIR}"
