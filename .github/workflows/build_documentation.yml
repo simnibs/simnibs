@@ -38,6 +38,7 @@ jobs:
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
+        tag_name: dev
         release_name: Draft
         draft: true
     - name: Upload the zipped documentation to the release
