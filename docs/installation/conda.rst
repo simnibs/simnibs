@@ -12,24 +12,26 @@ Windows
 
 1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Open  *Anaconda Prompt*, which can be found in the *Start Menu*.
+2. Download the `SimNIBS environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml>`_
 
-3. Run in the Prompt:
+3. Open  *Anaconda Prompt*, which can be found in the *Start Menu*.
+
+4. Run in the Prompt:
 
   .. code-block:: bash
   
-      conda create -n simnibs_env--file https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml
+      conda env create -f "%USERPROFILE%\Download\environment_windows.yml"
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
   \
 
-4. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
+5. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
 
   .. code-block::
   
-     md %USERPROFILE%\SimNIBS
-     postinstall_simnibs --copy-matlab --setup-links -d %USERPROFILE%\SimNIBS
+     md "%USERPROFILE%\SimNIBS"
+     postinstall_simnibs --copy-matlab --setup-links -d "%USERPROFILE%\SimNIBS"
 
   \  
 
@@ -38,18 +40,20 @@ Linux
 
 1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Run in a terminal window:
+2. Download the `SimNIBS environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml>`_
+
+3. Run in a terminal window:
 
   .. code-block:: bash
   
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda create -n simnibs_env --file https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml
+      conda env create -f ~/Downloads/environment_linux.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
   \
 
-3. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
+4. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
 
   .. code-block:: bash
   
@@ -64,18 +68,20 @@ MacOS
 
 1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Run in a terminal window:
+2. Download the `SimNIBS environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml>`_
+
+3. Run in a terminal window:
 
   .. code-block:: bash
   
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda create -n simnibs_env --file https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml
+      conda env create -f ~/Downloads/environment_macOS.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
   \
 
-3. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
+4. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
 
   .. code-block:: bash
   

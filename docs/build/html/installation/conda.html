@@ -55,23 +55,24 @@
 <h2>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml">SimNIBS environment file</a></p></li>
 <li><p>Open  <em>Anaconda Prompt</em>, which can be found in the <em>Start Menu</em>.</p></li>
 <li><p>Run in the Prompt:</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f <span class="s2">&quot;%USERPROFILE%\Download\environment_windows.yml&quot;</span>
 conda activate simnibs_env
 pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 </pre></div>
 </div>
 <p></p>
 </div></blockquote>
-<ol class="arabic simple" start="4">
+<ol class="arabic simple" start="5">
 <li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">md</span> <span class="o">%</span><span class="n">USERPROFILE</span><span class="o">%</span>\<span class="n">SimNIBS</span>
-<span class="n">postinstall_simnibs</span> <span class="o">--</span><span class="n">copy</span><span class="o">-</span><span class="n">matlab</span> <span class="o">--</span><span class="n">setup</span><span class="o">-</span><span class="n">links</span> <span class="o">-</span><span class="n">d</span> <span class="o">%</span><span class="n">USERPROFILE</span><span class="o">%</span>\<span class="n">SimNIBS</span>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">md</span> <span class="s2">&quot;%USERPROFILE%\SimNIBS&quot;</span>
+<span class="n">postinstall_simnibs</span> <span class="o">--</span><span class="n">copy</span><span class="o">-</span><span class="n">matlab</span> <span class="o">--</span><span class="n">setup</span><span class="o">-</span><span class="n">links</span> <span class="o">-</span><span class="n">d</span> <span class="s2">&quot;%USERPROFILE%\SimNIBS&quot;</span>
 </pre></div>
 </div>
 <p></p>
@@ -81,18 +82,19 @@ pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 <h2>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml">SimNIBS environment file</a></p></li>
 <li><p>Run in a terminal window:</p></li>
 </ol>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span> <span class="c1"># This part can change depending on your miniconda installation</span>
-conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml
+conda env create -f ~/Downloads/environment_linux.yml
 conda activate simnibs_env
 pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 </pre></div>
 </div>
 <p></p>
 </div></blockquote>
-<ol class="arabic simple" start="3">
+<ol class="arabic simple" start="4">
 <li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
 </ol>
 <blockquote>
@@ -107,18 +109,19 @@ postinstall_simnibs --copy-matlab --setup-links -d <span class="nv">$HOME</span>
 <h2>MacOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml">SimNIBS environment file</a></p></li>
 <li><p>Run in a terminal window:</p></li>
 </ol>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span> <span class="c1"># This part can change depending on your miniconda installation</span>
-conda create --file https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml
+conda env create -f ~/Downloads/environment_macOS.yml
 conda activate simnibs_env
 pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 </pre></div>
 </div>
 <p></p>
 </div></blockquote>
-<ol class="arabic simple" start="3">
+<ol class="arabic simple" start="4">
 <li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
 </ol>
 <blockquote>
