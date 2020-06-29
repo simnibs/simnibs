@@ -80,6 +80,15 @@ jobs:
 
   steps:
   - checkout: none
+
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'linux'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS
+
   - bash: |
       sudo apt-get update
       sudo apt-get install -y octave
@@ -96,7 +105,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Publish Example Test Results'
 
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
