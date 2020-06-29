@@ -47,8 +47,6 @@ Name "SimNIBS ${PRODUCT_VERSION}"
 OutFile "${INSTALLER_NAME}"
 ShowInstDetails show
 
-Var cmdLineInstallDir
-
 Section -SETTINGS
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -158,7 +156,10 @@ FunctionEnd
 Function .onInit
   ; Change default to HOME folder
   InitPluginsDir
-  StrCpy $INSTDIR "$PROFILE\${PRODUCT_NAME}"
+  InitPluginsDir
+  ${If} $INSTDIR == ""
+    StrCpy $INSTDIR "$PROFILE\${PRODUCT_NAME}"
+  ${EndIf}
 FunctionEnd
 
 ; Logging function from https://nsis.sourceforge.io/Dump_log_to_file
