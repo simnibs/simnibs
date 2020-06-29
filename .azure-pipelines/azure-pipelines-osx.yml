@@ -2,7 +2,7 @@ variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
-- master
+- norm_opt
 
 jobs:
 - job: Build
