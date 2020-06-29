@@ -1,8 +1,8 @@
 variables:
-  Agent.Source.Git.ShallowFetchDepth: 1
+  Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
-- master
+- norm_opt
 
 # Build SimNIBS on a Centos 6 container
 jobs:
@@ -14,21 +14,24 @@ jobs:
   container: simnibs/simnibs-testing:centos6
   steps:
   - bash: |
-      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
-      conda env create -f env.yml
+      conda update -y conda
+      conda env create -f environment_linux.yml
     displayName: Create Conda environment
 
   - bash: |
       source activate simnibs_env
       python setup.py bdist_wheel
+      pip install jinja2 conda-pack
+      python packing/pack.py dist/
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
+      cp simnibs_installer_linux.tar.gz  $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
 
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: linux_wheel
+      artifactName: linux
     displayName: Publish Artifact
 
 # Test SimNIBS in a series of containers
@@ -36,14 +39,12 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      centos6:
-        containerImage: simnibs/simnibs-testing:centos6
       centos7:
-        containerImage: simnibs/simnibs-testing:centos7
+        containerImage: centos:7
       ubuntu16:
-        containerImage: simnibs/simnibs-testing:ubuntu16
+        containerImage: ubuntu:16.04
       ubuntu18:
-        containerImage: simnibs/simnibs-testing:ubuntu18
+        containerImage: ubuntu:18.04
   pool:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
@@ -52,23 +53,18 @@ jobs:
 
   steps:
 
-  - bash: |
-      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_linux.yml  > env.yml
-      conda env create -f env.yml
-    displayName: Create conda environment
-
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'linux_wheel'
+      artifactName: 'linux'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
   - bash: |
-      source activate simnibs_env
-      pip install -f file://$(System.ArtifactsDirectory)/linux_wheel simnibs
-      pytest simnibs/tests --junit-xml=test-results.xml
+      tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
+      simnibs_installer/install -t simnibs_installed -s
+      simnibs_installed/bin/simnibs_python pytest simnibs/tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
   
   - task: PublishTestResults@2
@@ -77,7 +73,7 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
   
-# If everything went fine, we upload the wheel as a draft to GitHub
+# If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
   dependsOn: Test
   pool:
@@ -89,9 +85,9 @@ jobs:
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'linux_wheel'
+      artifactName: 'linux'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download SimNIBS version
 
   - task: GithubRelease@0
     displayName: Edit GitHub Release
@@ -100,6 +96,6 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(System.ArtifactsDirectory)/linux_wheel/*
+      assets: $(System.ArtifactsDirectory)/linux/*
       assetUploadMode: 'replace'
       isDraft: true
