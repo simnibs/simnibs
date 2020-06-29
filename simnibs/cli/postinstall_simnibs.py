@@ -30,7 +30,8 @@ import tempfile
 import time
 import functools
 import zipfile
-import urllib.request
+
+import requests
 
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
@@ -668,30 +669,19 @@ def activator_setup(install_dir):
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             activator, commands=f'-d "{install_dir}"')
 
-
-def _download_manager(blocknum, blocksize, totalsize, start_time=None, timeout=None):
-    if timeout is not None:
-        if time.time() - start_time > timeout:
-            raise TimeoutError('Download timed out')
-
-    if totalsize > 0:
-        nblocks = totalsize // blocksize
-        frac = nblocks // 10
-        if blocknum % frac == 0:
-            print(f'{blocknum/nblocks:.0%}', flush=True)
-    else:
-        b30 = int(30e6/blocksize)
-        if blocknum % b30 == 0:
-            read = (blocknum * blocksize) / 1e6
-            print(f'{read:.1f} MB', flush=True)
+# from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests
+def download_file(url, local_filename, timeout=None):
+    with requests.get(url, stream=True, timeout=timeout) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(local_filename, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 def download_extra_coils(timeout=None):
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
     with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
         tmpname = tmpf.name
-    reporthook = functools.partial(_download_manager, start_time=time.time(), timeout=timeout)
-    urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
+    download_file(url, tmpf.name, timeout)
     with zipfile.ZipFile(tmpname) as z:
         z.extractall(os.path.join(SIMNIBSDIR, 'ccd-files'))
     os.remove(tmpname)
@@ -905,8 +895,8 @@ def install(install_dir,
     scripts_dir = os.path.join(install_dir, 'bin')
     matlab_prepare()
     if extra_coils:
-        print('Downloading Extra Coils', flush=True)
-        download_extra_coils(timeout=30*60)
+        print('Downloading extra coils, this might take some time', flush=True)
+        download_extra_coils(timeout=10*60)
     if copy_gmsh_options:
         print('Copying Gmsh Options')
         setup_gmsh_options(force, silent)
