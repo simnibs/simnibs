@@ -2509,13 +2509,13 @@ class TDCSLEADFIELD(LEADFIELD):
             mat, 'eeg_cap', str, self.eeg_cap)
 
         if len(mat['electrode']) > 0:
-            if mat['electrode'] == 'none':
+            if type(mat['electrode'][0]) is np.str_ and mat['electrode'][0] == 'none':
                 self.electrode = None
             else:
                 self.electrode = []
                 for el in mat['electrode'][0]:
                     self.electrode.append(ELECTRODE(el))
-        elif len(self.electrode) == 1:
+        if self.electrode is not None and len(self.electrode) == 1:
             self.electrode = self.electrode[0]
 
     def sim_struct2mat(self):
