@@ -68,7 +68,6 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
       
-jobs:
 - job: Examples
   dependsOn: Build
   pool:
