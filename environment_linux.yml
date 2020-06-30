@@ -12,6 +12,7 @@ dependencies:
   - mock
   - freeglut
   - pip
+  - packaging
   - requests
   - pip:
     - nibabel==2.3.*

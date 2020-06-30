@@ -1,12 +1,12 @@
 variables:
-  Agent.Source.Git.ShallowFetchDepth: 1
+  Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
 - norm_opt
 
 jobs:
 
-# This job build the wheels using Windows 2016- vs 2017
+# Build using Windows 2016- vs 2017
 - job: Build
   pool:
     vmImage: 'vs2017-win2016'
@@ -75,10 +75,37 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
 
-# Finally, if everything went fine, we upload to GitHub releases as a draft
+- job: Examples
+  dependsOn: Build
+  pool:
+    vmImage: 'vs2017-win2016'
 
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'windows'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download Wheel
+
+  - bash: |
+      choco install octave
+      octave -v
+    displayName: Install Octave
+
+  - script: |
+      start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests\examples\examples.py --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run unit tests
+
+
+# If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
-  dependsOn: Test
+  dependsOn:
+   - Test
+   - Examples
   pool:
     vmImage: 'vs2017-win2016'
 

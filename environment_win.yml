@@ -13,6 +13,7 @@ dependencies:
   - freeglut
   - vs2015_runtime
   - pip
+  - packaging
   - requests
   - pip:
     - nibabel==2.3.*
