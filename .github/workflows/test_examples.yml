@@ -1,0 +1,29 @@
+# This workflows will test the SimNIBS examples in a Ubuntu machine
+
+name: Run Examples
+on: [pull_request]
+
+jobs:
+  run_simnibs_examples:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Octave
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y octave
+        octave -v
+    # Use intaller instead?
+    - uses: goanpeca/setup-miniconda@v1
+      with:
+        activate-environment: simnibs_env
+        environment-file: environment_linux.yml
+    - name: Test Examples
+      shell: bash -l {0}
+      # Should run the simnibs in site-packages as the matlab folder over there is modified.
+      run: |
+        python setup.py install
+        postinstall_simnibs -d . -s --no-extra-coils
+        pytest simnibs/tests/examples/examples.py -v -s -x --junit-xml=test-results.xml

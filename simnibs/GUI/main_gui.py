@@ -158,26 +158,14 @@ class TDCS_GUI(QtWidgets.QMainWindow):
             filename = dialog.selectedFiles()
         if filename:
             fn = str(filename[0])
-            if ' ' in fn:
-                QtWidgets.QMessageBox.critical(self, 'warning', 'Invalid File name:\n'+
-                                           'There are folders or files with ' +
-                                           'white spaces in the path' + 
-                                           '\n{0}'.format(fn))
-                return
-            else:
-                self.file_name.setText(fn)
-                self.loadHeadModel(fn)
-                self.lookForTensors(fn)
+            self.file_name.setText(fn)
+            self.loadHeadModel(fn)
+            self.lookForTensors(fn)
 
     def m2mFolderDialog(self):
         folder = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder == '':
             return None
-        if ' ' in folder:
-            QtWidgets.QMessageBox.critical(self, 'warning',  'Invalid Folder name:\n'+
-                                       'There are folders with ' +
-                                       'white spaces in the path:\n{0}'.format(folder))
-            return
         else:
             self.m2m_folder_lineEdit.setText(folder)
             self.session.subpath = folder
@@ -193,11 +181,6 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         folder = str( QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder == '':
             return None
-        if ' ' in folder:
-            QtWidgets.QMessageBox.critical(self, 'warning',  'Invalid Folder name:\n'+
-                                       'There are folders with ' +
-                                       'white spaces in the path:\n{0}'.format(folder))
-            return
         else:
             self.out_folder_lineEdit.setText(folder)
             self.session.pathfem = folder
