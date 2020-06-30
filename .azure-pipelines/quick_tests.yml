@@ -1,0 +1,91 @@
+variables:
+  Agent.Source.Git.ShallowFetchDepth: 5
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  - bash: |
+      conda env create -f environment_linux.yml
+    displayName: Create Conda environment
+
+  - bash: |
+      source activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - bash: |
+      source activate simnibs_env
+      pytest simnibs/tests --junit-xml=test-results.xml
+    displayName: Run Unity Tests
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Publish test results'
+
+- job: MacOS
+  pool:
+    vmImage: 'macOS-10.14'
+
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+
+  - bash: |
+      conda env create -f environment_macOS.yml
+    displayName: Create Conda environment
+
+  - bash: |
+      source activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - bash: |
+      source activate simnibs_env
+      pytest simnibs/tests --junit-xml=test-results.xml
+    displayName: Run Unity Tests
+
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Publish test results'
+
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
+
+  - script: |
+      conda env create -f environment_win.yml
+    displayName: Create Conda environment
+
+  - script: |
+      call activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - bash: |
+      call activate simnibs_env
+      pytest simnibs/tests --junit-xml=test-results.xml
+    displayName: Run Unity Tests
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Publish test results'
