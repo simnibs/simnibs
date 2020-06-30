@@ -79,9 +79,9 @@ jobs:
       python setup.py develop
     displayName: Install SimNIBS
 
-  - bash: |
+  - script: |
       call activate simnibs_env
-      pytest simnibs/tests --junit-xml=test-results.xml
+      pytest simnibs\tests --junit-xml=test-results.xml
     displayName: Run Unity Tests
 
   - task: PublishTestResults@2
