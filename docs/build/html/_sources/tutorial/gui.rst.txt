@@ -177,9 +177,9 @@ Setting Simulation Options
   * **norm E**:
       Norm (or strength) of the electric field. Units: V/m
   * **vector J**:
-      Current density vector. Units: A/mm²
+      Current density vector. Units: A/m²
   * **norm J**:
-      Norm of the current density. Units: A/mm²
+      Norm of the current density. Units: A/m²
   * **Conductivities**:
       Conductivity field. For isotropic conductivities, this is a scalar.
       For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
