@@ -124,7 +124,7 @@ jobs:
       artifactName: 'mac_os'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
-
+  # I need to notorize the app https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
