@@ -125,12 +125,6 @@ jobs:
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
-  - task: InstallAppleCertificate@2
-      inputs:
-        certSecureFile: 'certificate_installer.p12'
-        certPwd: '$(P12password)'
-
-
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
