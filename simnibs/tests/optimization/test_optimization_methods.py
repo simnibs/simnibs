@@ -1113,11 +1113,11 @@ class TestDistributed:
             max_total_current,
         )
         x_sp = optimize_lstsq(A, b, max_el_current, max_total_current)
-
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0)
-        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+        assert objective(x) < objective(x_sp) *1.1
 
     def test_calc_l_Q(self):
         leadfield = np.zeros((5, 30, 3))
@@ -1167,6 +1167,7 @@ class TestDistributed:
         np.random.seed(None)
 
         weights = np.ones(30)
+        weights[20:] = 0
 
         tes_problem = optimization_methods.TESDistributed(
             leadfield, target_field, weights, max_total_current,
@@ -1176,15 +1177,21 @@ class TestDistributed:
         x = tes_problem.solve()
 
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        A = leadfield.reshape(5, -1).T.dot(P)
+        A[60:] = 0
+        b = target_field.reshape(-1)
+        b[60:] = 0
+
         x_sp = optimize_lstsq(
-            leadfield.reshape(5, -1).T.dot(P),
-            target_field.reshape(-1),
+            A, b,
             max_el_current, max_total_current
         )
+
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0, atol=1e-6)
-        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+        assert objective(x) < objective(x_sp) *1.1
 
 
     @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
@@ -1206,16 +1213,19 @@ class TestDistributed:
         x = tes_problem.solve()
 
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        A = leadfield[..., 1].T.dot(P)
+        b = target_field[..., 1]
+
         x_sp = optimize_lstsq(
-            leadfield[..., 1].T.dot(P),
-            target_field[:, 1],
+            A, b,
             max_el_current, max_total_current
         )
-        #print(np.linalg.lstsq(leadfield[..., 1].T, target_field[..., 1])[0])
+
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0, atol=1e-6)
-        assert np.allclose(x, x_sp, rtol=1e-3, atol=1e-3)
+        assert objective(x) < objective(x_sp) *1.1
 
 
 class TestDistributedElec:
