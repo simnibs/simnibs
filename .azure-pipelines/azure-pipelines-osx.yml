@@ -4,6 +4,9 @@ variables:
 trigger:
 - norm_opt
 
+variables:
+- group: macos_build
+
 jobs:
 - job: Build
   pool:
@@ -11,6 +14,10 @@ jobs:
     maxParallel: 4
 
   steps:
+  - task: InstallAppleCertificate@2
+      inputs:
+        certSecureFile: 'certificate_installer.p12'
+        certPwd: '$(P12password)'
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
       sudo chown -R $USER $CONDA
@@ -26,7 +33,7 @@ jobs:
       python packing/pack.py dist/
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
-      cp simnibs_installer_macos.pkg  $(Build.ArtifactStagingDirectory)
+      productsign --sign "Developer ID Installer: Axel Thielscher" simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg
     displayName: Build SimNIBS
   - task: PublishBuildArtifacts@1
     inputs:
@@ -108,7 +115,7 @@ jobs:
     - Examples
 
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'macOS-latest'
 
   steps:
   - checkout: none
@@ -119,6 +126,12 @@ jobs:
       artifactName: 'mac_os'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
+
+  - task: InstallAppleCertificate@2
+      inputs:
+        certSecureFile: 'certificate_installer.p12'
+        certPwd: '$(P12password)'
+
 
   - task: GithubRelease@0
     displayName: Edit GitHub Release
