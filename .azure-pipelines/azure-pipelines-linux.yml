@@ -98,7 +98,8 @@ jobs:
   - bash: |
       tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
       simnibs_installer/install -s -t simnibs_install
-      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s -x --junit-xml=test-results.xml
+      simnibs_install/bin/simnibs_python -m pip install --force-reinstall --upgrade certifi
+      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
   - task: PublishTestResults@2

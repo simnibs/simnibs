@@ -140,7 +140,7 @@ def build(simnibs_dist_dir, include_spyder=False):
         )
     if sys.platform == 'darwin':
         with tempfile.TemporaryDirectory() as tmpdir:
-            for fn in glob.glob(os.path.join(simnibs_root_dir, 'macOS_installer', '*')):
+            for fn in glob.glob(os.path.join(simnibs_root_dir, 'packing', 'macOS_installer', '*')):
                 fn_out = os.path.join(tmpdir, os.path.basename(fn))
                 with open(fn, 'r') as f:
                     template = Template(f.read()).render(

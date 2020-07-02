@@ -1320,8 +1320,8 @@ class POSITION(object):
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
-            return self.matsimnibs
-        else:
+            self.matsimnibs = np.array(self.matsimnibs)
+        else: 
             logger.info('Calculating Coil position from (centre, pos_y, distance)')
             if not isinstance(self.centre, np.ndarray) and not self.centre:
                 raise ValueError('Coil centre not set!')
@@ -1336,8 +1336,15 @@ class POSITION(object):
                 raise ValueError('Coil pos_ydir must be 3-dimensional')
             self.matsimnibs = msh.calc_matsimnibs(
                 self.centre, self.pos_ydir, self.distance, msh_surf=msh_surf)
-            logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
-            return self.matsimnibs
+
+        logger.info('matsimnibs: \n{0}'.format(self.matsimnibs))
+        if 1002 in msh.elm.tag1:
+            cc_distance = np.min(np.linalg.norm(
+                msh.elements_baricenters()[msh.elm.tag1==1002] - self.matsimnibs[:3, 3],
+                axis=1)
+            )
+            logger.info(f'coil-cortex distance: {cc_distance:.2f}')
+        return self.matsimnibs
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
@@ -2022,6 +2029,12 @@ class LEADFIELD():
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        # The 2 variables bellow are set when the _get_vol() method is called
+        # If set, they have priority over fn_tensor_nifti
+        self.anisotropy_vol = None  # 4-d data with anisotropy information
+        self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
+        self.anisotropic_tissues = [1, 2]  # if an anisotropic conductivity is to be used,
+
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
@@ -2046,6 +2059,10 @@ class LEADFIELD():
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
+
+    def _get_vol_info(self):
+        return SimuList._get_vol_info(self)
+
 
     def _prepare(self):
         """Prepares Leadfield for simulations
@@ -2178,7 +2195,6 @@ class TDCSLEADFIELD(LEADFIELD):
             self.eeg_cap = sub_files.get_eeg_cap(self.eeg_cap)
 
         logger.info('EEG Cap: {0}'.format(self.eeg_cap))
-        self.mesh = mesh_io.read_msh(self.fnamehead)
 
     def _add_electrodes_from_cap(self):
         ''' Reads a csv file and adds the electrodes defined to the tdcslist
@@ -2509,13 +2525,13 @@ class TDCSLEADFIELD(LEADFIELD):
             mat, 'eeg_cap', str, self.eeg_cap)
 
         if len(mat['electrode']) > 0:
-            if mat['electrode'] == 'none':
+            if type(mat['electrode'][0]) is np.str_ and mat['electrode'][0] == 'none':
                 self.electrode = None
             else:
                 self.electrode = []
                 for el in mat['electrode'][0]:
                     self.electrode.append(ELECTRODE(el))
-        elif len(self.electrode) == 1:
+        if self.electrode is not None and len(self.electrode) == 1:
             self.electrode = self.electrode[0]
 
     def sim_struct2mat(self):

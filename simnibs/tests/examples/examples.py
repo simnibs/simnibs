@@ -3,13 +3,13 @@ import os
 import stat
 import subprocess
 import zipfile
-import urllib.request
 import tempfile
 import shutil
 import glob
+import functools
 
 import pytest
-
+import requests
 from simnibs.utils.file_finder import path2bin
 import simnibs
 
@@ -23,7 +23,12 @@ def example_dataset():
     )
     fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ernie_lowres'))
     tmpname = tempfile.mktemp(".zip")
-    urllib.request.urlretrieve(url, tmpname)
+    # Download the dataset
+    with requests.get(url, stream=True) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(tmpname, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    # Unzip the dataset
     with zipfile.ZipFile(tmpname) as z:
         z.extractall(os.path.dirname(__file__), )
     os.remove(tmpname)

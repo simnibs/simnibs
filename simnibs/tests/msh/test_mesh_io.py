@@ -195,6 +195,7 @@ class TestElements:
         assert np.all(elm[:] == np.array(
             [[1, 3, 2, -1], [4, 1, 2, -1],
              [1, 3, 2, 4], [4, 1, 3, 7]]))
+        assert np.all(elm.elm_type == [2, 2, 4, 4])
 
     def test_elm_init_node_number_list(self):
         triangles = np.array(((1, 3, 2), (4, 1, 2)))
