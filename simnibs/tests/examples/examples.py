@@ -6,6 +6,8 @@ import zipfile
 import urllib.request
 import tempfile
 import shutil
+import glob
+
 import pytest
 
 from simnibs.utils.file_finder import path2bin
@@ -34,12 +36,12 @@ def replace_gmsh():
     fn_gmsh = path2bin('gmsh')
     fn_gmsh_tmp = path2bin('gmsh_tmp')
     # move
+    if sys.platform == 'win32': fn_gmsh += '.exe'
     shutil.move(fn_gmsh, fn_gmsh_tmp)
     # replace
     if sys.platform == 'win32':
-        fn_script = fn_gmsh[:4] + '.cmd'
-        with open(fn_script, 'w') as f:
-            f.write('echo "GMSH"')
+        # replace gmsh with an .exe that does not to anything
+        shutil.copy(r'C:\Windows\System32\rundll32.exe', fn_gmsh)
     else:
         with open(fn_gmsh, 'w') as f:
             f.write('#! /bin/bash -e\n')
@@ -53,13 +55,24 @@ def replace_gmsh():
     shutil.move(fn_gmsh_tmp, fn_gmsh)
 
 def octave_call(script):
-    cmd = "octave -W --eval \""
+    if sys.platform == 'win32':
+        octave_exe = glob.glob(os.path.join(
+            r'C:\Octave\Octave-*\mingw64\bin\octave-cli.exe'
+        ))
+        if len(octave_exe) == 0:
+            raise OSError('Did not find Octave executable')
+        else:
+            octave_exe = octave_exe[0]
+    else:
+        octave_exe = 'octave'
+
     matlab_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'matlab')
     )
     octave_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'octave_compatibility')
     )
+    cmd = f"{octave_exe} -W --eval \""
     cmd += "addpath('{0}');".format(matlab_dir)
     cmd += "addpath('{0}');".format(octave_dir)
     cmd += "try,run('{}');catch ME,rethrow(ME);end,exit;\"".format(script)
@@ -89,6 +102,7 @@ class TestPythonErnie:
         if clean is not None and os.path.exists(clean):
             shutil.rmtree(clean)
         fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
         return subprocess.run([sys.executable, fn])
 
     def test_transform_coordinates(self, example_dataset):
