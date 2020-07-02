@@ -92,7 +92,6 @@ jobs:
 
   - bash: |
       choco install octave
-      octave -v
     displayName: Install Octave
 
   - script: |
