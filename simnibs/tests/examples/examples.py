@@ -33,7 +33,10 @@ def example_dataset():
         z.extractall(os.path.dirname(__file__), )
     os.remove(tmpname)
     yield fn_folder
-    shutil.rmtree(fn_folder)
+    try:
+        shutil.rmtree(fn_folder)
+    except:
+        print('Could not remove example dataset folder)
 
 
 @pytest.fixture
