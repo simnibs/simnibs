@@ -36,7 +36,7 @@ def example_dataset():
     try:
         shutil.rmtree(fn_folder)
     except:
-        print('Could not remove example dataset folder)
+        print('Could not remove example dataset folder')
 
 
 @pytest.fixture
