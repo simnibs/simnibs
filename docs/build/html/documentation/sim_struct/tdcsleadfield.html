@@ -115,7 +115,7 @@ density <em>‘J’</em>.</p></li>
 <li><p><em>list/cell array of strings</em>: List of mesh files in <em>‘.stl’</em>, <em>‘.gii’</em>, <em>‘.off’</em> or <em>‘.msh’</em> format. The files will be loaded and the fields will be interpolated at the mesh nodes.</p></li>
 </ul>
 </li>
-<li><p><strong>Default</strong>: True</p></li>
+<li><p><strong>Default</strong>: <em>‘middle_gm’</em></p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -136,6 +136,12 @@ density <em>‘J’</em>.</p></li>
 </pre></div>
 </div>
 <p></p>
+</li>
+<li><p><strong>interpolation_tissue</strong>:  <em>list (python) or array (MATLAB), optional</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Tissues numbers to use as a base for the interpolation procedure. Nodes in the interpolated surfaces outside of the region defined by <strong>interpolation_tissue</strong> will be extrapolated using nearest neighbor. Ignored if <strong>interpolation</strong> is set to <em>None/[]</em>. Must correspond to a volume.</p></li>
+<li><p><strong>Default</strong>: [2] (i.e. gray matter surface)</p></li>
+</ul>
 </li>
 <li><p><strong>electrode</strong>: <em>ELECTRODE structure or list/array of ELECTRODE structures, optional</em></p>
 <ul class="simple">
