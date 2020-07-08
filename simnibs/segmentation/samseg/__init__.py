@@ -9,3 +9,5 @@ from .figures import initVisualizer
 from .SamsegWholeHead import SamsegWholeHead
 from .AffineWholeHead import AffineWholeHead
 from .simnibs_segmentation_utils import *
+from .Affine import Affine
+from .Affine import initializationOptions

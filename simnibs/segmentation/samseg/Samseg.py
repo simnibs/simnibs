@@ -9,7 +9,7 @@ from .utilities import requireNumpyArray, Specification
 from .BiasField import BiasField
 from .ProbabilisticAtlas import ProbabilisticAtlas
 from .GMM import GMM
-from .AffineWholeHead import AffineWholeHead
+from .Affine import Affine
 from .SamsegUtility import *
 from .merge_alphas import kvlMergeAlphas, kvlGetMergingFractionsTable
 from . import gems
@@ -34,7 +34,9 @@ class Samseg:
         self.targetSearchStrings = targetSearchStrings
 
         # Initialize some objects
-        self.affine = AffineWholeHead()
+        self.affine = Affine( imageFileName=self.imageFileNames[0],
+                              meshCollectionFileName=os.path.join(self.atlasDir, 'atlasForAffineRegistration.txt.gz'),
+                              templateFileName=os.path.join(self.atlasDir, 'template.nii' ) )
         self.probabilisticAtlas = ProbabilisticAtlas()
 
         # Get full model specifications and optimization options (using default unless overridden by user)
@@ -96,11 +98,11 @@ class Samseg:
         if self.transformedTemplateFileName is None:
             templateFileName = os.path.join(self.atlasDir, 'template.nii')
             affineRegistrationMeshCollectionFileName = os.path.join(self.atlasDir, 'atlasForAffineRegistration.txt.gz')
-            _, self.transformedTemplateFileName, _ = self.affine.registerAtlas(self.imageFileNames[0],
-                                                                               affineRegistrationMeshCollectionFileName,
-                                                                               templateFileName,
-                                                                               self.savePath,
-                                                                               visualizer=self.visualizer)
+            self.imageToImageTransformMatrix, optimizationSummary = self.affine.registerAtlas(
+                                                                    savePath=self.savePath,
+                                                                    visualizer=self.visualizer,
+                                                                    worldToWorldTransformMatrix=worldToWorldTransformMatrix,
+                                                                    initTransform=initTransform)
 
     def preProcess(self):
         # =======================================================================================

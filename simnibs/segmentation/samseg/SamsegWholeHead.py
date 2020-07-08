@@ -85,7 +85,8 @@ class SamsegWholeHead(Samseg):
                                  'biasFields': self.biasField.getBiasFields(),
                                  'mask': self.mask,
                                  'cropping': self.cropping,
-                                 'transform': self.transform}
+                                 'transform': self.transform,
+                                 'names': self.modelSpecifications.names}
 
         if output_path is not None:
             with open(os.path.join(output_path, 'parameters.p'), 'wb') as file:

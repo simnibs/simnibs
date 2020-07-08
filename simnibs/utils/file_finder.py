@@ -212,13 +212,16 @@ class SubjectFiles:
 
     eeg_cap_folder: str
         Path to the folder with EEG caps (dir)
-        
+
     segmentation_folder: str
         Path to the output from the segmentation
-    
+
+    surface_folder: str
+        Path to the output from the segmentation
+
     label_prep_folder: str
-        Path to the output from upsampling   
-    
+        Path to the output from upsampling
+
     mni_transf_folder: str
         Path to MNI transformations
 
@@ -314,7 +317,22 @@ class SubjectFiles:
     
     head_mesh: str
         Final head mesh
+        
+    cerebrum_mask: str
+        Mask indicating cerebrum and cerebellum. Needed for surfaces.
     
+    norm_image: str
+        Normalized intensity image. Needed for surfaces.
+        
+    subcortical_mask: str
+        Mask of subcortical structures. Needed for surfaces
+        
+    parahippo_mask: str
+        Mask of parahippocampal area. Needed for surfaces.
+        
+    hemi_mask: str
+        Mask indicating left/right. Needed for surfaces.
+        
     Warning
     --------
     This class does not check for existance of the files
@@ -353,9 +371,9 @@ class SubjectFiles:
 
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
         self.eeg_cap_1010 = self.get_eeg_cap()
-        
+
         self.segmentation_folder = os.path.join(self.subpath, 'segmentation')
-        
+        self.surface_folder = os.path.join(self.subpath, 'surfaces')
         self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
 
         # Stuff for volume transformations
@@ -427,6 +445,11 @@ class SubjectFiles:
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
         self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
+        self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
+        self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
+        self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
+        self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
+        self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
