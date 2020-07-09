@@ -12,6 +12,7 @@ import atexit
 import h5py
 import numpy as np
 import scipy.sparse as sparse
+from scipy.spatial import cKDTree
 
 from ..msh import mesh_io
 from . import cond as cond_lib
@@ -726,6 +727,7 @@ class FEMSystem(object):
         '''
         # The first surface is set to a DirichletBC
         if input_type == 'tag':
+            # Find the nodes in the tag
             elements_in_surface = (
                 (mesh.elm.tag1 == ground_electrode) *
                 (mesh.elm.elm_type == 2)
@@ -768,6 +770,7 @@ class FEMSystem(object):
         areas = self.mesh.nodes_areas()
         for e, c in zip(electrodes, currents):
             if input_type == 'tag':
+                # Find the nodes in the tag
                 nodes = np.unique(
                     self.mesh.elm[
                         (self.mesh.elm.tag1 == e) *
@@ -815,6 +818,66 @@ class FEMSystem(object):
             return grad.reshape(-1, 3)
         elif v.ndim == 2:
             return grad.reshape(-1, 3, v.shape[1])
+
+    @classmethod
+    def electric_dipole(cls, mesh, cond, solver_options=None):
+        '''Sets up an electric dipole simulation using the partial integration method
+
+        Parameters
+        ------------
+        mesh: simnibs.mesh_io.msh.Msh
+            Mesh structure
+        cond: ndarray or simnibs.mesh_io.msh.ElementData
+            Conductivity of each element
+        solver_options: str (optional)
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+
+        Returns
+        ---------
+        S: FEMSystem
+            FEMSystem structure with a ".solve()" command
+
+        References
+        -----------
+        Weinstein, David, Leonid Zhukov, and Chris Johnson. "Lead-field bases for
+        electroencephalography source imaging." Annals of biomedical engineering 28.9
+        (2000): 1059-1065.
+        '''
+        return cls.tms(mesh, cond, solver_options=solver_options)
+
+    def assemble_electric_dipole_rhs(self, primary_j):
+        ''' Defines the right-hand side of the equation using the partial integration
+        method.
+
+        Parameters
+        -----------
+        primary_j: nx3 ElementData
+            Primary current sources (J_p)
+        
+        Returns
+        --------
+        b: numpy array
+            Right-hand side for the 
+
+        References
+        -----------
+        Weinstein, David, Leonid Zhukov, and Chris Johnson. "Lead-field bases for
+        electroencephalography source imaging." Annals of biomedical engineering 28.9
+        (2000): 1059-1065.
+
+        Gomez, Luis J., Moritz Dannhauer, and Angel V. Peterchev. "Fast computational
+        optimization of TMS coil placement for individualized electric field targeting." bioRxiv
+        (2020).
+        '''
+        # The RHS is basically the same as the TMS one, but with the conductiviy is
+        # already incorporated in dipole_vectors
+        _original_cond = np.copy(self.cond)
+        self._cond = np.ones(self.mesh.elm.nr)
+        b = self.assemble_tms_rhs(primary_j)
+        b *= -1
+        self._cond = _original_cond
+        return b
+
 
 
 def assemble_diagonal_mass_matrix(msh, units='mm'):

@@ -701,3 +701,37 @@ class TestTMSMany:
                     assert rdm(E, E_analytical[roi_select]) < .3
                     assert mag(E, E_analytical[roi_select]) < np.log(1.1)
         os.remove(fn_hdf5)
+
+class TestDipole:
+    @pytest.mark.parametrize('pos_target', [[50, 0, 0], [80, 0, 0]])
+    @pytest.mark.parametrize('dipole_direction', [[0, 1, 0], [1, 0, 0]])
+    def test_single_dipole(self, dipole_direction, pos_target, sphere3_msh):
+        bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
+        vol = sphere3_msh.elements_volumes_and_areas()
+        dipole_th = np.argmin(np.linalg.norm(pos_target - bar, axis=1))
+        dipole_pos = bar[dipole_th]
+        dipole_th = sphere3_msh.elm.tetrahedra[dipole_th]
+
+        surface_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+        surface_nodes_pos = sphere3_msh.nodes[surface_nodes]
+
+        analytical_v = analytical_solutions.potential_dipole_3layers(
+            [85, 90, 95], 2, 0.1, dipole_pos, dipole_direction, surface_nodes_pos
+        )
+        
+        # Relationship between primary current J and dipole vector p
+        # p = \int J dV
+        # p = J*V_i
+        # J = p/V_i
+        primary_j = mesh_io.ElementData(np.zeros((sphere3_msh.elm.nr, 3)))
+        primary_j[dipole_th] = dipole_direction/(vol[dipole_th] * 1e-9)
+        cond = 2 * np.ones(sphere3_msh.elm.nr)
+        cond[sphere3_msh.elm.tag1==4] = 0.1
+        S = fem.FEMSystem.electric_dipole(sphere3_msh, cond)
+        b = S.assemble_electric_dipole_rhs(primary_j)
+        numerical_v = S.solve(b)[surface_nodes - 1]
+
+        analytical_v -= np.average(analytical_v)
+        numerical_v -= np.average(numerical_v)
+        assert rdm(analytical_v, numerical_v) < 0.2
+        assert mag(analytical_v, numerical_v) < 0.15
