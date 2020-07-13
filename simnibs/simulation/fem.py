@@ -12,7 +12,6 @@ import atexit
 import h5py
 import numpy as np
 import scipy.sparse as sparse
-from scipy.spatial import cKDTree
 
 from ..msh import mesh_io
 from . import cond as cond_lib
