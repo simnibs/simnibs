@@ -1,4 +1,5 @@
 #!/usr/local/bin/python
+import os
 import numpy as np
 import fmm3dpy as fmm
 import time
@@ -42,6 +43,7 @@ def recipcode(rv,jv,rs,ks,A):
 	print("H-primary time: ",end-start);	
 	kp=ks;
 	Etotal=np.zeros(npos);
+	print(Hprimary)
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -229,20 +231,24 @@ def computeHprimary(rs,js,robs,prec):
 	outex=fmm.Output();
 	Hprimary=np.zeros([3,robs.shape[1]]);
 	muover4pi=-1e-7;
-	js1=muover4pi*js[0,:];
+	js1=js[0,:];
+	print(rs)
+	print(robs)
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	print("Run 1")
+	print("Run 1", out.gradtarg)
 	Hprimary[1,:]=-out.gradtarg[2,:];
 	Hprimary[2,:]=out.gradtarg[1,:];
-	js1=muover4pi*js[1,:];
+	js1=js[1,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	print("Run 2")
+	print("Run 2", out.gradtarg)
 	Hprimary[0,:]=out.gradtarg[2,:];
 	Hprimary[2,:]=Hprimary[2,:]-out.gradtarg[0,:];
-	js1=muover4pi*js[2,:];
+	js1=js[2,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
+	print("Run 3", out.gradtarg)
 	Hprimary[0,:]=Hprimary[0,:]-out.gradtarg[1,:];
 	Hprimary[1,:]=Hprimary[1,:]+out.gradtarg[0,:];
+	Hprimary *= muover4pi
 	return Hprimary;
 
 def resamplecoil(rs,ks,N,Nj,coildir):
@@ -277,11 +283,7 @@ def resamplecoil(rs,ks,N,Nj,coildir):
 	Zp=Zp+Zd;
 
 	#get gauss quadrature nodes for interpolation from txt file upto N=50
-	interpnodes = []
-	file_in = open('gauss50.txt', 'r');
-	for ival in file_in:
-		interpnodes.append(float(ival.strip()))
-	interpnodes=np.array(interpnodes);
+	interpnodes = np.loadtxt(os.path.join(os.dirname(__file__), 'gauss50.txt'))
 	#translate quadrature rules to coil box
 	XX=0.5*(interpnodes[int(N[0]*(N[0]-1)/2):int(N[0]*(N[0]+1)/2)]+1.0)*(Xp-Xm)+Xm;
 	YY=0.5*(interpnodes[int(N[1]*(N[1]-1)/2):int(N[1]*(N[1]+1)/2)]+1.0)*(Yp-Ym)+Ym;
@@ -318,4 +320,38 @@ def lagrange(x,pointx):
 				L[i,:]=np.multiply(L[i,:],(x-pointx[j])/(pointx[i]-pointx[j]));
 	return L;
 
+def calculate_Hprim(source_positions, source_currents, query_positions):
+    H = np.zeros_like(query_positions)
+    for i in range(len(query_positions)):
+        r = query_positions[i] - source_positions
+        dist = np.linalg.norm(r, axis=1)
+        H[i] = 1e-7 * np.sum(np.cross(source_currents, r)/dist[:, None]**3, axis=0)
 
+    return H
+
+def test_computeHprimary():
+    np.random.seed(1)
+    current_elm_positions = np.random.rand(100, 3)
+    currents = np.random.rand(len(current_elm_positions), 3)
+    observation_pos = np.random.rand(10, 3)
+
+    fmm_Hprimary = computeHprimary(
+        current_elm_positions.T,
+        currents.T,
+        observation_pos.T,
+        1e-5
+    ).T
+
+    Hprim = calculate_Hprim(
+        current_elm_positions,
+        currents,
+        observation_pos
+    )
+
+    print(fmm_Hprimary)
+    print(Hprim)
+    assert np.allclose(fmm_Hprimary, Hprim)
+
+
+if __name__ == '__main__':
+    test_computeHprimary()
