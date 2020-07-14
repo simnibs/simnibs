@@ -2,6 +2,7 @@
 import numpy as np
 import fmm3dpy as fmm
 import time
+import numpy.linalg as la
 #*********************************************************************
 #  This library compute E-fields induced during TMS via reciprocity and auxiliary
 #  dipoles. The method is implemented for magnetic dipole sources.
@@ -48,20 +49,22 @@ def recipcode(rv,jv,rs,ks,A):
 		Etotal[i]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	return Etotal;
 
-def ADM(rv,jv,rs,ks,A,Nj):
-	#this function computes E-fields via reciprocity no auxiliary dipoles
+def ADM(rv,jv,rs,ks,A,coildir):
+	#this function computes E-fields via reciprocity with auxiliary dipoles
 	#rv is 3 by ntetra and has mesh tetrahedron centroid positions
 	#jv is 3 by ntetra and has total conduction current at each tetrahedron
 	#rs is 3 by ncoil and has the coil dipole positions centered about the origin
 	#ks is 3 by ncoil and has the coil dipole weights
 	#A is 4 by 4 by number of coilpositions and each 4 by 4 matrix is a translation of the coil to a point above the scalp
-	#Nj is an integer number of orientations (Nj=360 for 1 degree spacing)
+	#coildir is a 3 by number of coil orientations that gives the y-direction orientation
+
 
 	#paramameter:
 	prec=10**(-3); #this number determines the accuracy of H-primary evaluation higher accuracy=slower time increases ~log(accuracy)
 	N=[17,17,2];
 	#generate auxiliary dipoles
-	raux,kaux=resamplecoil(rs,ks,N,Nj);
+	Nj=coildir.shape[1];
+	raux,kaux=resamplecoil(rs,ks,N,Nj,coildir);
 	#reads in sizes of each array
 	npos=A.shape[2]; #number of scalp positions
 	ncoil=raux.shape[1]; 
@@ -92,11 +95,137 @@ def ADM(rv,jv,rs,ks,A,Nj):
 			Etotal[j,i]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	return Etotal;
 
+def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
+	#this function computes E-field unidirectional approximation of the magnitude via reciprocity no auxiliary dipoles
+	#rv is 3 by ntetra and has mesh tetrahedron centroid positions
+	#jv is 3 by ntetra and has total conduction current at each tetrahedron
+	#rs is 3 by ncoil and has the coil dipole positions centered about the origin
+	#ks is 3 by ncoil and has the coil dipole weights
+	#A is 4 by 4 by number of coilpositions and each 4 by 4 matrix is a translation of the coil to a point above the scalp
+
+	#paramameter:
+	prec=10**(-3); #this number determines the accuracy of H-primary evaluation higher accuracy=slower time increases ~log(accuracy)
+
+	#reads in sizes of each array
+	npos=A.shape[2]; #number of scalp positions
+	ncoil=rs.shape[1]; 
+	nsource=rv.shape[1];
+	ntarget=ncoil*npos;
+	
+	#generate copies of coil
+	rp=np.transpose(np.c_[np.transpose(rs) ,np.ones([ncoil])]); #pads coil positions to 4 by ncoil
+	robs=np.array(np.zeros([3,ntarget]));
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
+	Etotal=np.zeros([npos,3]);
+	kp=ks;
+	start = time.time()
+	print("Computing H-primary");
+	Hprimary=computeHprimary(rv,jvx,robs,prec);
+	end = time.time()	
+	print("H-primary time: ",end-start);	
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		kp=np.matmul(A[0:3,0:3,i],ks);
+		Etotal[i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	start = time.time()
+	print("Computing H-primary");
+	Hprimary=computeHprimary(rv,jvy,robs,prec);
+	end = time.time()	
+	print("H-primary time: ",end-start);	
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		kp=np.matmul(A[0:3,0:3,i],ks);
+		Etotal[i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	start = time.time()
+	print("Computing H-primary");
+	Hprimary=computeHprimary(rv,jvz,robs,prec);
+	end = time.time()	
+	print("H-primary time: ",end-start);	
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		kp=np.matmul(A[0:3,0:3,i],ks);
+		Etotal[i,2]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	Etotal=np.sqrt(Etotal[:,0]**2+Etotal[:,1]**2+Etotal[:,2]**2);
+	return Etotal;
+
+def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
+	#this function computes E-field unidirectional approximation of the magnitude via reciprocity with auxiliary dipoles
+	#rv is 3 by ntetra and has mesh tetrahedron centroid positions
+	#jv is 3 by ntetra and has total conduction current at each tetrahedron
+	#rs is 3 by ncoil and has the coil dipole positions centered about the origin
+	#ks is 3 by ncoil and has the coil dipole weights
+	#A is 4 by 4 by number of coilpositions and each 4 by 4 matrix is a translation of the coil to a point above the scalp
+	#coildir is a 3 by number of coil orientations that gives the y-direction orientation
+
+
+	#paramameter:
+	prec=10**(-3); #this number determines the accuracy of H-primary evaluation higher accuracy=slower time increases ~log(accuracy)
+	N=[17,17,2];
+	#generate auxiliary dipoles
+	Nj=coildir.shape[1];
+	raux,kaux=resamplecoil(rs,ks,N,Nj,coildir);
+	#reads in sizes of each array
+	npos=A.shape[2]; #number of scalp positions
+	ncoil=raux.shape[1]; 
+	nsource=rv.shape[1];
+	ntarget=ncoil*npos;
+	
+	#generate copies of coil
+	rp=np.transpose(np.c_[np.transpose(raux) ,np.ones([ncoil])]); #pads coil positions to 4 by ncoil
+	robs=np.array(np.zeros([3,ntarget]));
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
+
+	start = time.time()
+	Etotal=np.zeros([Nj,npos,3]);
+	print("Computing H-primary");
+	Hprimary=computeHprimary(rv,jvx,robs,prec);
+	end = time.time()
+	print("H-primary time: ",end-start);	
+	kp=kaux[:,:,0];
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		for j in range(0,Nj):
+			kp=np.matmul(A[0:3,0:3,i],kaux[:,:,j]);#for flat coils you only need the 3rd element
+			Etotal[j,i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	Hprimary=computeHprimary(rv,jvy,robs,prec);
+	end = time.time()
+	print("H-primary time: ",end-start);	
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		for j in range(0,Nj):
+			kp=np.matmul(A[0:3,0:3,i],kaux[:,:,j]);#for flat coils you only need the 3rd element
+			Etotal[j,i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	Hprimary=computeHprimary(rv,jvz,robs,prec);
+	end = time.time()
+	print("H-primary time: ",end-start);	
+	for i in range(0,npos):
+		st=i*ncoil;
+		en=(i+1)*ncoil;
+		for j in range(0,Nj):
+			kp=np.matmul(A[0:3,0:3,i],kaux[:,:,j]);#for flat coils you only need the 3rd element
+			Etotal[j,i,2]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
+	Etotal=np.sqrt(Etotal[:,:,0]**2+Etotal[:,:,1]**2+Etotal[:,:,2]**2);
+	return Etotal;
+	
 
 def computeHprimary(rs,js,robs,prec):
 	#this function computes H-fields via FMM3D library
 	#convention is 3 by number of points
 	#prec determines the accuracy of the multipole expansion
+	#Note: for magnetic dipoles electromagnetic duality implies that
+	#if we pass magnetic dipoles weights as js we get negative E-primary.
+	# As such, this function is used to compute E-primary due to magnetic currents also.
 	outex=fmm.Output();
 	Hprimary=np.zeros([3,robs.shape[1]]);
 	muover4pi=-1e-7;
@@ -116,22 +245,23 @@ def computeHprimary(rs,js,robs,prec):
 	Hprimary[1,:]=Hprimary[1,:]+out.gradtarg[0,:];
 	return Hprimary;
 
-def resamplecoil(rs,ks,N,Nj):
+def resamplecoil(rs,ks,N,Nj,coildir):
 	#rs is 3 by ncoil and has the coil dipole positions centered about the origin
 	#ks is 3 by ncoil and has the coil dipole weights
 	#N is 3 by 1 and has the number of auxiliary dipoles along each dimension
-	#Nj is an integer number of orientations (Nj=360 for 1 degree spacing)
+	#Nj is an integer number of orientations 
+	#coildir is 3 by Nj and has the y orientation of the coil
 	#create copies of coil with different orientations
 	rs2=np.zeros([3,rs.shape[1],Nj]);
 	ks2=np.zeros([3,ks.shape[1],Nj]);
+	#x=y cross z = y[1] x -y[0] y
 	for i in range(0,Nj):
-		phi=2*(i+1)/Nj*np.pi;
 		rs2[2,:,i]=rs[2,:];
-		rs2[0,:,i]= rs[0,:]*np.cos(phi)+rs[1,:]*np.sin(phi);
-		rs2[1,:,i]=-rs[0,:]*np.sin(phi)+rs[1,:]*np.cos(phi);
+		rs2[0,:,i]= rs[0,:]*coildir[1,i]+rs[1,:]*coildir[0,i];
+		rs2[1,:,i]=-rs[0,:]*coildir[0,i]+rs[1,:]*coildir[1,i];
 		ks2[2,:,i]=ks[2,:];
-		ks2[0,:,i]= ks[0,:]*np.cos(phi)+ks[1,:]*np.sin(phi);#unnecessary ks is z oriented
-		ks2[1,:,i]=-ks[0,:]*np.sin(phi)+ks[1,:]*np.cos(phi);#unnecessary ks is z oriented
+		ks2[0,:,i]= ks[0,:]*coildir[1,i]+ks[1,:]*coildir[0,i];#unnecessary ks is z oriented
+		ks2[1,:,i]=-ks[0,:]*coildir[0,i]+ks[1,:]*coildir[1,i];#unnecessary ks is z oriented
 	#find range for interpolation
 	Xm=min(rs2[0,:,:].flatten());
 	Xp=max(rs2[0,:,:].flatten());
