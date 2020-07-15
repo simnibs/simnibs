@@ -37,8 +37,9 @@ import nibabel
 
 from . import optimize_tms
 from . import optimization_methods
-from ..simulation import cond
+from . import ADMlib
 from ..simulation import fem
+from ..simulation import cond
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
 from ..msh import mesh_io, gmsh_view, transformations
 from ..utils.simnibs_logger import logger
@@ -90,6 +91,10 @@ class TMSoptimize():
         Wether to open the results in gmsh. Default: False
     solver_options (optional): str
         Options for the FEM solver. Default: CG+AMG
+    method (optional): 'direct' or 'ADM'
+        Method to be used. Either 'direct' for running full TMS optimizations or
+        'ADM' for using the Auxiliary Dipole Method. 'ADM' is only compatible with ".ccd"
+        coil format
     '''
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
@@ -127,6 +132,7 @@ class TMSoptimize():
 
         self.open_in_gmsh = True
         self.solver_options = ''
+        self.method = 'direct'
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
@@ -287,6 +293,10 @@ class TMSoptimize():
         self.solver_options = try_to_read_matlab_field(
             mat, 'solver_options', str, self.solver_options
         )
+        self.method = try_to_read_matlab_field(
+            mat, 'method', str, self.method
+        )
+
         return self
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
@@ -332,8 +342,7 @@ class TMSoptimize():
             resolution_angle=self.angle_resolution,
             angle_limits=[-self.search_angle/2, self.search_angle/2]
         )
-        cond = SimuList.cond2elmdata(self)
-        didt_list = [self.didt for i in pos_matrices]
+        cond_field = SimuList.cond2elmdata(self)
 
         # Define target region
         target_region = optimize_tms.define_target_region(
@@ -378,35 +387,12 @@ class TMSoptimize():
             mesh_io.open_in_gmsh(fn_target, True)
 
         # Run simulations
-        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
-        if os.path.isfile(fn_hdf5):
-            os.remove(fn_hdf5)
-        dataset = 'tms_optimization/E_norm'
-        volumes = self.mesh.elements_volumes_and_areas()[target_region]
-        # Define postporcessing to calculate average field norm
-        def postprocessing(E, target_region, volumes):
-            return np.average(
-                np.linalg.norm(E[target_region - 1], axis=1),
-                weights=volumes
-            )
-        postpro = functools.partial(
-            postprocessing,
-            target_region=target_region,
-            volumes=volumes
-        )
-        fem.tms_many_simulations(
-            self.mesh, cond,
-            self.fnamecoil,
-            pos_matrices, didt_list,
-            fn_hdf5, dataset,
-            post_pro=postpro,
-            solver_options=self.solver_options,
-            n_workers=cpus
-        )
-        # Read the field norms
-        with h5py.File(fn_hdf5, 'a') as f:
-            normE = f[dataset][:]
-        os.remove(fn_hdf5)
+        if self.method.lower() == 'direct':
+            normE = self._direct_optimize(cond_field, target_region, pos_matrices, cpus)
+        elif self.method.lower() == 'adm':
+            normE = self._ADM_optimize(cond_field, target_region)
+        else:
+            raise ValueError("method should be 'direct' or 'ADM'")
         # Update the .geo file with the normE value
         optimize_tms.plot_matsimnibs_list(
             pos_matrices,
@@ -420,10 +406,11 @@ class TMSoptimize():
 
         # Run one extra simulation with the best position
         logger.info('Re-running best position')
+        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
         fn_out = fn_hdf5[:-5] + '.msh'
         fn_geo = fn_hdf5[:-5] + '_coil_pos.geo'
         fem.tms_coil(
-            self.mesh, cond, self.fnamecoil, 'eEjJ',
+            self.mesh, cond_field, self.fnamecoil, 'eEjJ',
             [pos_matrices[np.argmax(normE)]],
             [self.didt],
             [fn_out],
@@ -445,7 +432,6 @@ class TMSoptimize():
         v.write_opt(fn_out)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
-        # Another output with coil positions, possibly also transformed
 
     def _name_hdf5(self):
         try:
@@ -463,6 +449,95 @@ class TMSoptimize():
         name = '{0}TMS_optimize{1}.hdf5'.format(subid, coil_name)
         return name
 
+    def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus):
+        didt_list = [self.didt for i in pos_matrices]
+        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
+        if os.path.isfile(fn_hdf5):
+            os.remove(fn_hdf5)
+        dataset = 'tms_optimization/E_norm'
+        volumes = self.mesh.elements_volumes_and_areas()[target_region]
+        # Define postporcessing to calculate average field norm
+        def postprocessing(E, target_region, volumes):
+            return np.average(
+                np.linalg.norm(E[target_region - 1], axis=1),
+                weights=volumes
+            )
+        postpro = functools.partial(
+            postprocessing,
+            target_region=target_region,
+            volumes=volumes
+        )
+        fem.tms_many_simulations(
+            self.mesh, cond_field,
+            self.fnamecoil,
+            pos_matrices, didt_list,
+            fn_hdf5, dataset,
+            post_pro=postpro,
+            solver_options=self.solver_options,
+            n_workers=cpus
+        )
+        # Read the field norms
+        with h5py.File(fn_hdf5, 'a') as f:
+            normE = f[dataset][:]
+        os.remove(fn_hdf5)
+        return normE
+
+    def _ADM_optimize(self, cond_field, target_region):
+        th = self.mesh.elm.elm_type == 4
+        if not self.fnamecoil.endswith('.ccd'):
+            raise ValueError('ADM optimization is only possible with ".ccd" coil files')
+        if not np.all(th[target_region - 1]):
+            raise ValueError('Target region must contain only tetrahedra')
+        ccd_file = np.loadtxt(self.fnamecoil, skiprows=2)
+        dipoles, moments = ccd_file[:, 0:3], ccd_file[:, 3:]
+        # Run dipole simulations
+        S = fem.FEMSystem.electric_dipole(
+            self.mesh, cond_field,
+            solver_options=self.solver_options
+        )
+
+        vols = self.mesh.elements_volumes_and_areas()
+        def calc_dipole_J(dipole_dir):
+            Jp = mesh_io.ElementData(np.zeros((self.mesh.elm.nr, 3), dtype=float))
+            Jp[target_region] = dipole_dir
+            b = S.assemble_electric_dipole_rhs(Jp)
+            v = mesh_io.NodeData(S.solve(b), mesh=self.mesh)
+            m = fem.calc_fields(v, 'J', cond=cond_field)
+            J = m.field['J'][:] + Jp[:]
+            J /= np.sum(vols[target_region] * 1e-9)
+            return J
+
+        J_x = calc_dipole_J([1, 0, 0])
+        J_y = calc_dipole_J([0, 1, 0])
+        J_z = calc_dipole_J([0, 0, 1])
+        self.mesh.add_element_field(J_x, 'Jx')
+        self.mesh.add_element_field(J_y, 'Jy')
+        self.mesh.add_element_field(J_z, 'Jz')
+        self.mesh.write('/home/guilherme/simnibs2.1_examples/sphere/J.msh')
+
+        coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
+            self.mesh, self.centre,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
+        )
+
+        logger.info('Running ADM')
+        baricenters = self.mesh.elements_baricenters()
+        # Notice that there is an uknown scale factor
+        # as we need to know the pulse angular frequency
+        # \Omega and amplitude A
+        normE = ADMlib.ADMmag(
+            baricenters[th].T * 1e-3,
+            J_x[th].T, J_y[th].T, J_z[th].T,
+            dipoles.T * 1e-3, moments.T,
+            coil_matrices, rotations
+        )/(4 * np.pi)
+        breakpoint()
+        return normE.T.reshape(-1)
+
     def __str__(self):
         string = 'Subject Folder: %s\n' % self.subpath
         string += 'Mesh file name: %s\n' % self.fnamehead
@@ -474,7 +549,8 @@ class TMSoptimize():
         string += 'Search radius: %s\n' % self.search_radius
         string += 'Spatial resolution: %s\n' % self.spatial_resolution
         string += 'Search angle: %s\n' % self.search_angle
-        string += 'Angle resolution: %s' % self.angle_resolution
+        string += 'Angle resolution: %s\n' % self.angle_resolution
+        string += 'method: %s' % self.method
         return string
 
 
