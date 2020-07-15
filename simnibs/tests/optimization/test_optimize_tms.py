@@ -133,3 +133,4 @@ def test_define_target_region(sphere3_msh):
     assert np.all(dist[elm - 1] < r)
     assert np.all(sphere3_msh.elm.tag1[elm - 1] == 3)
     assert np.all(sphere3_msh.elm.elm_type[elm - 1] == 4)
+

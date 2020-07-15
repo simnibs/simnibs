@@ -1,5 +1,6 @@
 #!/usr/local/bin/python
 import os
+import logging
 import numpy as np
 import fmm3dpy as fmm
 import time
@@ -37,13 +38,12 @@ def recipcode(rv,jv,rs,ks,A):
 		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
 
 	start = time.time()
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jv,robs,prec);
 	end = time.time()
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	kp=ks;
 	Etotal=np.zeros(npos);
-	print(Hprimary)
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -82,10 +82,10 @@ def ADM(rv,jv,rs,ks,A,coildir):
 		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
 
 	start = time.time()
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jv,robs,prec);
 	end = time.time()
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	kp=kaux[:,:,0];
 	
 	Etotal=np.zeros([Nj,npos]);
@@ -124,30 +124,30 @@ def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
 	Etotal=np.zeros([npos,3]);
 	kp=ks;
 	start = time.time()
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvx,robs,prec);
 	end = time.time()	
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
 		kp=np.matmul(A[0:3,0:3,i],ks);
 		Etotal[i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	start = time.time()
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvy,robs,prec);
 	end = time.time()	
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
 		kp=np.matmul(A[0:3,0:3,i],ks);
 		Etotal[i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	start = time.time()
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvz,robs,prec);
 	end = time.time()	
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -188,10 +188,10 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 
 	start = time.time()
 	Etotal=np.zeros([Nj,npos,3]);
-	print("Computing H-primary");
+	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvx,robs,prec);
 	end = time.time()
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	kp=kaux[:,:,0];
 	for i in range(0,npos):
 		st=i*ncoil;
@@ -201,7 +201,7 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 			Etotal[j,i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	Hprimary=computeHprimary(rv,jvy,robs,prec);
 	end = time.time()
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -210,7 +210,7 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 			Etotal[j,i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	Hprimary=computeHprimary(rv,jvz,robs,prec);
 	end = time.time()
-	print("H-primary time: ",end-start);	
+	logging.debug("H-primary time: ",end-start);	
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -232,20 +232,18 @@ def computeHprimary(rs,js,robs,prec):
 	Hprimary=np.zeros([3,robs.shape[1]]);
 	muover4pi=-1e-7;
 	js1=js[0,:];
-	print(rs)
-	print(robs)
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	print("Run 1", out.gradtarg)
+	logging.debug("Run 1")
 	Hprimary[1,:]=-out.gradtarg[2,:];
 	Hprimary[2,:]=out.gradtarg[1,:];
 	js1=js[1,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	print("Run 2", out.gradtarg)
+	logging.debug("Run 2")
 	Hprimary[0,:]=out.gradtarg[2,:];
 	Hprimary[2,:]=Hprimary[2,:]-out.gradtarg[0,:];
 	js1=js[2,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	print("Run 3", out.gradtarg)
+	logging.debug("Run 3")
 	Hprimary[0,:]=Hprimary[0,:]-out.gradtarg[1,:];
 	Hprimary[1,:]=Hprimary[1,:]+out.gradtarg[0,:];
 	Hprimary *= muover4pi
@@ -262,6 +260,7 @@ def resamplecoil(rs,ks,N,Nj,coildir):
 	ks2=np.zeros([3,ks.shape[1],Nj]);
 	#x=y cross z = y[1] x -y[0] y
 	for i in range(0,Nj):
+		rs2[2,:,i]=rs[2,:];
 		rs2[2,:,i]=rs[2,:];
 		rs2[0,:,i]= rs[0,:]*coildir[1,i]+rs[1,:]*coildir[0,i];
 		rs2[1,:,i]=-rs[0,:]*coildir[0,i]+rs[1,:]*coildir[1,i];
@@ -283,7 +282,7 @@ def resamplecoil(rs,ks,N,Nj,coildir):
 	Zp=Zp+Zd;
 
 	#get gauss quadrature nodes for interpolation from txt file upto N=50
-	interpnodes = np.loadtxt(os.path.join(os.dirname(__file__), 'gauss50.txt'))
+	interpnodes = np.loadtxt(os.path.join(os.path.dirname(__file__), 'gauss50.txt'))
 	#translate quadrature rules to coil box
 	XX=0.5*(interpnodes[int(N[0]*(N[0]-1)/2):int(N[0]*(N[0]+1)/2)]+1.0)*(Xp-Xm)+Xm;
 	YY=0.5*(interpnodes[int(N[1]*(N[1]-1)/2):int(N[1]*(N[1]+1)/2)]+1.0)*(Yp-Ym)+Ym;
@@ -319,39 +318,6 @@ def lagrange(x,pointx):
 			if i != j:
 				L[i,:]=np.multiply(L[i,:],(x-pointx[j])/(pointx[i]-pointx[j]));
 	return L;
-
-def calculate_Hprim(source_positions, source_currents, query_positions):
-    H = np.zeros_like(query_positions)
-    for i in range(len(query_positions)):
-        r = query_positions[i] - source_positions
-        dist = np.linalg.norm(r, axis=1)
-        H[i] = 1e-7 * np.sum(np.cross(source_currents, r)/dist[:, None]**3, axis=0)
-
-    return H
-
-def test_computeHprimary():
-    np.random.seed(1)
-    current_elm_positions = np.random.rand(100, 3)
-    currents = np.random.rand(len(current_elm_positions), 3)
-    observation_pos = np.random.rand(10, 3)
-
-    fmm_Hprimary = computeHprimary(
-        current_elm_positions.T,
-        currents.T,
-        observation_pos.T,
-        1e-5
-    ).T
-
-    Hprim = calculate_Hprim(
-        current_elm_positions,
-        currents,
-        observation_pos
-    )
-
-    print(fmm_Hprimary)
-    print(Hprim)
-    assert np.allclose(fmm_Hprimary, Hprim)
-
 
 if __name__ == '__main__':
     test_computeHprimary()
