@@ -204,6 +204,7 @@ class TMSoptimize():
         mat['pathfem'] = remove_None(self.pathfem)
         mat['fname_tensor'] = remove_None(self.fname_tensor)
         mat['tissues'] = remove_None(self.tissues)
+        mat['fnamecoil'] = remove_None(self.fnamecoil)
 
         mat['target'] = remove_None(self.target)
         mat['target_size'] = remove_None(self.target_size)
