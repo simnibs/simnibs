@@ -12,7 +12,7 @@ Windows
 
 1. Download and install the `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ **Python 3** distribution.
 
-2. Download the `SimNIBS environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_windows.yml>`_
+2. Download the `SimNIBS environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_win.yml>`_
 
 3. Open  *Anaconda Prompt*, which can be found in the *Start Menu*.
 
@@ -20,7 +20,7 @@ Windows
 
   .. code-block:: bash
   
-      conda env create -f "%USERPROFILE%\Download\environment_windows.yml"
+      conda env create -f "%USERPROFILE%\Download\environment_win.yml"
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 

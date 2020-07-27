@@ -47,6 +47,8 @@ Current Contributors
 * Ole Nummsen
    * First version of the TMS optimization (3.1)
 
+* Luis Gomez
+   * Auxiliary Dipole Method (ADM) TMS optimization (3.2)
 
 Former Contributors
 ---------------------
@@ -81,6 +83,8 @@ and FEM calculations into one coherent pipeline:
 * FEM code introduced in version 3.0 relies on `PETSc <https://www.mcs.anl.gov/petsc/>`_ and `Hypre
   <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software>`_.
 * Thanks for **Konstantin Weise** for giving us access to an early version of his software, `pygpc <https://github.com/konstantinweise/pygpc>`_.
+
+* Thanks for **Luis Gomez** for providing a python version of his `ADM TMS optimization package <https://github.com/luisgo/Auxiliary_dipole_method>`_.
 
 Institutions
 ---------------

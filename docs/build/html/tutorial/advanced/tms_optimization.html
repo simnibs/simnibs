@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="TDCS Distributed Target Optimization" href="tdcs_distributed_opt.html" />
+    <link rel="next" title="TDCS Network Optimization" href="tdcs_distributed_opt.html" />
     <link rel="prev" title="Group Analysis" href="group_analysis.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -38,7 +38,7 @@
           <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
-          <a href="tdcs_distributed_opt.html" title="Next document">TDCS Distributed Target Optimization</a>
+          <a href="tdcs_distributed_opt.html" title="Next document">TDCS Network Optimization</a>
           &rarr;
         </li>
     </ul>
@@ -192,10 +192,19 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 </div>
 </div>
+<div class="section" id="auxiliary-dipole-method-adm">
+<h2>Auxiliary Dipole Method (ADM)<a class="headerlink" href="#auxiliary-dipole-method-adm" title="Permalink to this headline">¶</a></h2>
+<p>To use the Auxiliary Dipole Method (ADM), simply use a <code class="file docutils literal notranslate"><span class="pre">.ccd</span></code> coil file and set the <code class="code docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">'ADM'</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;ADM&#39;</span>
+</pre></div>
+</div>
+<p></p>
+</div>
 <div class="section" id="acknowledgements">
 <h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
 <p>We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
-functionality</p>
+functionality, and Luis Gomez for contributing the code for the</p>
 </div>
 <div class="section" id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
@@ -204,6 +213,7 @@ functionality</p>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1101/595603">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603.</a></p>
+<p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez, L. J., Dannhauer, M., &amp; Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv</a></p>
 </div>
 </div>
 
@@ -218,7 +228,7 @@ functionality</p>
           <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
-          <a href="tdcs_distributed_opt.html" title="Next document">TDCS Distributed Target Optimization</a>
+          <a href="tdcs_distributed_opt.html" title="Next document">TDCS Network Optimization</a>
           &rarr;
         </li>
     </ul>
@@ -273,7 +283,7 @@ functionality</p>
   <li><a href="../tutorial.html">Tutorial</a><ul>
   <li><a href="advanced.html">Advanced Features</a><ul>
       <li>Previous: <a href="group_analysis.html" title="previous chapter">Group Analysis</a></li>
-      <li>Next: <a href="tdcs_distributed_opt.html" title="next chapter">TDCS Distributed Target Optimization</a></li>
+      <li>Next: <a href="tdcs_distributed_opt.html" title="next chapter">TDCS Network Optimization</a></li>
   </ul></li>
   </ul></li>
   </ul></li>

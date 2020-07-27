@@ -202,6 +202,12 @@
 <li><p><strong>Default</strong>: Use the CG solver with the AMG preconditioner</p></li>
 </ul>
 </li>
+<li><p><strong>method</strong>: <em>‘direct’ or ‘ADM’, optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: Method to be used for the solution. Can be either a <code class="code docutils literal notranslate"><span class="pre">direct</span></code> method, which will perform electric field simulations at each coil position or the Auxiliary Dipole Method (ADM, <a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez 2020</a>), which uses reciprocity and the fast multipole method (FMM) to massively accelerate the optimization. The ADM method is only compatible with <code class="file docutils literal notranslate"><span class="pre">.ccd</span></code> coil files</p></li>
+<li><p><strong>Default</strong>: <code class="code docutils literal notranslate"><span class="pre">direct</span></code></p></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
