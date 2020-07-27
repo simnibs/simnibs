@@ -224,6 +224,7 @@ class TMSoptimize():
         mat['angle_resolution'] = remove_None(self.angle_resolution)
         mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
         mat['solver_options'] = remove_None(self.solver_options)
+        mat['method'] = remove_None(self.method)
 
         return mat
 

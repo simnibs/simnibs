@@ -59,6 +59,7 @@ switch S.type
        S.angle_resolution = 30; % Resolution to use for angles (in degrees)
        S.open_in_gmsh = true; % Wether to open simulation result in Gmsh
        S.solver_options = ''; % FEM solver options
+       S.method = 'direct'; % Solution method, either 'direct' or 'ADM'. The former is only valid with .ccd coil files
 
     case 'TDCSoptimize'
         S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
