@@ -1262,7 +1262,9 @@ def _set_up_global_solver(S):
 def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
+    start = time.time()
     dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt, fn_geo=fn_geo)
+    logger.info(f'{time.time() - start:.2f}s to calculate dA/dt')
     b = tms_global_solver.assemble_tms_rhs(dAdt)
     v = tms_global_solver.solve(b)
     v = mesh_io.NodeData(v, name='v', mesh=mesh)

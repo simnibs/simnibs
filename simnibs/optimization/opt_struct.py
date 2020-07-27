@@ -29,6 +29,7 @@ import time
 import glob
 import functools
 import logging
+import gc
 
 import numpy as np
 import scipy.spatial
@@ -517,7 +518,8 @@ class TMSoptimize():
         J_x = calc_dipole_J([1, 0, 0]) * vols[:, None]
         J_y = calc_dipole_J([0, 1, 0]) * vols[:, None]
         J_z = calc_dipole_J([0, 0, 1]) * vols[:, None]
-
+        del S
+        gc.collect()
         coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
             self.mesh, self.centre,
             handle_direction_ref=self.pos_ydir,

@@ -1343,7 +1343,7 @@ class POSITION(object):
                 msh.elements_baricenters()[msh.elm.tag1==1002] - self.matsimnibs[:3, 3],
                 axis=1)
             )
-            logger.info(f'coil-cortex distance: {cc_distance:.2f}')
+            logger.info(f'coil-cortex distance: {cc_distance:.2f}mm')
         return self.matsimnibs
 
     def __eq__(self, other):
