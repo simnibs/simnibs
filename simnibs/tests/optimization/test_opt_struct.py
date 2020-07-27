@@ -1,7 +1,8 @@
 import os
 import csv
-from mock import patch, call
+from mock import patch, call, MagicMock
 import shutil
+import tempfile
 
 import pytest
 import numpy as np
@@ -12,7 +13,8 @@ import scipy.io
 import simnibs.msh.mesh_io as mesh_io
 from simnibs.utils import file_finder
 from simnibs.optimization import opt_struct
-import simnibs.optimization.optimization_methods as methods
+from simnibs.simulation import sim_struct
+from simnibs.simulation.analytical_solutions import sphere as analytical_solutions
 
 
 @pytest.fixture()
@@ -28,6 +30,11 @@ def sphere_vol():
         __file__)), '..', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([4, 5])
 
+@pytest.fixture()
+def sphere_msh():
+    fn = os.path.join(os.path.dirname(os.path.realpath(
+        __file__)), '..', 'testing_files', 'sphere3.msh')
+    return mesh_io.read_msh(fn)
 
 @pytest.fixture
 def sphere_elec():
@@ -51,7 +58,6 @@ def leadfield_vol(sphere_vol):
 def leadfield_elec(sphere_vol):
     np.random.seed(0)
     return np.random.random((1, sphere_vol.elm.nr, 3))
-
 
 
 @pytest.fixture()
@@ -95,6 +101,186 @@ def fn_elec(sphere_elec, sphere_vol, leadfield_elec):
     yield fn_hdf5
     os.remove(fn_hdf5)
 
+def simple_coil():
+    dipole_pos = np.array([
+        [10, 0, 0],
+        [-10, 0, 0],
+        [0, 10, 0],
+        [0, -10, 0],
+        [0, 0, 0],
+        [0, 0, 1]],
+        dtype=float
+    )
+    dipole_vec = np.repeat([[0., 0., 1.]], len(dipole_pos), axis=0)
+    return dipole_pos, dipole_vec
+
+@pytest.fixture()
+def simple_coil_ccd():
+    dipole_pos, dipole_vec = simple_coil()
+    with tempfile.NamedTemporaryFile(suffix='.ccd', delete=False, mode='w') as f:
+        fn_ccd = f.name
+        f.write('# simple coil number of elements\n')
+        f.write(f'{len(dipole_pos)}\n')
+        f.write('# centers and weighted directions of the elements (magnetic dipoles)\n')
+        for l in np.hstack([dipole_pos*1e-3, dipole_vec]):
+            f.write(' '.join(str(x) for x in l))
+            f.write('\n')
+    yield fn_ccd
+    os.remove(fn_ccd)
+
+def rdm(a, b):
+    return np.linalg.norm(
+        a/np.linalg.norm(a) - b/np.linalg.norm(b)
+    )
+
+class TestTMSOpt:
+    def test_get_coil_positions(self, sphere_msh):
+        tms_opt = opt_struct.TMSoptimize()
+        tms_opt.mesh = sphere_msh
+        tms_opt.centre = np.array([95, 0, 0])
+        tms_opt.distance = 5.
+        tms_opt.pos_ydir = None
+        tms_opt.search_radius = 10
+        tms_opt.angle_resolution = 30
+        positions = np.array(tms_opt._get_coil_positions())
+        coil_centers = positions[:, :3, 3]
+        y_dirs = positions[:, :3, 1]
+        assert np.allclose(
+            np.linalg.norm(coil_centers, axis=1),
+            100, rtol=0.1)
+        assert np.allclose(
+            coil_centers[0::12], coil_centers[11::12]
+        )
+        for i in range(11):
+            assert np.allclose(
+                np.rad2deg(np.arccos(np.sum(y_dirs[i::12]*y_dirs[i+1::12], axis=1))),
+                30)
+
+    def test_get_target_region(self, sphere_msh):
+        tms_opt = opt_struct.TMSoptimize()
+        tms_opt.mesh = sphere_msh
+        tms_opt.target = np.array([85, 0, 0])
+        tms_opt.target_size = 10
+        tms_opt.tissues = [3]
+        target_region = tms_opt._get_target_region()
+        bar = sphere_msh.elements_baricenters()
+        assert np.all(
+            np.linalg.norm(tms_opt.target - bar[target_region], axis=1) <= 10
+        )
+        assert np.all(sphere_msh.elm.tag1[target_region - 1] == 3)
+
+    def test_direct(self, sphere_msh, simple_coil_ccd):
+        tms_opt = opt_struct.TMSoptimize()
+        tms_opt.fnamecoil = simple_coil_ccd
+        tms_opt.mesh = sphere_msh
+        tms_opt.didt = 1e6
+        fn_hdf5 = tempfile.mktemp(".hdf5")
+        tms_opt._name_hdf5 = MagicMock(return_value=fn_hdf5)
+
+        coil_centers = [
+            [150., 0., 0.],
+            [-150., 0., 0.],
+            [0., 150., 0.],
+            [0., -150., 0.],
+            [0., 0, 150.],
+            [0., 0, -150.],
+        ]
+        pos_matrices = []
+        for cc in coil_centers:
+            z_dir = -np.array(cc)/np.linalg.norm(cc)
+            y_dir = np.array([0., 1., 0.])
+            if np.isclose(np.abs(z_dir.dot(y_dir)), 1):
+                y_dir = np.array([1., 0., 0.])
+            p = np.eye(4)
+            p[:3, 0] = np.cross(y_dir, z_dir)
+            p[:3, 1] = y_dir
+            p[:3, 2] = z_dir
+            p[:3, 3] = cc
+            pos_matrices.append(p)
+
+        target_pos, target_region = sphere_msh.find_closest_element(
+            [85, 0, 0],
+            elements_of_interest=sphere_msh.elm.tetrahedra,
+            return_index=True
+        )
+        cond_field = sim_struct.SimuList.cond2elmdata(tms_opt)
+
+        E_fem = tms_opt._direct_optimize(
+            cond_field,
+            np.atleast_1d(target_region),
+            pos_matrices, 1
+        )
+
+        dipole_pos, dipole_moment = simple_coil()
+        E_analytical = []
+        for p in pos_matrices:
+            dp = p[:3, :3].dot(dipole_pos.T).T + p[:3, 3]
+            dm = p[:3, :3].dot(dipole_moment.T).T
+            E = analytical_solutions.tms_E_field(
+                dp * 1e-3, dm, tms_opt.didt,
+                np.atleast_2d(target_pos) * 1e-3
+            )
+            E_analytical.append(np.linalg.norm(E))
+        assert np.allclose(E_analytical, E_fem, rtol=0.1)
+
+
+    @patch('simnibs.optimization.optimize_tms.get_opt_grid_ADM')
+    def test_reciprocal(self, get_opt_grid_mock, sphere_msh, simple_coil_ccd):
+        tms_opt = opt_struct.TMSoptimize()
+        tms_opt.fnamecoil = simple_coil_ccd
+        tms_opt.mesh = sphere_msh
+        tms_opt.didt = 1e6
+
+        coil_centers = [
+            [150., 0., 0.],
+            [-150., 0., 0.],
+            [0., 150., 0.],
+            [0., -150., 0.],
+            [0., 0, 150.],
+            [0., 0, -150.],
+        ]
+        center_matrices = []
+        for cc in coil_centers:
+            z_dir = -np.array(cc)/np.linalg.norm(cc)
+            y_dir = np.array([0., 1., 0.])
+            if np.isclose(np.abs(z_dir.dot(y_dir)), 1):
+                y_dir = np.array([1., 0., 0.])
+            p = np.eye(4)
+            p[:3, 0] = np.cross(y_dir, z_dir)
+            p[:3, 1] = y_dir
+            p[:3, 2] = z_dir
+            p[:3, 3] = cc
+            center_matrices.append(p)
+        coil_dir = []
+        for angle in np.linspace(-np.pi/2, np.pi/2, 7):
+            coil_dir.append([-np.sin(angle), np.cos(angle), 0])
+        coil_dir = np.array(coil_dir)
+
+        get_opt_grid_mock.return_value = (
+                np.array(center_matrices).transpose(1, 2, 0),
+                coil_dir.T
+        )
+
+        target_pos, target_region = sphere_msh.find_closest_element(
+            [85, 0, 0],
+            elements_of_interest=sphere_msh.elm.tetrahedra,
+            return_index=True
+        )
+        cond_field = sim_struct.SimuList.cond2elmdata(tms_opt)
+
+        E_recp, pos_matrices = tms_opt._ADM_optimize(cond_field, target_region)
+
+        dipole_pos, dipole_moment = simple_coil()
+        E_analytical = []
+        for p in pos_matrices:
+            dp = p[:3, :3].dot(dipole_pos.T).T + p[:3, 3]
+            dm = p[:3, :3].dot(dipole_moment.T).T
+            E = analytical_solutions.tms_E_field(
+                dp * 1e-3, dm, tms_opt.didt,
+                np.atleast_2d(target_pos) * 1e-3
+            )
+            E_analytical.append(np.linalg.norm(E))
+        assert np.allclose(E_analytical, E_recp, rtol=0.1)
 
 
 class TestFindIndexes:

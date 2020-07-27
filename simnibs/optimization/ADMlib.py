@@ -5,6 +5,8 @@ import numpy as np
 import fmm3dpy as fmm
 import time
 import numpy.linalg as la
+
+logger = logging.getLogger('simnibs')
 #*********************************************************************
 #  This library compute E-fields induced during TMS via reciprocity and auxiliary
 #  dipoles. The method is implemented for magnetic dipole sources.
@@ -127,7 +129,8 @@ def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
 	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvx,robs,prec);
 	end = time.time()	
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -137,17 +140,19 @@ def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
 	logging.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvy,robs,prec);
 	end = time.time()	
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
 		kp=np.matmul(A[0:3,0:3,i],ks);
 		Etotal[i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	start = time.time()
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvz,robs,prec);
 	end = time.time()	
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -188,10 +193,11 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 
 	start = time.time()
 	Etotal=np.zeros([Nj,npos,3]);
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvx,robs,prec);
 	end = time.time()
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	kp=kaux[:,:,0];
 	for i in range(0,npos):
 		st=i*ncoil;
@@ -201,7 +207,8 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 			Etotal[j,i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	Hprimary=computeHprimary(rv,jvy,robs,prec);
 	end = time.time()
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -210,7 +217,8 @@ def ADMmag(rv,jvx,jvy,jvz,rs,ks,A,coildir):
 			Etotal[j,i,1]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	Hprimary=computeHprimary(rv,jvz,robs,prec);
 	end = time.time()
-	logging.debug("H-primary time: ",end-start);	
+	logger.info(f"H-primary time: {end-start:.2f}s")
+	start = end
 	for i in range(0,npos):
 		st=i*ncoil;
 		en=(i+1)*ncoil;
@@ -233,17 +241,17 @@ def computeHprimary(rs,js,robs,prec):
 	muover4pi=-1e-7;
 	js1=js[0,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	logging.debug("Run 1")
+	logger.debug("Run 1")
 	Hprimary[1,:]=-out.gradtarg[2,:];
 	Hprimary[2,:]=out.gradtarg[1,:];
 	js1=js[1,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	logging.debug("Run 2")
+	logger.debug("Run 2")
 	Hprimary[0,:]=out.gradtarg[2,:];
 	Hprimary[2,:]=Hprimary[2,:]-out.gradtarg[0,:];
 	js1=js[2,:];
 	out=fmm.lfmm3d(eps=prec,sources=rs,targets=robs,charges=js1,pgt=2);
-	logging.debug("Run 3")
+	logger.debug("Run 3")
 	Hprimary[0,:]=Hprimary[0,:]-out.gradtarg[1,:];
 	Hprimary[1,:]=Hprimary[1,:]+out.gradtarg[0,:];
 	Hprimary *= muover4pi

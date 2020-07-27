@@ -334,23 +334,10 @@ class TMSoptimize():
                     dir_name,
                     'simnibs_simulation_{0}.mat'.format(self.time_str)))
         logger.info(str(self))
-        pos_matrices = optimize_tms.get_opt_grid(
-            self.mesh, self.centre,
-            handle_direction_ref=self.pos_ydir,
-            distance=self.distance, radius=self.search_radius,
-            resolution_pos=self.spatial_resolution,
-            resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
-        )
+        pos_matrices = self._get_coil_positions()
+        target_region = self._get_target_region()
         cond_field = SimuList.cond2elmdata(self)
 
-        # Define target region
-        target_region = optimize_tms.define_target_region(
-            self.mesh,
-            self.target,
-            self.target_size,
-            self.tissues
-        )
         if len(target_region) == 0:
             raise ValueError('Did not find any elements within the defined target region')
 
@@ -369,28 +356,28 @@ class TMSoptimize():
         v.View[0].CustomMax = 1
         v.View[0].CustomMin = 0
         m.elmdata = []
-        # Write out the grid
-        optimize_tms.plot_matsimnibs_list(
-            pos_matrices,
-            np.ones(len(pos_matrices)),
-            "Grid",
-            os.path.join(self.pathfem, 'coil_positions.geo')
-        )
-        v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
-        v.add_view(
-            CustomMax=1, CustomMin=1,
-            VectorType=4, CenterGlyphs=0,
-            Visible=1, ColormapNumber=0
-        )
-        v.write_opt(fn_target)
-        if self.open_in_gmsh:
-            mesh_io.open_in_gmsh(fn_target, True)
 
         # Run simulations
         if self.method.lower() == 'direct':
+            # Write out the grid
+            optimize_tms.plot_matsimnibs_list(
+                pos_matrices,
+                np.ones(len(pos_matrices)),
+                "Grid",
+                os.path.join(self.pathfem, 'coil_positions.geo')
+            )
+            v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
+            v.add_view(
+                CustomMax=1, CustomMin=1,
+                VectorType=4, CenterGlyphs=0,
+                Visible=1, ColormapNumber=0
+            )
+            v.write_opt(fn_target)
+            if self.open_in_gmsh:
+                mesh_io.open_in_gmsh(fn_target, True)
             normE = self._direct_optimize(cond_field, target_region, pos_matrices, cpus)
         elif self.method.lower() == 'adm':
-            normE = self._ADM_optimize(cond_field, target_region)
+            normE, pos_matrices = self._ADM_optimize(cond_field, target_region)
         else:
             raise ValueError("method should be 'direct' or 'ADM'")
         # Update the .geo file with the normE value
@@ -449,6 +436,24 @@ class TMSoptimize():
         name = '{0}TMS_optimize{1}.hdf5'.format(subid, coil_name)
         return name
 
+    def _get_coil_positions(self):
+        return optimize_tms.get_opt_grid(
+            self.mesh, self.centre,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
+        )
+
+    def _get_target_region(self):
+        return optimize_tms.define_target_region(
+            self.mesh,
+            self.target,
+            self.target_size,
+            self.tissues
+        )
+
     def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus):
         didt_list = [self.didt for i in pos_matrices]
         fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
@@ -457,6 +462,7 @@ class TMSoptimize():
         dataset = 'tms_optimization/E_norm'
         volumes = self.mesh.elements_volumes_and_areas()[target_region]
         # Define postporcessing to calculate average field norm
+
         def postprocessing(E, target_region, volumes):
             return np.average(
                 np.linalg.norm(E[target_region - 1], axis=1),
@@ -497,6 +503,7 @@ class TMSoptimize():
         )
 
         vols = self.mesh.elements_volumes_and_areas()
+
         def calc_dipole_J(dipole_dir):
             Jp = mesh_io.ElementData(np.zeros((self.mesh.elm.nr, 3), dtype=float))
             Jp[target_region] = dipole_dir
@@ -504,16 +511,12 @@ class TMSoptimize():
             v = mesh_io.NodeData(S.solve(b), mesh=self.mesh)
             m = fem.calc_fields(v, 'J', cond=cond_field)
             J = m.field['J'][:] + Jp[:]
-            J /= np.sum(vols[target_region] * 1e-9)
+            J /= np.sum(vols[target_region])
             return J
 
-        J_x = calc_dipole_J([1, 0, 0])
-        J_y = calc_dipole_J([0, 1, 0])
-        J_z = calc_dipole_J([0, 0, 1])
-        self.mesh.add_element_field(J_x, 'Jx')
-        self.mesh.add_element_field(J_y, 'Jy')
-        self.mesh.add_element_field(J_z, 'Jz')
-        self.mesh.write('/home/guilherme/simnibs2.1_examples/sphere/J.msh')
+        J_x = calc_dipole_J([1, 0, 0]) * vols[:, None]
+        J_y = calc_dipole_J([0, 1, 0]) * vols[:, None]
+        J_z = calc_dipole_J([0, 0, 1]) * vols[:, None]
 
         coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
             self.mesh, self.centre,
@@ -523,6 +526,8 @@ class TMSoptimize():
             resolution_angle=self.angle_resolution,
             angle_limits=[-self.search_angle/2, self.search_angle/2]
         )
+        # trasnform coil matrix to meters
+        coil_matrices[:3, 3, :] *= 1e-3
 
         logger.info('Running ADM')
         baricenters = self.mesh.elements_baricenters()
@@ -532,11 +537,20 @@ class TMSoptimize():
         normE = ADMlib.ADMmag(
             baricenters[th].T * 1e-3,
             J_x[th].T, J_y[th].T, J_z[th].T,
-            dipoles.T * 1e-3, moments.T,
+            dipoles.T, moments.T,  # .ccd file is already in SI units
             coil_matrices, rotations
-        )/(4 * np.pi)
-        breakpoint()
-        return normE.T.reshape(-1)
+        ) * self.didt
+
+        z = np.array([0., 0., 1.])
+        pos_matrices = []
+        coil_matrices[:3, 3, :] *= 1e3
+        for cm in coil_matrices.transpose(2, 0, 1):
+            for r in rotations.T:
+                R = np.eye(4)
+                R[:3, :3] = np.array([np.cross(r, z), r, z]).T
+                pos_matrices.append(cm.dot(R))
+
+        return normE.T.reshape(-1), pos_matrices
 
     def __str__(self):
         string = 'Subject Folder: %s\n' % self.subpath
@@ -552,7 +566,6 @@ class TMSoptimize():
         string += 'Angle resolution: %s\n' % self.angle_resolution
         string += 'method: %s' % self.method
         return string
-
 
 class TDCSoptimize():
     ''' Defines a tdcs optimization problem
