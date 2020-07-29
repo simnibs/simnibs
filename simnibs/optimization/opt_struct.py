@@ -737,7 +737,7 @@ class TDCSoptimize():
         if self.leadfield_hdf is not None and self._field_units is None:
             try:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
-                    self.field_units = f[self.leadfield_path].attrs['field']
+                    self.field_units = f[self.leadfield_path].attrs['units']
             except:
                 return 'Au'
 
