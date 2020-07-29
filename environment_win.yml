@@ -12,7 +12,7 @@ dependencies:
   - mock
   - freeglut
   - vs2015_runtime
-  - pip
+  - pip>19.3
   - packaging
   - requests
   - pip:

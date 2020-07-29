@@ -11,7 +11,7 @@ dependencies:
   - cython=0.29
   - mock
   - freeglut
-  - pip
+  - pip>19.3
   - packaging
   - requests
   - pip:

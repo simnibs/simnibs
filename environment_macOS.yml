@@ -10,7 +10,7 @@ dependencies:
   - pytest=4.4
   - cython=0.29
   - mock
-  - pip
+  - pip>19.3
   - packaging
   - requests
   - pip:
