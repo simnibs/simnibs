@@ -4,26 +4,15 @@ variables:
 trigger:
 - norm_opt
 
-# Build SimNIBS on a Centos 7 container
+# Build SimNIBS on a Centos 6 container
 jobs:
 - job: Build
   pool:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
 
-  container: centos:7 #simnibs/simnibs-testing:centos7
+  container: simnibs/simnibs-testing:centos7
   steps:
-   - bash: |
-        sudo yum update -y
-        sudo yum install -y \
-            mesa-libGL yum-utils fontconfig freetype freetype-devel \
-            fontconfig-devel libXrender libxkbcommon-x11 bzip2 gcc
-        curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-             -o ~/miniconda.sh && \
-        sudo /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-        rm -f ~/miniconda.sh
-    displayName: Install Requirements
-
   - bash: |
       conda update -y conda
       conda env create -f environment_linux.yml
