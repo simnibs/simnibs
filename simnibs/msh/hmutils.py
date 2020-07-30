@@ -1752,8 +1752,8 @@ def make_splits(mesh, testpoints, nsplits="auto"):
     
     """
     # split data along 3rd dimension and process individually
-    split_min = np.floor(np.max([mesh[:,2].min(), testpoints[:,2].min()]))
-    split_max = np.ceil( np.min([mesh[:,2].max(), testpoints[:,2].max()]))
+    split_min = np.floor(np.max([mesh[:,2].min(), testpoints[:,2].min()])).astype(int)
+    split_max = np.ceil( np.min([mesh[:,2].max(), testpoints[:,2].max()])).astype(int)
    
    
     if nsplits == "auto":
