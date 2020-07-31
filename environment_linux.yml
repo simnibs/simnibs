@@ -17,4 +17,4 @@ dependencies:
   - pip:
     - nibabel==2.3.*
     - pyqt5==5.12.*
-    - fmm3dpy==0.0.2
+    - fmm3dpy==0.0.3
