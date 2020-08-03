@@ -44,6 +44,11 @@ def parseArguments(argv):
     parser.add_argument("-ev", action="store_true",
                         help="If the NifTI contains a tensor, save only the maximum "
                         "eigenvector in brain tissue")
+    parser.add_argument('--type', default='elements', choices=['elements', 'nodes'],
+                        help=
+                        "Whether to store field in mesh elements or nodes. "
+                        "Default: elements"
+                       )
     parser.add_argument('--version', action='version', version=__version__)
     return parser.parse_args(argv)
 
@@ -70,10 +75,16 @@ def main():
         mesh_io.write_msh(mesh, args.fn_out)
     else:
         logger.info('Interpolating data in NifTI file to mesh')
-        ed = mesh_io.ElementData.from_data_grid(
-                mesh, vol, affine, 'from_volume')
-        mesh.nodedata = []
-        mesh.elmdata = [ed]
+        if args.type == 'elements':
+            ed = mesh_io.ElementData.from_data_grid(
+                    mesh, vol, affine, 'from_volume'
+            )
+            mesh.elmdata.append(ed)
+        if args.type == 'nodes':
+            nd = mesh_io.NodeData.from_data_grid(
+                    mesh, vol, affine, 'from_volume'
+            )
+            mesh.nodedata.append(nd)
         mesh_io.write_msh(mesh, args.fn_out)
 
 

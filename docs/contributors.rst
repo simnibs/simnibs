@@ -8,35 +8,38 @@ Current Contributors
 * Axel Thielscher
    * Project coordination
    * Debugging and maintenance of :ref:`mri2mesh_docs`, :ref:`headreco_docs` and meshfix.
-   * Implementation of :ref:`dwi2cond_docs` (2.1)
-   * Creation of the new example dataset *ernie* (2.1)
+   * :ref:`dwi2cond_docs` (2.1)
+   * Example dataset *ernie* (2.1)
 
 * Guilherme B. Saturnino
-   * Implementation of tDCS optimiaztion (3.1)
+   * TES optimiaztion algorithms (3.1, 3.2)
    * Installation procedure (3.0)
    * Documentation (3.0)
-   * Implementation of the fast FEM code (3.0)
-   * Implementation (together with K. Weise) of the UQ functionality (3.0)
-   * Main contributor to the new python core (2.1)
-   * Main contributor to the GUI and the electrode modeling for tDCS (2.0)
+   * Fast FEM code (3.0)
+   * (together with K. Weise) UQ functionality (3.0)
+   * New python core (2.1)
+   * GUI (2.0)
+   * Electrode modeling for TES (2.0)
    * Bug-fixing
 
 * Jesper D. Nielsen
-   * Main author of the :ref:`headreco_docs` pipeline (2.1)
+   * Main author of :ref:`headreco_docs` pipeline (2.1)
 
 * Kristoffer H. Madsen
-   * Implementation of prototype version for MNI transformation (2.1)
-   * Implementation of fast I/O for gmsh-meshes in python (2.0)
-   * Integration of pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
+   * MNI transformation (2.1)
+   * Fast I/O for gmsh-meshes in python (2.0)
+   * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
 
 * Oula Puonti
-   * Help with :ref:`headreco_docs` (2.1)
-   * Creation of the new MNI head mesh (2.1)
+   * :ref:`headreco_docs` (2.1)
+   * New MNI head mesh (2.1)
 
+* Hassan Yazdanian
+   * Magnetic Field Calculations (3.2)
 
 * Konstantin Weise
    * First version of the TMS optimization (3.1)
-   * Help with the UQ functionality (3.0)
+   * UQ functionality (3.0)
 
 * Thomas Knoesche
    * Help with the UQ functionality (3.0)
@@ -44,6 +47,8 @@ Current Contributors
 * Ole Nummsen
    * First version of the TMS optimization (3.1)
 
+* Luis Gomez
+   * Auxiliary Dipole Method (ADM) TMS optimization (3.2)
 
 Former Contributors
 ---------------------
@@ -79,6 +84,8 @@ and FEM calculations into one coherent pipeline:
   <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software>`_.
 * Thanks for **Konstantin Weise** for giving us access to an early version of his software, `pygpc <https://github.com/konstantinweise/pygpc>`_.
 
+* Thanks for **Luis Gomez** for providing a python version of his `ADM TMS optimization package <https://github.com/luisgo/Auxiliary_dipole_method>`_.
+
 Institutions
 ---------------
 
@@ -91,7 +98,7 @@ Funding Sources
 
 We would like to thank our funding sources
 
-.. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_
+.. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_ |nimh|_
 
 
 .. |lundbeck| image:: ./images/lundbeckfonden.png
@@ -114,5 +121,8 @@ We would like to thank our funding sources
    :height: 50
 .. _if: https://innovationsfonden.dk/en
 
+.. |nimh| image:: ./images/NIH-NIMH-logo-new.png
+   :height: 50
+.. _nimh: https://www.nimh.nih.gov/index.shtml
 
 

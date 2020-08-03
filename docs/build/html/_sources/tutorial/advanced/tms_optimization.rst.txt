@@ -59,11 +59,25 @@ MATLAB
    :language: matlab
 
 
+Auxiliary Dipole Method (ADM)
+---------------------------------------
+
+To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`
+
+.. code-block:: python
+
+  tms_opt.fnamecoil = 'Magstim_70mm_Fig8.ccd'
+  tms_opt.method = 'ADM'
+
+\
+
+
+
 Acknowledgements
 ------------------
 
 We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
-functionality
+functionality, and Luis Gomez for contributing the code for the
 
 Further Reading
 ------------------
@@ -73,6 +87,8 @@ References
 ------------
 
 `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603. <https://doi.org/10.1101/595603>`_
+
+`Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
 
 
 

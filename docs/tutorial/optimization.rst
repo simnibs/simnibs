@@ -9,6 +9,7 @@ There are two steps for performing the optimizations.
 1. Create a *leadfield*. 
 2. Set-up an optimization based on the *leadfield*.
 
+.. _tutorial_leadfield:
 
 Leadfield Calculations
 -----------------------
@@ -117,6 +118,7 @@ To maximize intensity at the target, disregarding field focality, simply use a l
 
 \
 
+
 Using MNI Coordinates 
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -157,7 +159,26 @@ To optimize multiple distant targets simultaneously, just use multiple **target*
 
 \
 
-By using multiple targets, SimNIBS will try to hit each target with its intensity, whereas setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the many positions.
+By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the many positions.
+
+
+Electric Field Strength
+~~~~~~~~~~~~~~~~~~~~~~~
+For using electric field strength (norm) rather than an specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a `novel optimization method <https://doi.org/10.1101/2020.05.27.118422>`_.
+ 
+* *Python*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_strength.py
+     :language: python
+
+\
+
+* *MATLAB*
+
+  .. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_strength.m
+     :language: matlab
+
+\
 
 
 Avoidance Regions
@@ -188,3 +209,4 @@ References
 `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
 
 
+`Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv. <https://doi.org/10.1101/2020.05.27.118422>`_

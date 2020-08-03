@@ -238,7 +238,7 @@ function m = read_nodes(m, fid)
         error(['number of nodes is not a number']);
     end
     
-    pts = textscan(fid, '%d %f %f %f\n');
+    pts = textscan(fid, '%d %f %f %f');
     node_numbers=pts{1};
     m.nodes = [pts{2} pts{3} pts{4}];
 
@@ -306,7 +306,7 @@ function m = read_nodes4(m, fid)
         if l(3)
             error('Cant read parametric nodes')
         end
-        pts = textscan(fid, '%d %f %f %f\n', l(4));
+        pts = textscan(fid, '%d %f %f %f', l(4));
         node_numbers = [node_numbers; pts{1}];
         m.nodes = [m.nodes; [pts{2} pts{3} pts{4}]];
     end
@@ -471,7 +471,7 @@ function [m, continous_elm_numbers] = read_elements(m, fid)
         error('number of elements is not a number');
     end
     
-    c = textscan(fid,'%d %d %d %d %*d %d %d %d %d\n');
+    c = textscan(fid,'%d %d %d %d %*d %d %d %d %d');
     element_numbers=c{1};
     number_of_tags=c{3};
     
@@ -534,18 +534,18 @@ function [m, continous_elm_numbers] = read_elements4(m, fid)
     for b = 1:n_blocks
         l = sscanf(fgetl(fid),'%d %d %d %d');
         if l(3) == 2
-            c = textscan(fid,'%d %d %d %d\n', l(4));
+            c = textscan(fid,'%d %d %d %d', l(4));
             tr_numbers=[tr_numbers; c{1}];
             m.triangles = [m.triangles; [c{2} c{3} c{4}]];
             m.triangle_regions = [m.triangle_regions; l(1)*ones(l(4),1, 'int32')];
         elseif l(3) == 4
-            c = textscan(fid,'%d %d %d %d %d\n', l(4));
+            c = textscan(fid,'%d %d %d %d %d', l(4));
             th_numbers=[th_numbers; c{1}];
             m.tetrahedra = [m.tetrahedra; [c{2} c{3} c{4} c{5}]];
             m.tetrahedron_regions = [m.tetrahedron_regions; l(1)*ones(l(4),1, 'int32')];
         else
             warning('only reading tetrahedra and triangles, not reading element_data')
-            c = textscan(fid,'%d %*d %d\n', l(4));
+            c = textscan(fid,'%d %*d %d', l(4));
             continue
         end
     end
@@ -745,7 +745,7 @@ function [data, name, node_element_numbers]= read_data(fid, data_type)
 
     % read data
     t_str = repmat(' %f', 1, comp);
-    c = textscan(fid, ['%d' t_str '\n']);
+    c = textscan(fid, ['%d' t_str '']);
     if size(c{1},1) ~= int_tags(3)
         error(['number of data lines read does not correspond to ' num2str(int_tags(3))]);
     end

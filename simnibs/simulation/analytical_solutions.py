@@ -387,7 +387,7 @@ def potential_dipole_3layers(radii, cond_brain_scalp, cond_skull, dipole_pos,
     f2 = float(radii[1] * 1e-3) / R
     b = np.linalg.norm(dipole_pos) * 1e-3 / R
     
-    if not np.allclose(np.linalg.norm(surface_points, axis=1), R * 1e3):
+    if not np.allclose(np.linalg.norm(surface_points, axis=1), R * 1e3, rtol=1e-2):
         warnings.warn('Some points are not in the surface!!')
 
    

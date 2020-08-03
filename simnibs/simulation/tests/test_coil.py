@@ -10,7 +10,8 @@ from .. import coil_numpy as coil
 
 @pytest.fixture(scope='module')
 def sphere3_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(
+        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 
@@ -66,3 +67,37 @@ class TestCalcdAdt:
         assert np.allclose(dadt.value[:, 0], 2e6, atol=1e-6)
         assert np.allclose(dadt.value[:, 1], 1e6, atol=1e-6)
         assert np.allclose(dadt.value[:, 2], 3e6, atol=1e-6)
+
+    def test_calc_dAdt_ccd_fmm(self):
+        try:
+            import fmm3dpy
+        except ImportError:
+            print('skiping test, no fmm3dpy')
+            return
+
+        with open('test.ccd', 'w') as f:
+            f.write('# number of elements\n')
+            f.write('2\n')
+            f.write('0e-000 0e-000  0e-000 0e+000 0e+000 1e-000\n')
+            f.write('0e-000 0e-000  0e-000 0e+000 1e+000 0e-000\n')
+        msh = mesh_io.Msh()
+        # milimeters
+        msh.nodes = mesh_io.Nodes(np.array([
+            [1e3, 0., 0.],
+            [0., 1e3, 0.],
+            [0, 0., 1e3],
+            [0.,0., -1e3]
+        ]))
+        coil_matrix = np.eye(4)
+        dadt = coil._calculate_dadt_ccd_FMM(msh, 'test.ccd', coil_matrix, 1e6, None)
+        assert np.allclose(
+            dadt[:],
+            np.array([
+                [0., 0.1, -0.1],
+                [-0.1, 0, 0],
+                [0.1, 0., 0.],
+                [-0.1, 0., 0.]
+            ])
+        )
+        os.remove('test.ccd')
+

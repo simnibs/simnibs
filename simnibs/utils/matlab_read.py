@@ -75,19 +75,22 @@ def read_mat(fn):
             raise IOError(
                 "Could not access structure type in this .mat file")
 
-    if structure_type == 'SESSION':
+    if structure_type.lower() == 'session':
         from ..simulation.sim_struct import SESSION
         structure = SESSION(matlab_struct=mat)
-    elif structure_type == 'TDCSLEADFIELD':
+    elif structure_type.lower() == 'tdcsleadfield':
         from ..simulation.sim_struct import TDCSLEADFIELD
         structure = TDCSLEADFIELD(matlab_struct=mat)
-    elif structure_type == 'TMSoptimize':
+    elif structure_type.lower() == 'tmsoptimize':
         from ..optimization.opt_struct import TMSoptimize
         structure = TMSoptimize.read_mat_struct(mat)
-
-    elif structure_type == 'TDCSoptimize':
+    elif structure_type.lower() == 'tdcsoptimize':
         from ..optimization.opt_struct import TDCSoptimize
         structure = TDCSoptimize.read_mat_struct(mat)
+    elif structure_type.lower() == 'tdcsdistributedoptimize':
+        from ..optimization.opt_struct import TDCSDistributedOptimize
+        structure = TDCSDistributedOptimize.read_mat_struct(mat)
+
     else:
         raise IOError('Not a valid structure type!')
 

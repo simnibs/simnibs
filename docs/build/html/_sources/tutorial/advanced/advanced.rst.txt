@@ -7,4 +7,5 @@ Advanced Features
 
    group_analysis
    tms_optimization
+   tdcs_distributed_opt
    uq

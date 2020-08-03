@@ -1,15 +1,15 @@
 variables:
-  Agent.Source.Git.ShallowFetchDepth: 1
+  Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
-- master
+- norm_opt
 
 jobs:
 
-# This job build the wheels using Windows 2012- vs 2015
+# Build using Windows 2016- vs 2017
 - job: Build
   pool:
-    vmImage: 'vs2015-win2012r2'
+    vmImage: 'vs2017-win2016'
 
   steps:
 
@@ -27,13 +27,16 @@ jobs:
   - script: |
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
       python setup.py bdist_wheel
+      pip install jinja2 conda-pack
+      python packing\pack.py dist\
       copy dist\* $(Build.ArtifactStagingDirectory)
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
+      cp simnibs_installer_windows.exe  $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: windows_wheel
+      artifactName: windows
     displayName: Publish Artifact
 
 # Now we test the previously build wheels on different windows versions
@@ -42,8 +45,6 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      Windows-2012:
-        vmImage: 'vs2015-win2012r2'
       Windows-2016:
         vmImage: 'vs2017-win2016'
       Windows-2019:
@@ -54,29 +55,18 @@ jobs:
     maxParallel: 4
 
   steps:
-
-  - powershell: |
-      (New-Object System.Net.WebClient).DownloadFile("https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe",".\Miniconda3.exe")
-    displayName: Download Miniconda
-
-  - script: start /wait "" Miniconda3.exe /InstallationType=JustMe /RegisterPython=0 /S /D=$(Agent.BuildDirectory)\CONDA
-    displayName: Install Miniconda
-
+  - checkout: none
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'windows_wheel'
+      artifactName: 'windows'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
-  - script: call $(Agent.BuildDirectory)\CONDA\Scripts\activate & conda-env create --quiet --file environment_win.yml
-    displayName: Create Anaconda environment
-
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
-      pip install -f file://$(System.ArtifactsDirectory)\windows_wheel simnibs
-      pytest simnibs\tests --junit-xml=test-results.xml
+      start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
 
   - task: PublishTestResults@2
@@ -85,20 +75,47 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
 
-# Finally, if everything went fine, we upload to GitHub releases as a draft
-
-- job: Release
-  dependsOn: Test
+- job: Examples
+  dependsOn: Build
+  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'vs2015-win2012r2'
+    vmImage: 'vs2017-win2016'
 
   steps:
-
+  - checkout: none
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'windows_wheel'
+      artifactName: 'windows'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download Wheel
+
+  - bash: |
+      choco install octave
+    displayName: Install Octave
+
+  - script: |
+      start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests\examples\examples.py -v -s --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run unit tests
+
+
+# If everything went fine, we upload the new version as a draft to GitHub
+- job: Release
+  dependsOn:
+   - Test
+   - Examples
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'windows'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
 
@@ -109,7 +126,7 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(System.ArtifactsDirectory)\windows_wheel\*
+      assets: $(System.ArtifactsDirectory)\windows\*
       assetUploadMode: 'replace'
       isDraft: true
 

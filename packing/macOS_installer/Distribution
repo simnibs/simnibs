@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-script minSpecVersion="1.000000">
+    <title>SimNIBS {{ version }}</title>
+    <welcome file="welcome.html" mime-type="text/html" />
+    <conclusion file="conclusion.html" mime-type="text/html" />
+    <options customize="never" allow-external-scripts="no"/>
+    <domains enable_localSystem="true" />
+    <domains enable_currentUserHome="true"/>
+    <installation-check script="installCheck();"/>
+    <script>
+function installCheck() {
+    if(!(system.compareVersions(system.version.ProductVersion, '10.9.0') >= 0)) {
+        my.result.title = 'Unable to install';
+        my.result.message = 'SimNIBS requires Mac OS X 10.9 or later.';
+        my.result.type = 'Fatal';
+        return false;
+    }
+    return true;
+}
+    </script>
+    <choices-outline>
+        <line choice="SimNIBS {{ version }}"/>
+    </choices-outline>
+    <choice id="SimNIBS {{ version }}" title="SimNIBS {{ version }}">
+        <pkg-ref id="simnibs_installer_macos.pkg"/>
+    </choice>
+    <pkg-ref id="simnibs_installer_macos.pkg">simnibs_installer_macos.pkg</pkg-ref>
+</installer-script>

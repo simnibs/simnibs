@@ -1,0 +1,11 @@
+#!/bin/bash
+set -o pipefail
+(   # Fix entrypoints shebangs
+    "$2/simnibs_env/bin/python" "$2/simnibs_env/fix_entrypoints.py" "$2/simnibs_env/bin" "$2/simnibs_env/bin"
+    # Run Postinstall
+    if [[ -n $COMMAND_LINE_INSTALL ]]; then
+        "$2/simnibs_env/bin/postinstall_simnibs" -d "$2" --copy-matlab --setup-links --no-extra-coils --silent --force
+    else
+        "$2/simnibs_env/bin/postinstall_simnibs" -d "$2" --copy-matlab --setup-links --no-extra-coils
+    fi
+) 2>&1 | tee "$2/install.log"

@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>TDCS Network Optimization &#8212; SimNIBS 3.2b0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Uncertainty Quantification" href="uq.html" />
+    <link rel="prev" title="TMS Optimization" href="tms_optimization.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tms_optimization.html" title="Previous document">TMS Optimization</a>
+        </li>
+        <li>
+          <a href="uq.html" title="Next document">Uncertainty Quantification</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="tdcs-network-optimization">
+<span id="tdcs-distributed-opt"></span><h1>TDCS Network Optimization<a class="headerlink" href="#tdcs-network-optimization" title="Permalink to this headline">¶</a></h1>
+<p>As of SimNIBS 3.2, you can use SimNIBS to optimize electric fields based on distributed
+targets, such as t-maps from resting state networks. We use the problem set-up
+proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al. 2014</a>),
+and solve it using algorithms proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino et al. 2019</a>).</p>
+<div class="section" id="leadfield-calculations">
+<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<p>To run an optimiztion, please start by <a class="reference internal" href="../optimization.html#tutorial-leadfield"><span class="std std-ref">Creating a Leadfield</span></a>.</p>
+</div>
+<div class="section" id="optimiztion">
+<h2>Optimiztion<a class="headerlink" href="#optimiztion" title="Permalink to this headline">¶</a></h2>
+<p>The networks</p>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini, G., Fox, M. D., Ripolles, O., Miranda, P. C., &amp; Pascual-Leone, A. (2014). Optimization of multifocal transcranial current stimulation for weighted cortical pattern targeting from realistic modeling of electric fields. Neuroimage, 89, 216-225.</a></p>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+</div>
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tms_optimization.html" title="Previous document">TMS Optimization</a>
+        </li>
+        <li>
+          <a href="uq.html" title="Next document">Uncertainty Quantification</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../tutorial.html">Tutorial</a><ul>
+  <li><a href="advanced.html">Advanced Features</a><ul>
+      <li>Previous: <a href="tms_optimization.html" title="previous chapter">TMS Optimization</a></li>
+      <li>Next: <a href="uq.html" title="next chapter">Uncertainty Quantification</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/tutorial/advanced/tdcs_distributed_opt.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

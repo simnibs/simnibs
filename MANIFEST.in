@@ -1,4 +1,4 @@
-include *.md *.txt
+global-include *.md *.txt
 include simnibs/bash_modules/*
 include simnibs/matlab_tools/*
 include simnibs/**/tests

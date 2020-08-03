@@ -12,7 +12,10 @@ dependencies:
   - mock
   - freeglut
   - vs2015_runtime
-  - pip
+  - pip>19.3
+  - packaging
+  - requests
   - pip:
     - nibabel==3.0.*
-    - pyqt5==5.9.*
+    - pyqt5==5.12.*
+    - fmm3dpy==0.0.3
