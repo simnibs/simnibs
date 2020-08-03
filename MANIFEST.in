@@ -7,3 +7,4 @@ graft simnibs/_compiled
 graft simnibs/external
 graft simnibs/resources
 graft simnibs/examples
+graft simnibs/_internal

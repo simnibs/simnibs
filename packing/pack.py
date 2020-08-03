@@ -117,7 +117,7 @@ def build(simnibs_dist_dir, include_spyder=False):
         )
         #Use the installer.nsi template to create an NSIS installer
         shutil.copy(
-            os.path.join(simnibs_root_dir, 'simnibs', 'resources', 'gui_icon.ico'),
+            os.path.join(simnibs_root_dir, 'simnibs', '_internal', 'icons', 'simnibs', 'gui_icon.ico'),
             os.path.join(pack_dir, 'gui_icon.ico')
         )
         fn_script = os.path.join(pack_dir, 'installer.nsi')
