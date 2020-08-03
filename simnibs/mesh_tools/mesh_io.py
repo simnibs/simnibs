@@ -3592,6 +3592,12 @@ class ElementData(Data):
         bar = mesh.elements_baricenters().value.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(bar) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
+
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
             output=data_grid.dtype, **kwargs)
@@ -3977,6 +3983,12 @@ class NodeData(Data):
         pos=mesh.nodes.node_coord.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(pos) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
+
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
             output=data_grid.dtype, **kwargs)

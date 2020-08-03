@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from ... import SIMNIBSDIR
-from ...mesh_tool import mesh_io
+from ...mesh_tools import mesh_io
 from .. import biot_savart
 
 

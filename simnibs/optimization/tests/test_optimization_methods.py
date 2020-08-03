@@ -1,12 +1,11 @@
 import itertools
-import functools
 from unittest import mock
 import numpy as np
 import scipy.optimize
 import pytest
 
 from .. import optimization_methods
-from ...simulation.analytical_solutions.sphere import fibonacci_sphere
+from ...simulation.analytical_solutions import fibonacci_sphere
 
 @pytest.fixture()
 def optimization_variables():

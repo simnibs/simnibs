@@ -4,8 +4,8 @@
 '''
 
 import numpy as np
-from simnibs.msh import transformations
-from simnibs.msh import mesh_io
+from ..utils import transformations
+from ..mesh_tools import mesh_io
 
 '''
     This program is part of the SimNIBS package.

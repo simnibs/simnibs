@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import scipy.spatial
 
-from .. import SIMNIBSDIR
+from ... import SIMNIBSDIR
 from .. import optimize_tms
 from ...mesh_tools import mesh_io
 

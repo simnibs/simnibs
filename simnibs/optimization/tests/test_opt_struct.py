@@ -1,7 +1,6 @@
 import os
 import csv
-from mock import patch, call, MagicMock
-import shutil
+from mock import patch, MagicMock
 import tempfile
 
 import pytest
@@ -27,7 +26,7 @@ def sphere_surf():
 @pytest.fixture()
 def sphere_vol():
     fn = os.path.join(
-        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3_msh')
+        SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([4, 5])
 
 @pytest.fixture()
@@ -1077,7 +1076,7 @@ class TestTDCSDistributedoptimize:
         field, _ = p._target_distribution()
         assert np.allclose(field, sphere_vol.elements_baricenters()[:, 0], atol=1e-1)
 
-    @patch('simnibs.msh.transformations.subject2mni_coords')
+    @patch('simnibs.utils.transformations.subject2mni_coords')
     def test_terget_field_mni(self, s2mni_coords_mock, sphere_surf, fn_surf):
         target_image = np.meshgrid(
             np.arange(-100, 100, 2),
