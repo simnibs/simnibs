@@ -12,14 +12,14 @@ from .. import brain_surface
 @pytest.fixture
 def sphere_surf():
     fn = os.path.join(
-            SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
+            SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     mesh = mesh_io.read_msh(fn)
     return mesh.crop_mesh(1005)
 
 @pytest.fixture
 def sphere_2_surfs():
     fn = os.path.join(
-            SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
+            SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     mesh = mesh_io.read_msh(fn)
     return mesh.crop_mesh([1004, 1005])
 

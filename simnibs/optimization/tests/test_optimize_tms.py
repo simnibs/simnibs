@@ -11,7 +11,7 @@ from ...mesh_tools import mesh_io
 @pytest.fixture
 def sphere3_msh():
     fn = os.path.join(
-        SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 

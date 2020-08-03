@@ -16,12 +16,12 @@ from .. import mesh_io
 def sphere3():
     return mesh_io.read_msh(
         os.path.join(
-            SIMNIBSDIR, '_internal',
+            SIMNIBSDIR, '_internal_resources',
             'testing_files', 'sphere3.msh'))
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(SIMNIBSDIR, '_internal', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 

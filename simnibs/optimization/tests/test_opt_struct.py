@@ -19,26 +19,26 @@ from .. import opt_struct
 @pytest.fixture()
 def sphere_surf():
     fn = os.path.join(
-        SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([1003, 1004])
 
 
 @pytest.fixture()
 def sphere_vol():
     fn = os.path.join(
-        SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn).crop_mesh([4, 5])
 
 @pytest.fixture()
 def sphere_msh():
     fn = os.path.join(
-        SIMNIBSDIR, '_internal', 'testing_files',  'sphere3.msh')
+        SIMNIBSDIR, '_internal_resources', 'testing_files',  'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture
 def sphere_elec():
     fn = os.path.join(
-        SIMNIBSDIR, '_internal', 'testing_files',
+        SIMNIBSDIR, '_internal_resources', 'testing_files',
         'sphere_w_electrodes.msh')
     return mesh_io.read_msh(fn).crop_mesh([1005, 1100, 1101])
 

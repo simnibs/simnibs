@@ -177,7 +177,7 @@ def setup_gmsh_options(force=False, silent=False):
 
     if copy:
         gmsh_options_path = os.path.join(
-            SIMNIBSDIR, '_internal', 'gmsh-options_simnibsdefault')
+            SIMNIBSDIR, '_internal_resources', 'gmsh-options_simnibsdefault')
         _copy_and_log(gmsh_options_path, target)
 
 
@@ -362,12 +362,12 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
             "Programs", f"SimNIBS {MINOR_VERSION}"
         )
         gmsh_icon = None
-        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs',  'gui_icon.ico')
+        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs',  'gui_icon.ico')
 
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser(f'~/.local/share/applications/SimNIBS-{MINOR_VERSION}')
-        gmsh_icon = os.path.join(SIMNIBSDIR, '_internal', 'icons', 'gmsh', 'logo.png')
-        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs', 'gui_icon.png')
+        gmsh_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', 'logo.png')
+        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.png')
 
 
     if os.path.isdir(shortcut_folder):
@@ -472,7 +472,7 @@ def _create_apps(install_dir):
     _create_app(
         os.path.join(install_dir, 'SimNIBS GUI.app'),
         os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
-        os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs', 'gui_icon.icns'),
+        os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.icns'),
         plist)
 
     # Gmsh app setup
@@ -489,10 +489,10 @@ def _create_apps(install_dir):
     os.mkdir(macos_dir)
 
     _copy_and_log(
-        os.path.join(SIMNIBSDIR, '_internal', 'icons', 'gmsh', 'Info.plist'),
+        os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', 'Info.plist'),
         os.path.join(contents_dir))
 
-    for icns in glob.glob(os.path.join(SIMNIBSDIR, '_internal', 'icons', 'gmsh', '*.icns')):
+    for icns in glob.glob(os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', '*.icns')):
         _copy_and_log(icns, resouces_dir)
 
     _copy_and_log(
@@ -662,7 +662,7 @@ def activator_setup(install_dir):
         _create_shortcut(
             os.path.join(install_dir, 'Activate SimNIBS'),
             activator,
-            icon=os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs', 'gui_icon.ico')
+            icon=os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
         )
     else:
         _write_unix_sh(
@@ -780,7 +780,7 @@ if GUI:
             self.setLayout(mainLayout)
 
             self.setWindowTitle(f'SimNIBS {__version__} Post-Install Options')
-            gui_icon = os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
         def set_copy_gmsh_options(self, new_value):
@@ -866,7 +866,7 @@ if GUI:
             mainLayout.addWidget(button_box)
             self.setLayout(mainLayout)
             self.setWindowTitle('SimNIBS Uninstaller')
-            gui_icon = os.path.join(SIMNIBSDIR, '_internal', 'icons', 'simnibs', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
     def start_uninstall_gui(install_dir):
