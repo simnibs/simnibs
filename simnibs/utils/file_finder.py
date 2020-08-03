@@ -113,7 +113,7 @@ class Templates:
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
 templates = Templates()
-coil_models = os.path.join(SIMNIBSDIR, '_internal', 'coil_models')
+coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
 
 def get_atlas(atlas_name, hemi='both'):
     ''' Loads a brain atlas based of the FreeSurfer fsaverage template
