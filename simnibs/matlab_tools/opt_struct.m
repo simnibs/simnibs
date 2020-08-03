@@ -41,7 +41,7 @@ switch S.type
        S.subpath = ''; % path to the 'm2m_{subID}' folder created by mri2mesh or headreco (OPTIONAL, filled from fnamehead)
        S.pathfem = 'tms_optimization/';   % path to save the results (OPTIONAL)
        S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
-       S.fnamecoil =  '';      % to chose from inside ccd-files
+       S.fnamecoil =  '';      % to chose from resources/coil_models
        S.cond = standard_cond;   % list of conductivities
        S.anisotropy_type = 'scalar'; % can be 'scalar' (use isotropic values), 'dir' (direct mapping),'mc' (mean conductivity from direct mapping),'vn' (volume normalized); optional
        S.aniso_maxratio = 10; % maximal ratio between largest eigenvalue and the two other eigenvalues of conductivity tensor

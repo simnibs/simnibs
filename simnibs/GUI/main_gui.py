@@ -92,7 +92,7 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         self.setWindowTitle(f'SimNIBS {__version__}')
 
         try:
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.gif')
+            gui_icon = os.path.join(SIMNIBSDIR,'_internal', 'icons', 'simnibs', 'gui_icon.gif')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
         except:
             pass

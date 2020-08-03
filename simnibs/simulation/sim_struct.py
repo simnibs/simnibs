@@ -37,6 +37,7 @@ from . import cond
 from ..mesh_tools import mesh_io
 from ..utils import transformations
 from ..utils import simnibs_logger
+from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
@@ -1050,8 +1051,7 @@ class TMSLIST(SimuList):
         if os.path.isfile(fnamecoil):
             self.fnamecoil = fnamecoil
         else:
-            fnamecoil = os.path.join(
-                SIMNIBSDIR, 'resources', 'coil_models', self.fnamecoil)
+            fnamecoil = os.path.join(file_finder.coil_models, self.fnamecoil)
             if os.path.isfile(fnamecoil):
                 self.fnamecoil = fnamecoil
             else:

@@ -25,7 +25,7 @@ import nibabel
 
 from .. import SIMNIBSDIR
 
-__all__ = ['templates', 'get_atlas', 'SubjectFiles']
+__all__ = ['templates', 'get_atlas', 'SubjectFiles', 'coil_models']
 
 class Templates:
     ''' Defines the Templates for file names used in SimNIBS
@@ -113,6 +113,7 @@ class Templates:
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
 templates = Templates()
+coil_models = os.path.join(SIMNIBSDIR, '_internal', 'coil_models')
 
 def get_atlas(atlas_name, hemi='both'):
     ''' Loads a brain atlas based of the FreeSurfer fsaverage template
