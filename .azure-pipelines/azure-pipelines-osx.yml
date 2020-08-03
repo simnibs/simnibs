@@ -97,7 +97,7 @@ jobs:
 
   - bash: |
       installer -pkg $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
-      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/examples/tests/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
   - task: PublishTestResults@2
