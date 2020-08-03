@@ -55,7 +55,7 @@ def copy_scripts(dest_dir):
     # On windows, copy the sitecustomize script
     # in order to be able to use the python interpreter without activating the environment
     if sys.platform == 'win32':
-        simnibs_sitecustomize = os.path.join(SIMNIBSDIR, 'utils', 'sitecustomize.py')
+        simnibs_sitecustomize = os.path.join(SIMNIBSDIR, '_internal_resources', 'sitecustomize.py')
         env_sitecustomize = os.path.join(os.path.dirname(sys.executable), 'Lib', 'site-packages', 'sitecustomize.py')
         write_sitecustomize =True
         with open(simnibs_sitecustomize, 'r') as f:
@@ -338,17 +338,31 @@ def links_setup(install_dir):
         )
         _create_shortcut(
             os.path.join(install_dir, 'simnibs'),
-            os.path.join(SIMNIBSDIR)
+            SIMNIBSDIR
+        )
+        _create_shortcut(
+            os.path.join(install_dir, 'resources'),
+            os.path.join(SIMNIBSDIR, 'resources')
         )
     else:
-        lnk = os.path.join(install_dir, 'examples')
-        if os.path.islink(lnk):
-            os.remove(lnk)
-        os.symlink(os.path.join(SIMNIBSDIR, 'examples'), lnk)
-        lnk = os.path.join(install_dir, 'simnibs')
-        if os.path.islink(lnk):
-            os.remove(lnk)
-        os.symlink(SIMNIBSDIR, lnk)
+        def _new_symlink(link_name, target):
+            if os.path.islink(link_name):
+                os.remove(link_name)
+            os.symlink(target, link_name)
+
+        _new_symlink(
+            os.path.join(install_dir, 'examples'),
+            os.path.join(SIMNIBSDIR, 'examples')
+        )
+        _new_symlink(
+            os.path.join(install_dir, 'simnibs'),
+            SIMNIBSDIR
+        )
+        _create_shortcut(
+            os.path.join(install_dir, 'resources'),
+            os.path.join(SIMNIBSDIR, 'resources')
+        )
+
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
