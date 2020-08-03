@@ -19,24 +19,24 @@ fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture
 def sphere_el_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal', 'testing_files', 'sphere_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_lr():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal', 'testing_files', 'cube.msh')
     return mesh_io.read_msh(fn)
 
 

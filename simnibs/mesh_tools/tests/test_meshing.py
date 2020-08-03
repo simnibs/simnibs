@@ -26,13 +26,13 @@ def cube_image():
 @pytest.fixture
 def surface():
     fn = os.path.join(
-            SIMNIBSDIR, 'resources', 'testing_files', 'cube.off')
+            SIMNIBSDIR, '_internal', 'testing_files', 'cube.off')
     return mesh_io.read_off(fn)
 
 @pytest.fixture
 def sphere3():
     fn = os.path.join(
-            SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+            SIMNIBSDIR, '_internal', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 
