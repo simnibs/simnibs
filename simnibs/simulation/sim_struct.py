@@ -2368,7 +2368,7 @@ class TDCSLEADFIELD(LEADFIELD):
         
         if self.interpolation:
             # Leadfield is INTERPOLATED from ROI
-            roi = self.interpolation_tissue
+            roi = self.interpolation_tissue + self.tissues
         else:
             # Leadfield is SAMPLED in ROI
             roi = self.tissues
@@ -2491,7 +2491,6 @@ class TDCSLEADFIELD(LEADFIELD):
             mesh_lf = interp_to[0]
             for m in interp_to[1:]:
                 mesh_lf = mesh_lf.join_mesh(m)
-            
             if len(self.tissues) > 0:
                 try:
                     mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
