@@ -706,7 +706,6 @@ class TestDipole:
     @pytest.mark.parametrize('dipole_direction', [[0, 1, 0], [1, 0, 0]])
     def test_single_dipole(self, dipole_direction, pos_target, sphere3_msh):
         bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
-        vol = sphere3_msh.elements_volumes_and_areas()
         dipole_th = np.argmin(np.linalg.norm(pos_target - bar, axis=1))
         dipole_pos = bar[dipole_th]
         dipole_th = sphere3_msh.elm.tetrahedra[dipole_th]
@@ -717,20 +716,45 @@ class TestDipole:
         analytical_v = analytical_solutions.potential_dipole_3layers(
             [85, 90, 95], 2, 0.1, dipole_pos, dipole_direction, surface_nodes_pos
         )
-        
-        # Relationship between primary current J and dipole vector p
-        # p = \int J dV
-        # p = J*V_i
-        # J = p/V_i
-        primary_j = mesh_io.ElementData(np.zeros((sphere3_msh.elm.nr, 3)))
-        primary_j[dipole_th] = dipole_direction/(vol[dipole_th] * 1e-9)
+
         cond = 2 * np.ones(sphere3_msh.elm.nr)
-        cond[sphere3_msh.elm.tag1==4] = 0.1
-        S = fem.FEMSystem.electric_dipole(sphere3_msh, cond)
-        b = S.assemble_electric_dipole_rhs(primary_j)
-        numerical_v = S.solve(b)[surface_nodes - 1]
+        cond[sphere3_msh.elm.tag1 == 4] = 0.1
+        numerical_v = fem.electric_dipole(sphere3_msh, cond, pos_target, dipole_direction)
+        numerical_v = numerical_v[0, surface_nodes - 1]
 
         analytical_v -= np.average(analytical_v)
         numerical_v -= np.average(numerical_v)
         assert rdm(analytical_v, numerical_v) < 0.2
         assert mag(analytical_v, numerical_v) < 0.15
+
+    def test_many_dipoles(self, sphere3_msh):
+        positions = [[60, 0, 0], [0, 80, 0]]
+        moments = [[0, 0, 1], [0, 0.5, 0.5]]
+        bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
+
+        surface_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+        surface_nodes_pos = sphere3_msh.nodes[surface_nodes]
+        analytical_v = []
+        dipole_pos = []
+
+        for p, m in zip(positions, moments):
+            dipole_th = np.argmin(np.linalg.norm(p - bar, axis=1))
+            dipole_pos.append(bar[dipole_th])
+            dipole_th = sphere3_msh.elm.tetrahedra[dipole_th]
+            analytical_v.append(
+                analytical_solutions.potential_dipole_3layers(
+                    [85, 90, 95], 2, 0.1, p, m, surface_nodes_pos
+                )
+            )
+
+        cond = 2 * np.ones(sphere3_msh.elm.nr)
+        cond[sphere3_msh.elm.tag1 == 4] = 0.1
+        numerical_v = fem.electric_dipole(
+            sphere3_msh, cond, dipole_pos, moments
+        )[:, surface_nodes - 1]
+
+        for a_v, n_v in zip(analytical_v, numerical_v):
+            a_v -= np.average(a_v)
+            n_v -= np.average(n_v)
+            assert rdm(a_v, n_v) < 0.2
+            assert mag(a_v, n_v) < 0.15

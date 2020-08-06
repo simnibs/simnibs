@@ -1668,3 +1668,54 @@ def _finalize_tms_many_simulations_global_solver():
     del tms_many_global_field
     del tms_many_global_roi
 ### Finished functionr to run many TMS simulations in parallel ####
+
+def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options=None):
+    ''' Electric dipole simulations using the partial integration method
+
+    Parameters
+    -------------
+    mesh: simnibs.mesh_io.Msh
+        Mesh file with geometry information
+    cond: simnibs.msh.mesh_io.ElementData
+        An ElementData field with conductivity information
+    dipole_positions: Nx3 ndarray
+        Positions of the dipoles. Each dipole will be a separate simulation
+    dipole_momnents: Nx3 ndarray
+        Moment of each dipole
+    solver_options: str (optional)
+        Options for the sparse solver. Default: CG + AMG
+
+    Returns
+    -----------
+    v: Nxmesh.nodes.nr
+        Electric potential caused by each dipole
+    '''
+
+    dipole_positions = np.atleast_2d(dipole_positions) 
+    dipole_moments = np.atleast_2d(dipole_moments) 
+    assert dipole_positions.shape[1] == 3, 'dipole_positions should be in Nx3 format!'
+    assert dipole_positions.shape[1] == 3, 'dipole_moments should be in Nx3 format!'
+    if dipole_positions.shape[0] != dipole_moments.shape[0]:
+        raise ValueError('Different number of entries for '
+                         'dipole_positions and dipole_moments')
+
+    vol = mesh.elements_volumes_and_areas()
+    _, dipole_th = mesh.find_closest_element(
+        dipole_positions,
+        return_index=True,
+        elements_of_interest=mesh.elm.tetrahedra
+    )
+    S = FEMSystem.electric_dipole(mesh, cond, solver_options=solver_options)
+    n_dipoles = len(dipole_th)
+    v = np.zeros((n_dipoles, mesh.nodes.nr), dtype=float)
+    for i, dp, dm in zip(range(n_dipoles), dipole_th, dipole_moments):
+        # Relationship between primary current J and dipole vector p
+        # p = \int J dV
+        # p = J*V_i
+        # J = p/V_i
+        primary_j = mesh_io.ElementData(np.zeros((mesh.elm.nr, 3)))
+        primary_j[dp] = dm/(vol[dp] * 1e-9)
+        b = S.assemble_electric_dipole_rhs(primary_j)
+        v[i] = S.solve(b)
+
+    return v
