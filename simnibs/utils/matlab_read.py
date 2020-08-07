@@ -4,10 +4,9 @@ import scipy.io
 
 def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternative=None):
     """
-    Function for flexibilly reading a field from the mesh file
+    Function for flexibilly reading a field from a matlab .mat file
     Tries to read the field with the specified name
-    if sucesseful, returns the read
-    if not, returns the alternative
+    if successful, returns the value read if not, returns the alternative
 
     Parameters
     ----------
