@@ -1,9 +1,6 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
-trigger:
-- norm_opt
-
 jobs:
 
 # Build using Windows 2016- vs 2017

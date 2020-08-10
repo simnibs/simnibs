@@ -1,10 +1,7 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
-trigger:
-- norm_opt
-
-# Build SimNIBS on a Centos 6 container
+# Build SimNIBS on a Centos 7 container
 jobs:
 - job: Build
   pool:
