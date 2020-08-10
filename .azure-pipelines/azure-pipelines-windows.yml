@@ -1,9 +1,10 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
-jobs:
+trigger:
+- master
 
-# Build using Windows 2016- vs 2017
+jobs:
 - job: Build
   pool:
     vmImage: 'vs2017-win2016'
@@ -21,6 +22,7 @@ jobs:
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       conda env create -f environment_win.yml
     displayName: Create Conda environment
+
   - script: |
       call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
       python setup.py bdist_wheel
@@ -30,6 +32,7 @@ jobs:
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
       cp simnibs_installer_windows.exe  $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -70,7 +73,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Unit Tests'
 
 - job: Examples
   dependsOn: Build
@@ -95,8 +98,13 @@ jobs:
   - script: |
       start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests\examples\examples.py -v -s --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run unit tests
+    displayName: Install SimNIBS and run tests
 
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Example Tests'
 
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release

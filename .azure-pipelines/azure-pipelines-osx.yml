@@ -1,6 +1,9 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
+trigger:
+- master
+
 jobs:
 - job: Build
   pool:
@@ -68,7 +71,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Unit Tests'
       
 - job: Examples
   dependsOn: Build
@@ -101,7 +104,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish example test results'
+      testRunTitle: 'Example Tests'
 
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
