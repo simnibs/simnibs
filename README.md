@@ -13,6 +13,8 @@ The pipeline is divided in three parts:
 |---------|------------|-----|
 | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Linux?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=4&branchName=master) | [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/Windows?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=5&branchName=master) |  [![Build Status](https://dev.azure.com/simnibs/simnibs/_apis/build/status/MacOS?branchName=master)](https://dev.azure.com/simnibs/simnibs/_build/latest?definitionId=9&branchName=master)   |
 
+[![Coverage](https://img.shields.io/azure-devops/coverage/simnibs/simnibs/17)]
+
 ## Getting Started
  
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.

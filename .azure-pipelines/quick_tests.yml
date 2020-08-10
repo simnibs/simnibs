@@ -25,21 +25,20 @@ jobs:
       pip install pytest-cov
       pytest simnibs/tests \
         --junit-xml=test-results.xml \
-        --cov=simnibs --cov-report=xml --cov-report=html
+        --cov=simnibs --cov-report=xml
     displayName: Run Unity Tests
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Linux'
 
   - task: PublishCodeCoverageResults@1
     condition: succeededOrFailed()
     inputs:
         codeCoverageTool: Cobertura
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+        summaryFileLocation: 'coverage.xml'
 
 
 - job: MacOS
@@ -71,7 +70,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'MacOS'
 
 - job: Windows
   pool:
@@ -99,4 +98,4 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Windows'
