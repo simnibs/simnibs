@@ -77,7 +77,7 @@ Acknowledgements
 ------------------
 
 We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
-functionality, and Luis Gomez for contributing the code for the
+functionality, and Luis Gomez for contributing the code for the ADM optimization
 
 Further Reading
 ------------------
