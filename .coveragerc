@@ -1,0 +1,9 @@
+[run]
+omit = 
+    simnibs/GUI/*
+    simnibs/cli/*
+    simnibs/pygpc/*
+    simnibs/pygpc/*
+    simnibs/msh/_marching_cubes_lewiner_luts.py
+    simnibs/utils/sitecustomize.py
+    simnibs/utils/_system_path.py

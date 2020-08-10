@@ -22,7 +22,10 @@ jobs:
 
   - bash: |
       source activate simnibs_env
-      pytest simnibs/tests --junit-xml=test-results.xml
+      pip install pytest-cov
+      pytest simnibs/tests \
+        --junit-xml=test-results.xml \
+        --cov=simnibs --cov-report=xml --cov-report=html
     displayName: Run Unity Tests
 
   - task: PublishTestResults@2
@@ -30,6 +33,14 @@ jobs:
     inputs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Publish test results'
+
+  - task: PublishCodeCoverageResults@1
+    condition: succeededOrFailed()
+    inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+        reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+
 
 - job: MacOS
   pool:
