@@ -7,3 +7,4 @@ omit =
     simnibs/msh/_marching_cubes_lewiner_luts.py
     simnibs/utils/sitecustomize.py
     simnibs/utils/_system_path.py
+    simnibs/**/test*
