@@ -16,6 +16,13 @@ jobs:
       certSecureFile: 'certificate_installer.p12'
       certPwd: '$(P12password)'
       keychain: 'temp'
+    displayName: Install Installer Certificate
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: 'certificate_application.p12'
+      certPwd: '$(P12password)'
+      keychain: 'temp'
+    displayName: Install Application Certificate
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
       sudo chown -R $USER $CONDA
@@ -28,11 +35,17 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
-      python packing/pack.py dist/
+      python packing/pack.py dist --developer-id 8J5V4KS7H4
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
-      productsign --sign "Developer ID Installer: Axel Thielscher" simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg
     displayName: Build SimNIBS
+  # I need to notorize the app https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+  - bash: |
+      xcrun altool --notarize-app -u "ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
+    env:  
+      ALTOOL_PASSWORD: $(altool_password)
+      ALTOOL_USER: $(altool_user)
+    displayName: Notorize App
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -124,7 +137,7 @@ jobs:
       artifactName: 'mac_os'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download Wheel
-  # I need to notorize the app https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
