@@ -11,6 +11,107 @@ jobs:
     maxParallel: 4
 
   steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - bash: |
+      conda env create -f environment_macOS.yml
+    displayName: Create Conda environment
+  - bash: |
+      source activate simnibs_env
+      export MACOSX_DEPLOYMENT_TARGET=10.9
+      python setup.py bdist_wheel
+      pip install jinja2 conda-pack
+      python packing/pack.py dist
+      cp simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)
+    displayName: Build SimNIBS
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: unsigned_pkg
+    displayName: Publish Artifact
+
+- job: Test
+  dependsOn: Build
+  strategy:
+    matrix:
+      MacOSX-10.14:
+        vmImage: 'macOS-10.14'
+      MacOSX-10.15:
+        vmImage: 'macOS-10.15'
+
+  pool:
+    vmImage: $(vmImage)
+    maxParallel: 4
+
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'unsigned_pkg'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS
+
+  - bash: |
+      installer -pkg $(System.ArtifactsDirectory)/unsigned_pkg/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run unit tests
+ 
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Unit Tests'
+      
+- job: Examples
+  dependsOn: Build
+  pool:
+    vmImage: 'macOS-10.14'
+    maxParallel: 4
+
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'unsigned_pkg'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS
+
+  - bash: |
+      brew update
+      brew install octave
+      octave -v
+    displayName: Install Octave
+
+  - bash: |
+      installer -pkg $(System.ArtifactsDirectory)/unsigned_pkg/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run tests
+ 
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Example Tests'
+
+# If everything went fine, we upload the wheel as a draft to GitHub
+- job: Release
+  dependsOn:
+    - Test
+    - Examples
+
+  pool:
+    vmImage: 'macOS-10.14'
+
+  steps:
+  # Now I build again and sign the app
+  # I had problems testing the signed app, I don't know why
   - task: InstallAppleCertificate@2
     inputs:
       certSecureFile: 'certificate_installer.p12'
@@ -35,111 +136,23 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
-      python packing/pack.py dist #--developer-id 8J5V4KS7H4
+      python packing/pack.py dist --developer-id 8J5V4KS7H4
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
-      cp simnibs_installer_macos.pkg $(System.ArtifactsDirectory)
+      cp simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
-  # I need to notorize the app https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
-  #- bash: |
-  #    xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(System.ArtifactsDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
-  #  env:  
-  #    ALTOOL_PASSWORD: $(altool_password)
-  #    ALTOOL_USER: $(altool_user)
-  #  displayName: Notorize App
+  # https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+  - bash: |
+      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
+    env:  
+      ALTOOL_PASSWORD: $(altool_password)
+      ALTOOL_USER: $(altool_user)
+    displayName: Notorize App
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: mac_os
     displayName: Publish Artifact
-
-- job: Test
-  dependsOn: Build
-  strategy:
-    matrix:
-      MacOSX-10.14:
-        vmImage: 'macOS-10.14'
-      MacOSX-10.15:
-        vmImage: 'macOS-10.15'
-
-  pool:
-    vmImage: $(vmImage)
-    maxParallel: 4
-
-  steps:
-  - checkout: none
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'mac_os'
-      downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download SimNIBS
-
-  - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
-      cat ~/Applications/SimNIBS*/install.log
-      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run unit tests
- 
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Unit Tests'
-      
-- job: Examples
-  dependsOn: Build
-  pool:
-    vmImage: 'macOS-10.14'
-    maxParallel: 4
-
-  steps:
-  - checkout: none
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'mac_os'
-      downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download SimNIBS
-
-  - bash: |
-      brew update
-      brew install octave
-      octave -v
-    displayName: Install Octave
-
-  - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
-      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run tests
- 
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Example Tests'
-
-# If everything went fine, we upload the wheel as a draft to GitHub
-- job: Release
-  dependsOn:
-    - Test
-    - Examples
-
-  pool:
-    vmImage: 'macOS-latest'
-
-  steps:
-  - checkout: none
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'mac_os'
-      downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
-
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
@@ -147,6 +160,6 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(System.ArtifactsDirectory)/mac_os/*
+      assets: $(Build.ArtifactStagingDirectory)/mac_os/*
       assetUploadMode: 'replace'
       isDraft: true
