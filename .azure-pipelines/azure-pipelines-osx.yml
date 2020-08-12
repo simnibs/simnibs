@@ -77,8 +77,8 @@ jobs:
     displayName: Download SimNIBS
 
   - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
-      cat /Users/gbs/Applications/SimNIBS*/install.log
+      installer -pkg $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
       ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
  
