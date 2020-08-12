@@ -53,7 +53,7 @@ jobs:
       downloadType: 'single'
       artifactName: 'unsigned_pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download SimNIBS
+    displayName: Download SimNIBS Installer
 
   - bash: |
       installer -pkg $(System.ArtifactsDirectory)/unsigned_pkg/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
@@ -81,7 +81,7 @@ jobs:
       downloadType: 'single'
       artifactName: 'unsigned_pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download SimNIBS
+    displayName: Download SimNIBS Installer
 
   - bash: |
       brew update
@@ -133,7 +133,7 @@ jobs:
     displayName: Create Conda environment
   - bash: |
       source activate simnibs_env
-      export MACOSX_DEPLOYMENT_TARGET=10.9
+      export MACOSX_DEPLOYMENT_TARGET=10.9 # Increase backwards compatibility
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
       python packing/pack.py dist --developer-id 8J5V4KS7H4

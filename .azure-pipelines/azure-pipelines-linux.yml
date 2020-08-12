@@ -9,8 +9,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'ubuntu-16.04'
-    maxParallel: 4
+    vmImage: 'ubuntu-latest'
 
   container: simnibs/simnibs-testing:centos7
   steps:

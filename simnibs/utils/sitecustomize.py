@@ -7,6 +7,7 @@ import os
 
 prefix = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 #  Notice: this is where conda stores DLLs. If that changes in the future, this here should also change
+# From conda-pack/conda_pack/scripts/windows/activate.bat
 os.environ["PATH"] = os.pathsep.join([
     os.path.join(prefix, 'Library', 'mingw-w64'),
     os.path.join(prefix, 'Library', 'usr', 'bin'),
