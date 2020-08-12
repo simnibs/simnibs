@@ -38,10 +38,11 @@ jobs:
       python packing/pack.py dist --developer-id 8J5V4KS7H4
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
+      cp simnibs_installer_macos.pkg $(System.ArtifactsDirectory)
     displayName: Build SimNIBS
   # I need to notorize the app https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
   - bash: |
-      xcrun altool --notarize-app -u "ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(System.ArtifactsDirectory)/mac_os/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
+      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(System.ArtifactsDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
     env:  
       ALTOOL_PASSWORD: $(altool_password)
       ALTOOL_USER: $(altool_user)
