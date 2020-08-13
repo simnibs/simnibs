@@ -13,8 +13,8 @@ Current Contributors
 
 * Guilherme B. Saturnino
    * TES optimiaztion algorithms (3.1, 3.2)
-   * Installation procedure (3.0)
-   * Documentation (3.0)
+   * Installation procedure (3.0, 3.2)
+   * Documentation (3.0, 3.1 and 3.2)
    * Fast FEM code (3.0)
    * (together with K. Weise) UQ functionality (3.0)
    * New python core (2.1)
@@ -34,7 +34,7 @@ Current Contributors
    * :ref:`headreco_docs` (2.1)
    * New MNI head mesh (2.1)
 
-* Hassan Yazdanian
+* Hassan Yazdanian and Kim Knudsen
    * Magnetic Field Calculations (3.2)
 
 * Konstantin Weise
