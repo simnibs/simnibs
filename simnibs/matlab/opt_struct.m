@@ -1,16 +1,16 @@
-function S = sim_struct(type)
+function S = opt_struct(type)
 %
 % create an empty data structure
 % to set up a simnibs optimization
 %
-% S = sim_struct(type)
+% S = opt_struct(type)
 % 
 % Guilherme Saturnino, 2019
 
 %    This program is part of the SimNIBS package.
 %    Please check on www.simnibs.org how to cite our work in publications.
 %
-%    Copyright (C) 2019 Guilherme Saturnino
+%    Copyright (C) 2020 Guilherme Saturnino
 %
 %    This program is free software: you can redistribute it and/or modify
 %    it under the terms of the GNU General Public License as published by

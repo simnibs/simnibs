@@ -18,7 +18,7 @@ jobs:
     displayName: Create Conda environment
 
   - script: |
-      conda activate simnibs_env
+      call activate simnibs_env
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
       python packing\pack.py dist\
