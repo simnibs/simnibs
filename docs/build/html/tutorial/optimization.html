@@ -50,12 +50,16 @@
             
   <div class="section" id="tdcs-optimization">
 <span id="tdcs-opt"></span><h1>TDCS Optimization<a class="headerlink" href="#tdcs-optimization" title="Permalink to this headline">¶</a></h1>
-<p>SimNIBS 3 is able of optimizing TDCS montages for maximal focality.
+<p>SimNIBS can automatically optimize TDCS montages for maximal focality or intensity at the target.
 There are two steps for performing the optimizations.</p>
 <ol class="arabic simple">
 <li><p>Create a <em>leadfield</em>.</p></li>
 <li><p>Set-up an optimization based on the <em>leadfield</em>.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+</div>
 <div class="section" id="leadfield-calculations">
 <span id="tutorial-leadfield"></span><h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
@@ -475,6 +479,10 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </li>
 </ul>
 <p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
+</div>
 </div>
 <div class="section" id="avoidance-regions">
 <h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>

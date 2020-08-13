@@ -47,7 +47,7 @@ Current Contributors
 * Ole Nummsen
    * First version of the TMS optimization (3.1)
 
-* Luis Gomez
+* Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
    * Auxiliary Dipole Method (ADM) TMS optimization (3.2)
 
 Former Contributors
@@ -89,7 +89,7 @@ and FEM calculations into one coherent pipeline:
 Institutions
 ---------------
 
-* Versions 2.1 and 3 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark).
+* Versions 2.1 and 3 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark), in collaboration with external partners.
 * Version 1.0 was created at the `Max-Planck Institute for Biological Cybernetics <http://www.kyb.tuebingen.mpg.de>`_ (Tübingen, Germany).
 * Version 2.0 was developed in all three institutions
 

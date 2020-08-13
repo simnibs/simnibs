@@ -3,11 +3,14 @@
 TDCS Optimization
 =================
 
-SimNIBS 3 is able of optimizing TDCS montages for maximal focality.
+SimNIBS can automatically optimize TDCS montages for maximal focality or intensity at the target.
 There are two steps for performing the optimizations.
 
 1. Create a *leadfield*. 
 2. Set-up an optimization based on the *leadfield*.
+
+.. note:: When using this feature in a publication, please cite `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
+
 
 .. _tutorial_leadfield:
 
@@ -180,6 +183,8 @@ For using electric field strength (norm) rather than an specific direction, just
 
 \
 
+
+.. note:: When using this feature in a publication, please cite `Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv. <https://doi.org/10.1101/2020.05.27.118422>`_
 
 Avoidance Regions
 ~~~~~~~~~~~~~~~~~~~
