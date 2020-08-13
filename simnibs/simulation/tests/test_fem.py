@@ -12,8 +12,8 @@ from ... import SIMNIBSDIR
 from .. import fem
 from .. import analytical_solutions
 from .. import coil_numpy as coil_lib
+from .. import petsc_solver
 from ...mesh_tools import mesh_io
-from ..._compiled import petsc_solver
 
 fem._initialize_petsc()
 

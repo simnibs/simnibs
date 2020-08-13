@@ -6,9 +6,8 @@ import scipy.sparse
 import scipy.ndimage
 
 from . import mesh_io
+from .cgal import mesh_surfaces, mesh_image, mesh_image_sizing_field
 from ..utils.simnibs_logger import logger
-from .._compiled._create_mesh_surf import mesh_surfaces
-from .._compiled._create_mesh_vol import mesh_image, mesh_image_sizing_field
 
 
 class MeshingError(ValueError):

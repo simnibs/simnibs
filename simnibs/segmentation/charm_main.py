@@ -15,7 +15,7 @@ from simnibs import SIMNIBSDIR
 from ..utils.simnibs_logger import logger
 from ..utils import file_finder
 from ..utils import transformations
-from . import samseg
+#from . import samseg
 import nibabel as nib
 from ._cat_c_utils import sanlm
 import numpy as np
