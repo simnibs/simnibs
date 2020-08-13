@@ -10,6 +10,7 @@ prefix = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 os.environ["PATH"] = os.pathsep.join([
     os.path.join(prefix, 'Library', 'mingw-w64'),
     os.path.join(prefix, 'Library', 'usr', 'bin'),
-    os.path.join(prefix, 'Library', 'bin')
-]) + os.pathsep + os.environ["PATH"]
+    os.path.join(prefix, 'Library', 'bin'),
+    os.environ["PATH"]
+])
 ## End of SimNIBS sitecustomize.py ##
