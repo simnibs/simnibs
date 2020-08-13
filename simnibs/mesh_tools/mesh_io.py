@@ -45,7 +45,7 @@ from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 from . import cython_msh
-from .._compiled import _cgal_misc
+from . import cgal
 
 
 class InvalidMeshError(ValueError):
@@ -2097,7 +2097,7 @@ class Msh:
         if not (near.shape[1] == 3 and far.shape[1] == 3):
             raise ValueError('near and far poins should be arrays of size (N, 3)')
 
-        indices, points = _cgal_misc.segment_triangle_intersection(
+        indices, points = cgal.segment_triangle_intersection(
             self.nodes[:],
             self.elm[self.elm.elm_type == 2, :3] - 1,
             near, far
@@ -2139,7 +2139,7 @@ class Msh:
         idx, far = self._intersect_segment_getfarpoint(points, directions)
 
         if len(idx) > 0:
-            indices, intercpt_pos = _cgal_misc.segment_triangle_intersection(
+            indices, intercpt_pos = cgal.segment_triangle_intersection(
                 self.nodes[:],
                 self.elm[self.elm.elm_type == 2, :3] - 1,
                 points[idx, :], far

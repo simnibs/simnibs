@@ -233,8 +233,8 @@ petsc_solver = Extension(
 # 1. Reduce memory consumption during compilation in Linux
 # 2. Fix some compilation problems in Windows
 create_mesh_surf = Extension(
-    'simnibs.mesh_tools.cgal._create_mesh_surf',
-    sources=["simnibs/mesh_tools/cgal/_create_mesh_surf.pyx"],
+    'simnibs.mesh_tools.cgal.create_mesh_surf',
+    sources=["simnibs/mesh_tools/cgal/create_mesh_surf.pyx"],
     depends=["simnibs/mesh_tools/cgal/_mesh_surfaces.cpp"],
     language='c++',
     include_dirs=cgal_include,
@@ -246,8 +246,8 @@ create_mesh_surf = Extension(
     define_macros=cgal_mesh_macros
 )
 create_mesh_vol = Extension(
-    'simnibs.mesh_tools.cgal._create_mesh_vol',
-    sources=["simnibs/mesh_tools/cgal/_create_mesh_vol.pyx"],
+    'simnibs.mesh_tools.cgal.create_mesh_vol',
+    sources=["simnibs/mesh_tools/cgal/create_mesh_vol.pyx"],
     depends=["simnibs/mesh_tools/cgal/_mesh_volumes.cpp"],
     language='c++',
     include_dirs=cgal_include,
@@ -259,8 +259,8 @@ create_mesh_vol = Extension(
     define_macros=cgal_mesh_macros
 )
 cgal_misc = Extension(
-    'simnibs.mesh_tools.cgal._cgal_misc',
-    sources=["simnibs/mesh_tools/cgal/_cgal_misc.pyx"],
+    'simnibs.mesh_tools.cgal.cgal_misc',
+    sources=["simnibs/mesh_tools/cgal/cgal_misc.pyx"],
     depends=["simnibs/mesh_tools/cgal/_cgal_intersect.cpp"],
     language='c++',
     include_dirs=cgal_include,
