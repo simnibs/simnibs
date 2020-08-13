@@ -1,3 +1,5 @@
+''' Automated testing of the examples
+'''
 import sys
 import os
 import stat

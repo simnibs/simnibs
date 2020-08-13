@@ -1,5 +1,4 @@
-# cython: language_level=2
-
+# cython: language_level=3
 import time
 import cython
 import numpy as np

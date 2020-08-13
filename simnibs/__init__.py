@@ -1,5 +1,11 @@
 import os
+import sys
 SIMNIBSDIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+if sys.platform == 'win32':
+    os.environ['PATH'] = os.pathsep.join([
+        os.path.join(SIMNIBSDIR, 'external', 'win', 'linux'),
+        os.environ['PATH']
+    ])
 from ._version import __version__
 from .mesh_tools import *
 from .utils import transformations

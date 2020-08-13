@@ -108,6 +108,7 @@ if sys.platform == 'win32':
     ]
     petsc_dirs = ['simnibs/external/lib/win']
     petsc_runtime = None
+    petsc_extra_link_args = None
 
     cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib', 'tbb', 'tbbmalloc']
     cgal_include = [
@@ -138,6 +139,7 @@ elif sys.platform == 'linux':
     ]
     petsc_dirs = ['simnibs/external/lib/linux']
     petsc_runtime = ['$ORIGIN/../external/lib/linux']
+    petsc_extra_link_args = None
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
     cgal_include = [
@@ -168,6 +170,7 @@ elif sys.platform == 'darwin':
     ]
     petsc_dirs = ['simnibs/external/lib/osx']
     petsc_runtime = None
+    petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
     cgal_include = [
@@ -221,7 +224,8 @@ petsc_solver = Extension(
     include_dirs=petsc_include,
     library_dirs=petsc_dirs,
     libraries=petsc_libs,
-    runtime_library_dirs=petsc_runtime
+    runtime_library_dirs=petsc_runtime,
+    extra_link_args=petsc_extra_link_args
 )
 # I separated the CGAL functions into several files for two reasons
 # 1. Reduce memory consumption during compilation in Linux
@@ -429,7 +433,8 @@ class develop_(develop):
         if sys.platform == 'win32':
             move_libraries('.', shutil.copy)
         if sys.platform == 'darwin':
-            move_libraries('.', shutil.copy)
+            #move_libraries('.', shutil.copy)
+            pass
 
 
 setup(name='simnibs',
