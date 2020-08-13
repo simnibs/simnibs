@@ -194,6 +194,11 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
         assert ret.returncode == 0
 
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.py')
+        assert ret.returncode == 0
+
 
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
@@ -286,3 +291,7 @@ class TestMatlabErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')
         assert ret.returncode == 0
 
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.m')
+        assert ret.returncode == 0

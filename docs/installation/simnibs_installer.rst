@@ -5,22 +5,20 @@ Install SimNIBS
 
 
 
-A SimNIBS installation takes about 5 GB disk space.
+A SimNIBS installation takes about 3 GB disk space.
 
+.. note:: The installation procedure has changed in version 3.2. The previous simnibs installer app is now deprecated and will be removed in the near future.
 
 Windows
 -------
 1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
 
-2. Double click the :file:`install_simnibs_windows.exe` file. If a security warning shows up, click on *More info -> Run anyway*
+2. Double click the :file:`simnibs_installer_windows.exe` file. If a security warning shows up, click on *More info -> Run anyway*
 
-3. Select the desired version, accept the license and click *next*
+3. Click through the installer wizard
 
-4. Installation might take 15-30 minutes, depending on your computer and internet connection. Please be patient.
+4. Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.
  
-5. Log out and in again.
-
-.. note:: If you already have Anaconda or Miniconda installed in your computer, the links to the Anaconda Prompt and Anaconda Powershell in the Start Menu may be overwritten
 
 Testing the installation
 '''''''''''''''''''''''''
@@ -32,24 +30,21 @@ Linux
 -----
 1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
 
+
 2. Run in a terminal 
 
 
   .. code-block:: bash
   
     cd ~/Downloads
-    tar -xzf install_simnibs_linux.tar.gz
-    install_simnibs/install_simnibs
+    tar -xzf simnibs_installer_linux.tar.gz
+    simnibs_installer/install
 
   \
 
-3. Select the desired version, accept the license and click on *next*
+3. Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.
 
-4. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
-
-.. note:: The SimNIBS Installer does not support CentOS 6. However, it is possible to :ref:`install it using conda <conda-install>`
-
-.. note:: The installer also has a silent mode (no GUI), type :code:`./install_simnibs -h` for more information
+.. note:: The installer also has a silent mode (no GUI), type :code:`simnibs_installer/install -h` for more information
 
 
 Testing the Installation
@@ -62,40 +57,32 @@ MacOS
 ------
 1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
 
-2. Run in a terminal (use :code:`Cmd` + :code:`Space` and search for :code:`terminal`)
+2. Double click the :file:`simnibs_installer_macos.pkg` file.
 
+3. Click through the installer wizard.
 
-  .. code-block:: bash
-  
-    ~/Downloads/install_simnibs
-
-  \
-
-3. Select the desired version, accept the license and click on *next*
-
-4. Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.
+4. Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.
 
 .. note:: SimNIBS only supports MacOS versions ≥ 10.13 (High Sierra)
 
 
 Testing the Installation
 '''''''''''''''''''''''''
-Open the Launcher and search for :code:`SimNIBS GUI`
+Open Launchpad and search for :code:`SimNIBS GUI`
 
 
 Updating SimNIBS
 -----------------
 
-If you already have SimNIBS ≥ 3.0 installed, it is possible to upgrade your
-installation.
-
-Just start a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and type
+You can install the latest bugfix version of SimNIBS by starting a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and typing
 
 .. code-block:: bash
 
     update_simnibs
 
 \
+
+New feature versions require a new installation.
 
 Software Dependencies
 -----------------------

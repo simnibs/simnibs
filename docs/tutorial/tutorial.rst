@@ -12,5 +12,6 @@ Tutorial
    scripting
    analysis
    optimization
+   tms_optimization
    advanced/advanced
    win_prompt
