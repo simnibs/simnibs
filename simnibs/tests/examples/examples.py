@@ -196,7 +196,7 @@ class TestPythonErnie:
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tms_optimization_adm.py')
+        ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization')
         assert ret.returncode == 0
 
 
@@ -293,5 +293,5 @@ class TestMatlabErnie:
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tms_optimization_adm.m')
+        ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization')
         assert ret.returncode == 0
