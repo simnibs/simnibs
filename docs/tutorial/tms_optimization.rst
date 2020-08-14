@@ -8,6 +8,9 @@ SimNIBS can help finding the best TMS position for stimulating a certain target.
 done by searching coil positions in a grid around the target position and turning the
 coil at various angles.
 
+.. note::  When using this feature in a publication, please cite `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., & Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486. <https://doi.org/10.1016/j.neuroimage.2019.116486>`_
+
+
 Basic Setting
 --------------
 Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
@@ -22,14 +25,14 @@ solver uses approximately three times more memory than the standard solver.
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.py
+.. literalinclude:: ../../simnibs/examples/optimization/tms_optimization.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tms_optimization.m
+.. literalinclude:: ../../simnibs/examples/optimization/tms_optimization.m
    :language: matlab
 
 
@@ -48,14 +51,14 @@ refine the search by precisely specifying the search region, search angles and r
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.py
+.. literalinclude:: ../../simnibs/examples/optimization/tms_opt_refined.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tms_opt_refined.m
+.. literalinclude:: ../../simnibs/examples/optimization/tms_opt_refined.m
    :language: matlab
 
 
@@ -64,6 +67,16 @@ Auxiliary Dipole Method (ADM)
 
 To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`
 
+.. note:: 
+
+   When using this feature in a publication, please cite `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
+
+   Authors of auxiliary dipole method (ADM) and code for determining rapidly the optimum coil position and orientation: Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
+
+   The development of the Duke ADM algorithm and code were supported by the National Institute of Mental Health and the National Institute on Aging of the National Institutes of Health under Award Numbers K99MH120046, RF1MH114268, RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
+
+\
+
 .. code-block:: python
 
   tms_opt.fnamecoil = 'Magstim_70mm_Fig8.ccd'
@@ -71,13 +84,25 @@ To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file an
 
 \
 
+Python
+''''''
+
+.. literalinclude:: ../../simnibs/examples/optimization/tms_optimization_adm.py
+   :language: python
+
+
+MATLAB
+''''''
+
+.. literalinclude:: ../../simnibs/examples/optimization/tms_optimization_adm.m
+   :language: matlab
 
 
 Acknowledgements
 ------------------
 
 We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
-functionality, and Luis Gomez for contributing the code for the
+functionality, and Luis Gomez for contributing the code for the ADM optimization
 
 Further Reading
 ------------------

@@ -2,14 +2,14 @@ variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
-- norm_opt
+- master
 
-# Build SimNIBS on a Centos 6 container
+
+# Build SimNIBS on a Centos 7 container
 jobs:
 - job: Build
   pool:
-    vmImage: 'ubuntu-16.04'
-    maxParallel: 4
+    vmImage: 'ubuntu-latest'
 
   container: simnibs/simnibs-testing:centos7
   steps:
@@ -71,7 +71,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Unit Tests'
 
 - job: Examples
   dependsOn: Build
@@ -106,7 +106,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish Example Test Results'
+      testRunTitle: 'Example Tests'
 
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release

@@ -1,4 +1,4 @@
-''' This script is meant to fix the "shebang" on windows executables coming from installation of wheels
+''' This script is meant to fix the "shebang" on scripts coming from installation of wheels
     pip uses the distlib package to create entry points for wheels. These entry poits have a hard-coded
     path to the python executables. Here, we replace those paths with new ones
 

@@ -321,7 +321,7 @@ PyPardiso
 
 Files
 -----
-* simnibs/simulation/pardiso.py (Modified by G. Saturnino
+* simnibs/simulation/pardiso.py (Modified by G. Saturnino)
 
 Copyright
 ----------
@@ -372,7 +372,7 @@ GNU LGPL 3
 
 
 ZLIB
-======
+=======
 
 Files
 ------
@@ -410,3 +410,23 @@ freely, subject to the following restrictions:
 
 Jean-loup Gailly        Mark Adler
 jloup@gzip.org          madler@alumni.caltech.edu
+
+ADMlib
+======
+
+Files
+-------
+* simnibs/optimization/ADMlib.py
+
+License
+----------
+The copyrights of this software are owned by Duke University. As such, two licenses to this software are offered:
+
+* An open source license under the GNU General Public License (GPL-v2.0), for non-commercial and academic purposes only (https://opensource.org/licenses/gpl-2.0.php).
+* A commercial license with Duke University, for commercial use without the GPL-v2.0 restrictions.
+
+As a recipient of this software, you may choose which license to receive the code under. Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.
+
+To enter a commercial license agreement, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email.
+
+Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

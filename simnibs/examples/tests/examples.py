@@ -185,6 +185,22 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_strength.py')
         assert ret.returncode == 0
 
+    def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        shutil.copy(
+            os.path.join(
+                simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+            example_dataset
+        )
+        ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
+        assert ret.returncode == 0
+
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization')
+        assert ret.returncode == 0
+
 
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
@@ -264,4 +280,20 @@ class TestMatlabErnie:
     def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tdcs_optimize_strength.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        shutil.copy(
+            os.path.join(
+                simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+            example_dataset
+        )
+        ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')
+        assert ret.returncode == 0
+
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization')
         assert ret.returncode == 0

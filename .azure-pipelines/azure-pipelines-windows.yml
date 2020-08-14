@@ -2,30 +2,23 @@ variables:
   Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
-- norm_opt
+- master
 
 jobs:
-
-# Build using Windows 2016- vs 2017
 - job: Build
   pool:
     vmImage: 'vs2017-win2016'
 
   steps:
-
-  - powershell: |
-      (New-Object System.Net.WebClient).DownloadFile("https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe",".\Miniconda3.exe")
-    displayName: Download Miniconda
-
-  - script: start /wait "" Miniconda3.exe /InstallationType=JustMe /RegisterPython=0 /S /D=$(Agent.BuildDirectory)\CONDA
-    displayName: Install Miniconda
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
 
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate
       conda env create -f environment_win.yml
     displayName: Create Conda environment
+
   - script: |
-      call $(Agent.BuildDirectory)\CONDA\Scripts\activate simnibs_env
+      call activate simnibs_env
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
       python packing\pack.py dist\
@@ -33,6 +26,7 @@ jobs:
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
       cp simnibs_installer_windows.exe  $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -62,7 +56,7 @@ jobs:
       downloadType: 'single'
       artifactName: 'windows'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download Installer
 
   - script: |
       start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
@@ -73,7 +67,7 @@ jobs:
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Unit Tests'
 
 - job: Examples
   dependsOn: Build
@@ -98,8 +92,13 @@ jobs:
   - script: |
       start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\examples\tests\examples.py -v -s --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run unit tests
+    displayName: Install SimNIBS and run tests
 
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Example Tests'
 
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release

@@ -7,6 +7,11 @@ The main publications documenting SimNIBS development are
 Version 3.2
 -----------
 
+TMS Optimiztion (ADM method)
+''''''''''''''''''''''''''''
+* `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
+
+
 Magnetic Field Calculations
 '''''''''''''''''''''''''''
 * `Yazdanian, H., Saturnino, G. B., Thielscher, A., & Knudsen, K. (2020). Fast evaluation of the Biot-Savart integral using FFT for electrical conductivity imaging. Journal of Computational Physics, 109408. <https://doi.org/10.1016/j.jcp.2020.109408>`_
