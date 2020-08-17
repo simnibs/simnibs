@@ -166,6 +166,9 @@ def image2mesh(image, affine, facet_angle=30,
         spatially variable scalar field. It provides an upper bound on the circumradii of the
         mesh tetrahedra. Default: minimum voxel size (very low!)
 
+    optimize: bool (optional)
+        Tunrn on Lloyd optimization. Sliver perturbation and exudation is always done. Default: True
+
     Returns
     ----------
     msh: simnibs.Msh

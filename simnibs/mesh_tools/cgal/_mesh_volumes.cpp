@@ -112,7 +112,7 @@ struct Sizing_field
             std::cerr << "trying to access sizing field out-of-bounds" << std::endl;
             return 1;
         }
-	FT val = sizing_field_image[i + sx*j + sx*sy*k];
+	      FT val = sizing_field_image[i + sx*j + sx*sy*k];
         return val;
     };
 };

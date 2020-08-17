@@ -1,6 +1,7 @@
 import os
 import sys
 SIMNIBSDIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+# Add the external/lib/win folder to system path so that the dlls there can be found
 if sys.platform == 'win32':
     os.environ['PATH'] = os.pathsep.join([
         os.path.join(SIMNIBSDIR, 'external', 'lib', 'win'),
