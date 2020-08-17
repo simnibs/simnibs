@@ -310,13 +310,13 @@ def path_cleanup(scripts_dir, shell_type='bash'):
 
 
 def matlab_prepare():
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSDIR.m'), 'w') as f:
         f.write("function path=SIMNIBSDIR\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
         f.write("end\n")
 
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSPYTHON.m'), 'w') as f:
         python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
@@ -325,44 +325,29 @@ def matlab_prepare():
 
 def links_setup(install_dir):
     if sys.platform == 'win32':
-        _create_shortcut(
-            os.path.join(install_dir, 'examples'),
-            os.path.join(SIMNIBSDIR, 'examples')
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'simnibs'),
-            SIMNIBSDIR
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'resources'),
-            os.path.join(SIMNIBSDIR, 'resources')
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'matlab_tools'),
-            os.path.join(SIMNIBSDIR, 'matlab_tools')
-        )
+        linkfun = _create_shortcut
     else:
-        def _new_symlink(link_name, target):
+        def linkfun(link_name, target):
             if os.path.islink(link_name):
                 os.remove(link_name)
             os.symlink(target, link_name)
 
-        _new_symlink(
-            os.path.join(install_dir, 'examples'),
-            os.path.join(SIMNIBSDIR, 'examples')
-        )
-        _new_symlink(
-            os.path.join(install_dir, 'simnibs'),
-            SIMNIBSDIR
-        )
-        _new_symlink(
-            os.path.join(install_dir, 'resources'),
-            os.path.join(SIMNIBSDIR, 'resources')
-        )
-        _new_symlink(
-            os.path.join(install_dir, 'matlab_tools'),
-            os.path.join(SIMNIBSDIR, 'matlab_tools')
-        )
+    linkfun(
+        os.path.join(install_dir, 'examples'),
+        os.path.join(SIMNIBSDIR, 'examples')
+    )
+    linkfun(
+        os.path.join(install_dir, 'simnibs'),
+        SIMNIBSDIR
+    )
+    linkfun(
+        os.path.join(install_dir, 'resources'),
+        os.path.join(SIMNIBSDIR, 'resources')
+    )
+    linkfun(
+        os.path.join(install_dir, 'matlab_tools'),
+        os.path.join(SIMNIBSDIR, 'matlab_tools')
+    )
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
@@ -984,7 +969,7 @@ def main():
                         help="Silent mode, will install without the GUI")
     parser.add_argument('--setup-links', action='store_true',
                         help='Setups links or shortcuts (on windows) to the simnibs '
-                        'and example folders')
+                        'and example folders.')
     parser.add_argument('--no-copy-gmsh-options', dest='copy_gmsh_options',
                         action='store_false', help='Do not copy gmsh options')
     parser.add_argument('--no-add-to-path', dest='add_to_path',
