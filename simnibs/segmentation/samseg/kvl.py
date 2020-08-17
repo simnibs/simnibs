@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from . import gems
+import charm_gems as gems
 
 logger = logging.getLogger(__name__)
 

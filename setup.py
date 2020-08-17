@@ -408,6 +408,7 @@ class build_ext_(build_ext):
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in osx_folders]
 
+
 setup(name='simnibs',
       version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
       description='www.simnibs.org',
@@ -431,7 +432,8 @@ setup(name='simnibs',
           'nibabel>=2.3',
           'packaging',
           'requests',
-          'charm-gems'
+          'charm-gems',
+          'fmm3dpy'
       ],
       extras_require={
           'GUI': ['pyqt5', 'pyopengl']

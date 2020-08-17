@@ -5,7 +5,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 import logging
 
-from . import gems
+import charm_gems as gems
 from .Affine import Affine
 from .utilities import requireNumpyArray
 from .SamsegUtility import readCroppedImages
