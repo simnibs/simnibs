@@ -1,4 +1,4 @@
-from . import gemsbindings as gems
+import charm_gems as gems
 from .ProbabilisticAtlas import ProbabilisticAtlas
 from .SamsegUtility import undoLogTransformAndBiasField, writeImage, maskOutBackground, logTransform, readCroppedImages
 from .GMM import GMM
@@ -69,12 +69,12 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             FreeSurferLabels, bg_label,
                                             cat_opts=cat_structure_options)
     else:
-        segmentation, cat_norm_scan_masks = _calculateSegmentationLoop(
-                                            imageBuffers - biasFields,
-                                            mask, fractionsTable, mesh,
-                                            numberOfGaussiansPerClass,
-                                            means, variances, mixtureWeights,
-                                            FreeSurferLabels, bg_label)
+        segmentation = _calculateSegmentationLoop(
+                        imageBuffers - biasFields,
+                        mask, fractionsTable, mesh,
+                        numberOfGaussiansPerClass,
+                        means, variances, mixtureWeights,
+                        FreeSurferLabels, bg_label)
         
     writeImage(output_name_segmentation,
                segmentation, cropping, exampleImage)

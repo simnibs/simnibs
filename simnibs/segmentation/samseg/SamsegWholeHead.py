@@ -3,7 +3,7 @@ import os
 import pickle
 from .Samseg import Samseg
 from .SamsegUtility import writeImage
-from . import gems
+import charm_gems as gems
 eps = np.finfo(float).eps
 from .simnibs_segmentation_utils import _calculateSegmentationLoop
 

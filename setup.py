@@ -406,6 +406,7 @@ class build_ext_(build_ext):
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in osx_folders]
 
+
 setup(name='simnibs',
       version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
       description='www.simnibs.org',
@@ -426,7 +427,8 @@ setup(name='simnibs',
           'numpy>=1.16',
           'scipy>=1.2',
           'h5py>=2.9',
-          'nibabel>=2.3'
+          'nibabel>=2.3',
+          'charm-gems'
       ],
       extras_require={
           'GUI': ['pyqt5', 'pyopengl']
