@@ -1864,7 +1864,7 @@ class TestReadRes:
             f.write(b'$EndResFormat\n')
             f.write(b'$Solution\n')
             f.write(b'0 0 0 0\n')
-            f.write(np.array([-1.2, 0, -2, 0, 3.0, 0],dtype='float64').tostring())
+            f.write(np.array([-1.2, 0, -2, 0, 3.0, 0],dtype='float64').tobytes())
             f.write(b'\n')
             f.write(b'$EndSolution\n')
 
@@ -1935,23 +1935,8 @@ class TestSurfaceIO:
 
 
 class TestHashing:
-    def test_scalar(self):
-        hash_ = mesh_io._hash_rows(np.array([[2]]), dtype=np.int64)
-        assert hash_ == hash((2,))
-
-    def test_array(self):
-        array = (81231, 1238, 1213)
-        hash_ = mesh_io._hash_rows(np.array([array]), dtype=np.int64)
-        assert hash_ == hash(array)
-
-    def test_many_arrays(self):
-        array = ((81231, 1238, 1213),
-                 (11231, 1288, 1123))
-        hash_ = mesh_io._hash_rows(np.array(array), dtype=np.int64)
-        assert hash_[0] == hash(array[0])
-        assert hash_[1] == hash(array[1])
-
     def test_collisions(self):
+        np.random.seed(0)
         array = np.random.randint(0, 1e6, size=(int(1e7), 3), dtype=np.int32)
         array = np.unique(array, axis=0)
         hash_ = mesh_io._hash_rows(np.array(array))
