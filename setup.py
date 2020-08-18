@@ -20,7 +20,7 @@ CGAL >= 5 is a header-only library, so we download it right before compiling.
 
 Compilation requires:
 GCC >= 6.3 or Apple Clang == 10.0.1 or MSVC >= 14.0
-
+    conda install gcc_linux-64 gxx_linux-64 gfortran_linux-64
 Boost >= 1.57
 
 Boost can be instaled with
@@ -118,6 +118,7 @@ if sys.platform == 'win32':
         'simnibs/external/include/win/mpfr',
         'simnibs/external/include/win/gmp'
     ]
+    # Find boost headers if installed with conda
     if is_conda:
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_dirs = ['simnibs/external/lib/win']
@@ -150,10 +151,12 @@ elif sys.platform == 'linux':
         'simnibs/external/include/linux/mpfr',
         'simnibs/external/include/linux/gmp'
     ]
+    # To find the boost headers if installed with conda
     if is_conda:
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_dirs = ['simnibs/external/lib/linux']
     cgal_runtime = ['$ORIGIN/../../external/lib/linux']
+    # Add -Os -flto for much smaller binaries
     cgal_compile_args = [
         '-Os', '-flto',
         '-frounding-math',
@@ -170,7 +173,7 @@ elif sys.platform == 'darwin':
     ]
     petsc_dirs = ['simnibs/external/lib/osx']
     petsc_runtime = None
-    # add RPATH
+    # add RPATH as the _runtime argument does not work in MacOS, likely bug in setuptools
     petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
@@ -376,7 +379,6 @@ class build_ext_(build_ext):
         # cleanup downloads
         if self.force or changed_meshing:
             shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
-            shutil.rmtree(f'eigen-{eigen_version}', ignore_errors=True)
             shutil.rmtree(tbb_path, ignore_errors=True)
         # Remove unescessary binary files
         linux_folders = [
@@ -428,7 +430,10 @@ setup(name='simnibs',
           'scipy>=1.2',
           'h5py>=2.9',
           'nibabel>=2.3',
-          'charm-gems'
+          'packaging',
+          'requests',
+          'charm-gems',
+          'fmm3dpy'
       ],
       extras_require={
           'GUI': ['pyqt5', 'pyopengl']

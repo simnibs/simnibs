@@ -588,8 +588,8 @@ class TestTMS:
 
     @patch.object(coil_lib, 'set_up_tms')
     def test_tms_coil_parallel(self, mock_set_up, tms_sphere):
-        if sys.platform == 'win32':
-            '''Won't run on windows because Mock does not work through multiprocessing '''
+        if sys.platform in ['win32', 'darwin']:
+            '''Won't run on windows or MacOS because Mock does not work through multiprocessing '''
             assert True
             return
         m, cond, dAdt, E_analytical = tms_sphere
@@ -613,8 +613,8 @@ class TestLeadfield:
     @pytest.mark.parametrize('n_workers', [1, 2])
     @pytest.mark.parametrize('input_type', ['tag', 'node'])
     def test_leadfield(self, input_type, n_workers, field, post_pro, cube_msh):
-        if sys.platform == 'win32' and n_workers > 1:
-            ''' Same as above, does not work on windows '''
+        if sys.platform in ['win32', 'darwin'] and n_workers > 1:
+            ''' Same as above, does not work on windows or MacOS'''
             return
         m = cube_msh
         cond = np.ones(m.elm.nr)
@@ -647,14 +647,14 @@ class TestLeadfield:
 
         if not post_pro:
             n_roi = np.sum(m.elm.tag1 == 5)
-            with h5py.File(fn_hdf5) as f:
+            with h5py.File(fn_hdf5, 'r') as f:
                 assert f[dataset].shape == (2, n_roi, 3)
                 assert rdm(f[dataset][0, ...],
                            np.tile([0., 100, 0.], (n_roi, 1))) < .2
                 assert mag(f[dataset][0, ...],
                            np.tile([0., 100, 0.], (n_roi, 1))) < np.log(1.1)
         if post_pro:
-            with h5py.File(fn_hdf5) as f:
+            with h5py.File(fn_hdf5, 'r') as f:
                 assert f[dataset].shape == (2, 10, 3)
                 assert rdm(f[dataset][0, ...],
                            np.tile([0., 200, 0.], (10, 1))) < .2
@@ -669,7 +669,7 @@ class TestTMSMany:
     @pytest.mark.parametrize('n_workers', [1, 2])
     @patch.object(coil_lib, 'set_up_tms')
     def test_many_simulations(self, mock_set_up, n_workers, post_pro, tms_sphere):
-        if sys.platform == 'win32' and n_workers > 1:
+        if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows '''
             return
         m, cond, dAdt, E_analytical = tms_sphere
@@ -691,7 +691,7 @@ class TestTMSMany:
             n_workers=n_workers
         )
         roi_select = m.elm.tag1 == 3
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             for E in f[dataset]:
                 if post_pro:
                     assert rdm(E, post(E_analytical[roi_select])) < .3

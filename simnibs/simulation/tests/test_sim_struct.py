@@ -221,7 +221,7 @@ class TestList:
             fn_hdf5 = f.name
         l._write_conductivity_to_hdf5(fn_hdf5)
 
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert np.isclose(f['cond/values'][3], 2)
             assert np.isnan(f['cond/values'][46])
             assert f['cond/names'][0] == b'WM'

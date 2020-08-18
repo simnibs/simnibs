@@ -52,7 +52,7 @@
 <h1>simnibs.Elements<a class="headerlink" href="#simnibs-elements" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="simnibs.Elements">
-<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Elements</code><span class="sig-paren">(</span><em class="sig-param">triangles=None</em>, <em class="sig-param">tetrahedra=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">simnibs.</code><code class="descname">Elements</code><span class="sig-paren">(</span><em>triangles=None</em>, <em>tetrahedra=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mesh elements.</p>
 <p>Can only handle triangles and tetrahedra!</p>
@@ -66,7 +66,7 @@
 </dl>
 <dl class="attribute">
 <dt id="simnibs.Elements.elm_number">
-<code class="sig-name descname">elm_number</code><a class="headerlink" href="#simnibs.Elements.elm_number" title="Permalink to this definition">¶</a></dt>
+<code class="descname">elm_number</code><a class="headerlink" href="#simnibs.Elements.elm_number" title="Permalink to this definition">¶</a></dt>
 <dd><p>element ID (u from 1 till nr)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -77,7 +77,7 @@
 
 <dl class="attribute">
 <dt id="simnibs.Elements.elm_type">
-<code class="sig-name descname">elm_type</code><a class="headerlink" href="#simnibs.Elements.elm_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">elm_type</code><a class="headerlink" href="#simnibs.Elements.elm_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>elm-type (2=triangle, 4=tetrahedron, etc)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -88,7 +88,7 @@
 
 <dl class="attribute">
 <dt id="simnibs.Elements.tag1">
-<code class="sig-name descname">tag1</code><a class="headerlink" href="#simnibs.Elements.tag1" title="Permalink to this definition">¶</a></dt>
+<code class="descname">tag1</code><a class="headerlink" href="#simnibs.Elements.tag1" title="Permalink to this definition">¶</a></dt>
 <dd><p>first tag for each element</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -99,7 +99,7 @@
 
 <dl class="attribute">
 <dt id="simnibs.Elements.tag2">
-<code class="sig-name descname">tag2</code><a class="headerlink" href="#simnibs.Elements.tag2" title="Permalink to this definition">¶</a></dt>
+<code class="descname">tag2</code><a class="headerlink" href="#simnibs.Elements.tag2" title="Permalink to this definition">¶</a></dt>
 <dd><p>second tag for each elenent</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -110,7 +110,7 @@
 
 <dl class="attribute">
 <dt id="simnibs.Elements.node_number_list">
-<code class="sig-name descname">node_number_list</code><a class="headerlink" href="#simnibs.Elements.node_number_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">node_number_list</code><a class="headerlink" href="#simnibs.Elements.node_number_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>4xnumber_of_element matrix of the nodes that constitute the element.
 For the triangles, the fourth element = -1</p>
 <dl class="field-list simple">
@@ -122,7 +122,7 @@ For the triangles, the fourth element = -1</p>
 
 <dl class="attribute">
 <dt id="simnibs.Elements.nr">
-<code class="sig-name descname">nr</code><a class="headerlink" href="#simnibs.Elements.nr" title="Permalink to this definition">¶</a></dt>
+<code class="descname">nr</code><a class="headerlink" href="#simnibs.Elements.nr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number or elemets</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -135,12 +135,12 @@ For the triangles, the fourth element = -1</p>
 <p>Node and element count starts at 1!</p>
 <dl class="method">
 <dt id="simnibs.Elements.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">triangles=None</em>, <em class="sig-param">tetrahedra=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>triangles=None</em>, <em>tetrahedra=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-default">
+<table class="longtable docutils align-center">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
@@ -179,7 +179,7 @@ For the triangles, the fourth element = -1</p>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table class="longtable docutils align-default">
+<table class="longtable docutils align-center">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
@@ -201,7 +201,7 @@ For the triangles, the fourth element = -1</p>
 </table>
 <dl class="method">
 <dt id="simnibs.Elements.add_triangles">
-<code class="sig-name descname">add_triangles</code><span class="sig-paren">(</span><em class="sig-param">triangles</em>, <em class="sig-param">tag</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.add_triangles" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_triangles</code><span class="sig-paren">(</span><em>triangles</em>, <em>tag</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.add_triangles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add triangles to mesh in-place</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -215,7 +215,7 @@ For the triangles, the fourth element = -1</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.connected_components">
-<code class="sig-name descname">connected_components</code><span class="sig-paren">(</span><em class="sig-param">element_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.connected_components" title="Permalink to this definition">¶</a></dt>
+<code class="descname">connected_components</code><span class="sig-paren">(</span><em>element_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.connected_components" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds connected components</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -231,15 +231,15 @@ element indices, or booleans default: all elements)</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt>
-<em class="property">property </em><code class="sig-name descname">elm_number</code></dt>
+<code class="descname">elm_number</code></dt>
 <dd><p>Element numbers (1, …, nr)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="simnibs.Elements.find_adjacent_tetrahedra">
-<code class="sig-name descname">find_adjacent_tetrahedra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_adjacent_tetrahedra" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_adjacent_tetrahedra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_adjacent_tetrahedra" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find the tetrahedra adjacent (sharing a face) to each element</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -254,7 +254,7 @@ tetrahedra</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.find_all_elements_with_node">
-<code class="sig-name descname">find_all_elements_with_node</code><span class="sig-paren">(</span><em class="sig-param">node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_all_elements_with_node" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_all_elements_with_node</code><span class="sig-paren">(</span><em>node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_all_elements_with_node" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds all elements that have a given node</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -271,7 +271,7 @@ tetrahedra</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.find_neighbouring_nodes">
-<code class="sig-name descname">find_neighbouring_nodes</code><span class="sig-paren">(</span><em class="sig-param">node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_neighbouring_nodes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find_neighbouring_nodes</code><span class="sig-paren">(</span><em>node_nr</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.find_neighbouring_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the nodes that share an element with the specified node</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -295,7 +295,7 @@ tetrahedra</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.get_faces">
-<code class="sig-name descname">get_faces</code><span class="sig-paren">(</span><em class="sig-param">tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_faces" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_faces</code><span class="sig-paren">(</span><em>tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_faces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a list of nodes in each face and a list of faces in each tetrahedra</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -317,7 +317,7 @@ the tetrahedra are presented</p></li>
 
 <dl class="method">
 <dt id="simnibs.Elements.get_outside_faces">
-<code class="sig-name descname">get_outside_faces</code><span class="sig-paren">(</span><em class="sig-param">tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_outside_faces" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_outside_faces</code><span class="sig-paren">(</span><em>tetrahedra_indexes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_outside_faces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a list of nodes in each face that are in the outer volume</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -335,7 +335,7 @@ element indices, default: all tetrahedra)</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.get_surface_outline">
-<code class="sig-name descname">get_surface_outline</code><span class="sig-paren">(</span><em class="sig-param">triangle_indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_surface_outline" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_surface_outline</code><span class="sig-paren">(</span><em>triangle_indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.get_surface_outline" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns the outline of a non-closed surface</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -353,7 +353,7 @@ element indices, default: all tetrahedra)</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.node_elm_adjacency">
-<code class="sig-name descname">node_elm_adjacency</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.node_elm_adjacency" title="Permalink to this definition">¶</a></dt>
+<code class="descname">node_elm_adjacency</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.node_elm_adjacency" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a sparse matrix with element indexes adjacent to each node</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -367,7 +367,7 @@ element indices, default: all tetrahedra)</p>
 
 <dl class="method">
 <dt id="simnibs.Elements.nodes_with_tag">
-<code class="sig-name descname">nodes_with_tag</code><span class="sig-paren">(</span><em class="sig-param">tags</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.nodes_with_tag" title="Permalink to this definition">¶</a></dt>
+<code class="descname">nodes_with_tag</code><span class="sig-paren">(</span><em>tags</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.nodes_with_tag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets all nodes indexes that are part of at least one element with the given
 tags</p>
 <dl class="field-list simple">
@@ -383,21 +383,21 @@ tags</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt>
-<em class="property">property </em><code class="sig-name descname">nr</code></dt>
+<code class="descname">nr</code></dt>
 <dd><p>Number of elements</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="simnibs.Elements.tetrahedra">
-<em class="property">property </em><code class="sig-name descname">tetrahedra</code><a class="headerlink" href="#simnibs.Elements.tetrahedra" title="Permalink to this definition">¶</a></dt>
+<code class="descname">tetrahedra</code><a class="headerlink" href="#simnibs.Elements.tetrahedra" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tetrahedra element numbers</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="simnibs.Elements.triangles">
-<em class="property">property </em><code class="sig-name descname">triangles</code><a class="headerlink" href="#simnibs.Elements.triangles" title="Permalink to this definition">¶</a></dt>
+<code class="descname">triangles</code><a class="headerlink" href="#simnibs.Elements.triangles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triangle element numbers</p>
 </dd></dl>
 
@@ -480,10 +480,10 @@ tags</p>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
+  <h3>Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -502,10 +502,10 @@ tags</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

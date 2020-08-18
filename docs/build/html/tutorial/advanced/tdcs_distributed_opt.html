@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>TDCS Network Optimization &#8212; SimNIBS 3.2b0 documentation</title>
+    <title>TDCS Network Optimization &#8212; SimNIBS 4.0b0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -53,7 +53,7 @@
 <p>As of SimNIBS 3.2, you can use SimNIBS to optimize electric fields based on distributed
 targets, such as t-maps from resting state networks. We use the problem set-up
 proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al. 2014</a>),
-and solve it using algorithms proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino et al. 2019</a>). The connection between the two algorithms is explained <a class="reference download internal" download="" href="../../_downloads/790dad7e592349aca3567dbadebfb6ad/ERNI_opt.pdf"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a></p>
+and solve it using algorithms proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino et al. 2019</a>). The connection between the two algorithms is explained <a class="reference download internal" download="" href="../../_downloads/c8390cf1eea9229b8afab921b5353246/ERNI_opt.pdf"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
@@ -64,7 +64,7 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
 </div>
 <div class="section" id="optimiztion">
 <h2>Optimiztion<a class="headerlink" href="#optimiztion" title="Permalink to this headline">¶</a></h2>
-<p>In the examples below, we use the T-map defined in <a class="reference download internal" download="" href="../../_downloads/9fa57b79687e4991fe8f1def28e6a2d8/ID03_MOTOR_ICA.nii.gz"><code class="xref download docutils literal notranslate"><span class="pre">ID03_MOTOR_ICA</span></code></a> file as a target. This T-map is defined in MNI space</p>
+<p>In the examples below, we use the T-map defined in <a class="reference download internal" download="" href="../../_downloads/f6970c1fb469bd26efbaca4c0159bbdd/ID03_MOTOR_ICA.nii.gz"><code class="xref download docutils literal notranslate"><span class="pre">ID03_MOTOR_ICA</span></code></a> file as a target. This T-map is defined in MNI space</p>
 <div class="section" id="python">
 <h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a SimNIBS tDCS optimization with a distributed target in Python</span>
@@ -225,10 +225,10 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
+  <h3>Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -247,10 +247,10 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

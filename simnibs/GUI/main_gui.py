@@ -864,7 +864,7 @@ class ElcTable(QtWidgets.QWidget):
             tdcslist.electrode[i].substitute_positions_from_cap(eeg_cap)
             if tdcslist.electrode[i].pos_ydir is None or len(
                 tdcslist.electrode[i].pos_ydir) == 0:
-                while self.glHeadModel.getSurface('Scalp') is 'Loading':
+                while self.glHeadModel.getSurface('Scalp') == 'Loading':
                     time.sleep(1)
                 tdcslist.electrode[i].pos_ydir = _get_posy(
                     tdcslist.electrode[i].centre,

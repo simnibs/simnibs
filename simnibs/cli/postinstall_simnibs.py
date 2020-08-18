@@ -47,7 +47,7 @@ if sys.platform == 'win32':
 
 MINOR_VERSION = '.'.join(__version__.split('.')[:2])
 
-def copy_scripts(dest_dir):
+def create_scripts(dest_dir):
     ''' Create scripts to call SimNIBS
     We need to write sh/cmd scripts due to the way python handles DLLs
     Additionaly, creates a 'simnibs' command in the matlab folder
@@ -60,7 +60,7 @@ def copy_scripts(dest_dir):
         write_sitecustomize =True
         with open(simnibs_sitecustomize, 'r') as f:
             simnibs_sitecustomize_contents = f.read()
-        # Check if there is a sitecustomize file alread present and if it is identical ti the SimNIBS one
+        # Check if there is a sitecustomize file alread present and if it is identical to the SimNIBS one
         if os.path.isfile(env_sitecustomize):
             with open(env_sitecustomize, 'r') as f:
                 env_sitecustomize_contents = f.read()
@@ -82,7 +82,7 @@ def copy_scripts(dest_dir):
             gui = True
         else:
             gui = False
-        # Norma things
+        # Normal things
         bash_name = os.path.join(dest_dir, basename)
 
         # Special treatment to meshfix and gmsh
@@ -310,59 +310,44 @@ def path_cleanup(scripts_dir, shell_type='bash'):
 
 
 def matlab_prepare():
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSDIR.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSDIR.m'), 'w') as f:
         f.write("function path=SIMNIBSDIR\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"path='{os.path.join(SIMNIBSDIR)}';\n")
         f.write("end\n")
 
-    with open(os.path.join(SIMNIBSDIR, 'matlab', 'SIMNIBSPYTHON.m'), 'w') as f:
+    with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSPYTHON.m'), 'w') as f:
         python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"python_call='{python_call}';\n")
         f.write("end\n")
 
-def matlab_setup(install_dir):
-    destdir =  os.path.abspath(os.path.join(install_dir, 'matlab'))
-    if not os.path.isdir(destdir):
-        os.mkdir(destdir)
-    for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab', '*')):
-        shutil.copy(m, destdir)
-
 def links_setup(install_dir):
     if sys.platform == 'win32':
-        _create_shortcut(
-            os.path.join(install_dir, 'examples'),
-            os.path.join(SIMNIBSDIR, 'examples')
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'simnibs'),
-            SIMNIBSDIR
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'resources'),
-            os.path.join(SIMNIBSDIR, 'resources')
-        )
+        linkfun = _create_shortcut
     else:
-        def _new_symlink(link_name, target):
+        def linkfun(link_name, target):
             if os.path.islink(link_name):
                 os.remove(link_name)
             os.symlink(target, link_name)
 
-        _new_symlink(
-            os.path.join(install_dir, 'examples'),
-            os.path.join(SIMNIBSDIR, 'examples')
-        )
-        _new_symlink(
-            os.path.join(install_dir, 'simnibs'),
-            SIMNIBSDIR
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'resources'),
-            os.path.join(SIMNIBSDIR, 'resources')
-        )
-
+    linkfun(
+        os.path.join(install_dir, 'examples'),
+        os.path.join(SIMNIBSDIR, 'examples')
+    )
+    linkfun(
+        os.path.join(install_dir, 'simnibs'),
+        SIMNIBSDIR
+    )
+    linkfun(
+        os.path.join(install_dir, 'resources'),
+        os.path.join(SIMNIBSDIR, 'resources')
+    )
+    linkfun(
+        os.path.join(install_dir, 'matlab_tools'),
+        os.path.join(SIMNIBSDIR, 'matlab_tools')
+    )
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
@@ -648,7 +633,6 @@ def file_associations_cleanup():
 
 def uninstaller_setup(install_dir, force, silent):
     uninstaller = os.path.join(install_dir, 'uninstall_simnibs')
-    miniconda_dir = os.path.join(install_dir, 'miniconda3')
     simnibs_env_dir = os.path.join(install_dir, 'simnibs_env')
     if sys.platform == 'win32':
         _write_windows_cmd(
@@ -661,8 +645,7 @@ def uninstaller_setup(install_dir, force, silent):
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
             f.write(
-                f'&& rm -rf {miniconda_dir} '
-                f'; rm -rf {simnibs_env_dir} '
+                f'&& rm -rf {simnibs_env_dir} '
                 f'; rm "{uninstaller}" '
                 f'; rm -rf "{install_dir}"')
 
@@ -834,7 +817,6 @@ if GUI:
 
 
     def start_gui(simnibsdir,
-                  copy_matlab,
                   setup_links,
                   copy_gmsh_options,
                   add_to_path,
@@ -860,7 +842,6 @@ if GUI:
                     ex.extra_coils,
                     ex.add_shortcut_icons,
                     ex.associate_files,
-                    copy_matlab,
                     setup_links)
         else:
             raise Exception('Post-installation cancelled by user')
@@ -901,7 +882,6 @@ def install(install_dir,
             extra_coils=True,
             add_shortcut_icons=False,
             associate_files=False,
-            copy_matlab=False,
             setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     os.makedirs(install_dir, exist_ok=True)
@@ -919,9 +899,6 @@ def install(install_dir,
     if associate_files:
         print('Associating Files', flush=True)
         setup_file_association(force, silent)
-    if copy_matlab:
-        print('Copying matlab folder', flush=True)
-        matlab_setup(install_dir)
     if setup_links:
         links_setup(install_dir)
     activator_setup(install_dir)
@@ -935,7 +912,7 @@ def install(install_dir,
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
-    copy_scripts(scripts_dir)
+    create_scripts(scripts_dir)
     if add_to_path:
         try:
             added_to_path = path_setup(scripts_dir, force, silent)
@@ -951,7 +928,6 @@ def uninstall(install_dir):
     shortcut_icons_clenup()
     file_associations_cleanup()
     shutil.rmtree(os.path.join(install_dir, 'documentation'), True)
-    shutil.rmtree(os.path.join(install_dir, 'matlab'), True)
     shutil.rmtree(os.path.join(install_dir, 'bin'), True)
     def try_remove(f):
         try:
@@ -959,13 +935,11 @@ def uninstall(install_dir):
         except OSError:
             pass
 
-    for f in glob.glob(os.path.join(install_dir, 'environment*.yml')):
-        try_remove(f)
-
     if sys.platform == 'win32':
         try_remove(os.path.join(install_dir, 'activate_simnibs.cmd'))
         try_remove(os.path.join(install_dir, 'examples.lnk'))
         try_remove(os.path.join(install_dir, 'simnibs.lnk'))
+        try_remove(os.path.join(install_dir, 'matlab_tools.lnk'))
         try_remove(os.path.join(install_dir, 'Activate SimNIBS.lnk'))
         try_remove(os.path.join(install_dir, 'Uninstall SimNIBS.lnk'))
         conda_uninstaller = os.path.join(
@@ -978,6 +952,7 @@ def uninstall(install_dir):
         try_remove(os.path.join(install_dir, 'activate_simnibs'))
         try_remove(os.path.join(install_dir, 'simnibs'))
         try_remove(os.path.join(install_dir, 'examples'))
+        try_remove(os.path.join(install_dir, 'matlab_tools'))
         if sys.platform == 'darwin':
             shutil.rmtree(os.path.join(install_dir, 'SimNIBS GUI.app'), True)
             shutil.rmtree(os.path.join(install_dir, 'Gmsh.app'), True)
@@ -992,12 +967,9 @@ def main():
                         help="Perform all install steps")
     parser.add_argument('-s', "--silent", required=False, action='store_true',
                         help="Silent mode, will install without the GUI")
-    parser.add_argument('--copy-matlab', action='store_true',
-                        help='Copies the matlab folder from the simnibs package to'
-                       ' the target directory')
     parser.add_argument('--setup-links', action='store_true',
                         help='Setups links or shortcuts (on windows) to the simnibs '
-                        'and example folders')
+                        'and example folders.')
     parser.add_argument('--no-copy-gmsh-options', dest='copy_gmsh_options',
                         action='store_false', help='Do not copy gmsh options')
     parser.add_argument('--no-add-to-path', dest='add_to_path',
@@ -1027,7 +999,6 @@ def main():
                 'more information')
         start_gui(
             install_dir,
-            args.copy_matlab,
             args.setup_links,
             args.copy_gmsh_options,
             args.add_to_path,
@@ -1046,7 +1017,6 @@ def main():
             args.extra_coils,
             args.add_shortcut_icons,
             args.associate_files,
-            args.copy_matlab,
             args.setup_links
         )
 
