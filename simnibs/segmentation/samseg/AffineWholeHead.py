@@ -84,7 +84,7 @@ class AffineWholeHead(Affine):
         alphas = mesh.alphas
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
-        spineAlphas = alphas[:, -1]
+        spineAlphas = alphas[:, 48]
         mask_spine = spineAlphas > 0.01
 
         # Let's figure out where the z-coordinate is and which way is up
@@ -100,14 +100,14 @@ class AffineWholeHead(Affine):
         # The position where spine starts (from the brainstem) depends on
         # if the direction is I->S or S->I
         if(z_direction < 1):  # I->S
-            top_ind = np.argwhere(np.argmax(spine_positions_z))
-            top_pos = spine_positions_z[top_ind[0]]
+            top_ind = np.argmax(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
             mask_neck = z_positions < top_pos
             neck_pos = z_positions[mask_neck]
             z_dist = top_pos - neck_pos
         else:  # S->I
-            top_ind = np.argwhere(np.argmin(spine_positions_z))
-            top_pos = spine_positions_z[top_ind[0]]
+            top_ind = np.argmin(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
             mask_neck = z_positions > top_pos
             neck_pos = z_positions[mask_neck]
             z_dist = neck_pos - top_pos
@@ -173,7 +173,7 @@ class AffineWholeHead(Affine):
         alphas = mesh.alphas
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
-        spineAlphas = alphas[:, -1]
+        spineAlphas = alphas[:, 48]
         mask_spine = spineAlphas > 0.01
         z_positions = mesh.points[:, z_dim]
         spine_positions_z = z_positions[mask_spine]
