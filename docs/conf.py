@@ -22,7 +22,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'SimNIBS'
-copyright = '2019, SimNIBS Developers'
+copyright = '2020, SimNIBS Developers'
 author = 'SimNIBS Developers'
 
 # The full version, including alpha/beta/rc tags

@@ -61,7 +61,7 @@ There are two steps for performing the optimizations.</p>
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
 </div>
 <div class="section" id="leadfield-calculations">
-<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<span id="tutorial-leadfield"></span><h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
 <p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
@@ -368,8 +368,8 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/two_targets&#39;</span>
 
-<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">4e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="c1"># Target in the left motor cortex</span>
@@ -379,7 +379,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="c1"># Target in the right motor cortex</span>
 <span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
-<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value revert the direction</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value reverses direction</span>
 
 <span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 </pre></div>
@@ -414,9 +414,6 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </li>
 </ul>
 <p></p>
-<<<<<<< HEAD
-<p>By using multiple targets, SimNIBS will try to hit each target with its intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
-=======
 <p>By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
 </div>
 <div class="section" id="electric-field-strength">
@@ -486,7 +483,6 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p class="admonition-title">Note</p>
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
 </div>
->>>>>>> 7213b3d3dc2d2450b199a11b70e99c3933acb6f2
 </div>
 <div class="section" id="avoidance-regions">
 <h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>
@@ -556,6 +552,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+<p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
 </div>
 </div>
 
@@ -631,10 +628,10 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
+  <h3>Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -653,10 +650,10 @@ In this structure, we need to select the leadfield we will use for the optimizat
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

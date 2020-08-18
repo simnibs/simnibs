@@ -31,7 +31,7 @@ Windows
   .. code-block::
   
      md "%USERPROFILE%\SimNIBS"
-     postinstall_simnibs --copy-matlab --setup-links -d "%USERPROFILE%\SimNIBS"
+     postinstall_simnibs --setup-links -d "%USERPROFILE%\SimNIBS"
 
   \  
 
@@ -58,7 +58,7 @@ Linux
   .. code-block:: bash
   
      mkdir $HOME/SimNIBS
-     postinstall_simnibs --copy-matlab --setup-links -d $HOME/SimNIBS
+     postinstall_simnibs --setup-links -d $HOME/SimNIBS
 
   \  
 
@@ -86,6 +86,6 @@ MacOS
   .. code-block:: bash
   
      mkdir -p $HOME/Applications/SimNIBS
-     postinstall_simnibs --copy-matlab --setup-links -d $HOME/Applications/SimNIBS
+     postinstall_simnibs --setup-links -d $HOME/Applications/SimNIBS
 
   \ 
