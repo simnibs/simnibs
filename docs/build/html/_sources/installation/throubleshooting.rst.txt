@@ -1,3 +1,5 @@
+.. _install_throubleshooting:
+
 Troubleshooting
 ===============
 

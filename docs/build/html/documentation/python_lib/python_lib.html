@@ -1,17 +1,18 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Python Library Documentation &#8212; SimNIBS 3.2b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Library Documentation &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -162,6 +163,44 @@ modules used in SimNIBS.</p>
 </tbody>
 </table>
 </div>
+<div class="section" id="simulations">
+<h2>Simulations<a class="headerlink" href="#simulations" title="Permalink to this headline">¶</a></h2>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.calc_B.html#simnibs.simulation.calc_B" title="simnibs.simulation.calc_B"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.calc_B</span></code></a></p></td>
+<td><p>Calculates the magnetic field caused by a current density distribution J</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.calc_fields.html#simnibs.simulation.calc_fields" title="simnibs.simulation.calc_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.calc_fields</span></code></a></p></td>
+<td><p>Given a mesh and the electric potentials at the nodes, calculates the fields</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.tdcs.html#simnibs.simulation.tdcs" title="simnibs.simulation.tdcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tdcs</span></code></a></p></td>
+<td><p>Simulates a tDCS electric potentil</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.tdcs_neumann.html#simnibs.simulation.tdcs_neumann" title="simnibs.simulation.tdcs_neumann"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tdcs_neumann</span></code></a></p></td>
+<td><p>Simulates a tDCS electric potential using Neumann boundary conditions on the electrodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.tdcs_leadfield.html#simnibs.simulation.tdcs_leadfield" title="simnibs.simulation.tdcs_leadfield"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tdcs_leadfield</span></code></a></p></td>
+<td><p>Simulates tDCS fields using Neumann boundary conditions and writes the output Electric fields to an HDF5 file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.tms_dadt.html#simnibs.simulation.tms_dadt" title="simnibs.simulation.tms_dadt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tms_dadt</span></code></a></p></td>
+<td><p>Simulates a TMS electric potential field using a dAdt field</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.tms_coil.html#simnibs.simulation.tms_coil" title="simnibs.simulation.tms_coil"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tms_coil</span></code></a></p></td>
+<td><p>Simulates TMS fields using a coil + matsimnibs + dIdt definition</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.tms_many_simulations.html#simnibs.simulation.tms_many_simulations" title="simnibs.simulation.tms_many_simulations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tms_many_simulations</span></code></a></p></td>
+<td><p>Function for runnining a large amount of TMS simulations</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.electric_dipole.html#simnibs.simulation.electric_dipole" title="simnibs.simulation.electric_dipole"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.electric_dipole</span></code></a></p></td>
+<td><p>Electric dipole simulations using the partial integration method</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 
@@ -245,7 +284,7 @@ modules used in SimNIBS.</p>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -262,7 +301,7 @@ modules used in SimNIBS.</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

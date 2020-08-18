@@ -9,7 +9,6 @@ Please download it before continuing.
 SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running simulations.
 In both, we use a set of nested structures to define the simulation, and then use the *run_simnibs* function to run the simulation.
 
-
 .. _run_scripts:
 
 Running Scripts
@@ -19,6 +18,25 @@ Python
 ''''''
 
 Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the correct *Python* interpreter.
+
+Spyder IDE Setup (optional)
+............................
+
+You can install the `Spyder IDE <https://www.spyder-ide.org>`_ editor by running
+
+.. code-block::
+  
+  simnibs_python -m pip install --upgrade pyqt5==5.12 pyqtwebengine==5.12 pyflakes==2.2 spyder==4.1
+
+\
+
+To start Spyder, run
+
+.. code-block::
+
+  simnibs_python -m spyder.app.start
+
+\
 
 MATLAB
 ''''''

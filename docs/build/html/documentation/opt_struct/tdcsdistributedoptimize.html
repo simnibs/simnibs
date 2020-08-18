@@ -1,17 +1,18 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TDCSDistributedOptimize &#8212; SimNIBS 3.2b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDCSDistributedOptimize &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -126,13 +127,91 @@ and the <code class="file docutils literal notranslate"><span class="pre">motor_
 </li>
 <li><p><strong>intensity</strong>: <em>float, optional</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Target field intensity. The larger the value, the more the optimization will hit the target network, but at the cost at having higher fields outside of it. Corresponds to <img class="math" src="../../_images/math/b093524cca7c5e201eff20c8daedae7e61432d1d.png" alt="E_0"/> in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al., 2014</a>)</p></li>
+<li><p><strong>Description</strong>: Target field intensity. The larger the value, the more the optimization will hit the target network, but at the cost at having higher fields outside of it. Corresponds to <div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">E_0</span>)</p>
+<p>latex exited with error
+[stdout]
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=latex)
+ restricted \write18 enabled.
+entering extended mode
+(./math.tex
+LaTeX2e &lt;2020-02-02&gt; patch level 5
+L3 programming layer &lt;2020-03-06&gt;
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/inputenc.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+
+! LaTeX Error: File `anyfontsize.sty' not found.
+
+Type X to quit or &lt;RETURN&gt; to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
+! Emergency stop.
+&lt;read *&gt; 
+         
+l.8 \usepackage
+               {bm}^^M
+No pages of output.
+Transcript written on math.log.
+</p>
+</div>
+ in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al., 2014</a>)</p></li>
 <li><p><strong>Default</strong>: 0.2</p></li>
 </ul>
 </li>
 <li><p><strong>min_img_value</strong>: <em>float ≥ 0, optional</em></p>
 <ul class="simple">
-<li><p><strong>Descrption</strong>: minimum image value to be considered for optimization. All image values below it are set to zero. Corresponds to <img class="math" src="../../_images/math/5b8a89dfb9efc7112b0dde73f2b0f939793783a7.png" alt="T_{min}"/> in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al., 2014</a>)</p></li>
+<li><p><strong>Descrption</strong>: minimum image value to be considered for optimization. All image values below it are set to zero. Corresponds to <div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<span class="docutils literal">T_{min}</span>)</p>
+<p>latex exited with error
+[stdout]
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=latex)
+ restricted \write18 enabled.
+entering extended mode
+(./math.tex
+LaTeX2e &lt;2020-02-02&gt; patch level 5
+L3 programming layer &lt;2020-03-06&gt;
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/size12.clo))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/base/inputenc.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsmath.sty
+For additional information on amsmath, use the `?' option.
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amstext.sty
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsgen.sty))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsbsy.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsmath/amsopn.sty))
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amscls/amsthm.sty)
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsfonts/amssymb.sty
+(/usr/local/texlive/2020basic/texmf-dist/tex/latex/amsfonts/amsfonts.sty))
+
+! LaTeX Error: File `anyfontsize.sty' not found.
+
+Type X to quit or &lt;RETURN&gt; to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
+! Emergency stop.
+&lt;read *&gt; 
+         
+l.8 \usepackage
+               {bm}^^M
+No pages of output.
+Transcript written on math.log.
+</p>
+</div>
+ in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al., 2014</a>)</p></li>
 <li><p><strong>Default</strong>: 0</p></li>
 </ul>
 </li>
@@ -248,7 +327,7 @@ number of electrodes</p></li>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -265,7 +344,7 @@ number of electrodes</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

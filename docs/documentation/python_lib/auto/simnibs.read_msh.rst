@@ -1,4 +1,4 @@
-simnibs.read\_msh
+﻿simnibs.read\_msh
 =================
 
 .. currentmodule:: simnibs

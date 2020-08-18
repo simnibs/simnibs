@@ -9,6 +9,8 @@ A SimNIBS installation takes about 3 GB disk space.
 
 .. note:: The installation procedure has changed in version 3.2. The previous simnibs installer app is now deprecated and will be removed in the near future.
 
+.. note:: In case you have problems during the installation, please check :ref:`install_throubleshooting`
+
 Windows
 -------
 1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_

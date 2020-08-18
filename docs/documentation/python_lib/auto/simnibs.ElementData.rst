@@ -1,4 +1,4 @@
-simnibs.ElementData
+﻿simnibs.ElementData
 ===================
 
 .. currentmodule:: simnibs

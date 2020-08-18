@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simnibs.simulation.tms_dadt &#8212; SimNIBS 3.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="simnibs.simulation.tms_coil" href="simnibs.simulation.tms_coil.html" />
+    <link rel="prev" title="simnibs.simulation.tdcs_leadfield" href="simnibs.simulation.tdcs_leadfield.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.simulation.tdcs_leadfield.html" title="Previous document">simnibs.simulation.tdcs_leadfield</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.tms_coil.html" title="Next document">simnibs.simulation.tms_coil</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="simnibs-simulation-tms-dadt">
+<h1>simnibs.simulation.tms_dadt<a class="headerlink" href="#simnibs-simulation-tms-dadt" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="simnibs.simulation.tms_dadt">
+<code class="sig-prename descclassname">simnibs.simulation.</code><code class="sig-name descname">tms_dadt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mesh</span></em>, <em class="sig-param"><span class="n">cond</span></em>, <em class="sig-param"><span class="n">dAdt</span></em>, <em class="sig-param"><span class="n">solver_options</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tms_dadt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulates a TMS electric potential field using a dAdt field</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
+<li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
+<li><p><strong>dAdt</strong> (<em>simnibs.msh.mesh_io.NodeData</em><em> or </em><em>simnibs.msh.mesh_io.ElementData</em>) – dAdt information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>v</strong> – NodeData instance with potential at the nodes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>simnibs.msh.mesh_io.NodeData</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.simulation.tdcs_leadfield.html" title="Previous document">simnibs.simulation.tdcs_leadfield</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.tms_coil.html" title="Next document">simnibs.simulation.tms_coil</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../documentation.html">Documentation</a><ul>
+  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
+      <li>Previous: <a href="simnibs.simulation.tdcs_leadfield.html" title="previous chapter">simnibs.simulation.tdcs_leadfield</a></li>
+      <li>Next: <a href="simnibs.simulation.tms_coil.html" title="next chapter">simnibs.simulation.tms_coil</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/documentation/python_lib/auto/simnibs.simulation.tms_dadt.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

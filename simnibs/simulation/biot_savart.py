@@ -40,7 +40,7 @@ def calc_B(J, n_voxels, affine, calc_res=2., mask=False):
     n_voxels: list or tuple
         number of voxels in x, y, and z directions for the output B
     affine: ndarray
-        A 4x4 matrix specifying the transformation from voxels to xyz  for the output B
+        A 4x4 matrix specifying the transformation from voxels to xyz for the output B
     calc_res: float (optional)
         Resolution of the space used for the FFT calculations, in mm. Default: 2
     mask: bool (optional)
@@ -51,9 +51,22 @@ def calc_B(J, n_voxels, affine, calc_res=2., mask=False):
     B: ndarray
         numpy array of size n_voxesx3 with the magnetic field        
 
-    Attention
+    Reference
     ----------
-    This function calculates the FFT in a space
+    Yazdanian, H., Saturnino, G. B., Thielscher, A., & Knudsen, K. (2020).
+    Fast evaluation of the Biot-Savart integral using FFT for electrical conductivity imaging.
+    Journal of Computational Physics, 109408.
+    https://doi.org/10.1016/j.jcp.2020.109408
+
+    Example
+    ---------
+    Load a simulation result with a 'J' field can calculate B in an ROI
+    Defined by a nifti file
+    >>> import simnibs
+    >>> import nibabel
+    >>> simulation_J = simnibs.read_msh('simulation_result_with_J.msh')
+    >>> reference_nifti = nibabel.load('reference.nii)
+    >>> B = simnibs.simulation.calc_B(simulation_J.field['J'], reference_nifti.shape, reference_nifti.affine)
     '''
     mesh = J.mesh
     # Computational Domain (before zero-padding)

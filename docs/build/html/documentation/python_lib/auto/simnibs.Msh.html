@@ -1,17 +1,18 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.Msh &#8212; SimNIBS 3.2b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simnibs.Msh &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -50,11 +51,10 @@
             
   <div class="section" id="simnibs-msh">
 <h1>simnibs.Msh<a class="headerlink" href="#simnibs-msh" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+<dl class="py class">
 <dt id="simnibs.Msh">
-<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Msh</code><span class="sig-paren">(</span><em class="sig-param">nodes=None</em>, <em class="sig-param">elements=None</em>, <em class="sig-param">fn=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>class to handle the meshes.
+<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Msh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elements</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to handle the meshes.
 Gatters Nodes, Elements and Data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -66,7 +66,7 @@ Overides nodes and elements</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.nodes">
 <code class="sig-name descname">nodes</code><a class="headerlink" href="#simnibs.Msh.nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>a Nodes field</p>
@@ -77,7 +77,7 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.elm">
 <code class="sig-name descname">elm</code><a class="headerlink" href="#simnibs.Msh.elm" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Elements field</p>
@@ -88,7 +88,7 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.nodedata">
 <code class="sig-name descname">nodedata</code><a class="headerlink" href="#simnibs.Msh.nodedata" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of NodeData filds</p>
@@ -99,7 +99,7 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.elmdata">
 <code class="sig-name descname">elmdata</code><a class="headerlink" href="#simnibs.Msh.elmdata" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of ElementData fields</p>
@@ -110,7 +110,7 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.fn">
 <code class="sig-name descname">fn</code><a class="headerlink" href="#simnibs.Msh.fn" title="Permalink to this definition">¶</a></dt>
 <dd><p>name of file</p>
@@ -121,7 +121,7 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Msh.binary">
 <code class="sig-name descname">binary</code><a class="headerlink" href="#simnibs.Msh.binary" title="Permalink to this definition">¶</a></dt>
 <dd><p>wheather or not the mesh was in binary format</p>
@@ -132,9 +132,9 @@ Overides nodes and elements</p></li>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="simnibs.Msh.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">nodes=None</em>, <em class="sig-param">elements=None</em>, <em class="sig-param">fn=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elements</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
@@ -148,100 +148,115 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.__init__" title="simnibs.Msh.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([nodes, elements, fn])</p></td>
 <td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.add_element_field" title="simnibs.Msh.add_element_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_element_field</span></code></a>(field, field_name)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_element_field</span></code>(field, field_name)</p></td>
 <td><p>Adds field defined in the elements</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.add_node_field" title="simnibs.Msh.add_node_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_node_field</span></code></a>(field, field_name)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_node_field</span></code>(field, field_name)</p></td>
 <td><p>Adds field defined in the nodes</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.calc_matsimnibs" title="simnibs.Msh.calc_matsimnibs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_matsimnibs</span></code></a>(center, pos_ydir, distance)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_matsimnibs</span></code>(center, pos_ydir, distance)</p></td>
 <td><p>Calculate the matsimnibs matrix for TMS simulations</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.compact_ordering" title="simnibs.Msh.compact_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compact_ordering</span></code></a>(node_number)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compact_ordering</span></code>(node_number)</p></td>
 <td><p>Changes the node and element ordering so that it goes from 1 to nr_nodes</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.crop_mesh" title="simnibs.Msh.crop_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mesh</span></code></a>([tags, elm_type, nodes, elements])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mesh</span></code>([tags, elm_type, nodes, elements])</p></td>
 <td><p>Crops the specified tags from the mesh Generates a new mesh, with only the specified tags The nodes are also reordered</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.elements_baricenters" title="simnibs.Msh.elements_baricenters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_baricenters</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_baricenters</span></code>()</p></td>
 <td><p>Calculates the baricenter of the elements</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.elements_volumes_and_areas" title="simnibs.Msh.elements_volumes_and_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code></a>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code>()</p></td>
 <td><p>Calculates the volumes of tetrahedra and areas of triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.elm2node_matrix" title="simnibs.Msh.elm2node_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code></a>([elm_indices])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code>([elm_indices])</p></td>
 <td><p>Calculates a sparse matrix to tranform from ElementData to NodeData Uses Superconvergent patch recovery for volumetric data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.elm_node_coords" title="simnibs.Msh.elm_node_coords"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code></a>([elm_nr, tag, elm_type])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code>([elm_nr, tag, elm_type])</p></td>
 <td><p>Returns the position of each of the element’s nodes</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fields_summary" title="simnibs.Msh.fields_summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields_summary</span></code></a>([roi, fields, percentiles, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields_summary</span></code>([roi, fields, percentiles, …])</p></td>
 <td><p>Creates a text summaty of the field</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.find_closest_element" title="simnibs.Msh.find_closest_element"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_element</span></code></a>(querry_points[, …])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_element</span></code>(querry_points[, …])</p></td>
 <td><p>Finds the closest node to each point in p</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.find_corresponding_tetrahedra" title="simnibs.Msh.find_corresponding_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code>()</p></td>
 <td><p>Finds the tetrahedra corresponding to each triangle</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.find_tetrahedron_with_points" title="simnibs.Msh.find_tetrahedron_with_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code></a>(points[, …])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_shared_nodes</span></code>(tags)</p></td>
+<td><p>Finds the nodes which are shared by all given tags</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code>(points[, …])</p></td>
 <td><p>Finds the tetrahedron that contains each of the described points using a stochastic walk algorithm</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_surface_labels" title="simnibs.Msh.fix_surface_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code></a>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code>()</p></td>
 <td><p>Fixels labels of surfaces</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_th_node_ordering" title="simnibs.Msh.fix_th_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of tetrahedra in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.fix_thin_tetrahedra" title="simnibs.Msh.fix_thin_tetrahedra"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code></a>([n_iter, step_length])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
 <td><p>Optimize the locations of the points by moving them towards the center of their patch.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.fix_tr_node_ordering" title="simnibs.Msh.fix_tr_node_ordering"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of the triangles in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.interp_matrix" title="simnibs.Msh.interp_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code></a>(pos[, out_fill, th_indices, …])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code>()</p></td>
+<td><p>Calculates the Gaussian curvature at each node</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept_ray</span></code>(near, far)</p></td>
+<td><p>Finds the triangle (if any) that intercepts a line segment</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, …])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.join_mesh" title="simnibs.Msh.join_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code></a>(other)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
 <td><p>Join the current mesh with another</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_areas" title="simnibs.Msh.nodes_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code></a>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
 <td><p>Areas for all nodes in a surface</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_normals" title="simnibs.Msh.nodes_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code></a>([smooth])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([smooth])</p></td>
 <td><p>Normals for all nodes in a surface</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.nodes_volumes_or_areas" title="simnibs.Msh.nodes_volumes_or_areas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code></a>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
 <td><p>Return the volume (volume mesh) if area (surface mesh) of all nodes Only works for ordered values of mesh and node indices</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.open_in_gmsh" title="simnibs.Msh.open_in_gmsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
 <td><p>Opens the mesh in gmsh</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.prepare_surface_tags" title="simnibs.Msh.prepare_surface_tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code></a>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.read_hdf5" title="simnibs.Msh.read_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code></a>(hdf5_fn[, path, load_data])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
 <td><p>Reads mesh information from an hdf5 file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.remove_from_mesh" title="simnibs.Msh.remove_from_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code></a>([tags, elm_type, nodes, …])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags])</p></td>
+<td><p>Reconstruct the mhes surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code>([tags, elm_type, nodes, …])</p></td>
 <td><p>Removes the specified tags from the mesh Generates a new mesh, with the specified tags removed The nodes are also reordered</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.test_inside_volume" title="simnibs.Msh.test_inside_volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_inside_volume</span></code></a>(points)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_inside_volume</span></code>(points)</p></td>
 <td><p>Tests if points are iside the volume using the Möller–Trumbore intersection algorithm</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.tetrahedra_quality" title="simnibs.Msh.tetrahedra_quality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code>()</p></td>
 <td><p>calculates the quality measures of the tetrahedra</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.triangle_normals" title="simnibs.Msh.triangle_normals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code></a>([smooth])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_angles</span></code>()</p></td>
+<td><p>Calculates minimum angle of the mesh triangles</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code>([smooth])</p></td>
 <td><p>Calculates the normals of triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.view" title="simnibs.Msh.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>([visible_tags, visible_fields])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([visible_tags, visible_fields])</p></td>
 <td><p>Visualize mesh in Gmsh</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Msh.write" title="simnibs.Msh.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(out_fn)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(out_fn)</p></td>
 <td><p>Writes out the mesh as a “.msh” file</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.write_hdf5" title="simnibs.Msh.write_hdf5"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code></a>(hdf5_fn[, path, compression])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path, compression])</p></td>
 <td><p>Writes a HDF5 file with mesh information</p></td>
 </tr>
 </tbody>
@@ -253,654 +268,11 @@ Overides nodes and elements</p></li>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.field" title="simnibs.Msh.field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></p></td>
 <td><p>Dictionary of fields indexed by their name</p></td>
 </tr>
 </tbody>
 </table>
-<dl class="method">
-<dt id="simnibs.Msh.add_element_field">
-<code class="sig-name descname">add_element_field</code><span class="sig-paren">(</span><em class="sig-param">field</em>, <em class="sig-param">field_name</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.add_element_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds field defined in the elements</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>np.ndarray</em><em> or </em><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData"><em>simnibs.ElementData</em></a>) – Value of field in the mesh elements. Should have the shape
-- (n_elm,) or (n_elm, 1) for scalar fields
-- (n_elm, 3) for vector fields
-- (n_elm, 9) for tensors</p></li>
-<li><p><strong>field_name</strong> (<em>str</em>) – Name for the field.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ed</strong> – ElementData class with the input field</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData">simnibs.ElementData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.add_node_field">
-<code class="sig-name descname">add_node_field</code><span class="sig-paren">(</span><em class="sig-param">field</em>, <em class="sig-param">field_name</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.add_node_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds field defined in the nodes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>field</strong> (<em>np.ndarray</em><em> or </em><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData"><em>simnibs.NodeData</em></a>) – Value of field in the mesh nodes. Should have the shape
-- (n_nodes,) or (n_nodes, 1) for scalar fields
-- (n_nodes, 3) for vector fields
-- (n_nodes, 9) for tensors</p></li>
-<li><p><strong>field_name</strong> (<em>str</em>) – Name for the field.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>nd</strong> – NodeData class with the input field</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData">simnibs.NodeData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.calc_matsimnibs">
-<code class="sig-name descname">calc_matsimnibs</code><span class="sig-paren">(</span><em class="sig-param">center</em>, <em class="sig-param">pos_ydir</em>, <em class="sig-param">distance</em>, <em class="sig-param">skin_surface=None</em>, <em class="sig-param">msh_surf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.calc_matsimnibs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the matsimnibs matrix for TMS simulations</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>center</strong> (<em>np.ndarray</em>) – Position of the center of the coil, will be projected to the skin surface.</p></li>
-<li><p><strong>pos_ydir</strong> (<em>np.ndarray</em>) – Position of the y axis in relation to the coil center.</p></li>
-<li><p><strong>distance</strong> (<em>float</em>) – Distance from the center.</p></li>
-<li><p><strong>skin_surface</strong> (<em>list of num</em><em>, </em><em>optional</em>) – Possible tags for the skin surface (default: [5, 1005]).</p></li>
-<li><p><strong>msh_surf</strong> (<em>simnibs.msh.Msh</em><em>, </em><em>optional</em>) – Surface cropped mesh. If not provided, this is computed from self.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>matsimnibs</strong> – Matrix of the format
-x’ y’ z’ c
-0  0  0  1
-y’ is the direction of the coil
-z’ is a direction normal to the coil, points inside the head</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>2d np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.compact_ordering">
-<code class="sig-name descname">compact_ordering</code><span class="sig-paren">(</span><em class="sig-param">node_number</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.compact_ordering" title="Permalink to this definition">¶</a></dt>
-<dd><p>Changes the node and element ordering so that it goes from 1 to nr_nodes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>node_number</strong> (<em>N_nodes x 1 ndarray of inte</em>) – Node numbering in the original mesh</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.crop_mesh">
-<code class="sig-name descname">crop_mesh</code><span class="sig-paren">(</span><em class="sig-param">tags=None</em>, <em class="sig-param">elm_type=None</em>, <em class="sig-param">nodes=None</em>, <em class="sig-param">elements=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.crop_mesh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Crops the specified tags from the mesh
-Generates a new mesh, with only the specified tags
-The nodes are also reordered</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tags</strong> (<em>(</em><em>optinal</em><em>) </em><em>int</em><em> or </em><em>list</em>) – list of tags to be cropped, default: all</p></li>
-<li><p><strong>elm_type</strong> (<em>(</em><em>optional</em><em>) </em><em>list of int</em>) – list of element types to be croped (2 for triangles, 4 for tetrahedra), default: all</p></li>
-<li><p><strong>nodes</strong> (<em>(</em><em>optional</em><em>) </em><em>list of ints</em>) – List of nodes to be cropped, returns the minimal mesh containing elements
-wih at least one of the given nodes</p></li>
-<li><p><strong>elements</strong> (<em>(</em><em>optional</em><em>) </em><em>list of ints</em>) – List of elements to be cropped</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Mesh with only the specified tags/elements/nodes</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>simnibs.msh.Msh</p>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>ValueError</strong><strong>, </strong><strong>if the tag and elm_type combination is not foud</strong> – </p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>If more than one (tags, elm_type, nodes, elements) is selected, they are joined by an OR
-operation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.elements_baricenters">
-<code class="sig-name descname">elements_baricenters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elements_baricenters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the baricenter of the elements</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>baricenters</strong> – ElementData with the baricentes of the elements</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData">ElementData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.elements_volumes_and_areas">
-<code class="sig-name descname">elements_volumes_and_areas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elements_volumes_and_areas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the volumes of tetrahedra and areas of triangles</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>v</strong> – Volume/areas of tetrahedra/triangles</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>simnibs.Msh.ElementData</p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>In the mesh’s unit (normally mm)</p>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.elm2node_matrix">
-<code class="sig-name descname">elm2node_matrix</code><span class="sig-paren">(</span><em class="sig-param">elm_indices=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elm2node_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates a sparse matrix to tranform from ElementData to NodeData
-Uses Superconvergent patch recovery for volumetric data. Will not work well for
-discontinuous fields (like E, if several tissues are used)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>M</strong> (<em>scipy.sparse.csc</em>) – Sparse matrix, where M.dot(elm_data) = node_data, elm_data is a vector with
-element data, and node_data is a vector with node data. Interpolation is done
-different for tetrahedra, tetrahedra outside faces, and triangles without an
-associated tetrahedron</p></li>
-<li><p><strong>elm_indices</strong> (<em>np.ndarray (optional)</em>) – Indices of the elements to be considered for interpolation. Default: use all
-elements</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>Zienkiewicz, Olgierd Cecil, and Jian
-Zhong Zhu. “The superconvergent patch recovery and a posteriori error
-estimates. Part 1: The recovery technique.” International Journal for
-Numerical Methods in Engineering 33.7 (1992): 1331-1364.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.elm_node_coords">
-<code class="sig-name descname">elm_node_coords</code><span class="sig-paren">(</span><em class="sig-param">elm_nr=None</em>, <em class="sig-param">tag=None</em>, <em class="sig-param">elm_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.elm_node_coords" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the position of each of the element’s nodes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>elm_nr</strong> (<em>(</em><em>optional</em><em>) </em><em>array of ints</em>) – Elements to return, default: Return all elements</p></li>
-<li><p><strong>tag</strong> (<em>(</em><em>optional</em><em>) </em><em>array of ints</em>) – Only return elements with specified tag. default: all tags</p></li>
-<li><p><strong>elm_type</strong> (<em>(</em><em>optional</em><em>) </em><em>array of ints</em>) – Only return elements of specified type. default: all</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Array with node position of every element
-For triangles, the fourth coordinates are 0,0,0</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Nx4x3 ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.field">
-<em class="property">property </em><code class="sig-name descname">field</code><a class="headerlink" href="#simnibs.Msh.field" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dictionary of fields indexed by their name</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.fields_summary">
-<code class="sig-name descname">fields_summary</code><span class="sig-paren">(</span><em class="sig-param">roi=None</em>, <em class="sig-param">fields=None</em>, <em class="sig-param">percentiles=(99.9</em>, <em class="sig-param">99</em>, <em class="sig-param">95)</em>, <em class="sig-param">focality_cutoffs=(75</em>, <em class="sig-param">50)</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fields_summary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a text summaty of the field</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>roi</strong> (<em>list</em><em> (</em><em>optional</em><em>)</em>) – Regions of interest, in tissue tags. Default: Whole mesh</p></li>
-<li><p><strong>fields</strong> (<em>list</em><em> (</em><em>optional</em><em>)</em>) – Fields for which to calculate the summary</p></li>
-<li><p><strong>percentiles</strong> (<em>ndarray</em><em> (</em><em>optinal</em><em>)</em>) – Field percentiles to be printed. Default: (99.9, 99, 95)</p></li>
-<li><p><strong>focality_cutoffs</strong> (<em>ndarray</em><em> (</em><em>optional</em><em>)</em>) – Cuttofs for focality calculations. Default: (75, 50)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.find_closest_element">
-<code class="sig-name descname">find_closest_element</code><span class="sig-paren">(</span><em class="sig-param">querry_points</em>, <em class="sig-param">return_index=False</em>, <em class="sig-param">elements_of_interest=None</em>, <em class="sig-param">k=1</em>, <em class="sig-param">return_distance=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.find_closest_element" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the closest node to each point in p</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>querry_points</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of points (x,y,z) to which the closest element in the mesh should be found</p></li>
-<li><p><strong>return_index</strong> (<em>(</em><em>optional</em><em>) </em><em>bool</em>) – Whether to return the index of the closes nodes, default=False</p></li>
-<li><p><strong>elements_of_interest</strong> (<em>(</em><em>opional</em><em>) </em><em>list</em>) – list of element indices that are of interest</p></li>
-<li><p><strong>k</strong> (<em>(</em><em>optional</em><em>) </em><em>int</em>) – number of nearest neighbourt to return</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>coords</strong> (<em>Nx3 array of floats</em>) – coordinates of the baricenter of the closest element</p></li>
-<li><p><strong>indexes</strong> (<em>Nx1 array of ints</em>) – Indice of the closest elements</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The indices are in the mesh listing, that starts at one!</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.find_corresponding_tetrahedra">
-<code class="sig-name descname">find_corresponding_tetrahedra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.find_corresponding_tetrahedra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the tetrahedra corresponding to each triangle</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>corresponding_th_indices</strong> – List of the element indices of the tetrahedra corresponding to each triangle.
-Note: This is in mesh ordering (starts at 1), -1 if there’s no corresponding</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>ndarray of ints</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.find_shared_nodes">
-<code class="sig-name descname">find_shared_nodes</code><span class="sig-paren">(</span><em class="sig-param">tags</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.find_shared_nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the nodes which are shared by all given tags</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tags</strong> (<em>list of integers</em>) – Tags where to search</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>shared_nodes</strong> – List of nodes which are shared by all tags</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list of integers</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.find_tetrahedron_with_points">
-<code class="sig-name descname">find_tetrahedron_with_points</code><span class="sig-paren">(</span><em class="sig-param">points</em>, <em class="sig-param">compute_baricentric=True</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.find_tetrahedron_with_points" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the tetrahedron that contains each of the described points using a
-stochastic walk algorithm</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>points</strong> (<em>Nx3 ndarray</em>) – List of points to be queried</p></li>
-<li><p><strong>compute_baricenters</strong> (<em>bool</em>) – Wether or not to compute baricentric coordinates of the points</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>th_with_points</strong> (<em>ndarray</em>) – List with the tetrahedron that contains each point. If the point is outside
-the mesh, the value will be -1</p></li>
-<li><p><strong>baricentric</strong> (<em>n x 4 ndarray (if compute_baricentric == True)</em>) – Baricentric coordinates of point. If the point is outside, a list of zeros</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>Devillers, Olivier, Sylvain Pion, and Monique Teillaud. “Walking in a
-triangulation.” International Journal of Foundations of Computer Science 13.02
-(2002): 181-199.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.fix_surface_labels">
-<code class="sig-name descname">fix_surface_labels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_surface_labels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fixels labels of surfaces</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.fix_th_node_ordering">
-<code class="sig-name descname">fix_th_node_ordering</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_th_node_ordering" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fixes the node ordering of tetrahedra in-place</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.fix_thin_tetrahedra">
-<code class="sig-name descname">fix_thin_tetrahedra</code><span class="sig-paren">(</span><em class="sig-param">n_iter=7</em>, <em class="sig-param">step_length=0.05</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_thin_tetrahedra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Optimize the locations of the points by moving them towards the center
-of their patch. This is done iterativally for all points for a number of
-iterations</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.fix_tr_node_ordering">
-<code class="sig-name descname">fix_tr_node_ordering</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.fix_tr_node_ordering" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fixes the node ordering of the triangles in-place</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.gaussian_curvature">
-<code class="sig-name descname">gaussian_curvature</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.gaussian_curvature" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the Gaussian curvature at each node</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>nd</strong> – NodeData structure with gaussian curvature for each surface node</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData">NodeData</a></p>
-</dd>
-</dl>
-<p><a class="reference external" href="https://computergraphics.stackexchange.com/a/1721">https://computergraphics.stackexchange.com/a/1721</a></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.intercept_ray">
-<code class="sig-name descname">intercept_ray</code><span class="sig-paren">(</span><em class="sig-param">near</em>, <em class="sig-param">far</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.intercept_ray" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the triangle (if any) that intercepts a line segment</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>near</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – Start of the line segment</p></li>
-<li><p><strong>far</strong> (<em>(</em><em>3</em><em>,</em><em>) </em><em>array</em>) – end of the line segment</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>intercept_elm</em> – Index of the triangle intercepting the ray</p></li>
-<li><p><em>intercpt_pos</em> – Position of the interception</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.interp_matrix">
-<code class="sig-name descname">interp_matrix</code><span class="sig-paren">(</span><em class="sig-param">pos</em>, <em class="sig-param">out_fill=nan</em>, <em class="sig-param">th_indices=None</em>, <em class="sig-param">element_wise=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.interp_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates a matrix to perform interpolation
-y = M.dot(x)</p>
-<p>Where x is node-wise data (if element_wise=False, default) or element-wise data
-otherwise</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pos</strong> (<em>(</em><em>N x 3</em><em>) </em><em>np.ndarray</em>) – Positions where interpolation is to be performed</p></li>
-<li><p><strong>out_fill</strong> (<em>float</em><em> or </em><em>'nearest'</em>) – How to fill values for positions outside the volume</p></li>
-<li><p><strong>th_indices</strong> (<em>np.ndarray</em><em> (</em><em>optional</em><em>)</em>) – Indices of the tetrahedra to be considered in the volume. Default: use all
-tetrahedra</p></li>
-<li><p><strong>element_wise</strong> (<em>bool</em><em> (</em><em>optional</em><em>)</em>) – Wether to do interpolations one element-wise data. Default=False</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>M</strong> – Sparse matrix, interpolation represented by dot product</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>scipy.sparse.csc</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.join_mesh">
-<code class="sig-name descname">join_mesh</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.join_mesh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Join the current mesh with another</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>other</strong> (<em>simnibs.msh.Msh</em>) – Mesh to be joined</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>joined</strong> – Mesh with joined nodes and elements</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>simnibs.msh.Msh</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.nodes_areas">
-<code class="sig-name descname">nodes_areas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.nodes_areas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Areas for all nodes in a surface</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>nd</strong> – NodeData structure with normals for each node</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData">NodeData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.nodes_normals">
-<code class="sig-name descname">nodes_normals</code><span class="sig-paren">(</span><em class="sig-param">smooth=0</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.nodes_normals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Normals for all nodes in a surface</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>smooth</strong> (<em>int</em><em> (</em><em>optional</em><em>)</em>) – Number of smoothing cycles to perform. Default: 0</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>nd</strong> – NodeData structure with normals for each surface node</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData">NodeData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.nodes_volumes_or_areas">
-<code class="sig-name descname">nodes_volumes_or_areas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.nodes_volumes_or_areas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the volume (volume mesh) if area (surface mesh) of all nodes
-Only works for ordered values of mesh and node indices</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>nd</strong> – NodeData structure with the volume or area of each node</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.NodeData.html#simnibs.NodeData" title="simnibs.NodeData">NodeData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.open_in_gmsh">
-<code class="sig-name descname">open_in_gmsh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.open_in_gmsh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Opens the mesh in gmsh</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.prepare_surface_tags">
-<code class="sig-name descname">prepare_surface_tags</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.prepare_surface_tags" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.read_hdf5">
-<em class="property">classmethod </em><code class="sig-name descname">read_hdf5</code><span class="sig-paren">(</span><em class="sig-param">hdf5_fn</em>, <em class="sig-param">path='./'</em>, <em class="sig-param">load_data=True</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.read_hdf5" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads mesh information from an hdf5 file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hdf5_fn</strong> (<em>str</em>) – file name of hdf5 file</p></li>
-<li><p><strong>path</strong> (<em>str</em>) – path in the hdf5 file where the mesh is saved</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.reconstruct_surfaces">
-<code class="sig-name descname">reconstruct_surfaces</code><span class="sig-paren">(</span><em class="sig-param">tags=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.reconstruct_surfaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reconstruct the mhes surfaces for each label/connected component individually
-This function acts in-place, and will keep any surfaces already present in the
-mesh</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tags</strong> (<em>list of ints</em><em> or </em><em>None</em><em> (</em><em>optional</em><em>)</em>) – List of tags where we should reconstruct the surface off. Defaut: all volume tags in the
-mesh</p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Two surfaces will be present, one at each side of the model
-Will not fix any element_data that might be associated with this mesh</p>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.remove_from_mesh">
-<code class="sig-name descname">remove_from_mesh</code><span class="sig-paren">(</span><em class="sig-param">tags=None</em>, <em class="sig-param">elm_type=None</em>, <em class="sig-param">nodes=None</em>, <em class="sig-param">elements=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.remove_from_mesh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes the specified tags from the mesh
-Generates a new mesh, with the specified tags removed
-The nodes are also reordered</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tags</strong> (<em>(</em><em>optinal</em><em>) </em><em>int</em><em> or </em><em>list</em>) – list of tags to be removed</p></li>
-<li><p><strong>tags</strong> – list of tags to be removed, default: all</p></li>
-<li><p><strong>elm_type</strong> (<em>(</em><em>optional</em><em>) </em><em>list of int</em>) – list of element types to be removed (2 for triangles, 4 for tetrahedra), default: all</p></li>
-<li><p><strong>nodes</strong> (<em>(</em><em>optional</em><em>) </em><em>list of ints</em>) – List of nodes to be removed, removed the elements containing all the given
-nodes</p></li>
-<li><p><strong>elements</strong> (<em>(</em><em>optional</em><em>) </em><em>list of ints</em>) – List of elements to be removed</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Mesh without the specified elements</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>simnibs.msh.Msh</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>If more than one (tags, elm_type, nodes, elements) is selected, they are joined by an OR
-operation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.test_inside_volume">
-<code class="sig-name descname">test_inside_volume</code><span class="sig-paren">(</span><em class="sig-param">points</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.test_inside_volume" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests if points are iside the volume using the Möller–Trumbore intersection
-algorithm</p>
-<p>Notice: This algorithm is vulnerable to degenerate cases (example: when the ray
-goes right through an edge
-:param points: List of points to be queried
-:type points: Nx3 ndarray</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>inside</strong> – array of booleans</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.tetrahedra_quality">
-<code class="sig-name descname">tetrahedra_quality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.tetrahedra_quality" title="Permalink to this definition">¶</a></dt>
-<dd><p>calculates the quality measures of the tetrahedra</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>radius_edge_ratio</strong> (<em>ElementData</em>) – Ratio of tetrahedron cirmusradio and shortest edge of the tetrahedra</p></li>
-<li><p><strong>ir_cr_ratio</strong> (<em>ElementData</em>) – Ratio of inradius and circumsradio and circunsvribed sphere ratio of the
-tetrahedra</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.triangle_angles">
-<code class="sig-name descname">triangle_angles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.triangle_angles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates minimum angle of the mesh triangles</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><strong>min_triangle_angles</strong> – ElementData field with the angles for each triangle, in degrees</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData">ElementData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.triangle_normals">
-<code class="sig-name descname">triangle_normals</code><span class="sig-paren">(</span><em class="sig-param">smooth=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.triangle_normals" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the normals of triangles</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>smooth</em>) – Number of smoothing steps to perform. Default: 0</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>normals</strong> – normals of triangles, zero at the tetrahedra</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="simnibs.ElementData.html#simnibs.ElementData" title="simnibs.ElementData">ElementData</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.view">
-<code class="sig-name descname">view</code><span class="sig-paren">(</span><em class="sig-param">visible_tags=None</em>, <em class="sig-param">visible_fields=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.view" title="Permalink to this definition">¶</a></dt>
-<dd><p>Visualize mesh in Gmsh</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>visible_tags</strong> (<em>list</em><em> (</em><em>optional</em><em>)</em>) – List of tags to be visible. Default: all tags</p></li>
-<li><p><strong>visible_fields</strong> (<em>list</em><em> (</em><em>optional</em><em>) or </em><em>'all'</em>) – Name of visible fields or ‘all’ to view all fields. Default: no fields visible</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>vis</strong> – Visualization object</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>simnibs.gmsh_view.Visualization</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">msh</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">vis</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">vis</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.write">
-<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">out_fn</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes out the mesh as a “.msh” file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>out_fn</strong> (<em>str</em>) – Name of output file</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="simnibs.Msh.write_hdf5">
-<code class="sig-name descname">write_hdf5</code><span class="sig-paren">(</span><em class="sig-param">hdf5_fn</em>, <em class="sig-param">path='./'</em>, <em class="sig-param">compression=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.write_hdf5" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes a HDF5 file with mesh information</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>hdf5_fn</strong> (<em>str</em>) – file name of hdf5 file</p></li>
-<li><p><strong>path</strong> (<em>str</em>) – path in the hdf5 file where the mesh should be saved</p></li>
-<li><p><strong>compression</strong> (<em>str</em><em> or </em><em>int</em><em> (</em><em>Default: None</em><em>)</em>) – compression strategy: “gzip”, “lzf”, “szip”, None</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -988,7 +360,7 @@ tetrahedra</p></li>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -1005,7 +377,7 @@ tetrahedra</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

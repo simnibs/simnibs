@@ -1,4 +1,4 @@
-simnibs.NodeData
+﻿simnibs.NodeData
 ================
 
 .. currentmodule:: simnibs
@@ -18,6 +18,7 @@ simnibs.NodeData
       ~NodeData.append_to_mesh
       ~NodeData.as_nodedata
       ~NodeData.calc_flux
+      ~NodeData.from_data_grid
       ~NodeData.get_focality
       ~NodeData.get_percentiles
       ~NodeData.gradient
