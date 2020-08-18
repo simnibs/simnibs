@@ -86,7 +86,7 @@ This means we have the units:
    * - Electric field (and respective norm, normal, ...)
      - V/m
    * - Current Density (and respective norm, normal, ...)
-     - A/mm²
+     - A/m²
    * - Conductivities
      - S/m
    * - Electrode Currents
@@ -95,4 +95,6 @@ This means we have the units:
      - A/s
    * - Mesh node positions
      - mm
+   * - Magnetic Field
+     - T
 
