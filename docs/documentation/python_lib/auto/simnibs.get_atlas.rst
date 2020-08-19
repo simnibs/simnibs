@@ -1,4 +1,4 @@
-simnibs.get\_atlas
+﻿simnibs.get\_atlas
 ==================
 
 .. currentmodule:: simnibs

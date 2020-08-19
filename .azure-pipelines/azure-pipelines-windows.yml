@@ -83,7 +83,7 @@ jobs:
       downloadType: 'single'
       artifactName: 'windows'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download Installer
 
   - bash: |
       choco install octave

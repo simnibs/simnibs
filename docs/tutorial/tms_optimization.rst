@@ -8,8 +8,35 @@ SimNIBS can help finding the best TMS position for stimulating a certain target.
 done by searching coil positions in a grid around the target position and turning the
 coil at various angles.
 
-.. note::  When using this feature in a publication, please cite `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., & Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486. <https://doi.org/10.1016/j.neuroimage.2019.116486>`_
+.. note::  
 
+   When using this feature in a publication, please cite either
+
+   `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., & Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486. <https://doi.org/10.1016/j.neuroimage.2019.116486>`_
+   
+   or
+
+   `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
+   in case you use the ADM method. The ADM code is distributed under the conditions below:
+
+
+   Authors of auxiliary dipole method (ADM) and code for determining rapidly the optimum coil position and orientation: Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
+
+   The development of the Duke ADM algorithm and code were supported by the National Institute of Mental Health and the National Institute on Aging of the National Institutes of Health under Award Numbers K99MH120046, RF1MH114268, RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
+   
+   The copyrights of this software are owned by Duke University. As such, two licenses to this software are offered:
+
+      * An open source license under the GNU General Public License (GPL-v2.0) (https://opensource.org/licenses/gpl-2.0.php).
+      * A custom license with Duke University, for use without the GPL-v2.0 restrictions. 
+
+   As a recipient of this software, you may choose which license to receive the code under. Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.
+
+   To enter a license agreement without the GPL-v2.0 restrictions, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email. 
+
+   Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+ 
+\
 
 Basic Setting
 --------------
@@ -66,16 +93,6 @@ Auxiliary Dipole Method (ADM)
 ---------------------------------------
 
 To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`
-
-.. note:: 
-
-   When using this feature in a publication, please cite `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
-
-   Authors of auxiliary dipole method (ADM) and code for determining rapidly the optimum coil position and orientation: Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
-
-   The development of the Duke ADM algorithm and code were supported by the National Institute of Mental Health and the National Institute on Aging of the National Institutes of Health under Award Numbers K99MH120046, RF1MH114268, RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.
-
-\
 
 .. code-block:: python
 

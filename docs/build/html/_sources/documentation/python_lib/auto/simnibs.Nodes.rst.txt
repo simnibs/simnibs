@@ -1,4 +1,4 @@
-simnibs.Nodes
+﻿simnibs.Nodes
 =============
 
 .. currentmodule:: simnibs

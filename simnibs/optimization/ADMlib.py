@@ -16,18 +16,32 @@ logger = logging.getLogger('simnibs')
 #*********************************************************************
 
 '''
-The copyrights of this software are owned by Duke University. As such, two licenses to this software are offered:
+   Authors of auxiliary dipole method (ADM) and code for determining rapidly the
+   optimum coil position and orientation:
+   Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev;
+   Duke University, Durham, North Carolina, U.S.A.
 
-* An open source license under the GNU General Public License (GPL-v2.0), for
-non-commercial and academic purposes only (https://opensource.org/licenses/gpl-2.0.php).
-* A commercial license with Duke University, for commercial use without the GPL-v2.0 restrictions.
+   The development of the Duke ADM algorithm and code were supported by the
+   National Institute of Mental Health and the National Institute on Aging of the
+   National Institutes of Health under Award Numbers K99MH120046, RF1MH114268,
+   RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors
+   and does not necessarily represent the official views of the National Institutes of Health.
+   
+   The copyrights of this software are owned by Duke University. As such, two licenses to this software are offered:
 
-As a recipient of this software, you may choose which license to receive the code under. Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.
+      * An open source license under the GNU General Public License (GPL-v2.0) (https://opensource.org/licenses/gpl-2.0.php).
+      * A custom license with Duke University, for use without the GPL-v2.0 restrictions. 
 
-To enter a commercial license agreement, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email.
+   As a recipient of this software, you may choose which license to receive the code under.
+   Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers
+   the copyright to those changes over to Duke University.
 
+   To enter a license agreement without the GPL-v2.0 restrictions,
+   please contact the Digital Innovations department at Duke Office of Licensing and Ventures
+   (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email. 
 
-Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY;
+   and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 '''
 
 def recipcode(rv,jv,rs,ks,A):

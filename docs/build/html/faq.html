@@ -1,22 +1,24 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>FAQ &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contributors and Funding" href="contributors.html" />
-    <link rel="prev" title="simnibs.SubjectFiles" href="documentation/python_lib/auto/simnibs.SubjectFiles.html" />
+    <link rel="prev" title="simnibs.simulation.electric_dipole" href="documentation/python_lib/auto/simnibs.simulation.electric_dipole.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -35,7 +37,7 @@
     <ul>
         <li>
           &larr;
-          <a href="documentation/python_lib/auto/simnibs.SubjectFiles.html" title="Previous document">simnibs.SubjectFiles</a>
+          <a href="documentation/python_lib/auto/simnibs.simulation.electric_dipole.html" title="Previous document">simnibs.simulation.electric_dipole</a>
         </li>
         <li>
           <a href="contributors.html" title="Next document">Contributors and Funding</a>
@@ -52,23 +54,23 @@
 <span id="id1"></span><h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="can-simnibs-simulate-tacs">
 <h2>Can SimNIBS simulate TACS?<a class="headerlink" href="#can-simnibs-simulate-tacs" title="Permalink to this headline">¶</a></h2>
-<p>Yes! Frequencies used in TACS are usually low, so we can employ a <em>quasi-static approximation</em>. This means that if we have a sinusoidal current with a frequency <span class="math">f</span> and amplitude <span class="math">I_0</span></p>
-<div class="math">
-<p><span class="math">I(t) = I_0\sin\left(2 \pi f t\right)</span></p>
-</div><p>The electric field will vary in time and with the same frequency of the input current and with the same phase:</p>
-<div class="math">
-<p><span class="math">\boldsymbol E (t) = \boldsymbol E_0\sin\left(2 \pi f t\right)</span></p>
-</div><p>Where <span class="math">\boldsymbol E_0</span> is the electric field obtained with the current <span class="math">I_0</span>. In practice, this means you can just simulate the electric field obtained at peak currents, and the temporal variations of the current will just scale the field, and not change its distribution in the brain.</p>
+<p>Yes! Frequencies used in TACS are usually low, so we can employ a <em>quasi-static approximation</em>. This means that if we have a sinusoidal current with a frequency <span class="math notranslate nohighlight">\(f\)</span> and amplitude <span class="math notranslate nohighlight">\(I_0\)</span></p>
+<div class="math notranslate nohighlight">
+\[I(t) = I_0\sin\left(2 \pi f t\right)\]</div>
+<p>The electric field will vary in time and with the same frequency of the input current and with the same phase:</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol E (t) = \boldsymbol E_0\sin\left(2 \pi f t\right)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\boldsymbol E_0\)</span> is the electric field obtained with the current <span class="math notranslate nohighlight">\(I_0\)</span>. In practice, this means you can just simulate the electric field obtained at peak currents, and the temporal variations of the current will just scale the field, and not change its distribution in the brain.</p>
 <p>When multiple channels are involved, and especially when they are out of phase, more care needs to be taken. Please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2017.09.024">(Saturnino et. al., 2017)</a> for a more detailed discussion</p>
 </div>
 <div class="section" id="what-is-the-di-dt-in-tms-simulations">
 <h2>What is the dI/dt in TMS simulations?<a class="headerlink" href="#what-is-the-di-dt-in-tms-simulations" title="Permalink to this headline">¶</a></h2>
-<p>The dI/dt is the speed of variation of the current through the coil. This values depends on coil model, stimulator model and pulse intensity. In some stimulators, this value is displayed in the screen after a pulse. The variation with pulse is usually linear, meaning that an 80% maximum stimulator output will also give 80% of the <span class="math">^{dI}/_{dt}</span> value if the maximum stimulator output.</p>
-<p>The <span class="math">^{dI}/_{dt}</span> also varies in time. We normally take maximum value, which usually happens right at the beginning of the pulse.</p>
-<p>The Electric Field varies linearly with <span class="math">^{dI}/_{dt}</span></p>
-<div class="math">
-<p><span class="math">\boldsymbol E(t) = \boldsymbol E_0 \frac{dI}{dt}(t)</span></p>
-</div><p>Where <span class="math">\boldsymbol E_0</span> is the electric field obtained with a unit <span class="math">^{dI}/_{dt}</span> value</p>
+<p>The dI/dt is the speed of variation of the current through the coil. This values depends on coil model, stimulator model and pulse intensity. In some stimulators, this value is displayed in the screen after a pulse. The variation with pulse is usually linear, meaning that an 80% maximum stimulator output will also give 80% of the <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value if the maximum stimulator output.</p>
+<p>The <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> also varies in time. We normally take maximum value, which usually happens right at the beginning of the pulse.</p>
+<p>The Electric Field varies linearly with <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span></p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol E(t) = \boldsymbol E_0 \frac{dI}{dt}(t)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\boldsymbol E_0\)</span> is the electric field obtained with a unit <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value</p>
 </div>
 <div class="section" id="are-the-simnibs-coordinates-in-mni-space">
 <h2>Are the SimNIBS coordinates in MNI Space?<a class="headerlink" href="#are-the-simnibs-coordinates-in-mni-space" title="Permalink to this headline">¶</a></h2>
@@ -91,7 +93,7 @@
 <p>SimNIBS almost always uses units in the International System of Units (SI units).
 The exceptions are head model node positions, which are in millimiter and current values in the GUI, which are in mA.</p>
 <p>This means we have the units:</p>
-<table class="colwidths-given docutils align-center">
+<table class="colwidths-given docutils align-default">
 <colgroup>
 <col style="width: 75%" />
 <col style="width: 25%" />
@@ -106,7 +108,7 @@ The exceptions are head model node positions, which are in millimiter and curren
 <td><p>V/m</p></td>
 </tr>
 <tr class="row-odd"><td><p>Current Density (and respective norm, normal, …)</p></td>
-<td><p>A/mm²</p></td>
+<td><p>A/m²</p></td>
 </tr>
 <tr class="row-even"><td><p>Conductivities</p></td>
 <td><p>S/m</p></td>
@@ -119,6 +121,9 @@ The exceptions are head model node positions, which are in millimiter and curren
 </tr>
 <tr class="row-odd"><td><p>Mesh node positions</p></td>
 <td><p>mm</p></td>
+</tr>
+<tr class="row-even"><td><p>Magnetic Field</p></td>
+<td><p>T</p></td>
 </tr>
 </tbody>
 </table>
@@ -133,7 +138,7 @@ The exceptions are head model node positions, which are in millimiter and curren
     <ul>
         <li>
           &larr;
-          <a href="documentation/python_lib/auto/simnibs.SubjectFiles.html" title="Previous document">simnibs.SubjectFiles</a>
+          <a href="documentation/python_lib/auto/simnibs.simulation.electric_dipole.html" title="Previous document">simnibs.simulation.electric_dipole</a>
         </li>
         <li>
           <a href="contributors.html" title="Next document">Contributors and Funding</a>
@@ -185,21 +190,21 @@ The exceptions are head model node positions, which are in millimiter and curren
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="documentation/python_lib/auto/simnibs.SubjectFiles.html" title="previous chapter">simnibs.SubjectFiles</a></li>
+      <li>Previous: <a href="documentation/python_lib/auto/simnibs.simulation.electric_dipole.html" title="previous chapter">simnibs.simulation.electric_dipole</a></li>
       <li>Next: <a href="contributors.html" title="next chapter">Contributors and Funding</a></li>
   </ul></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -213,10 +218,10 @@ The exceptions are head model node positions, which are in millimiter and curren
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

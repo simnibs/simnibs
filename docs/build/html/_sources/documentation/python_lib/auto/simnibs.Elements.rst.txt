@@ -1,4 +1,4 @@
-simnibs.Elements
+﻿simnibs.Elements
 ================
 
 .. currentmodule:: simnibs

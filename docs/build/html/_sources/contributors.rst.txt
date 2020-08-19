@@ -44,7 +44,7 @@ Current Contributors
 * Thomas Knoesche
    * Help with the UQ functionality (3.0)
 
-* Ole Nummsen
+* Ole Numssen
    * First version of the TMS optimization (3.1)
 
 * Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.

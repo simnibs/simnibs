@@ -1,4 +1,4 @@
-simnibs.Msh
+﻿simnibs.Msh
 ===========
 
 .. currentmodule:: simnibs

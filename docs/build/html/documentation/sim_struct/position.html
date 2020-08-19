@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>POSITION &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>POSITION &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -100,7 +102,7 @@
 </li>
 <li><p><strong>pos_ydir</strong>: <em>list/array of floats or string/character array (Python/MATLAB)</em></p>
 <ul>
-<li><p><strong>Description</strong>: Position along the coil’s y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (<a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>).</p></li>
+<li><p><strong>Description</strong>: Position along the coil’s y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (<a class="reference download internal" download="" href="../../_downloads/e986c355ada77b045b81244bd468c3ac/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>).</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p>
 <p>Set-up a coil centered in C3 and pointing posteriorly</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
@@ -133,19 +135,19 @@
 <ul class="simple">
 <li><p><strong>Description</strong>: Affine transformation matrix defining coil position and directions. The matrix has the form</p></li>
 </ul>
-<div class="math">
-<p><span class="math">\left[\begin{array}{cccc}
+<div class="math notranslate nohighlight">
+\[\begin{split}\left[\begin{array}{cccc}
 p^x_1 &amp; p^y_1 &amp; p^z_1 &amp; p^c_1\\
 p^x_2 &amp; p^y_2 &amp; p^z_2 &amp; p^c_3\\
 p^x_3 &amp; p^y_3 &amp; p^z_3 &amp; p^c_2\\
 0 &amp; 0 &amp; 0 &amp; 1
-\end{array}\right].</span></p>
-</div></li>
+\end{array}\right].\end{split}\]</div>
+</li>
 </ul>
 <p></p>
 <blockquote>
 <div><blockquote>
-<div><p>Where <span class="math">\mathbf{p}^x</span>, <span class="math">\mathbf{p}^y</span> and <span class="math">\mathbf{p}^z</span> are the x, y and z coil axes (<a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>). Those should be mutually orthogonal and span a right-handed coordinate system. <span class="math">\mathbf{p}^c</span> is the center of the coil. <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>.</p>
+<div><p>Where <span class="math notranslate nohighlight">\(\mathbf{p}^x\)</span>, <span class="math notranslate nohighlight">\(\mathbf{p}^y\)</span> and <span class="math notranslate nohighlight">\(\mathbf{p}^z\)</span> are the x, y and z coil axes (<a class="reference download internal" download="" href="../../_downloads/e986c355ada77b045b81244bd468c3ac/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">see</span> <span class="pre">here</span> <span class="pre">for</span> <span class="pre">how</span> <span class="pre">SimNIBS</span> <span class="pre">defines</span> <span class="pre">the</span> <span class="pre">coil</span> <span class="pre">axes</span></code></a>). Those should be mutually orthogonal and span a right-handed coordinate system. <span class="math notranslate nohighlight">\(\mathbf{p}^c\)</span> is the center of the coil. <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">More about coordinates in SimNIBS</span></a>.</p>
 </div></blockquote>
 <ul class="simple">
 <li><p><strong>note</strong>: Be careful when setting up simulations this way. If the directions are set
@@ -156,7 +158,7 @@ wrongly, the coil might end up inside the head.</p></li>
 <div class="section" id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p>Set up a simulation with a coil centered in C3, pointing posteriorly (towards CP3), with a distance of 5mm from the cortex and a <span class="math">dI/dt = 20 \times 10^6</span> A/s.</p>
+<li><p>Set up a simulation with a coil centered in C3, pointing posteriorly (towards CP3), with a distance of 5mm from the cortex and a <span class="math notranslate nohighlight">\(dI/dt = 20 \times 10^6\)</span> A/s.</p>
 <p><em>Python/MATLAB</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
 <span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="s1">&#39;CP3&#39;</span>
@@ -167,7 +169,7 @@ wrongly, the coil might end up inside the head.</p></li>
 <p></p>
 </li>
 <li><p>Run a simulation with the coil placed at (-1.2, -15.8, 120.0), pointing anteriorly and facing downwards.</p>
-<p>By default, in the head models <em>+y</em> indicates the anterior direction. Therefore, the coil <em>y</em> axis is to be aligned with the model’s. Also by default, <em>+z</em> indicats the superior directio. Therefore, given the <a class="reference download internal" download="" href="../../_downloads/b5058e16348b286f9a3b94b9c49c4d6a/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">definitions</span></code></a>, the coil <em>z</em> axis need to point towards the <em>-z</em> direction. Finally, for the coordinates to be right-handed <span class="math">\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z</span>.</p>
+<p>By default, in the head models <em>+y</em> indicates the anterior direction. Therefore, the coil <em>y</em> axis is to be aligned with the model’s. Also by default, <em>+z</em> indicats the superior directio. Therefore, given the <a class="reference download internal" download="" href="../../_downloads/e986c355ada77b045b81244bd468c3ac/coil_axesorientation.pdf"><code class="xref download docutils literal notranslate"><span class="pre">definitions</span></code></a>, the coil <em>z</em> axis need to point towards the <em>-z</em> direction. Finally, for the coordinates to be right-handed <span class="math notranslate nohighlight">\(\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z\)</span>.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="o">.</span><span class="n">matsimnibs</span> <span class="o">=</span> <span class="p">[</span>
@@ -182,9 +184,9 @@ wrongly, the coil might end up inside the head.</p></li>
 <li><p><em>MATLAB</em></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">pos</span><span class="p">.</span><span class="n">matsimnibs</span> <span class="p">=</span> <span class="p">[</span><span class="c">...</span>
   <span class="o">-</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mf">1.2</span><span class="p">;</span><span class="c">...</span>
-  <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="o">-</span><span class="mf">15.8</span><span class="p">;</span><span class="c">...</span>
-  <span class="mi">0</span> <span class="mi">0</span> <span class="o">-</span><span class="mi">1</span> <span class="mf">120.0</span><span class="p">;</span><span class="c">...</span>
-  <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">];</span>
+  <span class="n">0</span> <span class="s">1</span> <span class="s">0</span> <span class="s">-15.8</span><span class="p">;</span><span class="c">...</span>
+  <span class="n">0</span> <span class="s">0</span> <span class="s">-1</span> <span class="s">120.0</span><span class="p">;</span><span class="c">...</span>
+  <span class="n">0</span> <span class="s">0</span> <span class="s">0</span> <span class="s">1]</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
@@ -270,15 +272,15 @@ wrongly, the coil might end up inside the head.</p></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -292,10 +294,10 @@ wrongly, the coil might end up inside the head.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.Nodes &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simnibs.Nodes &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -50,19 +52,18 @@
             
   <div class="section" id="simnibs-nodes">
 <h1>simnibs.Nodes<a class="headerlink" href="#simnibs-nodes" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+<dl class="py class">
 <dt id="simnibs.Nodes">
-<em class="property">class </em><code class="descclassname">simnibs.</code><code class="descname">Nodes</code><span class="sig-paren">(</span><em>node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>class to handle the node information:</p>
+<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Nodes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_coord</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to handle the node information:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>node_coord</em>) – Coordinates of the nodes</p>
 </dd>
 </dl>
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Nodes.node_coord">
-<code class="descname">node_coord</code><a class="headerlink" href="#simnibs.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">node_coord</code><a class="headerlink" href="#simnibs.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coordinates of the nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -71,9 +72,9 @@
 </dl>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="py attribute">
 <dt id="simnibs.Nodes.nr">
-<code class="descname">nr</code><a class="headerlink" href="#simnibs.Nodes.nr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">nr</code><a class="headerlink" href="#simnibs.Nodes.nr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of nodes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -83,7 +84,7 @@
 </dd></dl>
 
 <p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="n">Nodes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="n">Nodes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
 <span class="go">array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span><span class="o">.</span><span class="n">node_number</span>
 <span class="go">array([1, 2, 3])</span>
@@ -93,14 +94,14 @@
 <span class="go">array([[1, 0, 0], [0, 0, 1]])</span>
 </pre></div>
 </div>
-<dl class="method">
+<dl class="py method">
 <dt id="simnibs.Nodes.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>node_coord=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_coord</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-center">
+<table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
@@ -109,19 +110,19 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Nodes.__init__" title="simnibs.Nodes.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([node_coord])</p></td>
 <td><p>Initialize self.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Nodes.find_closest_node" title="simnibs.Nodes.find_closest_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_node</span></code></a>(querry_points[, return_index])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_node</span></code>(querry_points[, return_index])</p></td>
 <td><p>Finds the closest node to each point in p</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table class="longtable docutils align-center">
+<table class="longtable docutils align-default">
 <colgroup>
 <col style="width: 10%" />
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Nodes.node_number" title="simnibs.Nodes.node_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_number</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_number</span></code></p></td>
 <td><p>Node numbers (1, …, nr)</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Nodes.nr" title="simnibs.Nodes.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></p></td>
@@ -129,42 +130,6 @@
 </tr>
 </tbody>
 </table>
-<dl class="method">
-<dt id="simnibs.Nodes.find_closest_node">
-<code class="descname">find_closest_node</code><span class="sig-paren">(</span><em>querry_points</em>, <em>return_index=False</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.find_closest_node" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the closest node to each point in p</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>querry_points</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of points (x,y,z) to which the closes node in the mesh should be found</p></li>
-<li><p><strong>return_index</strong> (<em>(</em><em>optional</em><em>) </em><em>bool</em>) – </p></li>
-<li><p><strong>to return the index of the closes nodes</strong><strong>, </strong><strong>default</strong> (<em>Whether</em>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><strong>coords</strong> (<em>Nx3 array of floats</em>) – coordinates of the closest points</p></li>
-<li><p><strong>indexes</strong> (<em>Nx1 array of ints</em>) – Indices of the nodes in the mesh</p></li>
-<li><p><em>————————————–</em></p></li>
-<li><p><em>The indices are in the mesh listing, that starts at one!</em></p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="simnibs.Nodes.node_number">
-<code class="descname">node_number</code><a class="headerlink" href="#simnibs.Nodes.node_number" title="Permalink to this definition">¶</a></dt>
-<dd><p>Node numbers (1, …, nr)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">nr</code></dt>
-<dd><p>Number of nodes</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -244,15 +209,15 @@
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -266,10 +231,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

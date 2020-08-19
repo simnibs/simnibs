@@ -13,12 +13,12 @@ import h5py
 import numpy as np
 import scipy.sparse as sparse
 
-from ..mesh_tools import mesh_io
+from ..msh import mesh_io
 from . import cond as cond_lib
 from . import coil_numpy as coil_lib
 from . import pardiso
-from . import petsc_solver
 from ..utils.simnibs_logger import logger
+from ..cython_code import petsc_solver
 
 DEFAULT_SOLVER_OPTIONS = \
         '-ksp_type cg ' \
@@ -47,15 +47,10 @@ DEFAULT_SOLVER_OPTIONS = \
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-_PETSC_IS_INITILIZED = False
-def _initialize_petsc():
-    global _PETSC_IS_INITILIZED
-    if not _PETSC_IS_INITILIZED:
-        # Initialize PETSc
-        petsc_solver.petsc_initialize()
-        # Register the finalizer for PETSc
-        atexit.register(petsc_solver.petsc_finalize)
-        _PETSC_IS_INITILIZED = True
+# Initialize PETSc
+petsc_solver.petsc_initialize()
+# Register the finalizer for PETSc
+atexit.register(petsc_solver.petsc_finalize)
 
 
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
@@ -562,13 +557,11 @@ class FEMSystem(object):
         if self._solver_options == 'pardiso':
             self._solver = pardiso.Solver(A)
         else:
-            _initialize_petsc()
             self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
             self._solver = petsc_solver.Solver(self._solver_options, A)
 
     def solve(self, b=None):
         ''' Solves the FEM system
-        Calls PETSc to solve the FEM system
 
         Parameters
         ------------
@@ -679,8 +672,8 @@ class FEMSystem(object):
     def tdcs(cls, mesh, cond, electrode_tags, potentials, solver_options=None):
         '''Sets up a tDCS problem using Dirichled boundary conditions
 
-        Parameters:
-        ------
+        Parameters
+        ------------
         mesh: simnibs.mesh_io.msh.Msh
             Mesh structure
         cond: ndarray or simnibs.mesh_io.msh.ElementData
@@ -691,8 +684,8 @@ class FEMSystem(object):
             list of the potentials each surface is to be set
         solver_options: str
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
-        Returns:
-        ------
+        Returns
+        ---------
         S: FEMSystem
             FEMSystem structure with a ".solve()" command
         '''
@@ -1051,10 +1044,10 @@ def _vol(msh, volume_tag=None):
 
 def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
          solver_options=None):
-    ''' Simulates a tDCS field using PETSc
+    ''' Simulates a tDCS electric potentil
 
-    Parameters:
-    ------
+    Parameters
+    ------------
     mesh: simnibs.msh.mesh_io.Msh
         Mesh file with geometry information
     cond: simnibs.msh.mesh_io.ElementData
@@ -1064,8 +1057,8 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
     electrode_surface_tags: list
         A list of the indices of the surfaces where the dirichlet BC is to be applied
 
-    Returns:
-    ---------------
+    Returns
+    ----------
     potential: simnibs.msh.mesh_io.NodeData
         Total electric potential
     '''
@@ -1172,19 +1165,18 @@ def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[5, 1005], units='mm'):
 
 
 def tms_dadt(mesh, cond, dAdt, solver_options=None):
-    ''' Simulates a TMS field using PETSc
-    If strings are used, it will use already existing files. Otherwise, temporary files
-    are created
+    ''' Simulates a TMS electric potential field using a dAdt field
 
-    Parameters:
-    ------
+    Parameters
+    ------------
     mesh: simnibs.msh.mesh_io.Msh
         Mesh file with geometry information
     cond: simnibs.msh.mesh_io.ElementData
         An ElementData field with conductivity information
     dAdt: simnibs.msh.mesh_io.NodeData or simnibs.msh.mesh_io.ElementData
         dAdt information
-    Returns:
+
+    Returns
     -------
     v:  simnibs.msh.mesh_io.NodeData
         NodeData instance with potential at the nodes
@@ -1198,7 +1190,7 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
              output_names, geo_names=None, solver_options=None, n_workers=1):
-    ''' Simulates TMS fields using a coild + matsimnibs + dIdt definition
+    ''' Simulates TMS fields using a coil + matsimnibs + dIdt definition
 
     Parameters
     ------------
@@ -1285,11 +1277,11 @@ def _finalize_global_solver():
 
 
 def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
-    ''' Simulates a tDCS field using PETSc and Neumann boundary conditions on the
+    ''' Simulates a tDCS electric potential using Neumann boundary conditions on the
     electrodes
 
-    Parameters:
-    ------
+    Parameters
+    -----------
     mesh: simnibs.msh.mesh_io.Msh
         Mesh file with geometry information
     cond: simnibs.msh.mesh_io.ElementData
@@ -1299,7 +1291,7 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     electrode_surface_tags: list
         A list of the indices of the surfaces where the dirichlet BC is to be applied
 
-    Returns:
+    Returns
     ---------------
     potential: simnibs.msh.mesh_io.NodeData
         Total electric potential
@@ -1401,7 +1393,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
                 out_field = calc_J(E, cond)
             if post_pro is not None:
                 out_field = post_pro(out_field)
-            with h5py.File(fn_hdf5, 'a') as f:
+            with h5py.File(fn_hdf5) as f:
                 f[dataset][i] = out_field
 
     # Run simulations (parallel)
@@ -1569,7 +1561,7 @@ def tms_many_simulations(
                 out_field = calc_J(E, cond)
             if post_pro is not None:
                 out_field = post_pro(out_field)
-            with h5py.File(fn_hdf5, 'a') as f:
+            with h5py.File(fn_hdf5) as f:
                 f[dataset][i] = out_field
 
     # Run in parallel
@@ -1680,14 +1672,14 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options
         An ElementData field with conductivity information
     dipole_positions: Nx3 ndarray
         Positions of the dipoles. Each dipole will be a separate simulation
-    dipole_momnents: Nx3 ndarray
+    dipole_moments: Nx3 ndarray
         Moment of each dipole
     solver_options: str (optional)
         Options for the sparse solver. Default: CG + AMG
 
     Returns
     -----------
-    v: Nxmesh.nodes.nr
+    v: np.ndarray of size Nxmesh.nodes.nr
         Electric potential caused by each dipole
     '''
 
