@@ -148,30 +148,20 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
                 with open(fn_out, 'w') as f:
                     f.write(template)
                 os.chmod(fn_out, os.stat(fn).st_mode)
-            if developer_id is not None:
-                print("Signing binaries")
-                bins = subprocess.check_output(['find', pack_dir, '-perm', '+111', '-type', 'f']).decode('utf-8').split('\n')
-                bins += glob.glob(os.path.join(pack_dir, '**', '*.dylib'), recursive=True)
-                bins += glob.glob(os.path.join(pack_dir, '**', '*.mexmaci64'), recursive=True)
-                bins += glob.glob(os.path.join(pack_dir, '**', '*.mexmaci'), recursive=True)
-                bins = set([os.path.abspath(b) for b in bins if os.path.isfile(b)])
-                for b in bins:
-                    print(b)
-                    # if LC_VERSION_MIN_MACOSX < 10.9, change it to 10.9
-                    # This is required by the notorization process
-                    # This is an ugly hack, the ideal would be to re-compile these binaries
-                    # with a more recent SDK and setting MACOSX_DEPLOYMENT_TARGET=10.9
-                    # Binary from https://github.com/asmaloney/fix_LC_VERSION_MIN_MACOSX
-                    subprocess.run(
-                       [os.path.join(simnibs_root_dir, 'packing', 'fix_LC_VERSION_MIN_MACOSX'), b],
-                       capture_output=True
-                    )                    
-                    subprocess.run([
-                       'codesign',
-                       '--force',
-                       '--options', 'runtime',
-                       '-s', developer_id, b
-                    ])
+
+            # Workaroud for Notarization
+            # Instead of signing all binaries, I zip the enironment with a password
+            # The postinstall script will unzip it in the user's computer
+            orig_folder = os.path.abspath(os.curdir)
+            os.chdir(pack_dir)
+            subprocess.run([
+                'zip', '-P', 'password', '-r',
+                'simnibs_env.zip',
+                'simnibs_env'
+            ])
+            os.chdir(orig_folder)
+            shutil.rmtree(os.path.join(pack_dir, 'simnibs_env'))
+
             print('Running pkgbuild')
             subprocess.run([
                 'pkgbuild',
@@ -231,6 +221,6 @@ if __name__ == '__main__':
     )
     parser.add_argument("dist_dir", help="Directory with the SimNIBS wheels to be packed")
     parser.add_argument("--include-spyder", action="store_true", help="Includes the Spyder IDE")
-    parser.add_argument("--developer-id", default=None, help="Developer ID for signing in MacOS, requires Xcode (optional)")
+    parser.add_argument("--developer-id", default=None, help="Developer ID for signing in MacOS, DOES NOT SUPPORT NOTARIZATION (optional)")
     args = parser.parse_args(sys.argv[1:])
     build(args.dist_dir, args.include_spyder, args.developer_id)

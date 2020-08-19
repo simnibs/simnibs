@@ -11,6 +11,19 @@ jobs:
     maxParallel: 4
 
   steps:
+  # Install certificates for signing the package
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: 'certificate_installer.p12'
+      certPwd: '$(P12password)'
+      keychain: 'temp'
+    displayName: Install Installer Certificate
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: 'certificate_application.p12'
+      certPwd: '$(P12password)'
+      keychain: 'temp'
+    displayName: Install Application Certificate
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
       sudo chown -R $USER $CONDA
@@ -23,13 +36,22 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
-      python packing/pack.py dist
+      python packing/pack.py dist --developer-id 8J5V4KS7H4
+      cp dist/* $(Build.ArtifactStagingDirectory)
+      cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
       cp simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+  # https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+  - bash: |
+      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
+    env:  
+      ALTOOL_PASSWORD: $(altool_password)
+      ALTOOL_USER: $(altool_user)
+    displayName: Notarize App
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: unsigned_pkg
+      artifactName: macos
     displayName: Publish Artifact
 
 - job: Test
@@ -51,12 +73,12 @@ jobs:
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'unsigned_pkg'
+      artifactName: 'macos'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS Installer
 
   - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/unsigned_pkg/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
       cat ~/Applications/SimNIBS*/install.log
       ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
@@ -80,7 +102,7 @@ jobs:
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'unsigned_pkg'
+      artifactName: 'macos'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS Installer
 
@@ -91,7 +113,7 @@ jobs:
     displayName: Install Octave
 
   - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/unsigned_pkg/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
       ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
@@ -108,52 +130,20 @@ jobs:
     - Examples
 
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-latest'
 
   steps:
-  # Now I build again and sign the app
-  # I had problems testing the signed app, I don't know why
-  - task: InstallAppleCertificate@2
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
     inputs:
-      certSecureFile: 'certificate_installer.p12'
-      certPwd: '$(P12password)'
-      keychain: 'temp'
-    displayName: Install Installer Certificate
-  - task: InstallAppleCertificate@2
-    inputs:
-      certSecureFile: 'certificate_application.p12'
-      certPwd: '$(P12password)'
-      keychain: 'temp'
-    displayName: Install Application Certificate
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'macos'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS version
   - bash: |
-      echo "##vso[task.prependpath]$CONDA/bin"
-      sudo chown -R $USER $CONDA
-    displayName: Add conda to PATH
-  - bash: |
-      conda env create -f environment_macOS.yml
-    displayName: Create Conda environment
-  - bash: |
-      source activate simnibs_env
-      export MACOSX_DEPLOYMENT_TARGET=10.9 # Increase backwards compatibility
-      python setup.py bdist_wheel
-      pip install jinja2 conda-pack
-      python packing/pack.py dist --developer-id 8J5V4KS7H4
-      cp dist/* $(Build.ArtifactStagingDirectory)
-      cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
-      cp simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)
-    displayName: Build SimNIBS
-  # https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
-  - bash: |
-      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
-    env:  
-      ALTOOL_PASSWORD: $(altool_password)
-      ALTOOL_USER: $(altool_user)
-    displayName: Notorize App
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: mac_os
-    displayName: Publish Artifact
+      xcrun stapler staple "$(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg"
+    displayName: Staple notarization ticket
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
@@ -161,6 +151,6 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(Build.ArtifactStagingDirectory)/mac_os/*
+      assets: $(System.ArtifactsDirectory)/macos/*
       assetUploadMode: 'replace'
       isDraft: true
