@@ -75,6 +75,7 @@ jobs:
 
 - job: Examples
   dependsOn: Build
+  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
     vmImage: 'ubuntu-16.04'
 
@@ -114,7 +115,7 @@ jobs:
     - Test
     - Examples
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
 
   steps:
   - checkout: none

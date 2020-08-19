@@ -69,6 +69,7 @@ jobs:
       
 - job: Examples
   dependsOn: Build
+  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
     vmImage: 'macOS-10.14'
     maxParallel: 4
