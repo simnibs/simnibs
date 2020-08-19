@@ -30,9 +30,17 @@ Extra Coil Files
 ----------------
 
 Please see :download:`here <Deng_Brain_Stim_2013_docu.pdf>` for more information.
-These coil files are optionally downloaded by SimNIBS during the installation. 
+These coil files are optionally downloaded by SimNIBS during the installation, or can be downloaded after installation with the command
 
-We would like to thank Zhi-De Deng for sharing his coil definition files with us and Mursel Karadas for converting them to SimNIBS format. These models were constructed from geometrical values about the coil windings taken from literature. Please note that some of the models represent non-planar coils. Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements, i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!
+.. code-block::
+
+  download_coils
+
+We would like to thank Zhi-De Deng for sharing his coil definition files with us and Mursel Karadas for converting them to SimNIBS format.
+These models were constructed from geometrical values about the coil windings taken from literature.
+Please note that some of the models represent non-planar coils.
+Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements,
+i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!
 
 Reference
 ''''''''''
