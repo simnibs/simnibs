@@ -23,7 +23,7 @@ jobs:
   - bash: |
       source activate simnibs_env
       pip install pytest-cov
-      pytest simnibs/tests \
+      pytest simnibs \
         --junit-xml=test-results.xml \
         --cov=simnibs --cov-report=xml
     displayName: Run Unit Tests
@@ -62,7 +62,7 @@ jobs:
 
   - bash: |
       source activate simnibs_env
-      pytest simnibs/tests --junit-xml=test-results.xml
+      pytest simnibs --junit-xml=test-results.xml
     displayName: Run Unit Tests
 
 
@@ -91,7 +91,7 @@ jobs:
 
   - script: |
       call activate simnibs_env
-      pytest simnibs\tests --junit-xml=test-results.xml
+      pytest simnibs --junit-xml=test-results.xml
     displayName: Run Unit Tests
 
   - task: PublishTestResults@2
