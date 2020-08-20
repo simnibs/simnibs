@@ -104,7 +104,7 @@ jobs:
       buildType: 'current'
       downloadType: 'single'
       artifactName: 'macos'
-      itemPattern: 'simnibs_installer_macos.pkg
+      itemPattern: 'simnibs_installer_macos.pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS Installer
 
