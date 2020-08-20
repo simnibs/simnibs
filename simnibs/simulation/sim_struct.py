@@ -2459,19 +2459,11 @@ class TDCSLEADFIELD(LEADFIELD):
             interp_id = []
             if isinstance(self.interpolation, str):
                 if self.interpolation == 'middle gm':
-                    s_names, segtype = \
-                        transformations.get_surface_names_from_folder_structure(self.subpath)
-                    hemi = ('lh', 'rh')
-                    if segtype == 'mri2mesh':
-                        for h in hemi:
-                            wm = mesh_io.read(s_names[h+'_wm'])
-                            gm = mesh_io.read(s_names[h+'_gm'])
-                            interp_to.append(mesh_io._middle_surface(wm, gm, 0.5))
-                            interp_id.append(h)
-                    elif segtype == 'headreco':
-                        for h in hemi:
-                            interp_to.append(mesh_io.read(s_names[h+'_midgm']))
-                            interp_id.append(h)
+                    sub_files = SubjectFiles(self.fnamehead, self.subpath)
+                    for hemi in sub_files.regions:
+                        interp_to.append(
+                            mesh_io.read(sub_files.get_surface(hemi, 'central'))
+                        )
                 else:
                     raise ValueError('Invalid string argument to "interpolation".')
             elif isinstance(self.interpolation, list) or isinstance(self.interpolation, tuple):
