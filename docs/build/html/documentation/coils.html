@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Coil Models Included in SimNIBS &#8212; SimNIBS 3.1.2 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coil Models Included in SimNIBS &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -80,8 +82,15 @@
 <div class="section" id="extra-coil-files">
 <h2>Extra Coil Files<a class="headerlink" href="#extra-coil-files" title="Permalink to this headline">¶</a></h2>
 <p>Please see <a class="reference download internal" download="" href="../_downloads/264fd613665159f067941469a86ad10d/Deng_Brain_Stim_2013_docu.pdf"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a> for more information.
-These coil files are optionally downloaded by SimNIBS during the installation.</p>
-<p>We would like to thank Zhi-De Deng for sharing his coil definition files with us and Mursel Karadas for converting them to SimNIBS format. These models were constructed from geometrical values about the coil windings taken from literature. Please note that some of the models represent non-planar coils. Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements, i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!</p>
+These coil files are optionally downloaded by SimNIBS during the installation, or can be downloaded after installation with the command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">download_coils</span>
+</pre></div>
+</div>
+<p>We would like to thank Zhi-De Deng for sharing his coil definition files with us and Mursel Karadas for converting them to SimNIBS format.
+These models were constructed from geometrical values about the coil windings taken from literature.
+Please note that some of the models represent non-planar coils.
+Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements,
+i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!</p>
 <div class="section" id="id1">
 <h3>Reference<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference external" href="https://doi.org/10.1016/j.brs.2012.02.005">Deng, Zhi-De, Sarah H. Lisanby, and Angel V. Peterchev. “Electric field depth–focality tradeoff in transcranial magnetic stimulation: simulation comparison of 50 coil designs.” Brain stimulation 6.1 (2013): 1-13.</a></p>
@@ -187,7 +196,7 @@ These coil files are optionally downloaded by SimNIBS during the installation.</
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

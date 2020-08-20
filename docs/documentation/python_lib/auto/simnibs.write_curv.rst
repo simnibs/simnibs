@@ -1,4 +1,4 @@
-simnibs.write\_curv
+﻿simnibs.write\_curv
 ===================
 
 .. currentmodule:: simnibs

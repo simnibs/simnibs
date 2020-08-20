@@ -41,7 +41,7 @@ A SimNIBS workflow consists of three main parts:
   </style>
   <div class="row">
   <div class="column">
-  SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research Centre for Magnetic Resonance (DRCMR)</a> and the <a href="https://www.dtu.dk/english">Technical University of Denmark (DTU)</a>, in collaboration with external partners
+  SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research Centre for Magnetic Resonance (DRCMR)</a> and the <a href="https://www.dtu.dk/english">Technical University of Denmark (DTU)</a>, in collaboration with <a href="contributors.html" >external partners</a>
   </div>
   <div class="column">
   <a href="https://www.drcmr.dk"><img src="_static/DRCMR_logo.png" alt="DRCMR", height="70"></a>
@@ -64,7 +64,8 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
 News
 ======
 
-  * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` and even faster FEM solvers for leadfield calculations
+  * **Version 3.2 is now avaliable**  featuring :ref:`TMS optimization  using the ADM method <tms_optimize>` (contributed by Luis Gomez), TES :ref:`field strength <tdcs_opt>` and :ref:`brain network <tdcs_distributed_opt>` optimization and magnetic field calculations for MRCDI and MREIT 
+  * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` (contributed by Konstantin Weise and Ole Numssen) and even faster FEM solvers for leadfield calculations
   * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!
     
 .. toctree::

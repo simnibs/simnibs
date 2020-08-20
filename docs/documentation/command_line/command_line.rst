@@ -23,3 +23,4 @@ These command line tools can be accessed through the Windows Command Prompt (see
    subject2mni
    subject2mni_coords
    get_fields_at_coordinates 
+   calc_b

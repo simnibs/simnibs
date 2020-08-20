@@ -1075,7 +1075,7 @@ def warp_coordinates(coordinates, m2m_folder,
     --------
     coordinates: str, list or ndarray
         if list or ndarray (Nx3 format):
-            Will do a simple transformation of the
+            Will do a simple transformation of the listed coordinates
         If path to csv file:
             The CSV file must have at least 4 columns, dependind on the type of data to
             be transformed

@@ -90,7 +90,7 @@ Attributes
 
   \ 
 
-* **electrode**: *ELECTRODE structure or list/array of ELECTRODE structures, optional*
+* **electrode**: *ELECTRODE structure, list/array of ELECTRODE structures, or None/'none' optional*
 
   * **Description**: Electrodes to be used. Typically small round electrodes. There are 3
     ways to set this variable:
@@ -102,6 +102,7 @@ Attributes
     * list of :ref:`electrode_struct_doc` structures and **eeg_cap** set to *None* (Python only):
       will use the **centre** and **pos_ydir** attributes of the electrodes to place
       them. This allows to set up electrodes on your own, without using a eeg cap provided by SimNIBS.
+    * None(Python) or 'none' (MATLAB): Use point electrodes located at the surface nodes closest to the electrode center
 
   * **Default**: Use 1 x 1cm round electrodes with 4mm thickness
 

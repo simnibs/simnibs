@@ -12,4 +12,5 @@ Structures used to define optimization problems
    tdcsoptimize
    tdcstarget
    tdcsavoid
+   tdcsdistributedoptimize
    tmsoptimize

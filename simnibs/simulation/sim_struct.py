@@ -1343,7 +1343,7 @@ class POSITION(object):
                 msh.elements_baricenters()[msh.elm.tag1==1002] - self.matsimnibs[:3, 3],
                 axis=1)
             )
-            logger.info(f'coil-cortex distance: {cc_distance:.2f}')
+            logger.info(f'coil-cortex distance: {cc_distance:.2f}mm')
         return self.matsimnibs
 
     def __eq__(self, other):
@@ -2210,6 +2210,11 @@ class TDCSLEADFIELD(LEADFIELD):
             transformations._read_csv(self.eeg_cap)
         count_csv = len([t for t in type_ if t in
                          ['Electrode', 'ReferenceElectrode']])
+
+        # Create a dummy electrode object if set to None
+        if self.electrode in [None, 'none', '']:
+            self.electrode = ELECTRODE()
+            self.electrode.shape = ''
         try:
             count_struct = len(self.electrode)
         except TypeError:
@@ -2339,8 +2344,11 @@ class TDCSLEADFIELD(LEADFIELD):
                 self,
                 os.path.join(
                     dir_name,
-                    'simnibs_simulation_{0}.mat'.format(self.time_str)))
-
+                    'simnibs_simulation_{0}.mat'.format(self.time_str))
+            )
+        # For simulations without electrodes
+        has_electrodes = self.electrode is not None
+        # Set electrode positions
         if self.eeg_cap is not None:
             if os.path.isfile(self.eeg_cap):
                 self._add_electrodes_from_cap()
@@ -2356,7 +2364,7 @@ class TDCSLEADFIELD(LEADFIELD):
         for el in self.electrode:
             if len(el.thickness) == 3:
                 raise ValueError('Can not run leadfield on sponge electrodes')
-
+        # Handle the ROI
         if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
             raise ValueError('Mixing Volumes and Surfaces in ROI!')
 
@@ -2367,6 +2375,7 @@ class TDCSLEADFIELD(LEADFIELD):
         else:
             roi = self.tissues
 
+        # Field of interest
         if self.field != 'E' and self.field != 'J':
             raise ValueError("field parameter should be E or J. "
                              "found: {0}".format(self.field))
@@ -2376,11 +2385,30 @@ class TDCSLEADFIELD(LEADFIELD):
         # Get names for leadfield and file of head with cap
         fn_hdf5 = os.path.join(dir_name, self._lf_name())
         fn_el = os.path.join(dir_name, self._el_name())
-        logger.info('Placing Electrodes')
-        w_elec, electrode_surfaces = self._place_electrodes()
-        mesh_io.write_msh(w_elec, fn_el)
-        scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
-        scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
+        if has_electrodes:
+            # Place electrodes
+            logger.info('Placing Electrodes')
+            w_elec, electrode_surfaces = self._place_electrodes()
+            mesh_io.write_msh(w_elec, fn_el)
+            scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
+            scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
+            input_type = 'tag'
+        else:
+            # Find the closest surface node
+            w_elec = self.mesh
+            out_nodes = np.unique(self.mesh.elm.get_outside_faces())
+            out_nodes_kdt = scipy.spatial.cKDTree(self.mesh.nodes[out_nodes])
+            electrode_surfaces = []
+            for el in self.electrode:
+                _, idx = out_nodes_kdt.query(el.centre)
+                electrode_surfaces.append(out_nodes[idx])
+                # Update the position of the electrode
+                el.centre = self.mesh.nodes[electrode_surfaces[-1]]
+            mesh_io.write_geo_spheres(
+                [el.centre for el in self.electrode],
+                fn_el[:-4] + '.geo'
+            )
+            input_type = 'node'
 
         # Write roi, scalp and electrode surfaces hdf5
         roi_msh = w_elec.crop_mesh(roi)
@@ -2451,7 +2479,9 @@ class TDCSLEADFIELD(LEADFIELD):
             current=1., roi=roi,
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
-            n_workers=cpus)
+            n_workers=cpus,
+            input_type=input_type
+        )
 
         with h5py.File(fn_hdf5, 'a') as f:
             f[dset].attrs['electrode_names'] = [el.name.encode() for el in self.electrode]
@@ -2495,20 +2525,26 @@ class TDCSLEADFIELD(LEADFIELD):
             mat, 'eeg_cap', str, self.eeg_cap)
 
         if len(mat['electrode']) > 0:
-            self.electrode = []
-            for el in mat['electrode'][0]:
-                self.electrode.append(ELECTRODE(el))
-        if len(self.electrode) == 1:
+            if type(mat['electrode'][0]) is np.str_ and mat['electrode'][0] == 'none':
+                self.electrode = None
+            else:
+                self.electrode = []
+                for el in mat['electrode'][0]:
+                    self.electrode.append(ELECTRODE(el))
+        if self.electrode is not None and len(self.electrode) == 1:
             self.electrode = self.electrode[0]
 
     def sim_struct2mat(self):
         mat = LEADFIELD.sim_struct2mat(self)
-        try:
-            len(self.electrode)
-            electrode = self.electrode
-        except TypeError:
-            electrode = [self.electrode]
-        mat['electrode'] = save_electrode_mat(electrode)
+        if self.electrode is None:
+            mat['electrode'] = 'none'
+        else:
+            try:
+                len(self.electrode)
+                electrode = self.electrode
+            except TypeError:
+                electrode = [self.electrode]
+            mat['electrode'] = save_electrode_mat(electrode)
         mat['eeg_cap'] = remove_None(self.eeg_cap)
         return mat
 

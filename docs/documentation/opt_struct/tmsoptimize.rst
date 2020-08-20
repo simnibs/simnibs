@@ -145,3 +145,8 @@ Attributes
 
   * **Description**: Options for the FEM matrix solver. Leave empty to use the CG+AMG solver, use a string to be passed to `PETSc <https://www.mcs.anl.gov/petsc/index.html>`_ or set :code:`solver_options='pardiso'` to use the MKL Pardiso direct solver
   * **Default**: Use the CG solver with the AMG preconditioner
+
+* **method**: *'direct' or 'ADM', optional*
+
+  * **Description**: Method to be used for the solution. Can be either a :code:`direct` method, which will perform electric field simulations at each coil position or the Auxiliary Dipole Method (ADM, `Gomez 2020 <https://doi.org/10.1101/2020.05.27.120022>`_), which uses reciprocity and the fast multipole method (FMM) to massively accelerate the optimization. The ADM method is only compatible with :file:`.ccd` coil files
+  * **Default**: :code:`direct`
