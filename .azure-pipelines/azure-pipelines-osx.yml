@@ -1,5 +1,5 @@
 variables:
-  Agent.Source.Git.ShallowFetchDepth: 1
+  Agent.Source.Git.ShallowFetchDepth: 5
 
 trigger:
 - master
@@ -11,6 +11,19 @@ jobs:
     maxParallel: 4
 
   steps:
+  # Install certificates for signing the package
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: 'certificate_installer.p12'
+      certPwd: '$(P12password)'
+      keychain: 'temp'
+    displayName: Install Installer Certificate
+  - task: InstallAppleCertificate@2
+    inputs:
+      certSecureFile: 'certificate_application.p12'
+      certPwd: '$(P12password)'
+      keychain: 'temp'
+    displayName: Install Application Certificate
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
       sudo chown -R $USER $CONDA
@@ -22,13 +35,23 @@ jobs:
       source activate simnibs_env
       export MACOSX_DEPLOYMENT_TARGET=10.9
       python setup.py bdist_wheel
+      pip install jinja2 conda-pack
+      python packing/pack.py dist --developer-id 8J5V4KS7H4
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
+      cp simnibs_installer_macos.pkg $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
+  # https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+  - bash: |
+      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
+    env:  
+      ALTOOL_PASSWORD: $(altool_password)
+      ALTOOL_USER: $(altool_user)
+    displayName: Notarize App
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: osx_wheel
+      artifactName: macos
     displayName: Publish Artifact
 
 - job: Test
@@ -45,50 +68,85 @@ jobs:
     maxParallel: 4
 
   steps:
-  - bash: |
-      echo "##vso[task.prependpath]$CONDA/bin"
-      sudo chown -R $USER $CONDA
-    displayName: Add conda to PATH
-  - bash: |
-      sed '/pyopengl/d;/freeglut/d;/qt/d' environment_macOS.yml  > env.yml
-      conda env create -f env.yml
-    displayName: Create conda environment
+  - checkout: none
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'osx_wheel'
+      artifactName: 'macos'
+      itemPattern: '**/*.pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download SimNIBS Installer
 
   - bash: |
-      source activate simnibs_env
-      pip install -f file://$(System.ArtifactsDirectory)/osx_wheel simnibs
-      pytest simnibs/tests --junit-xml=test-results.xml
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
-  
+ 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
     inputs:
       testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Publish test results'
+      testRunTitle: 'Unit Tests'
       
-# If everything went fine, we upload the wheel as a draft to GitHub
-- job: Release
-  dependsOn: Test
+- job: Examples
+  dependsOn: Build
+  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'macOS-10.14'
+    maxParallel: 4
 
   steps:
-
+  - checkout: none
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'current'
       downloadType: 'single'
-      artifactName: 'osx_wheel'
+      artifactName: 'macos'
+      itemPattern: '**/*.pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Wheel
+    displayName: Download SimNIBS Installer
 
+  - bash: |
+      brew update
+      brew install octave
+      octave -v
+    displayName: Install Octave
+
+  - bash: |
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run tests
+ 
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Example Tests'
+
+# If everything went fine, we upload the wheel as a draft to GitHub
+- job: Release
+  dependsOn:
+    - Test
+    - Examples
+
+  pool:
+    vmImage: 'macOS-latest'
+
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'macos'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS version
+  - bash: |
+      xcrun stapler staple "$(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg"
+    displayName: Staple notarization ticket
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
@@ -96,6 +154,6 @@ jobs:
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
-      assets: $(System.ArtifactsDirectory)/osx_wheel/*
+      assets: $(System.ArtifactsDirectory)/macos/*
       assetUploadMode: 'replace'
       isDraft: true

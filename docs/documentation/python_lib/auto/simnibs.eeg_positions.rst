@@ -1,4 +1,4 @@
-simnibs.eeg\_positions
+﻿simnibs.eeg\_positions
 ======================
 
 .. currentmodule:: simnibs

@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TDCStarget &#8212; SimNIBS 3.1.2 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDCStarget &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -75,40 +77,41 @@
 <ul id="positions-attribute-doc">
 <li><p><strong>positions</strong>: <em>Nx3 list/array of floats (Python/MATLAB)</em></p>
 <ul>
-<li><p><strong>Desctiption</strong>: Positions where the field is to be optimized. The positions
+<li><p><strong>Desctiption</strong>: Positions where the field is to be controlled. The positions
 are in <strong>world coordinates</strong> in <strong>subject space</strong> (<a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">see here or more information about
 coordinates in SimNIBS</span></a>). SimNIBS finds the position in the
 mesh closest to the input position. These can be obtained by</p>
 <blockquote>
 <div><ul class="simple">
-<li><p>Open the <code class="file docutils literal notranslate"><span class="pre">tdcs_leadfield/</span><em><span class="pre">subID</span></em><span class="pre">_ROI.msh</span></code> file in <em>gmsh</em>, click in
-<em>Mesh</em> -&gt; <em>Inspect</em> and click in the model</p></li>
-<li><p>Open the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file in a NifTi reader and
+<li><p>Transforming positions from MNI space using the <code class="code docutils literal notranslate"><span class="pre">mni2subject_coords</span></code> Python
+and MATLAB functions</p></li>
+<li><p>Opening the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file in a NifTi reader and
 record the <strong>world coordinates</strong>.</p></li>
+<li><p>Opening the <code class="file docutils literal notranslate"><span class="pre">tdcs_leadfield/</span><em><span class="pre">subID</span></em><span class="pre">_ROI.msh</span></code> file in <em>gmsh</em>, click in
+<em>Mesh</em> -&gt; <em>Inspect</em> and click in the model</p></li>
 </ul>
 </div></blockquote>
 </li>
 </ul>
 </li>
-<li><p><strong>directions</strong>: <em>‘normal’ or Nx3 list/array of floats (Python/MATLAB), optional</em></p>
+<li><p><strong>directions</strong>: <em>‘normal’, None/’none’, or Nx3 list/array of floats (Python/MATLAB), optional</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Direction of the field to be optimized. If set to
-<strong>normal</strong> and the <strong>leadfield</strong> was run with <strong>map_to_surf</strong> set to <em>True</em>, will optimize the normal direction (see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>).</p></li>
-<li><p><strong>Defaut</strong>: <em>‘normal</em></p></li>
+<li><p><strong>Description</strong>: Direction of the field to be controlled.</p>
+<ul>
+<li><p>If set to <code class="code docutils literal notranslate"><span class="pre">'normal'</span></code> (default) and the leadfield was run with <code class="code docutils literal notranslate"><span class="pre">map_to_surf</span></code> (default) or surface ROIs, will control the electric fields in the normal direction.</p></li>
+<li><p>If set to <code class="code docutils literal notranslate"><span class="pre">None</span></code> (Python) or <code class="code docutils literal notranslate"><span class="pre">'none'</span></code> (MATLAB), will control electric field strength (norm).</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This argument is required if the leadfield obtained with <code class="code docutils literal notranslate"><span class="pre">map_to_surf</span> <span class="pre">=</span> <span class="pre">False</span></code>, which is the default in <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a></p>
-</div>
+</li>
+<li><p><strong>Defaut</strong>: <code class="code docutils literal notranslate"><span class="pre">'normal'</span></code></p></li>
+</ul>
 </li>
 </ul>
 <ul id="indexes-attribute-doc">
 <li><p><strong>indexes</strong>: <em>Nx1 list/array of ints (Python/MATLAB), optional</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: As an alternative to <strong>positions</strong>, you can select the <strong>node</strong>
-index (if the leadfield was run with <code class="code docutils literal notranslate"><span class="pre">map_to_surf</span> <span class="pre">=</span> <span class="pre">True</span></code>, see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>) or the <strong>element</strong> index
-(if the leadfield was run with <code class="code docutils literal notranslate"><span class="pre">map_to_surf</span> <span class="pre">=</span> <span class="pre">False</span></code>, see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>)</p></li>
-<li><p><strong>Default</strong>: Get the points closest to the <strong>positions</strong>.</p></li>
+<li><p><strong>Description</strong>: As an alternative to <code class="code docutils literal notranslate"><span class="pre">positions</span></code>, you can select the node
+index or the element index, depending on the type of leadfield.</p></li>
+<li><p><strong>Default</strong>: Get the points closest to the <code class="code docutils literal notranslate"><span class="pre">positions</span></code>.</p></li>
 </ul>
 </li>
 <li><p><strong>intensity</strong>: <em>float, optional</em></p>
@@ -116,7 +119,7 @@ index (if the leadfield was run with <code class="code docutils literal notransl
 <li><p><strong>Description</strong>: Intensity of the field (<em>E</em> or <em>J</em>, see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>) to
 be reached on average on the target and along the given direction. To optimize for
 intensity at the target rather than focality, you can set this value to a large
-number (eg: 100). With negative values, the direction will be inversed.</p></li>
+number (eg: 100). With negative values, the direction will be inverted.</p></li>
 <li><p><strong>Defaut</strong>: 0.2</p></li>
 </ul>
 </li>
@@ -257,7 +260,7 @@ mm. Set to 0 if you want the target to be only the specified positions or indice
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

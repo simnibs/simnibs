@@ -1,8 +1,11 @@
+import itertools
 import functools
+from unittest import mock
 import numpy as np
 import scipy.optimize
 import pytest
 from simnibs.optimization import optimization_methods
+from simnibs.simulation.analytical_solutions.sphere import fibonacci_sphere
 
 @pytest.fixture()
 def optimization_variables():
@@ -75,6 +78,108 @@ def optimize_scipy(l, Q, C, d, A=None, b=None, atol=1e-5):
         constraints=constraints)
     return res.x
 
+def optimize_comp(l, A, max_el_current=None, max_total_current=None):
+    objective = lambda x: -l.dot(x)
+    x0 = np.zeros_like(l)
+    jac = lambda x: -l
+
+    eq_constraint = {}
+    eq_constraint['type'] = 'eq'
+    eq_constraint['fun'] = lambda x: A.dot(x)
+    eq_constraint['jac'] = lambda x: A
+    constraints = (eq_constraint, )
+
+    if max_el_current is not None:
+        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
+    else:
+        bounds = None
+
+    if max_total_current is not None:
+        iq_constraint = {}
+        iq_constraint['type'] = 'ineq'
+        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
+        constraints += (iq_constraint, )
+
+    res = scipy.optimize.minimize(
+        objective, x0, jac=jac,
+        bounds=bounds,
+        constraints=constraints)
+    return res.x
+
+
+def optimize_focality(l, Q, b,
+                      max_el_current=None,
+                      max_total_current=None,
+                      Qin=None,
+                      max_angle=None):
+    objective = lambda x: .5 * x.dot(Q.dot(x))
+    x0 = np.zeros(Q.shape[0])
+    jac = lambda x: x.dot(Q)
+    #hess = lambda x: Q
+    m_constraint = {}
+    m_constraint['type'] = 'eq'
+    m_constraint['fun'] = lambda x: l.dot(x) - b
+    m_constraint['jac'] = lambda x: l
+
+    e_constraint = {}
+    e_constraint['type'] = 'eq'
+    e_constraint['fun'] = lambda x: np.sum(x)
+    e_constraint['jac'] = lambda x: np.ones_like(x)
+    constraints = (m_constraint, e_constraint)
+
+    if max_el_current is not None:
+        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
+    else:
+        bounds = None
+    if max_total_current is not None:
+        iq_constraint = {}
+        iq_constraint['type'] = 'ineq'
+        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
+        constraints += (iq_constraint, )
+    if Qin is not None:
+        a_constraint = {}
+        a_constraint['type'] = 'ineq'
+        a_constraint['fun'] = lambda x: (b/np.cos(np.deg2rad(max_angle)))**2 - x.dot(Qin.dot(x))
+        constraints += (a_constraint, )
+
+    res = scipy.optimize.minimize(
+        objective, x0, jac=jac,
+        bounds=bounds,
+        constraints=constraints)
+    return res.x
+
+def optimize_lstsq(A, b,
+                   max_el_current=None,
+                   max_total_current=None,
+                   atol=1e-5):
+    objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
+    x0 = np.zeros(A.shape[1])
+    #jac = lambda x: b.dot(A) + x.dot(Q)
+    jac = None
+
+    e_constraint = {}
+    e_constraint['type'] = 'eq'
+    e_constraint['fun'] = lambda x: np.sum(x)
+    e_constraint['jac'] = lambda x: np.ones_like(x)
+    constraints = (e_constraint, )
+
+    if max_el_current is not None:
+        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
+    else:
+        bounds = None
+    if max_total_current is not None:
+        iq_constraint = {}
+        iq_constraint['type'] = 'ineq'
+        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
+        constraints += (iq_constraint, )
+
+    res = scipy.optimize.minimize(
+        objective, x0, jac=jac,
+        bounds=bounds,
+        constraints=constraints)
+
+    return res.x
+
 class TestActiveSetQp:
     def test_inactive_constraints(self, optimization_variables):
         l, Q, P = optimization_variables
@@ -141,494 +246,323 @@ class TestActiveSetQp:
                           rtol=1e-4, atol=1e-4)
 
 
-class TestCalcMatrices():
+class TestTESOptimizationProblem():
+    def test_calc_Q(self):
+        A = np.random.random((2, 5, 3))
+        volumes = np.array([1, 2, 2, 2, 4])
+        tes_opt = optimization_methods.TESOptimizationProblem(
+            A, 1e3, 1e3, volumes
+        )
+        currents = np.array([1, 0])
+        field = np.vstack([A[..., i].T.dot(currents) for i in range(3)])
+        energy = np.sum(np.linalg.norm(field, axis=0)**2 * volumes)
+        energy /= np.sum(volumes)
+        currents = np.array([-1, 1, 0])
+        assert np.allclose(currents.dot(tes_opt.Q.dot(currents)), energy)
 
-    @pytest.mark.parametrize('avg_reference', [False, True])
-    def test_calc_l(self, avg_reference):
+    def test_bound_constraints(self):
+        A = np.random.random((2, 5, 3))
+        tes_opt = optimization_methods.TESOptimizationProblem(
+            A, 1e4, 1
+        )
+        C, d = tes_opt._bound_contraints()
+        currents = tes_opt.extend_currents(
+            np.array([0.5, 2, -3])
+        )
+        assert np.all((C.dot(currents) < d)[:6] == 
+                       [True, False, True, True, True, False])
+        assert np.all((C.dot(currents) <= d)[6:])
+
+    def test_l1_constraint(self):
+        A = np.random.random((2, 5, 3))
+        tes_opt = optimization_methods.TESOptimizationProblem(
+            A, 1, 1e4
+        )
+        C, d = tes_opt._l1_constraint()
+        currents = tes_opt.extend_currents(
+            np.array([0.3, -0.9, 0.6])
+        )
+        assert np.all(C.dot(currents) < d)
+        assert np.isclose(C.dot(currents), 1.8)
+
+    def test_l1_constraint_fail(self):
+        A = np.random.random((2, 5, 3))
+        tes_opt = optimization_methods.TESOptimizationProblem(
+            A, 1, 1e4
+        )
+        C, d = tes_opt._l1_constraint()
+        currents = tes_opt.extend_currents(
+            np.array([1.2, -1.2, 0])
+        )
+        assert ~np.all(C.dot(currents) < d)
+        assert np.isclose(C.dot(currents), 2.4)
+
+class TestCalcl:
+    def test_calc_l(self):
         # test if l.dot(currents) really is the average current
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-        l, _ = optimization_methods.target_matrices(
-            A, targets, target_direction, volumes, avg_reference)
+        l = optimization_methods._calc_l(A, targets, target_direction, volumes)
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         avg = np.average(field_x[[0, 1]], weights=[1, 2])
-        if avg_reference:
-            assert np.allclose(avg, l.dot([-2, 1, 1]))
-        else:
-            assert np.allclose(avg, l.dot(currents))
+        assert np.allclose(avg, l.dot([-2, 1, 1]))
 
-    @pytest.mark.parametrize('avg_reference', [False, True])
-    def test_calc_different_directions(self, avg_reference):
+    def test_calc_different_directions(self):
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-        l, _, = optimization_methods.target_matrices(
-            A, targets, target_direction, volumes, avg_reference)
+        l = optimization_methods._calc_l(
+            A, targets, target_direction, volumes
+        )
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         field_y = A[..., 1].T.dot(currents)
         avg = (field_x[0]*1 + field_y[1]*2)/3
-        if avg_reference:
-            assert np.allclose(avg, l.dot([-2, 1, 1]))
-        else:
-            assert np.allclose(avg, l.dot(currents))
+        assert np.allclose(avg, l.dot([-2, 1, 1]))
 
-    @pytest.mark.parametrize('avg_reference', [False, True])
-    def test_calc_Q_in(self, avg_reference):
+
+class TestTESLinearConstrained():
+    def test_calc_l(self):
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
+        volumes = np.array([1, 2, 2, 2, 2])
+        tes_problem = optimization_methods.TESLinearConstrained(
+            A, weights=volumes
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, 0.2)
+        currents = [-2, 1, 1]
+        field_x = A[..., 0].T.dot(currents[1:])
+        avg = np.average(field_x[[0, 1]], weights=[1, 2])
+        assert np.allclose(avg, tes_problem.l.dot(currents))
+        assert np.allclose(0.2, tes_problem.target_means)
+
+    def test_calc_different_directions(self):
+        A = np.random.random((2, 5, 3))
+        targets = [0, 1]
+        target_direction = np.array([[1, 0, 0], [0, 1, 0]])
+        volumes = np.array([1, 2, 2, 2, 2])
+        tes_problem = optimization_methods.TESLinearConstrained(
+            A, weights=volumes
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, 0.2)
+        currents = [1, 1]
+        field_x = A[..., 0].T.dot(currents)
+        field_y = A[..., 1].T.dot(currents)
+        avg = (field_x[0]*1 + field_y[1]*2)/3
+        assert np.allclose(avg, tes_problem.l.dot([-2, 1, 1]))
+
+    def test_calc_many_targets(self):
+        A = np.random.random((2, 5, 3))
+        volumes = np.array([1, 2, 2, 2, 2])
+        tes_problem = optimization_methods.TESLinearConstrained(
+            A, weights=volumes
+        )
+        tes_problem.add_linear_constraint([0], [1, 0, 0], 0.2)
+        tes_problem.add_linear_constraint([1], [1, 0, 0], 0.4)
+        currents = [-2, 1, 1]
+        field_x = A[..., 0].T.dot(currents[1:])
+        assert np.allclose(field_x[[0, 1]], tes_problem.l.dot(currents))
+        assert np.allclose([0.2, 0.4], tes_problem.target_means)
+
+    @pytest.mark.parametrize('target_mean', [1e-4, 5e-2])
+    def test_feasible(self, target_mean):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+        target_direction = [[1, 0, 0], [1, 0, 0]]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+
+        tes_problem = optimization_methods.TESLinearConstrained(
+            leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, target_mean)
+
+        x = tes_problem.solve()
+
+        x_sp = optimize_focality(
+            tes_problem.l, tes_problem.Q,
+            target_mean, max_el_current,
+            max_total_current
+        )
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(tes_problem.l.dot(x), tes_problem.target_means)
+        assert np.allclose(
+            x.dot(tes_problem.Q.dot(x)),
+            x_sp.dot(tes_problem.Q.dot(x_sp)),
+            rtol=1e-4, atol=1e-5
+        )
+
+    def test_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+        target_direction = [[1, 0, 0], [1, 0, 0]]
+
+        target_mean = 1e4
+        max_total_current = 0.2
+        max_el_current = 0.1
+
+        tes_problem = optimization_methods.TESLinearConstrained(
+            leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, target_mean)
+
+        x = tes_problem.solve()
+
+        x_sp = optimize_comp(
+            np.squeeze(tes_problem.l),
+            np.ones((1, 6)),
+            max_el_current,
+            max_total_current
+        )
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(tes_problem.l.dot(x), tes_problem.l.dot(x_sp),
+                           rtol=1e-4, atol=1e-5)
+
+    def test_multi_target_feasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+
+        tes_problem = optimization_methods.TESLinearConstrained(
+            leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_linear_constraint([0], [1, 0, 0], 1e-3)
+        tes_problem.add_linear_constraint([1], [1, 0, 0], 2e-3)
+
+        x = tes_problem.solve()
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(tes_problem.l.dot(x), tes_problem.target_means)
+
+
+class TestCalcQnorm:
+    def test_calc_Qnorm(self):
+        A = np.random.random((2, 5, 3))
+        targets = [0, 1]
         volumes = np.array([1, 2, 2, 2, 4])
-        _, Qin = optimization_methods.target_matrices(
-            A, targets, target_direction, volumes, avg_reference)
+        Qin = optimization_methods._calc_Qnorm(
+            A, targets, volumes,
+        )
         currents = np.array([1, 0])
         field = np.einsum('ijk, i->jk', A, currents)
         avg_in = np.sum(
             np.linalg.norm(field[targets], axis=1)**2 * volumes[targets])
         avg_in /= np.sum(volumes[targets])
-        if avg_reference:
-            currents = np.array([-1, 1, 0])
+        currents = np.array([-1, 1, 0])
         assert np.allclose(currents.dot(Qin.dot(currents)), avg_in)
 
-    @pytest.mark.parametrize('avg_reference', [False, True])
-    def test_calc_Q(self, avg_reference):
-        # test if currents.dot(Q).dot(currents) really is the average energy
-        A = np.random.random((2, 5, 3))
-        volumes = np.array([1, 2, 2, 2, 4])
-        Q = optimization_methods.energy_matrix(
-            A, volumes, avg_reference)
-        currents = np.array([1, 0])
-        field = np.vstack([A[..., i].T.dot(currents) for i in range(3)])
-        energy = np.sum(np.linalg.norm(field, axis=0)**2 * volumes)
-        energy /= np.sum(volumes)
-        if avg_reference:
-            currents = np.array([-1, 1, 0])
-        assert np.allclose(currents.dot(Q.dot(currents)), energy)
-
-def optimize_comp(l, A, max_el_current=None, max_total_current=None):
-    objective = lambda x: -l.dot(x)
-    x0 = np.zeros_like(l)
-    jac = lambda x: -l
-    #hess = lambda x: Q
-    eq_constraint = {}
-    eq_constraint['type'] = 'eq'
-    eq_constraint['fun'] = lambda x: A.dot(x)
-    eq_constraint['jac'] = lambda x: A
-    constraints = (eq_constraint, )
-
-    if max_el_current is not None:
-        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
-    else:
-        bounds = None
-    if max_total_current is not None:
-        iq_constraint = {}
-        iq_constraint['type'] = 'ineq'
-        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
-        constraints += (iq_constraint, )
-
-    res = scipy.optimize.minimize(
-        objective, x0, jac=jac,
-        bounds=bounds,
-        constraints=constraints)
-    return res.x
-
-
-class TestOptimizeTargetIntensity:
-    def test_bound_constraints(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        x = optimization_methods.optimize_field_component(l, max_el_current=m)
-        x_sp = optimize_comp(l, A, m)
-        assert np.all(np.abs(x) <= m+1e-6)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-
-    def test_l1_constraint(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        x = optimization_methods.optimize_field_component(l, max_total_current=m)
-        x_sp = optimize_comp(l, A, max_total_current=m)
-        assert np.linalg.norm(x, 1) <= 2 *m + 1e-4
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-    def test_both_constraints(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 3e-3
-        x = optimization_methods.optimize_field_component(l, max_el_current=m,
-                                                          max_total_current=m1)
-        x_sp = optimize_comp(l, A, m, m1)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m+1e-6)
-        assert np.isclose(l.dot(x), l.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-
-def optimize_focality(l, Q, b,
-                      max_el_current=None,
-                      max_total_current=None,
-                      Qin=None,
-                      max_angle=None):
-    objective = lambda x: .5 * x.dot(Q.dot(x))
-    x0 = np.zeros(Q.shape[0])
-    jac = lambda x: x.dot(Q)
-    #hess = lambda x: Q
-    m_constraint = {}
-    m_constraint['type'] = 'eq'
-    m_constraint['fun'] = lambda x: l.dot(x) - b
-    m_constraint['jac'] = lambda x: l
-
-    e_constraint = {}
-    e_constraint['type'] = 'eq'
-    e_constraint['fun'] = lambda x: np.sum(x)
-    e_constraint['jac'] = lambda x: np.ones_like(x)
-    constraints = (m_constraint, e_constraint)
-
-    if max_el_current is not None:
-        bounds = scipy.optimize.Bounds(-max_el_current, max_el_current)
-    else:
-        bounds = None
-    if max_total_current is not None:
-        iq_constraint = {}
-        iq_constraint['type'] = 'ineq'
-        iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
-        constraints += (iq_constraint, )
-    if Qin is not None:
-        a_constraint = {}
-        a_constraint['type'] = 'ineq'
-        a_constraint['fun'] = lambda x: (b/np.cos(np.deg2rad(max_angle)))**2 - x.dot(Qin.dot(x))
-        constraints += (a_constraint, )
-
-    res = scipy.optimize.minimize(
-        objective, x0, jac=jac,
-        bounds=bounds,
-        constraints=constraints)
-    return res.x
-
-
-class TestOptimizeFocality:
-    def test_bound_constraints_feasible(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        f = 2e-2
-        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m)
-        x_sp = optimize_focality(l, Q, f, m)
-        assert np.all(np.abs(x) <= m)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-    def test_bound_constraints_feasible(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 3e-3
-        f = 2e-2
-        x = optimization_methods.optimize_focality(l, Q, f, max_total_current=m)
-        x_sp = optimize_focality(l, Q, f, max_total_current=m)
-        assert np.linalg.norm(x, 1) <= 2 * m + 1e-4
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-    def test_both_constraints_feasible(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 2e-2
-        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
-                                                   max_total_current=m1)
-
-        x_sp = optimize_focality(
-            l, Q, f, max_el_current=m, max_total_current=m1)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-    def test_both_constraints_infeasible(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 4e-2
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1)
-
-        x_sp = optimize_comp(l, np.ones_like(l), max_el_current=m, max_total_current=m1)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.allclose(l.dot(x), l.dot(x_sp), rtol=1e-4, atol=1e-5)
-
-    def test_both_limit_angle_inactive(self, optimization_variables_avg):
+class TestTESLinearAngleConstrained:
+    def test_limit_angle_inactive(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
         Q_in = 5e1 * np.eye(len(l))
         max_angle = 45
-        m = 2e-3
-        m1 = 4e-3
+        max_el_current = 2e-3
+        max_total_current = 4e-3
         f = .02
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle)
+        x = optimization_methods._linear_angle_constrained_tes_opt(
+            np.atleast_2d(l), np.atleast_1d(f), Q,
+            max_el_current, max_total_current, Q_in, max_angle
+        )
         x_sp = optimize_focality(
-            l, Q, f, max_el_current=m, max_total_current=m1,
-            Qin=Q_in, max_angle=max_angle)
+            np.atleast_2d(l), Q,
+            np.atleast_1d(f),
+            max_el_current, max_total_current,
+            Qin=Q_in, max_angle=max_angle
+        )
 
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0)
         assert np.isclose(l.dot(x), f)
         assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
         assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
 
-    def test_both_limit_angle_limit(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        Q_in = 5e1 * np.eye(len(l))
-        max_angle = 25
-        m = 2e-3
-        m1 = 4e-3
-        f = .02
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle)
-        x_sp = optimize_focality(
-            l, Q, f, max_el_current=m, max_total_current=m1,
-            Qin=Q_in, max_angle=max_angle)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-    def test_both_limit_angle_reduce_target(self, optimization_variables_avg):
+    def test_limit_angle_reduce_target(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
         Q_in = 5e1 * np.eye(len(l))
         max_angle = 20
-        m = 2e-3
-        m1 = 4e-3
+        max_el_current = 2e-3
+        max_total_current = 4e-3
         f = .02
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
+        x = optimization_methods._linear_angle_constrained_tes_opt(
+            np.atleast_2d(l), np.atleast_1d(f), Q,
+            max_el_current, max_total_current, Q_in, max_angle
+        )
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
         assert np.isclose(np.sum(x), 0)
         assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
 
     def test_both_limit_angle_Q_iteration(self, optimization_variables_avg_QCQP):
         l, Q, A, Q_in = optimization_variables_avg_QCQP
-        # l, Q, A = optimization_variables_avg
-        # Q_in = 6 * np.eye(len(l)) + np.outer(l, l)
+        max_angle = 10
+        max_el_current = 2e-3
+        max_total_current = 4e-3
+        f = .01
+        x = optimization_methods._linear_angle_constrained_tes_opt(
+            np.atleast_2d(l), np.atleast_1d(f), Q,
+            max_el_current, max_total_current, Q_in, max_angle
+        )
+
+        x_sp = optimize_focality(
+            l, Q, f, max_el_current=max_el_current,
+            max_total_current=max_total_current,
+            Qin=Q_in, max_angle=max_angle
+        )
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(l.dot(x), f)
+        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
+        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
+
+    @pytest.mark.parametrize('target_intensity', [1e-2, 1e-1])
+    def test_linear_angle_constrained_Q(self, target_intensity):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
         max_angle = 20
-        m = 2e-3
-        m1 = 4e-3
-        f = .01
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle)
-        x_sp = optimize_focality(
-            l, Q, f, max_el_current=m, max_total_current=m1,
-            Qin=Q_in, max_angle=max_angle)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
+
+        tes_problem = optimization_methods.TESLinearAngleConstrained(
+            [0], [1, 0, 0], target_intensity, max_angle,
+            leadfield, max_total_current,
+            max_el_current
+        )
+        x = tes_problem.solve()
+        field = np.array([x[1:].dot(leadfield[..., i]) for i in range(3)]).T
+        angle = np.rad2deg(np.arccos(field[0, 0]/np.linalg.norm(field[0])))
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-    def test_both_limit_angle_infeasible_field(self, optimization_variables_avg_QCQP):
-        l, Q, A, Q_in = optimization_variables_avg_QCQP
-        max_angle = 15
-        m = 2e-3
-        m1 = 4e-3
-        f = 2
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
+        assert angle <= max_angle
 
 
-    def test_limit_nr_electrodes_infeasible_comp(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 2e3
-        n = 3
-        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
-                                                   max_total_current=m1,
-                                                   max_active_electrodes=n)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= n
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-    def test_limit_nr_electrodes_feasible_comp(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-2
-        n = 3
-        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
-                                                   max_total_current=m1,
-                                                   max_active_electrodes=n)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= n
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
-
-    def test_limit_nr_angle(seld, optimization_variables_avg_QCQP):
-        l, Q, A, Q_in = optimization_variables_avg_QCQP
-        max_angle = 15
-        m = 2e-3
-        m1 = 4e-3
-        f = 2
-        n = 4
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle,
-                                                   max_active_electrodes=n)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.linalg.norm(x, 0) <= n
-        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
-
-    def test_limit_nr_angle_change_Q(seld, optimization_variables_avg_QCQP):
-        l, Q, A, Q_in = optimization_variables_avg_QCQP
-        max_angle = 15
-        m = 2e-3
-        m1 = 4e-3
-        f = .01
-        n = 4
-        x = optimization_methods.optimize_focality(l, Q, f,
-                                                   max_el_current=m,
-                                                   max_total_current=m1,
-                                                   Qin=Q_in,
-                                                   max_angle=max_angle,
-                                                   max_active_electrodes=n)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.linalg.norm(x, 0) <= n
-        assert np.arccos(l.dot(x) / np.sqrt(x.dot(Q_in).dot(x))) <= np.deg2rad(max_angle)
-
-    def test_2_targets_field_component(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        l2 = l[::-1]
-        l = np.vstack([l ,l2])
-        m = 2e-3
-        m1 = 4e-3
-        x = optimization_methods.optimize_field_component(l, max_el_current=m,
-                                                          max_total_current=m1)
-
-        l_avg = np.average(l, axis=0)
-        x_sp = optimize_comp(l_avg, np.ones_like(l2), max_el_current=m, max_total_current=m1)
-
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-6)
-        assert np.isclose(l_avg.dot(x), l_avg.dot(x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.isclose(np.sum(x), 0)
-
-    def test_2_targets_feasible(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        l2 = l[::-1]
-        l = np.vstack([l, l2])
-        m = 2e-3
-        m1 = 4e-3
-        f = [1e-2, 1e-2]
-        x = optimization_methods.optimize_focality(l, Q, f, max_el_current=m,
-                                                   max_total_current=m1)
-        x_sp = optimize_focality(
-            l, Q, f, max_el_current=m, max_total_current=m1)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.allclose(l.dot(x), f)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
-
-
-    def test_2_targets_limit_nr_electrodes(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        l2 = l[::-1]
-        l = np.vstack([l, l2])
-        m = 2e-3
-        m1 = 4e-3
-        f = np.array([1e-2, 1e-2])
-        n = 3
-        x = optimization_methods.optimize_focality(
-            l, Q, f, max_el_current=m,
-            max_total_current=m1,
-            max_active_electrodes=n)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= n
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.allclose(l.dot(x), f)
-
-
-class TestEqConstrained:
-    def test_equality_constraints(self, optimization_variables):
-        l, Q, P = optimization_variables
-        A = np.ones((1, len(l)))
-        b = np.zeros(1)
-        x = optimization_methods._eq_constrained_QP(l, Q, A, b)
-
-        ob = lambda x: l.dot(x) + .5 * x.dot(Q.dot(x))
-        x0 = np.zeros(Q.shape[0])
-        jac = lambda x: l + x.dot(Q)
-        constraint = {}
-        constraint['type'] = 'eq'
-        constraint['fun'] = lambda x: A.dot(x) - b
-        constraint['jac'] = lambda x: A
-        constraints = (constraint, )
-
-        res = scipy.optimize.minimize(
-            ob, x0, jac=jac,
-            constraints=constraints)
-        x_sp = res.x
-
-        assert np.isclose(A.dot(x), b)
-        assert np.isclose(objective(l, Q, 0, x), objective(l, Q, 0, x_sp),
-                          rtol=1e-4, atol=1e-4)
-        assert np.allclose(x, x_sp, rtol=1e-4)
-
-
-class TestBB:
+class TestBBAlgorithm:
     def test_bb_node(self):
-        # Function with gives out the bounds as well as the new sets to split
         def bounds_func(s):
             a = np.array([0, 4, 1, 3, 2, 6, 7, 8, 9, 5])
             if len(s.active) > 4:
@@ -691,132 +625,628 @@ class TestBB:
         final_state = optimization_methods._branch_and_bound(init, bounds_func, eps, 100)
         assert np.all(final_state.active == [1, 2, 4, 3])
 
-    def test_bb_lower_bound(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-2
-        max_active = 2
-        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
-        x, val = optimization_methods._bb_lower_bound(
-            np.atleast_2d(l), Q, f, m1, m,
-            max_active, state)
+    def test_bb_bounds_tes_problem(self):
+        state = optimization_methods.bb_state([1], [0], [2, 3, 4]) # 1 active, 0 inactive
+        linear = [np.arange(5)[None, :]]
+        quadratic = [np.diag(np.arange(5))]
+        max_l0 = 3
+        max_el_current = 4
 
-        s = np.ones(len(l)) / m
-        s[state.active] = 0
-        select = state.active + state.unassigned
-        l_ = l[select]
-        Q_ = Q[np.ix_(select, select)]
-        A_ = A[select]
-        s_ = np.diag(s[select])
+        mock_fun = mock.Mock(
+            side_effect=[
+                (np.array([4, 3, 2, 1]), 2), # First call (lower bound)
+                (np.array([4, 3, 2, 1]), None), # second call (preparation upper bound)
+                (np.array([4, 3, 2]), 4), # Third call (calculation upper bound)
+            ]
+        )
+        ub, lb, child1, child2 = optimization_methods._bb_bounds_tes_problem(
+            state, max_l0, linear, quadratic,
+            max_el_current, mock_fun,
+        )
+        assert ub == 4
+        assert lb == 2
+        assert child2.inactive == [0, 2]
+        assert child1.active == [1, 2]
+        # Assertions realted to first call
+        assert np.allclose(mock_fun.call_args_list[0][0][0][0], np.arange(1, 5))
+        assert np.allclose(mock_fun.call_args_list[0][0][1][0], np.diag(np.arange(1, 5)))
+        assert np.allclose(mock_fun.call_args_list[0][1]['extra_ineq'][0],
+                           np.tile(np.array([0., 0.25, 0.25, 0.25]), 2))
+        assert np.allclose(mock_fun.call_args_list[0][1]['extra_ineq'][1], 2)
+        # Second call
+        assert np.allclose(mock_fun.call_args_list[1][0][0][0], np.arange(1, 5))
+        assert np.allclose(mock_fun.call_args_list[1][0][1][0], np.diag(np.arange(1, 5)))
+        # Third call
+        assert np.allclose(mock_fun.call_args_list[2][0][0][0], np.arange(1, 4))
+        assert np.allclose(mock_fun.call_args_list[2][0][1][0], np.diag(np.arange(1, 4)))
 
-        ob = lambda x: .5 * x.dot(Q_.dot(x))
-        x0 = np.zeros(Q_.shape[0])
-        jac = lambda x: x.dot(Q_)
-        #hess = lambda x: Q
-        m_constraint = {}
-        m_constraint['type'] = 'eq'
-        m_constraint['fun'] = lambda x: l_.dot(x) - f
-        m_constraint['jac'] = lambda x: l_
 
-        e_constraint = {}
-        e_constraint['type'] = 'eq'
-        e_constraint['fun'] = lambda x: A_.dot(x)
-        e_constraint['jac'] = lambda x: A_
+class TestLinearElecConstrained:
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+        target_direction = [[1, 0, 0], [1, 0, 0]]
 
-        bounds = scipy.optimize.Bounds(-m, m)
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 5e-2
+        n_elec = 4
 
-        iq_constraint = {}
-        iq_constraint['type'] = 'ineq'
-        iq_constraint['fun'] = lambda x: 2 * m1 - np.linalg.norm(x, 1)
+        tes_problem = optimization_methods.TESLinearElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, target_mean)
 
-        r_constraint = {}
-        r_constraint['type'] = 'ineq'
-        r_constraint['fun'] = lambda x: 1 - np.linalg.norm(s_*x, 1)
+        x = tes_problem.solve(init_startegy=init_startegy)
 
-        constraints = (m_constraint, e_constraint, iq_constraint, r_constraint)
+        x_bf = None
+        obj_bf = np.inf
+        for c in itertools.combinations(range(6),  n_elec):
+            l_ = tes_problem.l[:, c]
+            Q_ = tes_problem.Q[np.ix_(c, c)]
+            x_ = optimization_methods._linear_constrained_tes_opt(
+                l_, tes_problem.target_means,
+                Q_, max_el_current,
+                max_total_current, log_level=0
+            )
+            obj = x_.dot(Q_).dot(x_)
+            if np.all(l_.dot(x_) > target_mean*0.99) and obj < obj_bf:
+                obj_bf = obj
+                x_bf = np.zeros(6)
+                x_bf[list(c)] = x_
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(tes_problem.l.dot(x), target_mean)
+        assert np.allclose(x_bf, x)
+
+    def test_solve_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+        target_direction = [[1, 0, 0], [1, 0, 0]]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 20
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESLinearElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_linear_constraint(targets, target_direction, target_mean)
+
+        x = tes_problem.solve()
+
+        x_sp = optimize_comp(
+            np.squeeze(tes_problem.l),
+            np.ones((1, 6)),
+            max_el_current,
+            max_total_current
+        )
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(x_sp, x, atol=1e-4)
+
+class TestLinearAngleElecConstrained:
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 1e-3
+        max_angle = 40
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESLinearAngleElecConstrained(
+            n_elec, [0], [1, 0, 0], target_mean, max_angle,
+            leadfield, max_total_current, max_el_current
+        )
+        x = tes_problem.solve()
+        field = np.array([x[1:].dot(leadfield[..., i]) for i in range(3)]).T
+        angle = np.rad2deg(np.arccos(field[0, 0]/np.linalg.norm(field[0])))
+
+        obj_bf = np.inf
+        for c in itertools.combinations(range(6),  n_elec):
+            l_ = tes_problem.l[:, c]
+            Q_ = tes_problem.Q[np.ix_(c, c)]
+            Qnorm_ = tes_problem.Qnorm[np.ix_(c, c)]
+            x_ = optimization_methods._linear_angle_constrained_tes_opt(
+                l_, tes_problem.target_mean,
+                Q_, max_el_current, max_total_current,
+                Qnorm_, max_angle,
+                log_level=0
+            )
+            obj = x_.dot(Q_).dot(x_)
+            if np.all(l_.dot(x_) > target_mean*0.99) and obj < obj_bf:
+                obj_bf = obj
+
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert angle <= max_angle
+        assert np.isclose(tes_problem.l.dot(x), target_mean)
+        assert x.dot(tes_problem.Q).dot(x) <= obj_bf
+
+    def test_solve_angle_elec_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 1.
+        max_angle = 40
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESLinearAngleElecConstrained(
+            n_elec, [0], [1, 0, 0], target_mean, max_angle,
+            leadfield, max_total_current, max_el_current
+        )
+        x = tes_problem.solve()
+        field = np.array([x[1:].dot(leadfield[..., i]) for i in range(3)]).T
+        angle = np.rad2deg(np.arccos(field[0, 0]/np.linalg.norm(field[0])))
+
+        obj_bf = -np.inf
+        for c in itertools.combinations(range(6),  n_elec):
+            l_ = tes_problem.l[:, c]
+            Q_ = tes_problem.Q[np.ix_(c, c)]
+            Qnorm_ = tes_problem.Qnorm[np.ix_(c, c)]
+            x_ = optimization_methods._linear_angle_constrained_tes_opt(
+                l_, tes_problem.target_mean,
+                Q_, max_el_current, max_total_current,
+                Qnorm_, max_angle,
+                log_level=10
+            )
+            obj = l_.dot(x_)
+            if np.all(obj > obj_bf):
+                obj_bf = obj
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert angle <= max_angle
+        assert np.all(tes_problem.l.dot(x) >= obj_bf)
+
+
+class TestEqConstrained:
+    def test_equality_constraints(self, optimization_variables):
+        l, Q, P = optimization_variables
+        A = np.ones((1, len(l)))
+        b = np.zeros(1)
+        x = optimization_methods._eq_constrained_QP(l, Q, A, b)
+
+        ob = lambda x: l.dot(x) + .5 * x.dot(Q.dot(x))
+        x0 = np.zeros(Q.shape[0])
+        jac = lambda x: l + x.dot(Q)
+        constraint = {}
+        constraint['type'] = 'eq'
+        constraint['fun'] = lambda x: A.dot(x) - b
+        constraint['jac'] = lambda x: A
+        constraints = (constraint, )
+
         res = scipy.optimize.minimize(
             ob, x0, jac=jac,
-            bounds=bounds,
             constraints=constraints)
-        x_sp = np.zeros(len(l))
-        x_sp[select] = res.x
+        x_sp = res.x
 
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x) <= m + 1e-4)
+        assert np.isclose(A.dot(x), b)
+        assert np.isclose(objective(l, Q, 0, x), objective(l, Q, 0, x_sp),
+                          rtol=1e-4, atol=1e-4)
+        assert np.allclose(x, x_sp, rtol=1e-4)
+
+
+class TestConstrainedEigenvalue:
+    def test_constrained_eigv(self):
+        A = np.random.rand(5, 100)
+        Q = A.dot(A.T)
+        eigvals, eigvec = optimization_methods._constrained_eigenvalue(Q)
+        assert np.allclose(np.sum(eigvec, axis=0), 0)
+        assert np.allclose(eigvec.T.dot(eigvec)[1:, 1:], np.eye(4))
+        assert np.allclose(eigvals, np.diagonal(eigvec.T.dot(Q).dot(eigvec)))
+
+
+class TestTESNormContrained:
+    def test_norm_constrained_tes_opt(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = 0.1
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        energy_bf = np.inf
+        directions = fibonacci_sphere(51)
+        directions = directions[directions[:, 2] > 0]
+        for d in directions:
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
+            x_ = optimization_methods._linear_constrained_tes_opt(
+                l[None, :], np.atleast_1d(target_norm),
+                Q, max_el_current,
+                max_total_current, log_level=0
+            )
+            norm_ = np.sqrt(x_.dot(Qnorm).dot(x_))
+            energy_ = x_.dot(Q).dot(x_)
+            if np.isclose(norm_, target_norm, rtol=1e-1) and energy_ < energy_bf:
+                energy_bf = energy_
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.isclose(x[state.inactive], 0)
-        assert np.isclose(l.dot(x), f)
-        assert np.allclose(x.dot(Q.dot(x)), x_sp.dot(Q.dot(x_sp)), rtol=1e-4, atol=1e-5)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+        assert x.dot(Q).dot(x) < energy_bf
 
-    def test_bb_upper_bound(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-3
-        max_active = 2
-        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
-        x_ub, ub = optimization_methods._bb_upper_bound(
-            np.atleast_2d(l), Q, f, m1, m, max_active, state)
+    def test_norm_constrained_tes_opt_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
 
-        assert np.linalg.norm(x_ub, 1) <= 2 * m1 + 1e-4
-        assert np.all(np.abs(x_ub) <= m + 1e-4)
-        assert np.isclose(np.sum(x_ub), 0)
-        assert np.isclose(x_ub[state.inactive], 0)
-        assert np.isclose(l.dot(x_ub), f)
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
 
-    def test_bb_split(self):
-        state = optimization_methods.bb_state([1], [2], [3, 0, 4])
-        x = np.array([4, 3, 0, 1, -5])
-        child1, child2 = optimization_methods._bb_split(x, state)
-        assert child1.active == [1, 4]
-        assert child1.inactive == [2]
-        assert child2.active == [1]
-        assert child2.inactive == [2, 4]
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = 20
 
-    def test_bb_full(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-2
-        max_active = 2
-        init = optimization_methods.bb_state([], [], list(range(len(l))))
-        bf = functools.partial(
-            optimization_methods._bb_bounds_function,
-            np.atleast_2d(l), Q, f, m1, m, max_active)
-        final_state = optimization_methods._branch_and_bound(
-            init, bf, 1e-2, 100)
-        x = final_state.x_lb
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= max_active
-        assert np.all(np.abs(x) <= m + 1e-4)
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm[None, ...], target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        norm_bf = -np.inf
+        directions = fibonacci_sphere(51)
+        directions = directions[directions[:, 2] > 0]
+        for d in directions:
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
+            x_ = optimization_methods._linear_constrained_tes_opt(
+                l[None, :], np.atleast_1d(target_norm),
+                Q, max_el_current,
+                max_total_current, log_level=0
+            )
+            norm_ = np.sqrt(x_.dot(Qnorm).dot(x_))
+            if norm_ > norm_bf:
+                norm_bf = norm_
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
+        assert np.sqrt(x.dot(Qnorm).dot(x)) > norm_bf*0.999
 
-    def test_constrained_l0_branch_and_bound(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-2
-        max_active = 2
-        x = optimization_methods._constrained_l0_branch_and_bound(
-            l, Q, f, m1, m, max_active)
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= max_active
-        assert np.all(np.abs(x) <= m + 1e-4)
-        assert np.isclose(np.sum(x), 0)
-        assert np.isclose(l.dot(x), f)
 
-    def test_constrained_l0_branch_and_bound_ac(self, optimization_variables_avg):
-        l, Q, A = optimization_variables_avg
-        m = 2e-3
-        m1 = 4e-3
-        f = 1e-2
-        max_active = 3
-        x = optimization_methods._constrained_l0_branch_and_bound(
-            l, Q, f, m1, m, max_active, start_inactive=[2], start_active=[1])
-        assert np.linalg.norm(x, 1) <= 2 * m1 + 1e-4
-        assert np.linalg.norm(x, 0) <= max_active
-        assert np.isclose(x[2], 0)
-        assert np.all(np.abs(x) <= m + 1e-4)
+    def test_norm_constrained_tes_opt_multi(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm = np.stack([Qnorm1, Qnorm2])
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.1])
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
+        assert np.allclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+
+
+    def test_norm_constrained_tes_opt_multi_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        Q = tes_opt.Q
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm = np.stack([Qnorm1, Qnorm2])
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.2])
+
+        x = optimization_methods._norm_constrained_tes_opt(
+            Qnorm, target_norm, Q,
+            max_el_current, max_total_current
+        )
+
+        assert np.all(np.abs(x) <= max_el_current*1.001)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current*1.001)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_norm[0], rtol=1e-1)
+
+    def test_add_norm_constaint(self):
+        A = np.random.random((2, 5, 3))
+        targets = [0, 1]
+        volumes = np.array([1, 2, 2, 2, 2])
+        tes_problem = optimization_methods.TESNormConstrained(
+            A, weights=volumes
+        )
+        tes_problem.add_norm_constraint(targets, 0.2)
+        currents = np.array([-2, 1, 1])
+        field_norm = np.linalg.norm(A.T.dot(currents[1:]), axis=0)
+        avg_sq = np.average(field_norm[[0, 1]]**2, weights=[1, 2])
+        assert np.allclose(avg_sq, currents.T @ tes_problem.Qnorm @ currents)
+        assert np.allclose(0.2, tes_problem.target_means)
+
+    def test_solve_norm_constraint(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_norm = np.array([0.1, 0.1])
+
+        tes_opt = optimization_methods.TESNormConstrained(
+            leadfield, max_total_current, max_el_current
+        )
+        tes_opt.add_norm_constraint(0, target_norm[0])
+        tes_opt.add_norm_constraint(1, target_norm[1])
+        x = tes_opt.solve()
+
+        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.linalg.norm(x) <= 2*max_total_current)
+        assert np.isclose(np.sum(x), 0)
+        assert np.allclose(np.sqrt(x.dot(tes_opt.Qnorm).dot(x)), target_norm, rtol=1e-1)
+
+
+class TestNormElecConstrained:
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 5e-2
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESNormElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_norm_constraint(targets, target_mean)
+
+        x = tes_problem.solve(init_startegy=init_startegy)
+
+        x_bf = None
+        obj_bf = np.inf
+        for c in itertools.combinations(range(6),  n_elec):
+            Qnorm_ = tes_problem.Qnorm[0][np.ix_(c, c)]
+            Q_ = tes_problem.Q[np.ix_(c, c)]
+            x_ = optimization_methods._norm_constrained_tes_opt(
+                Qnorm_, tes_problem.target_means,
+                Q_, max_el_current,
+                max_total_current, log_level=0
+            )
+            obj = x_.dot(Q_).dot(x_)
+            if np.all(np.sqrt(x_.dot(Qnorm_).dot(x_)) > target_mean*0.99) and obj < obj_bf:
+                obj_bf = obj
+                x_bf = np.zeros(6)
+                x_bf[list(c)] = x_
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert np.isclose(np.sqrt(x @ tes_problem.Qnorm @ x), target_mean, rtol=1e-2)
+        assert np.allclose(x_bf, x) or np.allclose(x_bf, -x)
+
+    def test_solve_infeasible(self):
+        np.random.seed(1)
+        leadfield = np.random.random((5, 10, 3))
+        np.random.seed(None)
+        targets = [0, 1]
+
+        max_total_current = 0.2
+        max_el_current = 0.1
+        target_mean = 20
+        n_elec = 4
+
+        tes_problem = optimization_methods.TESNormElecConstrained(
+            n_elec, leadfield, max_total_current, max_el_current
+        )
+        tes_problem.add_norm_constraint(targets, target_mean)
+
+        x = tes_problem.solve()
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= n_elec
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+
+
+class TestDistributed:
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-4])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-4])
+    def test_least_squares_opt(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        A = np.random.rand(30, 5)
+        b = np.random.rand(30)
+        np.random.seed(None)
+
+        Q = A.T.dot(A)
+        l = -2*b.dot(A)
+
+        x = optimization_methods._least_squares_tes_opt(
+            l, Q,
+            max_el_current,
+            max_total_current,
+        )
+        x_sp = optimize_lstsq(A, b, max_el_current, max_total_current)
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0)
+        assert objective(x) < objective(x_sp) *1.1
+
+    def test_calc_l_Q(self):
+        leadfield = np.zeros((5, 30, 3))
+        for i in range(5):
+            leadfield[i, i, :] = 1
+
+        target_field = np.zeros((30, 3))
+        target_field[0, 0] = 1
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field
+        )
+        x = optimization_methods._eq_constrained_QP(
+            tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
+        )
+        field = leadfield.T.dot(x[1:]).T
+        assert np.allclose(field[0], 1/3)
+        assert np.allclose(field[1:], 0)
+
+    def test_calc_l_Q_weighted(self):
+        leadfield = np.zeros((5, 30, 3))
+        for i in range(5):
+            leadfield[i, i, :] = 1
+
+        target_field = np.zeros((30, 3))
+        target_field[0, 0] = 1
+
+        weights = np.ones((30, 3))
+        weights[0] = [-2, -1, -1]
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field, weights
+        )
+        x = optimization_methods._eq_constrained_QP(
+            tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
+        )
+        field = leadfield.T.dot(x[1:]).T
+        assert np.allclose(field[0], 1/2)
+        assert np.allclose(field[1:], 0)
+
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
+    def test_solve_scalar_w(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        target_field = np.random.rand(30, 3)
+        np.random.seed(None)
+
+        weights = np.ones(30)
+        weights[20:] = 0
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field, weights, max_total_current,
+            max_el_current
+        )
+
+        x = tes_problem.solve()
+
+        P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        A = leadfield.reshape(5, -1).T.dot(P)
+        A[60:] = 0
+        b = target_field.reshape(-1)
+        b[60:] = 0
+
+        x_sp = optimize_lstsq(
+            A, b,
+            max_el_current, max_total_current
+        )
+
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0, atol=1e-6)
+        assert objective(x) < objective(x_sp) *1.1
+
+
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
+    def test_solve_vector_w(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        target_field = np.random.rand(30, 3)
+        np.random.seed(None)
+
+        weights = np.zeros((30, 3))
+        weights[:, 1] = 1.
+
+        tes_problem = optimization_methods.TESDistributed(
+            leadfield, target_field, weights, max_total_current,
+            max_el_current
+        )
+
+        x = tes_problem.solve()
+
+        P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
+        A = leadfield[..., 1].T.dot(P)
+        b = target_field[..., 1]
+
+        x_sp = optimize_lstsq(
+            A, b,
+            max_el_current, max_total_current
+        )
+
+        objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)
+        assert np.isclose(np.sum(x), 0, atol=1e-6)
+        assert objective(x) < objective(x_sp) *1.1
+
+
+class TestDistributedElec:
+    @pytest.mark.parametrize('max_el_current', [1e5, 1e-2])
+    @pytest.mark.parametrize('max_total_current', [1e5, 1e-2])
+    def test_solve(self, max_el_current, max_total_current):
+        np.random.seed(1)
+        leadfield = np.random.rand(5, 30, 3)
+        target_field = np.random.rand(30, 3)
+        np.random.seed(None)
+
+        weights = np.zeros((30, 3))
+        weights[:, 1] = 1.
+
+        tes_problem = optimization_methods.TESDistributedElecConstrained(
+            4, leadfield, target_field,
+            weights, max_total_current,
+            max_el_current
+        )
+        x = tes_problem.solve()
+
+        assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
+        assert np.linalg.norm(x, 0) <= 4
+        assert np.all(np.abs(x) <= max_el_current + 1e-4)

@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Contributors and Funding &#8212; SimNIBS 3.1.2 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contributors and Funding &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -57,21 +59,22 @@
 <dt>Axel Thielscher</dt><dd><ul>
 <li><p>Project coordination</p></li>
 <li><p>Debugging and maintenance of <a class="reference internal" href="documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> and meshfix.</p></li>
-<li><p>Implementation of <a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> (2.1)</p></li>
-<li><p>Creation of the new example dataset <em>ernie</em> (2.1)</p></li>
+<li><p><a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> (2.1)</p></li>
+<li><p>Example dataset <em>ernie</em> (2.1)</p></li>
 </ul>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
 <dt>Guilherme B. Saturnino</dt><dd><ul>
-<li><p>Implementation of tDCS optimiaztion (3.1)</p></li>
-<li><p>Installation procedure (3.0)</p></li>
-<li><p>Documentation (3.0)</p></li>
-<li><p>Implementation of the fast FEM code (3.0)</p></li>
-<li><p>Implementation (together with K. Weise) of the UQ functionality (3.0)</p></li>
-<li><p>Main contributor to the new python core (2.1)</p></li>
-<li><p>Main contributor to the GUI and the electrode modeling for tDCS (2.0)</p></li>
+<li><p>TES optimiaztion algorithms (3.1, 3.2)</p></li>
+<li><p>Installation procedure (3.0, 3.2)</p></li>
+<li><p>Documentation (3.0, 3.1 and 3.2)</p></li>
+<li><p>Fast FEM code (3.0)</p></li>
+<li><p>(together with K. Weise) UQ functionality (3.0)</p></li>
+<li><p>New python core (2.1)</p></li>
+<li><p>GUI (2.0)</p></li>
+<li><p>Electrode modeling for TES (2.0)</p></li>
 <li><p>Bug-fixing</p></li>
 </ul>
 </dd>
@@ -79,24 +82,31 @@
 </li>
 <li><dl class="simple">
 <dt>Jesper D. Nielsen</dt><dd><ul>
-<li><p>Main author of the <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> pipeline (2.1)</p></li>
+<li><p>Main author of <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> pipeline (2.1)</p></li>
 </ul>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
 <dt>Kristoffer H. Madsen</dt><dd><ul>
-<li><p>Implementation of prototype version for MNI transformation (2.1)</p></li>
-<li><p>Implementation of fast I/O for gmsh-meshes in python (2.0)</p></li>
-<li><p>Integration of pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)</p></li>
+<li><p>MNI transformation (2.1)</p></li>
+<li><p>Fast I/O for gmsh-meshes in python (2.0)</p></li>
+<li><p>Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)</p></li>
 </ul>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
 <dt>Oula Puonti</dt><dd><ul>
-<li><p>Help with <a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> (2.1)</p></li>
-<li><p>Creation of the new MNI head mesh (2.1)</p></li>
+<li><p><a class="reference internal" href="documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> (2.1)</p></li>
+<li><p>New MNI head mesh (2.1)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Hassan Yazdanian and Kim Knudsen</dt><dd><ul>
+<li><p>Magnetic Field Calculations (3.2)</p></li>
 </ul>
 </dd>
 </dl>
@@ -104,7 +114,7 @@
 <li><dl class="simple">
 <dt>Konstantin Weise</dt><dd><ul>
 <li><p>First version of the TMS optimization (3.1)</p></li>
-<li><p>Help with the UQ functionality (3.0)</p></li>
+<li><p>UQ functionality (3.0)</p></li>
 </ul>
 </dd>
 </dl>
@@ -117,8 +127,15 @@
 </dl>
 </li>
 <li><dl class="simple">
-<dt>Ole Nummsen</dt><dd><ul>
+<dt>Ole Numssen</dt><dd><ul>
 <li><p>First version of the TMS optimization (3.1)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.</dt><dd><ul>
+<li><p>Auxiliary Dipole Method (ADM) TMS optimization (3.2)</p></li>
 </ul>
 </dd>
 </dl>
@@ -174,12 +191,13 @@ Wellcome Trust Centre for Neuroimaging (UCL) and <a class="reference external" h
 <li><p>We heavily use <a class="reference external" href="http://geuz.org/gmsh/">Gmsh</a> by <a class="reference external" href="http://www.montefiore.ulg.ac.be/~geuzaine/">Christophe Geuzaine</a> and <a class="reference external" href="http://perso.uclouvain.be/jean-francois.remacle/">Jean-François Remacle</a></p></li>
 <li><p>FEM code introduced in version 3.0 relies on <a class="reference external" href="https://www.mcs.anl.gov/petsc/">PETSc</a> and <a class="reference external" href="https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software">Hypre</a>.</p></li>
 <li><p>Thanks for <strong>Konstantin Weise</strong> for giving us access to an early version of his software, <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc</a>.</p></li>
+<li><p>Thanks for <strong>Luis Gomez</strong> for providing a python version of his <a class="reference external" href="https://github.com/luisgo/Auxiliary_dipole_method">ADM TMS optimization package</a>.</p></li>
 </ul>
 </div>
 <div class="section" id="institutions">
 <h2>Institutions<a class="headerlink" href="#institutions" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>Versions 2.1 and 3 have been developed at the <a class="reference external" href="http://www.drcmr.dk">Danish Research Center for Magnetic Resonance</a> (Copenhagen, Denmark) and the <a class="reference external" href="http://www.dtu.dk/english">Technical University of Denmark</a> (Kgs Lyngby, Denmark).</p></li>
+<li><p>Versions 2.1 and 3 have been developed at the <a class="reference external" href="http://www.drcmr.dk">Danish Research Center for Magnetic Resonance</a> (Copenhagen, Denmark) and the <a class="reference external" href="http://www.dtu.dk/english">Technical University of Denmark</a> (Kgs Lyngby, Denmark), in collaboration with external partners.</p></li>
 <li><p>Version 1.0 was created at the <a class="reference external" href="http://www.kyb.tuebingen.mpg.de">Max-Planck Institute for Biological Cybernetics</a> (Tübingen, Germany).</p></li>
 <li><p>Version 2.0 was developed in all three institutions</p></li>
 </ul>
@@ -282,7 +300,7 @@ Wellcome Trust Centre for Neuroimaging (UCL) and <a class="reference external" h
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

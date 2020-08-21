@@ -1,4 +1,4 @@
-simnibs.read\_freesurfer\_surface
+﻿simnibs.read\_freesurfer\_surface
 =================================
 
 .. currentmodule:: simnibs

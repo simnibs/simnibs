@@ -1,16 +1,16 @@
-function S = sim_struct(type)
+function S = opt_struct(type)
 %
 % create an empty data structure
 % to set up a simnibs optimization
 %
-% S = sim_struct(type)
+% S = opt_struct(type)
 % 
 % Guilherme Saturnino, 2019
 
 %    This program is part of the SimNIBS package.
 %    Please check on www.simnibs.org how to cite our work in publications.
 %
-%    Copyright (C) 2019 Guilherme Saturnino
+%    Copyright (C) 2020 Guilherme Saturnino
 %
 %    This program is free software: you can redistribute it and/or modify
 %    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ function S = sim_struct(type)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid'};
+validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -59,6 +59,7 @@ switch S.type
        S.angle_resolution = 30; % Resolution to use for angles (in degrees)
        S.open_in_gmsh = true; % Wether to open simulation result in Gmsh
        S.solver_options = ''; % FEM solver options
+       S.method = 'direct'; % Solution method, either 'direct' or 'ADM'. The former is only valid with .ccd coil files
 
     case 'TDCSoptimize'
         S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
@@ -85,6 +86,18 @@ switch S.type
         S.radius = 2; % Radius of avoid region, in mm
         S.indexes = []; % OPTIONAL: Nodes/element indexes of the region, overwires "positions"
         S.tissues = []; % OPTINAL: Tissues where the region is defined
-        
+    case 'TDCSDistributedOptimize'       
+        S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
+        S.name = 'optimization/tdcs'; % Name for the output files
+        S.max_total_current = 2e-3; % Maximum total current injected (in mA), optional
+        S.max_individual_current = 1e-3; % Maximum current injected per electrode (in mA)
+        S.max_active_electrodes = []; % Maximum number of active electrodes in solution, leave empty to unconstrained.
+        S.target_image = ''; % Image to be "reproduced" via the optimization
+        S.mni_space = true; % Wether the image is in MNI space. Set to "false" if in subject space
+        S.subpath = ''; % Path to the m2m_{subID} directory. Mandatory if mni_space=true;
+        S.intensity = 0.2;  % Target field intensity
+        S.min_image_value = 0; %minimum image value to be considered. Corresponds to T_min in Ruffini et al. 2014
+        S.open_in_gmsh = true; % Wether to open output in Gmsh
+
 end
 

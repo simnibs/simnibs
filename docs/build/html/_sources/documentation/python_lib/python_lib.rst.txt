@@ -60,3 +60,20 @@ Utilities
     templates
     get_atlas
     SubjectFiles
+
+
+Simulations
+------------
+.. autosummary::
+   :toctree: auto
+   :nosignatures:
+
+    simulation.calc_B
+    simulation.calc_fields
+    simulation.tdcs
+    simulation.tdcs_neumann
+    simulation.tdcs_leadfield
+    simulation.tms_dadt
+    simulation.tms_coil
+    simulation.tms_many_simulations
+    simulation.electric_dipole

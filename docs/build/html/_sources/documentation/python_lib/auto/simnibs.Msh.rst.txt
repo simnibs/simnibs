@@ -1,4 +1,4 @@
-simnibs.Msh
+﻿simnibs.Msh
 ===========
 
 .. currentmodule:: simnibs
@@ -26,11 +26,14 @@ simnibs.Msh
       ~Msh.fields_summary
       ~Msh.find_closest_element
       ~Msh.find_corresponding_tetrahedra
+      ~Msh.find_shared_nodes
       ~Msh.find_tetrahedron_with_points
       ~Msh.fix_surface_labels
       ~Msh.fix_th_node_ordering
       ~Msh.fix_thin_tetrahedra
       ~Msh.fix_tr_node_ordering
+      ~Msh.gaussian_curvature
+      ~Msh.intercept_ray
       ~Msh.interp_matrix
       ~Msh.join_mesh
       ~Msh.nodes_areas
@@ -39,9 +42,11 @@ simnibs.Msh
       ~Msh.open_in_gmsh
       ~Msh.prepare_surface_tags
       ~Msh.read_hdf5
+      ~Msh.reconstruct_surfaces
       ~Msh.remove_from_mesh
       ~Msh.test_inside_volume
       ~Msh.tetrahedra_quality
+      ~Msh.triangle_angles
       ~Msh.triangle_normals
       ~Msh.view
       ~Msh.write

@@ -2,16 +2,19 @@ name: simnibs_env
 channels:
   - defaults
 dependencies:
-  - python=3.7.3
+  - python=3.7
   - numpy=1.16
   - scipy=1.2
   - h5py=2.9
-  - pyqt=5.9
   - pyopengl=3.1
   - pytest=4.4
   - cython=0.29
   - mock
   - freeglut
-  - pip
+  - pip>19.3
+  - packaging
+  - requests
   - pip:
     - nibabel==2.3.*
+    - pyqt5==5.12.*
+    - fmm3dpy==0.0.5

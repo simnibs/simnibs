@@ -17,7 +17,8 @@ def log_warnings(message, category, filename, lineno, file=None, line=None):
     logger.warn(warnings.formatwarning(message, category, filename, lineno))
 
 
-warnings.showwarning = log_warnings
+# This is causing errors in pytest
+#warnings.showwarning = log_warnings
 
 
 def register_excepthook(logger):

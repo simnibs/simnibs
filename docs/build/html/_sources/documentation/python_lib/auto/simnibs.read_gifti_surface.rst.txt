@@ -1,4 +1,4 @@
-simnibs.read\_gifti\_surface
+﻿simnibs.read\_gifti\_surface
 ============================
 
 .. currentmodule:: simnibs

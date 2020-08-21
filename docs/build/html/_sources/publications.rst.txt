@@ -4,19 +4,36 @@ Publications
 =============
 The main publications documenting SimNIBS development are
 
+Version 3.2
+-----------
+
+TMS Optimiztion (ADM method)
+''''''''''''''''''''''''''''
+* `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
+
+
+Magnetic Field Calculations
+'''''''''''''''''''''''''''
+* `Yazdanian, H., Saturnino, G. B., Thielscher, A., & Knudsen, K. (2020). Fast evaluation of the Biot-Savart integral using FFT for electrical conductivity imaging. Journal of Computational Physics, 109408. <https://doi.org/10.1016/j.jcp.2020.109408>`_
+ 
+
+Electric Field Strength Optimization
+''''''''''''''''''''''''''''''''''''
+* `Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv. <https://doi.org/10.1101/2020.05.27.118422>`_
+
+
 Version 3.1
 -----------
 
 
 TDCS Optimization
 '''''''''''''''''''
-
 * `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
+
 
 TMS Optimization
 '''''''''''''''''''
-
-* `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603. <https://doi.org/10.1101/595603>`_ 
+* `Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., & Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486. <https://doi.org/10.1016/j.neuroimage.2019.116486>`_
 
 
 
@@ -43,12 +60,12 @@ Version 2.1
 
 Validation 
 ''''''''''
-* `Puonti, O., Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2019). Comparing and Validating Automated Tools for Individualized Electric Field Simulations in the Human Head. bioRxiv, 611962. <https://doi.org/10.1101/611962>`_ 
+
+* `Puonti, O., Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2020). Value and limitations of intracranial recordings for validating electric field modeling for transcranial brain stimulation. Neuroimage, 208, 116431. <https://doi.org/10.1016/j.neuroimage.2019.116431>`_
 
 Tutorial paper
 ''''''''''''''
-* `Saturnino, G. B., Puonti, O., Nielsen, J. D., Antonenko, D., Madsen, K. H. H., and
-  Thielscher, A. (2018), SimNIBS 2.1: A Comprehensive Pipeline for Individualized Electric Field Modelling for Transcranial Brain Stimulation. bioRxiv, 500314. <https://doi.org/10.1101/500314>`_
+* `Saturnino, G. B., Puonti, O., Nielsen, J. D., Antonenko, D., Madsen, K. H., & Thielscher, A. (2019). Simnibs 2.1: A comprehensive pipeline for individualized electric field modelling for transcranial brain stimulation. In Brain and Human Body Modeling (pp. 3-25). Springer, Cham. <https://doi.org/10.1016/j.neuroimage.2019.116431>`_
 
 :ref:`headreco_docs` pipeline and assessement of skull segmentation accuracy
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''

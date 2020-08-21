@@ -1,4 +1,4 @@
-simnibs.subject2mni\_coords
+﻿simnibs.subject2mni\_coords
 ===========================
 
 .. currentmodule:: simnibs

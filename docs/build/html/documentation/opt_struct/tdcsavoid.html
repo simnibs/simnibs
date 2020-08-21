@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TDCSavoid &#8212; SimNIBS 3.1.2 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDCSavoid &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,10 +13,11 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="TMSoptimize" href="tmsoptimize.html" />
+    <link rel="next" title="TDCSDistributedOptimize" href="tdcsdistributedoptimize.html" />
     <link rel="prev" title="TDCStarget" href="tdcstarget.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -38,7 +40,7 @@
           <a href="tdcstarget.html" title="Previous document">TDCStarget</a>
         </li>
         <li>
-          <a href="tmsoptimize.html" title="Next document">TMSoptimize</a>
+          <a href="tdcsdistributedoptimize.html" title="Next document">TDCSDistributedOptimize</a>
           &rarr;
         </li>
     </ul>
@@ -82,8 +84,8 @@ information</span></a>).</p></li>
 <li><p><strong>weight</strong>: <em>float</em></p>
 <ul class="simple">
 <li><p><strong>Description</strong>: Weight to be given to this avoid region. The largest the weight the
-more SimNIBS will avoid this region. Must be <img class="math" src="../../_images/math/6d3151275c219f6623672b405417264b67fe8fb0.png" alt="&gt; 1"/>.</p></li>
-<li><p><strong>Default</strong>: <img class="math" src="../../_images/math/c1a0f9480cb59f3ee04f7de7c852080ba993f601.png" alt="10^3"/>.</p></li>
+more SimNIBS will avoid this region. Must be <span class="math notranslate nohighlight">\(&gt; 1\)</span>.</p></li>
+<li><p><strong>Default</strong>: <span class="math notranslate nohighlight">\(10^3\)</span>.</p></li>
 </ul>
 </li>
 <li><p><strong>indexes</strong>: <em>Nx1 list/array of ints (Python/MATLAB), optional</em></p>
@@ -125,7 +127,7 @@ all tissues in the leadfield.</p></li>
           <a href="tdcstarget.html" title="Previous document">TDCStarget</a>
         </li>
         <li>
-          <a href="tmsoptimize.html" title="Next document">TMSoptimize</a>
+          <a href="tdcsdistributedoptimize.html" title="Next document">TDCSDistributedOptimize</a>
           &rarr;
         </li>
     </ul>
@@ -182,7 +184,7 @@ all tissues in the leadfield.</p></li>
   <li><a href="../documentation.html">Documentation</a><ul>
   <li><a href="opt_struct.html">Optimization Data Structures</a><ul>
       <li>Previous: <a href="tdcstarget.html" title="previous chapter">TDCStarget</a></li>
-      <li>Next: <a href="tmsoptimize.html" title="next chapter">TMSoptimize</a></li>
+      <li>Next: <a href="tdcsdistributedoptimize.html" title="next chapter">TDCSDistributedOptimize</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
@@ -214,7 +216,7 @@ all tissues in the leadfield.</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

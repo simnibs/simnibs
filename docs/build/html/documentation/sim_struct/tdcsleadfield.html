@@ -1,10 +1,11 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TDCSLEADFIELD &#8212; SimNIBS 3.1.2 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDCSLEADFIELD &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -131,7 +133,7 @@ density <em>‘J’</em>.</p></li>
 </div>
 <p></p>
 </li>
-<li><p><strong>electrode</strong>: <em>ELECTRODE structure or list/array of ELECTRODE structures, optional</em></p>
+<li><p><strong>electrode</strong>: <em>ELECTRODE structure, list/array of ELECTRODE structures, or None/’none’ optional</em></p>
 <ul class="simple">
 <li><p><strong>Description</strong>: Electrodes to be used. Typically small round electrodes. There are 3
 ways to set this variable:</p>
@@ -143,6 +145,7 @@ the shape of the corresponding entry in the list</p></li>
 <li><p>list of <a class="reference internal" href="electrode.html#electrode-struct-doc"><span class="std std-ref">ELECTRODE</span></a> structures and <strong>eeg_cap</strong> set to <em>None</em> (Python only):
 will use the <strong>centre</strong> and <strong>pos_ydir</strong> attributes of the electrodes to place
 them. This allows to set up electrodes on your own, without using a eeg cap provided by SimNIBS.</p></li>
+<li><p>None(Python) or ‘none’ (MATLAB): Use point electrodes located at the surface nodes closest to the electrode center</p></li>
 </ul>
 </li>
 <li><p><strong>Default</strong>: Use 1 x 1cm round electrodes with 4mm thickness</p></li>
@@ -278,7 +281,7 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
