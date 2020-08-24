@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pytest
+import tempfile
+import pathlib
 
 from .. import file_finder
 
@@ -43,6 +45,15 @@ def test_get_atlas(atlas_name, hemi):
                 assert not np.any(mask[163842:])
             if name.startswith('rh'):
                 assert not np.any(mask[:163842])
+
+@pytest.mark.parametrize('region', ['lh', 'rh', 'lc', 'rc'])
+@pytest.mark.parametrize('surf_type', ['central', 'sphere', 'inflated'])
+def test_get_reference_surf(region, surf_type):
+    if (region in ['lc', 'rc']) and surf_type == 'inflated':
+        with pytest.raises(FileNotFoundError):
+            file_finder.get_reference_surf(region, surf_type)
+    else:
+        file_finder.get_reference_surf(region, surf_type)
 
 
 class TestSubjectFiles:
@@ -87,4 +98,29 @@ class TestSubjectFiles:
 
         assert s.get_eeg_cap('test.csv') == os.path.join(
             'path', 'to', 'm2m_sub', 'eeg_positions', 'test.csv')
+    
+    def test_surfaces(self):
+        with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
+            surf_dir = file_finder.SubjectFiles(subpath=tmpdir).surf_dir
+            os.makedirs(surf_dir)
+            for region in ['lh', 'rh']:
+                for surf_type in ['central', 'sphere', 'sphere.reg']:
+                    pathlib.Path(
+                        os.path.join(surf_dir, f'{region}.{surf_type}.SOMETHING.gii')
+                    ).touch()
+            pathlib.Path(os.path.join(surf_dir, 'lc.sphere.reg.SOMETHING.gii')).touch()
+            pathlib.Path(os.path.join(surf_dir, 'rc.sphere.SOMETHING.gii')).touch()
+            pathlib.Path(os.path.join(surf_dir, 'rh.thickness.SOMETHING')).touch()
+            s = file_finder.SubjectFiles(subpath=tmpdir)
 
+            assert s.get_surface('lh', 'central') == \
+                    os.path.join(surf_dir, 'lh.central.SOMETHING.gii')
+            assert s.get_surface('rh', 'central') == \
+                    os.path.join(surf_dir, 'rh.central.SOMETHING.gii')
+            assert s.get_surface('lc', 'sphere_reg') == \
+                    os.path.join(surf_dir, 'lc.sphere.reg.SOMETHING.gii')
+            assert s.get_surface('rc', 'sphere') == \
+                    os.path.join(surf_dir, 'rc.sphere.SOMETHING.gii')
+            with pytest.raises(FileNotFoundError):
+                s.get_surface('lc', 'sphere')
+            assert s.regions == ['lh', 'rh']

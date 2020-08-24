@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Uncertainty Quantification &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uncertainty Quantification &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -156,10 +158,10 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c">% Set-up the uncertain conductivities</span>
 <span class="c">% White Matter</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="p">.</span><span class="mi">4</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.4</span><span class="p">];</span>
 <span class="c">% Gray Matter</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="p">.</span><span class="mi">6</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.6</span><span class="p">];</span>
 <span class="c">% Skull</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">];</span>
@@ -241,18 +243,17 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-
-<span class="kn">import</span> <span class="nn">simnibs</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">msh</span><span class="p">,</span> <span class="n">file_finder</span>
 <span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
 
 <span class="c1">## Define the TMS simulation</span>
-<span class="n">tms</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
+<span class="n">tms</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
 
 <span class="c1"># We need to set the EEG cap as we are giving the coil</span>
 <span class="c1"># Coordinates as EEG positions</span>
-<span class="n">sub_files</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">sub_files</span> <span class="o">=</span> <span class="n">file_finder</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">eeg_cap</span> <span class="o">=</span> <span class="n">sub_files</span><span class="o">.</span><span class="n">eeg_cap_1010</span>
 
 <span class="c1"># Define the coil position</span>
@@ -277,8 +278,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <div class="section" id="secondary-quantities">
 <h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Permalink to this headline">¶</a></h2>
 <p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">simnibs</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">msh</span>
 <span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
 
 
@@ -286,7 +287,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c1"># Read the regression object from the HDF5 file</span>
 <span class="n">regression</span> <span class="o">=</span> <span class="n">gpc</span><span class="o">.</span><span class="n">gPC_regression</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">)</span>
 <span class="c1"># Read the mesh ROI from the HDF5 file</span>
-<span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
 <span class="c1"># Define the function to be used for the expansion</span>
 
 <span class="k">def</span> <span class="nf">percentile_99</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
@@ -295,16 +296,16 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
     <span class="c1"># for each simulation, we calculate the 99th percentile</span>
     <span class="n">prc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Es</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">E</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
-        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">msh</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">prc</span>
 
 <span class="c1"># Calculate the gPC coefficients</span>
 <span class="n">gpc_coeffs</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">expand_quantity</span><span class="p">(</span><span class="n">percentile_99</span><span class="p">)</span>
 
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;99th Percentile&quot;</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Mean Value: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
-<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Standard Deviation: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;99th Percentile&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mean Value: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Standard Deviation: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
 
 <span class="c1"># Draw 1000 samples for the 99th percentile</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">MC_sampling</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
@@ -397,15 +398,15 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -419,10 +420,10 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

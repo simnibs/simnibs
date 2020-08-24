@@ -1,21 +1,23 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>get_fields_at_coordinates &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>get_fields_at_coordinates &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Simulation Data Structures" href="../sim_struct/sim_struct.html" />
+    <link rel="next" title="calc_B" href="calc_b.html" />
     <link rel="prev" title="subject2mni_coords" href="subject2mni_coords.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -38,7 +40,7 @@
           <a href="subject2mni_coords.html" title="Previous document">subject2mni_coords</a>
         </li>
         <li>
-          <a href="../sim_struct/sim_struct.html" title="Next document">Simulation Data Structures</a>
+          <a href="calc_b.html" title="Next document">calc_B</a>
           &rarr;
         </li>
     </ul>
@@ -58,7 +60,7 @@
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Suppose you want to accurately determine the electric field at a set of positions. The electric fields are in a mesh called <em>ernie_TDCS_1_scalar.msh</em></p></li>
-<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/453c2ae54a49ba1bfd299415e708b65c/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
+<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/1185fd0024a5db30ea82cba82cd93bfd/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
 <li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_fields_at_coordinates -s positions.csv -m ernie_TDCS_1_scalar.msh
@@ -89,7 +91,7 @@ These files contain the fields (or field vectors) at each sampling position.</p>
           <a href="subject2mni_coords.html" title="Previous document">subject2mni_coords</a>
         </li>
         <li>
-          <a href="../sim_struct/sim_struct.html" title="Next document">Simulation Data Structures</a>
+          <a href="calc_b.html" title="Next document">calc_B</a>
           &rarr;
         </li>
     </ul>
@@ -146,22 +148,22 @@ These files contain the fields (or field vectors) at each sampling position.</p>
   <li><a href="../documentation.html">Documentation</a><ul>
   <li><a href="command_line.html">Command Line Tools</a><ul>
       <li>Previous: <a href="subject2mni_coords.html" title="previous chapter">subject2mni_coords</a></li>
-      <li>Next: <a href="../sim_struct/sim_struct.html" title="next chapter">Simulation Data Structures</a></li>
+      <li>Next: <a href="calc_b.html" title="next chapter">calc_B</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -175,10 +177,10 @@ These files contain the fields (or field vectors) at each sampling position.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

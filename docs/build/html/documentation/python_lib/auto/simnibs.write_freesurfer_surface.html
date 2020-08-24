@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.write_freesurfer_surface &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simnibs.write_freesurfer_surface &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -50,9 +52,9 @@
             
   <div class="section" id="simnibs-write-freesurfer-surface">
 <h1>simnibs.write_freesurfer_surface<a class="headerlink" href="#simnibs-write-freesurfer-surface" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+<dl class="py function">
 <dt id="simnibs.write_freesurfer_surface">
-<code class="descclassname">simnibs.</code><code class="descname">write_freesurfer_surface</code><span class="sig-paren">(</span><em>msh</em>, <em>fn</em>, <em>ref_fs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.write_freesurfer_surface" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">write_freesurfer_surface</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msh</span></em>, <em class="sig-param"><span class="n">fn</span></em>, <em class="sig-param"><span class="n">ref_fs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.write_freesurfer_surface" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes a FreeSurfer surface
 Only the surfaces (triangles) are writen to the FreeSurfer surface file</p>
 <dl class="field-list simple">
@@ -60,8 +62,7 @@ Only the surfaces (triangles) are writen to the FreeSurfer surface file</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>msh</strong> (<a class="reference internal" href="simnibs.Msh.html#simnibs.Msh" title="simnibs.Msh"><em>Msh</em></a><em>(</em><em>)</em>) – Mesh structure</p></li>
 <li><p><strong>fn</strong> (<em>str</em>) – output file name</p></li>
-<li><p><strong>ref_fs</strong> (<em>bool</em><em> or </em><em>str</em>) – if set to True, a standard LIA orientation string will be written to tail
-if set to Name of a ref_fs file, the orientation of that file will be set</p></li>
+<li><p><strong>ref_fs</strong> (<em>str</em>) – Name of ref_fs file, Used to set the tail</p></li>
 </ul>
 </dd>
 </dl>
@@ -144,15 +145,15 @@ if set to Name of a ref_fs file, the orientation of that file will be set</p></l
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -166,10 +167,10 @@ if set to Name of a ref_fs file, the orientation of that file will be set</p></l
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

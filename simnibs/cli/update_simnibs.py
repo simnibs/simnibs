@@ -108,7 +108,7 @@ def update_simnibs(requested_version='latest'):
     )
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         prog="update_simnibs",
         description="Update the SimNIBS package")
@@ -120,3 +120,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args(sys.argv[1:])
     update_simnibs(args.target_version)
+
+
+if __name__ == '__main__':
+    main()

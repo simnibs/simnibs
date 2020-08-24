@@ -1,22 +1,24 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>simnibs.subject_atlas &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>simnibs.subject_atlas &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="simnibs.templates" href="simnibs.templates.html" />
-    <link rel="prev" title="simnibs.mni2subject_coords" href="simnibs.mni2subject_coords.html" />
+    <link rel="prev" title="simnibs.eeg_positions" href="simnibs.eeg_positions.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -35,7 +37,7 @@
     <ul>
         <li>
           &larr;
-          <a href="simnibs.mni2subject_coords.html" title="Previous document">simnibs.mni2subject_coords</a>
+          <a href="simnibs.eeg_positions.html" title="Previous document">simnibs.eeg_positions</a>
         </li>
         <li>
           <a href="simnibs.templates.html" title="Next document">simnibs.templates</a>
@@ -50,9 +52,9 @@
             
   <div class="section" id="simnibs-subject-atlas">
 <h1>simnibs.subject_atlas<a class="headerlink" href="#simnibs-subject-atlas" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+<dl class="py function">
 <dt id="simnibs.subject_atlas">
-<code class="descclassname">simnibs.</code><code class="descname">subject_atlas</code><span class="sig-paren">(</span><em>atlas_name</em>, <em>m2m_dir</em>, <em>hemi='both'</em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.subject_atlas" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">subject_atlas</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">atlas_name</span></em>, <em class="sig-param"><span class="n">m2m_dir</span></em>, <em class="sig-param"><span class="n">hemi</span><span class="o">=</span><span class="default_value">'both'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.subject_atlas" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads a brain atlas based of the FreeSurfer fsaverage template</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -96,7 +98,7 @@ nodes comes before right hemisphere nodes</p></li>
     <ul>
         <li>
           &larr;
-          <a href="simnibs.mni2subject_coords.html" title="Previous document">simnibs.mni2subject_coords</a>
+          <a href="simnibs.eeg_positions.html" title="Previous document">simnibs.eeg_positions</a>
         </li>
         <li>
           <a href="simnibs.templates.html" title="Next document">simnibs.templates</a>
@@ -155,7 +157,7 @@ nodes comes before right hemisphere nodes</p></li>
   <li><a href="../../../index.html">Documentation overview</a><ul>
   <li><a href="../../documentation.html">Documentation</a><ul>
   <li><a href="../python_lib.html">Python Library Documentation</a><ul>
-      <li>Previous: <a href="simnibs.mni2subject_coords.html" title="previous chapter">simnibs.mni2subject_coords</a></li>
+      <li>Previous: <a href="simnibs.eeg_positions.html" title="previous chapter">simnibs.eeg_positions</a></li>
       <li>Next: <a href="simnibs.templates.html" title="next chapter">simnibs.templates</a></li>
   </ul></li>
   </ul></li>
@@ -163,15 +165,15 @@ nodes comes before right hemisphere nodes</p></li>
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -185,10 +187,10 @@ nodes comes before right hemisphere nodes</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -3,7 +3,7 @@
     Find templates and segmentation files of SimNIBS
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (C) 2019, 2020 Guilherme B Saturnino
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,91 +20,31 @@
 import sys
 import os
 import re
+import glob
+import collections
 import numpy as np
 import nibabel
 
 from .. import SIMNIBSDIR
 
-__all__ = ['templates', 'get_atlas', 'SubjectFiles', 'coil_models']
+__all__ = ['templates', 'get_atlas', 'get_reference_surf', 'SubjectFiles', 'coil_models']
 
 class Templates:
     ''' Defines the Templates for file names used in SimNIBS
 
     Attributes
     ------------
-    templates_surfaces: str
-        Path to the directory with the template surfaces (dir)
     atlases_surfaces: str
         Path to the directory with the atlases surfaces (dir)
-    lh_central: str
-        Path to the GifTi surface with the FsAverage left central cortex template (.gii)
-    rh_central: str
-        Path to the GifTi surface with the FsAverage right central cortex template (.gii)
-    lh_sphere: str
-        Path to the GifTi surface with the FsAverage left cortical sphere template (.gii)
-    rh_sphere: str
-        Path to the GifTi surface with the FsAverage right cortical sphere template (.gii)
-    lh_inflated: str
-        Path to the GifTi surface with the FsAverage left inflated cortex template (.gii)
-    rh_inflated: str
-        Path to the GifTi surface with the FsAverage right inflated cortex template (.gii)
 
-    lc_central: str
-        Path to the GifTi surface with the FsAverage left central cerebellum template (.gii)
-    rc_cortex: str
-        Path to the GifTi surface with the FsAverage right central cerebellum template (.gii)
-    lc_sphere: str
-        Path to the GifTi surface with the FsAverage left cerebellum sphere template (.gii)
-    rc_sphere: str
-        Path to the GifTi surface with the FsAverage right cerebellum sphere template (.gii)
-
-    lh_mask: str
-        Path to the MASK file for the lh (.mask)
-    rh_mask: str
-        Path to the MASK file for the lh (.mask)
-  
     mni_volume: str
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
-        # Surfaces
-        self.templates_surfaces = os.path.join(
-            self._resources, 'templates', 'fsaverage_surf')
-
         self.atlases_surfaces = os.path.join(
-            self._resources, 'templates', 'fsaverage_atlases')
-
-        self.lh_central = os.path.join(
-            self.templates_surfaces, 'lh.central.freesurfer.gii')
-        self.rh_central = os.path.join(
-            self.templates_surfaces, 'rh.central.freesurfer.gii')
-
-        self.lh_sphere = os.path.join(
-            self.templates_surfaces, 'lh.sphere.freesurfer.gii')
-        self.rh_sphere = os.path.join(
-            self.templates_surfaces, 'rh.sphere.freesurfer.gii')
-
-        self.lh_inflated = os.path.join(
-            self.templates_surfaces, 'lh.inflated.freesurfer.gii')
-        self.rh_inflated = os.path.join(
-            self.templates_surfaces, 'rh.inflated.freesurfer.gii')
-
-        self.lh_mask = os.path.join(
-            self.templates_surfaces, 'lh.mask')
-        self.rh_mask = os.path.join(
-            self.templates_surfaces, 'rh.mask')
-
-        self.lc_sphere = os.path.join(
-            self.templates_surfaces, 'lc.sphere.freesurfer.gii')
-        self.rc_sphere = os.path.join(
-            self.templates_surfaces, 'rc.sphere.freesurfer.gii')
-
-        self.lc_central = os.path.join(
-            self.templates_surfaces, 'lc.central.freesurfer.gii')
-        self.rc_central = os.path.join(
-            self.templates_surfaces, 'rc.central.freesurfer.gii')
-
+            self._resources, 'templates', 'fsaverage_atlases'
+        )
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
@@ -180,6 +120,34 @@ def get_atlas(atlas_name, hemi='both'):
         raise ValueError('Invalid hemisphere name')
 
 
+def get_reference_surf(region, surf_type='central'):
+    ''' Gets the file name of a reference surface
+
+    Parameters
+    -----------
+    region: 'lh', 'rh', 'lc' or 'rc'
+        Name of the region of interest
+    surf_type: 'central', 'sphere', 'inflated' (optional)
+        Surface type. Default: central
+    
+    Returns
+    --------
+    fn_surf: str
+        Name of surface file
+
+    Raises
+    -------
+    FileNotFoundError if the specified reference surface is not found
+
+    '''
+    fn_surf = os.path.join(
+        SIMNIBSDIR, 'resources', 'templates',
+        'fsaverage_surf', f'{region}.{surf_type}.freesurfer.gii'
+    )
+    if os.path.isfile(fn_surf):
+        return fn_surf
+    else:
+        raise FileNotFoundError('Could not find reference surface')
 
 class SubjectFiles:
     ''' Class to find files for a given subject
@@ -250,32 +218,19 @@ class SubjectFiles:
     surf_dir: str
         Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
 
-    seg_type: 'headreco' or 'mri2mesh'
-        Type of segmentation (only in mri2mesh and headreco+CAT)
+    central_surfaces: list
+        List of SurfaceFile objects which containts 2 fields:
+            fn: name of surface file (.gii format)
+            region: 'lh', 'rh', 'lc' or 'rc'
 
-    lh_midgm: str
-        Left hemisphere middle gray matter model (only for headreco+CAT segmentations) (.gii)
+    sphere_surfaces: list
+        Same as above but in a spherical geometry
 
-    rh_midgm: str
-        Right hemisphere middle right gray matter model (only for headreco+CAT segmentations) (.gii)
-    
-    lh_gm: str
-        Left hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)
+    sphere_reg_surfaces: list
+        Same as above but for the spherical registration files
 
-    rh_gm: str
-        Right hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)
-
-    lh_wm: str
-        Left hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)
-
-    rh_wm: str
-        Right hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)
-
-    lh_reg: str
-        Left hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)
-
-    rh_reg: str
-        Right hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)
+    regions: list
+        list of region names (e.g. 'lh', 'rh') where all surfaces above are present
 
     final_contr: str
         Volume mask after meshing (.nii.gz)
@@ -404,31 +359,37 @@ class SubjectFiles:
         # Stuff for surface transformations
 
         self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
-        headreco_surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
-        mri2mesh_surf_dir = os.path.join(self.basedir, 'fs_' + self.subid, 'surf')
+        #TODO: Set here the path for CHARM files
+        self.surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
+        # Look for all .gii files in surf_dir
+        surfaces = glob.glob(os.path.join(self.surf_dir, '*.gii'))
+        # Organize the files in 3 separate lists
+        SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
+        self.sphere_reg_surfaces = []
+        self.sphere_surfaces = []
+        self.central_surfaces = []
+        for fn in surfaces:
+            s = os.path.basename(fn)
+            region = s[:2]
+            if '.sphere.reg' in s:
+                self.sphere_reg_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
+            elif '.sphere.' in s:
+                self.sphere_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
+            elif '.central.' in s:
+                self.central_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
 
-        if os.path.isdir(headreco_surf_dir):
-            self.surf_dir = headreco_surf_dir
-            self.seg_type = 'headreco'
-            self.lh_midgm = os.path.join(headreco_surf_dir, 'lh.central.T1fs_conform.gii')
-            self.rh_midgm = os.path.join(headreco_surf_dir, 'rh.central.T1fs_conform.gii')
-            self.lh_reg = os.path.join(headreco_surf_dir, 'lh.sphere.reg.T1fs_conform.gii')
-            self.rh_reg = os.path.join(headreco_surf_dir, 'rh.sphere.reg.T1fs_conform.gii')
-
-        elif os.path.isdir(mri2mesh_surf_dir):
-            self.surf_dir = mri2mesh_surf_dir
-            self.seg_type = 'mri2mesh'
-            self.lh_gm = os.path.join(mri2mesh_surf_dir, 'lh.pial')
-            self.lh_wm = os.path.join(mri2mesh_surf_dir, 'lh.white')
-            self.rh_gm = os.path.join(mri2mesh_surf_dir, 'rh.pial')
-            self.rh_wm = os.path.join(mri2mesh_surf_dir, 'rh.white')
-            self.lh_reg = os.path.join(mri2mesh_surf_dir, 'lh.sphere.reg')
-            self.rh_reg = os.path.join(mri2mesh_surf_dir, 'rh.sphere.reg')
-
-        else:
-            self.surf_dir = None
-            self.seg_type = None
-
+        self.regions = sorted(
+            set([s.region for s in self.sphere_reg_surfaces]) &
+            set([s.region for s in self.sphere_surfaces]) &
+            set([s.region for s in self.central_surfaces])
+        )
+        
         self.final_contr = os.path.join(
             self.subpath, self.subid + '_final_contr.nii.gz')
         self.masks_contr = os.path.join(
@@ -471,6 +432,39 @@ class SubjectFiles:
 
         '''
         return os.path.join(self.eeg_cap_folder, cap_name)
+
+    def get_surface(self, region, surf_type='central'):
+        ''' Gets the file name of a subject CAT12 surface
+
+        Parameters
+        -----------
+        region: 'lh', 'rh', 'lc' or 'rc'
+            Name of the region of interest
+        surf_type: 'central', 'sphere', 'sphere_reg' (optional)
+            Surface type. Default: central
+        
+        Returns
+        --------
+        fn_surf: str
+            Name of surface file
+
+        Raises
+        -------
+        FileNotFoundError if the specified reference surface is not found
+
+        '''
+        if surf_type == 'central':
+            for s in self.central_surfaces:
+                if s.region == region: return s.fn
+        elif surf_type == 'sphere':
+            for s in self.sphere_surfaces:
+                if s.region == region: return s.fn
+        elif surf_type == 'sphere_reg':
+            for s in self.sphere_reg_surfaces:
+                if s.region == region: return s.fn
+        else:
+            raise ValueError('invalid surf_type')
+        raise FileNotFoundError('Could not find surface')
 
 
 def path2bin(program):

@@ -1,4 +1,4 @@
-simnibs.SubjectFiles
+﻿simnibs.SubjectFiles
 ====================
 
 .. currentmodule:: simnibs

@@ -1,4 +1,4 @@
-simnibs.write\_msh
+﻿simnibs.write\_msh
 ==================
 
 .. currentmodule:: simnibs

@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TMS Optimization &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TMS Optimization &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -55,8 +57,25 @@ done by searching coil positions in a grid around the target position and turnin
 coil at various angles.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116486">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., &amp; Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486.</a></p>
+<p>When using this feature in a publication, please cite either</p>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116486">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., &amp; Knösche, T. R. (2020). A novel approach to localize cortical TMS effects. Neuroimage, 209, 116486.</a></p>
+<p>or</p>
+<p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez, L. J., Dannhauer, M., &amp; Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv</a>
+in case you use the ADM method. The ADM code is distributed under the conditions below:</p>
+<p>Authors of auxiliary dipole method (ADM) and code for determining rapidly the optimum coil position and orientation: Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.</p>
+<p>The development of the Duke ADM algorithm and code were supported by the National Institute of Mental Health and the National Institute on Aging of the National Institutes of Health under Award Numbers K99MH120046, RF1MH114268, RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.</p>
+<p>The copyrights of this software are owned by Duke University. As such, two licenses to this software are offered:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>An open source license under the GNU General Public License (GPL-v2.0) (<a class="reference external" href="https://opensource.org/licenses/gpl-2.0.php">https://opensource.org/licenses/gpl-2.0.php</a>).</p></li>
+<li><p>A custom license with Duke University, for use without the GPL-v2.0 restrictions.</p></li>
+</ul>
+</div></blockquote>
+<p>As a recipient of this software, you may choose which license to receive the code under. Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.</p>
+<p>To enter a license agreement without the GPL-v2.0 restrictions, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (<a class="reference external" href="https://olv.duke.edu/software/">https://olv.duke.edu/software/</a>) at <a class="reference external" href="mailto:olvquestions&#37;&#52;&#48;duke&#46;edu">olvquestions<span>&#64;</span>duke<span>&#46;</span>edu</a> with reference to “OLV File No. 7148” in your email.</p>
+<p>Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 </div>
+<p></p>
 <div class="section" id="basic-setting">
 <h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Permalink to this headline">¶</a></h2>
 <p>Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
@@ -199,13 +218,6 @@ refine the search by precisely specifying the search region, search angles and r
 <div class="section" id="auxiliary-dipole-method-adm">
 <h2>Auxiliary Dipole Method (ADM)<a class="headerlink" href="#auxiliary-dipole-method-adm" title="Permalink to this headline">¶</a></h2>
 <p>To use the Auxiliary Dipole Method (ADM), simply use a <code class="file docutils literal notranslate"><span class="pre">.ccd</span></code> coil file and set the <code class="code docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">'ADM'</span></code></p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez, L. J., Dannhauer, M., &amp; Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv</a></p>
-<p>Authors of auxiliary dipole method (ADM) and code for determining rapidly the optimum coil position and orientation: Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.</p>
-<p>The development of the Duke ADM algorithm and code were supported by the National Institute of Mental Health and the National Institute on Aging of the National Institutes of Health under Award Numbers K99MH120046, RF1MH114268, RF1MH114253, and U01AG050618. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institutes of Health.</p>
-</div>
-<p></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;ADM&#39;</span>
 </pre></div>
@@ -341,15 +353,15 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
 </ul>
 </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -363,10 +375,10 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,4 +1,4 @@
-simnibs.write\_geo\_text
+﻿simnibs.write\_geo\_text
 ========================
 
 .. currentmodule:: simnibs
