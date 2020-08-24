@@ -74,6 +74,7 @@ jobs:
       buildType: 'current'
       downloadType: 'single'
       artifactName: 'macos'
+      itemPattern: '**/*.pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS Installer
 
@@ -103,6 +104,7 @@ jobs:
       buildType: 'current'
       downloadType: 'single'
       artifactName: 'macos'
+      itemPattern: '**/*.pkg'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS Installer
 
@@ -113,7 +115,8 @@ jobs:
     displayName: Install Octave
 
   - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
       ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
