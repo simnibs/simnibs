@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TMSoptimize &#8212; SimNIBS 3.2.0 documentation</title>
+    <title>TMSoptimize &#8212; SimNIBS 3.2.1 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -104,7 +104,17 @@
 <li><p><strong>Desctiption</strong>: Position of optimization target. Please see <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">Coordinates in SimNIBS</span></a> for more information and how to obtain coordinates in SimNIBS</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="s">&#39;[-43.4, -20.7, 83.4]&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">83.4</span><span class="p">];</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><strong>target_direction</strong>: <em>None/[] or (3x1) list/array (Python/MATLAB) of floats, optional</em></p>
+<ul class="simple">
+<li><p><strong>Desctiption</strong>: Direction of the electric field to be optimized. If <code class="code docutils literal notranslate"><span class="pre">None</span></code> (Python) or <code class="code docutils literal notranslate"><span class="pre">[]</span></code> (MATLAB), will optimize the elctric field norm. Default: optimize field norm</p></li>
+<li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
+</ul>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target_direction</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 <p></p>

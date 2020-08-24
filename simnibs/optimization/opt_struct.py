@@ -120,6 +120,7 @@ class TMSoptimize():
         self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         # Optimization stuff
         self.target = None
+        self.target_direction = None
         self.tissues = [2]
         self.target_size = 5
         self.centre = []
@@ -193,6 +194,7 @@ class TMSoptimize():
         TMSLIST.resolve_fnamecoil(self)
         if self.target is None or len(self.target) != 3:
             raise ValueError('Target for optimization not defined')
+
         assert self.search_radius > 0
         assert self.spatial_resolution > 0
         assert self.angle_resolution > 0
@@ -201,6 +203,9 @@ class TMSoptimize():
             self.pos_ydir = None
         if len(self.centre) == 0:
             self.centre = np.copy(self.target)
+        if self.target_direction is not None and len(self.target_direction) == 0:
+            self.target_direction = None
+
 
     def sim_struct2mat(self):
         mat = SimuList.cond_mat_struct(self)
@@ -214,6 +219,7 @@ class TMSoptimize():
         mat['fnamecoil'] = remove_None(self.fnamecoil)
 
         mat['target'] = remove_None(self.target)
+        mat['target_direction'] = remove_None(self.target_direction)
         mat['target_size'] = remove_None(self.target_size)
         mat['centre'] = remove_None(self.centre)
         mat['pos_ydir'] = remove_None(self.pos_ydir)
@@ -259,6 +265,9 @@ class TMSoptimize():
         )
         self.target = try_to_read_matlab_field(
             mat, 'target', list, self.target
+        )
+        self.target_direction = try_to_read_matlab_field(
+            mat, 'target_direction', list, self.target_direction
         )
         self.target_size = try_to_read_matlab_field(
             mat, 'target_size', float, self.target_size
@@ -378,16 +387,16 @@ class TMSoptimize():
             v.write_opt(fn_target)
             if self.open_in_gmsh:
                 mesh_io.open_in_gmsh(fn_target, True)
-            normE = self._direct_optimize(cond_field, target_region, pos_matrices, cpus)
+            E_roi = self._direct_optimize(cond_field, target_region, pos_matrices, cpus)
         elif self.method.lower() == 'adm':
-            normE, pos_matrices = self._ADM_optimize(cond_field, target_region)
+            E_roi, pos_matrices = self._ADM_optimize(cond_field, target_region)
         else:
             raise ValueError("method should be 'direct' or 'ADM'")
-        # Update the .geo file with the normE value
+        # Update the .geo file with the E values
         optimize_tms.plot_matsimnibs_list(
             pos_matrices,
-            normE,
-            "normE at target",
+            E_roi,
+            "E at target",
             os.path.join(self.pathfem, 'coil_positions.geo')
         )
         v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
@@ -401,7 +410,7 @@ class TMSoptimize():
         fn_geo = fn_hdf5[:-5] + '_coil_pos.geo'
         fem.tms_coil(
             self.mesh, cond_field, self.fnamecoil, 'eEjJ',
-            [pos_matrices[np.argmax(normE)]],
+            [pos_matrices[np.argmax(E_roi)]],
             [self.didt],
             [fn_out],
             [fn_geo],
@@ -465,16 +474,31 @@ class TMSoptimize():
         dataset = 'tms_optimization/E_norm'
         volumes = self.mesh.elements_volumes_and_areas()[target_region]
         # Define postporcessing to calculate average field norm
+        if self.target_direction is None:
+            direction = None
+        else:
+            if len(self.target_direction) != 3:
+                raise ValueError('target direction should have 3 elements!')
+            direction = np.array(self.target_direction, dtype=float)
+            direction /= np.linalg.norm(direction)
 
-        def postprocessing(E, target_region, volumes):
-            return np.average(
-                np.linalg.norm(E[target_region - 1], axis=1),
-                weights=volumes
-            )
+        def postprocessing(E, target_region, volumes, direction):
+            if direction is None: 
+                return np.average(
+                    np.linalg.norm(E[target_region - 1], axis=1),
+                    weights=volumes,
+                )
+            else:
+                return np.average(
+                    np.sum(E[target_region - 1] * direction[None, :], axis=1),
+                    weights=volumes
+                )
+
         postpro = functools.partial(
             postprocessing,
             target_region=target_region,
-            volumes=volumes
+            volumes=volumes,
+            direction=direction
         )
         fem.tms_many_simulations(
             self.mesh, cond_field,
@@ -485,13 +509,26 @@ class TMSoptimize():
             solver_options=self.solver_options,
             n_workers=cpus
         )
-        # Read the field norms
+        # Read the fields
         with h5py.File(fn_hdf5, 'a') as f:
-            normE = f[dataset][:]
+            E_roi = f[dataset][:]
         os.remove(fn_hdf5)
-        return normE
+        return E_roi
 
     def _ADM_optimize(self, cond_field, target_region):
+        coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
+            self.mesh, self.centre,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
+        )
+        # trasnform coil matrix to meters
+        coil_matrices[:3, 3, :] *= 1e-3
+
+        baricenters = self.mesh.elements_baricenters()
+
         th = self.mesh.elm.elm_type == 4
         if not self.fnamecoil.endswith('.ccd'):
             raise ValueError('ADM optimization is only possible with ".ccd" coil files')
@@ -517,33 +554,34 @@ class TMSoptimize():
             J /= np.sum(vols[target_region])
             return J
 
-        J_x = calc_dipole_J([1, 0, 0]) * vols[:, None]
-        J_y = calc_dipole_J([0, 1, 0]) * vols[:, None]
-        J_z = calc_dipole_J([0, 0, 1]) * vols[:, None]
-        del S
-        gc.collect()
-        coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
-            self.mesh, self.centre,
-            handle_direction_ref=self.pos_ydir,
-            distance=self.distance, radius=self.search_radius,
-            resolution_pos=self.spatial_resolution,
-            resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
-        )
-        # trasnform coil matrix to meters
-        coil_matrices[:3, 3, :] *= 1e-3
-
-        logger.info('Running ADM')
-        baricenters = self.mesh.elements_baricenters()
-        # Notice that there is an uknown scale factor
-        # as we need to know the pulse angular frequency
-        # \Omega and amplitude A
-        normE = ADMlib.ADMmag(
-            baricenters[th].T * 1e-3,
-            J_x[th].T, J_y[th].T, J_z[th].T,
-            dipoles.T, moments.T,  # .ccd file is already in SI units
-            coil_matrices, rotations
-        ) * self.didt
+        if self.target_direction is None:
+            J_x = calc_dipole_J([1, 0, 0]) * vols[:, None]
+            J_y = calc_dipole_J([0, 1, 0]) * vols[:, None]
+            J_z = calc_dipole_J([0, 0, 1]) * vols[:, None]
+            del S
+            gc.collect()
+            logger.info('Running ADM')
+            # Notice that there is an uknown scale factor
+            # as we need to know the pulse angular frequency
+            # \Omega and amplitude A
+            E_roi = ADMlib.ADMmag(
+                baricenters[th].T * 1e-3,
+                J_x[th].T, J_y[th].T, J_z[th].T,
+                dipoles.T, moments.T,  # .ccd file is already in SI units
+                coil_matrices, rotations
+            ) * self.didt
+        else:
+            if len(self.target_direction) != 3:
+                raise ValueError('target direction should have 3 elements!')
+            direction = np.array(self.target_direction, dtype=float)
+            direction /= np.linalg.norm(direction)
+            J_d = calc_dipole_J(direction) * vols[:, None]
+            E_roi = ADMlib.ADM(
+                baricenters[th].T * 1e-3,
+                J_d[th].T,
+                dipoles.T, moments.T,  # .ccd file is already in SI units
+                coil_matrices, rotations
+            ) * self.didt
 
         z = np.array([0., 0., 1.])
         pos_matrices = []
@@ -554,13 +592,14 @@ class TMSoptimize():
                 R[:3, :3] = np.array([np.cross(r, z), r, z]).T
                 pos_matrices.append(cm.dot(R))
 
-        return normE.T.reshape(-1), pos_matrices
+        return E_roi.T.reshape(-1), pos_matrices
 
     def __str__(self):
         string = 'Subject Folder: %s\n' % self.subpath
         string += 'Mesh file name: %s\n' % self.fnamehead
         string += 'Coil file: %s\n' % self.fnamecoil
         string += 'Target: %s\n' % self.target
+        string += 'Target Direction: %s\n' % self.target_direction
         string += 'Centre position: %s\n' % self.centre
         string += 'Reference y: %s\n' % self.pos_ydir
         string += 'Coil distance: %s\n' % self.distance

@@ -48,6 +48,7 @@ switch S.type
        S.aniso_maxcond = 2; % maximal directional conductivity in [S/m] (i.e. max eigenvalue of conductivity tensor)
        S.tissues = [2]; % list, tissues where the target is defined (Optional)
        S.target = []; % Position of the optimization target, in head coordinates
+       S.target_direction = []; % Direction of electric field to be optimized (Optional).
        S.target_size = 5; % Size of target, in mm
        S.centre = []; % Position in scalp to use as a reference for the search space (Optional) . By default, will project the target to the scalp.
        S.pos_ydir = []; % Reference position for the coil Y axis, with respect to the target (or the pos variable, if it is defined). If left empty, will search positions in a 360 degrees radius.

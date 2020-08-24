@@ -70,10 +70,10 @@ def recipcode(rv,jv,rs,ks,A):
 		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
 
 	start = time.time()
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jv,robs,prec);
 	end = time.time()
-	logging.debug("H-primary time: ",end-start);	
+	logger.debug(f"H-primary time: {end-start:.2f}s");
 	kp=ks;
 	Etotal=np.zeros(npos);
 	for i in range(0,npos):
@@ -114,10 +114,10 @@ def ADM(rv,jv,rs,ks,A,coildir):
 		robs[:,st:en]=np.matmul(A[0:3,:,i],rp);
 
 	start = time.time()
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jv,robs,prec);
 	end = time.time()
-	logging.debug("H-primary time: ",end-start);	
+	logger.debug(f"H-primary time: {end-start:.2f}s")
 	kp=kaux[:,:,0];
 	
 	Etotal=np.zeros([Nj,npos]);
@@ -156,7 +156,7 @@ def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
 	Etotal=np.zeros([npos,3]);
 	kp=ks;
 	start = time.time()
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvx,robs,prec);
 	end = time.time()	
 	logger.info(f"H-primary time: {end-start:.2f}s")
@@ -167,7 +167,7 @@ def recipcodemag(rv,jvx,jvy,jvz,rs,ks,A):
 		kp=np.matmul(A[0:3,0:3,i],ks);
 		Etotal[i,0]=-np.inner(Hprimary[:,st:en].flatten(),kp.flatten());
 	start = time.time()
-	logging.debug("Computing H-primary");
+	logger.debug("Computing H-primary");
 	Hprimary=computeHprimary(rv,jvy,robs,prec);
 	end = time.time()	
 	logger.info(f"H-primary time: {end-start:.2f}s")

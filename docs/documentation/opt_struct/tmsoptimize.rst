@@ -63,9 +63,21 @@ Attributes
 
   .. code-block:: matlab
 
-     opt.target = '[-43.4, -20.7, 83.4]'
+     opt.target = [-43.4, -20.7, 83.4];
 
   \ 
+
+* **target_direction**: *None/[] or (3x1) list/array (Python/MATLAB) of floats, optional*
+
+  * **Desctiption**: Direction of the electric field to be optimized. If :code:`None` (Python) or :code:`[]` (MATLAB), will optimize the elctric field norm. Default: optimize field norm
+  * **Example**: *Python/MATLAB*
+
+  .. code-block:: matlab
+
+     opt.target_direction = [1, 0, 0]
+
+  \ 
+
 
 * **cond**: *list/array of COND structures (Python/MATLAB), optional*
    

@@ -169,11 +169,13 @@ class TestTMSOpt:
         )
         assert np.all(sphere_msh.elm.tag1[target_region - 1] == 3)
 
-    def test_direct(self, sphere_msh, simple_coil_ccd):
+    @pytest.mark.parametrize('target_direction', [None, [0, 1, 0]])
+    def test_direct(self, target_direction, sphere_msh, simple_coil_ccd):
         tms_opt = opt_struct.TMSoptimize()
         tms_opt.fnamecoil = simple_coil_ccd
         tms_opt.mesh = sphere_msh
         tms_opt.didt = 1e6
+        tms_opt.target_direction = target_direction
         fn_hdf5 = tempfile.mktemp(".hdf5")
         tms_opt._name_hdf5 = MagicMock(return_value=fn_hdf5)
 
@@ -220,16 +222,21 @@ class TestTMSOpt:
                 dp * 1e-3, dm, tms_opt.didt,
                 np.atleast_2d(target_pos) * 1e-3
             )
-            E_analytical.append(np.linalg.norm(E))
-        assert np.allclose(E_analytical, E_fem, rtol=0.1)
+            if target_direction is None:
+                E_analytical.append(np.linalg.norm(E))
+            else:
+                E_analytical.append(E[0, 1])
+        assert np.allclose(E_analytical, E_fem, rtol=0.1, atol=1)
 
 
+    @pytest.mark.parametrize('target_direction', [None, [0, 1, 0]])
     @patch('simnibs.optimization.optimize_tms.get_opt_grid_ADM')
-    def test_reciprocal(self, get_opt_grid_mock, sphere_msh, simple_coil_ccd):
+    def test_reciprocal(self, get_opt_grid_mock, target_direction, sphere_msh, simple_coil_ccd):
         tms_opt = opt_struct.TMSoptimize()
         tms_opt.fnamecoil = simple_coil_ccd
         tms_opt.mesh = sphere_msh
         tms_opt.didt = 1e6
+        tms_opt.target_direction = target_direction
 
         coil_centers = [
             [150., 0., 0.],
@@ -279,8 +286,12 @@ class TestTMSOpt:
                 dp * 1e-3, dm, tms_opt.didt,
                 np.atleast_2d(target_pos) * 1e-3
             )
-            E_analytical.append(np.linalg.norm(E))
-        assert np.allclose(E_analytical, E_recp, rtol=0.1)
+            if target_direction is None:
+                E_analytical.append(np.linalg.norm(E))
+            else:
+                E_analytical.append(E[0, 1])
+
+        assert np.allclose(E_analytical, E_recp, rtol=0.1, atol=1)
 
 
 class TestFindIndexes:
