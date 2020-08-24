@@ -146,7 +146,8 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
 
     tissue_labeling = np.zeros_like(segmentation)
     for t, label in simnibs_tissues.items():
-        tissue_labeling[np.isin(segmentation, segmentation_tissues[t])] = label
+        tissue_labeling[np.isin(segmentation,
+                                FreeSurferLabels[segmentation_tissues[t]])] = label
 
     example_image = gems.KvlImage(input_bias_corrected[0])
     uncropped_tissue_labeling = np.zeros(

@@ -359,7 +359,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
     # TODO: Setup the visualization tool. This needs some pyqt stuff to be
     # installed. Don't know if we want to expose this in the .ini
-    showFigs = True
+    showFigs = False
     showMovies = False
     visualizer = samseg.initVisualizer(showFigs, showMovies)
 

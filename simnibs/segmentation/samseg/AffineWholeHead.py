@@ -11,6 +11,8 @@ from .utilities import requireNumpyArray
 from .SamsegUtility import readCroppedImages
 eps = np.finfo(float).eps
 
+# For debugging
+import matplotlib.pyplot as plt
 
 class AffineWholeHead(Affine):
 
@@ -61,7 +63,9 @@ class AffineWholeHead(Affine):
                     mesh_level2, neck_bounds, neck_tissues, visualizer,
                     downsampling_target=3.0):
         logger = logging.getLogger(__name__)
-        image_buffer, transformation_to_image, voxel_spacing, cropping = readCroppedImages([T1],transformed_template_file_name)
+        image_buffer, transformation_to_image, voxel_spacing, cropping = \
+            readCroppedImages([T1], transformed_template_file_name)
+        transformation_matrix = transformation_to_image.as_numpy_array
         # Figure out how much to downsample (depends on voxel size)
         downsampling_factors = np.round(downsampling_target / voxel_spacing)
         downsampling_factors[downsampling_factors < 1] = 1
@@ -85,40 +89,47 @@ class AffineWholeHead(Affine):
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
         spineAlphas = alphas[:, 48]
-        mask_spine = spineAlphas > 0.01
+        mask_spine = spineAlphas > 0.1
 
-        # Let's figure out where the z-coordinate is and which way is up
-        transformation_matrix = transformation_to_image.as_numpy_array
-        z_dim = np.argmax(np.abs(transformation_matrix[0:3, 2]))
-        z_direction = transformation_matrix[z_dim, 2]
+        # Let's figure out where the z-direction is in the buffer
+        xyz_to_array_inds = [1, 0, 2] # Fortran ordering
+        image_tmp = gems.KvlImage( T1 )
+        mat_tmp = image_tmp.transform_matrix.as_numpy_array
+        z_row = np.argmax(np.abs(mat_tmp[0:3, 2]))
+        z_dim = xyz_to_array_inds[z_row]
 
         # Get z-coordinates
         z_positions = mesh.points[:, z_dim]
         spine_positions_z = z_positions[mask_spine]
         mask_neck = 0
         neck_pos = 0
-        # The position where spine starts (from the brainstem) depends on
-        # if the direction is I->S or S->I
-        if(z_direction < 1):  # I->S
-            top_ind = np.argmax(spine_positions_z)
-            top_pos = spine_positions_z[top_ind]
-            mask_neck = z_positions < top_pos
-            neck_pos = z_positions[mask_neck]
-            z_dist = top_pos - neck_pos
-        else:  # S->I
-            top_ind = np.argmin(spine_positions_z)
-            top_pos = spine_positions_z[top_ind]
-            mask_neck = z_positions > top_pos
-            neck_pos = z_positions[mask_neck]
-            z_dist = neck_pos - top_pos
+        # The values are stored from bottom of the head (0) to the top (-1)
+        # Note, here the mesh nodes are already transformed to the voxels
+        # of the image.
+        top_ind = np.argmax(spine_positions_z)
+        top_pos = spine_positions_z[top_ind]
+        mask_neck = z_positions < top_pos
+        neck_pos = z_positions[mask_neck]
+        z_dist = top_pos - neck_pos
 
         # Okay the distance from the top of the spine defines the amount
         # of deformation in the A->P direction
         # Let's first check where the A-P direction is
-        y_dim = np.argmax(np.abs(transformation_matrix[0:3, 1]))
+        x_row = np.argmax(np.abs(mat_tmp[0:3, 0]))
+        x_dim = xyz_to_array_inds[x_row]
         deformation_field = np.zeros_like(mesh.points)
-        deformation_field[mask_neck, y_dim] = z_dist
-
+        deformation_field[mask_neck, x_dim] = z_dist
+        if 0:
+            alphas_tmp = alphas.copy()
+            alphas_tmp[mask_neck,:] = 0
+            mesh.alphas = alphas_tmp
+            probs = mesh.rasterize_atlas(image_buffer.shape)
+            spine_probs = probs[:,:,31,46]
+            fig, ax = plt.subplots(1,1)
+            ax.imshow(spine_probs,cmap='gray')
+            plt.show()
+            
+            
         # Okay one more trick that seems to work, only consider a subset
         # of the structures to compute the cost
         # These are: air internal, spine, cortical bone and spongy bone
@@ -130,6 +141,15 @@ class AffineWholeHead(Affine):
         # Let's see how it looks
         visualizer.show(mesh=mesh, images=image_buffer,
                         window_id='Initial Neck', title="Initial Neck")
+        
+        if 0:
+            probs = mesh.rasterize_atlas(image_buffer.shape)
+            probs_to_show = np.sum(probs, axis=3)
+            probs_to_show = probs_to_show[:,:,31]
+            fig, ax = plt.subplots(1,1)
+            ax.imshow(probs_to_show,cmap='gray')
+            plt.show()
+            
         image = gems.KvlImage(requireNumpyArray(image_buffer))
         calculator = gems.KvlCostAndGradientCalculator('MutualInformation',
                                                        [image], 'Affine')
@@ -154,7 +174,14 @@ class AffineWholeHead(Affine):
 
         visualizer.show(mesh=mesh, images=image_buffer,
                         window_id='Corrected Neck', title="Corrected Neck")
-
+        
+        if 0:
+            probs = mesh.rasterize_atlas(image_buffer.shape)
+            probs_to_show = np.sum(probs, axis=3)
+            probs_to_show = probs_to_show[:,:,31]
+            fig, ax = plt.subplots(1,1)
+            ax.imshow(probs_to_show,cmap='gray')
+            plt.show()
         # Now need to write out the mesh collections with the new positions
         mesh.scale(downsampling_factors)
         mesh.alphas = alphas
@@ -174,28 +201,22 @@ class AffineWholeHead(Affine):
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
         spineAlphas = alphas[:, 48]
-        mask_spine = spineAlphas > 0.01
+        mask_spine = spineAlphas > 0.1
         z_positions = mesh.points[:, z_dim]
         spine_positions_z = z_positions[mask_spine]
         mask_neck = 0
         neck_pos = 0
-        # The position where spine starts (from the brainstem) depends on
-        # if the direction is I->S or S->I
-        if(z_direction < 1):  # I->S
-            top_ind = np.argwhere(np.argmax(spine_positions_z))
-            top_pos = spine_positions_z[top_ind[0]]
-            mask_neck = z_positions < top_pos
-            neck_pos = z_positions[mask_neck]
-            z_dist = top_pos - neck_pos
-        else:  # S->I
-            top_ind = np.argwhere(np.argmin(spine_positions_z))
-            top_pos = spine_positions_z[top_ind[0]]
-            mask_neck = z_positions > top_pos
-            neck_pos = z_positions[mask_neck]
-            z_dist = neck_pos - top_pos
+        # The values are stored from bottom of the head (0) to the top (-1)
+        # Note, here the mesh nodes are already transformed to the voxels
+        # of the image.
+        top_ind = np.argmax(spine_positions_z)
+        top_pos = spine_positions_z[top_ind]
+        mask_neck = z_positions < top_pos
+        neck_pos = z_positions[mask_neck]
+        z_dist = top_pos - neck_pos
 
         deformation_field = np.zeros_like(mesh.points)
-        deformation_field[mask_neck, y_dim] = z_dist
+        deformation_field[mask_neck, x_dim] = z_dist
         initial_node_positions = mesh.points
         mesh.points = initial_node_positions - res.x*deformation_field
 
