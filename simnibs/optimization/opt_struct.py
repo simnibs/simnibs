@@ -322,6 +322,11 @@ class TMSoptimize():
             Wether to allow multiple runs in one folder. Default: False
         save_mat: bool (optional)
             Whether to save the ".mat" file of this structure
+        
+        Returns
+        --------
+        matsimnibs: array_like
+            optimal coil position/orientation
         '''
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
@@ -431,6 +436,9 @@ class TMSoptimize():
         v.write_opt(fn_out)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
+        
+        # return optimum coil position
+        return pos_matrices[np.argmax(E_roi)]
 
     def _name_hdf5(self):
         try:
