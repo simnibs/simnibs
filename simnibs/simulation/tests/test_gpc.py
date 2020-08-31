@@ -16,12 +16,12 @@ from .. import mesh_io
 def sphere3():
     return mesh_io.read_msh(
         os.path.join(
-            SIMNIBSDIR, 'resources',
+            SIMNIBSDIR, '_internal_resources',
             'testing_files', 'sphere3.msh'))
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
@@ -200,7 +200,7 @@ class TestSampler:
         assert np.all(S.mesh_roi.elm.tag1 == 3)
 
         S.create_hdf5()
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert f['mesh']
             assert f['mesh_roi']
             assert f['cond']
@@ -234,7 +234,7 @@ class TestSampler:
         S.record_data_matrix(rand_vars2, 'random_vars', 'data')
         S.record_data_matrix(E2, 'E', 'data')
 
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert np.allclose(f['data/random_vars'][0, :], rand_vars1)
             assert np.allclose(f['data/random_vars'][1, :], rand_vars2)
             assert np.allclose(f['data/potential'][0, :], potential1)
@@ -272,7 +272,7 @@ class TestSampler:
         S = simnibs_gpc.TDCSgPCSampler(mesh, poslist, fn_hdf5, [1101, 1102], [-1, 1],
                                        roi)
         S.create_hdf5()
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert f['mesh']
             assert f['mesh_roi']
             assert f['cond']
@@ -311,7 +311,7 @@ class TestSampler:
         assert np.allclose(E1.reshape(-1, 3), [-1e3, 0, 0])
 
         S.run_simulation([2])
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert np.allclose(f['random_var_samples'][()], [[1], [2]])
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][0, :], v_roi)
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][1, :],-v_roi)
@@ -338,7 +338,7 @@ class TestSampler:
         assert np.allclose(E1.reshape(-1, 3), [-1e3, 0, 0])
 
         S.run_simulation([2])
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert np.allclose(f['random_var_samples'][()], [[1], [2]])
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][0, :], v_roi)
             assert np.allclose(f['mesh_roi/data_matrices/v_samples'][1, :],-v_roi)
@@ -354,7 +354,7 @@ class TestSampler:
         coil = 'coil.nii.gz'
         S = simnibs_gpc.TMSgPCSampler(mesh, poslist, fn_hdf5, coil, matsimnibs, didt, roi)
         S.create_hdf5()
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert f['mesh']
             assert f['mesh_roi']
             assert f['cond']

@@ -3,7 +3,7 @@ import os
 import pickle
 from .Samseg import Samseg
 from .SamsegUtility import writeImage
-from . import gems
+import charm_gems as gems
 eps = np.finfo(float).eps
 from .simnibs_segmentation_utils import _calculateSegmentationLoop
 
@@ -85,7 +85,8 @@ class SamsegWholeHead(Samseg):
                                  'biasFields': self.biasField.getBiasFields(),
                                  'mask': self.mask,
                                  'cropping': self.cropping,
-                                 'transform': self.transform}
+                                 'transform': self.transform,
+                                 'names': self.modelSpecifications.names}
 
         if output_path is not None:
             with open(os.path.join(output_path, 'parameters.p'), 'wb') as file:

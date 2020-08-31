@@ -7,11 +7,14 @@ simnibs/matlab_tools/simnibs.cmd
 simnibs/resources/spm12/
 activate_simnibs
 uninstall_simnibs
-simnibs/mesh_tools/_marching_cubes_lewiner_cy.c
 simnibs/mesh_tools/cython_msh.c
-simnibs/_compiled/petsc_solver.c
-simnibs/_compiled/create_mesh.cpp
-simnibs/segmentation/_cs_utils.c
+simnibs/simulation/petsc_solver.c
+simnibs/mesh_tools/cgal/create_mesh_surf.cpp
+simnibs/mesh_tools/cgal/create_mesh_vol.cpp
+simnibs/mesh_tools/cgal/cgal_misc.cpp
+simnibs/segmentation/_cat_c_utils.c
+simnibs/segmentation/_marching_cubes_lewiner_cy.c
+simnibs/segmentation/_thickness.c
 Contents/
 simnibs/ccd-files/LICENSE
 simnibs/ccd-files/README.md
@@ -76,7 +79,6 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-*.gz
 
 # Installer logs
 pip-log.txt

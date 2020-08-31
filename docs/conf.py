@@ -22,7 +22,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'SimNIBS'
-copyright = '2019, SimNIBS Developers'
+copyright = '2020, SimNIBS Developers'
 author = 'SimNIBS Developers'
 
 # The full version, including alpha/beta/rc tags
@@ -42,7 +42,6 @@ version = '.'.join(release.split('.')[:2])
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.imgmath',
     'sphinx.ext.intersphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
@@ -56,7 +55,6 @@ autodoc_default_flags = [
     'show-inheritance',
     'inherited-members'
 ]
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

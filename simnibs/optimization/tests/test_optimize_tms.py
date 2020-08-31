@@ -11,7 +11,7 @@ from ...mesh_tools import mesh_io
 @pytest.fixture
 def sphere3_msh():
     fn = os.path.join(
-            SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 
@@ -135,3 +135,28 @@ def test_define_target_region(sphere3_msh):
     assert np.all(dist[elm - 1] < r)
     assert np.all(sphere3_msh.elm.tag1[elm - 1] == 3)
     assert np.all(sphere3_msh.elm.elm_type[elm - 1] == 4)
+
+def test_get_opt_grid_ADM(sphere3_msh):
+    matrices, coil_dir = optimize_tms.get_opt_grid_ADM(
+        sphere3_msh, [90, 0, 0], handle_direction_ref=[90, 0, 1],
+        distance=1., radius=10, resolution_pos=1,
+        resolution_angle=30, angle_limits=[-60, 60]
+    )
+    assert np.allclose(np.linalg.det(matrices.transpose(2, 1, 0)), 1)
+    centers = matrices[:3, 3, :]
+    assert np.all(np.linalg.norm(centers.T - [94.60, -2.81, 5.79], axis=1) <= 10)
+    normal_component = np.sum(
+        matrices[:3, 2, :] *
+        centers/np.linalg.norm(centers, axis=0),
+        axis=0
+    )
+    assert np.all(normal_component < -0.9)
+    handle_dir = np.sum(
+        matrices[:3, 1, :].T * [0, 0, 1], axis=1
+    )
+    assert np.all(handle_dir > 0.9)
+
+    assert np.allclose(
+        np.rad2deg(np.arctan2(coil_dir[0, :], coil_dir[1, :])),
+        [-60., -30., 0., 30., 60.]
+    )

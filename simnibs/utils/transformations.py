@@ -32,7 +32,7 @@ import nibabel as nib
 
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
-from ..utils.file_finder import templates, SubjectFiles, get_atlas
+from ..utils.file_finder import templates, SubjectFiles, get_atlas, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
 
 __all__ = [
@@ -1359,52 +1359,6 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
 
     return resampled, new_affine, original_res
 
-def get_surface_names_from_folder_structure(m2m_folder):
-    # Subject name
-    sub_files = SubjectFiles(subpath=m2m_folder)
-    if not os.path.isdir(sub_files.subpath):
-        raise IOError('The given m2m folder name does not correspond to a directory')
-
-    def look_up(f):
-        if os.path.isfile(f) or os.path.isdir(f):
-            return f
-        else:
-            raise IOError('Could not find file or directory: {0}'.format(f))
-
-    names = {}
-
-    if sub_files.seg_type == 'headreco':
-        names['surf_dir'] = look_up(sub_files.surf_dir)
-        names['lh_midgm'] = look_up(sub_files.lh_midgm)
-        names['rh_midgm'] = look_up(sub_files.rh_midgm)
-        names['lh_reg'] = look_up(sub_files.lh_reg)
-        names['rh_reg'] = look_up(sub_files.rh_reg)
-        names['lh_sphere_ref'] = look_up(templates.lh_sphere)
-        names['rh_sphere_ref'] = look_up(templates.rh_sphere)
-        names['ref_fs'] = look_up(sub_files.ref_fs)
-        names['lh_cortex_ref'] = look_up(templates.lh_central)
-        names['rh_cortex_ref'] = look_up(templates.rh_central)
-
-    elif sub_files.seg_type == 'mri2mesh':
-        names['subj_id'] = sub_files.subid
-        names['surf_dir'] = look_up(sub_files.surf_dir)
-        names['lh_gm'] = look_up(sub_files.lh_gm)
-        names['lh_wm'] = look_up(sub_files.lh_wm)
-        names['rh_gm'] = look_up(sub_files.rh_gm)
-        names['rh_wm'] = look_up(sub_files.rh_wm)
-        names['lh_reg'] = look_up(sub_files.lh_reg)
-        names['rh_reg'] = look_up(sub_files.rh_reg)
-        names['lh_sphere_ref'] = look_up(templates.fs_lh_sphere_ref)
-        names['rh_sphere_ref'] = look_up(templates.fs_rh_sphere_ref)
-        names['ref_fs'] = look_up(sub_files.ref_fs)
-        names['lh_cortex_ref'] = look_up(templates.fs_lh_cortex_ref)
-        names['rh_cortex_ref'] = look_up(templates.fs_rh_cortex_ref)
-
-    else:
-        raise IOError('Could not find surface files in m2m folder. SPM-only segmentation?')
-
-    return names, sub_files.seg_type
-
 
 def _surf2surf(field, in_surf, out_surf, kdtree=None):
     ''' Interpolates the field defined in in_vertices to the field defined in
@@ -1449,7 +1403,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     '''
     from ..mesh_tools import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
-    names, segtype = get_surface_names_from_folder_structure(m2m_folder)
+    subject_files = SubjectFiles(subpath=m2m_folder)
     if depth < 0. or depth > 1.:
         raise ValueError('Invalid depth value. Should be between 0 and 1')
 
@@ -1475,7 +1429,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     m = mesh_io.read_msh(mesh_fn)
     subdir, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
-    # Crio out GM
+    # Crop out GM
     m = m.crop_mesh(2)
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
@@ -1486,51 +1440,40 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     if out_fsaverage is not None:
         out_fsaverage = os.path.abspath(os.path.normpath(out_fsaverage))
 
+
+    names_subj = []
+    names_fsavg = []
+    # Loading surfaces and Kdtree caching
     middle_surf = {}
     reg_surf = {}
     ref_surf = {}
     avg_surf = {}
-    # Load and write furfaces
-    if segtype == 'mri2mesh':
-        for hemi in ['lh', 'rh']:
-            wm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_wm'])
-            gm_surface = mesh_io.read_freesurfer_surface(names[hemi + '_gm'])
-            middle_surf[hemi] = mesh_io._middle_surface(wm_surface, gm_surface, depth)
-            mesh_io.write_freesurfer_surface(
-                middle_surf[hemi],
-                os.path.join(out_folder, hemi + '.central'),
-                names['ref_fs'])
-    elif segtype == 'headreco':
-        for hemi in ['lh', 'rh']:
-            middle_surf[hemi] = mesh_io.read_gifti_surface(names[hemi + '_midgm'])
-            mesh_io.write_freesurfer_surface(
-                middle_surf[hemi],
-                os.path.join(out_folder, hemi + '.central'),
-                names['ref_fs'])
-    # Load average space things
-    if out_fsaverage:
-        for hemi in ['lh', 'rh']:
-            if segtype == 'headreco':
-                reg_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_reg'])
-                ref_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_sphere_ref'])
-                avg_surf[hemi] = \
-                    mesh_io.read_gifti_surface(names[hemi+'_cortex_ref'])
-            if segtype == 'mri2mesh':
-                reg_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_reg'])
-                ref_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_sphere_ref'])
-                avg_surf[hemi] = \
-                    mesh_io.read_freesurfer_surface(names[hemi+'_cortex_ref'])
+    kdtree = {}
+    for hemi in subject_files.regions:
+        middle_surf[hemi] = mesh_io.read_gifti_surface(
+            subject_files.get_surface(hemi, 'central')
+        )
+        reg_surf[hemi] = mesh_io.read_gifti_surface(
+            subject_files.get_surface(hemi, 'sphere_reg')
+        )
+        if out_fsaverage is not None:
+            ref_surf[hemi] = mesh_io.read_gifti_surface(
+                get_reference_surf(hemi, 'sphere')
+            )
+            avg_surf[hemi] =  mesh_io.read_gifti_surface(
+                get_reference_surf(hemi, 'central')
+            )
 
-    names_subj = []
-    names_fsavg = []
-    kdtree = {'lh': None, 'rh': None}
+        mesh_io.write_freesurfer_surface(
+            middle_surf[hemi],
+            os.path.join(out_folder, hemi + '.central'),
+            subject_files.ref_fs
+        )
+        kdtree[hemi] = None
+
     h = []
     for name, data in m.field.items():
-        for hemi in ['lh', 'rh']:
+        for hemi in subject_files.regions:
             if fields is None or name in fields:
                 # Interpolate to middle gm
                 data = data.as_nodedata()
@@ -1544,7 +1487,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                         mesh_io.write_curv(
                             out_subj,
                             q_data.value,
-                            middle_surf[hemi].elm.nr)
+                            middle_surf[hemi].elm.nr
+                        )
                         names_subj.append(out_subj)
                         middle_surf[hemi].add_node_field(q_data, name + '_' + q_name)
                         h.append(hemi)
@@ -1554,15 +1498,18 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                                 q_data.value,
                                 reg_surf[hemi],
                                 ref_surf[hemi],
-                                kdtree[hemi])
+                                kdtree[hemi]
+                            )
                             out_avg = os.path.join(
                                           out_fsaverage,
                                           hemi + sim_name + '.fsavg.'
-                                          + name + '.' + q_name)
+                                          + name + '.' + q_name
+                            )
                             mesh_io.write_curv(
                                 out_avg,
                                 q_transformed,
-                                ref_surf[hemi].elm.nr)
+                                ref_surf[hemi].elm.nr
+                            )
                             avg_surf[hemi].add_node_field(q_transformed, name + '_' + q_name)
                             names_fsavg.append(out_avg)
 
@@ -1575,11 +1522,13 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                         pass
                     else:
                         out_subj = os.path.join(
-                            out_folder, hemi + sim_name + '.central.' + name)
+                            out_folder, hemi + sim_name + '.central.' + name
+                        )
                         mesh_io.write_curv(
                             out_subj,
                             interpolated.value.squeeze(),
-                            middle_surf[hemi].elm.nr)
+                            middle_surf[hemi].elm.nr
+                        )
                         names_subj.append(out_subj)
                         h.append(hemi)
                         middle_surf[hemi].add_node_field(interpolated, name)
@@ -1588,17 +1537,23 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                                 interpolated.value.squeeze(),
                                 reg_surf[hemi],
                                 ref_surf[hemi],
-                                kdtree[hemi])
+                                kdtree[hemi]
+                            )
                             out_avg = os.path.join(
                                 out_fsaverage,
-                                hemi + sim_name + '.fsavg.' + name)
+                                hemi + sim_name + '.fsavg.' + name
+                            )
                             mesh_io.write_curv(
-                                out_avg, f_transformed, ref_surf[hemi].elm.nr)
+                                out_avg, f_transformed, ref_surf[hemi].elm.nr
+                            )
                             names_fsavg.append(out_avg)
                             avg_surf[hemi].add_node_field(f_transformed, name)
 
 
     # Join surfaces, fields and open in gmsh
+    # I only work with lh and rh at least for now
+    # It also needs to be nicely ordered, otherwise will
+    # screw up the atlases
     def join_and_write(surfs, fn_out, open_in_gmsh):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
         mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
@@ -1663,7 +1618,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
     atlas: dict
         Dictionary where atlas['region'] = roi
     '''
-    from ..mesh_tools.mesh_io import read_msh, read_gifti_surface, read_freesurfer_surface
+    from ..mesh_tools.mesh_io import read_msh, read_gifti_surface
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
 
@@ -1675,23 +1630,11 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
             f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
         )
         labels, _ , names = nib.freesurfer.io.read_annot(fn_atlas)
-        if subject_files.seg_type == 'headreco':
-            read_fun = read_gifti_surface
-        elif subject_files.seg_type == 'mri2mesh':
-            read_fun = read_freesurfer_surface
-
-        if hemi == 'lh':
-            labels_sub, _ = _surf2surf(
-                labels,
-                read_gifti_surface(templates.lh_sphere),
-                read_fun(subject_files.lh_reg)
-                ) 
-        if hemi == 'rh':
-            labels_sub, _ = _surf2surf(
-                labels,
-                read_gifti_surface(templates.rh_sphere),
-                read_fun(subject_files.rh_reg)
-                ) 
+        labels_sub, _ = _surf2surf(
+            labels,
+            read_gifti_surface(get_reference_surf(hemi, 'sphere')),
+            read_gifti_surface(subject_files.get_surface(hemi, 'sphere_reg'))
+        )
         atlas = {}
         for l, name in enumerate(names):
             atlas[name.decode()] = labels_sub == l

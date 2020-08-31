@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Troubleshooting &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Troubleshooting &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,11 +51,18 @@
           <div class="body" role="main">
             
   <div class="section" id="troubleshooting">
-<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p>If you are on can’t see SimNIBS commands in your Linux or OSX terminal, be sure that you are using a <strong>bash</strong> terminal, <strong>not tcsh</strong></p></li>
-<li><p>If you are experiencing problems during the install, be sure that you can connect to <a class="reference external" href="https://repo.continuum.io/">https://repo.continuum.io/</a> and <a class="reference external" href="https://github.com/">https://github.com/</a></p></li>
+<span id="install-throubleshooting"></span><h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<ul>
 <li><p>Antivirus software and other security features might interfere with the installation.</p></li>
+<li><p>if you are seeing the error messages such as</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">find</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span> <span class="pre">&quot;xcb&quot;</span> <span class="pre">in</span> <span class="pre">&quot;&quot;</span></code></p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">find</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span> <span class="pre">&quot;windows&quot;</span> <span class="pre">in</span> <span class="pre">&quot;&quot;</span></code></p></li>
+</ul>
+<p>You likely have <a class="reference external" href="https://en.wikipedia.org/wiki/ASCII">non-ASCII charactes</a> (e.g. Chinese characters) in your installation path. Please change the installation path so that it only includes ASCII characters.</p>
+</div></blockquote>
+</li>
 <li><p>Often times, <a class="reference internal" href="conda.html#conda-install"><span class="std std-ref">installing with the conda package manager</span></a> can help overcome problems with the installer. Please try it out</p></li>
 <li><p><strong>glError</strong> messages when opening the GUI can often be solved by updating video drivers.</p></li>
 <li><p>If you are stuck, please <a class="reference internal" href="../contact.html#contact"><span class="std std-ref">contact us</span></a> and attach the <code class="file docutils literal notranslate"><span class="pre">simnibs_install_log.txt</span></code> file, which can be found in your SimNIBS installation directory</p></li>
@@ -137,7 +146,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -154,7 +163,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

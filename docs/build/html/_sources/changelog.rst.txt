@@ -1,6 +1,17 @@
 Changelog
 ===========
 
+3.2
+----
+ * Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)
+ * Added TES magnetic field calculations for MRCDI/MREIT (contributed by Hassan Yazdanian)
+ * Added TES optimization with field strength
+ * Added TES optimization for brain network targeting
+ * FMM-based coil A field calculations from :file:`.ccd` files
+ * Refactoring of optimization code
+ * Calculating coil-cortex distances during TMS simulations
+ * New installers
+
 3.1
 ----
  * Added TDCS and TMS Optimization

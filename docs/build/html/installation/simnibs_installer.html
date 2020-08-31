@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Install SimNIBS &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install SimNIBS &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -50,20 +52,23 @@
             
   <div class="section" id="install-simnibs">
 <span id="simnibs-installer"></span><h1>Install SimNIBS<a class="headerlink" href="#install-simnibs" title="Permalink to this headline">¶</a></h1>
-<p>A SimNIBS installation takes about 5 GB disk space.</p>
+<p>A SimNIBS installation takes about 3 GB disk space.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The installation procedure has changed in version 3.2. The previous simnibs installer app is now deprecated and will be removed in the near future.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In case you have problems during the installation, please check <a class="reference internal" href="throubleshooting.html#install-throubleshooting"><span class="std std-ref">Troubleshooting</span></a></p>
+</div>
 <div class="section" id="windows">
 <h2>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="https://simnibs.drcmr.dk/userregistration2">Download the SimNIBS installer</a></p></li>
-<li><p>Double click the <code class="file docutils literal notranslate"><span class="pre">install_simnibs_windows.exe</span></code> file. If a security warning shows up, click on <em>More info -&gt; Run anyway</em></p></li>
-<li><p>Select the desired version, accept the license and click <em>next</em></p></li>
-<li><p>Installation might take 15-30 minutes, depending on your computer and internet connection. Please be patient.</p></li>
-<li><p>Log out and in again.</p></li>
+<li><p>Double click the <code class="file docutils literal notranslate"><span class="pre">simnibs_installer_windows.exe</span></code> file. If a security warning shows up, click on <em>More info -&gt; Run anyway</em></p></li>
+<li><p>Click through the installer wizard</p></li>
+<li><p>Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.</p></li>
 </ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you already have Anaconda or Miniconda installed in your computer, the links to the Anaconda Prompt and Anaconda Powershell in the Start Menu may be overwritten</p>
-</div>
 <div class="section" id="testing-the-installation">
 <h3>Testing the installation<a class="headerlink" href="#testing-the-installation" title="Permalink to this headline">¶</a></h3>
 <p>Look for a shortcut called <code class="code docutils literal notranslate"><span class="pre">SimNIBS</span> <span class="pre">GUI</span></code> in your Start Menu</p>
@@ -77,23 +82,18 @@
 </ol>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> ~/Downloads
-tar -xzf install_simnibs_linux.tar.gz
-install_simnibs/install_simnibs
+tar -xzf simnibs_installer_linux.tar.gz
+simnibs_installer/install
 </pre></div>
 </div>
 <p></p>
 </div></blockquote>
 <ol class="arabic simple" start="3">
-<li><p>Select the desired version, accept the license and click on <em>next</em></p></li>
-<li><p>Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.</p></li>
+<li><p>Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.</p></li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The SimNIBS Installer does not support CentOS 6. However, it is possible to <a class="reference internal" href="conda.html#conda-install"><span class="std std-ref">install it using conda</span></a></p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The installer also has a silent mode (no GUI), type <code class="code docutils literal notranslate"><span class="pre">./install_simnibs</span> <span class="pre">-h</span></code> for more information</p>
+<p>The installer also has a silent mode (no GUI), type <code class="code docutils literal notranslate"><span class="pre">simnibs_installer/install</span> <span class="pre">-h</span></code> for more information</p>
 </div>
 <div class="section" id="id2">
 <h3>Testing the Installation<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
@@ -104,17 +104,9 @@ install_simnibs/install_simnibs
 <h2>MacOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p><a class="reference external" href="https://simnibs.drcmr.dk/userregistration2">Download the SimNIBS installer</a></p></li>
-<li><p>Run in a terminal (use <code class="code docutils literal notranslate"><span class="pre">Cmd</span></code> + <code class="code docutils literal notranslate"><span class="pre">Space</span></code> and search for <code class="code docutils literal notranslate"><span class="pre">terminal</span></code>)</p></li>
-</ol>
-<blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>~/Downloads/install_simnibs
-</pre></div>
-</div>
-<p></p>
-</div></blockquote>
-<ol class="arabic simple" start="3">
-<li><p>Select the desired version, accept the license and click on <em>next</em></p></li>
-<li><p>Installation might take 10-20 minutes, depending on your computer and internet connection. Please be patient.</p></li>
+<li><p>Double click the <code class="file docutils literal notranslate"><span class="pre">simnibs_installer_macos.pkg</span></code> file.</p></li>
+<li><p>Click through the installer wizard.</p></li>
+<li><p>Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.</p></li>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -122,18 +114,17 @@ install_simnibs/install_simnibs
 </div>
 <div class="section" id="id4">
 <h3>Testing the Installation<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
-<p>Open the Launcher and search for <code class="code docutils literal notranslate"><span class="pre">SimNIBS</span> <span class="pre">GUI</span></code></p>
+<p>Open Launchpad and search for <code class="code docutils literal notranslate"><span class="pre">SimNIBS</span> <span class="pre">GUI</span></code></p>
 </div>
 </div>
 <div class="section" id="updating-simnibs">
 <h2>Updating SimNIBS<a class="headerlink" href="#updating-simnibs" title="Permalink to this headline">¶</a></h2>
-<p>If you already have SimNIBS ≥ 3.0 installed, it is possible to upgrade your
-installation.</p>
-<p>Just start a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and type</p>
+<p>You can install the latest bugfix version of SimNIBS by starting a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and typing</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>update_simnibs
 </pre></div>
 </div>
 <p></p>
+<p>New feature versions require a new installation.</p>
 </div>
 <div class="section" id="software-dependencies">
 <h2>Software Dependencies<a class="headerlink" href="#software-dependencies" title="Permalink to this headline">¶</a></h2>
@@ -226,7 +217,7 @@ installation.</p>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -243,7 +234,7 @@ installation.</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

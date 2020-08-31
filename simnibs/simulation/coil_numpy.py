@@ -6,6 +6,14 @@
 import numpy as np
 import nibabel as nib
 from ..mesh_tools import mesh_io
+from ..utils.simnibs_logger import logger
+
+try:
+    import fmm3dpy
+except ImportError:
+    FMM3D = False
+else:
+    FMM3D = True
 
 
 '''
@@ -54,9 +62,7 @@ def read_ccd(fn):
 
     return ccd_file[:, 0:3], ccd_file[:, 3:]
 
-
-def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
-    """ auxiliary function to calculate the dA/dt field from a ccd file """
+def _rotate_coil(ccd_file, coil_matrix):
     # read ccd file
     d_position, d_moment = read_ccd(ccd_file)
     # transfrom positions to mm
@@ -66,6 +72,12 @@ def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
     d_position = coil_matrix.dot(d_position.T).T[:, :3]
     # rotate the moment
     d_moment = coil_matrix[:3, :3].dot(d_moment.T).T
+    return d_position, d_moment
+
+def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
+    """ auxiliary function to calculate the dA/dt field from a ccd file """
+    # read ccd file
+    d_position, d_moment = _rotate_coil(ccd_file, coil_matrix)
     A = np.zeros((msh.nodes.nr, 3), dtype=float)
     for p, m in zip(d_position, d_moment):
         # get distance of point to dipole, transform back to meters
@@ -74,11 +86,46 @@ def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
     node_data = mesh_io.NodeData(A)
 
     if geo_fn is not None:
-        mesh_io.write_geo_spheres(d_position, geo_fn,
-                               np.linalg.norm(d_moment, axis=1),
-                               'coil_dipoles')
+        mesh_io.write_geo_spheres(
+            d_position, geo_fn,
+            np.linalg.norm(d_moment, axis=1),
+            'coil_dipoles'
+        )
 
     return node_data
+
+def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
+    """ auxiliary function to calculate the dA/dt field from a ccd file using FMM """
+    import fmm3dpy
+    d_position, d_moment = _rotate_coil(ccd_file, coil_matrix)
+    # bring everything to SI
+    d_position *= 1e-3
+    pos = msh.nodes[:] * 1e-3
+    A = np.zeros((len(pos), 3), dtype=float)
+    out = [
+        fmm3dpy.lfmm3d(
+            eps=eps,
+            sources=d_position.T,
+            charges=d_m,
+            targets=pos.T,
+            pgt=2
+        )
+        for d_m in d_moment.T
+    ]
+    A[:, 0] = (out[1].gradtarg[2] - out[2].gradtarg[1])
+    A[:, 1] = (out[2].gradtarg[0] - out[0].gradtarg[2])
+    A[:, 2] = (out[0].gradtarg[1] - out[1].gradtarg[0])
+
+    A *= -1e-7 * didt
+    if geo_fn is not None:
+        mesh_io.write_geo_spheres(
+            d_position*1e3, geo_fn,
+            np.linalg.norm(d_moment, axis=1),
+            'coil_dipoles'
+        )
+
+    return mesh_io.NodeData(A)
+
 
 
 def _calculate_dadt_nifti(msh, nifti_image, coil_matrix, didt, geo_fn):
@@ -141,8 +188,16 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
 def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None):
     coil_matrix = np.array(coil_matrix)
     if coil_file.endswith('.ccd'):
-        dadt = _calculate_dadt_ccd(msh, coil_file,
-                                   coil_matrix, didt, fn_geo)
+        if FMM3D:
+            dadt = _calculate_dadt_ccd_FMM(
+                msh, coil_file,
+                coil_matrix, didt, fn_geo
+            )
+        else:
+            dadt = _calculate_dadt_ccd(
+                msh, coil_file,
+                coil_matrix, didt, fn_geo
+            )
     elif coil_file.endswith('.nii.gz') or coil_file.endswith('.nii'):
         dadt = _calculate_dadt_nifti(msh, coil_file,
                                      coil_matrix, didt, fn_geo)

@@ -6,9 +6,8 @@ import scipy.sparse
 import scipy.ndimage
 
 from . import mesh_io
+from . import cgal
 from ..utils.simnibs_logger import logger
-from .._compiled._create_mesh_surf import mesh_surfaces
-from .._compiled._create_mesh_vol import mesh_image, mesh_image_sizing_field
 
 
 class MeshingError(ValueError):
@@ -53,14 +52,14 @@ def _mesh_image(image, voxel_dims, facet_angle,
         fn_mesh = os.path.join(tmpdir, 'mesh.mesh')
         _write_inr(image, voxel_dims, fn_image)
         if type(cell_size) is np.ndarray:
-            ret = mesh_image_sizing_field(
+            ret = cgal.mesh_image_sizing_field(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
                     optimize
                  )
         else:
-            ret = mesh_image(
+            ret = cgal.mesh_image(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
@@ -167,6 +166,9 @@ def image2mesh(image, affine, facet_angle=30,
         spatially variable scalar field. It provides an upper bound on the circumradii of the
         mesh tetrahedra. Default: minimum voxel size (very low!)
 
+    optimize: bool (optional)
+        Tunrn on Lloyd optimization. Sliver perturbation and exudation is always done. Default: True
+
     Returns
     ----------
     msh: simnibs.Msh
@@ -247,7 +249,7 @@ def _mesh_surfaces(surfaces, subdomains, facet_angle,
             fn_surfaces.append(fn.encode())
             sd_formated.append((sd[0], sd[1]))
         fn_mesh = os.path.join(tmpdir, 'mesh.mesh')
-        ret = mesh_surfaces(
+        ret = cgal.mesh_surfaces(
                 fn_surfaces, sd_formated, fn_mesh.encode(),
                 facet_angle, facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,

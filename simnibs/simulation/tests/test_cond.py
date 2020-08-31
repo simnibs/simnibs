@@ -8,7 +8,7 @@ from .. import cond
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture

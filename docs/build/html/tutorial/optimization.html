@@ -1,21 +1,23 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TDCS Optimization &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDCS Optimization &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Advanced Features" href="advanced/advanced.html" />
+    <link rel="next" title="TMS Optimization" href="tms_optimization.html" />
     <link rel="prev" title="Analyzing Simulations" href="analysis.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -38,7 +40,7 @@
           <a href="analysis.html" title="Previous document">Analyzing Simulations</a>
         </li>
         <li>
-          <a href="advanced/advanced.html" title="Next document">Advanced Features</a>
+          <a href="tms_optimization.html" title="Next document">TMS Optimization</a>
           &rarr;
         </li>
     </ul>
@@ -50,14 +52,18 @@
             
   <div class="section" id="tdcs-optimization">
 <span id="tdcs-opt"></span><h1>TDCS Optimization<a class="headerlink" href="#tdcs-optimization" title="Permalink to this headline">¶</a></h1>
-<p>SimNIBS 3 is able of optimizing TDCS montages for maximal focality.
+<p>SimNIBS can automatically optimize TDCS montages for maximal focality or intensity at the target.
 There are two steps for performing the optimizations.</p>
 <ol class="arabic simple">
 <li><p>Create a <em>leadfield</em>.</p></li>
 <li><p>Set-up an optimization based on the <em>leadfield</em>.</p></li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+</div>
 <div class="section" id="leadfield-calculations">
-<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<span id="tutorial-leadfield"></span><h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
 <p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
@@ -364,8 +370,8 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/two_targets&#39;</span>
 
-<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">4e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="c1"># Target in the left motor cortex</span>
@@ -375,7 +381,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="c1"># Target in the right motor cortex</span>
 <span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
-<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value revert the direction</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value reverses direction</span>
 
 <span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
 </pre></div>
@@ -410,7 +416,75 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </li>
 </ul>
 <p></p>
-<p>By using multiple targets, SimNIBS will try to hit each target with its intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
+<p>By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
+</div>
+<div class="section" id="electric-field-strength">
+<h3>Electric Field Strength<a class="headerlink" href="#electric-field-strength" title="Permalink to this headline">¶</a></h3>
+<p>For using electric field strength (norm) rather than an specific direction, just set the <strong>directions</strong> attribute to <em>None</em> (Python) or <em>‘none’</em> (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">novel optimization method</a>.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Optimize controlling electric field strength</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">simnibs</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSoptimize</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">leadfield_hdf</span> <span class="o">=</span> <span class="s1">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;optimization/strength&#39;</span>
+
+<span class="n">opt</span><span class="o">.</span><span class="n">max_total_current</span> <span class="o">=</span> <span class="mf">4e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_individual_current</span> <span class="o">=</span> <span class="mf">2e-3</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="c1"># Target in the left motor cortex</span>
+<span class="n">target_left</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">21.4</span><span class="p">,</span> <span class="mf">88.5</span><span class="p">]</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">directions</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="c1"># Target in the right motor cortex</span>
+<span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">directions</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Optimize controlling electric field strength</span>
+<span class="c">%</span>
+
+<span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;optimization/strength&#39;</span><span class="p">;</span>
+
+<span class="n">opt</span><span class="p">.</span><span class="n">max_total_current</span> <span class="p">=</span> <span class="mf">4e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">2e-3</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
+
+<span class="c">% Target in the left motor cortex</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span> <span class="o">-</span><span class="mf">21.4</span> <span class="mf">88.5</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">directions</span><span class="p">=</span><span class="s">&#39;none&#39;</span><span class="p">;</span>
+<span class="c">% Target in the right motor cortex</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">32.4</span> <span class="o">-</span><span class="mf">25.5</span> <span class="mf">90.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">directions</span><span class="p">=</span><span class="s">&#39;none&#39;</span><span class="p">;</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
+</div>
 </div>
 <div class="section" id="avoidance-regions">
 <h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>
@@ -480,6 +554,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
+<p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
 </div>
 </div>
 
@@ -494,7 +569,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
           <a href="analysis.html" title="Previous document">Analyzing Simulations</a>
         </li>
         <li>
-          <a href="advanced/advanced.html" title="Next document">Advanced Features</a>
+          <a href="tms_optimization.html" title="Next document">TMS Optimization</a>
           &rarr;
         </li>
     </ul>
@@ -530,6 +605,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html">TMS Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
@@ -548,7 +624,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="tutorial.html">Tutorial</a><ul>
       <li>Previous: <a href="analysis.html" title="previous chapter">Analyzing Simulations</a></li>
-      <li>Next: <a href="advanced/advanced.html" title="next chapter">Advanced Features</a></li>
+      <li>Next: <a href="tms_optimization.html" title="next chapter">TMS Optimization</a></li>
   </ul></li>
   </ul></li>
 </ul>
@@ -562,7 +638,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -579,7 +655,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

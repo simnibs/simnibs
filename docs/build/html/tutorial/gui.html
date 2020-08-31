@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Setting up and Running Simulations &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Setting up and Running Simulations &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -110,7 +112,7 @@ example data set</p></li>
 </dd>
 </dl>
 <ol class="arabic simple" start="4">
-<li><p>Let’s suppose we have a <img class="math" src="../_images/math/5bffc8f40007707f8e226a19a4f962743ed9c0de.png" alt="7.0 \times 5.5 \text{cm}^2"/> electrode, composed of a single gel layer of 5 mm thickness</p></li>
+<li><p>Let’s suppose we have a <span class="math notranslate nohighlight">\(7.0 \times 5.5 \text{cm}^2\)</span> electrode, composed of a single gel layer of 5 mm thickness</p></li>
 </ol>
 <img alt="../_images/tutorial_electrodegui.png" class="align-center" src="../_images/tutorial_electrodegui.png" />
 <dl class="simple">
@@ -137,7 +139,7 @@ example data set</p></li>
 </ol>
 <img alt="../_images/tutorial_position3.png" class="align-center" src="../_images/tutorial_position3.png" />
 <dl class="simple">
-<dt></dt><dd><p>Select a shape and a current of <img class="math" src="../_images/math/329b8e108b0f083ebc06dd233ac863f887851012.png" alt="-1.000 \text{mA}"/> for this second electrode.
+<dt></dt><dd><p>Select a shape and a current of <span class="math notranslate nohighlight">\(-1.000 \text{mA}\)</span> for this second electrode.
 You can see a simple preview of the electrode shapes by clicking on <em>Preview Shapes</em> at the bottom of the screen</p>
 </dd>
 </dl>
@@ -201,12 +203,12 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>vector J</strong>:</dt><dd><p>Current density vector. Units: A/mm²</p>
+<dt><strong>vector J</strong>:</dt><dd><p>Current density vector. Units: A/m²</p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>norm J</strong>:</dt><dd><p>Norm of the current density. Units: A/mm²</p>
+<dt><strong>norm J</strong>:</dt><dd><p>Norm of the current density. Units: A/m²</p>
 </dd>
 </dl>
 </li>
@@ -356,6 +358,7 @@ selected.</p>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html">TMS Optimization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
@@ -388,7 +391,7 @@ selected.</p>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -405,7 +408,7 @@ selected.</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -820,7 +820,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     # #offset=0.04
     # #Yppt=(Yppt-offset)/(1.0-offset)
     Yppt[np.isnan(Yppt)]=1
-    Yppt[Yppt>1]=1
+    Yppt[Yppt > 1] = 1
     Yppt[Yppt<0]=0
     Vpp = nib.Nifti1Image(np.uint8(np.rint(Yppt*255)), vox2mm_Yppt)
     Vpp.header['scl_slope'] = 1/255
@@ -839,7 +839,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     # some more tweaking of parahippocampal area in Yppi
     if not iscerebellum:
         Yppi = Yppi + add_parahipp * spm_smooth(np.float32(mask_parahipp), [8., 8., 8.])
-    Yppi[Yppi < 0] = 0    
+    Yppi[Yppi < 0] = 0
 
     # optionally apply closing inside mask for parahippocampal gyrus to get rid of the holes that lead to large cuts in gyri
     # after topology correction

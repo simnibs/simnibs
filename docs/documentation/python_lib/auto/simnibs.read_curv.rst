@@ -1,4 +1,4 @@
-simnibs.read\_curv
+﻿simnibs.read\_curv
 ==================
 
 .. currentmodule:: simnibs

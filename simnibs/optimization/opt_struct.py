@@ -25,22 +25,25 @@ import copy
 import csv
 import re
 import os
-from collections import OrderedDict
 import time
 import glob
 import functools
 import logging
+import gc
 
 import numpy as np
 import scipy.spatial
 import h5py
+import nibabel
 
 from . import optimize_tms
 from . import optimization_methods
-from ..simulation import cond
+from . import ADMlib
 from ..simulation import fem
+from ..simulation import cond
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
 from ..mesh_tools import mesh_io, gmsh_view
+from ..utils import transformations
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
@@ -90,6 +93,10 @@ class TMSoptimize():
         Wether to open the results in gmsh. Default: False
     solver_options (optional): str
         Options for the FEM solver. Default: CG+AMG
+    method (optional): 'direct' or 'ADM'
+        Method to be used. Either 'direct' for running full TMS optimizations or
+        'ADM' for using the Auxiliary Dipole Method. 'ADM' is only compatible with ".ccd"
+        coil format
     '''
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
@@ -127,6 +134,7 @@ class TMSoptimize():
 
         self.open_in_gmsh = True
         self.solver_options = ''
+        self.method = 'direct'
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
@@ -204,6 +212,7 @@ class TMSoptimize():
         mat['pathfem'] = remove_None(self.pathfem)
         mat['fname_tensor'] = remove_None(self.fname_tensor)
         mat['tissues'] = remove_None(self.tissues)
+        mat['fnamecoil'] = remove_None(self.fnamecoil)
 
         mat['target'] = remove_None(self.target)
         mat['target_size'] = remove_None(self.target_size)
@@ -217,6 +226,7 @@ class TMSoptimize():
         mat['angle_resolution'] = remove_None(self.angle_resolution)
         mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
         mat['solver_options'] = remove_None(self.solver_options)
+        mat['method'] = remove_None(self.method)
 
         return mat
 
@@ -287,6 +297,10 @@ class TMSoptimize():
         self.solver_options = try_to_read_matlab_field(
             mat, 'solver_options', str, self.solver_options
         )
+        self.method = try_to_read_matlab_field(
+            mat, 'method', str, self.method
+        )
+
         return self
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
@@ -324,24 +338,10 @@ class TMSoptimize():
                     dir_name,
                     'simnibs_simulation_{0}.mat'.format(self.time_str)))
         logger.info(str(self))
-        pos_matrices = optimize_tms.get_opt_grid(
-            self.mesh, self.centre,
-            handle_direction_ref=self.pos_ydir,
-            distance=self.distance, radius=self.search_radius,
-            resolution_pos=self.spatial_resolution,
-            resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
-        )
-        cond = SimuList.cond2elmdata(self)
-        didt_list = [self.didt for i in pos_matrices]
+        pos_matrices = self._get_coil_positions()
+        target_region = self._get_target_region()
+        cond_field = SimuList.cond2elmdata(self)
 
-        # Define target region
-        target_region = optimize_tms.define_target_region(
-            self.mesh,
-            self.target,
-            self.target_size,
-            self.tissues
-        )
         if len(target_region) == 0:
             raise ValueError('Did not find any elements within the defined target region')
 
@@ -360,53 +360,30 @@ class TMSoptimize():
         v.View[0].CustomMax = 1
         v.View[0].CustomMin = 0
         m.elmdata = []
-        # Write out the grid
-        optimize_tms.plot_matsimnibs_list(
-            pos_matrices,
-            np.ones(len(pos_matrices)),
-            "Grid",
-            os.path.join(self.pathfem, 'coil_positions.geo')
-        )
-        v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
-        v.add_view(
-            CustomMax=1, CustomMin=1,
-            VectorType=4, CenterGlyphs=0,
-            Visible=1, ColormapNumber=0
-        )
-        v.write_opt(fn_target)
-        if self.open_in_gmsh:
-            mesh_io.open_in_gmsh(fn_target, True)
 
         # Run simulations
-        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
-        if os.path.isfile(fn_hdf5):
-            os.remove(fn_hdf5)
-        dataset = 'tms_optimization/E_norm'
-        volumes = self.mesh.elements_volumes_and_areas()[target_region]
-        # Define postporcessing to calculate average field norm
-        def postprocessing(E, target_region, volumes):
-            return np.average(
-                np.linalg.norm(E[target_region - 1], axis=1),
-                weights=volumes
+        if self.method.lower() == 'direct':
+            # Write out the grid
+            optimize_tms.plot_matsimnibs_list(
+                pos_matrices,
+                np.ones(len(pos_matrices)),
+                "Grid",
+                os.path.join(self.pathfem, 'coil_positions.geo')
             )
-        postpro = functools.partial(
-            postprocessing,
-            target_region=target_region,
-            volumes=volumes
-        )
-        fem.tms_many_simulations(
-            self.mesh, cond,
-            self.fnamecoil,
-            pos_matrices, didt_list,
-            fn_hdf5, dataset,
-            post_pro=postpro,
-            solver_options=self.solver_options,
-            n_workers=cpus
-        )
-        # Read the field norms
-        with h5py.File(fn_hdf5, 'a') as f:
-            normE = f[dataset][:]
-        os.remove(fn_hdf5)
+            v.add_merge(os.path.join(self.pathfem, 'coil_positions.geo'))
+            v.add_view(
+                CustomMax=1, CustomMin=1,
+                VectorType=4, CenterGlyphs=0,
+                Visible=1, ColormapNumber=0
+            )
+            v.write_opt(fn_target)
+            if self.open_in_gmsh:
+                mesh_io.open_in_gmsh(fn_target, True)
+            normE = self._direct_optimize(cond_field, target_region, pos_matrices, cpus)
+        elif self.method.lower() == 'adm':
+            normE, pos_matrices = self._ADM_optimize(cond_field, target_region)
+        else:
+            raise ValueError("method should be 'direct' or 'ADM'")
         # Update the .geo file with the normE value
         optimize_tms.plot_matsimnibs_list(
             pos_matrices,
@@ -420,10 +397,11 @@ class TMSoptimize():
 
         # Run one extra simulation with the best position
         logger.info('Re-running best position')
+        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
         fn_out = fn_hdf5[:-5] + '.msh'
         fn_geo = fn_hdf5[:-5] + '_coil_pos.geo'
         fem.tms_coil(
-            self.mesh, cond, self.fnamecoil, 'eEjJ',
+            self.mesh, cond_field, self.fnamecoil, 'eEjJ',
             [pos_matrices[np.argmax(normE)]],
             [self.didt],
             [fn_out],
@@ -445,7 +423,6 @@ class TMSoptimize():
         v.write_opt(fn_out)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
-        # Another output with coil positions, possibly also transformed
 
     def _name_hdf5(self):
         try:
@@ -463,6 +440,123 @@ class TMSoptimize():
         name = '{0}TMS_optimize{1}.hdf5'.format(subid, coil_name)
         return name
 
+    def _get_coil_positions(self):
+        return optimize_tms.get_opt_grid(
+            self.mesh, self.centre,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
+        )
+
+    def _get_target_region(self):
+        return optimize_tms.define_target_region(
+            self.mesh,
+            self.target,
+            self.target_size,
+            self.tissues
+        )
+
+    def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus):
+        didt_list = [self.didt for i in pos_matrices]
+        fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
+        if os.path.isfile(fn_hdf5):
+            os.remove(fn_hdf5)
+        dataset = 'tms_optimization/E_norm'
+        volumes = self.mesh.elements_volumes_and_areas()[target_region]
+        # Define postporcessing to calculate average field norm
+
+        def postprocessing(E, target_region, volumes):
+            return np.average(
+                np.linalg.norm(E[target_region - 1], axis=1),
+                weights=volumes
+            )
+        postpro = functools.partial(
+            postprocessing,
+            target_region=target_region,
+            volumes=volumes
+        )
+        fem.tms_many_simulations(
+            self.mesh, cond_field,
+            self.fnamecoil,
+            pos_matrices, didt_list,
+            fn_hdf5, dataset,
+            post_pro=postpro,
+            solver_options=self.solver_options,
+            n_workers=cpus
+        )
+        # Read the field norms
+        with h5py.File(fn_hdf5, 'a') as f:
+            normE = f[dataset][:]
+        os.remove(fn_hdf5)
+        return normE
+
+    def _ADM_optimize(self, cond_field, target_region):
+        th = self.mesh.elm.elm_type == 4
+        if not self.fnamecoil.endswith('.ccd'):
+            raise ValueError('ADM optimization is only possible with ".ccd" coil files')
+        if not np.all(th[target_region - 1]):
+            raise ValueError('Target region must contain only tetrahedra')
+        ccd_file = np.loadtxt(self.fnamecoil, skiprows=2)
+        dipoles, moments = ccd_file[:, 0:3], ccd_file[:, 3:]
+        # Run dipole simulations
+        S = fem.FEMSystem.electric_dipole(
+            self.mesh, cond_field,
+            solver_options=self.solver_options
+        )
+
+        vols = self.mesh.elements_volumes_and_areas()
+
+        def calc_dipole_J(dipole_dir):
+            Jp = mesh_io.ElementData(np.zeros((self.mesh.elm.nr, 3), dtype=float))
+            Jp[target_region] = dipole_dir
+            b = S.assemble_electric_dipole_rhs(Jp)
+            v = mesh_io.NodeData(S.solve(b), mesh=self.mesh)
+            m = fem.calc_fields(v, 'J', cond=cond_field)
+            J = m.field['J'][:] + Jp[:]
+            J /= np.sum(vols[target_region])
+            return J
+
+        J_x = calc_dipole_J([1, 0, 0]) * vols[:, None]
+        J_y = calc_dipole_J([0, 1, 0]) * vols[:, None]
+        J_z = calc_dipole_J([0, 0, 1]) * vols[:, None]
+        del S
+        gc.collect()
+        coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
+            self.mesh, self.centre,
+            handle_direction_ref=self.pos_ydir,
+            distance=self.distance, radius=self.search_radius,
+            resolution_pos=self.spatial_resolution,
+            resolution_angle=self.angle_resolution,
+            angle_limits=[-self.search_angle/2, self.search_angle/2]
+        )
+        # trasnform coil matrix to meters
+        coil_matrices[:3, 3, :] *= 1e-3
+
+        logger.info('Running ADM')
+        baricenters = self.mesh.elements_baricenters()
+        # Notice that there is an uknown scale factor
+        # as we need to know the pulse angular frequency
+        # \Omega and amplitude A
+        normE = ADMlib.ADMmag(
+            baricenters[th].T * 1e-3,
+            J_x[th].T, J_y[th].T, J_z[th].T,
+            dipoles.T, moments.T,  # .ccd file is already in SI units
+            coil_matrices, rotations
+        ) * self.didt
+
+        z = np.array([0., 0., 1.])
+        pos_matrices = []
+        coil_matrices[:3, 3, :] *= 1e3
+        for cm in coil_matrices.transpose(2, 0, 1):
+            for r in rotations.T:
+                R = np.eye(4)
+                R[:3, :3] = np.array([np.cross(r, z), r, z]).T
+                pos_matrices.append(cm.dot(R))
+
+        return normE.T.reshape(-1), pos_matrices
+
     def __str__(self):
         string = 'Subject Folder: %s\n' % self.subpath
         string += 'Mesh file name: %s\n' % self.fnamehead
@@ -474,9 +568,9 @@ class TMSoptimize():
         string += 'Search radius: %s\n' % self.search_radius
         string += 'Spatial resolution: %s\n' % self.spatial_resolution
         string += 'Search angle: %s\n' % self.search_angle
-        string += 'Angle resolution: %s' % self.angle_resolution
+        string += 'Angle resolution: %s\n' % self.angle_resolution
+        string += 'method: %s' % self.method
         return string
-
 
 class TDCSoptimize():
     ''' Defines a tdcs optimization problem
@@ -645,7 +739,7 @@ class TDCSoptimize():
         if self.leadfield_hdf is not None and self._field_units is None:
             try:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
-                    self.field_units = f[self.leadfield_path].attrs['field']
+                    self.field_units = f[self.leadfield_path].attrs['units']
             except:
                 return 'Au'
 
@@ -729,25 +823,19 @@ class TDCSoptimize():
                    max_individual_current, max_active_electrodes,
                    name, target, avoid, open_in_gmsh)
 
-    def calc_energy_matrix(self):
-        '''Calculates the enery matrix for optimization
-
-        Returns:
-        ----------
-        Q: np.ndarray
-            Energy matrix (N_elec x N_elec)
+    def get_weights(self):
+        ''' Calculates the volumes or areas of the mesh associated with the leadfield
         '''
-        assert self.leadfield is not None, 'Leadfield not defined'
         assert self.mesh is not None, 'Mesh not defined'
         if self.lf_type == 'node':
             weights = self.mesh.nodes_volumes_or_areas().value
         elif self.lf_type == 'element':
             weights = self.mesh.elements_volumes_and_areas().value
         else:
-            raise ValueError('Cant calculate energy matrix: mesh or leadfield not set')
+            raise ValueError('Cant calculate weights: mesh or leadfield not set')
 
         weights *= self._get_avoid_field()
-        return optimization_methods.energy_matrix(self.leadfield, weights)
+        return weights
 
     def _get_avoid_field(self):
         fields = []
@@ -809,7 +897,7 @@ class TDCSoptimize():
             if t.mesh is None: t.mesh = self.mesh
             if t.lf_type is None: t.lf_type = self.lf_type
         for a in self.avoid:
-            if a.mesh is None: a.mesh = self.a
+            if a.mesh is None: a.mesh = self.mesh
             if a.lf_type is None: a.lf_type = self.lf_type
 
     def optimize(self, fn_out_mesh=None, fn_out_csv=None):
@@ -835,43 +923,92 @@ class TDCSoptimize():
         if self.max_active_electrodes is not None:
             assert self.max_active_electrodes > 1, \
                     'The maximum number of active electrodes should be at least 2'
-        if self.max_total_current is not None:
-            assert self.max_total_current > 0,\
-                    'max_total_current should be positive'
-        if self.max_individual_current is not None:
-            assert self.max_individual_current > 0,\
-                    'max_individual_current should be positive'
-        Q_mat = self.calc_energy_matrix()
-        l_mat = np.zeros([len(self.target), Q_mat.shape[1]])
-        target_intensities = np.zeros(len(self.target))
-        max_angle = None
-        Q_target = None
+
+        if self.max_total_current is None:
+            logger.warning('Maximum total current not set!')
+            max_total_current = 1e3
+
+        else:
+            assert self.max_total_current > 0
+            max_total_current = self.max_total_current
+
+        if self.max_individual_current is None:
+            max_individual_current = max_total_current
+
+        else:
+            assert self.max_individual_current > 0
+            max_individual_current = self.max_individual_current
+
         self._assign_mesh_lf_type_to_target()
-        for i, t in enumerate(self.target):
-            target_intensities[i] = t.intensity
+        weights = self.get_weights()
+        norm_constrained = [t.directions is None for t in self.target]
+
+        # Angle-constrained optimization
+        if any([t.max_angle is not None for t in self.target]):
+            if len(self.target) > 1:
+                raise ValueError("Can't apply angle constraints with multiple target")
+            t = self.target[0]
             max_angle = t.max_angle
-            t_mat, Q_target = t.calc_target_matrices(self.leadfield)
-            l_mat[i] = t_mat
-            if t.intensity < 0:
-                target_intensities[i] *= -1.
-                l_mat[i] *= -1.
+            indices, directions = t.get_indexes_and_directions()
+            assert max_angle > 0, 'max_angle must be >= 0'
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESLinearAngleConstrained(
+                    indices, directions,
+                    t.target_mean, max_angle, self.leadfield,
+                    max_total_current, max_individual_current,
+                    weights=weights, weights_target=t.get_weights()
+                )
 
-        if max_angle is not None and len(self.target) > 1:
-            raise ValueError("Can't apply angle constraints with multiple target (yet)")
+            else:
+                opt_problem = optimization_methods.TESLinearAngleElecConstrained(
+                    self.max_active_electrodes, indices, directions,
+                    t.target_mean, max_angle, self.leadfield,
+                    max_total_current, max_individual_current,
+                    weights, weights_target=t.get_weights()
+                )
 
-        if max_angle is not None:
-            assert max_angle > 0,\
-                    'max_angle should be positive'
+        # Norm-constrained optimization
+        elif any(norm_constrained):
+            if not all(norm_constrained):
+                raise ValueError("Can't mix norm and linear constrained optimization")
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESNormConstrained(
+                        self.leadfield, max_total_current,
+                        max_individual_current, weights
+                )
+            else:
+                opt_problem = optimization_methods.TESNormElecConstrained(
+                        self.max_active_electrodes,
+                        self.leadfield, max_total_current,
+                        max_individual_current, weights
+                )
+            for t in self.target:
+                if t.intensity < 0:
+                    raise ValueError('Intensity must be > 0')
+                opt_problem.add_norm_constraint(
+                    t.get_indexes_and_directions()[0], t.intensity,
+                    t.get_weights()
+                )
 
-        currents = optimization_methods.optimize_focality(
-            l_mat, Q_mat, target_intensities,
-            max_total_current=self.max_total_current,
-            max_el_current=self.max_individual_current,
-            max_active_electrodes=self.max_active_electrodes,
-            max_angle=max_angle,
-            Qin=Q_target,
-            log_level=10
-        )
+        # Simple QP-style optimization
+        else:
+            if self.max_active_electrodes is None:
+                opt_problem = optimization_methods.TESLinearConstrained(
+                    self.leadfield, max_total_current,
+                    max_individual_current, weights)
+
+            else:
+                opt_problem = optimization_methods.TESLinearElecConstrained(
+                    self.max_active_electrodes, self.leadfield,
+                    max_total_current, max_individual_current, weights)
+
+            for t in self.target:
+                opt_problem.add_linear_constraint(
+                    *t.get_indexes_and_directions(), t.intensity,
+                    t.get_weights()
+                )
+
+        currents = opt_problem.solve()
 
         logger.log(25, '\n' + self.summary(currents))
 
@@ -895,7 +1032,8 @@ class TDCSoptimize():
             max_c = np.max(np.abs(currents))
             v.add_view(Visible=1, RangeType=2,
                        ColorTable=gmsh_view._coolwarm_cm(),
-                       CustomMax=max_c, CustomMin=-max_c)
+                       CustomMax=max_c, CustomMin=-max_c,
+                       PointSize=10)
             v.write_opt(fn_out_mesh)
             if self.open_in_gmsh:
                 mesh_io.open_in_gmsh(fn_out_mesh, True)
@@ -909,7 +1047,6 @@ class TDCSoptimize():
     def field(self, currents):
         ''' Outputs the electric fields caused by the current combination
 
-        f[dset].attrs['d_type'] = 'node_data'
         Parameters
         -----------
         currents: N_elec x 1 ndarray
@@ -933,7 +1070,8 @@ class TDCSoptimize():
 
         return E
 
-    def electrode_geo(self, fn_out, currents=None, mesh_elec=None, elec_tags=None):
+    def electrode_geo(self, fn_out, currents=None, mesh_elec=None, elec_tags=None,
+                      elec_positions=None):
         ''' Creates a mesh with the electrodes and their currents
 
         Parameters
@@ -945,28 +1083,64 @@ class TDCSoptimize():
             self.leadfield_hdf
         elec_tags: N_elec x 1 ndarray of ints (optional)
             Tags of the electrodes corresponding to each leadfield column. The first is
-            the reference electrode. Default: lood at the attribute electrode_tags in the
+            the reference electrode. Default: load at the attribute electrode_tags in the
             leadfield dataset
+        elec_positions: N_elec x 3 ndarray of floats (optional)
+            Positions of the electrodes in the head. If mesh_elec is not defined, will
+            create small sphres at those positions instead.
+            Default: load at the attribute electrode_pos in the leadfield dataset
+
         '''
+        # First try to set the electrode visualizations using meshed electrodes
         if mesh_elec is None:
             if self.leadfield_hdf is not None:
                 try:
                     mesh_elec = mesh_io.Msh.read_hdf5(self.leadfield_hdf, 'mesh_electrodes')
                 except KeyError:
-                    raise IOError('Could not find mesh_electrodes in '
-                                  '{0}'.format(self.leadfield_hdf))
+                    pass
             else:
                 raise ValueError('Please define a mesh with the electrodes')
 
-        if elec_tags is None:
+        if elec_tags is None and mesh_elec is not None:
             if self.leadfield_hdf is not None:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
                     elec_tags = f[self.leadfield_path].attrs['electrode_tags']
             else:
                 raise ValueError('Please define the electrode tags')
+        
+        # If not, use point electrodes
+        if mesh_elec is None and elec_positions is None:
+            if self.leadfield_hdf is not None:
+                with h5py.File(self.leadfield_hdf, 'r') as f:
+                    elec_positions = f[self.leadfield_path].attrs['electrode_pos']
+            else:
+                raise ValueError('Please define the electrode positions')
 
+        if mesh_elec is not None:
+            elec_pos = self._electrode_geo_triangles(fn_out, currents, mesh_elec, elec_tags)
+            # elec_pos is used for writing electrode names
+        elif elec_positions is not None:
+            self._electrode_geo_points(fn_out, currents, elec_positions)
+            elec_pos = elec_positions
+        else:
+            raise ValueError('Neither mesh_elec nor elec_positions defined')
+        if self.leadfield_hdf is not None:
+            with h5py.File(self.leadfield_hdf, 'r') as f:
+                try:
+                    elec_names = f[self.leadfield_path].attrs['electrode_names']
+                    elec_names = [n.decode() for n in elec_names]
+                except KeyError:
+                    elec_names = None
+
+            if elec_names is not None:
+                mesh_io.write_geo_text(
+                    elec_pos, elec_names,
+                    fn_out, name="electrode_names", mode='ba')
+
+    def _electrode_geo_triangles(self, fn_out, currents, mesh_elec, elec_tags):
         if currents is None:
             currents = np.ones(len(elec_tags))
+
         assert len(elec_tags) == len(currents), 'Define one current per electrode'
 
         triangles = []
@@ -989,60 +1163,14 @@ class TDCSoptimize():
             triangles - 1, mesh_elec.nodes.node_coord,
             fn_out, values, 'electrode_currents')
 
-        if self.leadfield_hdf is not None:
-            with h5py.File(self.leadfield_hdf, 'r') as f:
-                try:
-                    elec_names = f[self.leadfield_path].attrs['electrode_names']
-                    elec_names = [n.decode() for n in elec_names]
-                except KeyError:
-                    elec_names = None
+        return elec_pos
 
-            if elec_names is not None:
-                mesh_io.write_geo_text(
-                    elec_pos, elec_names,
-                    fn_out, name="electrode_names", mode='ba')
+    def _electrode_geo_points(self, fn_out, currents, elec_positions):
+        if currents is None:
+            currents = np.ones(len(elec_positions))
 
-
-    def electrode_geo_old(self, fn_out, currents=None, elec_pos=None, elec_names=None):
-        ''' Creates a .geo file with electrodes currents/positions and/or names
-
-        Parameters
-        -------------
-        fn_out: str
-            Output name of .geo file
-        ALL THE BELOW ARE AUTOMATICALLY FILLED BY THE LEADFIELD
-        currents: Nx1 ndarray (optional)
-            Currents through the electrodes. If set, will create spheres with the
-            currents in the .geo file
-        elec_pos: Nx3 ndarray (optional)
-            Electrode positions in the subject space. If not set will look into the
-            leadfield
-        elec_names: list with names of the electrdes (optional)
-            Names of the electrodes
-        '''
-        if self.leadfield_hdf is not None:
-            if elec_pos is None:
-                with h5py.File(self.leadfield_hdf, 'r') as f:
-                    elec_pos = f[self.leadfield_path].attrs['electrode_pos']
-
-            if elec_names is None:
-                with h5py.File(self.leadfield_hdf, 'r') as f:
-                    try:
-                        elec_names = f[self.leadfield_path].attrs['electrode_names']
-                        elec_names = [n.decode() for n in elec_names]
-                    except KeyError:
-                        pass
-
-        if elec_pos is None:
-            raise ValueError('please define either elec_pos or a valid leadfield')
-
-        if os.path.isfile(fn_out):
-            os.remove(fn_out)
-
-        if currents is not None:
-            mesh_io.write_geo_spheres(
-                elec_pos, fn_out,
-                values=currents, name="Electrode Currents", mode='bw')
+        assert len(elec_positions) == len(currents), 'Define one current per electrode'
+        mesh_io.write_geo_spheres(elec_positions, fn_out, currents, "electrode_currents")
 
 
 
@@ -1154,6 +1282,7 @@ class TDCSoptimize():
         logger.removeHandler(fh)
         logger.removeHandler(fh_s)
 
+        return fn_out_mesh
 
     def __str__(self):
         s = 'Optimization set-up\n'
@@ -1237,8 +1366,8 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimied for each mesh point or the
-        string 'normal', Default: 'normal'
+        List of Electric field directions to be optimied for each mesh point, the string
+        'normal' or None (for norm optimization), Default: 'normal'
     intensity: float (optional)
         Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
@@ -1251,7 +1380,7 @@ class TDCStarget:
         Tissues included in the target. Either a list of integer with tissue tags or None
         for all tissues. Default: None
 
-    THE ONES BELOW SHOULD NOT BE FILLED BY THE USERS IN NORMAL CIRCUNTANCES:
+    THE ONES BELOW SHOULD NOT BE FILED BY THE USERS IN NORMAL CIRCUNTANCES:
     mesh: simnibs.msh.mesh_io.Msh (optional)
         Mesh where the target is defined. Set by the TDCSoptimize methods
     lf_type: 'node' or 'element'
@@ -1261,15 +1390,37 @@ class TDCStarget:
     def __init__(self, positions=None, indexes=None, directions='normal',
                  intensity=0.2, max_angle=None, radius=2, tissues=None,
                  mesh=None, lf_type=None):
+
         self.lf_type = lf_type
         self.mesh = mesh
         self.radius = radius
         self.tissues = tissues
         self.positions = positions
         self.indexes = indexes
-        self.directions = directions
         self.intensity = intensity
         self.max_angle = max_angle
+        self.directions = directions
+
+    @property
+    def directions(self):
+        return self._directions
+
+    @directions.setter
+    def directions(self, value):
+        if value == 'normal':
+            pass
+        elif value == 'none':
+            value = None
+        elif isinstance(value, str):
+            raise ValueError(
+                'Invalid value for directions: f{directions} '
+                'valid arguments are "normal", "none" or an array'
+            )
+        if value is None and self.max_angle is not None:
+            raise ValueError(
+                "Can't constrain angle in norm optimizations"
+            )
+        self._directions = value
 
 
     @classmethod
@@ -1322,27 +1473,7 @@ class TDCStarget:
 
         return cls(positions, indexes, directions, intensity, max_angle, radius, tissues)
 
-    def calc_target_matrices(self, leadfield):
-        ''' Calculates target-specific matrices
-
-        Parameters
-        -----------
-        leadfield: N_elec-1 x M x 3 ndarray
-            Leadfield to be used for calculations
-
-        Returns
-        ----------
-        t_matrix: N_elec x 1 ndarray
-            Array such that t_matrix.dot(x) is the mean electric field in the target
-            region and directions
-        Q_matrix: N_elec x N_elec
-            Matrix that calculates the mean squared norm electric field in the target
-            region
-        '''
-        if (self.positions is None) == (self.indexes is None): # negative XOR operation
-            raise ValueError('Please set either positions or indexes')
-        assert self.directions is not None, 'Please set directions'
-        assert self.mesh is not None, 'Please set a mesh'
+    def get_weights(self):
         assert self.lf_type is not None, 'Please set a lf_type'
 
         if self.lf_type == 'node':
@@ -1353,8 +1484,18 @@ class TDCStarget:
             raise ValueError('Invalid lf_type: {0}, should be '
                              '"element" or "node"'.format(self.lf_type))
 
-        # Use the radius and tissue information to find the final indexes for the
-        # optimization
+        return weights
+
+    def get_indexes_and_directions(self):
+        ''' Calculates the mesh indexes and directions corresponding to this target
+        Returns
+        ----------
+        indexes: (n,) ndarray of ints
+            0-based region indexes
+
+        indexes: (n,3) ndarray of floats
+            Target directions
+        '''
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
                                          indexes=self.indexes,
@@ -1364,9 +1505,9 @@ class TDCStarget:
         directions = _find_directions(self.mesh, self.lf_type,
                                       self.directions, indexes,
                                       mapping)
+        
+        return indexes-1, directions
 
-        return optimization_methods.target_matrices(
-            leadfield, indexes - 1, directions, weights)
 
     def as_field(self, name='target_field'):
         ''' Returns the target as an ElementData or NodeData field
@@ -1385,11 +1526,16 @@ class TDCStarget:
 
         assert self.mesh is not None, 'Please set a mesh'
 
+        if self.directions is None:
+            nr_comp = 1
+        else:
+            nr_comp = 3
+
         if self.lf_type == 'node':
-            field = np.zeros((self.mesh.nodes.nr, 3))
+            field = np.zeros((self.mesh.nodes.nr, nr_comp))
             field_type = mesh_io.NodeData
         elif self.lf_type == 'element':
-            field = np.zeros((self.mesh.elm.nr, 3))
+            field = np.zeros((self.mesh.elm.nr, nr_comp))
             field_type = mesh_io.ElementData
         else:
             raise ValueError("lf_type must be 'node' or 'element'."
@@ -1401,11 +1547,15 @@ class TDCStarget:
                                          tissues=self.tissues,
                                          radius=self.radius)
 
-        directions = _find_directions(self.mesh, self.lf_type,
-                                      self.directions, indexes,
-                                      mapping)
-
-        field[indexes-1] = directions * self.intensity
+        if self.directions is None:
+            field[indexes-1] = self.intensity
+        else:
+            directions = _find_directions(
+                self.mesh, self.lf_type,
+                self.directions, indexes,
+                mapping
+            )
+            field[indexes-1] = directions * self.intensity
 
         return field_type(field, name, mesh=self.mesh)
 
@@ -1434,12 +1584,16 @@ class TDCStarget:
                                          tissues=self.tissues,
                                          radius=self.radius)
 
-        directions = _find_directions(self.mesh, self.lf_type,
-                                      self.directions, indexes,
-                                      mapping)
-
         f = field[indexes]
-        components = np.sum(f * directions, axis=1)
+        if self.directions is None:
+            components = np.linalg.norm(f, axis=1)
+
+        else:
+            directions = _find_directions(self.mesh, self.lf_type,
+                                          self.directions, indexes,
+                                          mapping)
+
+            components = np.sum(f * directions, axis=1)
 
         if self.lf_type == 'node':
             weights = self.mesh.nodes_volumes_or_areas()[indexes]
@@ -1470,6 +1624,8 @@ class TDCStarget:
 
         assert self.mesh is not None, 'Please set a mesh'
         assert field.nr_comp == 3, 'Field must have 3 components'
+        if self.directions is None:
+            return np.nan
 
         indexes, mapping = _find_indexes(self.mesh, self.lf_type,
                                          positions=self.positions,
@@ -1633,7 +1789,7 @@ class TDCSavoid:
         '''
         assert self.mesh is not None, 'Please set a mesh'
         assert self.lf_type is not None, 'Please set a lf_type'
-        assert self.weight > 0, 'Weights must be > 0'
+        assert self.weight >= 0, 'Weights must be >= 0'
         if self.lf_type == 'node':
             f = np.ones(self.mesh.nodes.nr)
         elif self.lf_type == 'element':
@@ -1644,6 +1800,8 @@ class TDCSavoid:
 
         indexes = self._get_avoid_region()
         f[indexes - 1] = self.weight
+        if len(indexes) == 0:
+            raise ValueError('Empty avoid region!')
 
         return f
 
@@ -1703,6 +1861,547 @@ class TDCSavoid:
                  str(self.tissues)))
         return s
 
+class TDCSDistributedOptimize():
+    ''' Defines a tdcs optimization problem with distributed sources
+
+    This function uses the problem setup from
+
+    Ruffini et al. "Optimization of multifocal transcranial current
+    stimulation for weighted cortical pattern targeting from realistic modeling of
+    electric fields", NeuroImage, 2014 
+    
+    And the algorithm from
+
+    Saturnino et al. "Accessibility of cortical regions to focal TES:
+    Dependence on spatial position, safety, and practical constraints."
+    NeuroImage, 2019
+
+    Parameters
+    --------------
+    leadfield_hdf: str (optional)
+        Name of file with leadfield
+    max_total_current: float (optional)
+        Maximum current across all electrodes (in Amperes). Default: 2e-3
+    max_individual_current: float (optional)
+        Maximum current for any single electrode (in Amperes). Default: 1e-3
+    max_active_electrodes: int (optional)
+        Maximum number of active electrodes. Default: no maximum
+    name: str (optional)
+        Name of optimization problem. Default: optimization
+    target_image: str or pair (array, affine)
+        Image to be "reproduced" via the optimization
+    mni_space: bool (optional)
+        Wether the image is in MNI space. Default True
+    subpath: str (optional)
+        Path to the subject "m2m" folder. Needed if mni_space=True
+    intensity: float
+        Target field intensity
+    min_img_value: float >= 0 (optional)
+        minimum image (for example t value) to be considered. Corresponds to T_min in
+        Ruffini et al. 2014. Default: 0
+    open_in_gmsh: bool (optional)
+        Whether to open the result in Gmsh after the calculations. Default: False
+
+    Attributes
+    --------------
+    leadfield_hdf: str
+        Name of file with leadfield
+    max_total_current: float (optional)
+        Maximum current across all electrodes (in Amperes). Default: 2e-3
+    max_individual_current: float
+        Maximum current for any single electrode (in Amperes). Default: 1e-3
+    max_active_electrodes: int
+        Maximum number of active electrodes. Default: no maximum
+    ledfield_path: str
+        Path to the leadfield in the hdf5 file. Default: '/mesh_leadfield/leadfields/tdcs_leadfield'
+    mesh_path: str
+        Path to the mesh in the hdf5 file. Default: '/mesh_leadfield/'
+
+    The two above are used to define:
+
+    mesh: simnibs.msh.mesh_io.Msh
+        Mesh with problem geometry
+
+    leadfield: np.ndarray
+        Leadfield matrix (N_elec -1 x M x 3) where M is either the number of nodes or the
+        number of elements in the mesh. We assume that there is a reference electrode
+
+    Alternatively, you can set the three attributes above and not leadfield_path,
+    mesh_path and leadfield_hdf
+
+    lf_type: None, 'node' or 'element'
+        Type of leadfield.
+
+    name: str
+        Name for the optimization problem. Defaults tp 'optimization'
+
+    target_image: str or pair (array, affine)
+        Image to be "reproduced" via the optimization
+
+    mni_space: bool (optional)
+        Wether the image is in MNI space. Default True
+
+    subpath: str (optional)
+        Path to the subject "m2m" folder. Needed if mni_space=True
+
+    intensity: float
+        Target field intensity
+
+    min_img_value: float >= 0 (optional)
+        minimum image (for example t value) to be considered. Corresponds to T_min in
+        Ruffini et al. 2014. Default: 0
+
+    open_in_gmsh: bool (optional)
+        Whether to open the result in Gmsh after the calculations. Default: False
+
+    Warning
+    -----------
+    Changing leadfield_hdf, leadfield_path and mesh_path after constructing the class
+    can cause unexpected behaviour
+    '''
+    def __init__(self, leadfield_hdf=None,
+                 max_total_current=2e-3,
+                 max_individual_current=1e-3,
+                 max_active_electrodes=None,
+                 name='optimization/tdcs',
+                 target_image=None,
+                 mni_space=True,
+                 subpath=None,
+                 intensity=0.2,
+                 min_img_value=0,
+                 open_in_gmsh=True):
+
+        self._tdcs_opt_obj = TDCSoptimize(
+            leadfield_hdf=leadfield_hdf,
+            max_total_current=max_total_current,
+            max_individual_current=max_individual_current,
+            max_active_electrodes=max_active_electrodes,
+            name=name,
+            target=[],
+            avoid=[],
+            open_in_gmsh=open_in_gmsh
+        )
+        self.max_total_current = max_total_current
+        self.max_individual_current = max_individual_current
+        self.max_active_electrodes = max_active_electrodes
+        self.leadfield_path = '/mesh_leadfield/leadfields/tdcs_leadfield'
+        self.mesh_path = '/mesh_leadfield/'
+        self.target_image = target_image
+        self.mni_space = mni_space
+        self.open_in_gmsh = open_in_gmsh
+        self.subpath = subpath
+        self.name = name
+
+        self.intensity = intensity
+        self.min_img_value = min_img_value
+
+        if min_img_value < 0:
+            raise ValueError('min_img_value must be > 0')
+
+    @property
+    def lf_type(self):
+        self._tdcs_opt_obj.mesh = self.mesh
+        self._tdcs_opt_obj.leadfield = self.leadfield
+
+        return self._tdcs_opt_obj.lf_type
+
+    @property
+    def leadfield_hdf(self):
+        return self._tdcs_opt_obj.leadfield_hdf
+
+    @leadfield_hdf.setter
+    def leadfield_hdf(self, leadfield_hdf):
+        self._tdcs_opt_obj.leadfield_hdf = leadfield_hdf
+
+    @property
+    def leadfield_path(self):
+        return self._tdcs_opt_obj.leadfield_path
+
+    @leadfield_path.setter
+    def leadfield_path(self, leadfield_path):
+        self._tdcs_opt_obj.leadfield_path = leadfield_path
+
+    @property
+    def mesh_path(self):
+        return self._tdcs_opt_obj.mesh_path
+
+    @mesh_path.setter
+    def mesh_path(self, mesh_path):
+        self._tdcs_opt_obj.mesh_path = mesh_path
+
+    @property
+    def name(self):
+        return self._tdcs_opt_obj.name
+
+    @name.setter
+    def name(self, name):
+        self._tdcs_opt_obj.name = name
+
+    @property
+    def leadfield(self):
+        ''' Reads the leadfield from the HDF5 file'''
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj.leadfield
+
+    @leadfield.setter
+    def leadfield(self, leadfield):
+        self._tdcs_opt_obj.leadfield = leadfield
+
+    @property
+    def mesh(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj.mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._tdcs_opt_obj.mesh = mesh
+
+    @property
+    def field_name(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj._field_name
+
+
+    @field_name.setter
+    def field_name(self, field_name):
+        self._tdcs_opt_obj._field_name = field_name
+
+    @property
+    def field_units(self):
+        self._tdcs_opt_obj.leadfield_hdf = self.leadfield_hdf
+        return self._tdcs_opt_obj._field_units
+
+    def to_mat(self):
+        """ Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+
+        Returns
+        --------------------
+        dict
+            Dictionaty for usage with scipy.io.savemat
+        """
+        mat = {}
+        mat['type'] = 'TDCSDistributedOptimize'
+        mat['leadfield_hdf'] = remove_None(self.leadfield_hdf)
+        mat['max_total_current'] = remove_None(self.max_total_current)
+        mat['max_individual_current'] = remove_None(self.max_individual_current)
+        mat['max_active_electrodes'] = remove_None(self.max_active_electrodes)
+        mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
+        mat['name'] = remove_None(self.name)
+        mat['target_image'] = remove_None(self.target_image)
+        mat['mni_space'] = remove_None(self.mni_space)
+        mat['subpath'] = remove_None(self.subpath)
+        mat['intensity'] = remove_None(self.intensity)
+        mat['min_img_value'] = remove_None(self.min_img_value)
+
+        return mat
+
+    @classmethod
+    def read_mat_struct(cls, mat):
+        '''Reads a .mat structure
+
+        Parameters
+        -----------
+        mat: dict
+            Dictionary from scipy.io.loadmat
+
+        Returns
+        ----------
+        p: TDCSoptimize
+            TDCSoptimize structure
+        '''
+        t = cls()
+        leadfield_hdf = try_to_read_matlab_field(
+            mat, 'leadfield_hdf', str, t.leadfield_hdf)
+        max_total_current = try_to_read_matlab_field(
+            mat, 'max_total_current', float, t.max_total_current)
+        max_individual_current = try_to_read_matlab_field(
+            mat, 'max_individual_current', float, t.max_individual_current)
+        max_active_electrodes = try_to_read_matlab_field(
+            mat, 'max_active_electrodes', int, t.max_active_electrodes)
+        open_in_gmsh = try_to_read_matlab_field(
+            mat, 'open_in_gmsh', bool, t.open_in_gmsh)
+        name = try_to_read_matlab_field(
+            mat, 'name', str, t.name)
+        target_image = try_to_read_matlab_field(
+            mat, 'target_image', str, t.target_image)
+        mni_space = try_to_read_matlab_field(
+            mat, 'mni_space', bool, t.mni_space)
+        subpath = try_to_read_matlab_field(
+            mat, 'subpath', str, t.subpath)
+        intensity = try_to_read_matlab_field(
+            mat, 'intensity', float, t.intensity)
+        min_img_value = try_to_read_matlab_field(
+            mat, 'min_img_value', float, t.min_img_value)
+
+        return cls(
+            leadfield_hdf=leadfield_hdf,
+            max_total_current=max_total_current,
+            max_individual_current=max_individual_current,
+            max_active_electrodes=max_active_electrodes,
+            name=name,
+            target_image=target_image,
+            mni_space=mni_space,
+            subpath=subpath,
+            intensity=intensity,
+            min_img_value=min_img_value,
+            open_in_gmsh=open_in_gmsh
+        )
+
+    def _target_distribution(self):
+        ''' Gets the y and W fields, by interpolating the target_image
+        
+        Based on Eq. 1 from
+        Ruffini et al. "Optimization of multifocal transcranial current
+        stimulation for weighted cortical pattern targeting from realistic modeling of
+        electric fields", NeuroImage, 2014 
+        '''
+        assert self.mesh is not None, 'Please set a mesh'
+        assert self.min_img_value >= 0, 'min_img_value must be >= 0'
+        assert self.intensity is not None, 'intensity not set'
+        # load image
+        if isinstance(self.target_image, str):
+            img = nibabel.load(self.target_image)
+            vol = np.array(img.dataobj)
+            affine = img.affine
+        else:
+            vol, affine = self.target_image
+        # if in MNI space, tranfrom coordinates
+        if self.mni_space:
+            if self.subpath is None:
+                raise ValueError('subpath not set!')
+            nodes_mni = transformations.subject2mni_coords(
+                self.mesh.nodes[:], self.subpath
+            )
+            orig_nodes = np.copy(self.mesh.nodes[:])
+            self.mesh.nodes.node_coord = nodes_mni
+        # Interpolate
+        if self.lf_type == 'node':
+            field = mesh_io.NodeData.from_data_grid(self.mesh, vol, affine)
+        elif self.lf_type == 'element':
+            field = mesh_io.ElementData.from_data_grid(self.mesh, vol, affine)
+
+        if self.mni_space:
+            self.mesh.nodes.node_coord = orig_nodes
+
+        field = field[:]
+
+        W = np.abs(field)
+        W[np.abs(field) < self.min_img_value] = self.min_img_value
+        y = field[:].copy()
+        y[np.abs(field) < self.min_img_value] = 0
+        y *= self.intensity
+
+        if np.all(np.abs(field) < self.min_img_value):
+            raise ValueError('Target image values are below min_img_value!')
+        return y, W
+
+    def normal_directions(self):
+        assert self.mesh is not None, 'Please set a mesh'
+        assert self.lf_type is not None, 'Please set a lf_type'
+
+        if 4 in self.mesh.elm.elm_type:
+            raise ValueError("Can't define a normal direction for volumetric data!")
+
+        if self.lf_type == 'node':
+            normals = self.mesh.nodes_normals()[:]
+        elif self.lf_type == 'element':
+            normals = self.mesh.triangle_normals()[:]
+
+        return -normals
+
+    def field(self, currents):
+        ''' Outputs the electric fields caused by the current combination
+
+        Parameters
+        -----------
+        currents: N_elec x 1 ndarray
+            Currents going through each electrode, in A. Usually from the optimize
+            method. The sum should be approximately zero
+
+        Returns
+        ----------
+        E: simnibs.mesh.NodeData or simnibs.mesh.ElementData
+            NodeData or ElementData with the field caused by the currents
+        '''
+        return self._tdcs_opt_obj.field(currents)
+
+    def field_mesh(self, currents):
+        ''' Creates showing the targets and the field
+        Parameters
+        -------------
+        currents: N_elec x 1 ndarray
+            Currents going through each electrode, in A. Usually from the optimize
+            method. The sum should be approximately zero
+
+        Returns
+        ---------
+        results: simnibs.msh.mesh_io.Msh
+            Mesh file
+        ''' 
+        e_field = self.field(currents)
+        e_norm_field = e_field.norm()
+        normals = self.normal_directions()
+        e_normal_field = np.sum(e_field[:]*normals, axis=1)
+        target_map, W = self._target_distribution()
+        erni = (target_map - W*e_normal_field) ** 2 - target_map ** 2
+        erni *= len(target_map)/np.sum(W)
+
+        m = copy.deepcopy(self.mesh)
+        if self.lf_type == 'node':
+            add_field = m.add_node_field
+        elif self.lf_type == 'element':
+            add_field = m.add_element_field
+
+        add_field(e_field, e_field.field_name)
+        add_field(e_norm_field, e_norm_field.field_name)
+        add_field(e_normal_field, 'normal' + e_field.field_name)
+        add_field(target_map, 'target_map')
+        add_field(erni, 'ERNI')
+        return m
+
+    def optimize(self, fn_out_mesh=None, fn_out_csv=None):
+        ''' Runs the optimization problem
+
+        Parameters
+        -------------
+        fn_out_mesh: str
+            If set, will write out the electric field and currents to the mesh
+
+        fn_out_mesh: str
+            If set, will write out the currents and electrode names to a CSV file
+
+
+        Returns
+        ------------
+        currents: N_elec x 1 ndarray
+            Optimized currents. The first value is the current in the reference electrode
+        '''
+        assert self.leadfield is not None, 'Leadfield not defined'
+        assert self.mesh is not None, 'Mesh not defined'
+        if self.max_active_electrodes is not None:
+            assert self.max_active_electrodes > 1, \
+                'The maximum number of active electrodes should be at least 2'
+
+        if self.max_total_current is None:
+            logger.warning('Maximum total current not set!')
+            max_total_current = 1e3
+        else:
+            assert self.max_total_current > 0
+            max_total_current = self.max_total_current
+
+        if self.max_individual_current is None:
+            max_individual_current = max_total_current
+
+        else:
+            assert self.max_individual_current > 0
+            max_individual_current = self.max_individual_current
+
+        assert self.min_img_value is not None, 'min_img_value not set'
+        assert self.intensity is not None, 'intensity not set'
+
+        y, W = self._target_distribution()
+        normals = self.normal_directions()
+        weights = np.sqrt(self._tdcs_opt_obj.get_weights())
+
+        if self.max_active_electrodes is None:
+            opt_problem = optimization_methods.TESDistributed(
+                W[None, :, None] * self.leadfield,
+                y[:, None]*normals, weights[:, None]*normals,
+                max_total_current,
+                max_individual_current
+            )
+        else:
+            opt_problem = optimization_methods.TESDistributedElecConstrained(
+                self.max_active_electrodes,
+                W[None, :, None] * self.leadfield,
+                y[:, None]*normals, weights[:, None]*normals,
+                max_total_current,
+                max_individual_current
+            )
+
+        currents = opt_problem.solve()
+
+        logger.log(25, '\n' + self.summary(currents))
+
+        if fn_out_mesh is not None:
+            fn_out_mesh = os.path.abspath(fn_out_mesh)
+            m = self.field_mesh(currents)
+            m.write(fn_out_mesh)
+            v = m.view()
+            ## Configure view
+            v.Mesh.SurfaceFaces = 0
+            v.View[2].Visible = 1
+            # Electrode geo file
+            el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
+            self._tdcs_opt_obj.electrode_geo(el_geo_fn, currents)
+            v.add_merge(el_geo_fn)
+            max_c = np.max(np.abs(currents))
+            v.add_view(Visible=1, RangeType=2,
+                       ColorTable=gmsh_view._coolwarm_cm(),
+                       CustomMax=max_c, CustomMin=-max_c)
+            v.write_opt(fn_out_mesh)
+            if self.open_in_gmsh:
+                mesh_io.open_in_gmsh(fn_out_mesh, True)
+
+
+        if fn_out_csv is not None:
+            self._tdcs_opt_obj.write_currents_csv(currents, fn_out_csv)
+
+        return currents
+
+    def __str__(self):
+        s = 'Optimization set-up\n'
+        s += '===========================\n'
+        s += 'Leadfield file: {0}\n'.format(self.leadfield_hdf)
+        s += 'Max. total current: {0} (A)\n'.format(self.max_total_current)
+        s += 'Max. individual current: {0} (A)\n'.format(self.max_individual_current)
+        s += 'Max. active electrodes: {0}\n'.format(self.max_active_electrodes)
+        s += 'Name: {0}\n'.format(self.name)
+        s += '----------------------\n'
+        s += 'Target image: {0}\n'.format(self.target_image)
+        s += 'MNI space: {0}\n'.format(self.mni_space)
+        s += 'Min. image value: {0}\n'.format(self.min_img_value)
+        s += 'Target intensity: {0}\n'.format(self.intensity)
+        return s
+
+
+    def summary(self, currents):
+        ''' Returns a string with a summary of the optimization
+
+        Parameters
+        ------------
+        field: ElementData or NodeData
+            Field of interest
+
+        Returns
+        ------------
+        summary: str
+            Summary of field
+        '''
+        s = self._tdcs_opt_obj.summary(currents)
+        # Calculate erri
+        field = self.field(currents)[:]
+        normals = self.normal_directions()
+        field_normal = np.sum(field * normals, axis=1)
+        y, W = self._target_distribution()
+        erri =  np.sum((y - field_normal * W)**2 - y**2)
+        erri *= len(y) /np.sum(W**2)
+        # add Erri to messaga
+        s += f'Error Relative to Non Intervention (ERNI): {erri:.2e}\n'
+        return s
+
+
+    def run(self, cpus=1):
+        ''' Interface to use with the run_simnibs function
+
+        Parameters
+        ---------------
+        cpus: int (optional)
+            Does not do anything, it is just here for the common interface with the
+            simulation's run function
+        '''
+        return TDCSoptimize.run(self)
+
 
 def _save_TDCStarget_mat(target):
     target_dt = np.dtype(
@@ -1727,7 +2426,6 @@ def _save_TDCStarget_mat(target):
              dtype=target_dt)
 
     return target_mat
-
 
 
 def _save_TDCSavoid_mat(avoid):
@@ -1804,6 +2502,8 @@ def _find_indexes(mesh, lf_type, indexes=None, positions=None, tissues=None, rad
         return mesh_indexes[indexes],  np.arange(len(indexes))
 
 def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
+    if directions is None:
+        return None
     if directions == 'normal':
         if 4 in np.unique(mesh.elm.elm_type):
             raise ValueError("Can't define a normal direction for volumetric data!")

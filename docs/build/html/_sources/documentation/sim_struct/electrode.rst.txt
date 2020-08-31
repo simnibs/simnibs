@@ -102,7 +102,7 @@ Attributes
        electrode.dimensions = [50, 70]
 
     \
-    To create a small 2cm radius electrode in Cz, use
+    To create a small 2cm (20mm) diameter electrode in Cz, use
 
     .. code-block:: python
 

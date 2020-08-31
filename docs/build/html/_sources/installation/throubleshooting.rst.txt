@@ -1,11 +1,16 @@
+.. _install_throubleshooting:
+
 Troubleshooting
 ===============
 
-* If you are on can't see SimNIBS commands in your Linux or OSX terminal, be sure that you are using a **bash** terminal, **not tcsh**
-
-* If you are experiencing problems during the install, be sure that you can connect to `<https://repo.continuum.io/>`_ and `<https://github.com/>`_
-
 * Antivirus software and other security features might interfere with the installation.
+
+* if you are seeing the error messages such as
+
+    * :code:`.plugin: Could not find the Qt platform plugin "xcb" in ""`
+    * :code:`.plugin: Could not find the Qt platform plugin "windows" in ""`
+
+    You likely have `non-ASCII charactes <https://en.wikipedia.org/wiki/ASCII>`_ (e.g. Chinese characters) in your installation path. Please change the installation path so that it only includes ASCII characters.
 
 * Often times, :ref:`installing with the conda package manager <conda-install>` can help overcome problems with the installer. Please try it out
 

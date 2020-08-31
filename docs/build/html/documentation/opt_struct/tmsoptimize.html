@@ -1,22 +1,24 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>TMSoptimize &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TMSoptimize &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Output Files" href="../output_files.html" />
-    <link rel="prev" title="TDCSavoid" href="tdcsavoid.html" />
+    <link rel="prev" title="TDCSDistributedOptimize" href="tdcsdistributedoptimize.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -35,7 +37,7 @@
     <ul>
         <li>
           &larr;
-          <a href="tdcsavoid.html" title="Previous document">TDCSavoid</a>
+          <a href="tdcsdistributedoptimize.html" title="Previous document">TDCSDistributedOptimize</a>
         </li>
         <li>
           <a href="../output_files.html" title="Next document">Output Files</a>
@@ -202,6 +204,12 @@
 <li><p><strong>Default</strong>: Use the CG solver with the AMG preconditioner</p></li>
 </ul>
 </li>
+<li><p><strong>method</strong>: <em>‘direct’ or ‘ADM’, optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: Method to be used for the solution. Can be either a <code class="code docutils literal notranslate"><span class="pre">direct</span></code> method, which will perform electric field simulations at each coil position or the Auxiliary Dipole Method (ADM, <a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez 2020</a>), which uses reciprocity and the fast multipole method (FMM) to massively accelerate the optimization. The ADM method is only compatible with <code class="file docutils literal notranslate"><span class="pre">.ccd</span></code> coil files</p></li>
+<li><p><strong>Default</strong>: <code class="code docutils literal notranslate"><span class="pre">direct</span></code></p></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -214,7 +222,7 @@
     <ul>
         <li>
           &larr;
-          <a href="tdcsavoid.html" title="Previous document">TDCSavoid</a>
+          <a href="tdcsdistributedoptimize.html" title="Previous document">TDCSDistributedOptimize</a>
         </li>
         <li>
           <a href="../output_files.html" title="Next document">Output Files</a>
@@ -273,7 +281,7 @@
   <li><a href="../../index.html">Documentation overview</a><ul>
   <li><a href="../documentation.html">Documentation</a><ul>
   <li><a href="opt_struct.html">Optimization Data Structures</a><ul>
-      <li>Previous: <a href="tdcsavoid.html" title="previous chapter">TDCSavoid</a></li>
+      <li>Previous: <a href="tdcsdistributedoptimize.html" title="previous chapter">TDCSDistributedOptimize</a></li>
       <li>Next: <a href="../output_files.html" title="next chapter">Output Files</a></li>
   </ul></li>
   </ul></li>
@@ -289,7 +297,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -306,7 +314,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

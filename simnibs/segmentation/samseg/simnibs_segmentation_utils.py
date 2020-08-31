@@ -1,14 +1,19 @@
-from . import gemsbindings as gems
+import charm_gems as gems
 from .ProbabilisticAtlas import ProbabilisticAtlas
 from .SamsegUtility import undoLogTransformAndBiasField, writeImage, maskOutBackground, logTransform, readCroppedImages
 from .GMM import GMM
 import numpy as np
 import nibabel as nib
+from simnibs.segmentation._cat_c_utils import cat_vbdist
 
+# TODO! remove
+import os
 
 def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             output_name_segmentation,
-                                            parameters_and_inputs):
+                                            parameters_and_inputs,
+                                            cat_structure_options=None,
+                                            cat_images=None):
 
     # We need an init of the probabilistic segmentation class
     # to call instance methods
@@ -50,19 +55,33 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
     means = GMMparameters['means']
     variances = GMMparameters['variances']
     mixtureWeights = GMMparameters['mixtureWeights']
-
-    structureNumbers = _calculateSegmentationLoop(
-                imageBuffers - biasFields,
-                mask, fractionsTable, mesh,
-                numberOfGaussiansPerClass,
-                means, variances, mixtureWeights)
-
+    names = parameters_and_inputs['names']
+    bg_label = names.index("Background")
     FreeSurferLabels = np.array(modelSpecifications.FreeSurferLabels,
                                 dtype=np.uint16)
-    segmentation = FreeSurferLabels[structureNumbers]
-    segmentation = segmentation.reshape(imageBuffers.shape[0:3])
+
+    if cat_structure_options is not None:
+        segmentation, cat_norm_scan_masks = _calculateSegmentationLoop(
+                                            imageBuffers - biasFields,
+                                            mask, fractionsTable, mesh,
+                                            numberOfGaussiansPerClass,
+                                            means, variances, mixtureWeights,
+                                            FreeSurferLabels, bg_label,
+                                            cat_opts=cat_structure_options)
+    else:
+        segmentation = _calculateSegmentationLoop(
+                        imageBuffers - biasFields,
+                        mask, fractionsTable, mesh,
+                        numberOfGaussiansPerClass,
+                        means, variances, mixtureWeights,
+                        FreeSurferLabels, bg_label)
+        
     writeImage(output_name_segmentation,
                segmentation, cropping, exampleImage)
+    
+    if cat_structure_options is not None and cat_images is not None:
+        for inds, name in enumerate(cat_images):
+            writeImage(name, cat_norm_scan_masks[inds], cropping, exampleImage)
 
 
 def segmentUpsampled(input_bias_corrected, tissue_settings,
@@ -112,24 +131,23 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
     means = GMMparameters['means']
     variances = GMMparameters['variances']
     mixtureWeights = GMMparameters['mixtureWeights']
-
-    upsampledStructureNumbers = _calculateSegmentationLoop(
+    names = parameters_and_inputs['names']
+    bg_label = names.index("Background")
+    FreeSurferLabels = np.array(modelSpecifications.FreeSurferLabels,
+                                dtype=np.uint16)
+    segmentation = _calculateSegmentationLoop(
                 imageBuffersUpsampled,
                 maskUpsampled, fractionsTable, meshUpsampled,
                 numberOfGaussiansPerClass,
-                means, variances, mixtureWeights)
-
-    FreeSurferLabels = np.array(modelSpecifications.FreeSurferLabels,
-                                dtype=np.uint16)
-    segmentation = FreeSurferLabels[upsampledStructureNumbers]
-    segmentation = segmentation.reshape(imageBuffersUpsampled.shape[0:3])
+                means, variances, mixtureWeights, FreeSurferLabels, bg_label)
 
     simnibs_tissues = tissue_settings['simnibs_tissues']
     segmentation_tissues = tissue_settings['segmentation_tissues']
 
     tissue_labeling = np.zeros_like(segmentation)
     for t, label in simnibs_tissues.items():
-        tissue_labeling[np.isin(segmentation, segmentation_tissues[t])] = label
+        tissue_labeling[np.isin(segmentation,
+                                FreeSurferLabels[segmentation_tissues[t]])] = label
 
     example_image = gems.KvlImage(input_bias_corrected[0])
     uncropped_tissue_labeling = np.zeros(
@@ -160,6 +178,7 @@ def saveWarpField(template_name, warp_to_mni,
     nodePositions = probabilisticAtlas.getMesh(
              modelSpecifications.atlasFileName,
              transform,
+             K=modelSpecifications.K,
              initialDeformation=deformation,
              initialDeformationMeshCollectionFileName=deformationAtlasFileName
          ).points
@@ -172,24 +191,26 @@ def saveWarpField(template_name, warp_to_mni,
 
     # Get mapping from voxels to world space of the image.
     imageFileNames = parameters_and_inputs['imageFileNames']
-    image = gems.KvlImage(imageFileNames[0])
-    imageToWorldTransformMatrix = image.transform_matrix.as_numpy_array
-    image_buffer = image.getImageBuffer()
+    image = nib.load(imageFileNames[0])
+    imageToWorldTransformMatrix = image.affine
+    image_buffer = image.get_data()
     # Transform the node positions
     nodePositionsInWorldSpace = (imageToWorldTransformMatrix @
                                  np.pad(nodePositions,
                                         ((0, 0), (0, 1)),
                                         'constant', constant_values=1).T).T
     nodePositionsInWorldSpace = nodePositionsInWorldSpace[:, 0:3]
-
     template = gems.KvlImage(template_name)
     templateToWorldTransformMatrix = template.transform_matrix.as_numpy_array
     template_buffer = template.getImageBuffer()
 
     # Rasterize the final node coordinates (in image space)
     # using the initial template mesh
+    mni_deformation = np.load('mni_deformation.npy')
     mesh = probabilisticAtlas.getMesh(
-                modelSpecifications.atlasFileName)
+                modelSpecifications.atlasFileName,
+                K=modelSpecifications.K,
+                initialDeformation=mni_deformation)
 
     # Get node positions in template voxel space
     nodePositionsTemplate = mesh.points
@@ -198,17 +219,18 @@ def saveWarpField(template_name, warp_to_mni,
     coordmapTemplate = mesh.rasterize_values(template_buffer.shape,
                                              nodePositionsInWorldSpace)
     # Write the warp file
-    warp_image = nib.Nifti1Image(coordmapTemplate,
-                                 templateToWorldTransformMatrix)
+    temp_header = nib.load(template_name)
+    warp_image = nib.Nifti1Image(coordmapTemplate, temp_header.affine)
+                                 #templateToWorldTransformMatrix)
     nib.save(warp_image, warp_to_mni)
 
     # Now do it the other way, i.e., template->image
-    nodePositionsTemplateWorldSpace = (templateToWorldTransformMatrix @
+    nodePositionsTemplateWorldSpace = (temp_header.affine @
                                        np.pad(nodePositionsTemplate,
                                               ((0, 0), (0, 1)),
                                               'constant', constant_values=1).T).T
     nodePositionsTemplateWorldSpace = nodePositionsTemplateWorldSpace[:, 0:3]
-
+    node_pos_in_mni = np.load('mni_node_positions.npy')
     # Okay get the mesh in image space
     mesh = probabilisticAtlas.getMesh(
              modelSpecifications.atlasFileName,
@@ -218,7 +240,7 @@ def saveWarpField(template_name, warp_to_mni,
 
     imageBuffers = parameters_and_inputs['imageBuffers']
     coordmapImage = mesh.rasterize_values(imageBuffers.shape[0:-1],
-                                          nodePositionsTemplateWorldSpace)
+                                          node_pos_in_mni)
     # The image buffer is cropped so need to set
     # everything to the correct place
     uncroppedWarp = np.zeros(image_buffer.shape+(3,),
@@ -231,7 +253,7 @@ def saveWarpField(template_name, warp_to_mni,
         uncroppedWarp[:, :, :, c] = uncroppedMap
 
     # Write the warp
-    warp_image = nib.Nifti1Image(coordmapImage,
+    warp_image = nib.Nifti1Image(uncroppedWarp,
                                  imageToWorldTransformMatrix)
     nib.save(warp_image, warp_from_mni)
 
@@ -240,8 +262,9 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
                                mask, fractionsTable, mesh,
                                numberOfGaussiansPerClass,
                                means, variances,
-                               mixtureWeights,
-                               computeNormalizer=False):
+                               mixtureWeights, FreeSurferLabels,
+                               bg_label,
+                               cat_opts=None):
 
     data = biasCorrectedImageBuffers[mask, :]
     numberOfVoxels = data.shape[0]
@@ -254,11 +277,23 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     # These will store the max values and indices
     maxValues = np.zeros(biasCorrectedImageBuffers.shape[0:3],
                          dtype=np.float64)
-    maxIndices = np.zeros(biasCorrectedImageBuffers.shape[0:3],
+    maxIndices = np.empty(biasCorrectedImageBuffers.shape[0:3],
                           dtype=np.uint16)
+    maxIndices[:] = FreeSurferLabels[bg_label]
 
-    if computeNormalizer:
-        normalizer = np.zeros((numberOfVoxels, 1), dtype=np.float64)
+    # We need the normalizer if we are writing out the normalized images
+    # for CAT
+    if cat_opts is not None:
+        cat_tissue_dict = cat_opts['cat_tissues']
+        cat_mask_dict = cat_opts['cat_masks']
+        wm_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
+                            dtype=np.float64)
+        gm_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
+                            dtype=np.float64)
+        csf_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
+                             dtype=np.float64)
+        normalizer = np.zeros(biasCorrectedImageBuffers.shape[0:3],
+                              dtype=np.float64)
 
     # The different structures can share their mixtures between classes
     # E.g., thalamus can be half wm and half gm. This needs to be accounted
@@ -299,8 +334,14 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
         # Now compute the non-normalized posterior
         nonNormalized[mask] = likelihoods*prior
 
-        if computeNormalizer:
+        if cat_opts is not None:
             normalizer += nonNormalized
+            if structureNumber in cat_tissue_dict['WM']:
+                wm_probs += nonNormalized
+            elif structureNumber in cat_tissue_dict['GM']:
+                gm_probs += nonNormalized
+            elif structureNumber in cat_tissue_dict['CSF']:
+                csf_probs += nonNormalized
 
         if structureNumber == 0:
             # In the first iteration just save the non-normalized values
@@ -310,9 +351,67 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
             # Check whether we have higher values and save indices
             higher_values = nonNormalized > maxValues
             maxValues[higher_values] = nonNormalized[higher_values]
-            maxIndices[higher_values] = structureNumber
+            maxIndices[higher_values] = FreeSurferLabels[structureNumber]
+            
 
-    if computeNormalizer:
-        return maxIndices.flatten(), normalizer
+    if cat_opts is not None:
+        cat_scan_and_masks = _prep_scans_and_masks([wm_probs, gm_probs,
+                                                    csf_probs],
+                                                   normalizer,
+                                                   maxIndices,
+                                                   FreeSurferLabels,
+                                                   cat_mask_dict)
+
+    if cat_opts is not None:
+        return maxIndices, cat_scan_and_masks
     else:
-        return maxIndices.flatten()
+        return maxIndices
+
+
+def _prep_scans_and_masks(tissue_prob_list, normalizer, maxInds,
+                          FreeSurferLabels, mask_dict):
+
+    # Create normalized image
+    eps = np.finfo(float).eps
+    normalized_scan = np.zeros_like(normalizer)
+    normalized_scan += tissue_prob_list[0]/(normalizer + eps)
+    normalized_scan += (2.0*tissue_prob_list[1])/(3.0*(normalizer + eps))
+    normalized_scan += tissue_prob_list[2]/(3.0*(normalizer + eps))
+
+    normalized_scan = 3.0*normalized_scan
+    # Create cerebrum mask
+    mask_cereb = np.zeros_like(normalizer)
+    for left, right in zip(mask_dict['Left_Cerebrum'], mask_dict['Right_Cerebrum']):
+        mask_cereb += 1*(maxInds == FreeSurferLabels[left])
+        mask_cereb += 2*(maxInds == FreeSurferLabels[right])
+
+    for left, right in zip(mask_dict['Left_Cerebellum'], mask_dict['Right_Cerebellum']):
+        mask_cereb += 3*(maxInds == FreeSurferLabels[left])
+        mask_cereb += 4*(maxInds == FreeSurferLabels[right])
+
+    mask_cereb = mask_cereb.astype(np.uint8)
+    # Create subcortical mask
+    mask_subcortical = np.zeros_like(normalizer)
+    for struct in mask_dict['Sub_cortical']:
+        mask_subcortical += 1*(maxInds == FreeSurferLabels[struct])
+
+    # Make boolean
+    mask_subcortical = mask_subcortical > 0
+
+    # Create parahippo mask
+    mask_parahippo = np.zeros_like(normalizer)
+    for struct in mask_dict['Parahippo']:
+        mask_parahippo += 1*(maxInds == FreeSurferLabels[struct])
+
+    # Make boolean
+    mask_parahippo = mask_parahippo > 0
+
+    # Create left/right mask by interpolating the cereb mask into the background 
+    mask = 2*(mask_cereb == 1) + 2*(mask_cereb == 3) + 1*(mask_cereb == 2) + 1*(mask_cereb == 4)
+    # cat_vbdist takes in a voxel size as well, need to probably use that too
+    _, _, mask_hemi = cat_vbdist(mask)
+    mask_hemi = mask_hemi > 1
+    mask_hemi = mask_hemi.astype(np.uint8)
+
+    return [normalized_scan, mask_cereb, mask_subcortical,
+            mask_parahippo, mask_hemi]

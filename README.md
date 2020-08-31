@@ -1,5 +1,6 @@
 # SimNIBS
 
+![SimNIBS Fronpage](docs/images/simnibs_frontpage.png)
 The main goal of SimNIBS is to calculate electric fields caused by Transcranial Electrical Stimulation (TES) and Transcranial Magnetic Stimulation (TMS).
 
 The pipeline is divided in three parts:
@@ -15,7 +16,7 @@ The pipeline is divided in three parts:
 ## Getting Started
  
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.
-Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions into how to download and install SimNIBS.
+Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions on how to download and install SimNIBS.
 
 
 ## Authors

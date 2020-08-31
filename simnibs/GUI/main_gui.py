@@ -92,7 +92,7 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         self.setWindowTitle(f'SimNIBS {__version__}')
 
         try:
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.gif')
+            gui_icon = os.path.join(SIMNIBSDIR,'_internal_resources', 'icons', 'simnibs', 'gui_icon.gif')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
         except:
             pass
@@ -155,26 +155,14 @@ class TDCS_GUI(QtWidgets.QMainWindow):
             filename = dialog.selectedFiles()
         if filename:
             fn = str(filename[0])
-            if ' ' in fn:
-                QtWidgets.QMessageBox.critical(self, 'warning', 'Invalid File name:\n'+
-                                           'There are folders or files with ' +
-                                           'white spaces in the path' + 
-                                           '\n{0}'.format(fn))
-                return
-            else:
-                self.file_name.setText(fn)
-                self.loadHeadModel(fn)
-                self.lookForTensors(fn)
+            self.file_name.setText(fn)
+            self.loadHeadModel(fn)
+            self.lookForTensors(fn)
 
     def m2mFolderDialog(self):
         folder = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder == '':
             return None
-        if ' ' in folder:
-            QtWidgets.QMessageBox.critical(self, 'warning',  'Invalid Folder name:\n'+
-                                       'There are folders with ' +
-                                       'white spaces in the path:\n{0}'.format(folder))
-            return
         else:
             self.m2m_folder_lineEdit.setText(folder)
             self.session.subpath = folder
@@ -190,11 +178,6 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         folder = str( QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder == '':
             return None
-        if ' ' in folder:
-            QtWidgets.QMessageBox.critical(self, 'warning',  'Invalid Folder name:\n'+
-                                       'There are folders with ' +
-                                       'white spaces in the path:\n{0}'.format(folder))
-            return
         else:
             self.out_folder_lineEdit.setText(folder)
             self.session.pathfem = folder
@@ -881,7 +864,7 @@ class ElcTable(QtWidgets.QWidget):
             tdcslist.electrode[i].substitute_positions_from_cap(eeg_cap)
             if tdcslist.electrode[i].pos_ydir is None or len(
                 tdcslist.electrode[i].pos_ydir) == 0:
-                while self.glHeadModel.getSurface('Scalp') is 'Loading':
+                while self.glHeadModel.getSurface('Scalp') == 'Loading':
                     time.sleep(1)
                 tdcslist.electrode[i].pos_ydir = _get_posy(
                     tdcslist.electrode[i].centre,

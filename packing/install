@@ -1,0 +1,63 @@
+#! /bin/bash -e
+set -o pipefail
+
+show_help() {
+cat << EOF
+Usage: ${0##*/} [-hs] [-t INSTALL_DIR] ...
+Install SimNIBS {{ full_version }} to the target directory
+
+    -h               display this help and exit
+    -t INSTALL_DIR   Installation directory. Default: ${HOME}/SimNIBS
+    -s               Silent mode. Will not open the installation GUI
+EOF
+}
+
+# Initialize our own variables:
+FULL_VERSION="{{ full_version }}"
+INSTALL_DIR="$HOME/SimNIBS-{{ version }}"
+silent=""
+
+OPTIND=1
+# Resetting OPTIND is necessary if getopts was used previously in the script.
+# It is a good idea to make OPTIND local if you process options in a function.
+
+while getopts hst: opt; do
+    case $opt in
+        h)
+            show_help
+            exit 0
+            ;;
+        s)  silent="--silent"
+            ;;
+        t)  INSTALL_DIR=$OPTARG
+            ;;
+        *)
+            show_help >&2
+            exit 1
+            ;;
+    esac
+done
+shift "$((OPTIND-1))"   # Discard the options and sentinel --
+mkdir -p "$INSTALL_DIR"
+INSTALL_LOG="$INSTALL_DIR/install.log"
+touch "$INSTALL_LOG"
+(
+echo "Installing SimNIBS ${FULL_VERSION} to ${INSTALL_DIR}"
+CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"
+if [ -d "${INSTALL_DIR}/simnibs_env" ]; then
+    read -p "Found another SimNIBS installation in ${INSTALL_DIR}. Remove it? [y/N] :" REPLY
+    if [[ $REPLY =~ [Yy]$ ]]; then
+        rm -r "${INSTALL_DIR}/simnibs_env"
+        rm -r "${INSTALL_DIR}/documentation"
+    else
+        echo "Aborting Installation"; exit 1
+    fi
+fi
+# Copy folders
+cp -R "${CUR_DIR}/simnibs_env" "${INSTALL_DIR}/simnibs_env"
+cp -R "${CUR_DIR}/documentation" "${INSTALL_DIR}/documentation"
+# Fix entrypoint shebangs
+"${INSTALL_DIR}/simnibs_env/bin/python" "${INSTALL_DIR}/simnibs_env/fix_entrypoints.py" "${INSTALL_DIR}/simnibs_env/bin" "${INSTALL_DIR}/simnibs_env/bin"
+# Run SimNIBS postinstall operation
+"${INSTALL_DIR}/simnibs_env/bin/postinstall_simnibs" -d "${INSTALL_DIR}" --setup-links --no-extra-coils $silent
+) 2>&1 | tee "${INSTALL_LOG}"

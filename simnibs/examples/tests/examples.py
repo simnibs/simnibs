@@ -1,17 +1,21 @@
+''' Automated testing of the examples
+'''
 import sys
 import os
 import stat
 import subprocess
 import zipfile
-import urllib.request
 import tempfile
 import shutil
-import pytest
+import glob
+import functools
 
+import pytest
+import requests
 from simnibs.utils.file_finder import path2bin
 import simnibs
 
-EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..' ))
+EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 @pytest.fixture(scope="module")
 def example_dataset():
@@ -21,12 +25,20 @@ def example_dataset():
     )
     fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ernie_lowres'))
     tmpname = tempfile.mktemp(".zip")
-    urllib.request.urlretrieve(url, tmpname)
+    # Download the dataset
+    with requests.get(url, stream=True) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(tmpname, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    # Unzip the dataset
     with zipfile.ZipFile(tmpname) as z:
         z.extractall(os.path.dirname(__file__), )
     os.remove(tmpname)
     yield fn_folder
-    shutil.rmtree(fn_folder)
+    try:
+        shutil.rmtree(fn_folder)
+    except:
+        print('Could not remove example dataset folder')
 
 
 @pytest.fixture
@@ -34,12 +46,12 @@ def replace_gmsh():
     fn_gmsh = path2bin('gmsh')
     fn_gmsh_tmp = path2bin('gmsh_tmp')
     # move
+    if sys.platform == 'win32': fn_gmsh += '.exe'
     shutil.move(fn_gmsh, fn_gmsh_tmp)
     # replace
     if sys.platform == 'win32':
-        fn_script = fn_gmsh[:4] + '.cmd'
-        with open(fn_script, 'w') as f:
-            f.write('echo "GMSH"')
+        # replace gmsh with an .exe that does not to anything
+        shutil.copy(r'C:\Windows\System32\rundll32.exe', fn_gmsh)
     else:
         with open(fn_gmsh, 'w') as f:
             f.write('#! /bin/bash -e\n')
@@ -53,13 +65,24 @@ def replace_gmsh():
     shutil.move(fn_gmsh_tmp, fn_gmsh)
 
 def octave_call(script):
-    cmd = "octave -W --eval \""
+    if sys.platform == 'win32':
+        octave_exe = glob.glob(os.path.join(
+            r'C:\Octave\Octave-*\mingw64\bin\octave-cli.exe'
+        ))
+        if len(octave_exe) == 0:
+            raise OSError('Did not find Octave executable')
+        else:
+            octave_exe = octave_exe[0]
+    else:
+        octave_exe = 'octave'
+
     matlab_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'matlab_tools')
     )
     octave_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'octave_compatibility')
     )
+    cmd = f"{octave_exe} -W --eval \""
     cmd += "addpath('{0}');".format(matlab_dir)
     cmd += "addpath('{0}');".format(octave_dir)
     cmd += "try,run('{}');catch ME,rethrow(ME);end,exit;\"".format(script)
@@ -89,6 +112,7 @@ class TestPythonErnie:
         if clean is not None and os.path.exists(clean):
             shutil.rmtree(clean)
         fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
         return subprocess.run([sys.executable, fn])
 
     def test_transform_coordinates(self, example_dataset):
@@ -154,6 +178,27 @@ class TestPythonErnie:
     def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tdcs_optimize_mni.py')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_strength.py')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        shutil.copy(
+            os.path.join(
+                simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+            example_dataset
+        )
+        ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
+        assert ret.returncode == 0
+
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization')
         assert ret.returncode == 0
 
 
@@ -230,4 +275,25 @@ class TestMatlabErnie:
     def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tdcs_optimize_mni.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tdcs_optimize_strength.m')
+        assert ret.returncode == 0
+
+    def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        shutil.copy(
+            os.path.join(
+                simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+            example_dataset
+        )
+        ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')
+        assert ret.returncode == 0
+
+    def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization')
         assert ret.returncode == 0

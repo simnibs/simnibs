@@ -1,4 +1,4 @@
-simnibs.read\_stl
+﻿simnibs.read\_stl
 =================
 
 .. currentmodule:: simnibs

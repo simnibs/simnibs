@@ -1,4 +1,4 @@
-simnibs.write\_geo\_spheres
+﻿simnibs.write\_geo\_spheres
 ===========================
 
 .. currentmodule:: simnibs

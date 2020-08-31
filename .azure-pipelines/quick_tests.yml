@@ -1,0 +1,101 @@
+variables:
+  Agent.Source.Git.ShallowFetchDepth: 5
+
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  - bash: |
+      conda env create -f environment_linux.yml
+    displayName: Create Conda environment
+
+  - bash: |
+      source activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - bash: |
+      source activate simnibs_env
+      pip install pytest-cov
+      pytest simnibs \
+        --junit-xml=test-results.xml \
+        --cov=simnibs --cov-report=xml
+    displayName: Run Unit Tests
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Linux'
+
+  - task: PublishCodeCoverageResults@1
+    condition: succeededOrFailed()
+    inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: 'coverage.xml'
+
+
+- job: MacOS
+  pool:
+    vmImage: 'macOS-10.14'
+
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+
+  - bash: |
+      conda env create -f environment_macOS.yml
+    displayName: Create Conda environment
+
+  - bash: |
+      source activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - bash: |
+      source activate simnibs_env
+      pytest simnibs --junit-xml=test-results.xml
+    displayName: Run Unit Tests
+
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'MacOS'
+
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
+
+  - script: |
+      conda env create -f environment_win.yml
+    displayName: Create Conda environment
+
+  - script: |
+      call activate simnibs_env
+      python setup.py develop
+    displayName: Install SimNIBS
+
+  - script: |
+      call activate simnibs_env
+      pytest simnibs --junit-xml=test-results.xml
+    displayName: Run Unit Tests
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Windows'

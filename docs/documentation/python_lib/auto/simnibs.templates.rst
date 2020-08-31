@@ -1,4 +1,4 @@
-simnibs.templates
+﻿simnibs.templates
 =================
 
 .. currentmodule:: simnibs

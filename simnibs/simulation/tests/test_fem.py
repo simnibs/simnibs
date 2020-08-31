@@ -12,31 +12,31 @@ from ... import SIMNIBSDIR
 from .. import fem
 from .. import analytical_solutions
 from .. import coil_numpy as coil_lib
+from .. import petsc_solver
 from ...mesh_tools import mesh_io
-from ..._compiled import petsc_solver
 
 fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 @pytest.fixture
 def sphere_el_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'sphere_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_msh():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube_w_electrodes.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'cube_w_electrodes.msh')
     return mesh_io.read_msh(fn)
 
 
 @pytest.fixture
 def cube_lr():
-    fn = os.path.join(SIMNIBSDIR, 'resources', 'testing_files', 'cube.msh')
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'cube.msh')
     return mesh_io.read_msh(fn)
 
 
@@ -150,7 +150,6 @@ class Testcalc_fields:
         z = np.zeros(sphere3_msh.elm.nr)
         cond = np.reshape(np.eye(3) * np.array([1, 2, 3]), -1)
         cond = np.tile(cond, [sphere3_msh.elm.nr, 1])
-        print(cond)
         cond = mesh_io.ElementData(cond, mesh=sphere3_msh)
         m = fem.calc_fields(potential, 'vJEgsej', cond, units='m')
 
@@ -411,6 +410,24 @@ class TestFEMSystem:
         assert rdm(sol, x.T) < .1
         assert np.abs(mag(x, sol)) < np.log(1.5)
 
+    def test_solve_assemble_neumann_nodes(self, cube_msh):
+        m = cube_msh
+        cond = np.ones(m.elm.nr)
+        cond[m.elm.tag1 > 5] = 25
+        cond = mesh_io.ElementData(cond)
+        currents = [1, -1]
+        nodes_top = np.unique(m.elm[m.elm.tag1 == 1100, :3])
+        nodes_bottom = np.unique(m.elm[m.elm.tag1 == 1101, :3])
+        S = fem.FEMSystem.tdcs_neumann(m, cond, nodes_top, input_type='node')
+        b = S.assemble_tdcs_neumann_rhs(nodes_bottom, currents[1:], input_type='node')
+        x = S.solve(b)
+        sol = (m.nodes.node_coord[:, 1] - 50) / 10
+        m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
+        #mesh_io.write_msh(m, '~/Tests/fem.msh')
+        assert rdm(sol, x.T) < .1
+        assert np.abs(mag(x, sol)) < np.log(1.5)
+
+
     def test_solve_assemble_aniso(self, cube_msh):
         m = cube_msh
         cond = np.tile(np.eye(3), (m.elm.nr, 1, 1))
@@ -571,8 +588,8 @@ class TestTMS:
 
     @patch.object(coil_lib, 'set_up_tms')
     def test_tms_coil_parallel(self, mock_set_up, tms_sphere):
-        if sys.platform == 'win32':
-            '''Won't run on windows because Mock does not work through multiprocessing '''
+        if sys.platform in ['win32', 'darwin']:
+            '''Won't run on windows or MacOS because Mock does not work through multiprocessing '''
             assert True
             return
         m, cond, dAdt, E_analytical = tms_sphere
@@ -594,15 +611,23 @@ class TestLeadfield:
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('field', ['E', 'J'])
     @pytest.mark.parametrize('n_workers', [1, 2])
-    def test_leadfield(self, n_workers, field, post_pro, cube_msh):
-        if sys.platform == 'win32' and n_workers > 1:
-            ''' Same as above, does not work on windows '''
+    @pytest.mark.parametrize('input_type', ['tag', 'node'])
+    def test_leadfield(self, input_type, n_workers, field, post_pro, cube_msh):
+        if sys.platform in ['win32', 'darwin'] and n_workers > 1:
+            ''' Same as above, does not work on windows or MacOS'''
             return
         m = cube_msh
         cond = np.ones(m.elm.nr)
         cond[m.elm.tag1 > 5] = 1e3
         cond = mesh_io.ElementData(cond, mesh=m)
-        el_tags = [1100, 1101, 1101]
+        if input_type == 'tag':
+            el = [1100, 1101, 1101]
+        elif input_type == 'node':
+            el = [
+                np.unique(m.elm[m.elm.tag1 == 1100, :3]),
+                np.unique(m.elm[m.elm.tag1 == 1101, :3]),
+                np.unique(m.elm[m.elm.tag1 == 1101, :3])
+             ]
         fn_hdf5 = tempfile.NamedTemporaryFile(delete=False).name
         dataset = 'leadfield'
         if post_pro:
@@ -612,22 +637,24 @@ class TestLeadfield:
             post = None
 
         fem.tdcs_leadfield(
-            m, cond, el_tags,
+            m, cond, el,
             fn_hdf5, dataset, roi=[5],
             field=field,
             post_pro=post,
-            n_workers=n_workers)
+            n_workers=n_workers,
+            input_type=input_type
+        )
 
         if not post_pro:
             n_roi = np.sum(m.elm.tag1 == 5)
-            with h5py.File(fn_hdf5) as f:
+            with h5py.File(fn_hdf5, 'r') as f:
                 assert f[dataset].shape == (2, n_roi, 3)
                 assert rdm(f[dataset][0, ...],
                            np.tile([0., 100, 0.], (n_roi, 1))) < .2
                 assert mag(f[dataset][0, ...],
                            np.tile([0., 100, 0.], (n_roi, 1))) < np.log(1.1)
         if post_pro:
-            with h5py.File(fn_hdf5) as f:
+            with h5py.File(fn_hdf5, 'r') as f:
                 assert f[dataset].shape == (2, 10, 3)
                 assert rdm(f[dataset][0, ...],
                            np.tile([0., 200, 0.], (10, 1))) < .2
@@ -642,7 +669,7 @@ class TestTMSMany:
     @pytest.mark.parametrize('n_workers', [1, 2])
     @patch.object(coil_lib, 'set_up_tms')
     def test_many_simulations(self, mock_set_up, n_workers, post_pro, tms_sphere):
-        if sys.platform == 'win32' and n_workers > 1:
+        if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows '''
             return
         m, cond, dAdt, E_analytical = tms_sphere
@@ -664,7 +691,7 @@ class TestTMSMany:
             n_workers=n_workers
         )
         roi_select = m.elm.tag1 == 3
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             for E in f[dataset]:
                 if post_pro:
                     assert rdm(E, post(E_analytical[roi_select])) < .3
@@ -673,3 +700,61 @@ class TestTMSMany:
                     assert rdm(E, E_analytical[roi_select]) < .3
                     assert mag(E, E_analytical[roi_select]) < np.log(1.1)
         os.remove(fn_hdf5)
+
+class TestDipole:
+    @pytest.mark.parametrize('pos_target', [[50, 0, 0], [80, 0, 0]])
+    @pytest.mark.parametrize('dipole_direction', [[0, 1, 0], [1, 0, 0]])
+    def test_single_dipole(self, dipole_direction, pos_target, sphere3_msh):
+        bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
+        dipole_th = np.argmin(np.linalg.norm(pos_target - bar, axis=1))
+        dipole_pos = bar[dipole_th]
+        dipole_th = sphere3_msh.elm.tetrahedra[dipole_th]
+
+        surface_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+        surface_nodes_pos = sphere3_msh.nodes[surface_nodes]
+
+        analytical_v = analytical_solutions.potential_dipole_3layers(
+            [85, 90, 95], 2, 0.1, dipole_pos, dipole_direction, surface_nodes_pos
+        )
+
+        cond = 2 * np.ones(sphere3_msh.elm.nr)
+        cond[sphere3_msh.elm.tag1 == 4] = 0.1
+        numerical_v = fem.electric_dipole(sphere3_msh, cond, pos_target, dipole_direction)
+        numerical_v = numerical_v[0, surface_nodes - 1]
+
+        analytical_v -= np.average(analytical_v)
+        numerical_v -= np.average(numerical_v)
+        assert rdm(analytical_v, numerical_v) < 0.2
+        assert mag(analytical_v, numerical_v) < 0.15
+
+    def test_many_dipoles(self, sphere3_msh):
+        positions = [[60, 0, 0], [0, 80, 0]]
+        moments = [[0, 0, 1], [0, 0.5, 0.5]]
+        bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
+
+        surface_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+        surface_nodes_pos = sphere3_msh.nodes[surface_nodes]
+        analytical_v = []
+        dipole_pos = []
+
+        for p, m in zip(positions, moments):
+            dipole_th = np.argmin(np.linalg.norm(p - bar, axis=1))
+            dipole_pos.append(bar[dipole_th])
+            dipole_th = sphere3_msh.elm.tetrahedra[dipole_th]
+            analytical_v.append(
+                analytical_solutions.potential_dipole_3layers(
+                    [85, 90, 95], 2, 0.1, p, m, surface_nodes_pos
+                )
+            )
+
+        cond = 2 * np.ones(sphere3_msh.elm.nr)
+        cond[sphere3_msh.elm.tag1 == 4] = 0.1
+        numerical_v = fem.electric_dipole(
+            sphere3_msh, cond, dipole_pos, moments
+        )[:, surface_nodes - 1]
+
+        for a_v, n_v in zip(analytical_v, numerical_v):
+            a_v -= np.average(a_v)
+            n_v -= np.average(n_v)
+            assert rdm(a_v, n_v) < 0.2
+            assert mag(a_v, n_v) < 0.15

@@ -1,17 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
-    <title>Install Using Conda (Advanced) &#8212; SimNIBS 4.0b0 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install Using Conda (Advanced) &#8212; SimNIBS 3.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -51,72 +53,87 @@
   <div class="section" id="install-using-conda-advanced">
 <span id="conda-install"></span><h1>Install Using Conda (Advanced)<a class="headerlink" href="#install-using-conda-advanced" title="Permalink to this headline">¶</a></h1>
 <p>It is also possible to install SimNIBS using the <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> package manager.</p>
-<ol class="arabic">
+<div class="section" id="windows">
+<h2>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
 <li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
-<li><p>Go to the latest <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest">SimNIBS release page</a> and download the <code class="file docutils literal notranslate"><span class="pre">environment_*.yml</span></code> file for your operating system</p></li>
-<li><ul>
-<li><p><strong>Windows</strong>: Open the the <em>Anaconda Prompt</em>, which can be found in the <em>Star Menu</em>.</p></li>
-<li><p><strong>Linux</strong> and <strong>MacOS</strong>: Open a terminal. Type</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
-</pre></div>
-</div>
-<p></p>
-<p>to ensure <code class="code docutils literal notranslate"><span class="pre">conda</span></code> is in your system PATH. You might need to change the command above depending on your miniconda install location.</p>
-</li>
-</ul>
-</li>
-<li><p>Create and activate the <code class="code docutils literal notranslate"><span class="pre">simnibs_env</span></code> conda environment.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_win.yml">SimNIBS environment file</a></p></li>
+<li><p>Open  <em>Anaconda Prompt</em>, which can be found in the <em>Start Menu</em>.</p></li>
+<li><p>Run in the Prompt:</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f PATH/TO/environment_&lt;OS&gt;.yml
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f <span class="s2">&quot;%USERPROFILE%\Download\environment_win.yml&quot;</span>
 conda activate simnibs_env
+pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 </pre></div>
 </div>
 <p></p>
-<p>Where <code class="file docutils literal notranslate"><span class="pre">PATH/TO/environment_&lt;OS&gt;.yml</span></code> designates the path to the downloaded environment file, typically:</p>
-<ul class="simple">
-<li><p><strong>Windows</strong>:  <code class="file docutils literal notranslate"><span class="pre">%HOMEPATH%\Downloads\environment_win.yml</span></code></p></li>
-<li><p><strong>Linux</strong>:  <code class="file docutils literal notranslate"><span class="pre">~/Downloads/environment_linux.yml</span></code></p></li>
-<li><p><strong>MacOS</strong>:  <code class="file docutils literal notranslate"><span class="pre">~/Downloads/environment_macOS.yml</span></code></p></li>
-</ul>
 </div></blockquote>
 <ol class="arabic simple" start="5">
-<li><p>Install SimNIBS using <code class="code docutils literal notranslate"><span class="pre">pip</span></code>.</p></li>
+<li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
 </ol>
 <blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">md</span> <span class="s2">&quot;%USERPROFILE%\SimNIBS&quot;</span>
+<span class="n">postinstall_simnibs</span> <span class="o">--</span><span class="n">copy</span><span class="o">-</span><span class="n">matlab</span> <span class="o">--</span><span class="n">setup</span><span class="o">-</span><span class="n">links</span> <span class="o">-</span><span class="n">d</span> <span class="s2">&quot;%USERPROFILE%\SimNIBS&quot;</span>
 </pre></div>
 </div>
 <p></p>
 </div></blockquote>
-<ol class="arabic" start="6">
-<li><p>To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p>
-<ul>
-<li><p><strong>Windows</strong></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">md</span> <span class="o">%</span><span class="n">LOCALAPPDATA</span><span class="o">%</span>\<span class="n">SimNIBS</span>
-<span class="n">postinstall_simnibs</span> <span class="o">--</span><span class="n">copy</span><span class="o">-</span><span class="n">matlab</span> <span class="o">--</span><span class="n">setup</span><span class="o">-</span><span class="n">links</span> <span class="o">-</span><span class="n">d</span> <span class="o">%</span><span class="n">LOCALAPPDATA</span><span class="o">%</span>\<span class="n">SimNIBS</span>
+</div>
+<div class="section" id="linux">
+<h2>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_linux.yml">SimNIBS environment file</a></p></li>
+<li><p>Run in a terminal window:</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span> <span class="c1"># This part can change depending on your miniconda installation</span>
+conda env create -f ~/Downloads/environment_linux.yml
+conda activate simnibs_env
+pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 </pre></div>
 </div>
 <p></p>
-</li>
-<li><p><strong>Linux</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir <span class="nv">$HOME</span>/SimNIBS
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir <span class="nv">$HOME</span>/SimNIBS
 postinstall_simnibs --copy-matlab --setup-links -d <span class="nv">$HOME</span>/SimNIBS
 </pre></div>
 </div>
 <p></p>
-</li>
-<li><p><strong>MacOS</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir -p <span class="nv">$HOME</span>/Applications/SimNIBS
+</div></blockquote>
+</div>
+<div class="section" id="macos">
+<h2>MacOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
+<li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml">SimNIBS environment file</a></p></li>
+<li><p>Run in a terminal window:</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span> <span class="c1"># This part can change depending on your miniconda installation</span>
+conda env create -f ~/Downloads/environment_macOS.yml
+conda activate simnibs_env
+pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
+</pre></div>
+</div>
+<p></p>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>(Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span></code> script:</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir -p <span class="nv">$HOME</span>/Applications/SimNIBS
 postinstall_simnibs --copy-matlab --setup-links -d <span class="nv">$HOME</span>/Applications/SimNIBS
 </pre></div>
 </div>
 <p></p>
-</li>
-</ul>
-<p>Type <code class="code docutils literal notranslate"><span class="pre">postinstall_simnibs</span> <span class="pre">-h</span></code> for more options.</p>
-</li>
-</ol>
+</div></blockquote>
+</div>
 </div>
 
 
@@ -196,7 +213,7 @@ postinstall_simnibs --copy-matlab --setup-links -d <span class="nv">$HOME</span>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -213,7 +230,7 @@ postinstall_simnibs --copy-matlab --setup-links -d <span class="nv">$HOME</span>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

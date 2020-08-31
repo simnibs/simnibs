@@ -24,42 +24,50 @@ from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
 from ..mesh_tools.mesh_io import write_msh
+from .brain_surface import createCS
+import multiprocessing
+import functools
 
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
                                     mesh_level2, save_path,
                                     template_coregistered_name,
-                                    init_atlas_settings, visualizer,
+                                    init_atlas_settings, neck_tissues,
+                                    visualizer,
                                     init_transform=None,
                                     world_to_world_transform_matrix=None):
 
     # Import the affine registration function
     scales = init_atlas_settings['affine_scales']
     thetas = init_atlas_settings['affine_rotations']
+    thetas_rad = [theta * np.pi/180 for theta in thetas]
     neck_search_bounds = init_atlas_settings['neck_search_bounds']
     ds_factor = init_atlas_settings['dowsampling_factor_affine']
-    affine = samseg.AffineWholeHead(scalingFactors=scales,
-                                    thetas_rad=thetas,
-                                    neck_bounds=neck_search_bounds,
-                                    targetDownsampledVoxelSpacing=ds_factor)
+    affine = samseg.AffineWholeHead(T1, affine_mesh_collection_name,
+                                    template_file_name)
 
-    _, optimizationSummary = affine.registerAtlas(
-            T1,
-            affine_mesh_collection_name,
-            template_file_name, save_path,
-            template_coregistered_name,
-            visualizer,
-            world_to_world_transform_matrix,
-            init_transform)
+    init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
+                                               scales=scales)
+    
+    image_to_image_transform, world_to_world_transform, optimization_summary =\
+    affine.registerAtlas(initializationOptions=init_options,
+                         targetDownsampledVoxelSpacing=ds_factor,
+                         visualizer=visualizer)
+ 
+    affine.saveResults(T1, template_file_name, save_path,
+                       template_coregistered_name, image_to_image_transform,
+                       world_to_world_transform)
+
     logger.info('Template registration summary.')
     logger.info('Number of Iterations: %d, Cost: %f\n' %
-                (optimizationSummary['numberOfIterations'],
-                 optimizationSummary['cost']))
+                (optimization_summary['numberOfIterations'],
+                 optimization_summary['cost']))
 
     logger.info('Adjusting neck.')
     affine.adjust_neck(T1, template_coregistered_name, mesh_level1,
-                       mesh_level2, visualizer)
+                       mesh_level2, neck_search_bounds, neck_tissues,
+                       visualizer)
     logger.info('Neck adjustment done.')
 
 
@@ -211,8 +219,9 @@ def view(subject_dir):
 
 
 def run(subject_dir=None, T1=None, T2=None,
-        registerT2=False, initatlas=False, segment=False, mesh_image=False,
-        skipregisterT2=False, usesettings=None, options_str=None):
+        registerT2=False, initatlas=False, segment=False,
+        create_surfaces=True, mesh_image=False, skipregisterT2=False,
+        usesettings=None, options_str=None):
     """charm pipeline
 
     PARAMETERS
@@ -370,6 +379,8 @@ def run(subject_dir=None, T1=None, T2=None,
                                 atlas_settings_names['atlas_level1'])
     atlas_level2 = os.path.join(atlas_path,
                                 atlas_settings_names['atlas_level2'])
+    neck_tissues = atlas_settings['neck_optimization']
+    neck_tissues = neck_tissues['neck_tissues']
 
     if initatlas:
         # initial affine registration of atlas to input images,
@@ -388,6 +399,7 @@ def run(subject_dir=None, T1=None, T2=None,
                                         sub_files.segmentation_folder,
                                         sub_files.template_coregistered,
                                         init_atlas_settings,
+                                        neck_tissues,
                                         visualizer)
 
     if segment:
@@ -425,20 +437,37 @@ def run(subject_dir=None, T1=None, T2=None,
         if len(input_images) > 1:
             bias_corrected_image_names.append(sub_files.T2_bias_corrected)
 
-        logger.info('Writing out bias corrected images and labeling.')
-        samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
-                bias_corrected_image_names,
-                sub_files.labeling,
-                segment_parameters_and_inputs)
+        logger.info('Writing out normalized images and labelings.')
+        if create_surfaces:
+            os.makedirs(sub_files.surface_folder, exist_ok=True)
+            cat_images = [sub_files.norm_image,
+                          sub_files.cereb_mask,
+                          sub_files.subcortical_mask,
+                          sub_files.parahippo_mask,
+                          sub_files.hemi_mask]
+
+            cat_structs = atlas_settings['CAT_structures']
+            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+                            bias_corrected_image_names,
+                            sub_files.labeling,
+                            segment_parameters_and_inputs,
+                            cat_structure_options=cat_structs,
+                            cat_images=cat_images)
+        else:
+            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+                            bias_corrected_image_names,
+                            sub_files.labeling,
+                            segment_parameters_and_inputs)
 
         # Write out MNI warps
-        logger.info('Writing out MNI warps.')
-        os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
-        samseg.simnibs_segmentation_utils.saveWarpField(
-                template_name,
-                sub_files.conf2mni_nonl,
-                sub_files.mni2conf_nonl,
-                segment_parameters_and_inputs)
+        if 0:
+            logger.info('Writing out MNI warps.')
+            os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
+            samseg.simnibs_segmentation_utils.saveWarpField(
+                    template_name,
+                    sub_files.conf2mni_nonl,
+                    sub_files.mni2conf_nonl,
+                    segment_parameters_and_inputs)
 
         # Run post-processing
         logger.info('Post-processing segmentation')
@@ -462,6 +491,67 @@ def run(subject_dir=None, T1=None, T2=None,
         upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues,
                                             affine_upsampled)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
+
+    if create_surfaces:
+        # Create surfaces ala CAT12
+        logger.info('Starting surface creation')
+        fsavgDir = file_finder.Templates().templates_surfaces
+
+        # input images and image header 
+        Ymf = nib.load(sub_files.norm_image)
+        vox2mm = Ymf.affine
+        Yleft = nib.load(sub_files.hemi_mask)
+        Ymaskhemis = nib.load(sub_files.cereb_mask)
+        Ymaskparahipp = nib.load(sub_files.parahippo_mask)
+
+        # parameters (will be put into the .ini file)
+        surf=['lh','rh','lc','rc']
+        #surf = ['lc', 'rc']
+        vdist = [1.0, 0.75]
+        voxsize_pbt = [0.5, 0.25]
+        voxsize_refineCS = [0.75, 0.5]
+        no_selfintersections = True
+        th_initial = 0.714
+
+        # parameters that will we likely skip...
+        add_parahipp = 0
+        close_parahipp = False
+
+        starttime = time.time()
+        Pcentral_all = []
+        Pspherereg_all = []
+        Pthick_all = []
+        EC_all = []
+        defect_size_all = []
+        # GBS: changed here
+        for si in range(len(surf)):
+            Pcentral, Pspherereg, Pthick, EC, defect_size = createCS(
+                                                            Ymf.get_data(),
+                                                            Yleft.get_data(),
+                                                            Ymaskhemis.get_data(),
+                                                            Ymaskparahipp.get_data(),
+                                                            vox2mm,
+                                                            surf[si],
+                                                            sub_files.surface_folder,
+                                                            fsavgDir,
+                                                            vdist,
+                                                            voxsize_pbt,
+                                                            voxsize_refineCS,
+                                                            th_initial,
+                                                            no_selfintersections,
+                                                            add_parahipp,
+                                                            close_parahipp)
+
+            Pcentral_all.append(Pcentral)
+            Pspherereg_all.append(Pspherereg)
+            Pthick_all.append(Pthick)
+            EC_all.append(EC)
+            defect_size_all.append(defect_size)
+            
+        # print time duration
+        elapsed = time.time() - starttime    
+        print('\nTotal time cost (HH:MM:SS):')
+        print(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
     if mesh_image:
         # create mesh from label image

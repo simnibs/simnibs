@@ -45,7 +45,7 @@ from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 from . import cython_msh
-from .._compiled import _cgal_misc
+from . import cgal
 
 
 class InvalidMeshError(ValueError):
@@ -2097,7 +2097,7 @@ class Msh:
         if not (near.shape[1] == 3 and far.shape[1] == 3):
             raise ValueError('near and far poins should be arrays of size (N, 3)')
 
-        indices, points = _cgal_misc.segment_triangle_intersection(
+        indices, points = cgal.segment_triangle_intersection(
             self.nodes[:],
             self.elm[self.elm.elm_type == 2, :3] - 1,
             near, far
@@ -2139,7 +2139,7 @@ class Msh:
         idx, far = self._intersect_segment_getfarpoint(points, directions)
 
         if len(idx) > 0:
-            indices, intercpt_pos = _cgal_misc.segment_triangle_intersection(
+            indices, intercpt_pos = cgal.segment_triangle_intersection(
                 self.nodes[:],
                 self.elm[self.elm.elm_type == 2, :3] - 1,
                 points[idx, :], far
@@ -3592,6 +3592,12 @@ class ElementData(Data):
         bar = mesh.elements_baricenters().value.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(bar) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
+
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
             output=data_grid.dtype, **kwargs)
@@ -3649,7 +3655,7 @@ class ElementData(Data):
                     m = np.concatenate((m,
                                         value[:, i].astype('float64').view('int32').reshape(-1, 2)),
                                        axis=1)
-                f.write(m.tostring())
+                f.write(m.tobytes())
 
             else:
                 raise IOError("invalid mode:", mode)
@@ -3696,7 +3702,7 @@ class ElementData(Data):
                 m = np.concatenate((m,
                                     value[:, i].astype('float64').view('int32').reshape(-1, 2)),
                                    axis=1)
-            f.write(m.tostring())
+            f.write(m.tobytes())
 
             f.write(b'$EndElementData\n')
 
@@ -3977,6 +3983,12 @@ class NodeData(Data):
         pos=mesh.nodes.node_coord.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(pos) + iM[:3, 3, None]
+        # Deal with edges
+        for i in range(3):
+            s = data_grid.shape[i]
+            coords[i, (coords[i, :] > -0.5) * (coords[i, :] < 0)] = 0.
+            coords[i, (coords[i, :] > s-1) * (coords[i, :] < s-0.5)] = s-1
+
         f = partial(
             scipy.ndimage.map_coordinates, coordinates=coords,
             output=data_grid.dtype, **kwargs)
@@ -4143,7 +4155,7 @@ class NodeData(Data):
                                         value[:, i].astype('float64').view('int32').reshape(-1, 2)),
                                        axis=1)
 
-                f.write(m.tostring())
+                f.write(m.tobytes())
             else:
                 raise IOError("invalid mode:", mode)
 
@@ -4188,7 +4200,7 @@ class NodeData(Data):
                                     value[:, i].astype('float64').view('int32').reshape(-1, 2)),
                                    axis=1)
 
-            f.write(m.tostring())
+            f.write(m.tobytes())
 
             f.write(b'$EndNodeData\n')
 
@@ -4886,7 +4898,7 @@ def write_msh(msh, file_name=None, mode='binary'):
                 nc = node_coord[:, i].astype('float64')
                 m = np.concatenate((m,
                                     nc.view('int32').reshape(-1, 2)), axis=1)
-            f.write(m.tostring())
+            f.write(m.tobytes())
         f.write(b'$EndNodes\n')
         # write elements
         f.write(b'$Elements\n')
@@ -4920,11 +4932,11 @@ def write_msh(msh, file_name=None, mode='binary'):
                 triangles_tag2 = msh.elm.tag2[triangles].astype('int32')
                 triangles_node_list = msh.elm.node_number_list[
                     triangles, :3].astype('int32')
-                f.write(triangles_header.tostring())
+                f.write(triangles_header.tobytes())
                 f.write(np.concatenate((triangles_number[:, np.newaxis],
                                         triangles_tag1[:, np.newaxis],
                                         triangles_tag2[:, np.newaxis],
-                                        triangles_node_list), axis=1).tostring())
+                                        triangles_node_list), axis=1).tobytes())
 
             tetra = np.where(msh.elm.elm_type == 4)[0]
             if len(tetra > 0):
@@ -4934,11 +4946,11 @@ def write_msh(msh, file_name=None, mode='binary'):
                 tetra_tag2 = msh.elm.tag2[tetra].astype('int32')
                 tetra_node_list = msh.elm.node_number_list[tetra].astype('int32')
 
-                f.write(tetra_header.tostring())
+                f.write(tetra_header.tobytes())
                 f.write(np.concatenate((tetra_number[:, np.newaxis],
                                         tetra_tag1[:, np.newaxis],
                                         tetra_tag2[:, np.newaxis],
-                                        tetra_node_list), axis=1).tostring())
+                                        tetra_node_list), axis=1).tobytes())
 
         f.write(b'$EndElements\n')
 
@@ -5284,8 +5296,8 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
             os.getenv('USER'), str(datetime.datetime.now())).encode('ascii'))
         f.write(struct.pack('>i', vnum))
         f.write(struct.pack('>i', fnum))
-        f.write(vertices.reshape(-1).astype('>f').tostring())
-        f.write(faces.reshape(-1).astype('>i').tostring())
+        f.write(vertices.reshape(-1).astype('>f').tobytes())
+        f.write(faces.reshape(-1).astype('>i').tobytes())
         if write_tail:
             f.write(b'\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x14')
             f.write(b'valid = 1  # volume info valid\n')
@@ -5436,7 +5448,7 @@ def write_curv(fn, curv, fnum):
         f.write(struct.pack(">i", int(vnum)))
         f.write(struct.pack('>i', int(fnum)))
         f.write(struct.pack('>i', 1))
-        f.write(curv.astype('>f').tostring())
+        f.write(curv.astype('>f').tobytes())
 
 
 def _middle_surface(wm_surface, gm_surface, depth):

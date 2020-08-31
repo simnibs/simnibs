@@ -2,6 +2,7 @@
 #cython: boundscheck=False
 #cython: nonecheck=False
 #cython: wraparound=False
+#cython: language_level=3
 
 from scipy import ndimage as ndi
 import numpy as np

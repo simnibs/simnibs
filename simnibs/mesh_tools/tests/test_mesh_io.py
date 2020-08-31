@@ -15,7 +15,7 @@ from .. import mesh_io
 @pytest.fixture(scope='module')
 def sphere3_msh():
     fn = os.path.join(
-            SIMNIBSDIR, 'resources', 'testing_files', 'sphere3.msh')
+            SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
 
@@ -1624,10 +1624,11 @@ class TestElmData:
         assert np.isclose(flux, 85 ** 3 * 4 * np.pi, rtol=1e-2)
 
     def test_from_data_grid(self, sphere3_msh):
-        X, Y, Z = np.meshgrid(np.linspace(-100, 100, 201),
-                              np.linspace(-100, 100, 201),
-                              np.linspace(-100, 100, 201),
+        X, _, _ = np.meshgrid(np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              np.arange(-100, 100),
                               indexing='ij')
+        X = X.astype(np.float)
         affine = np.array([[1, 0, 0, -100],
                            [0, 1, 0, -100],
                            [0, 0, 1, -100],
@@ -1637,11 +1638,12 @@ class TestElmData:
                            ed.value)
 
     def test_from_data_grid_vec(self, sphere3_msh):
-        X, Y, Z = np.meshgrid(np.linspace(-100, 100, 201),
-                              np.linspace(-100, 100, 201),
-                              np.linspace(-100, 100, 201),
+        X, Y, Z = np.meshgrid(np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              np.arange(-100, 100),
                               indexing='ij')
         V = np.stack([X, Y, Z], axis=3)
+        V = V.astype(float)
         affine = np.array([[1, 0, 0, -100],
                            [0, 1, 0, -100],
                            [0, 0, 1, -100],
@@ -1650,22 +1652,26 @@ class TestElmData:
         assert np.allclose(sphere3_msh.elements_baricenters().value,
                            ed.value)
 
-    def test_from_data_grid_vec_extra_args(self, sphere3_msh):
-        X, Y, Z = np.meshgrid(np.linspace(-100, 100, 201),
-                              np.linspace(-100, 100, 201),
-                              np.linspace(-1, 1, 3),
+    def test_from_data_grid_slice(self, sphere3_msh):
+        X, Y, Z = np.meshgrid(np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              [0],
                               indexing='ij')
         V = np.stack([X, Y, Z], axis=3)
+        V = V.astype(float)
         affine = np.array([[1, 0, 0, -100],
                            [0, 1, 0, -100],
-                           [0, 0, 1, -1],
+                           [0, 0, 1, 0],
                            [0, 0, 0, 1]], dtype=float)
-        ed = mesh_io.ElementData.from_data_grid(sphere3_msh, V, affine,
-                                             cval=0.0, order=1)
+        ed = mesh_io.ElementData.from_data_grid(
+            sphere3_msh, V, affine,
+            cval=np.nan, order=1
+        )
         bar = sphere3_msh.elements_baricenters().value
-        in_area = (bar[:, 2] >= -1) * (bar[:, 2] <= 1)
-        assert np.allclose(bar[in_area], ed.value[in_area])
-        assert np.allclose(ed.value[~in_area], 0)
+        in_slice = (bar[:, 2] >= -.5) * (bar[:, 2] <= .5)
+        assert np.allclose(bar[in_slice, :2], ed.value[in_slice, :2])
+        assert np.all(np.isnan(ed.value[~in_slice]))
+
 
 
 class TestNodeData:
@@ -1797,6 +1803,38 @@ class TestNodeData:
         tangent = nd.tangent()
         assert np.allclose(tangent[outer_nodes] / nd.norm()[outer_nodes], 0, atol=1e-1)
 
+    def test_from_data_grid(self, sphere3_msh):
+        X, Y, Z = np.meshgrid(np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              indexing='ij')
+        X = X.astype(float)
+        affine = np.array([[1, 0, 0, -100],
+                           [0, 1, 0, -100],
+                           [0, 0, 1, -100],
+                           [0, 0, 0, 1]], dtype=float)
+        nd = mesh_io.NodeData.from_data_grid(sphere3_msh, X, affine)
+        assert np.allclose(sphere3_msh.nodes[:, 0], nd.value)
+
+    def test_from_data_grid_slice(self, sphere3_msh):
+        X, Y, Z = np.meshgrid(np.arange(-100, 100),
+                              np.arange(-100, 100),
+                              [0],
+                              indexing='ij')
+        V = np.stack([X, Y, Z], axis=3)
+        V = V.astype(float)
+        affine = np.array([[1, 0, 0, -100],
+                           [0, 1, 0, -100],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1]], dtype=float)
+        ed = mesh_io.NodeData.from_data_grid(
+            sphere3_msh, V, affine,
+            cval=np.nan, order=1
+        )
+        in_slice = (sphere3_msh.nodes[:, 2] >= -.5) * (sphere3_msh.nodes[:, 2] <= .5)
+        assert np.allclose(sphere3_msh.nodes[in_slice, :2], ed.value[in_slice, :2])
+        assert np.all(np.isnan(ed.value[~in_slice]))
+
 
 
 
@@ -1826,7 +1864,7 @@ class TestReadRes:
             f.write(b'$EndResFormat\n')
             f.write(b'$Solution\n')
             f.write(b'0 0 0 0\n')
-            f.write(np.array([-1.2, 0, -2, 0, 3.0, 0],dtype='float64').tostring())
+            f.write(np.array([-1.2, 0, -2, 0, 3.0, 0],dtype='float64').tobytes())
             f.write(b'\n')
             f.write(b'$EndSolution\n')
 
@@ -1897,23 +1935,8 @@ class TestSurfaceIO:
 
 
 class TestHashing:
-    def test_scalar(self):
-        hash_ = mesh_io._hash_rows(np.array([[2]]), dtype=np.int64)
-        assert hash_ == hash((2,))
-
-    def test_array(self):
-        array = (81231, 1238, 1213)
-        hash_ = mesh_io._hash_rows(np.array([array]), dtype=np.int64)
-        assert hash_ == hash(array)
-
-    def test_many_arrays(self):
-        array = ((81231, 1238, 1213),
-                 (11231, 1288, 1123))
-        hash_ = mesh_io._hash_rows(np.array(array), dtype=np.int64)
-        assert hash_[0] == hash(array[0])
-        assert hash_[1] == hash(array[1])
-
     def test_collisions(self):
+        np.random.seed(0)
         array = np.random.randint(0, 1e6, size=(int(1e7), 3), dtype=np.int32)
         array = np.unique(array, axis=0)
         hash_ = mesh_io._hash_rows(np.array(array))

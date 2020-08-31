@@ -37,6 +37,7 @@ from . import cond
 from ..mesh_tools import mesh_io
 from ..utils import transformations
 from ..utils import simnibs_logger
+from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
@@ -1050,8 +1051,7 @@ class TMSLIST(SimuList):
         if os.path.isfile(fnamecoil):
             self.fnamecoil = fnamecoil
         else:
-            fnamecoil = os.path.join(
-                SIMNIBSDIR, 'resources', 'coil_models', self.fnamecoil)
+            fnamecoil = os.path.join(file_finder.coil_models, self.fnamecoil)
             if os.path.isfile(fnamecoil):
                 self.fnamecoil = fnamecoil
             else:
@@ -1321,8 +1321,8 @@ class POSITION(object):
         if cap is None:
             cap = self.eeg_cap
         if self.matsimnibs_is_defined():
-            return self.matsimnibs
-        else:
+            self.matsimnibs = np.array(self.matsimnibs)
+        else: 
             logger.info('Calculating Coil position from (centre, pos_y, distance)')
             if not isinstance(self.centre, np.ndarray) and not self.centre:
                 raise ValueError('Coil centre not set!')
@@ -1337,8 +1337,15 @@ class POSITION(object):
                 raise ValueError('Coil pos_ydir must be 3-dimensional')
             self.matsimnibs = msh.calc_matsimnibs(
                 self.centre, self.pos_ydir, self.distance, msh_surf=msh_surf)
-            logger.info('Matsimnibs: \n{0}'.format(self.matsimnibs))
-            return self.matsimnibs
+
+        logger.info('matsimnibs: \n{0}'.format(self.matsimnibs))
+        if 1002 in msh.elm.tag1:
+            cc_distance = np.min(np.linalg.norm(
+                msh.elements_baricenters()[msh.elm.tag1==1002] - self.matsimnibs[:3, 3],
+                axis=1)
+            )
+            logger.info(f'coil-cortex distance: {cc_distance:.2f}mm')
+        return self.matsimnibs
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
@@ -2033,6 +2040,12 @@ class LEADFIELD():
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
+        # The 2 variables bellow are set when the _get_vol() method is called
+        # If set, they have priority over fn_tensor_nifti
+        self.anisotropy_vol = None  # 4-d data with anisotropy information
+        self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
+        self.anisotropic_tissues = [1, 2]  # if an anisotropic conductivity is to be used,
+
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
@@ -2057,6 +2070,10 @@ class LEADFIELD():
 
     def _finish_logger(self):
         SESSION._finish_logger(self)
+
+    def _get_vol_info(self):
+        return SimuList._get_vol_info(self)
+
 
     def _prepare(self):
         """Prepares Leadfield for simulations
@@ -2205,7 +2222,6 @@ class TDCSLEADFIELD(LEADFIELD):
             self.eeg_cap = sub_files.get_eeg_cap(self.eeg_cap)
 
         logger.info('EEG Cap: {0}'.format(self.eeg_cap))
-        self.mesh = mesh_io.read_msh(self.fnamehead)
 
     def _add_electrodes_from_cap(self):
         ''' Reads a csv file and adds the electrodes defined to the tdcslist
@@ -2221,6 +2237,11 @@ class TDCSLEADFIELD(LEADFIELD):
             read_csv_positions(self.eeg_cap)
         count_csv = len([t for t in type_ if t in
                          ['Electrode', 'ReferenceElectrode']])
+
+        # Create a dummy electrode object if set to None
+        if self.electrode in [None, 'none', '']:
+            self.electrode = ELECTRODE()
+            self.electrode.shape = ''
         try:
             count_struct = len(self.electrode)
         except TypeError:
@@ -2347,7 +2368,7 @@ class TDCSLEADFIELD(LEADFIELD):
         
         if self.interpolation:
             # Leadfield is INTERPOLATED from ROI
-            roi = self.interpolation_tissue
+            roi = self.interpolation_tissue + self.tissues
         else:
             # Leadfield is SAMPLED in ROI
             roi = self.tissues
@@ -2373,8 +2394,11 @@ class TDCSLEADFIELD(LEADFIELD):
                 self,
                 os.path.join(
                     dir_name,
-                    'simnibs_simulation_{0}.mat'.format(self.time_str)))
-
+                    'simnibs_simulation_{0}.mat'.format(self.time_str))
+            )
+        # For simulations without electrodes
+        has_electrodes = self.electrode is not None
+        # Set electrode positions
         if self.eeg_cap is not None:
             if os.path.isfile(self.eeg_cap):
                 self._add_electrodes_from_cap()
@@ -2390,7 +2414,7 @@ class TDCSLEADFIELD(LEADFIELD):
         for el in self.electrode:
             if len(el.thickness) == 3:
                 raise ValueError('Can not run leadfield on sponge electrodes')
-
+        # Handle the ROI
         if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
             raise ValueError('Mixing Volumes and Surfaces in ROI!')
 
@@ -2403,11 +2427,30 @@ class TDCSLEADFIELD(LEADFIELD):
         # Get names for leadfield and file of head with cap
         fn_hdf5 = os.path.join(dir_name, self._lf_name())
         fn_el = os.path.join(dir_name, self._el_name())
-        logger.info('Placing Electrodes')
-        w_elec, electrode_surfaces = self._place_electrodes()
-        mesh_io.write_msh(w_elec, fn_el)
-        scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
-        scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
+        if has_electrodes:
+            # Place electrodes
+            logger.info('Placing Electrodes')
+            w_elec, electrode_surfaces = self._place_electrodes()
+            mesh_io.write_msh(w_elec, fn_el)
+            scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
+            scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
+            input_type = 'tag'
+        else:
+            # Find the closest surface node
+            w_elec = self.mesh
+            out_nodes = np.unique(self.mesh.elm.get_outside_faces())
+            out_nodes_kdt = scipy.spatial.cKDTree(self.mesh.nodes[out_nodes])
+            electrode_surfaces = []
+            for el in self.electrode:
+                _, idx = out_nodes_kdt.query(el.centre)
+                electrode_surfaces.append(out_nodes[idx])
+                # Update the position of the electrode
+                el.centre = self.mesh.nodes[electrode_surfaces[-1]]
+            mesh_io.write_geo_spheres(
+                [el.centre for el in self.electrode],
+                fn_el[:-4] + '.geo'
+            )
+            input_type = 'node'
 
         # Write roi, scalp and electrode surfaces hdf5
         roi_msh = w_elec.crop_mesh(roi)
@@ -2416,19 +2459,11 @@ class TDCSLEADFIELD(LEADFIELD):
             interp_id = []
             if isinstance(self.interpolation, str):
                 if self.interpolation == 'middle gm':
-                    s_names, segtype = \
-                        transformations.get_surface_names_from_folder_structure(self.subpath)
-                    hemi = ('lh', 'rh')
-                    if segtype == 'mri2mesh':
-                        for h in hemi:
-                            wm = mesh_io.read(s_names[h+'_wm'])
-                            gm = mesh_io.read(s_names[h+'_gm'])
-                            interp_to.append(mesh_io._middle_surface(wm, gm, 0.5))
-                            interp_id.append(h)
-                    elif segtype == 'headreco':
-                        for h in hemi:
-                            interp_to.append(mesh_io.read(s_names[h+'_midgm']))
-                            interp_id.append(h)
+                    sub_files = SubjectFiles(self.fnamehead, self.subpath)
+                    for hemi in sub_files.regions:
+                        interp_to.append(
+                            mesh_io.read(sub_files.get_surface(hemi, 'central'))
+                        )
                 else:
                     raise ValueError('Invalid string argument to "interpolation".')
             elif isinstance(self.interpolation, list) or isinstance(self.interpolation, tuple):
@@ -2448,7 +2483,6 @@ class TDCSLEADFIELD(LEADFIELD):
             mesh_lf = interp_to[0]
             for m in interp_to[1:]:
                 mesh_lf = mesh_lf.join_mesh(m)
-            
             if len(self.tissues) > 0:
                 try:
                     mesh_lf = mesh_lf.join_mesh(roi_msh.crop_mesh(self.tissues))
@@ -2494,7 +2528,9 @@ class TDCSLEADFIELD(LEADFIELD):
             current=1., roi=roi,
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
-            n_workers=cpus)
+            n_workers=cpus,
+            input_type=input_type
+        )
 
         with h5py.File(fn_hdf5, 'a') as f:
             f[dset].attrs['electrode_names'] = [el.name.encode() for el in self.electrode]
@@ -2538,20 +2574,26 @@ class TDCSLEADFIELD(LEADFIELD):
             mat, 'eeg_cap', str, self.eeg_cap)
 
         if len(mat['electrode']) > 0:
-            self.electrode = []
-            for el in mat['electrode'][0]:
-                self.electrode.append(ELECTRODE(el))
-        if len(self.electrode) == 1:
+            if type(mat['electrode'][0]) is np.str_ and mat['electrode'][0] == 'none':
+                self.electrode = None
+            else:
+                self.electrode = []
+                for el in mat['electrode'][0]:
+                    self.electrode.append(ELECTRODE(el))
+        if self.electrode is not None and len(self.electrode) == 1:
             self.electrode = self.electrode[0]
 
     def sim_struct2mat(self):
         mat = LEADFIELD.sim_struct2mat(self)
-        try:
-            len(self.electrode)
-            electrode = self.electrode
-        except TypeError:
-            electrode = [self.electrode]
-        mat['electrode'] = save_electrode_mat(electrode)
+        if self.electrode is None:
+            mat['electrode'] = 'none'
+        else:
+            try:
+                len(self.electrode)
+                electrode = self.electrode
+            except TypeError:
+                electrode = [self.electrode]
+            mat['electrode'] = save_electrode_mat(electrode)
         mat['eeg_cap'] = remove_None(self.eeg_cap)
         return mat
 

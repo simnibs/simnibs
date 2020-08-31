@@ -1,4 +1,4 @@
-simnibs.subject\_atlas
+﻿simnibs.subject\_atlas
 ======================
 
 .. currentmodule:: simnibs

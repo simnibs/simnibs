@@ -3,7 +3,7 @@
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2019  Guilherme B Saturnino
+    Copyright (C) 2020 Guilherme B Saturnino
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,8 @@ import tempfile
 import time
 import functools
 import zipfile
-import urllib.request
+
+import requests
 
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
@@ -44,11 +45,31 @@ except ImportError:
 if sys.platform == 'win32':
     import winreg
 
-def copy_scripts(dest_dir):
+MINOR_VERSION = '.'.join(__version__.split('.')[:2])
+
+def create_scripts(dest_dir):
     ''' Create scripts to call SimNIBS
     We need to write sh/cmd scripts due to the way python handles DLLs
     Additionaly, creates a 'simnibs' command in the matlab folder
     '''
+    # On windows, copy the sitecustomize script
+    # in order to be able to use the python interpreter without activating the environment
+    if sys.platform == 'win32':
+        simnibs_sitecustomize = os.path.join(SIMNIBSDIR, '_internal_resources', 'sitecustomize.py')
+        env_sitecustomize = os.path.join(os.path.dirname(sys.executable), 'Lib', 'site-packages', 'sitecustomize.py')
+        write_sitecustomize =True
+        with open(simnibs_sitecustomize, 'r') as f:
+            simnibs_sitecustomize_contents = f.read()
+        # Check if there is a sitecustomize file alread present and if it is identical to the SimNIBS one
+        if os.path.isfile(env_sitecustomize):
+            with open(env_sitecustomize, 'r') as f:
+                env_sitecustomize_contents = f.read()
+            # If it's alteady there, will not append the PATH
+            write_sitecustomize = not(simnibs_sitecustomize_contents in env_sitecustomize_contents)
+        if write_sitecustomize:
+            with open(env_sitecustomize, 'a') as f:
+                f.write('\n')
+                f.write(simnibs_sitecustomize_contents)
     scripts = glob.glob(os.path.join(SIMNIBSDIR, 'cli', '[!_]*.py'))
     if not os.path.isdir(dest_dir):
         os.makedirs(dest_dir)
@@ -61,7 +82,7 @@ def copy_scripts(dest_dir):
             gui = True
         else:
             gui = False
-        # Norma things
+        # Normal things
         bash_name = os.path.join(dest_dir, basename)
 
         # Special treatment to meshfix and gmsh
@@ -105,16 +126,15 @@ def _write_unix_sh(python_cli, bash_cli, commands='"$@"'):
 
 def _write_windows_cmd(python_cli, bash_cli, gui=False, commands='%*'):
     bash_cli = bash_cli + '.cmd'
-    # I need to activate the environment first
+    executables_dir = os.path.dirname(sys.executable)
     if gui:
-        python_interpreter = 'start pythonw'
+        python_interpreter = f'start "Loading SimNIBS" "{os.path.join(executables_dir, "pythonw.exe")}"'
     else:
-        python_interpreter = 'python'
+        python_interpreter = f'"{os.path.join(executables_dir, "python.exe")}"'
     with open(bash_cli, 'w') as f:
         f.write("@echo off\n")
-        f.write(f'call "{_get_activate_bin()}" {_get_conda_env()}\n')
         if python_cli is None:
-            f.write(f'{python_interpreter} %*')
+            f.write(f'"{python_interpreter}" %*')
         else:
             f.write(f'{python_interpreter} -E -u "{python_cli}"  {commands}')
 
@@ -146,8 +166,6 @@ def setup_gmsh_options(force=False, silent=False):
         target = os.path.expanduser('~/.gmsh-options')
     else:
         target = os.path.join(os.getenv('APPDATA'), 'gmsh-options')
-
-    silent = silent and GUI
     copy = True
     if os.path.isfile(target):
         if force:
@@ -159,7 +177,7 @@ def setup_gmsh_options(force=False, silent=False):
 
     if copy:
         gmsh_options_path = os.path.join(
-            SIMNIBSDIR, 'resources', 'gmsh-options_simnibsdefault')
+            SIMNIBSDIR, '_internal_resources', 'gmsh-options_simnibsdefault')
         _copy_and_log(gmsh_options_path, target)
 
 
@@ -209,20 +227,16 @@ def _get_win_simnibs_env_vars():
                 simnibs_env_vars[var_name] = value
     return simnibs_env_vars
 
-def _get_win_path():
-    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
-        try:
-            path = winreg.QueryValueEx(reg, 'Path')[0]
-        except FileNotFoundError: # PATH not set
-            path = ''
-    return path
-
-def path_setup(scripts_dir, force=False, silent=False):
+def path_setup(scripts_dir, force=False, silent=False, shell_type='bash'):
     ''' Modifies the bash startup path and postpends SimNIBS to the PATH '''
     scripts_dir = os.path.abspath(scripts_dir)
-    silent = silent and GUI
     if sys.platform in ['linux', 'darwin']:
-        bashrc, _ = _get_bashrc()
+        if shell_type == 'bash':
+            bashrc, _ = _get_bashrc()
+        elif shell_type =='zsh':
+            bashrc = os.path.expanduser('~/.zprofile')
+        else:
+            raise OSError('Invalid shell type')
         if os.path.exists(bashrc):
             has_simnibs = (
                 re.search('simnibs', open(bashrc, 'r').read(), re.IGNORECASE)
@@ -231,8 +245,7 @@ def path_setup(scripts_dir, force=False, silent=False):
             has_simnibs = False
 
     if sys.platform == 'win32':
-        simnibs_env_vars = _get_win_simnibs_env_vars()
-        has_simnibs = len(simnibs_env_vars) != 0
+        has_simnibs = False
 
     if has_simnibs:
         if force:
@@ -243,12 +256,12 @@ def path_setup(scripts_dir, force=False, silent=False):
                 silent)
 
         if not overwrite:
-            print('Not Adding the current SimNIBS install to the PATH')
-            return
+            print(f'Not Adding the current SimNIBS install to the {shell_type} PATH')
+            return False
 
-        path_cleanup()
+        path_cleanup(scripts_dir, shell_type=shell_type)
 
-    print(f'Postpending {scripts_dir} to the PATH')
+    print(f'Postpending {scripts_dir} to the {shell_type} PATH')
     if sys.platform in ['linux', 'darwin']:
         with open(bashrc, 'a') as f:
             f.write('\n')
@@ -257,21 +270,25 @@ def path_setup(scripts_dir, force=False, silent=False):
             f.write('export PATH=${PATH}:${SIMNIBS_BIN}')
 
     else:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
-            winreg.SetValueEx(reg,'SIMNIBS_BIN', 0, winreg.REG_SZ, scripts_dir)
-            path = scripts_dir + ';' + _get_win_path()
-            winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
+        from simnibs.utils import _system_path
+        _system_path.add_to_system_path(scripts_dir, allusers=False)
+        _system_path.broadcast_environment_settings_change()
 
-def path_cleanup():
+    return True
+
+def path_cleanup(scripts_dir, shell_type='bash'):
     ''' Removes SIMNIBS from PATH '''
     if sys.platform in ['linux', 'darwin']:
-        bashrc, backup_file = _get_bashrc()
-
+        if shell_type == 'bash':
+            bashrc, backup_file = _get_bashrc()
+        if shell_type == 'zsh':
+            bashrc = os.path.expanduser('~/.zprofile')
+            backup_file = os.path.expanduser('~/.zprofile_simnibs_bk')
         if not os.path.isfile(bashrc):
             print('Could not find bashrc file')
             return
 
-        print('Removing SimNIBS install from PATH')
+        print(f'Removing SimNIBS install from {shell_type} PATH')
         print(f'Backing up the bashrc file at {backup_file}')
         _copy_and_log(bashrc, backup_file)
         with open(backup_file, 'r') as fin:
@@ -281,22 +298,16 @@ def path_cleanup():
                         fout.write(line)
     else:
         simnibs_env_vars = _get_win_simnibs_env_vars()
-        path = _get_win_path()
-        path = path.split(';')
-        path = [p for p in path if len(p) > 0]
         for key, value in simnibs_env_vars.items():
-            # If the directory is in the PATH variable, remove it
-            path = [
-                os.path.normpath(p) for p in path if not (
-                os.path.normpath(value) in os.path.normpath(p))]
-            # Remove environment variable
+            # Remove environments variables with SimNIBS in their names.
+            # These are leftovers from previous (3.0, 3.1) installs
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
                 winreg.DeleteValue(reg, key)
+                
+        from simnibs.utils import _system_path
+        _system_path.remove_from_system_path(scripts_dir, allusers=False)
+        _system_path.broadcast_environment_settings_change()
 
-        # write out the PATH with SimNIBS removed
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
-            path = ';'.join(path) + ';'
-            winreg.SetValueEx(reg,'Path', 0, winreg.REG_EXPAND_SZ, path)
 
 def matlab_prepare():
     with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSDIR.m'), 'w') as f:
@@ -306,41 +317,37 @@ def matlab_prepare():
         f.write("end\n")
 
     with open(os.path.join(SIMNIBSDIR, 'matlab_tools', 'SIMNIBSPYTHON.m'), 'w') as f:
-        if sys.platform == 'win32':
-            python_call = f'call "{_get_activate_bin()}" simnibs_env && python -E -u '
-        else:
-            python_call = f'"{sys.executable}" -E -u '
+        python_call = f'"{sys.executable}" -E -u '
         f.write("function python_call=SIMNIBSPYTHON\n")
         f.write("% Function writen by SimNIBS postinstaller\n")
         f.write(f"python_call='{python_call}';\n")
         f.write("end\n")
 
-def matlab_setup(install_dir):
-    destdir =  os.path.abspath(os.path.join(install_dir, 'matlab_tools'))
-    if not os.path.isdir(destdir):
-        os.mkdir(destdir)
-    for m in glob.glob(os.path.join(SIMNIBSDIR, 'matlab_tools', '*')):
-        shutil.copy(m, destdir)
-
 def links_setup(install_dir):
     if sys.platform == 'win32':
-        _create_shortcut(
-            os.path.join(install_dir, 'examples'),
-            os.path.join(SIMNIBSDIR, 'examples')
-        )
-        _create_shortcut(
-            os.path.join(install_dir, 'simnibs'),
-            os.path.join(SIMNIBSDIR)
-        )
+        linkfun = _create_shortcut
     else:
-        lnk = os.path.join(install_dir, 'examples')
-        if os.path.islink(lnk):
-            os.remove(lnk)
-        os.symlink(os.path.join(SIMNIBSDIR, 'examples'), lnk)
-        lnk = os.path.join(install_dir, 'simnibs')
-        if os.path.islink(lnk):
-            os.remove(lnk)
-        os.symlink(SIMNIBSDIR, lnk)
+        def linkfun(link_name, target):
+            if os.path.islink(link_name):
+                os.remove(link_name)
+            os.symlink(target, link_name)
+
+    linkfun(
+        os.path.join(install_dir, 'examples'),
+        os.path.join(SIMNIBSDIR, 'examples')
+    )
+    linkfun(
+        os.path.join(install_dir, 'simnibs'),
+        SIMNIBSDIR
+    )
+    linkfun(
+        os.path.join(install_dir, 'resources'),
+        os.path.join(SIMNIBSDIR, 'resources')
+    )
+    linkfun(
+        os.path.join(install_dir, 'matlab_tools'),
+        os.path.join(SIMNIBSDIR, 'matlab_tools')
+    )
 
 def setup_shortcut_icons(scripts_dir, force=False, silent=False):
     ''' Creates shortcut icons for the gui_scripts '''
@@ -351,15 +358,15 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         shortcut_folder = os.path.join(
             os.environ['APPDATA'],
             "Microsoft", "Windows", "Start Menu",
-            "Programs", "SimNIBS"
+            "Programs", f"SimNIBS {MINOR_VERSION}"
         )
         gmsh_icon = None
-        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
+        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs',  'gui_icon.ico')
 
     elif sys.platform == 'linux':
-        shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
-        gmsh_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'gmsh', 'logo.png')
-        simnibs_icon = os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.png')
+        shortcut_folder = os.path.expanduser(f'~/.local/share/applications/SimNIBS-{MINOR_VERSION}')
+        gmsh_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', 'logo.png')
+        simnibs_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.png')
 
 
     if os.path.isdir(shortcut_folder):
@@ -406,7 +413,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         )
         _create_shortcut(
              os.path.join(shortcut_folder, 'SimNIBS Prompt'),
-             '%windir%\System32\cmd.exe',
+             r'%windir%\System32\cmd.exe',
              arguments=f'/K ""{_get_activate_bin()}"" {_get_conda_env()}')
     if sys.platform == 'linux':
         try:
@@ -464,7 +471,7 @@ def _create_apps(install_dir):
     _create_app(
         os.path.join(install_dir, 'SimNIBS GUI.app'),
         os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
-        os.path.join(SIMNIBSDIR, 'resources', 'gui_icon.icns'),
+        os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.icns'),
         plist)
 
     # Gmsh app setup
@@ -481,10 +488,10 @@ def _create_apps(install_dir):
     os.mkdir(macos_dir)
 
     _copy_and_log(
-        os.path.join(SIMNIBSDIR, 'resources', 'gmsh', 'Info.plist'),
+        os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', 'Info.plist'),
         os.path.join(contents_dir))
 
-    for icns in glob.glob(os.path.join(SIMNIBSDIR, 'resources', 'gmsh', '*.icns')):
+    for icns in glob.glob(os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'gmsh', '*.icns')):
         _copy_and_log(icns, resouces_dir)
 
     _copy_and_log(
@@ -526,7 +533,7 @@ def shortcut_icons_clenup():
         shortcut_folder=os.path.join(
             os.environ['APPDATA'],
             "Microsoft", "Windows", "Start Menu",
-            "Programs", "SimNIBS"
+            "Programs", f"SimNIBS {MINOR_VERSION}"
         )
     elif sys.platform == 'linux':
         shortcut_folder = os.path.expanduser('~/.local/share/applications/SimNIBS')
@@ -559,26 +566,25 @@ def setup_file_association(force=False, silent=False):
         return
 
     if sys.platform == 'win32':
-        # We need to run with admin privileges
-        # So a write a .cmd script and run it with administrative privileges
-        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'call assoc {ext}=gmsh.simnibs\n') for ext, val in associate.items() if val]
-            f.write(f'call ftype gmsh.simnibs="{gmsh_bin}" "%1"')
-            temp_fn = f.name
-        # I need to run as admin for some reason
-        # using a very ugly trick to get "%1" through
-        # I have to use %1 as an argument so "%1" in the script becomes literal
-        ret = subprocess.run(
-            'powershell.exe -noprofile -executionpolicy bypass -Command '
-            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"'
-            f' -ArgumentList "%1"',
-            shell=True)
-        try:
-            ret.check_returncode()
-        except subprocess.CalledProcessError:
-            print('Could not associate files')
-        finally:
-            os.remove(temp_fn)
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes', access=winreg.KEY_WRITE) as reg:
+            winreg.CreateKey(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command')
+            winreg.SetValue(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command', winreg.REG_SZ, f'"{gmsh_bin}" "%1"')
+            for ext in extensions:
+                try:
+                    value = winreg.QueryValue(reg, ext)
+                except FileNotFoundError:
+                    register = True
+                else:
+                    if value:
+                        register = _get_input(
+                            f'Found other association for "{ext}" files, overwrite it?',
+                            silent
+                        )
+                    else:
+                        register = True
+                if register:
+                    winreg.CreateKey(reg, ext)
+                    winreg.SetValue(reg, ext, winreg.REG_SZ, fr'SimNIBS.Gmsh.v{MINOR_VERSION}')
 
 def _is_associated(ext):
     if sys.platform == 'win32':
@@ -594,180 +600,98 @@ def _is_associated(ext):
             return False
 
 def file_associations_cleanup():
-    # Linux file associations are done together with desktop items
-    if sys.platform == 'linux':
-        return
     extensions = ['.msh', '.geo', '.stl']
-    associate = dict.fromkeys(extensions)
-    for ext in extensions:
-        ass = _is_associated(ext)
-        associate[ext] = (ass and 'simnibs' in ass)
-    if not any(associate.values()):
+    # Linux file associations are done together with desktop items
+    # MacOS file associations are set using the .app files
+    if sys.platform in ['linux', 'darwin']:
         return
     
     if sys.platform == 'win32':
-        with tempfile.NamedTemporaryFile('w', delete=False, suffix='.cmd') as f:
-            [f.write(f'call assoc {ext}=\n') for ext, val in associate.items() if val]
-            f.write(f'call ftype gmsh.simnibs=')
-            temp_fn = f.name
-
-        # I need to run as shell for some reason
-        ret = subprocess.run(
-        'powershell.exe -noprofile -executionpolicy bypass -Command '
-            f'"Start-Process -Wait -WindowStyle Hidden -Verb RunAs -FilePath {temp_fn}"',
-            shell=True)
-        try:
-            ret.check_returncode()
-        except subprocess.CalledProcessError:
-            print('Could not cleanup file associations')
-        finally:
-            os.remove(temp_fn)
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes', access=winreg.KEY_WRITE) as reg:
+            # Remove SimNIBS Gmsh call from the registry
+            try:
+                winreg.QueryValue(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command')
+            except FileNotFoundError:
+                pass
+            else:
+                # Delete recursivelly
+                paths = rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command'.split('\\')
+                for i in reversed(range(len(paths))):
+                    try:
+                        winreg.DeleteKey(reg, '\\'.join(paths[:i+1]))
+                    except OSError:
+                        break
+            # Remove the extensions from the registry
+            for ext in extensions:
+                try:
+                    entry = winreg.QueryValue(reg, ext)
+                except FileNotFoundError:
+                    pass
+                else:
+                    if entry == fr'SimNIBS.Gmsh.v{MINOR_VERSION}':
+                        winreg.SetValue(reg, ext, winreg.REG_SZ, '')
 
 def uninstaller_setup(install_dir, force, silent):
     uninstaller = os.path.join(install_dir, 'uninstall_simnibs')
-    miniconda_dir = os.path.join(install_dir, 'miniconda3')
     simnibs_env_dir = os.path.join(install_dir, 'simnibs_env')
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             uninstaller, commands=f'-u %* -d "{install_dir}"',
             gui=False)
-
-        with open(uninstaller + '.cmd', 'a') as f:
-            f.write(
-                f' & rd /Q /S "{miniconda_dir}" >NUL 2>&1 '
-                f'& rd /Q /S "{simnibs_env_dir}" >NUL 2>&1 '
-                f'& del "{uninstaller}.cmd" >NUL 2>&1 '
-                f'& rd /Q /S "{install_dir}"'
-            )
-        _create_shortcut(
-            os.path.join(install_dir, 'Uninstall SimNIBS'),
-            uninstaller,
-            icon=os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
-        )
-        with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall') as reg:
-            try:
-                winreg.QueryValue(reg, 'SimNIBS')
-                has_uninstaller = True
-            except FileNotFoundError:
-                has_uninstaller = False
-
-        if not has_uninstaller:
-            answ = True
-        else:
-            if force:
-                answ = True
-            else:
-                answ = _get_input(
-                    'Found other SimNIBS uninstaller overwrite it?',
-                    silent)
-        if answ:
-            if has_uninstaller:
-                uninstaller_cleanup()
-            with winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER,
-                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-                    access=winreg.KEY_WRITE) as reg:
-                winreg.CreateKey(reg, 'SimNIBS')
-            with winreg.OpenKey(
-                    winreg.HKEY_CURRENT_USER,
-                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\SimNIBS',
-                    access=winreg.KEY_WRITE) as reg:
-                winreg.SetValueEx(
-                    reg, 'UninstallString', 0, winreg.REG_SZ,
-                    f"{uninstaller}.cmd"
-                )
-                winreg.SetValueEx(
-                    reg, 'DisplayIcon', 0, winreg.REG_SZ,
-                    os.path.join(SIMNIBSDIR, "resources", "icons", "simnibs", "gui_icon.ico")
-                )
-                winreg.SetValueEx(
-                    reg, 'DisplayName', 0, winreg.REG_SZ,
-                    'SimNIBS'
-                )
-                winreg.SetValueEx(
-                    reg, 'DisplayVersion', 0, winreg.REG_SZ,
-                    __version__
-                )
-
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
             uninstaller, commands=f'-u "$@" -d "{install_dir}"')
         with open(uninstaller, 'a') as f:
             f.write(
-                f'&& rm -rf {miniconda_dir} '
-                f'; rm -rf {simnibs_env_dir} '
+                f'&& rm -rf {simnibs_env_dir} '
                 f'; rm "{uninstaller}" '
                 f'; rm -rf "{install_dir}"')
-
-def uninstaller_cleanup():
-    if sys.platform == 'win32':
-        try:
-            with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-                    access=winreg.KEY_WRITE) as reg:
-                winreg.DeleteKey(reg, 'SimNIBS')
-        except FileNotFoundError:
-            pass
 
 def activator_setup(install_dir):
     activator = os.path.join(install_dir, 'activate_simnibs')
     if sys.platform == 'win32':
         _write_windows_cmd(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            activator, gui=True, commands=f'-d {install_dir}')
+            activator, gui=True, commands=f'-d "{install_dir}"')
 
         _create_shortcut(
             os.path.join(install_dir, 'Activate SimNIBS'),
             activator,
-            icon=os.path.join(SIMNIBSDIR, 'resources', 'icons', 'simnibs', 'gui_icon.ico')
+            icon=os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
         )
     else:
         _write_unix_sh(
             os.path.join(SIMNIBSDIR, 'cli', 'postinstall_simnibs.py'),
-            activator, commands=f'-d {install_dir}')
+            activator, commands=f'-d "{install_dir}"')
 
-
-def _download_manager(blocknum, blocksize, totalsize, start_time=None, timeout=None):
-    if timeout is not None:
-        if time.time() - start_time > timeout:
-            raise TimeoutError('Download timed out')
-
-    if totalsize > 0:
-        nblocks = totalsize // blocksize
-        frac = nblocks // 10
-        if blocknum % frac == 0:
-            print(f'{blocknum/nblocks:.0%}', flush=True)
-    else:
-        b30 = int(30e6/blocksize)
-        if blocknum % b30 == 0:
-            read = (blocknum * blocksize) / 1e6
-            print(f'{read:.1f} MB', flush=True)
+# from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests
+def download_file(url, local_filename, timeout=None):
+    with requests.get(url, stream=True, timeout=timeout) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(local_filename, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
 def download_extra_coils(timeout=None):
     version = 'master'
     url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
     with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
         tmpname = tmpf.name
-    reporthook = functools.partial(_download_manager, start_time=time.time(), timeout=timeout)
-    urllib.request.urlretrieve(url, tmpf.name, reporthook=reporthook)
+    download_file(url, tmpf.name, timeout)
     with zipfile.ZipFile(tmpname) as z:
-        z.extractall(os.path.join(SIMNIBSDIR, 'resources', 'coil_models'))
+        z.extractall(file_finder.coil_models)
     os.remove(tmpname)
-    src = os.path.join(SIMNIBSDIR, 'resources', 'coil_models', f'simnibs-coils-{version}')
-    dest = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
+    src = os.path.join(file_finder.coil_models, f'simnibs-coils-{version}')
     for f in glob.glob(os.path.join(src, '*')):
-        d = os.path.join(dest, os.path.basename(f))
+        d = os.path.join(file_finder.coil_models, os.path.basename(f))
         if os.path.isdir(d):
             shutil.rmtree(d)
         if os.path.isfile(d):
             os.remove(d)
         shutil.move(f, d)
-    shutil.rmtree(src)
+    shutil.rmtree(
+        os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
 
 def run_tests(args):
     ''' run tests on pytest '''
@@ -853,7 +777,7 @@ if GUI:
             self.setLayout(mainLayout)
 
             self.setWindowTitle(f'SimNIBS {__version__} Post-Install Options')
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
         def set_copy_gmsh_options(self, new_value):
@@ -893,7 +817,6 @@ if GUI:
 
 
     def start_gui(simnibsdir,
-                  copy_matlab,
                   setup_links,
                   copy_gmsh_options,
                   add_to_path,
@@ -919,7 +842,6 @@ if GUI:
                     ex.extra_coils,
                     ex.add_shortcut_icons,
                     ex.associate_files,
-                    copy_matlab,
                     setup_links)
         else:
             raise Exception('Post-installation cancelled by user')
@@ -939,7 +861,7 @@ if GUI:
             mainLayout.addWidget(button_box)
             self.setLayout(mainLayout)
             self.setWindowTitle('SimNIBS Uninstaller')
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'icons', 'simnibs', 'gui_icon.ico')
+            gui_icon = os.path.join(SIMNIBSDIR, '_internal_resources', 'icons', 'simnibs', 'gui_icon.ico')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
 
     def start_uninstall_gui(install_dir):
@@ -960,15 +882,14 @@ def install(install_dir,
             extra_coils=True,
             add_shortcut_icons=False,
             associate_files=False,
-            copy_matlab=False,
             setup_links=False):
     install_dir = os.path.abspath(os.path.expanduser(install_dir))
     os.makedirs(install_dir, exist_ok=True)
     scripts_dir = os.path.join(install_dir, 'bin')
     matlab_prepare()
     if extra_coils:
-        print('Downloading Extra Coils', flush=True)
-        download_extra_coils(timeout=30*60)
+        print('Downloading extra coils, this might take some time', flush=True)
+        download_extra_coils(timeout=10*60)
     if copy_gmsh_options:
         print('Copying Gmsh Options')
         setup_gmsh_options(force, silent)
@@ -978,33 +899,35 @@ def install(install_dir,
     if associate_files:
         print('Associating Files', flush=True)
         setup_file_association(force, silent)
-    if copy_matlab:
-        print('Copying matlab folder', flush=True)
-        matlab_setup(install_dir)
     if setup_links:
         links_setup(install_dir)
     activator_setup(install_dir)
     uninstaller_setup(install_dir, force, silent)
-    if add_to_path:
-        path_setup(scripts_dir, force, silent)
     test_call = [
-        SIMNIBSDIR, '-k', 'TestSolve', '-q', '-W', 'ignore'
+        os.path.join(SIMNIBSDIR, 'tests', 'simulation', 'test_fem.py'),
+        '-k', 'TestSolve', '-q', '-W', 'ignore'
     ]
     run_tests(test_call)
     if sys.platform == 'win32':
         pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw')
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
-    copy_scripts(scripts_dir)
+    create_scripts(scripts_dir)
+    if add_to_path:
+        try:
+            added_to_path = path_setup(scripts_dir, force, silent)
+            if sys.platform == 'darwin' and added_to_path:
+                path_setup(scripts_dir, force=True, silent=True, shell_type='zsh')
+        except:
+            print('Could not add SimNIBS to the system PATH')
 
 def uninstall(install_dir):
-    path_cleanup()
+    path_cleanup(os.path.join(install_dir, 'bin'))
+    if sys.platform == 'darwin':
+        path_cleanup(os.path.join(install_dir, 'bin'), shell_type='zsh')
     shortcut_icons_clenup()
     file_associations_cleanup()
-    uninstaller_cleanup()
     shutil.rmtree(os.path.join(install_dir, 'documentation'), True)
-    shutil.rmtree(os.path.join(install_dir, 'matlab'), True)
-    shutil.rmtree(os.path.join(install_dir, 'matlab_tools'), True)
     shutil.rmtree(os.path.join(install_dir, 'bin'), True)
     def try_remove(f):
         try:
@@ -1012,13 +935,11 @@ def uninstall(install_dir):
         except OSError:
             pass
 
-    for f in glob.glob(os.path.join(install_dir, 'environment*.yml')):
-        try_remove(f)
-
     if sys.platform == 'win32':
         try_remove(os.path.join(install_dir, 'activate_simnibs.cmd'))
         try_remove(os.path.join(install_dir, 'examples.lnk'))
         try_remove(os.path.join(install_dir, 'simnibs.lnk'))
+        try_remove(os.path.join(install_dir, 'matlab_tools.lnk'))
         try_remove(os.path.join(install_dir, 'Activate SimNIBS.lnk'))
         try_remove(os.path.join(install_dir, 'Uninstall SimNIBS.lnk'))
         conda_uninstaller = os.path.join(
@@ -1031,12 +952,10 @@ def uninstall(install_dir):
         try_remove(os.path.join(install_dir, 'activate_simnibs'))
         try_remove(os.path.join(install_dir, 'simnibs'))
         try_remove(os.path.join(install_dir, 'examples'))
+        try_remove(os.path.join(install_dir, 'matlab_tools'))
         if sys.platform == 'darwin':
             shutil.rmtree(os.path.join(install_dir, 'SimNIBS GUI.app'), True)
             shutil.rmtree(os.path.join(install_dir, 'Gmsh.app'), True)
-
-    try_remove(os.path.join(install_dir, 'simnibs_install_log.txt'))
-
 
 def main():
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
@@ -1048,14 +967,9 @@ def main():
                         help="Perform all install steps")
     parser.add_argument('-s', "--silent", required=False, action='store_true',
                         help="Silent mode, will install without the GUI")
-    parser.add_argument('--copy-matlab', action='store_true',
-                        help='Copies the matlab folder from the simnibs package to'
-                       ' the target directory')
     parser.add_argument('--setup-links', action='store_true',
                         help='Setups links or shortcuts (on windows) to the simnibs '
-                        'and example folders')
-    parser.add_argument('-u', "--uninstall", required=False, action='store_true',
-                        help="Ignores all other arguments and uninstall SimNIBS")
+                        'and example folders.')
     parser.add_argument('--no-copy-gmsh-options', dest='copy_gmsh_options',
                         action='store_false', help='Do not copy gmsh options')
     parser.add_argument('--no-add-to-path', dest='add_to_path',
@@ -1066,6 +980,9 @@ def main():
                         action='store_false', help='Do not create start menu shortcuts')
     parser.add_argument('--no-associate-files', dest='associate_files',
                         action='store_false', help='Do not create file associations')
+    parser.add_argument('-u', "--uninstall", required=False, action='store_true',
+                        help="Ignores all other arguments and uninstall SimNIBS")
+    parser.add_argument('--version', action='version', version=__version__)
     args = parser.parse_args(sys.argv[1:])
     install_dir = os.path.abspath(os.path.expanduser(args.target_dir))
     if args.uninstall:
@@ -1082,7 +999,6 @@ def main():
                 'more information')
         start_gui(
             install_dir,
-            args.copy_matlab,
             args.setup_links,
             args.copy_gmsh_options,
             args.add_to_path,
@@ -1101,7 +1017,6 @@ def main():
             args.extra_coils,
             args.add_shortcut_icons,
             args.associate_files,
-            args.copy_matlab,
             args.setup_links
         )
 

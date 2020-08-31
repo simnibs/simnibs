@@ -1,4 +1,4 @@
-simnibs.write\_freesurfer\_surface
+﻿simnibs.write\_freesurfer\_surface
 ==================================
 
 .. currentmodule:: simnibs

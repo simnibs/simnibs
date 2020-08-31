@@ -17,13 +17,13 @@ from ...mesh_tools import mesh_io
 @pytest.fixture(scope='module')
 def sphere3_fn():
     return os.path.join(
-        SIMNIBSDIR, 'resources',
+        SIMNIBSDIR, '_internal_resources',
         'testing_files', 'sphere3.msh')
 
 @pytest.fixture
 def sphere3_msh():
     return mesh_io.read_msh(os.path.join(
-        SIMNIBSDIR, 'resources',
+        SIMNIBSDIR, '_internal_resources',
         'testing_files', 'sphere3.msh'))
 
 
@@ -31,7 +31,7 @@ def sphere3_msh():
 @pytest.fixture(scope='module')
 def mat_session():
     mat = scipy.io.loadmat(os.path.join(
-        SIMNIBSDIR, 'resources',
+        SIMNIBSDIR, '_internal_resources',
         'testing_files', 'session.mat'),
         struct_as_record=True, squeeze_me=False)
 
@@ -43,7 +43,7 @@ def sphere3_folders():
     """ Creates folder structure
     """
     path_to_dir = os.path.join(
-        SIMNIBSDIR, 'resources',
+        SIMNIBSDIR, '_internal_resources',
         'testing_files', 'd2c_sphere3')
     if not os.path.exists(path_to_dir):
         os.mkdir(path_to_dir)
@@ -58,7 +58,7 @@ def sphere3_folders():
     def fin():
         shutil.rmtree(path_to_dir)
 
-    return os.path.join(SIMNIBSDIR, 'resources', 'testing_files')
+    return os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files')
 
 class TestFiducials:
     def test_fiducial_from_csv(self):
@@ -221,7 +221,7 @@ class TestList:
             fn_hdf5 = f.name
         l._write_conductivity_to_hdf5(fn_hdf5)
 
-        with h5py.File(fn_hdf5) as f:
+        with h5py.File(fn_hdf5, 'r') as f:
             assert np.isclose(f['cond/values'][3], 2)
             assert np.isnan(f['cond/values'][46])
             assert f['cond/names'][0] == b'WM'

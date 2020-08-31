@@ -93,7 +93,7 @@ switch S.type
     case 'TMSLIST'
         S=sim_struct('LIST');
         S.type='TMSLIST';
-        S.fnamecoil='';      % to chose from inside ccd-files
+        S.fnamecoil='';      % to chose from inside resources/coil_models
         S.pos=sim_struct('POSITION');    % list of coil positions
         
     case 'TDCSLIST'
