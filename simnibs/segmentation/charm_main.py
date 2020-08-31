@@ -344,7 +344,7 @@ def run(subject_dir=None, T1=None, T2=None,
     # by default this is all, but can be changed in the .ini
     num_threads = samseg_settings['threads']
     if isinstance(num_threads, int) and num_threads > 0:
-        samseg.setGlobalDefaulNumberOfThreads(num_threads)
+        samseg.setGlobalDefaultNumberOfThreads(num_threads)
         logger.info('Using %d threads, instead of all available.'
                     % num_threads)
 
