@@ -40,6 +40,7 @@ import scipy.sparse.csgraph
 import scipy.interpolate
 import nibabel
 import h5py
+import io
 
 from .transformations import nifti_transform
 from . import gmsh_view
@@ -3935,7 +3936,7 @@ class NodeData(Data):
             f.write(b'$EndNodeData\n')
 
 
-def read_msh(fn, m=None):
+def read_msh(fn, m=None, buffered=False):
     ''' Reads a gmsh '.msh' file
 
     Parameters
@@ -3944,6 +3945,11 @@ def read_msh(fn, m=None):
         File name
     m: simnibs.msh.Msh (optional)
         Mesh structure to be overwritten. If unset, will create a new structure
+    buffered: bool
+        Perform buffered reading, expected to be significantly faster for slow
+        network connections when the file specifies elements and nodes one by
+        one (the case for some version 2 .msh files directly from gmsh).
+        Defaults to False, and is ignored for version 4 .msh files
 
     Returns
     --------
@@ -3960,7 +3966,7 @@ def read_msh(fn, m=None):
 
     version_number = _find_mesh_version(fn)
     if version_number == 2:
-        m = _read_msh_2(fn, m)
+        m = _read_msh_2(fn, m, buffered=buffered)
 
     elif version_number == 4:
         m = _read_msh_4(fn, m)
@@ -3990,11 +3996,22 @@ def _find_mesh_version(fn):
     return version_number
 
 
-def _read_msh_2(fn, m):
+def _read_msh_2(fn, m, buffered=False):
     m.fn = fn
-
-    # file open
-    with open(fn, 'rb') as f:
+    # file open and handle buffered reads
+    if buffered:
+        with io.BytesIO(open(fn, 'rb').read()) as ff:
+            f = io.BytesIO(ff.read())
+    else:
+        f = open(fn, 'rb')
+    # wrapper function for numpy.fromfile, needed in case file is buffered
+    def npfromfile(f, dtype=float, count=-1, offset=0):
+        if buffered:
+            buf = f.read(np.dtype(dtype).itemsize * count)
+            return np.frombuffer(buf, dtype=dtype, count=count, offset=offset)
+        else:
+            return np.fromfile(f, dtype=dtype, count=count, offset=offset)
+    try:
         # check 1st line
         first_line = f.readline()
         if first_line != b'$MeshFormat\n':
@@ -4049,8 +4066,7 @@ def _read_msh_2(fn, m):
             dt = np.dtype([
                 ('id', np.int32),
                 ('coord', np.float64, 3)])
-
-            temp = np.fromfile(f, dtype=dt, count=node_nr)
+            temp = npfromfile(f, dtype=dt, count=node_nr)
             node_number = np.copy(temp['id'])
             node_coord = np.copy(temp['coord'])
 
@@ -4108,9 +4124,9 @@ def _read_msh_2(fn, m):
             nr_nodes_elm = [None, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9,
                             10, 27, 18, 14, 1, 8, 20, 15, 13]
             while current_element < elm_nr:
-                elm_type, nr, _ = np.fromfile(f, 'int32', 3)
+                elm_type, nr, _ = npfromfile(f, 'int32', 3)
                 if elm_type == 2:
-                    tmp = np.fromfile(f, 'int32', nr * 6).reshape(-1, 6)
+                    tmp = npfromfile(f, 'int32', nr * 6).reshape(-1, 6)
 
                     m.elm.elm_type[current_element:current_element+nr] = \
                         2 * np.ones(nr, 'int32')
@@ -4121,7 +4137,7 @@ def _read_msh_2(fn, m):
                     read[current_element:current_element+nr] = 1
 
                 elif elm_type == 4:
-                    tmp = np.fromfile(f, 'int32', nr * 7).reshape(-1, 7)
+                    tmp = npfromfile(f, 'int32', nr * 7).reshape(-1, 7)
 
                     m.elm.elm_type[current_element:current_element+nr] = \
                         4 * np.ones(nr, 'int32')
@@ -4134,7 +4150,7 @@ def _read_msh_2(fn, m):
                 else:
                     warnings.warn('element of type {0} '
                                   'cannot be read, ignoring it'.format(elm_type))
-                    np.fromfile(f, 'int32', nr * (3 + nr_nodes_elm[elm_type]))
+                    npfromfile(f, 'int32', nr * (3 + nr_nodes_elm[elm_type]))
                     read[current_element:current_element+nr] = 0
                 current_element += nr
 
@@ -4220,7 +4236,7 @@ def _read_msh_2(fn, m):
                 else:
                     value_dt = ('values', np.float64, nr_comp)
                 dt = np.dtype([('id', np.int32), value_dt])
-                temp = np.fromfile(f, dtype=dt, count=nr)
+                temp = npfromfile(f, dtype=dt, count=nr)
                 node_number = np.copy(temp['id'])
                 data.value = np.copy(temp['values'])
             else:
@@ -4252,7 +4268,7 @@ def _read_msh_2(fn, m):
                 else:
                     value_dt = ('values', np.float64, nr_comp)
                 dt = np.dtype([('id', np.int32), value_dt])
-                temp = np.fromfile(f, dtype=dt, count=nr)
+                temp = npfromfile(f, dtype=dt, count=nr)
                 elm_number = np.copy(temp['id'])
                 data.value = np.copy(temp['values'])
 
@@ -4291,6 +4307,8 @@ def _read_msh_2(fn, m):
             return
 
         read_next_section()
+    finally:
+        f.close()
     m.compact_ordering(node_number)
     return m
 

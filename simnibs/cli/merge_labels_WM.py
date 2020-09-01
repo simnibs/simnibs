@@ -46,7 +46,8 @@ def main():
         print('2nd argument must have a .msh extension')
         sys.exit(1)
 
-    m = mesh_io.read_msh(sys.argv[1])
+    # using buffered reading due to ineffcient version 2 format written by gmsh
+    m = mesh_io.read_msh(sys.argv[1], buffered=True)
 
     m.fn = sys.argv[2]
     logger.info("Relabeled ventricle regions to CSF and cerebellum regions to WM")
