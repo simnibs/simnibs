@@ -4005,12 +4005,12 @@ def _read_msh_2(fn, m, buffered=False):
     else:
         f = open(fn, 'rb')
     # wrapper function for numpy.fromfile, needed in case file is buffered
-    def npfromfile(f, dtype=float, count=-1, offset=0):
+    def npfromfile(f, dtype=float, count=-1):
         if buffered:
             buf = f.read(np.dtype(dtype).itemsize * count)
-            return np.frombuffer(buf, dtype=dtype, count=count, offset=offset)
+            return np.frombuffer(buf, dtype=dtype, count=count)
         else:
-            return np.fromfile(f, dtype=dtype, count=count, offset=offset)
+            return np.fromfile(f, dtype=dtype, count=count)
     try:
         # check 1st line
         first_line = f.readline()
