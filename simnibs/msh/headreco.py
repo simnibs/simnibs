@@ -693,7 +693,8 @@ def headmodel(argv):
         ovmsh = vmsh
         
         # load volume mesh
-        vmsh = mesh_io.read_msh(vmsh)
+        # using buffered reading due to ineffcient version 2 format written by gmsh
+        vmsh = mesh_io.read_msh(vmsh, buffered=True)
         
         # if ventricles exist, relabel to CSF
         if any(["ventricles" in s for s in surfaces]):
