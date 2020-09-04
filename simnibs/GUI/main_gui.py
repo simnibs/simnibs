@@ -1011,7 +1011,7 @@ class COIL_TABLE_ROW:
         #self.ogl_object = None
         #self.electrode.definition = 'plane'
         self.didt_box = QtWidgets.QDoubleSpinBox()
-        self.didt_box.setSuffix("x10e6 A/s")
+        self.didt_box.setSuffix("x1e6 A/s")
         self.didt_box.setMinimum(0)
         self.didt_box.setMaximum(200)
         self.didt_box.setSingleStep(0.5)
