@@ -3984,8 +3984,8 @@ def _find_mesh_version(fn):
     # file open
     with open(fn, 'rb') as f:
         # check 1st line
-        first_line = f.readline().decode()        
-        if first_line != '$MeshFormat\n' and first_line != '$MeshFormat\r\n':
+        first_line = f.readline().decode().strip()
+        if first_line != '$MeshFormat':
             raise IOError(fn, "must start with $MeshFormat")
 
         # parse 2nd line
@@ -4013,8 +4013,8 @@ def _read_msh_2(fn, m, buffered=False):
             return np.fromfile(f, dtype=dtype, count=count)
     try:
         # check 1st line
-        first_line = f.readline()
-        if first_line != b'$MeshFormat\n':
+        first_line = f.readline().strip()
+        if first_line != b'$MeshFormat':
             raise IOError(fn, "must start with $MeshFormat")
 
         # parse 2nd line
@@ -4047,11 +4047,11 @@ def _read_msh_2(fn, m, buffered=False):
             raise IOError("endianness is not 1, is the endian order wrong?")
 
         # read 3rd line
-        if f.readline() != b'$EndMeshFormat\n':
+        if f.readline().strip() != b'$EndMeshFormat':
             raise IOError(fn + " expected $EndMeshFormat")
 
         # read 4th line
-        if f.readline() != b'$Nodes\n':
+        if f.readline().strip() != b'$Nodes':
             raise IOError(fn + " expected $Nodes")
 
         # read 5th line with number of nodes
@@ -4096,12 +4096,12 @@ def _read_msh_2(fn, m, buffered=False):
                           " unexpectedly")
         m.nodes.node_coord = node_coord
 
-        if f.readline() != b'$EndNodes\n':
+        if f.readline().strip() != b'$EndNodes':
             raise IOError(fn + " expected $EndNodes after reading " +
                           str(node_nr) + " nodes")
 
         # read all elements
-        if f.readline() != b'$Elements\n':
+        if f.readline().strip() != b'$Elements':
             raise IOError(fn, "expected line with $Elements")
 
         try:
