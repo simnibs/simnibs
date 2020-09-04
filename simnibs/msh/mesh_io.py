@@ -3984,8 +3984,8 @@ def _find_mesh_version(fn):
     # file open
     with open(fn, 'rb') as f:
         # check 1st line
-        first_line = f.readline().decode()
-        if first_line != '$MeshFormat\n':
+        first_line = f.readline().decode()        
+        if first_line != '$MeshFormat\n' and first_line != '$MeshFormat\r\n':
             raise IOError(fn, "must start with $MeshFormat")
 
         # parse 2nd line
@@ -4318,8 +4318,8 @@ def _read_msh_4(fn, m):
     # file open
     with open(fn, 'rb') as f:
         # check 1st line
-        first_line = f.readline()
-        if first_line != b'$MeshFormat\n':
+        first_line = f.readline().strip()
+        if first_line != b'$MeshFormat':
             raise IOError(fn, "must start with $MeshFormat")
 
         # parse 2nd line
@@ -4352,19 +4352,19 @@ def _read_msh_4(fn, m):
             raise IOError("endianness is not 1, is the endian order wrong?")
 
         # read 3rd line
-        if f.readline() != b'$EndMeshFormat\n':
+        if f.readline().strip() != b'$EndMeshFormat':
             raise IOError(fn + " expected $EndMeshFormat")
 
-        # Skip  everyting untill nodes
-        while f.readline() != b'$Nodes\n':
+        # Skip  everyting until nodes
+        while f.readline().strip() != b'$Nodes':
             continue
 
         # Number of nodes and number of blocks
         if binary:
-            entity_blocks, node_nr = struct.unpack('LL', f.read(struct.calcsize('LL')))
+            entity_blocks, node_nr, _, _ = struct.unpack('NNNN', f.read(struct.calcsize('NNNN')))
         else:
             line = f.readline().strip()
-            entity_blocks, node_nr = line.decode().split()
+            entity_blocks, node_nr, _, _ = line.decode().split()
             entity_blocks = int(entity_blocks)
             node_nr = int(node_nr)
         n_read = 0
@@ -4372,10 +4372,9 @@ def _read_msh_4(fn, m):
         node_coord = np.zeros((node_nr, 3), dtype=np.float)
         for block in range(entity_blocks):
             if binary:
-                _, _, parametric, n_in_block = struct.unpack(
-                    'iiii', f.read(struct.calcsize('iiii')))
-                # We need to read 4 extra bytes here
-                f.read(4)
+                _, _, parametric = struct.unpack(
+                    'iii', f.read(struct.calcsize('iii')))
+                n_in_block, = struct.unpack('N', f.read(struct.calcsize('N')))
             else:
                 _, _, parametric, n_in_block = f.readline().decode().strip().split()
                 parametric = int(parametric)
@@ -4383,23 +4382,21 @@ def _read_msh_4(fn, m):
             if parametric:
                 raise IOError("Can't read parametric entity!")
             if binary:
-                dt = np.dtype([
-                    ('id', np.int32, 1),
-                    ('coord', np.float64, 3)])
-                temp = np.fromfile(f, dtype=dt, count=n_in_block)
-                node_nbr_block = temp['id']
-                node_coord_block = temp['coord']
+                node_nbr_block = np.fromfile(f, dtype=np.uintp, count=n_in_block)
+                node_coord_block = np.fromfile(f, dtype=np.float64, count=3 * n_in_block)
             else:
                 node_nbr_block = np.zeros(n_in_block, dtype=np.int)
                 node_coord_block = np.zeros(3 * n_in_block, dtype=np.float)
                 for i in range(n_in_block):
-                    line = f.readline().decode().strip().split()
-                    node_nbr_block[i] = line[0]
-                    node_coord_block[3*i] = line[1]
-                    node_coord_block[3*i + 1] = line[2]
-                    node_coord_block[3*i + 2] = line[3]
-                node_coord_block = node_coord_block.reshape(-1, 3)
-
+                     line = f.readline().decode().strip().split()
+                     node_nbr_block[i] = line[0]    
+                for i in range(n_in_block):
+                     line = f.readline().decode().strip().split()   
+                     node_coord_block[3*i] = line[0]
+                     node_coord_block[3*i + 1] = line[1]
+                     node_coord_block[3*i + 2] = line[2]
+                     
+            node_coord_block = node_coord_block.reshape(-1, 3)
             node_number[n_read:n_read+n_in_block] = node_nbr_block
             node_coord[n_read:n_read+n_in_block, :] = node_coord_block
             n_read += n_in_block
@@ -4414,13 +4411,13 @@ def _read_msh_4(fn, m):
                               str(m.noedes.nr) + " nodes. Read " + line)
 
         # Read Elements
-        if f.readline() != b'$Elements\n':
+        if f.readline().strip() != b'$Elements':
             raise IOError(fn, "expected line with $Elements")
         if binary:
-            entity_blocks, elm_nr = struct.unpack('LL', f.read(struct.calcsize('LL')))
+            entity_blocks, elm_nr, _, _ = struct.unpack('NNNN', f.read(struct.calcsize('NNNN')))
         else:
             line = f.readline().strip()
-            entity_blocks, elm_nr = line.decode().split()
+            entity_blocks, elm_nr, _, _ = line.decode().split()
             entity_blocks = int(entity_blocks)
             elm_nr = int(elm_nr)
         n_read = 0
@@ -4431,11 +4428,11 @@ def _read_msh_4(fn, m):
         read = np.ones(elm_nr, dtype=bool)
         for block in range(entity_blocks):
             if binary:
-                tag, _, elm_type, n_in_block = struct.unpack(
-                    'iiii', f.read(struct.calcsize('iiii')))
-                f.read(4)
+                _, tag, elm_type = struct.unpack(
+                    'iii', f.read(struct.calcsize('iii')))
+                n_in_block, = struct.unpack('N', f.read(struct.calcsize('N')))
             else:
-                tag, _, elm_type, n_in_block = f.readline().decode().strip().split()
+                _, tag, elm_type, n_in_block = f.readline().decode().strip().split()
                 tag = int(tag)
                 elm_type = int(elm_type)
                 n_in_block = int(n_in_block)
@@ -4451,8 +4448,8 @@ def _read_msh_4(fn, m):
 
             if binary:
                 dt = np.dtype([
-                    ('id', np.int32, 1),
-                    ('nodes', np.int32, nr_nodes_elm)])
+                    ('id', np.uintp, 1),
+                    ('nodes', np.uintp, nr_nodes_elm)])
                 temp = np.fromfile(f, dtype=dt, count=n_in_block)
                 elm_nbr_block = temp['id']
                 elm_node_block = temp['nodes']
@@ -4517,7 +4514,7 @@ def _read_msh_4(fn, m):
             data = NodeData(np.empty((nr, nr_comp)), name=name, mesh=m)
             if binary:
                 dt = np.dtype([
-                    ('id', np.int32, 1),
+                    ('id', np.uintp, 1),
                     ('values', np.float64, nr_comp)])
 
                 temp = np.fromfile(f, dtype=dt, count=nr)
@@ -4531,7 +4528,7 @@ def _read_msh_4(fn, m):
                     node_number[ii] = int(line[0])
                     data.value[ii, :] = [float(v) for v in line[1:]]
 
-            if f.readline() != b'$EndNodeData\n':
+            if f.readline().strip() != b'$EndNodeData':
                 raise IOError(fn + " expected $EndNodeData after reading " +
                               str(nr) + " lines in $NodeData")
 
@@ -4548,7 +4545,7 @@ def _read_msh_4(fn, m):
             data = ElementData(np.empty((nr, nr_comp)), name=name, mesh=m)
             if binary:
                 dt = np.dtype([
-                    ('id', np.int32, 1),
+                    ('id', np.uintp, 1),
                     ('values', np.float64, nr_comp)])
 
                 temp = np.fromfile(f, dtype=dt, count=nr)
@@ -4564,7 +4561,7 @@ def _read_msh_4(fn, m):
                     elm_number[ii] = int(line[0])
                     data.value[ii, :] = [float(jj) for jj in line[1:]]
 
-            if f.readline() != b'$EndElementData\n':
+            if f.readline().strip() != b'$EndElementData':
                 raise IOError(fn + " expected $EndElementData after reading " +
                               str(nr) + " lines in $ElementData")
 

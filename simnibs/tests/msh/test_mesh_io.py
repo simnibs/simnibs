@@ -1774,3 +1774,17 @@ class TestHashing:
         _, count = np.unique(hash_, return_counts=True)
         assert np.all(count == 1)
 
+class TestMshV41:
+    def test_mshv41(self):
+        fn = os.path.join(os.path.dirname(os.path.realpath(
+            __file__)), '..', 'testing_files', 'sphere3_v4_1_binary.msh')      
+        m41bin=mesh_io.read_msh(fn)
+        
+        fn = os.path.join(os.path.dirname(os.path.realpath(
+            __file__)), '..', 'testing_files', 'sphere3_v4_1_ascii.msh')  
+        m41asc=mesh_io.read_msh(fn)
+        
+        assert np.all(m41asc.nodes[:] == m41bin.nodes[:])
+        assert np.all(m41asc.elm[:] == m41bin.elm[:])
+        assert np.all(m41asc.elm.tag1[:] == m41bin.elm.tag1[:])
+            
