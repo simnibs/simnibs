@@ -4247,7 +4247,7 @@ def _read_msh_2(fn, m, buffered=False):
                     node_number[ii] = int(line[0])
                     data.value[ii, :] = [float(v) for v in line[1:]]
 
-            if f.readline() != b'$EndNodeData\n':
+            if f.readline().strip() != b'$EndNodeData':
                 raise IOError(fn + " expected $EndNodeData after reading " +
                               str(nr) + " lines in $NodeData")
 
@@ -4281,7 +4281,7 @@ def _read_msh_2(fn, m, buffered=False):
                     elm_number[ii] = int(line[0])
                     data.value[ii, :] = [float(jj) for jj in line[1:]]
 
-            if f.readline() != b'$EndElementData\n':
+            if f.readline().strip() != b'$EndElementData':
                 raise IOError(fn + " expected $EndElementData after reading " +
                               str(nr) + " lines in $ElementData")
 
