@@ -4324,13 +4324,17 @@ def _read_msh_4(fn, m):
 
         # parse 2nd line
         version_number, file_type, data_size = f.readline().decode().strip().split()
-        version_number = int(version_number[0])
+        version_number, sub_number = version_number.split('.')
+        version_number = int(version_number)
+        sub_number = int(sub_number)
         file_type = int(file_type)
         data_size = int(data_size)
 
         if version_number != 4:
             raise IOError("Can only handle v4 meshes")
-
+        if sub_number == 0:
+            raise IOError(fn, "mesh version 4.0 not supported; use 4.1 or higher")
+            
         if file_type == 1:
             binary = True
         elif file_type == 0:
