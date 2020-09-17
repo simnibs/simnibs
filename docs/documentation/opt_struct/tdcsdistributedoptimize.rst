@@ -13,8 +13,8 @@ Initialization
 
   .. code-block:: python
 
-     from simnibs import optimization
-     opt = optimization.TDCSDistributedOptimize()
+     from simnibs import opt_struct
+     opt = opt_struct.TDCSDistributedOptimize()
 
   \
 
@@ -32,7 +32,7 @@ Attributes
 
 * **leadfield_hdf**: *string (Python)/character array (MATLAB)*
 
-  * **Desctiption**: Name of HDF5 file with leadfield (see :ref:`tdcsleadfield_doc`)
+  * **Description**: Name of HDF5 file with leadfield (see :ref:`tdcsleadfield_doc` and also the first part of :ref:`tdcs_opt`)
   * **Example**: *Python/MATLAB*
 
   .. code-block:: matlab

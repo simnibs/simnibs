@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TDCSDistributedOptimize &#8212; SimNIBS 3.2.1 documentation</title>
+    <title>TDCSDistributedOptimize &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -57,8 +57,8 @@
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>Python</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">optimization</span>
-<span class="n">opt</span> <span class="o">=</span> <span class="n">optimization</span><span class="o">.</span><span class="n">TDCSDistributedOptimize</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TDCSDistributedOptimize</span><span class="p">()</span>
 </pre></div>
 </div>
 <p></p>
@@ -76,7 +76,7 @@
 <ul>
 <li><p><strong>leadfield_hdf</strong>: <em>string (Python)/character array (MATLAB)</em></p>
 <ul class="simple">
-<li><p><strong>Desctiption</strong>: Name of HDF5 file with leadfield (see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>)</p></li>
+<li><p><strong>Description</strong>: Name of HDF5 file with leadfield (see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a> and also the first part of <a class="reference internal" href="../../tutorial/optimization.html#tdcs-opt"><span class="std std-ref">TDCS Optimization</span></a>)</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;tdcs_leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
