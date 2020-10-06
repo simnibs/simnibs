@@ -21,7 +21,7 @@ if ~any(strcmp(out_fill, {'nan', 'nearest'}))
 end
 
 if ischar(mesh)
-    assert(exist(mesh, 'file'), ['Could not find mesh file ' mesh])
+    assert(exist(mesh, 'file') == 2, ['Could not find mesh file ' mesh])
     fn_mesh = mesh;
     is_temp = false; 
 else
