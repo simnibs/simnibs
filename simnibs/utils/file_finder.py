@@ -43,8 +43,7 @@ class Templates:
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
         self.atlases_surfaces = os.path.join(
-            self._resources, 'templates', 'fsaverage_atlases'
-        )
+            self._resources, 'templates', 'fsaverage_surf')
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
