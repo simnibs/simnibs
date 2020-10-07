@@ -760,8 +760,33 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     logger.debug(f'iscerebellum: {iscerebellum}, vdist: {vdist}, voxsize_pbt: {voxsize_pbt}, voxsize_refineCS: {voxsize_refineCS}')
             
     # crop
-    mask = ndimage.uniform_filter(Ymfs, 3) > 1.5
+    
+    if debug:
+        tmp = ndimage.uniform_filter(Ymfs, 3)
+        Ymfs_filtered = nib.Nifti1Image(tmp, vox2mm)
+        fname_ymfsfiltered=os.path.join(surffolder, 'Ymfs_filtered_' + actualsurf + '.nii.gz')
+        nib.save(Ymfs_filtered, fname_ymfsfiltered)
+    
+    # Okay CAT12 uses the magical threshold of 1.5 in multiple places,
+    # based on a single example (Ernie) this is not the optimal magical
+    # threshold for charm. So from hereon wherever there read thres_magic,
+    # it will be 1.3 for charm whereas the original one in CAT12 is 1.5
+    iscat = True
+    if iscat:
+        thres_magic = 1.5
+    else:
+        thres_magic = 1.2
+    thres_magic = 1.2
+    
+    mask = ndimage.uniform_filter(Ymfs, 3) > thres_magic
+    
     Ymfs, vox2mm_cropped, _ = crop_vol(Ymfs, vox2mm, mask, 4)
+    
+    if debug:
+        Ymfs_tmp = nib.Nifti1Image(Ymfs, vox2mm_cropped)
+        fname_ymfstest=os.path.join(surffolder,'Ymfs_masked_' + actualsurf + '.nii.gz')
+        nib.save(Ymfs_tmp, fname_ymfstest)   
+    
     Yside = crop_vol(Yside, vox2mm, mask, 4)[0]
     if not iscerebellum:
         mask_parahipp = dilate(Ymaskparahipp,6)
@@ -770,6 +795,13 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     # upsample using linear interpolation (linear is better than cubic for small thicknesses)
     Ymfs, vox2mm_upsampled, _ =resample_vol(np.maximum(1,Ymfs), vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')
     Ymfs=np.minimum(3,np.maximum(1,Ymfs))
+    
+    # TESTING
+    if debug:
+        Ymfs_upsampled = nib.Nifti1Image(Ymfs, vox2mm_upsampled)
+        fname_ymfstest = os.path.join(surffolder,'Ymfs_test_upsampled_'+actualsurf+'.nii.gz')
+        nib.save(Ymfs_upsampled, fname_ymfstest)
+        
     Yside=resample_vol(Yside, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
     if not iscerebellum:
         mask_parahipp = resample_vol(mask_parahipp, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
@@ -781,7 +813,8 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     
     # NOTE: Yth1i is the cortical thickness map
     #       Yppi is the percentage position map: 1 is WM, 0 is GM surface
-    Yth1i, Yppi = cat_vol_pbt_AT(Ymfs, voxsize_pbt, debug)
+    Yth1i, Yppi = cat_vol_pbt_AT(Ymfs, voxsize_pbt, actualsurf, debug,
+                                 vox2mm_upsampled, surffolder)
     del Ymfs
     gc.collect()
         
@@ -895,7 +928,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     return Pcentral, Pspherereg, Pthick, EC, defect_size
         
 
-def cat_vol_pbt_AT(Ymf, resV, debug=False):
+def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=None):
     """ Estimate cortical thickness and surface position using pbt2x
 
     PARAMETERS
@@ -903,10 +936,13 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
        Ymf    : tissue segment image or better the noise, bias, and
                 intensity corrected
        resV   : voxel resolution (only isotropic)
+       actualsurf: the side being processed (lh,rh,rc,lc)
 
        --> optional parameters:
        debug  : bool
-                (default = False)       
+                (default = False)   
+                
+       vox2mm : image-to-world transformation for debugging purposes
 
     RETURNS
     ----------
@@ -950,7 +986,15 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     debug=int(debug)
 
+    # CAT12's original magical threshold is 1.5
+    iscat = True
     
+    if iscat:
+        thres_magic = 1.5
+    else:
+        thres_magic = 1.2
+    
+    thres_magic = 1.2
     #  WM distance
     #  Estimate WM distance Ywmd and the outer CSF distance Ycsfdc to correct
     #  the values in CSF area are to limit the Ywmd to the maximum value that
@@ -968,20 +1012,56 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     stimet = time.time()
     stimet2 = stimet
 
-    YMM = np.logical_or(erosion(Ymf < 1.5, 1), np.isnan(Ymf))
+    YMM = np.logical_or(erosion(Ymf < thres_magic, 1), np.isnan(Ymf))
     F = np.fmax(0.5, np.fmin(1, Ymf / 2))
-
-    YM = np.fmax(0, np.fmin(1, (Ymf - 2)))
+    
+    ## DEBUG
+    if debug:
+        F_image = nib.Nifti1Image(F, vox2mm)
+        fname_F=os.path.join(surffolder,'F_' + actualsurf + '.nii.gz')
+        nib.save(F_image, fname_F)
+    
+    # In CAT12 this extends quite far into gray matter, as there are
+    # values that are > 2 quite close to CSF. In our case the values drop
+    # off faster, so could change the 2 into 1.9
+    # YM = np.fmax(0, np.fmin(1, (Ymf - 1.9)))
+    if iscat:
+        tmp_param = 2
+    else:
+        tmp_param = 1.9
+        
+    YM = np.fmax(0, np.fmin(1, (Ymf - tmp_param)))
     YM[YMM] = np.nan
+    
+    ## DEBUG
+    if debug:
+        YM_image = nib.Nifti1Image(YM, vox2mm)
+        fname_YM=os.path.join(surffolder,'YM_' + actualsurf + '.nii.gz')
+        nib.save(YM_image, fname_YM)
+    
     Ywmd = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
+    
+    ## DEBUG
+    if debug:
+        Ywmd_image = nib.Nifti1Image(Ywmd, vox2mm)
+        fname_Ywmd=os.path.join(surffolder,'Ywmd_' + actualsurf + '.nii.gz')
+        nib.save(Ywmd_image, fname_Ywmd)
+    
+    
     F = np.fmax(1.0, np.fmin(1, Ymf / 2))
-
+    
     YM = np.fmax(0, np.fmin(1, (Ymf - 1)))
     YM[YMM] = np.nan
     Ycsfdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
 
+    ## FOR DEBUGGING
+    if debug:
+        Ycsfdc_image = nib.Nifti1Image(Ycsfdc, vox2mm)
+        fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_' + actualsurf + '.nii.gz')
+        nib.save(Ycsfdc_image, fname_Ycsfdc)
+    
     del F, YMM
     gc.collect()
 
@@ -990,8 +1070,13 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         notnan = ~np.isnan(Ywmd)
         YM = np.full(Ywmd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= 1.5))
-        Ywmd[YM] = Ywmd[YM] - Ycsfdc[YM]
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= thres_magic))
+        
+        # It might happen that there are inf-infs here which triggers a 
+        # runtime warning. inf-inf produces a nan and those seem to be 
+        # masked out later on, so I'll ignore the warning here
+        with np.errstate(invalid='ignore'):
+            Ywmd[YM] = Ywmd[YM] - Ycsfdc[YM]
         Ywmd[np.isinf(Ywmd)] = 0
         del Ycsfdc
         gc.collect()
@@ -1000,7 +1085,7 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         notnan = ~np.isnan(Ywmd)
         YM = np.full(Ywmd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ywmd[notnan] > minfdist), (Ymf[notnan] > 1.5))
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] > thres_magic))
         YwmdM = np.array(Ywmd, copy=True)
         YwmdM = _cat_c_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
         Ywmd[YM] = YwmdM[YM]
@@ -1009,23 +1094,34 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         notnan = ~np.isnan(Ywmd)
         YM = np.full(Ywmd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= 1.5))
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] <= thres_magic))
         YwmdM = np.array(Ywmd, copy=True)
         for i in np.arange(1, 3):
             YwmdM = _cat_c_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
         Ywmd[YM] = YwmdM[YM]
 
+        if iscat:
+            tmp_param9 = 2.0
+        else:
+            tmp_param9 = 1.5
+
         # reducing outliers in the GM/CSF area
         notnan = ~np.isnan(Ywmd)
         YM = np.full(Ywmd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ywmd[notnan] > minfdist), (Ymf[notnan] < 2.0))
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] < tmp_param9))
         YwmdM = np.array(Ywmd, copy=True)
         YwmdM = _cat_c_utils.cat_vol_median3(YwmdM, YM, YM)
         Ywmd[YM] = YwmdM[YM]
         del YwmdM, YM
         gc.collect()
 
+    ## DEBUG
+    if debug:
+        Ywmd_image = nib.Nifti1Image(Ywmd, vox2mm)
+        fname_Ywmd=os.path.join(surffolder,'Ywm_after_a_million_steps_' + actualsurf + '.nii.gz')
+        nib.save(Ywmd_image, fname_Ywmd)
+    
     logger.info(f'WM distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
@@ -1033,13 +1129,26 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     #  Similar to the WM distance, but keep in mind that this map is
     #  incorrect in blurred sulci that is handled by PBT
     stimet = time.time()
+    if iscat:
+        tmp_param6 = 2.5
+    else:
+        tmp_param6 = 2.2
+        
 
-    YMM = np.any((erosion(Ymf < 1.5, 1), erosion(
-        Ymf > 2.5, 1), np.isnan(Ymf)), axis=0)
+    YMM = np.any((erosion(Ymf < thres_magic, 1), erosion(
+        Ymf > tmp_param6, 1), np.isnan(Ymf)), axis=0)
 
+    
     F = np.fmax(0.5, np.fmin(1, (4 - Ymf) / 2))
 
-    YM = np.fmax(0, np.fmin(1, (2 - Ymf)))
+    if iscat:
+        tmp_param10 = 2
+    else:
+        tmp_param10 = 1.5
+        
+    tmp_param10 = 1.5
+    
+    YM = np.fmax(0, np.fmin(1, (tmp_param10 - Ymf)))
     YM[YMM] = np.nan
     Ycsfd = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
@@ -1049,20 +1158,57 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     YM[YMM] = np.nan
     Ywmdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
-    YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
+    
+    # The original CAT12 command was: 
+    # YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
+    # This looks slightly fishy as it's not really a half
+    # Let's try to set this to 3 and see what happens
+    if iscat:
+        tmp_param2 = 2.7
+    else:
+        tmp_param2 = 2.2
+        
+    YM = np.fmax(0, np.fmin(1, (tmp_param2 - Ymf)))
+    
     YM[YMM] = np.nan
-    Ywmdx = _cat_c_utils.cat_vol_eidist(
-        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.3
+    
+    # I presume the 0.3 links to the 2.7 above so let's remove it
+    # Here the original CAT12 call was:
+    if iscat:
+        Ywmdx = _cat_c_utils.cat_vol_eidist(
+            YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.3
+    else:
+        Ywmdx = _cat_c_utils.cat_vol_eidist(
+            YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.8
+    
     del F, YMM
     gc.collect()
+    
+    ## DEBUG
+    if debug:
+        Ywmdx_image = nib.Nifti1Image(Ywmdx, vox2mm)
+        fname_Ywmdx=os.path.join(surffolder,'Ywmdx_'+actualsurf+'.nii.gz')
+        nib.save(Ywmdx_image, fname_Ywmdx)
 
     Ywmdc = np.fmin(Ywmdc, Ywmdx)
-
+    
+    ## DEBUG
+    if debug:
+        Ywmdc_image = nib.Nifti1Image(Ywmdc, vox2mm)
+        fname_Ywmdc=os.path.join(surffolder,'Ywmdc_'+ actualsurf+ '.nii.gz')
+        nib.save(Ywmdc_image, fname_Ywmdc)
+    
+    ## DEBUG
+    if debug:
+        Ycsfdc_image = nib.Nifti1Image(Ycsfd, vox2mm)
+        fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_before_a_million_steps_' + actualsurf + '.nii.gz')
+        nib.save(Ycsfdc_image, fname_Ycsfdc)
+    
     if not binary:
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= tmp_param6))
         Ycsfd[YM] = Ycsfd[YM] - Ywmdc[YM]
         Ycsfd[np.isinf(- Ycsfd)] = 0
         del Ywmdc
@@ -1070,14 +1216,14 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] < 2.5))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] < tmp_param6))
         YcsfdM = np.array(Ycsfd, copy=True)
         YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
         Ycsfd[YM] = YcsfdM[YM]
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= tmp_param6))
         YcsfdM = np.array(Ycsfd, copy=True)
         for i in np.arange(1, 3):
             YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
@@ -1085,13 +1231,19 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] > 2.0))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] > tmp_param9))
         YcsfdM = np.array(Ycsfd, copy=True)
         YcsfdM = _cat_c_utils.cat_vol_median3(YcsfdM, YM, YM)
         Ycsfd[YM] = YcsfdM[YM]
         del YcsfdM, YM
         gc.collect()
 
+    ## DEBUG
+    if debug:
+        Ycsfdc_image = nib.Nifti1Image(Ycsfd, vox2mm)
+        fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_a_million_steps_' + actualsurf + '.nii.gz')
+        nib.save(Ycsfdc_image, fname_Ycsfdc)
+    
     logger.info(f'CSF distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
@@ -1130,12 +1282,28 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
     YM[notnan] = Ygmt2[notnan] > 0
 
     Ygmt2 = _cat_c_utils.cat_vol_median3(Ygmt2, YM, YM)
+    
+    ## DEBUG
+    if debug:
+        Ygmt1_image = nib.Nifti1Image(Ygmt1, vox2mm)
+        fname_Ygmt1=os.path.join(surffolder,'Ygmt1_' + actualsurf + '.nii.gz')
+        nib.save(Ygmt1_image, fname_Ygmt1)
+        Ygmt2_image = nib.Nifti1Image(Ygmt2, vox2mm)
+        fname_Ygmt2=os.path.join(surffolder,'Ygmt2_' + actualsurf + '.nii.gz')
+        nib.save(Ygmt2_image, fname_Ygmt2)
+    
 
     # estimation of Ypp for further GM filtering without sulcul blurring
+    # 2.2 was 2.5 originally
+    if iscat:
+        tmpparam3 = 2.5
+    else:
+        tmpparam3 = 2.2
+        
     Ygmt = np.fmin(Ygmt1, Ygmt2)
-    YM = np.logical_and((Ymf >= 1.5), (Ymf < 2.5))
+    YM = np.logical_and((Ymf >= thres_magic), (Ymf < tmpparam3))
     Ypp = np.zeros(Ymf.shape, dtype=np.float32)
-    Ypp[Ymf >= 2.5] = 1
+    Ypp[Ymf >= tmpparam3] = 1
     eps = np.finfo(float).eps
     Ypp[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM]) / (Ygmt[YM] + eps)
     Ypp[Ypp > 2] = 0
@@ -1150,47 +1318,84 @@ def cat_vol_pbt_AT(Ymf, resV, debug=False):
 
     Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
 
-    # filter result
+    # filter result 1.3 was 1.8 in original CAT12 code
+    if iscat:
+        tmpparam4 = 1.8
+    else:
+        tmpparam4 = 1.2
+        
     Ygmts = np.array(Ygmt1, copy=True)
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
 
     Ygmt1[Ygmts > 0] = Ygmts[Ygmts > 0]
     Ygmts = np.array(Ygmt2, copy=True)
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
 
     Ygmt2[Ygmts > 0] = Ygmts[Ygmts > 0]
 
     # mix result
     # only minimum possible, because Ygmt2 is incorrect in blurred sulci
     Ygmt = np.fmin(Ygmt1, Ygmt2)
+    
+    ## DEBUG
+    if debug:
+        Ygmt_image = nib.Nifti1Image(Ygmt, vox2mm)
+        fname_Ygmt=os.path.join(surffolder,'Ygmt_' + actualsurf + '.nii.gz')
+        nib.save(Ygmt_image, fname_Ygmt)
 
     Ygmts = np.array(Ygmt, copy=True)
+    
+    # The original CAT12 version of this loop was:
+    # for i in np.arange(1, iterator):
+    #     Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
+    #         Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+    # Here the 1.8 looks suspicious, so changing that to 2
+    
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
+            Ygmts > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
 
     Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
 
-    # Estimation of a mixed percentual possion map Ypp.
-    YM = ((Ymf >= 1.5) & (Ymf < 2.5) & (Ygmt > eps))
+    # Estimation of a mixed percentual possion map Ypp. 2.3 should be 2.5
+    if iscat:
+        tmpparam5 = 2.5
+    else:
+        tmpparam5 = 2.2
+        
+    YM = ((Ymf >= thres_magic) & (Ymf < tmpparam5) & (Ygmt > eps))
     Ycsfdc = np.array(Ycsfd, copy=True)
     Ycsfdc[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM])
     Ypp = np.zeros(Ymf.shape, dtype=np.float32)
-    Ypp[Ymf >= 2.5] = 1
+    Ypp[Ymf >= tmpparam5] = 1
     Ypp[YM] = Ycsfdc[YM] / (Ygmt[YM] + eps)
     Ypp[Ypp > 2] = 0
     notnan = ~np.logical_or(np.isnan(Ywmd), np.isnan(Ygmt))
     YM = np.full(Ywmd.shape, False, dtype=bool)
     YM[notnan] = np.squeeze((Ygmt[notnan] <= resV) & (
         Ywmd[notnan] <= resV) & (Ygmt[notnan] > 0))
-    Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
+    
+    # Here the original CAT12 call was 
+    # Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
+    # Maybe the 0.2 is linked to the 1.8 above, 
+    # so getting rid of that
+    if iscat:
+        Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
+    else:
+        Ypp[YM] = (Ymf[YM] - 1) / 2
 
     Ypp[np.isnan(Ypp)] = 0
     Ypp[Ypp < 0] = 0
+    ## DEBUG
+    if debug:
+        Ypp_image = nib.Nifti1Image(Ypp, vox2mm)
+        fname_Ypp=os.path.join(surffolder,'Ypp_pbt_' + actualsurf + '.nii.gz')
+        nib.save(Ypp_image, fname_Ypp)
+    
 
     # Final corrections for thickness map with thickness limit of 10 mm.
     # Resolution correction of the thickness map after all other operations,

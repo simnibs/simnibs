@@ -10,6 +10,7 @@ import logging
 import os
 import shutil
 import time
+import subprocess
 from .. import utils
 from simnibs import SIMNIBSDIR
 from ..utils.simnibs_logger import logger
@@ -24,9 +25,7 @@ from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
 from ..mesh_tools.mesh_io import write_msh
-from .brain_surface import createCS
-import multiprocessing
-import functools
+
 
 
 def _register_atlas_to_input_affine(T1, template_file_name,
@@ -120,13 +119,13 @@ def _estimate_parameters(path_to_segment_folder,
                                        os.path.join(path_to_segment_folder,
                                                     'atlas_level1.txt.gz'),
                                        'targetDownsampledVoxelSpacing': 3.0,
-                                       'maximumNumberOfIterations': 10,
+                                       'maximumNumberOfIterations': 2,
                                        'estimateBiasField': True},
                                       {'atlasFileName':
                                           os.path.join(path_to_segment_folder,
                                                        'atlas_level2.txt.gz'),
                                        'targetDownsampledVoxelSpacing': 2.0,
-                                       'maximumNumberOfIterations': 10,
+                                       'maximumNumberOfIterations': 2,
                                        'estimateBiasField': True}]}
 
     samseg_kwargs = dict(
@@ -353,7 +352,7 @@ def run(subject_dir=None, T1=None, T2=None,
     # by default this is all, but can be changed in the .ini
     num_threads = samseg_settings['threads']
     if isinstance(num_threads, int) and num_threads > 0:
-        samseg.setGlobalDefaulNumberOfThreads(num_threads)
+        samseg.setGlobalDefaultNumberOfThreads(num_threads)
         logger.info('Using %d threads, instead of all available.'
                     % num_threads)
 
@@ -495,61 +494,38 @@ def run(subject_dir=None, T1=None, T2=None,
     if create_surfaces:
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
-        fsavgDir = file_finder.Templates().templates_surfaces
-
-        # input images and image header 
-        Ymf = nib.load(sub_files.norm_image)
-        vox2mm = Ymf.affine
-        Yleft = nib.load(sub_files.hemi_mask)
-        Ymaskhemis = nib.load(sub_files.cereb_mask)
-        Ymaskparahipp = nib.load(sub_files.parahippo_mask)
-
-        # parameters (will be put into the .ini file)
-        surf=['lh','rh','lc','rc']
-        #surf = ['lc', 'rc']
-        vdist = [1.0, 0.75]
-        voxsize_pbt = [0.5, 0.25]
-        voxsize_refineCS = [0.75, 0.5]
-        no_selfintersections = True
-        th_initial = 0.714
-
-        # parameters that will we likely skip...
-        add_parahipp = 0
-        close_parahipp = False
-
+        python_interpreter = 'simnibs_python'
+        multithreading_script = [os.path.join(SIMNIBSDIR), 'segmentation',
+                                 'run_cat_multiprocessing.py']
+        
+        fsavgDir = file_finder.Templates().atlases_surfaces
+        args = ['--Ymf', sub_files.norm_image,
+                '--Yleft_path', sub_files.hemi_mask,
+                '--Ymaskhemis_path', sub_files.cereb_mask,
+                '--Ymaskparahipp_path', sub_files.parahippo_mask,
+                '--surface_folder', sub_files.surface_folder,
+                '--fsavgdir', fsavgDir,
+                '--surf', 'lh', 'rh']
+        
+        
+        # These values are defaults in the multiprocessing scripts, can be 
+        # added to args if needed
+        # ['--vdist', 1.0, 0.75,
+        #  '--voxsize_pbt', 0.5, 0.25,
+        #  '--voxsizeCS', 0.75, 0.5,
+        #  '--th_initial', 0.5,
+        #  '--no_intersect', True,
+        #  '--add_parahipp', False,
+        #  '--close_parahipp', False,
+        
         starttime = time.time()
-        Pcentral_all = []
-        Pspherereg_all = []
-        Pthick_all = []
-        EC_all = []
-        defect_size_all = []
-        # GBS: changed here
-        for si in range(len(surf)):
-            Pcentral, Pspherereg, Pthick, EC, defect_size = createCS(
-                                                            Ymf.get_data(),
-                                                            Yleft.get_data(),
-                                                            Ymaskhemis.get_data(),
-                                                            Ymaskparahipp.get_data(),
-                                                            vox2mm,
-                                                            surf[si],
-                                                            sub_files.surface_folder,
-                                                            fsavgDir,
-                                                            vdist,
-                                                            voxsize_pbt,
-                                                            voxsize_refineCS,
-                                                            th_initial,
-                                                            no_selfintersections,
-                                                            add_parahipp,
-                                                            close_parahipp)
+        # A hack to get multithreading to work
+        proc = subprocess.run([shutil.which(python_interpreter)] +
+                              multithreading_script + args,
+                              capture_output=True)
 
-            Pcentral_all.append(Pcentral)
-            Pspherereg_all.append(Pspherereg)
-            Pthick_all.append(Pthick)
-            EC_all.append(EC)
-            defect_size_all.append(defect_size)
-            
         # print time duration
-        elapsed = time.time() - starttime    
+        elapsed = time.time() - starttime
         print('\nTotal time cost (HH:MM:SS):')
         print(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
