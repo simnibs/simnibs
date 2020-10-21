@@ -373,3 +373,4 @@ class GMM:
         mean = np.random.multivariate_normal(tmpGmm.means[0],
                                              variance / (tmpGmm.hyperMeansNumberOfMeasurements[0] + N)).reshape(-1, 1)
         return mean, variance
+    
