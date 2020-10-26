@@ -28,6 +28,22 @@ import numpy as np
 import scipy.spatial
 from ..msh.mesh_io import _hash_rows
 
+def _remove_unconnected_triangles(mesh, roi_triangles, center,
+                                  roi_nodes, triangles):
+    cc = mesh.elm.connected_components(roi_triangles)
+    if len(cc) > 1:
+        _, center_index = mesh.find_closest_element(center, return_index=True,
+                                                    elements_of_interest=roi_triangles)
+        for comps in cc:
+            if center_index in comps:
+                roi_triangles = comps
+        
+        roi_nodes, triangles = \
+        np.unique(mesh.elm[roi_triangles, :3], return_inverse=True)
+        triangles = triangles.reshape(-1,3)
+        
+    return roi_nodes, triangles, roi_triangles
+        
 def _get_nodes_in_surface(mesh, surface_tags):
     tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
     nodes_in_surface = np.unique(mesh.elm.node_number_list[tr_of_interest, :3])
@@ -130,8 +146,7 @@ def _get_roi(center, radius, mesh, mesh_surface=[5, 1005], min_cos=.1):
         np.in1d(mesh.elm[mesh.elm.triangles, :3], in_roi).reshape(-1, 3), axis=1)
     roi_nodes, roi_triangles_reordering = \
         np.unique(mesh.elm[mesh.elm.triangles[tr_in_roi], :3], return_inverse=True)
-    return mesh.elm.triangles[tr_in_roi], roi_nodes, roi_triangles_reordering.reshape(-1,
-                                                                                      3)
+    return mesh.elm.triangles[tr_in_roi], roi_nodes, roi_triangles_reordering.reshape(-1,3)
 
 def _point_inside_polygon(vertices, points, tol=1e-3):
     '''uses the line-tracing algorithm Known issues: if the point is right in the edge,
@@ -716,6 +731,12 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
     R = np.linalg.norm(poly, axis=1).max() * 1.2
     roi_triangles, roi_nodes, triangles = _get_roi(
              center, R, mesh, mesh_surface=on_top_of)
+    
+    # Sometimes the ROI can include nodes inside the head. Figure out the 
+    # connected components and take the group, which includes the center node
+    roi_nodes, triangles, roi_triangles = \
+    _remove_unconnected_triangles(mesh, roi_triangles, center, roi_nodes, triangles)
+    
     nodes = mesh.nodes[roi_nodes]
     affine, _ = _get_transform(
         center, ydir, mesh,
@@ -952,8 +973,15 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=40
     else:
         R = np.linalg.norm(elec_poly, axis=1).max() * 1.2
     roi_triangles, roi_nodes, triangles = _get_roi(
-        elec_center, R, mesh, mesh_surface=skin_tag)
+    elec_center, R, mesh, mesh_surface=skin_tag)
+    
+    # Sometimes the ROI can include nodes inside the head. Figure out the 
+    # connected components and take the group, which includes the center node
+    roi_nodes, triangles, roi_triangles = \
+    _remove_unconnected_triangles(mesh, roi_triangles, elec_center, roi_nodes, triangles)
+                
     nodes = mesh.nodes[roi_nodes]
+        
     affine, elec_center = _get_transform(
         elec_center, ydir, mesh,
         mesh_surface=skin_tag,
