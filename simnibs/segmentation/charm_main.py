@@ -27,7 +27,6 @@ from . import _thickness
 from ..mesh_tools.mesh_io import write_msh
 
 
-
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
                                     mesh_level2, save_path,
@@ -47,13 +46,13 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                     template_file_name)
 
     init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
-                                               scales=scales)
-    
+                                                scales=scales)
+
     image_to_image_transform, world_to_world_transform, optimization_summary =\
     affine.registerAtlas(initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
                          visualizer=visualizer)
- 
+
     affine.saveResults(T1, template_file_name, save_path,
                        template_coregistered_name, image_to_image_transform,
                        world_to_world_transform)
@@ -111,8 +110,7 @@ def _estimate_parameters(path_to_segment_folder,
                                  'biasFieldSmoothingKernelSize': 50,
                                  'brainMaskingThreshold': 0.01}
 
-
-    #TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
+    # TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
     if 0:
         user_optimization_options = {'multiResolutionSpecification':
                                      [{'atlasFileName':
@@ -152,7 +150,7 @@ def _estimate_parameters(path_to_segment_folder,
         logger.info('atlasRegistrationLevel%d %d %f\n' %
                     (multiResolutionLevel, item['numberOfIterations'],
                      item['perVoxelCost']))
-        
+
     return samsegment.saveParametersAndInput()
 
 
@@ -213,14 +211,22 @@ def _morphological_operations(label_img, simnibs_tissues):
     label_img[SKULL_outer] = simnibs_tissues["Compact_bone"]
 
 
+def _registerT1T2(fixed_image, moving_image, output_image):
+    registerer = samseg.gems.KvlImageRegisterer()
+    registerer.read_images(fixed_image, moving_image)
+    registerer.initialize_transform()
+    registerer.register()
+    registerer.write_out_result(output_image)
+
+
 def view(subject_dir):
     print('charm viewer not yet implemented, sorry...')
 
 
 def run(subject_dir=None, T1=None, T2=None,
         registerT2=False, initatlas=False, segment=False,
-        create_surfaces=True, mesh_image=False, skipregisterT2=False,
-        usesettings=None, options_str=None):
+        create_surfaces=True, mesh_image=False, usesettings=None,
+        options_str=None):
     """charm pipeline
 
     PARAMETERS
@@ -278,9 +284,6 @@ def run(subject_dir=None, T1=None, T2=None,
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
 
-    # get subID
-    subID = sub_files.subid
-
     # copy T1 (as nii.gz) if supplied
     if T1 is not None:
         if not os.path.exists(T1):
@@ -290,15 +293,17 @@ def run(subject_dir=None, T1=None, T2=None,
         else:
             nib.save(nib.load(T1), sub_files.T1)
 
-    if skipregisterT2 and T2 is not None:
-        # skip T2-to-T1 registration, just copy T2 image (as nii.gz)
-        registerT2 = False
+    if registerT2:
         if not os.path.exists(T2):
             raise FileNotFoundError(f'Could not find input T2 file: {T2}')
-        if len(T2) > 7 and T2[-7:].lower() == '.nii.gz':
-            shutil.copyfile(T2, sub_files.T2_reg)
         else:
-            nib.save(nib.load(T2), sub_files.T2_reg)
+            _registerT1T2(T1, T2, sub_files.T2_reg)
+    else:
+        if os.path.exists(T2):
+            if len(T2) > 7 and T2[-7:].lower() == '.nii.gz':
+                shutil.copyfile(T2, sub_files.T2_reg)
+            else:
+                nib.save(nib.load(T2), sub_files.T2_reg)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -320,23 +325,6 @@ def run(subject_dir=None, T1=None, T2=None,
     if denoise_settings['denoise']:
         logger.info('Denoising the T1 input and saving.')
         _denoise_input_and_save(T1, sub_files.T1_denoised)
-
-    if registerT2:
-        # register T2 to T1
-        logger.info('starting registerT2')
-
-        # get local settings
-        local_settings=settings['registerT2']
-
-        # check input files
-        if not os.path.exists(sub_files.T1):
-            raise FileNotFoundError(f'Could not find subject T1 file')
-        if not os.path.exists(sub_files.T2_reg):
-            raise FileNotFoundError(f'Could not find subject T2 file')
-
-        # do your stuff
-
-        # write QA results
 
     # denoise if needed
     if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg):
@@ -497,7 +485,7 @@ def run(subject_dir=None, T1=None, T2=None,
         python_interpreter = 'simnibs_python'
         multithreading_script = [os.path.join(SIMNIBSDIR), 'segmentation',
                                  'run_cat_multiprocessing.py']
-        
+
         fsavgDir = file_finder.Templates().atlases_surfaces
         args = ['--Ymf', sub_files.norm_image,
                 '--Yleft_path', sub_files.hemi_mask,
@@ -506,9 +494,8 @@ def run(subject_dir=None, T1=None, T2=None,
                 '--surface_folder', sub_files.surface_folder,
                 '--fsavgdir', fsavgDir,
                 '--surf', 'lh', 'rh']
-        
-        
-        # These values are defaults in the multiprocessing scripts, can be 
+
+        # These values are defaults in the multiprocessing scripts, can be
         # added to args if needed
         # ['--vdist', 1.0, 0.75,
         #  '--voxsize_pbt', 0.5, 0.25,
@@ -517,7 +504,7 @@ def run(subject_dir=None, T1=None, T2=None,
         #  '--no_intersect', True,
         #  '--add_parahipp', False,
         #  '--close_parahipp', False,
-        
+
         starttime = time.time()
         # A hack to get multithreading to work
         proc = subprocess.run([shutil.which(python_interpreter)] +
