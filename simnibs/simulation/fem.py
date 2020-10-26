@@ -1410,8 +1410,8 @@ def tms_many_simulations(
         Regions of interest where the fields is to be saved.
         If set to None, will save the electric field in all tissues.
         Default: None
-    field: 'E' or 'J' (optional)
-        Which field to save (electric field E or current density J). Default: 'E'
+    field: 'E', 'J', 'vdAdt' (optional)
+        Which field to save (electric field E, current density J, or v and dAdt). Default: 'E'
     post_pro: list of callables (optional)
         list of callables f_post = post_pro(f), where f is an input field in the ROI and
         f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
@@ -1421,8 +1421,8 @@ def tms_many_simulations(
     n_workers: int
         Number of workers to use
     '''
-    if field != 'E' and field != 'J':
-        raise ValueError("Field shoud be either 'E' or 'J'")
+    if field != 'E' and field != 'J' and field.lower() != 'vdadt':
+        raise ValueError("Field can be either 'E', 'J', or 'vdAdt'")
     if len(matsimnibs_list) != len(didt_list):
         raise ValueError("matsimnibs_list and didt_list should have the same length")
     D = grad_matrix(mesh, split=True)
@@ -1467,6 +1467,8 @@ def tms_many_simulations(
                 out_field = E
             elif field == 'J':
                 out_field = calc_J(E, cond)
+            elif field.lower() == 'vdadt':
+                out_field = (v, dAdt)
             if post_pro is not None:
                 out_field = post_pro(out_field)
             with h5py.File(fn_hdf5) as f:
@@ -1540,6 +1542,8 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
         out_field = E
     elif tms_many_global_field == 'J':
         out_field = calc_J(E, tms_many_global_cond)
+    elif tms_many_global_field.lower() == 'vdadt':
+        out_field = (v,dAdt)
     if tms_many_global_post_pro is not None:
         out_field = tms_many_global_post_pro(out_field)
     # Write out
