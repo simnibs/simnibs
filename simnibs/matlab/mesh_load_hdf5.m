@@ -66,11 +66,11 @@ function m = read_group_mesh(fn, group_name)
     m.tetrahedra = zeros(0, 4, 'int32');
     m.tetrahedron_regions = zeros(0, 1, 'int32');
     % Read nodes
-    m.nodes = h5read(fn, [group_name, '/nodes/node_coord'])';
+    m.nodes = ensure_horizontal(h5read(fn, [group_name, '/nodes/node_coord']));
     % Read elements
-    elm_types = h5read(fn, [group_name, '/elm/elm_type'])';
-    elm_tags = h5read(fn, [group_name, '/elm/tag1'])';
-    node_number_list = h5read(fn, [group_name, '/elm/node_number_list'])';
+    elm_types = ensure_horizontal(h5read(fn, [group_name, '/elm/elm_type']));
+    elm_tags = ensure_horizontal(h5read(fn, [group_name, '/elm/tag1']));
+    node_number_list = ensure_horizontal(h5read(fn, [group_name, '/elm/node_number_list']));
     m.triangles = int32(node_number_list(elm_types==2, 1:3));
     m.triangle_regions = elm_tags(elm_types==2);
     m.tetrahedra =  int32(node_number_list(elm_types==4, 1:4));
@@ -86,10 +86,17 @@ function m = read_group_mesh(fn, group_name)
     ifo = h5info(fn, [group_name, '/elmdata']);
     for i = 1:length(ifo.Datasets)
         dset = ifo.Datasets(i);
-        m.node_data{i}.name = dset.Name;
         m.element_data{i}.name = dset.Name;
-        data =  h5read(fn, [group_name, '/elmdata/' dset.Name])';
+        data =  ensure_horizontal(h5read(fn, [group_name, '/elmdata/' dset.Name]));
         m.element_data{i}.tridata = double(data(elm_types==2, 1:end));
         m.element_data{i}.tetdata = double(data(elm_types==4, 1:end));
+    end
+end
+
+function vout=ensure_horizontal(v)
+    if size(v,1)<size(v,2)
+        vout=v';
+    else
+        vout=v;
     end
 end
