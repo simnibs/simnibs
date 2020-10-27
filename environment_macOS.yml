@@ -17,4 +17,4 @@ dependencies:
     - nibabel==3.1.*
     - pyqt5==5.12.*
     - fmm3dpy==0.0.5
-    - charm_gems==0.5.1
+    - charm_gems==1.0
