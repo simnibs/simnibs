@@ -47,6 +47,9 @@ from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 import simnibs.cython_code.cython_msh as cython_msh
 
+# time and memory profiling: remove in the future
+import time
+from memory_profiler import profile
 
 class InvalidMeshError(ValueError):
     pass
@@ -3043,7 +3046,7 @@ class ElementData(Data):
         return self.elm_data2node_data()
 
     def interpolate_scattered(self, points, out_fill=np.nan, method='linear',
-                              continuous=False, squeeze=True):
+                              continuous=False, squeeze=True, th_indices=None):
         ''' Interpolates the ElementData into the points by finding the element
         containing the point and assigning the value in it
 
@@ -3063,12 +3066,16 @@ class ElementData(Data):
             behaviour of the function only if method == 'linear'. Default: False
         squeeze: bool
             Wether to squeeze the output. Default: True
+        th_indices: np.ndarray (optional)
+            Indices of the tetrahedra to be considered in the volume. Default: use all
+            tetrahedra
 
         Returns
         -------
         f: np.ndarray
             Value of function in the points
         '''
+
         self._test_msh()
         msh = self.mesh
         if len(msh.elm.tetrahedra) == 0:
@@ -3079,6 +3086,10 @@ class ElementData(Data):
             f = np.zeros((points.shape[0], ), self.value.dtype)
         th_with_points = \
             msh.find_tetrahedron_with_points(points, compute_baricentric=False)
+
+        if th_indices is not None:
+            th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
         inside = th_with_points != -1
 
         if method == 'assign':
@@ -3626,7 +3637,8 @@ class NodeData(Data):
             np.sum(normals[nodes] * self[nodes], axis=1) * areas[nodes])
         return flux
 
-    def interpolate_scattered(self, points, out_fill=np.nan, squeeze=True):
+    @profile
+    def interpolate_scattered(self, points, out_fill=np.nan, squeeze=True, th_indices=None):
         ''' Interpolates the NodeaData into the points by finding the element
         containing the point and performing linear interpolation inside the element
 
@@ -3639,6 +3651,9 @@ class NodeData(Data):
             value of th nearest node. (default: NaN)
         squeeze: bool
             Wether to squeeze the output. Default: True
+        th_indices: np.ndarray (optional)
+            Indices of the tetrahedra to be considered in the volume. Default: use all
+            tetrahedra
 
         Returns
         -------
@@ -3646,7 +3661,9 @@ class NodeData(Data):
             Value of function in the points
         '''
         self._test_msh()
-        msh = self.mesh
+
+        msh = copy.deepcopy(self.mesh)
+
         if len(msh.elm.tetrahedra) == 0:
             raise InvalidMeshError('Mesh has no volume elements')
         if len(self.value.shape) > 1:
@@ -3656,7 +3673,12 @@ class NodeData(Data):
 
         th_with_points, bar = \
             msh.find_tetrahedron_with_points(points, compute_baricentric=True)
+
+        if th_indices is not None:
+            th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
         inside = th_with_points != -1
+        
         if np.any(inside) and len(self.value.shape) == 1:
             f[inside] = np.einsum('ik, ik -> i',
                                   self[msh.elm[th_with_points[inside]]],
@@ -3667,9 +3689,24 @@ class NodeData(Data):
                                   bar[inside])
 
         if out_fill == 'nearest':
-            _, nearest = msh.nodes.find_closest_node(points[~inside],
+
+            if th_indices is not None:
+
+                msh.add_node_field(self.value, self.field_name)
+
+                is_in = np.in1d(msh.elm.elm_number, th_indices)
+                elm_in_volume = msh.elm.elm_number[is_in]
+                msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
+
+                _, nearest = msh_in_volume.nodes.find_closest_node(points[~inside],
                                                      return_index=True)
-            f[~inside] = self[nearest]
+
+                f[~inside] = msh_in_volume.nodedata[-1][nearest]
+            else:
+                _, nearest = msh.nodes.find_closest_node(points[~inside],
+                                                     return_index=True)
+                f[~inside] = self[nearest]
+
         else:
             f[~inside] = out_fill
 
