@@ -2211,6 +2211,11 @@ class TDCSDistributedOptimize():
             affine = img.affine
         else:
             vol, affine = self.target_image
+        vol=vol.squeeze() # fix when image is "4D", i.e. NxMxKx1
+        if vol.ndim != 3:
+            raise ValueError('Target image has to be 3D')
+        vol[np.isnan(vol)] = 0.0
+        
         # if in MNI space, tranfrom coordinates
         if self.mni_space:
             if self.subpath is None:
@@ -2225,11 +2230,20 @@ class TDCSDistributedOptimize():
             field = mesh_io.NodeData.from_data_grid(self.mesh, vol, affine)
         elif self.lf_type == 'element':
             field = mesh_io.ElementData.from_data_grid(self.mesh, vol, affine)
-
+        field = np.float64(field[:])
+        
+        # setting values in eyes to zero
+        if np.any(self.mesh.elm.tag1 == 1006):
+            logger.info('setting target values in eyes to zero')
+            if self.lf_type == 'node':
+                eye_nodes=np.unique(self.mesh.elm.node_number_list[self.mesh.elm.tag1 == 1006,:])
+                eye_nodes = eye_nodes[eye_nodes>0]
+                field[eye_nodes-1] = 0.0 # node indices in mesh are 1-based
+            elif self.lf_type == 'element':
+                field[self.mesh.elm.tag1 == 1006] = 0.0
+                        
         if self.mni_space:
             self.mesh.nodes.node_coord = orig_nodes
-
-        field = field[:]
 
         W = np.abs(field)
         W[np.abs(field) < self.min_img_value] = self.min_img_value
