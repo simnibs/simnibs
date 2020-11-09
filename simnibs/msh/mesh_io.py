@@ -3084,21 +3084,38 @@ class ElementData(Data):
             f = np.zeros((points.shape[0], self.nr_comp), self.value.dtype)
         else:
             f = np.zeros((points.shape[0], ), self.value.dtype)
-        th_with_points = \
-            msh.find_tetrahedron_with_points(points, compute_baricentric=False)
-
-        if th_indices is not None:
-            th_with_points[~np.isin(th_with_points, th_indices)] = -1
-
-        inside = th_with_points != -1
 
         if method == 'assign':
+
+            th_with_points = \
+                msh.find_tetrahedron_with_points(points, compute_baricentric=False)
+
+            if th_indices is not None:
+                th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
+            inside = th_with_points != -1
+
             f[inside] = self[th_with_points[inside]]
             if out_fill == 'nearest':
-                _, nearest = msh.find_closest_element(
-                    points[~inside], return_index=True)
 
-                f[~inside] = self[nearest]
+                if th_indices is not None:
+
+                    msh.add_element_field(self.value, self.field_name)
+
+                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    elm_in_volume = msh.elm.elm_number[is_in]
+                    msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
+
+                    _, nearest = msh_in_volume.find_closest_element(points[~inside],
+                                                         return_index=True)
+
+                    f[~inside] = msh_in_volume.elmdata[-1][nearest]
+                else:
+
+                    _, nearest = msh.find_closest_element(
+                        points[~inside], return_index=True)
+
+                    f[~inside] = self[nearest]
 
             else:
                 f[~inside] = out_fill
@@ -3108,6 +3125,15 @@ class ElementData(Data):
                 nd = self.elm_data2node_data()
                 f = nd.interpolate_scattered(points, out_fill=out_fill, squeeze=False)
             else:
+
+                th_with_points = \
+                    msh.find_tetrahedron_with_points(points, compute_baricentric=False)
+
+                if th_indices is not None:
+                    th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
+                inside = th_with_points != -1
+
                 # if all points are outside
                 if not np.any(inside):
                     tags = [np.unique(msh.elm.tag1[msh.elm.elm_type==4])]
