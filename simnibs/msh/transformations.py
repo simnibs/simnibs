@@ -36,6 +36,10 @@ from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
 from ..utils.file_finder import templates, SubjectFiles, get_atlas
 
+
+# for testing remove in the future
+import time
+
 __all__ = [
     'subject2mni_coords',
     'mni2subject_coords',
@@ -1414,8 +1418,16 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     m = mesh_io.read_msh(mesh_fn)
     subdir, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
-    # Crio out GM
-    m = m.crop_mesh(2)
+
+    # Crop out WM, GM, and CSF. We add WM and CSF to make the mesh convex.
+    m = m.crop_mesh(tags=[1,2,3])
+
+    # Set the volume to be GM. The interpolation will use only the tetrahedra in the volume.
+    th_indices = m.elm.elm_number[m.elm.tag1 == 2]
+
+    # for testing, remove in the future
+    m_v1 = m.crop_mesh(tags=[2])
+
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
     out_folder = os.path.abspath(os.path.normpath(out_folder))
@@ -1472,8 +1484,23 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         for hemi in ['lh', 'rh']:
             if fields is None or name in fields:
                 # Interpolate to middle gm
-                data = data.as_nodedata()
-                interpolated = data.interpolate_to_surface(middle_surf[hemi])
+
+                # Fang changed on Nov 6, 2020. Uncomment it in the future.
+                # data = data.as_nodedata()
+
+                start_time = time.time()
+                interpolated = data.interpolate_to_surface(middle_surf[hemi], th_indices=th_indices)
+                print(time.time()-start_time)
+
+                ii=0
+                breakpoint()
+                start_time = time.time()
+                data_v1=m_v1.elmdata[ii].as_nodedata()
+                interpolated_v1 = data_v1.interpolate_to_surface(middle_surf[hemi])
+                print(time.time()-start_time)
+
+                breakpoint()
+                
                 # For vector quantities, calculate quantities (normal, norm, ...)
                 if data.nr_comp == 3:
                     q = calc_quantities(interpolated, quantities)

@@ -47,10 +47,6 @@ from . import gmsh_view
 from ..utils.file_finder import path2bin, templates
 import simnibs.cython_code.cython_msh as cython_msh
 
-# time and memory profiling: remove in the future
-import time
-from memory_profiler import profile
-
 class InvalidMeshError(ValueError):
     pass
 
@@ -3045,119 +3041,6 @@ class ElementData(Data):
         '''
         return self.elm_data2node_data()
 
-    def interpolate_scattered_v1(self, points, out_fill=np.nan, method='linear',
-                              continuous=False, squeeze=True):
-        ''' Interpolates the ElementData into the points by finding the element
-        containing the point and assigning the value in it
-
-        Parameters
-        -------
-        points: Nx3 ndarray
-            List of points where we want to interpolate
-        out_fill: float
-            Value to be goven to points outside the volume, if 'nearest' assigns the
-            nearest value (default: NaN)
-        method: {'assign' or 'linear'} (Optional)
-            If 'assign', gives to each voxel the value of the element that contains
-            it. If linear, first assign fields to nodes, and then perform
-            baricentric interpolatiom. Default: linear
-        continuous: bool
-            Wether fields is continuous across tissue boundaries. Changes the
-            behaviour of the function only if method == 'linear'. Default: False
-        squeeze: bool
-            Wether to squeeze the output. Default: True
-
-        Returns
-        -------
-        f: np.ndarray
-            Value of function in the points
-        '''
-        self._test_msh()
-        msh = self.mesh
-        if len(msh.elm.tetrahedra) == 0:
-            raise InvalidMeshError('Mesh has no volume elements')
-        if len(self.value.shape) > 1:
-            f = np.zeros((points.shape[0], self.nr_comp), self.value.dtype)
-        else:
-            f = np.zeros((points.shape[0], ), self.value.dtype)
-        th_with_points = \
-            msh.find_tetrahedron_with_points(points, compute_baricentric=False)
-        inside = th_with_points != -1
-
-        if method == 'assign':
-            f[inside] = self[th_with_points[inside]]
-            if out_fill == 'nearest':
-                _, nearest = msh.find_closest_element(
-                    points[~inside], return_index=True)
-
-                f[~inside] = self[nearest]
-
-            else:
-                f[~inside] = out_fill
-
-        elif method == 'linear':
-            if continuous:
-                nd = self.elm_data2node_data()
-                f = nd.interpolate_scattered(points, out_fill=out_fill, squeeze=False)
-            else:
-
-                # if all points are outside
-                if not np.any(inside):
-                    tags = [np.unique(msh.elm.tag1[msh.elm.elm_type==4])]
-                # if there are points inside
-                else:
-                    tags = np.unique(msh.elm.tag1[th_with_points[inside] - 1])
-                msh_copy = copy.deepcopy(msh)
-                msh_copy.elmdata = [ElementData(self.value, mesh=msh_copy)]
-                # create a list of fields at each tag
-                field_at_tags = []
-                for t in tags:
-                    msh_tag = msh_copy.crop_mesh(tags=t)
-                    nd = msh_tag.elmdata[0].elm_data2node_data()
-                    field_at_tags.append(nd.interpolate_scattered(points, out_fill=np.nan, squeeze=False))
-                    del msh_tag
-                    del nd
-                # Join the list of field values
-                del msh_copy
-                f = field_at_tags[0]
-                count = np.ones(len(f), dtype=int)
-                for f_t in field_at_tags[1:]:
-                    # find where f and f_t are unasigned
-                    unasigned_f = np.isnan(f)
-                    if unasigned_f.ndim == 2:
-                        unasigned_f = np.any(unasigned_f, axis=1)
-                    unasigned_ft = np.isnan(f_t)
-                    if unasigned_ft.ndim == 2:
-                        unasigned_ft = np.any(unasigned_ft, axis=1)
-                    # Assign to f unassigned values
-                    f[unasigned_f] = f_t[unasigned_f]
-                    # if for some reason a value is in 2 tissues, calculate the average
-                    f[~unasigned_f * ~unasigned_ft] += f_t[~unasigned_f * ~unasigned_ft]
-                    count[~unasigned_f * ~unasigned_ft] += 1
-                del field_at_tags
-                if f.ndim == 2:
-                    f /= count[:, None]
-                else:
-                    f /= count
-
-                # Finally, fill in the unassigned values
-                unasigned_f = np.isnan(f)
-                if unasigned_f.ndim == 2:
-                    unasigned_f = np.any(unasigned_f, axis=1)
-                if out_fill == 'nearest':
-                    _, nearest = msh.find_closest_element(points[unasigned_f],
-                                                          return_index=True)
-                    f[unasigned_f] = self[nearest]
-                else:
-                    f[unasigned_f] = out_fill
-        else:
-            raise ValueError('Invalid interpolation method!')
-
-        if squeeze:
-            f = np.squeeze(f)
-        return f
-
-    @profile
     def interpolate_scattered(self, points, out_fill=np.nan, method='linear',
                               continuous=False, squeeze=True, th_indices=None):
         ''' Interpolates the ElementData into the points by finding the element
@@ -3189,9 +3072,6 @@ class ElementData(Data):
             Value of function in the points
         '''
 
-        # remove in the future
-        start_time = time.time()
-        
         self._test_msh()
 
         msh = copy.deepcopy(self.mesh)
@@ -3202,12 +3082,6 @@ class ElementData(Data):
             f = np.zeros((points.shape[0], self.nr_comp), self.value.dtype)
         else:
             f = np.zeros((points.shape[0], ), self.value.dtype)
-
-        # remove in the future
-        out_fill = 'nearest'
-        method='linear'
-        continuous = False
-        th_indices = None
 
         if method == 'assign':
 
@@ -3232,9 +3106,6 @@ class ElementData(Data):
 
             else:
 
-                # remove the testing code in the future
-                # th_indices = np.array([-1, 0, 7])
-
                 th_with_points, bar = msh.find_tetrahedron_with_points(points, compute_baricentric=True)
 
                 if th_indices is not None:
@@ -3253,12 +3124,9 @@ class ElementData(Data):
                     th = th_with_points[where_inside]
 
                     # get sorted unique elements of `th`
-                    # assert sorted_th.shape == arg_th.shape
-                    # assert th.shape == arg_inv.shape
                     sorted_th, arg_th, arg_inv = np.unique(th, return_index=True, return_inverse=True)
 
                     # get the 'tag1' from 'msh' for every element in 'th' in 'points' order
-                    # assert sorted_th.shape == sorted_tag.shape
                     sorted_tag = msh.elm.tag1[sorted_th - 1]
 
                     # assign 'msh.elmdata'
@@ -3266,7 +3134,6 @@ class ElementData(Data):
 
                     for t in np.unique(sorted_tag):
                         # find the elements in 'sorted_tag' which equals to 't'
-                        # assert is_t.shape == sorted_tag.shape
                         is_t = sorted_tag == t
 
                         # 'msh_tag' contains only the tetrahedra with 'elm_number == th_with_t'
@@ -3324,16 +3191,6 @@ class ElementData(Data):
 
             else:
                 f[~inside] = out_fill
-
-        # remove in the future
-        print(time.time()-start_time)
-        
-        start_time = time.time()
-        f_v1 = self.interpolate_scattered_v1(points, out_fill=out_fill, method=method, continuous=continuous)
-
-        print(time.time()-start_time)
-
-        breakpoint()
 
         if squeeze:
             f = np.squeeze(f)
