@@ -1970,6 +1970,7 @@ class Msh:
         if len(self.elm.tetrahedra) == 0:
             raise ValueError("Can only create interpolation matrices for tetrahedral meshes")
 
+        breakpoint()
         th_with_points, bar = self.find_tetrahedron_with_points(
             pos, compute_baricentric=True)
         if th_indices is not None:
@@ -2003,6 +2004,97 @@ class Msh:
                 M = M.dot(self.elm2node_matrix())
             else:
                 M = M.dot(self.elm2node_matrix(th_indices))
+
+        return M
+
+
+    def interp_matrix_v2(self, pos, out_fill=np.nan, th_indices=None, element_wise=False):
+        ''' Calculates a matrix to perform interpolation
+        y = M.dot(x)
+
+        Where x is node-wise data (if element_wise=False, default) or element-wise data
+        otherwise
+
+        Parameters
+        ----------
+        pos: (N x 3) np.ndarray
+            Positions where interpolation is to be performed
+
+        out_fill: float or 'nearest'
+            How to fill values for positions outside the volume
+
+        th_indices: np.ndarray (optional)
+            Indices of the tetrahedra to be considered in the volume. Default: use all
+            tetrahedra
+
+        element_wise: bool (optional)
+            Wether to do interpolations one element-wise data. Default=False
+
+        Returns
+        -------
+        M: scipy.sparse.csc
+            Sparse matrix, interpolation represented by dot product
+
+        '''
+        if len(self.elm.tetrahedra) == 0:
+            raise ValueError("Can only create interpolation matrices for tetrahedral meshes")
+
+        breakpoint()
+        th_with_points, bar = self.find_tetrahedron_with_points(
+            pos, compute_baricentric=True)
+        if th_indices is not None:
+            th_with_points[~np.isin(th_with_points, th_indices)] = -1
+        inside = th_with_points != -1
+        pos_nr = np.arange(len(pos))
+
+        if th_indices is None:
+            th_nodes = self.elm[th_with_points[inside]]
+            M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
+
+        else:
+            is_in = np.in1d(self.elm.elm_number, th_indices)
+            elm_in_volume = self.elm.elm_number[is_in]
+            msh_in_volume = self.crop_mesh(elements=elm_in_volume)
+
+            th = th_with_points[inside]
+            idx = np.searchsorted(elm_in_volume, th)
+            th_nodes = msh_in_volume.elm[idx+1]
+
+            M = scipy.sparse.csc_matrix((len(pos), msh_in_volume.nodes.nr))
+
+        # if any points are inside
+        if np.any(inside):
+            for i in range(4):
+                M += scipy.sparse.csc_matrix(
+                    (bar[inside, i],
+                     (pos_nr[inside], th_nodes[:, i] - 1)),
+                    shape=M.shape)
+
+        # if any points are outside, fill in the unassigned values
+        if np.any(~inside):
+
+            if out_fill != 'nearest':
+                v = out_fill * np.ones(np.sum(~inside))
+                M += scipy.sparse.csc_matrix(
+                    (v, (pos_nr[~inside], np.zeros(np.sum(~inside)))),
+                    shape=M.shape)
+            else:
+                if th_indices is None:
+                    _, nearest = self.nodes.find_closest_node(
+                            pos[~inside], return_index=True)
+                else:
+                    _, nearest = msh_in_volume.nodes.find_closest_node(
+                            pos[~inside], return_index=True)
+
+                M += scipy.sparse.csc_matrix(
+                    (np.ones(np.sum(~inside)), (pos_nr[~inside], nearest-1)),
+                    shape=M.shape)
+
+        if element_wise:
+            if th_indices is None:
+                M = M @ self.elm2node_matrix()
+            else:
+                M = M @ msh_in_volume.elm2node_matrix()
 
         return M
 
@@ -3710,6 +3802,7 @@ class NodeData(Data):
 
         inside = th_with_points != -1
 
+        # if any points are inside
         if np.any(inside) and len(self.value.shape) == 1:
             f[inside] = np.einsum('ik, ik -> i',
                                   self[msh.elm[th_with_points[inside]]],
@@ -3719,28 +3812,30 @@ class NodeData(Data):
                                   self[msh.elm[th_with_points[inside]]],
                                   bar[inside])
 
-        if out_fill == 'nearest':
+        # if any points are outside, fill in the unassigned values
+        if np.any(~inside):
+            
+            if out_fill == 'nearest':
+                if th_indices is not None:
 
-            if th_indices is not None:
+                    msh.add_node_field(self.value, self.field_name)
 
-                msh.add_node_field(self.value, self.field_name)
+                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    elm_in_volume = msh.elm.elm_number[is_in]
+                    msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
-                is_in = np.in1d(msh.elm.elm_number, th_indices)
-                elm_in_volume = msh.elm.elm_number[is_in]
-                msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
+                    _, nearest = msh_in_volume.nodes.find_closest_node(points[~inside],
+                                                         return_index=True)
 
-                _, nearest = msh_in_volume.nodes.find_closest_node(points[~inside],
-                                                     return_index=True)
+                    f[~inside] = msh_in_volume.nodedata[-1][nearest]
 
-                f[~inside] = msh_in_volume.nodedata[-1][nearest]
+                else:
+                    _, nearest = msh.nodes.find_closest_node(points[~inside],
+                                                         return_index=True)
+                    f[~inside] = self[nearest]
 
             else:
-                _, nearest = msh.nodes.find_closest_node(points[~inside],
-                                                     return_index=True)
-                f[~inside] = self[nearest]
-
-        else:
-            f[~inside] = out_fill
+                f[~inside] = out_fill
 
         if squeeze:
             f = np.squeeze(f)
