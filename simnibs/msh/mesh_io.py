@@ -1939,6 +1939,7 @@ class Msh:
 
         return M
 
+
     def interp_matrix(self, pos, out_fill=np.nan, th_indices=None, element_wise=False):
         ''' Calculates a matrix to perform interpolation
         y = M.dot(x)
@@ -1970,76 +1971,6 @@ class Msh:
         if len(self.elm.tetrahedra) == 0:
             raise ValueError("Can only create interpolation matrices for tetrahedral meshes")
 
-        breakpoint()
-        th_with_points, bar = self.find_tetrahedron_with_points(
-            pos, compute_baricentric=True)
-        if th_indices is not None:
-            th_with_points[~np.isin(th_with_points, th_indices)] = -1
-        inside = th_with_points != -1
-        pos_nr = np.arange(len(pos))
-        th_nodes = self.elm[th_with_points[inside]]
-
-        M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
-        for i in range(4):
-            M += scipy.sparse.csc_matrix(
-                (bar[inside, i],
-                 (pos_nr[inside], th_nodes[:, i] - 1)),
-                shape=M.shape)
-
-        if out_fill != 'nearest':
-            v = out_fill * np.ones(np.sum(~inside))
-            M += scipy.sparse.csc_matrix(
-                (v, (pos_nr[~inside], np.zeros(np.sum(~inside)))),
-                shape=M.shape)
-
-        else:
-            _, nearest = self.nodes.find_closest_node(
-                    pos[~inside], return_index=True)
-            M += scipy.sparse.csc_matrix(
-                (np.ones(np.sum(~inside)), (pos_nr[~inside], nearest-1)),
-                shape=M.shape)
-
-        if element_wise:
-            if th_indices is None:
-                M = M.dot(self.elm2node_matrix())
-            else:
-                M = M.dot(self.elm2node_matrix(th_indices))
-
-        return M
-
-
-    def interp_matrix_v2(self, pos, out_fill=np.nan, th_indices=None, element_wise=False):
-        ''' Calculates a matrix to perform interpolation
-        y = M.dot(x)
-
-        Where x is node-wise data (if element_wise=False, default) or element-wise data
-        otherwise
-
-        Parameters
-        ----------
-        pos: (N x 3) np.ndarray
-            Positions where interpolation is to be performed
-
-        out_fill: float or 'nearest'
-            How to fill values for positions outside the volume
-
-        th_indices: np.ndarray (optional)
-            Indices of the tetrahedra to be considered in the volume. Default: use all
-            tetrahedra
-
-        element_wise: bool (optional)
-            Wether to do interpolations one element-wise data. Default=False
-
-        Returns
-        -------
-        M: scipy.sparse.csc
-            Sparse matrix, interpolation represented by dot product
-
-        '''
-        if len(self.elm.tetrahedra) == 0:
-            raise ValueError("Can only create interpolation matrices for tetrahedral meshes")
-
-        breakpoint()
         th_with_points, bar = self.find_tetrahedron_with_points(
             pos, compute_baricentric=True)
         if th_indices is not None:
@@ -2052,12 +1983,22 @@ class Msh:
             M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
 
         else:
+            # get the mask of elements in the volume defined by 'th_indices'
             is_in = np.in1d(self.elm.elm_number, th_indices)
+
+            # get the 'elm_number' of the tetrahedra in 'self' which has 'is_in' == True
             elm_in_volume = self.elm.elm_number[is_in]
+
+            # 'msh_in_volume' contains only the tetrahedra with 'elm_number == elm_in_volume'
             msh_in_volume = self.crop_mesh(elements=elm_in_volume)
 
+            # the 'elm_number' of elements in 'self' with 'inside' == True
             th = th_with_points[inside]
+
+            # get the indices of elements in 'msh_in_volume'. The 'elm_number' of the same elements are 'th' in 'self'. 'idx' starts from 0, not 1.
             idx = np.searchsorted(elm_in_volume, th)
+
+            # get the 'node_number_list' of the tetrahedra with indices of 'idx'
             th_nodes = msh_in_volume.elm[idx+1]
 
             M = scipy.sparse.csc_matrix((len(pos), msh_in_volume.nodes.nr))
