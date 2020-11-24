@@ -2364,6 +2364,7 @@ class TDCSLEADFIELD(LEADFIELD):
         for el in self.electrode:
             if len(el.thickness) == 3:
                 raise ValueError('Can not run leadfield on sponge electrodes')
+
         # Handle the ROI
         if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
             raise ValueError('Mixing Volumes and Surfaces in ROI!')
@@ -2410,10 +2411,24 @@ class TDCSLEADFIELD(LEADFIELD):
             )
             input_type = 'node'
 
-        # Write roi, scalp and electrode surfaces hdf5
-        roi_msh = w_elec.crop_mesh(roi)
         # If mapping to surface
         if self.map_to_surf:
+
+            # We add WM and CSF to make the mesh convex.
+            roi_fill = roi + [1,3]
+
+            # remove in the future
+            roi_fill = roi
+
+            # Write roi, scalp and electrode surfaces hdf5
+            roi_msh = w_elec.crop_mesh(roi_fill)
+
+            # 'roi':  the GM and eye surfaces ([self.tissues + [2])
+            in_roi = np.in1d(roi_msh.elm.tag1, roi)
+
+            # th_indices': the volume in the 'roi_msh'
+            th_indices = roi_msh.elm.elm_number[in_roi]
+
             # Load middle gray matter
             s_names, segtype = \
                 transformations.get_surface_names_from_folder_structure(self.subpath)
@@ -2447,8 +2462,10 @@ class TDCSLEADFIELD(LEADFIELD):
             M = roi_msh.interp_matrix(
                 mesh_lf.nodes.node_coord,
                 out_fill='nearest',
+                th_indices=th_indices,
                 element_wise=True
             )
+
             # Define postprocessing operation
             def post(out_field, M):
                 return M.dot(out_field)
@@ -2456,6 +2473,10 @@ class TDCSLEADFIELD(LEADFIELD):
             post_pro = functools.partial(post, M=M)
 
         else:
+
+            # Write roi, scalp and electrode surfaces hdf5
+            roi_msh = w_elec.crop_mesh(roi)
+
             mesh_lf = roi_msh
             post_pro = None
 
