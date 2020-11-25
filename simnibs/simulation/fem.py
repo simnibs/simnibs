@@ -1478,7 +1478,7 @@ def tms_many_simulations(
     mesh, cond, fn_coil, matsimnibs_list, didt_list,
     fn_hdf5, dataset, roi=None, field='E', post_pro=None,
     solver_options=None, n_workers=1):
-    ''' Function for runnining a large amount of TMS simulations
+    ''' Function for running a large amount of TMS simulations
 
     Parameters
     -------------
@@ -1486,8 +1486,6 @@ def tms_many_simulations(
         Mesh structure
     cond: simnibs.msh.mesh_io.ElementData
         Conductivity field
-    fields: str or list of str
-        Fields to be calculated for each position
     fn_coil: string
         Name of coil file
     matsimnibs_list: list
@@ -1502,19 +1500,20 @@ def tms_many_simulations(
         Regions of interest where the fields is to be saved.
         If set to None, will save the electric field in all tissues.
         Default: None
-    field: 'E' or 'J' (optional)
-        Which field to save (electric field E or current density J). Default: 'E'
+    field: str
+        Which field/s to save, any combination of E, D, J, v. E.g. 'EDJ'. Default: 'E'.
     post_pro: list of callables (optional)
-        list of callables f_post = post_pro(f), where f is an input field in the ROI and
-        f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
-        field
+        List of callables f_post = post_pro(f), where f is the requested field (or multiple field as a tuple of
+        the ordering E,D,J,v) in the ROI and f_post is an Nx3 ndarray. The postprocessing result will be saved
+        instead of the field/s.
     solver_options: str (optional)
         Options to be used by the solver. Default: Hypre solver
     n_workers: int
         Number of workers to use
     '''
-    if field != 'E' and field != 'J':
-        raise ValueError("Field shoud be either 'E' or 'J'")
+    for f in field:
+        if f not in 'EDJv':
+            raise ValueError("Field must be one or more of 'E', 'D', 'J', 'v'")
     if len(matsimnibs_list) != len(didt_list):
         raise ValueError("matsimnibs_list and didt_list should have the same length")
     D = grad_matrix(mesh, split=True)
@@ -1555,10 +1554,22 @@ def tms_many_simulations(
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             dAdt = dAdt[roi]
             E -= dAdt
-            if field == 'E':
-                out_field = E
-            elif field == 'J':
-                out_field = calc_J(E, cond)
+
+            # build output fields
+            out_field = []
+            if 'E' in field:
+                out_field.append(E)
+            if 'D' in field:
+                out_field.append(dAdt)
+            if 'J' in field:
+                out_field.append(calc_J(E, cond))
+            if 'v' in field:
+                out_field.append(v)
+            out_field = tuple(out_field)
+
+            # if only one field to output, un-tuple
+            if len(out_field) == 1:
+                out_field = out_field[0]
             if post_pro is not None:
                 out_field = post_pro(out_field)
             with h5py.File(fn_hdf5) as f:
@@ -1628,10 +1639,23 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tms_many_global_grad_matrix]).T * 1e3
     E -= dAdt[tms_many_global_roi]
-    if tms_many_global_field == 'E':
-        out_field = E
-    elif tms_many_global_field == 'J':
-        out_field = calc_J(E, tms_many_global_cond)
+
+    # build output fields
+    out_field = []
+    if 'E' in tms_many_global_field:
+        out_field.append(E)
+    if 'D' in tms_many_global_field:
+        out_field.append(dAdt)
+    if 'J' in tms_many_global_field:
+        out_field.append(calc_J(E, tms_many_global_cond))
+    if 'v' in tms_many_global_field:
+        out_field.append(v)
+    out_field = tuple(out_field)
+
+    # if only one field to output, un-tuple
+    if len(out_field) == 1:
+        out_field = out_field[0]
+
     if tms_many_global_post_pro is not None:
         out_field = tms_many_global_post_pro(out_field)
     # Write out
