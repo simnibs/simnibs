@@ -8,7 +8,7 @@ Adapted by Guilherme Saturnino, 2019
 import numpy as np
 
 
-def _create_grid(mesh, pos, distance, radius, resolution_pos):
+def _create_grid(mesh, pos, distance, radius, resolution_pos, smooth=1):
     ''' Creates a position grid '''
     # extract ROI
     msh_surf = mesh.crop_mesh(elm_type=2)
@@ -38,7 +38,7 @@ def _create_grid(mesh, pos, distance, radius, resolution_pos):
     # project grid-points to skin-surface
     coords_mapped = []
     coords_normals = []
-    normals_roi = msh_roi.triangle_normals(smooth=1)
+    normals_roi = msh_roi.triangle_normals(smooth=smooth)
     for i, c in enumerate(coords_plane):
         # Query points inside/outside the surface
         q1 = c + 1e2 * vh[:, 2]
@@ -73,7 +73,7 @@ def _rotate_system(R, angle_limits, angle_res):
 
 
 def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
-                 resolution_pos=1, resolution_angle=20, angle_limits=None):
+                 resolution_pos=1, resolution_angle=20, angle_limits=None, smooth=1):
     """ Determine the coil positions and orientations for bruteforce TMS optimization
 
     Parameters
@@ -82,7 +82,7 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
         Simnibs mesh object
     pos: ndarray
         Coordinates (x, y, z) of reference position
-    handle_direction_ref (optinal): list of float or np.ndarray
+    handle_direction_ref: list of float or np.ndarray (optional)
         Vector of handle prolongation direction, in relation to "pos". (Default: do
         not select a handle direction and scan rotations from -180 to 180)
     distance: float or None
@@ -96,6 +96,8 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-180, 180])
+    smooth: int (optional)
+        Smoothing steps of skin-surface smoothing for coil z-axis orientation. Default: 1
 
     Returns
     -------
@@ -104,7 +106,7 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
     """
     # creates the spatial grid
     coords_mapped, coords_normals = _create_grid(
-        mesh, pos, distance, radius, resolution_pos)
+        mesh, pos, distance, radius, resolution_pos, smooth)
     
     # Determines the seed y direction
     if handle_direction_ref is None:
