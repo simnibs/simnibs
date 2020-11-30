@@ -124,6 +124,7 @@ class TMSoptimize():
         self.spatial_resolution = 5
         self.search_angle = 360
         self.angle_resolution = 30
+        self.smooth = 1
 
         self.open_in_gmsh = True
         self.solver_options = ''
@@ -330,7 +331,8 @@ class TMSoptimize():
             distance=self.distance, radius=self.search_radius,
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
+            angle_limits=[-self.search_angle/2, self.search_angle/2],
+            smooth=self.smooth
         )
         cond = SimuList.cond2elmdata(self)
         didt_list = [self.didt for i in pos_matrices]
