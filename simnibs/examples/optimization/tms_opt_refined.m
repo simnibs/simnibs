@@ -27,5 +27,7 @@ tms_opt.pos_ydir = [-56.4, -22.2, 96.0];
 tms_opt.search_angle = 90;
 % Change the angular resolution
 tms_opt.angle_resolution = 15;
+% Increase smoothing steps for uneven skin surface
+tms_opt.smooth = 20;
 
 run_simnibs(tms_opt)
