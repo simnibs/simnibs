@@ -46,7 +46,8 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                     template_file_name)
 
     init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
-                                                scales=scales)
+                                                scales=scales,
+                                                scalingCenter=[0,125.0,0])
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
     affine.registerAtlas(initializationOptions=init_options,
@@ -293,12 +294,12 @@ def run(subject_dir=None, T1=None, T2=None,
         else:
             nib.save(nib.load(T1), sub_files.T1)
 
-    if registerT2:
+    if registerT2 and T2 is not None:
         if not os.path.exists(T2):
             raise FileNotFoundError(f'Could not find input T2 file: {T2}')
         else:
             _registerT1T2(T1, T2, sub_files.T2_reg)
-    else:
+    elif T2 is not None:
         if os.path.exists(T2):
             if len(T2) > 7 and T2[-7:].lower() == '.nii.gz':
                 shutil.copyfile(T2, sub_files.T2_reg)
@@ -346,7 +347,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
     # TODO: Setup the visualization tool. This needs some pyqt stuff to be
     # installed. Don't know if we want to expose this in the .ini
-    showFigs = False
+    showFigs = True
     showMovies = False
     visualizer = samseg.initVisualizer(showFigs, showMovies)
 

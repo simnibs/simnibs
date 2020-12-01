@@ -39,7 +39,7 @@ class AffineWholeHead(Affine):
         alphas = mesh.alphas
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
-        spineAlphas = alphas[:, -1]
+        spineAlphas = alphas[:, 48]
         mask = spineAlphas > 0.01
 
         # Get z-coordinates

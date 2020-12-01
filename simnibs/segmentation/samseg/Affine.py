@@ -279,8 +279,8 @@ class Affine:
             mesh.points = positionsInTemplateSpace
             templateSize = np.round( np.max( mesh.points, axis=0 ) + 1 ).astype( 'int' )
             priors = mesh.rasterize( templateSize, -1 )
-            head = np.sum( priors[:,:,:,1:], axis=3 )
-            centerOfGravityTemplate = np.array( scipy.ndimage.measurements.center_of_mass( head ) ) # in image space
+            head = np.sum( priors[:,:,:,1:], axis=3 )/65535
+            centerOfGravityTemplate = np.array( scipy.ndimage.measurements.center_of_mass( head.astype(float) ) ) # in image space
             centerOfGravityImage = np.array( 
                 scipy.ndimage.measurements.center_of_mass( self.image.getImageBuffer() ) ) # in image space
             tmp = self.getTransformMatrix()
