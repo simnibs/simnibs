@@ -11,6 +11,8 @@ import os
 import shutil
 import time
 import subprocess
+import nibabel as nib
+from sys import platform
 from .. import utils
 from simnibs import SIMNIBSDIR
 from ..utils.simnibs_logger import logger
@@ -33,6 +35,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                     template_coregistered_name,
                                     init_atlas_settings, neck_tissues,
                                     visualizer,
+                                    noneck,
                                     init_transform=None,
                                     world_to_world_transform_matrix=None):
 
@@ -47,12 +50,13 @@ def _register_atlas_to_input_affine(T1, template_file_name,
 
     init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
                                                 scales=scales,
-                                                scalingCenter=[0,125.0,0])
+                                                scalingCenter=[0, 120.0, 0])
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
     affine.registerAtlas(initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
-                         visualizer=visualizer)
+                         visualizer=visualizer,
+                         noneck=noneck)
 
     affine.saveResults(T1, template_file_name, save_path,
                        template_coregistered_name, image_to_image_transform,
@@ -63,12 +67,17 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                 (optimization_summary['numberOfIterations'],
                  optimization_summary['cost']))
 
-    logger.info('Adjusting neck.')
-    affine.adjust_neck(T1, template_coregistered_name, mesh_level1,
-                       mesh_level2, neck_search_bounds, neck_tissues,
-                       visualizer)
-    logger.info('Neck adjustment done.')
-
+    if not noneck:
+        logger.info('Adjusting neck.')
+        affine.adjust_neck(T1, template_coregistered_name, mesh_level1,
+                           mesh_level2, neck_search_bounds, neck_tissues,
+                           visualizer, downsampling_target=2.0)
+        logger.info('Neck adjustment done.')
+    else:
+        logger.info('No neck, copying meshes over.')
+        file_path = os.path.split(template_coregistered_name)
+        shutil.copy(mesh_level1, os.path.join(file_path[0], 'atlas_level1.txt'))
+        shutil.copy(mesh_level2, os.path.join(file_path[0], 'atlas_level2.txt'))
 
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
@@ -105,27 +114,11 @@ def _estimate_parameters(path_to_segment_folder,
             path_to_segment_folder, 'atlas_level2.txt.gz'),
                                  'biasFieldSmoothingKernelSize': 70,
                                  'brainMaskingThreshold': 0.01}
-    if len(input_images) > 1:
+    if 0: #len(input_images) > 1:
         user_model_specifications = {'atlasFileName': os.path.join(
             path_to_segment_folder, 'atlas_level2.txt.gz'),
                                  'biasFieldSmoothingKernelSize': 50,
                                  'brainMaskingThreshold': 0.01}
-
-    # TODO: THIS IS TO MAKE TESTING FASTER, REMOVE LATER
-    if 0:
-        user_optimization_options = {'multiResolutionSpecification':
-                                     [{'atlasFileName':
-                                       os.path.join(path_to_segment_folder,
-                                                    'atlas_level1.txt.gz'),
-                                       'targetDownsampledVoxelSpacing': 3.0,
-                                       'maximumNumberOfIterations': 2,
-                                       'estimateBiasField': True},
-                                      {'atlasFileName':
-                                          os.path.join(path_to_segment_folder,
-                                                       'atlas_level2.txt.gz'),
-                                       'targetDownsampledVoxelSpacing': 2.0,
-                                       'maximumNumberOfIterations': 2,
-                                       'estimateBiasField': True}]}
 
     samseg_kwargs = dict(
         imageFileNames=input_images,
@@ -227,7 +220,7 @@ def view(subject_dir):
 def run(subject_dir=None, T1=None, T2=None,
         registerT2=False, initatlas=False, segment=False,
         create_surfaces=True, mesh_image=False, usesettings=None,
-        options_str=None):
+        noneck=False, options_str=None):
     """charm pipeline
 
     PARAMETERS
@@ -249,8 +242,6 @@ def run(subject_dir=None, T1=None, T2=None,
     mesh_image : bool
         run tetrahedral meshing (default = False)
     --> further parameters:
-    skipregisterT2 : bool
-    skip T2-to-T1 registration, just copy T2-weighted image (default = False)
     usesettings : str
         filename of alternative settings-file (default = None)
     options_str : str
@@ -323,7 +314,7 @@ def run(subject_dir=None, T1=None, T2=None,
     os.makedirs(sub_files.segmentation_folder, exist_ok=True)
 
     denoise_settings = settings['preprocess']
-    if denoise_settings['denoise']:
+    if denoise_settings['denoise'] and T1 is not None:
         logger.info('Denoising the T1 input and saving.')
         _denoise_input_and_save(T1, sub_files.T1_denoised)
 
@@ -369,18 +360,17 @@ def run(subject_dir=None, T1=None, T2=None,
                                 atlas_settings_names['atlas_level2'])
     neck_tissues = atlas_settings['neck_optimization']
     neck_tissues = neck_tissues['neck_tissues']
+    mni_deformation_file = os.path.join(atlas_path,
+                                        atlas_settings_names['mni_deformation'])
+    mni_node_positions_file = os.path.join(atlas_path,
+                                           atlas_settings_names['mni_node_positions'])
 
     if initatlas:
         # initial affine registration of atlas to input images,
         # including break neck
         logger.info('Starting affine registration and neck correction.')
-        if denoise_settings['denoise']:
-            input_image = sub_files.T1_denoised
-        else:
-            input_image = T1
-
         init_atlas_settings = settings['initatlas']
-        _register_atlas_to_input_affine(input_image, template_name,
+        _register_atlas_to_input_affine(T1, template_name,
                                         atlas_affine_name,
                                         atlas_level1,
                                         atlas_level2,
@@ -388,7 +378,8 @@ def run(subject_dir=None, T1=None, T2=None,
                                         sub_files.template_coregistered,
                                         init_atlas_settings,
                                         neck_tissues,
-                                        visualizer)
+                                        visualizer,
+                                        noneck)
 
     if segment:
         # This part runs the segmentation, upsamples bias corrected output,
@@ -448,14 +439,15 @@ def run(subject_dir=None, T1=None, T2=None,
                             segment_parameters_and_inputs)
 
         # Write out MNI warps
-        if 0:
-            logger.info('Writing out MNI warps.')
-            os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
-            samseg.simnibs_segmentation_utils.saveWarpField(
-                    template_name,
-                    sub_files.conf2mni_nonl,
-                    sub_files.mni2conf_nonl,
-                    segment_parameters_and_inputs)
+        logger.info('Writing out MNI warps.')
+        os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
+        samseg.simnibs_segmentation_utils.saveWarpField(
+                template_name,
+                sub_files.conf2mni_nonl,
+                sub_files.mni2conf_nonl,
+                segment_parameters_and_inputs,
+                mni_deformation_file,
+                mni_node_positions_file)
 
         # Run post-processing
         logger.info('Post-processing segmentation')
@@ -507,10 +499,36 @@ def run(subject_dir=None, T1=None, T2=None,
         #  '--close_parahipp', False,
 
         starttime = time.time()
-        # A hack to get multithreading to work
-        proc = subprocess.run([shutil.which(python_interpreter)] +
-                              multithreading_script + args,
-                              capture_output=True)
+        # A hack to get multithreading to work on Windows
+        if platform == 'win32':
+            proc = subprocess.run([shutil.which(python_interpreter)] +
+                                  multithreading_script + args,
+                                  capture_output=True)
+        else:
+            from simnibs.segmentation.run_cat_multiprocessing import run_cat_multiprocessing
+            Ymf = nib.load(sub_files.norm_image)
+            Yleft = nib.load(sub_files.hemi_mask)
+            Yhemis = nib.load(sub_files.cereb_mask)
+            Yparahipp = nib.load(sub_files.parahippo_mask)
+            vox2mm = Ymf.affine
+            vdist = [1.0, 0.75]
+            voxsize_pbt = [0.5, 0.25]
+            voxsize_refineCS = [0.75, 0.5]
+            th_initial = 0.714
+            no_selfintersections = True
+            add_parahipp = False
+            close_parahipp = False
+            surf = ['lh', 'rh']
+
+            run_cat_multiprocessing(Ymf.get_fdata(),
+                                    Yleft.get_fdata(),
+                                    Yhemis.get_fdata(),
+                                    Yparahipp.get_fdata(),
+                                    vox2mm, sub_files.surface_folder,
+                                    fsavgDir, vdist,
+                                    voxsize_pbt, voxsize_refineCS,
+                                    th_initial, no_selfintersections,
+                                    add_parahipp, close_parahipp, surf)
 
         # print time duration
         elapsed = time.time() - starttime
@@ -561,7 +579,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
 def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
          distance_slope=0.5, distance_range=(0.1, 3),
-         optimize=True, remove_spikes=True, smooth_steps=5):
+         optimize=False, remove_spikes=True, smooth_steps=5):
     ''' Creates a mesh from a labeled image
 
     The maximum element sizes (CGAL facet_size and cell_size) is given by:

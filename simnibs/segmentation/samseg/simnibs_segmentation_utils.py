@@ -158,7 +158,8 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
 
 
 def saveWarpField(template_name, warp_to_mni,
-                  warp_from_mni, parameters_and_inputs):
+                  warp_from_mni, parameters_and_inputs,
+                  mni_deformation_file, mni_node_positions_file):
     # Save warp field two ways: the subject space world coordinates
     # in template space, i.e., the iamge voxel coordinates in
     # physical space for every voxel in the template.
@@ -206,7 +207,7 @@ def saveWarpField(template_name, warp_to_mni,
 
     # Rasterize the final node coordinates (in image space)
     # using the initial template mesh
-    mni_deformation = np.load('mni_deformation.npy')
+    mni_deformation = np.load(mni_deformation_file)
     mesh = probabilisticAtlas.getMesh(
                 modelSpecifications.atlasFileName,
                 K=modelSpecifications.K,
@@ -230,7 +231,7 @@ def saveWarpField(template_name, warp_to_mni,
                                               ((0, 0), (0, 1)),
                                               'constant', constant_values=1).T).T
     nodePositionsTemplateWorldSpace = nodePositionsTemplateWorldSpace[:, 0:3]
-    node_pos_in_mni = np.load('mni_node_positions.npy')
+    node_pos_in_mni = np.load(mni_node_positions_file)
     # Okay get the mesh in image space
     mesh = probabilisticAtlas.getMesh(
              modelSpecifications.atlasFileName,

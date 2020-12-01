@@ -82,6 +82,9 @@ MANUAL EDITING:
                         the registrations to the fsaverage and MNI templates""")
     parser.add_argument('--mesh',action='store_true',default=False,
                         help="Create the head mesh from the label image")
+
+    parser.add_argument('--surfaces', action='store_true', default=False,
+                        help="Create central cortical surfaces from the label image")
     
     parser.add_argument('--forcerun',action='store_true',default=False,
                         help="""Overwrite existing m2m_{subID} folder instead 
@@ -92,6 +95,8 @@ MANUAL EDITING:
     parser.add_argument('--usesettings',nargs=1,metavar="settings.ini",
                         help="""ini-file with settings (default: charm.ini in 
                         simnibs folder""")
+    parser.add_argument('--noneck', action='store_true', default=False,
+                        help="""Inform the segmentation that there's no neck in the scan.""")
 
     args=parser.parse_args(argv)
 
@@ -110,7 +115,7 @@ def main():
         
     if args.check:
         # visual check of results
-        if any([args.registerT2, args.initatlas, args.segment, args.mesh]): # --check can only be called alone        
+        if any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]): # --check can only be called alone
             raise RuntimeError("""ERROR: --check cannot be used together with 
                                --registerT2, --initatlas, --segment or --mesh""")
                                
@@ -126,12 +131,13 @@ def main():
         fresh_run = args.registerT2
         fresh_run |= args.initatlas and not args.registerT2 and args.T1 is not None # initatlas is the first step in the pipeline when a T1 is explicitly supplied
         
-        if not any([args.registerT2, args.initatlas, args.segment, args.mesh]):
+        if not any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]):
             # if charm part is not explicitly stated, run all
             fresh_run=True
             args.initatlas=True
             args.segment=True
             args.mesh=True
+            args.surfaces = True
             if args.T2 is not None:
                 args.registerT2=True
         
@@ -153,7 +159,7 @@ def main():
                 
                 
         charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
-                       args.segment, args.mesh, args.skipregisterT2, args.usesettings,
+                       args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
                        " ".join(sys.argv[1:]))
 
         

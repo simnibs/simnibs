@@ -32,6 +32,7 @@ class AffineWholeHead(Affine):
         # let's do that now
         template_image_to_world_transform = np.asfortranarray(
             image_to_world_transform @ image_to_image_transform)
+
         template.write(template_coregistered_name,
                        gems.KvlTransform(template_image_to_world_transform))
 
