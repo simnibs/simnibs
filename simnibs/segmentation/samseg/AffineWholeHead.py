@@ -32,6 +32,7 @@ class AffineWholeHead(Affine):
         # let's do that now
         template_image_to_world_transform = np.asfortranarray(
             image_to_world_transform @ image_to_image_transform)
+
         template.write(template_coregistered_name,
                        gems.KvlTransform(template_image_to_world_transform))
 
@@ -39,7 +40,7 @@ class AffineWholeHead(Affine):
         alphas = mesh.alphas
         # Note: the spine class is the last one in the affine atlas.
         # Might need to change this in the future.
-        spineAlphas = alphas[:, -1]
+        spineAlphas = alphas[:, 48]
         mask = spineAlphas > 0.01
 
         # Get z-coordinates

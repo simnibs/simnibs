@@ -16,14 +16,14 @@ class initializationOptions:
     def __init__( self,
                   pitchAngles=np.array( [ 0 ] ) / 180.0 * np.pi, # in radians
                   scales=[ 1.0 ],  
-                  horizontalTableShifts=[ 40.0, 20.0, 0.0, -20.0, -40.0 ], # in mm, in template space
+                  horizontalTableShifts= [ 40.0, 20.0, 0.0, -20.0, -40.0 ], # in mm, in template space
                   verticalTableShifts=[ 0.0 ], # in mm, in template space
                   tryCenterOfGravity=True,
                   searchForTableShiftsSeparately=False,
                   pitchCenter=[ 0.0, 0.0, 0.0 ], # in mm, in template space - anterior commissure
                   scalingCenter=[ 0.0, 120.0, 0.0 ], # in mm, in template space - back of the head
                   initialPitchAngle=-10.0/180.0*np.pi, # in radians
-                  initialScale=0.9, 
+                  initialScale=0.9,
                   initialTableShift=[ 0.0, 0.0, 0.0 ] # in mm, in template space
                 ):
         self.pitchAngles = pitchAngles
@@ -52,17 +52,18 @@ class Affine:
                       initializationOptions = initializationOptions(),
                       targetDownsampledVoxelSpacing=3.0,
                       maximalDeformationStopCriterion=0.005,
-                      visualizer=None ):
+                      visualizer=None, noneck=False):
 
         # ------ Set up ------ 
-        self.setUp( initTransform,targetDownsampledVoxelSpacing, visualizer )
+        self.setUp( initTransform,targetDownsampledVoxelSpacing, visualizer)
 
         # ------ Register mesh to image ------
         imageToImageTransformMatrix, worldToWorldTransformMatrix, optimizationSummary = \
             self.registerMeshToImage(worldToWorldTransformMatrix=worldToWorldTransformMatrix,
                                      Ks=Ks,
                                      maximalDeformationStopCriterion=maximalDeformationStopCriterion,
-                                     initializationOptions=initializationOptions)
+                                     initializationOptions=initializationOptions,
+                                     noneck=noneck)
         
         return imageToImageTransformMatrix, worldToWorldTransformMatrix, optimizationSummary
      
@@ -250,7 +251,7 @@ class Affine:
 
     
     #
-    def getInitialization(self, initializationOptions):   
+    def getInitialization(self, initializationOptions, noneck):
         # Remember some things that are fixed
         self.pitchCenter = initializationOptions.pitchCenter
         self.scalingCenter = initializationOptions.scalingCenter
@@ -268,6 +269,7 @@ class Affine:
         mesh = ProbabilisticAtlas().getMesh( self.meshCollectionFileName, 
                                              transform=imageToImageTransform,
                                              K=0.0 )
+
         positionsInTemplateSpace = ProbabilisticAtlas().mapPositionsFromSubjectToTemplateSpace( mesh.points, 
                                                                           imageToImageTransform )
 
@@ -279,7 +281,12 @@ class Affine:
             mesh.points = positionsInTemplateSpace
             templateSize = np.round( np.max( mesh.points, axis=0 ) + 1 ).astype( 'int' )
             priors = mesh.rasterize( templateSize, -1 )
-            head = np.sum( priors[:,:,:,1:], axis=3 )
+
+            if noneck:
+                head = np.sum( priors[:,:,:,2:], axis=3 )
+            else:
+                head = np.sum(priors[:, :, :, 2:], axis=3)
+
             centerOfGravityTemplate = np.array( scipy.ndimage.measurements.center_of_mass( head ) ) # in image space
             centerOfGravityImage = np.array( 
                 scipy.ndimage.measurements.center_of_mass( self.image.getImageBuffer() ) ) # in image space
@@ -393,7 +400,7 @@ class Affine:
       
 
     def registerMeshToImage( self, worldToWorldTransformMatrix, Ks, maximalDeformationStopCriterion,
-                             initializationOptions ):
+                             initializationOptions, noneck=False):
     
         if worldToWorldTransformMatrix is not None:
             # The world-to-world transfrom is externally given, so let's just compute the corresponding image-to-image
@@ -410,7 +417,7 @@ class Affine:
             print('template: %s' % self.templateFileName)
 
             # Get an initialization of the image-to-image transform (template -> subject)
-            imageToImageTransformMatrix = self.getInitialization( initializationOptions )
+            imageToImageTransformMatrix = self.getInitialization(initializationOptions, noneck)
 
 
             # Optimze image-to-image transform (template->subject)

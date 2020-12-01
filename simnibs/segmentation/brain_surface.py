@@ -719,7 +719,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         This function is adapted from cat_surf_createCS.m of CAT12
         (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).  
     """
-    debug=True # keep intermediate results if set to True
+    debug=False # keep intermediate results if set to True
     
     # add surface name to logger
     formatter_list=[]
@@ -1146,7 +1146,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     else:
         tmp_param10 = 1.5
         
-    tmp_param10 = 1.5
+    tmp_param10 = 1.6 #seems to be better than 1.5
     
     YM = np.fmax(0, np.fmin(1, (tmp_param10 - Ymf)))
     YM[YMM] = np.nan
