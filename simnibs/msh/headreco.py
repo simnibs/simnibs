@@ -237,7 +237,7 @@ def headmodel(argv):
         elif len(img2sgm)==1:
             spmcall = "segment_SPM('{0}','{1}',[],{2},{3})".format(etpm_dir, img2sgm[0], args.biasreg, args.dsf)
         if docat:
-            catcall = "segment_CAT('{0}','{1}',{2})".format(fcat,etpm_dir,int(args.cat_no_print))
+            catcall = "segment_CAT('{0}','{1}',{2})".format(fcat,etpm_dir,int(not(args.cat_print)))
             spmcall +="; "+ catcall
         
         # -nosplash -nodesktop - CAT12 will stall on using -nodisplay due to the graphical report
@@ -670,12 +670,13 @@ def headmodel(argv):
         print("")
         
         section_start = time.time()
-        
+
+
         try:
             relabel
         except NameError:
             relabel = sorted(glob(os.path.join(subject_dir,
-                                     "air_outer_relabel*.stl")), key=str.lower)
+                            "air_outer_relabel*.stl")), key=str.lower)
         try:
             surfaces
         except NameError:
@@ -689,7 +690,7 @@ def headmodel(argv):
         T1 = nib.load(os.path.join(subject_dir,"T1fs_conform.nii.gz"))
         
         # run Gmsh
-        vmsh = make_volume_mesh(args.subject_id, surfaces, subject_dir)
+        vmsh = make_volume_mesh(args.subject_id, surfaces, subject_dir, args.keep_air)
         ovmsh = vmsh
         
         # load volume mesh
@@ -721,7 +722,7 @@ def headmodel(argv):
         hmu.log("Creating control volume and GM and WM masks")
         hmu.vmesh2nifti(vmsh, T1, final_control)
 
-        hmu.log("Checking if the mesing went OK")
+        hmu.log("Checking if the meshing went OK")
         if not hmu.check_volumes_meshed(subject_dir):
             os.remove(final_mesh)
             print("")
@@ -1540,7 +1541,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     hmu.write_nifti(mSKIN_Y_mod, mod[key], ref, dtype=dtype)
     
     hmu.log("Extracting surface")
-    off[key] = hmu.make_surface_mesh(mod[key], off[key], 1, 1, vertex_density, 5)[0]
+    off[key] = hmu.make_surface_mesh(mod[key], off[key], 1, 1, vertex_density, 20)[0]
     
     hmu.log("Decoupling from bone")
     hmu.decouple_surfaces(off["bone"], off[key], "outer-from-inner",
@@ -1709,7 +1710,7 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     return surfaces, relabel
 
 
-def make_volume_mesh(subject_id,input_files,out_dir):
+def make_volume_mesh(subject_id,input_files,out_dir, keep_air):
     """Generates a volume mesh from the given set of surface meshes using Gmsh.
     This essentially fills the surface(s) with tetrahedra. 
     Relabels
@@ -1810,22 +1811,40 @@ def make_volume_mesh(subject_id,input_files,out_dir):
     if "cavities" in files:
         i = num["cavities"]
         merge.append('Merge \"{cavities}\";')
+        if keep_air:
+            i_new = 11
+
         surface_loop.append("Surface Loop({0}) = {{{1}}}; // cavities.stl".format(i,n))
         # modify bone volume
         volumes[3] = "Volume(4) = {{3, 4, {0}}};    // bone volume".format(i)
-        physical_surf[3] = "Physical Surface(1004) = {{4, {0}}};".format(i)
+        if keep_air:
+            physical_surf.append("Physical Surface({0}) = {{{1}}};".format(1000+i_new,i))
+            physical_vol.append("Physical Volume({0}) = {{{1}}};".format(i_new,i))
+            volumes.append("Volume({0}) = {{{0}}};          // cavities volume".format(i))
+        else:
+            physical_surf[3] = "Physical Surface(1004) = {{4, {0}}};".format(i)
         n += 1
 
     if "air_outer" in files:
         # outer air : s 1007/7
         i = num["air_outer"]
         merge.append('Merge \"{air_outer}\";')
+
+        if keep_air:
+            i_new = 12
+
         surface_loop.append("Surface Loop({0}) = {{{1}}}; // air_outer.stl; i.e., air outside bone".format(i,n))
         # modify skin
         if "eyes" in files:
             volumes[4] = "Volume(5) = {{4, 5, 6, {0}}}; // SKIN volume".format(i)
         else:
             volumes[4] = "Volume(5) = {{4, 5, {0}}};    // SKIN volume".format(i)
+
+        if keep_air:
+            physical_surf.append("Physical Surface({0}) = {{{1}}};".format(1000 + i_new, i))
+            physical_vol.append("Physical Volume({0}) = {{{1}}};".format(i_new, i))
+            volumes.append("Volume({0}) = {{{0}}};          // cavities volume".format(i))
+
         n += 1
         
     if "ventricles" in files:
@@ -2399,12 +2418,18 @@ def parse_args(argv):
         "help"   :"""Skip registration of T1 and T2 if already registered (default:
                   %(default)s)."""
         }
-    cat_no_print = {
+    cat_print = {
         "action" :"store_true",
         "default":False,
-        "help"   :"""Suppress pdf printing from CAT12 (default:
+        "help"   :"""Print pdf from CAT12 (default:
                   %(default)s)."""
         }
+    keep_air = {
+        "action": "store_true",
+        "default": False,
+        "help": """Keep the surfaces and volumes of air cavities (default:
+                      %(default)s)."""
+    }
          
    
     # setup argument parser
@@ -2423,7 +2448,8 @@ def parse_args(argv):
     parser_all.add_argument("-v","--vertex-density", **vertex_density)
     parser_all.add_argument("--noclean", **noclean)
     parser_all.add_argument("--skip_coreg", **skip_coreg)
-    parser_all.add_argument("--cat_no_print", **cat_no_print)
+    parser_all.add_argument("--cat_print", **cat_print)
+    parser_all.add_argument("--keep_air", **keep_air)
     # positional
     parser_all.add_argument("subject_id",**subject_id)
     parser_all.add_argument("input_files", **input_files)
@@ -2439,7 +2465,7 @@ def parse_args(argv):
     parser_prepvols.add_argument("--vx-size", **vx_size)
     parser_prepvols.add_argument("--noclean", **noclean)
     parser_prepvols.add_argument("--skip_coreg", **skip_coreg)
-    parser_prepvols.add_argument("--cat_no_print", **cat_no_print)
+    parser_prepvols.add_argument("--cat_print", **cat_print)
     # positional
     parser_prepvols.add_argument("subject_id",**subject_id)
     parser_prepvols.add_argument("input_files", **input_files)
@@ -2479,6 +2505,7 @@ def parse_args(argv):
     # optional
     parser_volmesh.add_argument("--no-cat", **cat)
     parser_volmesh.add_argument("-nc","--noclean", **noclean)
+    parser_volmesh.add_argument("--keep_air", **keep_air)
     # positional
     parser_volmesh.add_argument("subject_id",**subject_id)
     

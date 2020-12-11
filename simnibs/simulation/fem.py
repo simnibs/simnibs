@@ -1502,6 +1502,7 @@ def tms_many_simulations(
         Default: None
     field: str
         Which field/s to save, any combination of E, D, J, v. E.g. 'EDJ'. Default: 'E'.
+        Note: When post-processing is used the field can only be either 'E' or 'J'
     post_pro: list of callables (optional)
         List of callables f_post = post_pro(f), where f is the requested field (or multiple field as a tuple of
         the ordering E,D,J,v) in the ROI and f_post is an Nx3 ndarray. The postprocessing result will be saved
@@ -1519,7 +1520,7 @@ def tms_many_simulations(
     D = grad_matrix(mesh, split=True)
     S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
     n_out = mesh.elm.nr
-    # Separate out the part of the gradiend that is in the ROI
+    # Separate out the part of the gradient that is in the ROI
     if roi is not None:
         roi = np.in1d(mesh.elm.tag1, roi)
         D = [d.tocsc() for d in D]
@@ -1531,6 +1532,10 @@ def tms_many_simulations(
     n_roi = np.sum(roi)
     # Figure out size of the postprocessing output
     if post_pro is not None:
+        if len(field) != 1:
+            raise ValueError("Post-processing work only with a single field.")
+        if field not in 'EJ':
+            raise ValueError("Field has to be E or J for post-processing.")
         n_out = np.array(post_pro(np.zeros((n_roi, 3)))).shape
     else:
         n_out = (n_roi, 3)

@@ -2620,7 +2620,7 @@ def volume_mesh_relabel(mesh, surfaces, region_number):
     lvl = logging.DEBUG
     
     # indexing in .msh files start from 1. To minimize confusion, subtract 1 to
-    # get coordinates appropriate for python indexing. Readd before saving the
+    # get coordinates appropriate for python indexing. Read before saving the
     # mesh to disk
     mesh.elm.node_number_list -= 1
     
