@@ -30,6 +30,7 @@ import tempfile
 import time
 import functools
 import zipfile
+import warnings
 
 import requests
 
@@ -41,7 +42,7 @@ try:
     GUI = True
 except ImportError:
     GUI = False
-
+    
 if sys.platform == 'win32':
     import winreg
 
@@ -970,6 +971,33 @@ def uninstall(install_dir):
             shutil.rmtree(os.path.join(install_dir, 'Gmsh.app'), True)
 
 def main():
+    big_sur = False
+    if sys.platform == 'darwin':
+        try:
+            mac_vers=subprocess.check_output('sw_vers -productVersion',shell=True)
+            if int(mac_vers.split(b'.')[0]) >= 11:
+                big_sur = True
+        except:
+            warnings.warn('Mac OS sw_vers failed.')
+    if big_sur:
+        warnings.warn('Big Sur detected, using dirty workaround.')
+        os.environ['QT_MAC_WANTS_LAYER'] = '1'
+        try:
+            import OpenGL.GL
+        except:
+            import OpenGL
+            warnings.warn('Big Sur, .')
+            ctypesloader_fn = os.path.join(os.path.split(OpenGL.__file__)[0], 'platform', 'ctypesloader.py')
+            fid = open(ctypesloader_fn)
+            ctypesloader_code = fid.read()
+            fid.close()
+            str_find = 'fullName = util.find_library( name )'
+            new_code = '\n        fullName = \'/System/Library/Frameworks/OpenGL.framework/OpenGL\''
+            ctypesloader_code = ctypesloader_code.replace(str_find,str_find + new_code)
+            fid = open(ctypesloader_fn, 'w')
+            fid.write(ctypesloader_code)
+            fid.close()
+
     parser = argparse.ArgumentParser(prog="postinstall_simnibs",
                                      description="Optional post-installation procedures "
                                      "for SimNIBS ")
