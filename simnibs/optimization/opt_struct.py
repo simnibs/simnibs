@@ -437,6 +437,8 @@ class TMSoptimize():
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
         
+        logger.info('\n' + self.summary(pos_matrices[np.argmax(E_roi)]))
+        
         # return optimum coil position
         return pos_matrices[np.argmax(E_roi)]
 
@@ -521,6 +523,7 @@ class TMSoptimize():
         with h5py.File(fn_hdf5, 'a') as f:
             E_roi = f[dataset][:]
         os.remove(fn_hdf5)
+            
         return E_roi
 
     def _ADM_optimize(self, cond_field, target_region):
@@ -617,6 +620,26 @@ class TMSoptimize():
         string += 'Angle resolution: %s\n' % self.angle_resolution
         string += 'method: %s' % self.method
         return string
+
+    def summary(self, position):
+        ''' Returns a string with the optimal coil position
+
+        Parameters
+        ------------
+        position: 4x4 position vector
+
+        Returns
+        ------------
+        summary: str
+            Best coil position
+        '''
+        s = 'Best coil position\n'
+        s += '=============================\n'
+        s += '%s\n' % position
+
+        return s
+
+
 
 class TDCSoptimize():
     ''' Defines a tdcs optimization problem

@@ -14,4 +14,4 @@ tms_opt.target = mni2subject_coords([-37, -21, 58], 'm2m_ernie')
 # Use the ADM method
 tms_opt.method = 'ADM'
 # Run optimization
-tms_opt.run()
+opt_pos=tms_opt.run()

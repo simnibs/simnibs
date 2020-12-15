@@ -14,5 +14,5 @@ tms_opt.target = [-43.4, -20.7, 83.4]
 # Will make the simulations much faster
 # but has large (approx 12GB) memory usage
 tms_opt.solver_options = 'pardiso'
-# Run optimization
-tms_opt.run()
+# Run optimization to get optimal coil position
+opt_pos=tms_opt.run()
