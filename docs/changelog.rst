@@ -9,7 +9,6 @@ Changelog
  * Added work-around to enable installation on mac os 11 big sur; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved
  * Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.
  * Per default, headreco does not print the cat summary pdf anymore. The --cat_no_print flag was removed; Instead, use --cat_print now in case you need the summary.
-
 Bug fixes:
  * TDCS Network Optimization: Fixed bugs to accept images with NaNs, binary images, and images of size NxMxKx1; weights of eyes are now set to 0.
  * Added buffered read for gmsh v2 files in python to resolve speed issue on clusters
