@@ -10,7 +10,6 @@ Changelog
  * Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.
  * Per default, headreco does not print the cat summary pdf anymore. The --cat_no_print flag was removed; Instead, use --cat_print now in case you need the summary.
  
-
 Bug fixes:
  * TDCS Network Optimization: Fixed bugs to accept images with NaNs, binary images, and images of size NxMxKx1; weights of eyes are now set to 0.
  * Added buffered read for gmsh v2 files in python to resolve speed issue on clusters
@@ -18,7 +17,7 @@ Bug fixes:
  * Further small fixes across the code
  *  Fixed electrode meshing that sometimes caused some parts of the electrodes to be detached.
  
- Known issues:
+Known issues:
  * mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now
 
 3.2
