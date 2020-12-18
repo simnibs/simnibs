@@ -1,24 +1,21 @@
 
 <!DOCTYPE html>
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>simnibs.Elements &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simnibs.NodeData" href="simnibs.NodeData.html" />
-    <link rel="prev" title="simnibs.Nodes" href="simnibs.Nodes.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -35,14 +32,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="simnibs.Nodes.html" title="Previous document">simnibs.Nodes</a>
-        </li>
-        <li>
-          <a href="simnibs.NodeData.html" title="Next document">simnibs.NodeData</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -52,156 +41,6 @@
             
   <div class="section" id="simnibs-elements">
 <h1>simnibs.Elements<a class="headerlink" href="#simnibs-elements" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="simnibs.Elements">
-<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Elements</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">triangles</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tetrahedra</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mesh elements.</p>
-<p>Can only handle triangles and tetrahedra!</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>triangles</em>) – List of nodes composing each triangle</p></li>
-<li><p><strong>tetrahedra</strong><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>(</em><em>Nx3</em><em>) </em><em>ndarray</em>) – List of nodes composing each tetrahedra</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt id="simnibs.Elements.elm_number">
-<code class="sig-name descname">elm_number</code><a class="headerlink" href="#simnibs.Elements.elm_number" title="Permalink to this definition">¶</a></dt>
-<dd><p>element ID (u from 1 till nr)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>(Nx1) ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Elements.elm_type">
-<code class="sig-name descname">elm_type</code><a class="headerlink" href="#simnibs.Elements.elm_type" title="Permalink to this definition">¶</a></dt>
-<dd><p>elm-type (2=triangle, 4=tetrahedron, etc)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>(Nx1) ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Elements.tag1">
-<code class="sig-name descname">tag1</code><a class="headerlink" href="#simnibs.Elements.tag1" title="Permalink to this definition">¶</a></dt>
-<dd><p>first tag for each element</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>(Nx1) ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Elements.tag2">
-<code class="sig-name descname">tag2</code><a class="headerlink" href="#simnibs.Elements.tag2" title="Permalink to this definition">¶</a></dt>
-<dd><p>second tag for each elenent</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>(Nx1) ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Elements.node_number_list">
-<code class="sig-name descname">node_number_list</code><a class="headerlink" href="#simnibs.Elements.node_number_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>4xnumber_of_element matrix of the nodes that constitute the element.
-For the triangles, the fourth element = -1</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>(Nx4) ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Elements.nr">
-<code class="sig-name descname">nr</code><a class="headerlink" href="#simnibs.Elements.nr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number or elemets</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p>Node and element count starts at 1!</p>
-<dl class="py method">
-<dt id="simnibs.Elements.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">triangles</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tetrahedra</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Elements.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
-
-<p class="rubric">Methods</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.__init__" title="simnibs.Elements.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([triangles, tetrahedra])</p></td>
-<td><p>Initialize self.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_triangles</span></code>(triangles, tag)</p></td>
-<td><p>Add triangles to mesh in-place</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">connected_components</span></code>([element_indexes])</p></td>
-<td><p>Finds connected components</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_adjacent_tetrahedra</span></code>()</p></td>
-<td><p>Find the tetrahedra adjacent (sharing a face) to each element</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_all_elements_with_node</span></code>(node_nr)</p></td>
-<td><p>Finds all elements that have a given node</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_neighbouring_nodes</span></code>(node_nr)</p></td>
-<td><p>Finds the nodes that share an element with the specified node</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_faces</span></code>([tetrahedra_indexes])</p></td>
-<td><p>Creates a list of nodes in each face and a list of faces in each tetrahedra</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_outside_faces</span></code>([tetrahedra_indexes])</p></td>
-<td><p>Creates a list of nodes in each face that are in the outer volume</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_elm_adjacency</span></code>()</p></td>
-<td><p>Generates a sparse matrix with element indexes adjacent to each node</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_with_tag</span></code>(tags)</p></td>
-<td><p>Gets all nodes indexes that are part of at least one element with the given tags</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Attributes</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Elements.elm_number" title="simnibs.Elements.elm_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_number</span></code></a></p></td>
-<td><p>Element numbers (1, …, nr)</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Elements.nr" title="simnibs.Elements.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></p></td>
-<td><p>Number of elements</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra</span></code></p></td>
-<td><p>Tetrahedra element numbers</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangles</span></code></p></td>
-<td><p>Triangle element numbers</p></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 
 
@@ -210,14 +49,6 @@ For the triangles, the fourth element = -1</p>
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="simnibs.Nodes.html" title="Previous document">simnibs.Nodes</a>
-        </li>
-        <li>
-          <a href="simnibs.NodeData.html" title="Next document">simnibs.NodeData</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -241,23 +72,11 @@ For the triangles, the fourth element = -1</p>
 
 
 <h3>Navigation</h3>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
@@ -269,12 +88,6 @@ For the triangles, the fourth element = -1</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
-  <li><a href="../../documentation.html">Documentation</a><ul>
-  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
-      <li>Previous: <a href="simnibs.Nodes.html" title="previous chapter">simnibs.Nodes</a></li>
-      <li>Next: <a href="simnibs.NodeData.html" title="next chapter">simnibs.NodeData</a></li>
-  </ul></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -287,7 +100,7 @@ For the triangles, the fourth element = -1</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -304,7 +117,7 @@ For the triangles, the fourth element = -1</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

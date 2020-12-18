@@ -1,19 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Changelog &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -53,7 +52,35 @@
   <div class="section" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
-<h2>3.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Added matlab and python examples for TACSchallenge</p></li>
+<li><p>Added matlab examples to calculate TI amplitudes</p></li>
+<li><p>TMS optimization now prints optimal position in log file</p></li>
+<li><p>Added reading of leadfields in mesh_load_hdr5.m</p></li>
+<li><p>Added work-around to enable installation on mac os 11 big sur; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved</p></li>
+<li><p>Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.</p></li>
+<li><p>Per default, headreco does not print the cat summary pdf anymore. The –cat_no_print flag was removed; Instead, use –cat_print now in case you need the summary.</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Bug fixes:</dt><dd><ul class="simple">
+<li><p>TDCS Network Optimization: Fixed bugs to accept images with NaNs, binary images, and images of size NxMxKx1; weights of eyes are now set to 0.</p></li>
+<li><p>Added buffered read for gmsh v2 files in python to resolve speed issue on clusters</p></li>
+<li><p>Resolved a bug causing some points of the individual middle gm surface to be falsely interpreted as outside gm when interpolating results to individual gm surface</p></li>
+<li><p>Further small fixes across the code</p></li>
+<li><p>Fixed electrode meshing that sometimes caused some parts of the electrodes to be detached.</p></li>
+</ul>
+</dd>
+<dt>Known issues:</dt><dd><ul class="simple">
+<li><p>mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now</p></li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="id2">
+<h2>3.2<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)</p></li>
@@ -67,8 +94,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id2">
-<h2>3.1<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>3.1<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added TDCS and TMS Optimization</p></li>
@@ -77,8 +104,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id3">
-<h2>3.0<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>3.0<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Major update to SimNIBS</p></li>
@@ -94,8 +121,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id4">
-<h2>2.1.2<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>2.1.2<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on the MATLAB library for SimNIBS</p></li>
@@ -105,8 +132,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id5">
-<h2>2.1.1<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>2.1.1<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on usability of SimNIBS</p></li>
@@ -118,8 +145,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id6">
-<h2>2.1.0<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>2.1.0<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>2.1.0 is a major update of SimNIBS 2</p></li>
@@ -257,12 +284,13 @@
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id1">3.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id2">3.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id3">3.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id4">2.1.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id5">2.1.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id6">2.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">3.2.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">2.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">2.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">2.1.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#g">2.0.1g</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#f">2.0.1f</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e">2.0.1e</a></li>
@@ -293,7 +321,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -310,7 +338,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
