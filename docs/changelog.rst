@@ -8,7 +8,7 @@ Changelog
  * Added matlab examples to calculate TI amplitudes
  * TMS optimization now prints optimal position in log file
  * Added reading of leadfields in mesh_load_hdr5.m
- * Added work-around to enable installation on mac os 11 big sur; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved
+ * Added work-around to enable installation on Mac OS 11 Big Sur; NOTE: If you attempted to install a previous version of SimNIBS 3.2, you have to wipe the installation folder (in "/Users/username/Applications/SimNIBS-3.2" before attempting to install again; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved
  * Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.
  * Per default, headreco does not print the cat summary pdf anymore. The --cat_no_print flag was removed; Instead, use --cat_print now in case you need the summary.
 
