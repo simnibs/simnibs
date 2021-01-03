@@ -1189,7 +1189,8 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
 
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
-             output_names, geo_names=None, solver_options=None, n_workers=1):
+             output_names, geo_names=None, solver_options=None, n_workers=1, 
+             fn_stl=None):
     ''' Simulates TMS fields using a coil + matsimnibs + dIdt definition
 
     Parameters
@@ -1214,6 +1215,8 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         Options for the solver
     n_workers: int
         Number of workers to use
+    fn_stl: string
+        Name of stl-file for coil visualization
 
     Returns
     --------
@@ -1234,7 +1237,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                 matsimnibs_list, didt_list, output_names, geo_names):
             _run_tms(
                 mesh, cond, fn_coil, fields,
-                matsimnibs, didt, fn_out, fn_geo)
+                matsimnibs, didt, fn_out, fn_geo, fn_stl)
         _finalize_global_solver()
     else:
         with multiprocessing.Pool(processes=n_workers,
@@ -1247,7 +1250,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                     pool.apply_async(
                         _run_tms,
                         (mesh, cond, fn_coil, fields,
-                         matsimnibs, didt, fn_out, fn_geo)))
+                         matsimnibs, didt, fn_out, fn_geo, fn_stl)))
             pool.close()
             pool.join()
 
@@ -1257,11 +1260,12 @@ def _set_up_global_solver(S):
     tms_global_solver = S
 
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
+def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo, fn_stl):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     start = time.time()
-    dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt, fn_geo=fn_geo)
+    dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt,
+                               fn_geo=fn_geo, fn_stl=fn_stl)
     logger.info(f'{time.time() - start:.2f}s to calculate dA/dt')
     b = tms_global_solver.assemble_tms_rhs(dAdt)
     v = tms_global_solver.solve(b)

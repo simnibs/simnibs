@@ -5,9 +5,13 @@
 
 import numpy as np
 import nibabel as nib
+import os
 
+from .. import __version__
 from ..msh import mesh_io
 from ..utils.simnibs_logger import logger
+from ..utils.file_finder import Templates
+
 
 try:
     import fmm3dpy
@@ -128,7 +132,6 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
     return mesh_io.NodeData(A)
 
 
-
 def _calculate_dadt_nifti(msh, nifti_image, coil_matrix, didt, geo_fn):
 
     """ auxiliary function that interpolates the dA/dt field from a nifti file """
@@ -185,7 +188,49 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
     return out
 
 
-def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None):
+def _add_logo(msh_stl):
+    ''' adds the simnibs logo to the coil surface '''
+    
+    msh_logo=mesh_io.read_msh(Templates().simnibs_logo)
+    
+    # 'simnibs' has tag 1, '3' has tag 2, '4' has tag 3
+    # renumber tags, because they will be converted to color: 
+    # 0 gray, 1 red, 2 lightblue, 3 blue
+    major_version = __version__.split('.')[0]
+    if  major_version == '3':
+        msh_logo=msh_logo.crop_mesh(tags = [1,2]) 
+        msh_logo.elm.tag1[msh_logo.elm.tag1==2] = 3 # version in blue
+    elif major_version == '4':
+        msh_logo=msh_logo.crop_mesh(tags=[1,3])
+    else:
+        msh_logo=msh_logo.crop_mesh(tags=1)   
+    msh_logo.elm.tag1[msh_logo.elm.tag1==1] = 2 # 'simnibs' in light blue
+    
+    # center logo in xy-plane, mirror at yz-plane and scale
+    bbox_coil=np.vstack([np.min(msh_stl.nodes[:],0),
+                         np.max(msh_stl.nodes[:],0)])
+    bbox_logo=np.vstack([np.min(msh_logo.nodes[:],0),
+                         np.max(msh_logo.nodes[:],0)])
+    bbox_ratio=np.squeeze(np.diff(bbox_logo,axis=0)/
+                          np.diff(bbox_coil,axis=0))
+    bbox_ratio=max(bbox_ratio[0:2]) # maximal size ratio in xy plane
+    
+    msh_logo.nodes.node_coord[:,0:2] -= np.mean(bbox_logo[:,0:2],axis=0)
+    msh_logo.nodes.node_coord[:,0] = -msh_logo.nodes.node_coord[:,0]
+    msh_logo.nodes.node_coord[:,0:2] *= 1/(4*bbox_ratio)
+    
+    # shift logo along negative z to the top side of coil
+    msh_logo.nodes.node_coord[:,2] += bbox_coil[0,2] - bbox_logo[0,2] - 5
+    
+    msh_stl = msh_stl.join_mesh(msh_logo)
+    return msh_stl
+
+
+
+def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
+    
+    add_logo = True # add simnibs logo to coil surface visulization
+    
     coil_matrix = np.array(coil_matrix)
     if coil_file.endswith('.ccd'):
         if FMM3D:
@@ -203,12 +248,26 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None):
                                      coil_matrix, didt, fn_geo)
     else:
         raise ValueError('coil file must be either a .ccd file or a nifti file')
+    
+    if fn_stl is not None:
+        if not os.path.isfile(fn_stl):
+            raise IOError('Could not find stl file: {0}'.format(fn_stl))
+        msh_stl = mesh_io.read_stl(fn_stl)
+        msh_stl.elm.tag1[:]=0 # tag1 will be shown as gray
+        if add_logo:
+            msh_stl = _add_logo(msh_stl)
+        d_position = np.hstack([msh_stl.nodes[:], np.ones((msh_stl.nodes.nr, 1))])
+        msh_stl.nodes = coil_matrix.dot(d_position.T).T[:, :3]
+        mesh_io.write_geo_triangles(msh_stl.elm[:,:3]-1, msh_stl.nodes[:],
+                                    fn_geo, values=msh_stl.elm.tag1,
+                                    name='coil_casing', mode='ba')
+    
     dadt.mesh = msh
     dadt = dadt.node_data2elm_data()
     return dadt
 
 
-def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None):
+def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
     """ sets up a tms simulation
 
     Parameters
@@ -231,4 +290,4 @@ def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None):
         dAdt at the elements
     """
     coil_matrix = np.array(coil_matrix, dtype=float)
-    return set_up_tms_dAdt(msh, coil_file, coil_matrix, didt, fn_geo)
+    return set_up_tms_dAdt(msh, coil_file, coil_matrix, didt, fn_geo, fn_stl)

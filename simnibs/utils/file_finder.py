@@ -56,6 +56,8 @@ class Templates:
         Path to the fs surface file with the Fsavarage ls pial (freesurfer surface)
     fs_rh_cortex_ref: str
         Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)
+    simnibs_logo: str
+        Path to the SimNIBS logo stored as triangle mesh (gmsh format)
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
@@ -93,7 +95,8 @@ class Templates:
 
             self.fs_lh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
             self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'rh.pial')
-
+        # SimNIBS logo
+        self.simnibs_logo = os.path.join(self._resources, 'simnibslogo.msh')
 
 templates = Templates()
 

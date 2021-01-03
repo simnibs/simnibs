@@ -497,7 +497,6 @@ def _run(command, remove=[]):
         [os.remove(r) for r in remove]
 
 
-
 def _coolwarm_cm():
     # from http://www.kennethmoreland.com/color-maps/ 
     cm = np.array([
@@ -762,4 +761,17 @@ def _coolwarm_cm():
     alpha = np.abs(np.arange(len(cm)) - len(cm)/2)**1.5
     alpha = (alpha * 255/alpha.max()).astype(int)
     cm = np.append(cm, alpha[:, None], axis=1)
+    return cm
+
+
+def _gray_red_lightblue_blue_cm():
+   # simple colormap to visualize coils    
+    cm = np.zeros((255,4),dtype = np.int)
+    cm[0:64,0:3] = 132 # first quarter is gray 
+    cm[64:128,0] = 255 # second quarter is red
+    cm[128:192,2] = 255 # third quarter is lightblue
+    cm[128:192,0:2] = 127
+    cm[192:,2] = 255 # forth quarter is blue
+    cm[0:128,3] = 60 # the coil is transparent
+    cm[128:,3] = 114 # the logo is a bit less transparent
     return cm

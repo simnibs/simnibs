@@ -35,7 +35,7 @@ import h5py
 
 from . import cond
 from ..msh import transformations
-from ..msh import mesh_io
+from ..msh import mesh_io, gmsh_view
 from ..utils import simnibs_logger
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
@@ -1099,6 +1099,9 @@ class TMSLIST(SimuList):
         cond = self.cond2elmdata()
         matsimnibs_list = [p.calc_matsimnibs(self.mesh) for p in self.pos]
         didt_list = [p.didt for p in self.pos]
+        fn_stl = self.fnamecoil.split('.')[0]+'.stl'
+        if not os.path.isfile(fn_stl): 
+            fn_stl = None
 
         # Output names
         coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
@@ -1112,7 +1115,8 @@ class TMSLIST(SimuList):
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     solver_options=self.solver_options, n_workers=cpus)
+                     solver_options=self.solver_options, n_workers=cpus,
+                     fn_stl=fn_stl)
 
         logger.info('Creating visualizations')
         summary = ''
@@ -1122,7 +1126,12 @@ class TMSLIST(SimuList):
             v = m.view(
                 visible_tags=_surf_preferences(m),
                 visible_fields=_field_preferences(self.postprocess))
-            v.add_merge(g)
+            v.add_merge(g)            
+            v.add_view(ShowScale=0) # dipoles or direction "hook"
+            if fn_stl is not None:
+                v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
+                           Visible=1, ShowScale=0, CustomMin=-0.5,
+                           CustomMax=3.5, RangeType=2)
             v.write_opt(n)
 
             if view:
