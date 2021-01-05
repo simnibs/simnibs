@@ -1,4 +1,6 @@
 import sys
+import os
+import subprocess
 from simnibs.GUI.main_gui import start_gui
 
 big_sur = False
