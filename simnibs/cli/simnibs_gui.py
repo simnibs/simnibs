@@ -12,7 +12,7 @@ if sys.platform == 'darwin':
     except:
         print('Mac OS sw_vers failed.')
 if big_sur:
-    print('Big Sur detected, setting QT_MAC_WANTS_LAYER=1 flag.')
+    print('Mac OS X Big Sur detected, setting QT_MAC_WANTS_LAYER=1 flag.')
     os.environ['QT_MAC_WANTS_LAYER'] = '1'
 
 def main():
