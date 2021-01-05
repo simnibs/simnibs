@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o pipefail
 (
-    unzip -P password "$2/simnibs_env.zip" -d "$2"
+    unzip -o -P password "$2/simnibs_env.zip" -d "$2"
     rm -rf "$2/simnibs_env.zip" 
     # Fix entrypoints shebangs
     "$2/simnibs_env/bin/python" "$2/simnibs_env/fix_entrypoints.py" "$2/simnibs_env/bin" "$2/simnibs_env/bin"
