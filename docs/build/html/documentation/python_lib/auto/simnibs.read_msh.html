@@ -1,24 +1,21 @@
 
 <!DOCTYPE html>
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>simnibs.read_msh &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simnibs.write_msh" href="simnibs.write_msh.html" />
-    <link rel="prev" title="Python Library Documentation" href="../python_lib.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -35,14 +32,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="../python_lib.html" title="Previous document">Python Library Documentation</a>
-        </li>
-        <li>
-          <a href="simnibs.write_msh.html" title="Next document">simnibs.write_msh</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -52,30 +41,6 @@
             
   <div class="section" id="simnibs-read-msh">
 <h1>simnibs.read_msh<a class="headerlink" href="#simnibs-read-msh" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="simnibs.read_msh">
-<code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">read_msh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fn</span></em>, <em class="sig-param"><span class="n">m</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">buffered</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.read_msh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads a gmsh ‘.msh’ file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fn</strong> (<em>str</em>) – File name</p></li>
-<li><p><strong>m</strong> (<em>simnibs.msh.Msh</em><em> (</em><em>optional</em><em>)</em>) – Mesh structure to be overwritten. If unset, will create a new structure</p></li>
-<li><p><strong>buffered</strong> (<em>bool</em>) – Perform buffered reading, expected to be significantly faster for slow
-network connections when the file specifies elements and nodes one by
-one (the case for some version 2 .msh files directly from gmsh).
-Defaults to False, and is ignored for version 4 .msh files</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>msh</strong> – Mesh structure</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>simnibs.msh.Msh</p>
-</dd>
-</dl>
-</dd></dl>
-
 </div>
 
 
@@ -84,14 +49,6 @@ Defaults to False, and is ignored for version 4 .msh files</p></li>
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="../python_lib.html" title="Previous document">Python Library Documentation</a>
-        </li>
-        <li>
-          <a href="simnibs.write_msh.html" title="Next document">simnibs.write_msh</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -115,23 +72,11 @@ Defaults to False, and is ignored for version 4 .msh files</p></li>
 
 
 <h3>Navigation</h3>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
@@ -143,12 +88,6 @@ Defaults to False, and is ignored for version 4 .msh files</p></li>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
-  <li><a href="../../documentation.html">Documentation</a><ul>
-  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
-      <li>Previous: <a href="../python_lib.html" title="previous chapter">Python Library Documentation</a></li>
-      <li>Next: <a href="simnibs.write_msh.html" title="next chapter">simnibs.write_msh</a></li>
-  </ul></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -161,7 +100,7 @@ Defaults to False, and is ignored for version 4 .msh files</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -178,7 +117,7 @@ Defaults to False, and is ignored for version 4 .msh files</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

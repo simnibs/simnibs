@@ -1,6 +1,29 @@
 Changelog
 ===========
 
+3.2.2
+----
+
+ * Added matlab and python examples for TACSchallenge
+ * Added matlab examples to calculate TI amplitudes
+ * TMS optimization now prints optimal position in log file
+ * Added reading of leadfields in mesh_load_hdr5.m
+ * Added work-around to enable installation on Mac OS 11 Big Sur; NOTE: If you attempted to install a previous version of SimNIBS 3.2, you have to wipe the installation folder (in "/Users/username/Applications/SimNIBS-3.2" before attempting to install again; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved
+ * Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.
+ * Per default, headreco does not print the cat summary pdf anymore. The --cat_no_print flag was removed; Instead, use --cat_print now in case you need the summary.
+
+
+Bug fixes:
+ * TDCS Network Optimization: Fixed bugs to accept images with NaNs, binary images, and images of size NxMxKx1; weights of eyes are now set to 0.
+ * Added buffered read for gmsh v2 files in python to resolve speed issue on clusters
+ * Resolved a bug causing some points of the individual middle gm surface to be falsely interpreted as outside gm when interpolating results to individual gm surface
+ * Further small fixes across the code
+ *  Fixed electrode meshing that sometimes caused some parts of the electrodes to be detached.
+
+ 
+Known issues:
+ * mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now
+
 3.2
 ----
  * Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)

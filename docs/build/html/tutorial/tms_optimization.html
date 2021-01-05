@@ -1,19 +1,18 @@
 
 <!DOCTYPE html>
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TMS Optimization &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -102,8 +101,8 @@ solver uses approximately three times more memory than the standard solver.</p>
 <span class="c1"># Will make the simulations much faster</span>
 <span class="c1"># but has large (approx 12GB) memory usage</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">solver_options</span> <span class="o">=</span> <span class="s1">&#39;pardiso&#39;</span>
-<span class="c1"># Run optimization</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="c1"># Run optimization to get optimal coil position</span>
+<span class="n">opt_pos</span><span class="o">=</span><span class="n">tms_opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -241,7 +240,7 @@ refine the search by precisely specifying the search region, search angles and r
 <span class="c1"># Use the ADM method</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;ADM&#39;</span>
 <span class="c1"># Run optimization</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="n">opt_pos</span><span class="o">=</span><span class="n">tms_opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -361,7 +360,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -378,7 +377,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

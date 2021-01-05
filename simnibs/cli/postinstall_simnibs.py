@@ -974,19 +974,19 @@ def main():
     big_sur = False
     if sys.platform == 'darwin':
         try:
-            mac_vers=subprocess.check_output('sw_vers -productVersion',shell=True)
+            mac_vers=subprocess.check_output('sw_vers -productVersion', shell=True)
             if int(mac_vers.split(b'.')[0]) >= 11:
                 big_sur = True
         except:
-            warnings.warn('Mac OS sw_vers failed.')
+            print('Mac OS sw_vers failed.')
     if big_sur:
-        warnings.warn('Big Sur detected, using dirty workaround.')
+        print('Big Sur detected, using dirty workaround.')
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
         try:
             import OpenGL.GL
         except:
             import OpenGL
-            warnings.warn('Big Sur, .')
+            print('Big Sur OpenGL problem dectected, implementing OpenGL workaround')
             ctypesloader_fn = os.path.join(os.path.split(OpenGL.__file__)[0], 'platform', 'ctypesloader.py')
             fid = open(ctypesloader_fn)
             ctypesloader_code = fid.read()

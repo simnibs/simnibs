@@ -1,8 +1,9 @@
 .. simnibs documentation master file, created by
    sphinx-quickstart on Wed Aug 22 14:44:31 2018.
 
-SimNIBS 
-=======
+=========
+ SimNIBS
+=========
 
 
 **SimNIBS** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
@@ -61,9 +62,15 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
 
 .. |copy| unicode:: U+000A9
 
-News
+======
+ News
 ======
 
+  * **Version 3.2.2 is now avaliable**.  This version includes a number of bug fixes and small improvements. Please see details in  `changelog`_. 
+
+.. _changelog: https://simnibs.github.io/simnibs/build/html/changelog.html
+
+  
   * **Version 3.2 is now avaliable**  featuring :ref:`TMS optimization  using the ADM method <tms_optimize>` (contributed by Luis Gomez), TES :ref:`field strength <tdcs_opt>` and :ref:`brain network <tdcs_distributed_opt>` optimization and magnetic field calculations for MRCDI and MREIT 
   * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` (contributed by Konstantin Weise and Ole Numssen) and even faster FEM solvers for leadfield calculations
   * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!

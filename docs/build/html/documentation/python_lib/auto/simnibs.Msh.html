@@ -1,24 +1,21 @@
 
 <!DOCTYPE html>
 
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>simnibs.Msh &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simnibs.Nodes" href="simnibs.Nodes.html" />
-    <link rel="prev" title="simnibs.write_geo_text" href="simnibs.write_geo_text.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -35,14 +32,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="simnibs.write_geo_text.html" title="Previous document">simnibs.write_geo_text</a>
-        </li>
-        <li>
-          <a href="simnibs.Nodes.html" title="Next document">simnibs.Nodes</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -52,230 +41,6 @@
             
   <div class="section" id="simnibs-msh">
 <h1>simnibs.Msh<a class="headerlink" href="#simnibs-msh" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="simnibs.Msh">
-<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Msh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elements</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
-<dd><p>class to handle the meshes.
-Gatters Nodes, Elements and Data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>nodes</strong> (<em>(</em><em>optional</em><em>) </em><em>simnibs.msh.Nodes</em>) – Nodes structure</p></li>
-<li><p><strong>elements</strong> (<em>(</em><em>optional</em><em>) </em><em>simnibs.msh.Elements</em><em>(</em><em>)</em>) – Elements structure</p></li>
-<li><p><strong>fn</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – Name of “.msh” file to be read.
-Overides nodes and elements</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt id="simnibs.Msh.nodes">
-<code class="sig-name descname">nodes</code><a class="headerlink" href="#simnibs.Msh.nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>a Nodes field</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>simnibs.msh.Nodes</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Msh.elm">
-<code class="sig-name descname">elm</code><a class="headerlink" href="#simnibs.Msh.elm" title="Permalink to this definition">¶</a></dt>
-<dd><p>A Elements field</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>simnibs.msh.Elements</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Msh.nodedata">
-<code class="sig-name descname">nodedata</code><a class="headerlink" href="#simnibs.Msh.nodedata" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of NodeData filds</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>simnibs.msh.NodeData</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Msh.elmdata">
-<code class="sig-name descname">elmdata</code><a class="headerlink" href="#simnibs.Msh.elmdata" title="Permalink to this definition">¶</a></dt>
-<dd><p>list of ElementData fields</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>simnibs.msh.ElementData</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Msh.fn">
-<code class="sig-name descname">fn</code><a class="headerlink" href="#simnibs.Msh.fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>name of file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.Msh.binary">
-<code class="sig-name descname">binary</code><a class="headerlink" href="#simnibs.Msh.binary" title="Permalink to this definition">¶</a></dt>
-<dd><p>wheather or not the mesh was in binary format</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="simnibs.Msh.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elements</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
-
-<p class="rubric">Methods</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.__init__" title="simnibs.Msh.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([nodes, elements, fn])</p></td>
-<td><p>Initialize self.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_element_field</span></code>(field, field_name)</p></td>
-<td><p>Adds field defined in the elements</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_node_field</span></code>(field, field_name)</p></td>
-<td><p>Adds field defined in the nodes</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_matsimnibs</span></code>(center, pos_ydir, distance)</p></td>
-<td><p>Calculate the matsimnibs matrix for TMS simulations</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compact_ordering</span></code>(node_number)</p></td>
-<td><p>Changes the node and element ordering so that it goes from 1 to nr_nodes</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mesh</span></code>([tags, elm_type, nodes, elements])</p></td>
-<td><p>Crops the specified tags from the mesh Generates a new mesh, with only the specified tags The nodes are also reordered</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_baricenters</span></code>()</p></td>
-<td><p>Calculates the baricenter of the elements</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code>()</p></td>
-<td><p>Calculates the volumes of tetrahedra and areas of triangles</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code>([elm_indices])</p></td>
-<td><p>Calculates a sparse matrix to tranform from ElementData to NodeData Uses Superconvergent patch recovery for volumetric data.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code>([elm_nr, tag, elm_type])</p></td>
-<td><p>Returns the position of each of the element’s nodes</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields_summary</span></code>([roi, fields, percentiles, …])</p></td>
-<td><p>Creates a text summaty of the field</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_element</span></code>(querry_points[, …])</p></td>
-<td><p>Finds the closest node to each point in p</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code>()</p></td>
-<td><p>Finds the tetrahedra corresponding to each triangle</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_shared_nodes</span></code>(tags)</p></td>
-<td><p>Finds the nodes which are shared by all given tags</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code>(points[, …])</p></td>
-<td><p>Finds the tetrahedron that contains each of the described points using a stochastic walk algorithm</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code>()</p></td>
-<td><p>Fixels labels of surfaces</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
-<td><p>Fixes the node ordering of tetrahedra in-place</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
-<td><p>Optimize the locations of the points by moving them towards the center of their patch.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
-<td><p>Fixes the node ordering of the triangles in-place</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code>()</p></td>
-<td><p>Calculates the Gaussian curvature at each node</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept_ray</span></code>(near, far)</p></td>
-<td><p>Finds the triangle (if any) that intercepts a line segment</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, …])</p></td>
-<td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
-<td><p>Join the current mesh with another</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
-<td><p>Areas for all nodes in a surface</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([smooth])</p></td>
-<td><p>Normals for all nodes in a surface</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
-<td><p>Return the volume (volume mesh) if area (surface mesh) of all nodes Only works for ordered values of mesh and node indices</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
-<td><p>Opens the mesh in gmsh</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
-<td><p>Reads mesh information from an hdf5 file</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags])</p></td>
-<td><p>Reconstruct the mhes surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code>([tags, elm_type, nodes, …])</p></td>
-<td><p>Removes the specified tags from the mesh Generates a new mesh, with the specified tags removed The nodes are also reordered</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_inside_volume</span></code>(points)</p></td>
-<td><p>Tests if points are iside the volume using the Möller–Trumbore intersection algorithm</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code>()</p></td>
-<td><p>calculates the quality measures of the tetrahedra</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_angles</span></code>()</p></td>
-<td><p>Calculates minimum angle of the mesh triangles</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code>([smooth])</p></td>
-<td><p>Calculates the normals of triangles</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([visible_tags, visible_fields])</p></td>
-<td><p>Visualize mesh in Gmsh</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(out_fn)</p></td>
-<td><p>Writes out the mesh as a “.msh” file</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path, compression])</p></td>
-<td><p>Writes a HDF5 file with mesh information</p></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Attributes</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></p></td>
-<td><p>Dictionary of fields indexed by their name</p></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 
 
@@ -284,14 +49,6 @@ Overides nodes and elements</p></li>
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="simnibs.write_geo_text.html" title="Previous document">simnibs.write_geo_text</a>
-        </li>
-        <li>
-          <a href="simnibs.Nodes.html" title="Next document">simnibs.Nodes</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -315,23 +72,11 @@ Overides nodes and elements</p></li>
 
 
 <h3>Navigation</h3>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
@@ -343,12 +88,6 @@ Overides nodes and elements</p></li>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
-  <li><a href="../../documentation.html">Documentation</a><ul>
-  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
-      <li>Previous: <a href="simnibs.write_geo_text.html" title="previous chapter">simnibs.write_geo_text</a></li>
-      <li>Next: <a href="simnibs.Nodes.html" title="next chapter">simnibs.Nodes</a></li>
-  </ul></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -361,7 +100,7 @@ Overides nodes and elements</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script type="text/javascript">$('#searchbox').show(0);</script>
 
 
 
@@ -378,7 +117,7 @@ Overides nodes and elements</p></li>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
