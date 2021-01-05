@@ -1,21 +1,24 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>simnibs.Nodes &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="simnibs.Elements" href="simnibs.Elements.html" />
+    <link rel="prev" title="simnibs.Msh" href="simnibs.Msh.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -32,6 +35,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="simnibs.Msh.html" title="Previous document">simnibs.Msh</a>
+        </li>
+        <li>
+          <a href="simnibs.Elements.html" title="Next document">simnibs.Elements</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -41,6 +52,86 @@
             
   <div class="section" id="simnibs-nodes">
 <h1>simnibs.Nodes<a class="headerlink" href="#simnibs-nodes" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="simnibs.Nodes">
+<em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Nodes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_coord</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>class to handle the node information:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>(</strong><strong>optional</strong><strong>)</strong> (<em>node_coord</em>) – Coordinates of the nodes</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="simnibs.Nodes.node_coord">
+<code class="sig-name descname">node_coord</code><a class="headerlink" href="#simnibs.Nodes.node_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coordinates of the nodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(Nx3) ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="simnibs.Nodes.nr">
+<code class="sig-name descname">nr</code><a class="headerlink" href="#simnibs.Nodes.nr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of nodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>property</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span> <span class="o">=</span> <span class="n">Nodes</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="go">array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span><span class="o">.</span><span class="n">node_number</span>
+<span class="go">array([1, 2, 3])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">array([1, 0, 0])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nodes</span><span class="p">[</span><span class="n">array</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)]</span>
+<span class="go">array([[1, 0, 0], [0, 0, 1]])</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="simnibs.Nodes.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node_coord</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Nodes.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Nodes.__init__" title="simnibs.Nodes.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([node_coord])</p></td>
+<td><p>Initialize self.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_node</span></code>(querry_points[, return_index])</p></td>
+<td><p>Finds the closest node to each point in p</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_number</span></code></p></td>
+<td><p>Node numbers (1, …, nr)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#simnibs.Nodes.nr" title="simnibs.Nodes.nr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nr</span></code></a></p></td>
+<td><p>Number of nodes</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 
 
@@ -49,6 +140,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="simnibs.Msh.html" title="Previous document">simnibs.Msh</a>
+        </li>
+        <li>
+          <a href="simnibs.Elements.html" title="Next document">simnibs.Elements</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -72,11 +171,23 @@
 
 
 <h3>Navigation</h3>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
@@ -88,6 +199,12 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../documentation.html">Documentation</a><ul>
+  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
+      <li>Previous: <a href="simnibs.Msh.html" title="previous chapter">simnibs.Msh</a></li>
+      <li>Next: <a href="simnibs.Elements.html" title="next chapter">simnibs.Elements</a></li>
+  </ul></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -100,7 +217,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -117,7 +234,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

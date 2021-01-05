@@ -1,21 +1,24 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>simnibs.simulation.tdcs &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="simnibs.simulation.tdcs_neumann" href="simnibs.simulation.tdcs_neumann.html" />
+    <link rel="prev" title="simnibs.simulation.calc_fields" href="simnibs.simulation.calc_fields.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -32,6 +35,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="simnibs.simulation.calc_fields.html" title="Previous document">simnibs.simulation.calc_fields</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.tdcs_neumann.html" title="Next document">simnibs.simulation.tdcs_neumann</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -41,6 +52,28 @@
             
   <div class="section" id="simnibs-simulation-tdcs">
 <h1>simnibs.simulation.tdcs<a class="headerlink" href="#simnibs-simulation-tdcs" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="simnibs.simulation.tdcs">
+<code class="sig-prename descclassname">simnibs.simulation.</code><code class="sig-name descname">tdcs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mesh</span></em>, <em class="sig-param"><span class="n">cond</span></em>, <em class="sig-param"><span class="n">currents</span></em>, <em class="sig-param"><span class="n">electrode_surface_tags</span></em>, <em class="sig-param"><span class="n">n_workers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">units</span><span class="o">=</span><span class="default_value">'mm'</span></em>, <em class="sig-param"><span class="n">solver_options</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulates a tDCS electric potentil</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
+<li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
+<li><p><strong>currents</strong> (<em>list</em><em> or </em><em>ndarray</em>) – A list of currents going though each electrode</p></li>
+<li><p><strong>electrode_surface_tags</strong> (<em>list</em>) – A list of the indices of the surfaces where the dirichlet BC is to be applied</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>potential</strong> – Total electric potential</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>simnibs.msh.mesh_io.NodeData</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 
@@ -49,6 +82,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="simnibs.simulation.calc_fields.html" title="Previous document">simnibs.simulation.calc_fields</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.tdcs_neumann.html" title="Next document">simnibs.simulation.tdcs_neumann</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -72,11 +113,23 @@
 
 
 <h3>Navigation</h3>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
@@ -88,6 +141,12 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../documentation.html">Documentation</a><ul>
+  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
+      <li>Previous: <a href="simnibs.simulation.calc_fields.html" title="previous chapter">simnibs.simulation.calc_fields</a></li>
+      <li>Next: <a href="simnibs.simulation.tdcs_neumann.html" title="next chapter">simnibs.simulation.tdcs_neumann</a></li>
+  </ul></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -100,7 +159,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -117,7 +176,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

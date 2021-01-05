@@ -1,18 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Changelog &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -59,7 +60,7 @@
 <li><p>Added matlab examples to calculate TI amplitudes</p></li>
 <li><p>TMS optimization now prints optimal position in log file</p></li>
 <li><p>Added reading of leadfields in mesh_load_hdr5.m</p></li>
-<li><p>Added work-around to enable installation on mac os 11 big sur; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved</p></li>
+<li><p>Added work-around to enable installation on Mac OS 11 Big Sur; NOTE: If you attempted to install a previous version of SimNIBS 3.2, you have to wipe the installation folder (in “/Users/username/Applications/SimNIBS-3.2” before attempting to install again; NOTE: This work-around is temporary and will be removed once the issues in the underlying python packages have been resolved</p></li>
 <li><p>Changed the skin smoothing iterations in headreco from 5 to 20, which should result in a smoother skin surface. Note: this changes the standard behavior of headreco, so results might differ slightly.</p></li>
 <li><p>Per default, headreco does not print the cat summary pdf anymore. The –cat_no_print flag was removed; Instead, use –cat_print now in case you need the summary.</p></li>
 </ul>
@@ -75,6 +76,7 @@
 </dd>
 <dt>Known issues:</dt><dd><ul class="simple">
 <li><p>mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now</p></li>
+<li><p>SimNIBS is so far not tested on Macs with Apple Silicon, and is likely to give errors on those machines</p></li>
 </ul>
 </dd>
 </dl>
@@ -321,7 +323,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -338,7 +340,7 @@
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

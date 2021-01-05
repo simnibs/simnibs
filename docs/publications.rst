@@ -9,7 +9,7 @@ Version 3.2
 
 TMS Optimiztion (ADM method)
 ''''''''''''''''''''''''''''
-* `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv <https://doi.org/10.1101/2020.05.27.120022>`_
+* `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. NeuroImage 2021; 228: 117696. <https://doi.org/10.1016/j.neuroimage.2020.117696>`_
 
 
 Magnetic Field Calculations

@@ -2,7 +2,7 @@ Changelog
 ===========
 
 3.2.2
-----
+------
 
  * Added matlab and python examples for TACSchallenge
  * Added matlab examples to calculate TI amplitudes
@@ -18,11 +18,12 @@ Bug fixes:
  * Added buffered read for gmsh v2 files in python to resolve speed issue on clusters
  * Resolved a bug causing some points of the individual middle gm surface to be falsely interpreted as outside gm when interpolating results to individual gm surface
  * Further small fixes across the code
- *  Fixed electrode meshing that sometimes caused some parts of the electrodes to be detached.
+ * Fixed electrode meshing that sometimes caused some parts of the electrodes to be detached.
 
  
 Known issues:
  * mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now
+ * SimNIBS is so far not tested on Macs with Apple Silicon, and is likely to give errors on those machines
 
 3.2
 ----

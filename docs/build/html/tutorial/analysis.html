@@ -1,18 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Analyzing Simulations &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -141,7 +142,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 <span class="sd">We will calculate the mean electric field in a gray matter ROI defined around M1</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">simnibs</span>
 
 <span class="c1">## Load simulation result</span>
@@ -183,7 +184,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c1"># Calculate the mean</span>
 <span class="n">mean_normE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">elm_vols</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in M1 ROI: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in M1 ROI: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -258,7 +259,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 <blockquote>
 <div><ul class="simple">
 <li><dl class="simple">
-<dt><em>Python</em>:</dt><dd><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.subject_atlas()</span></code> function</p>
+<dt><em>Python</em>:</dt><dd><p><a class="reference internal" href="../documentation/python_lib/auto/simnibs.subject_atlas.html#simnibs.subject_atlas" title="simnibs.subject_atlas"><code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.subject_atlas()</span></code></a> function</p>
 </dd>
 </dl>
 </li>
@@ -317,7 +318,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 <span class="sd">We will calculate the mean electric field in a gray matter ROI defined using an atlas</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">simnibs</span>
 
 <span class="c1">## Input ##</span>
@@ -343,7 +344,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 <span class="c1"># finally, calculate the mean of the field</span>
 <span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;E_normal&#39;</span>
 <span class="n">mean_normE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">gm_surf</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">field_name</span><span class="p">][</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">node_areas</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in &#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in &#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -468,7 +469,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -485,7 +486,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

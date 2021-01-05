@@ -1,18 +1,19 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>get_fields_at_coordinates &#8212; SimNIBS 3.2.2 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -59,7 +60,7 @@
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Suppose you want to accurately determine the electric field at a set of positions. The electric fields are in a mesh called <em>ernie_TDCS_1_scalar.msh</em></p></li>
-<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/1185fd0024a5db30ea82cba82cd93bfd/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
+<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/b4120ee8fd8ba5a0099a3ded107b7ac0/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
 <li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_fields_at_coordinates -s positions.csv -m ernie_TDCS_1_scalar.msh
@@ -162,7 +163,7 @@ These files contain the fields (or field vectors) at each sampling position.</p>
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
 
 
 
@@ -179,7 +180,7 @@ These files contain the fields (or field vectors) at each sampling position.</p>
       &copy;2019, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
