@@ -76,8 +76,8 @@ def _register_atlas_to_input_affine(T1, template_file_name,
     else:
         logger.info('No neck, copying meshes over.')
         file_path = os.path.split(template_coregistered_name)
-        shutil.copy(mesh_level1, os.path.join(file_path[0], 'atlas_level1.txt'))
-        shutil.copy(mesh_level2, os.path.join(file_path[0], 'atlas_level2.txt'))
+        shutil.copy(mesh_level1, os.path.join(file_path[0], 'atlas_level1.txt.gz'))
+        shutil.copy(mesh_level2, os.path.join(file_path[0], 'atlas_level2.txt.gz'))
 
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
@@ -338,7 +338,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
     # TODO: Setup the visualization tool. This needs some pyqt stuff to be
     # installed. Don't know if we want to expose this in the .ini
-    showFigs = True
+    showFigs = False
     showMovies = False
     visualizer = samseg.initVisualizer(showFigs, showMovies)
 
