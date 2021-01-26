@@ -121,11 +121,11 @@ class Samseg:
         # Background masking: simply setting intensity values outside of a very rough brain mask to zero
         # ensures that they'll be skipped in all subsequent computations
         self.imageBuffers, self.mask = maskOutBackground(self.imageBuffers,
-                                                                      self.modelSpecifications.atlasFileName,
-                                                                      self.transform,
-                                                                      self.modelSpecifications.brainMaskingSmoothingSigma,
-                                                                      self.modelSpecifications.brainMaskingThreshold,
-                                                                      self.probabilisticAtlas)
+                                                         self.modelSpecifications.atlasFileName,
+                                                         self.transform,
+                                                         self.modelSpecifications.brainMaskingSmoothingSigma,
+                                                         self.modelSpecifications.brainMaskingThreshold,
+                                                         self.probabilisticAtlas)
 
         # Let's prepare for the bias field correction that is part of the imaging model. It assumes
         # an additive effect, whereas the MR physics indicate it's a multiplicative one - so we log

@@ -23,11 +23,13 @@ import nibabel as nib
 from ._cat_c_utils import sanlm
 import numpy as np
 from scipy import ndimage
+import scipy.ndimage.morphology as mrph
 from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
 from ..mesh_tools.mesh_io import write_msh
-
+from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.measurements import label
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -42,6 +44,8 @@ def _register_atlas_to_input_affine(T1, template_file_name,
     # Import the affine registration function
     scales = init_atlas_settings['affine_scales']
     thetas = init_atlas_settings['affine_rotations']
+    horizontal_shifts = init_atlas_settings['affine_horizontal_shifts']
+    vertical_shifts = init_atlas_settings['affine_vertical_shifts']
     thetas_rad = [theta * np.pi/180 for theta in thetas]
     neck_search_bounds = init_atlas_settings['neck_search_bounds']
     ds_factor = init_atlas_settings['dowsampling_factor_affine']
@@ -50,7 +54,9 @@ def _register_atlas_to_input_affine(T1, template_file_name,
 
     init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
                                                 scales=scales,
-                                                scalingCenter=[0, 120.0, 0])
+                                                scalingCenter=[0.0, -120.0, 0.0],
+                                                horizontalTableShifts=horizontal_shifts,
+                                                verticalTableShifts=vertical_shifts)
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
     affine.registerAtlas(initializationOptions=init_options,
@@ -93,32 +99,33 @@ def _denoise_input_and_save(input_name, output_name):
 def _estimate_parameters(path_to_segment_folder,
                          template_coregistered_name,
                          path_to_atlas_folder, input_images,
-                         visualizer):
+                         segment_settings, visualizer):
 
-    # TODO: Should the model specs be here or in .ini?
+    ds_targets = segment_settings['downsampling_targets']
+    kernel_size = segment_settings['bias_kernel_width']
+    bg_mask_sigma = segment_settings['background_mask_sigma']
+    bg_mask_th = segment_settings['background_mask_threshold']
+    stiffness = segment_settings['mesh_stiffness']
     user_optimization_options = {'multiResolutionSpecification':
                                  [{'atlasFileName':
                                    os.path.join(path_to_segment_folder,
                                                 'atlas_level1.txt.gz'),
-                                   'targetDownsampledVoxelSpacing': 2.0,
+                                   'targetDownsampledVoxelSpacing': ds_targets[0],
                                    'maximumNumberOfIterations': 100,
                                    'estimateBiasField': True},
                                   {'atlasFileName':
                                       os.path.join(path_to_segment_folder,
                                                    'atlas_level2.txt.gz'),
-                                   'targetDownsampledVoxelSpacing': 1.0,
+                                   'targetDownsampledVoxelSpacing': ds_targets[1],
                                    'maximumNumberOfIterations': 100,
                                    'estimateBiasField': True}]}
 
     user_model_specifications = {'atlasFileName': os.path.join(
             path_to_segment_folder, 'atlas_level2.txt.gz'),
-                                 'biasFieldSmoothingKernelSize': 70,
-                                 'brainMaskingThreshold': 0.01}
-    if 0: #len(input_images) > 1:
-        user_model_specifications = {'atlasFileName': os.path.join(
-            path_to_segment_folder, 'atlas_level2.txt.gz'),
-                                 'biasFieldSmoothingKernelSize': 50,
-                                 'brainMaskingThreshold': 0.01}
+                                 'biasFieldSmoothingKernelSize': kernel_size,
+                                 'brainMaskingSmoothingSigma': bg_mask_sigma,
+                                 'brainMaskingThreshold': bg_mask_th,
+                                 'K': stiffness}
 
     samseg_kwargs = dict(
         imageFileNames=input_images,
@@ -180,30 +187,230 @@ def _post_process_segmentation(bias_corrected_image_names,
 
 
 def _morphological_operations(label_img, simnibs_tissues):
-    ''' Does morphological operations to ensure
-        1. A CSF layer between GM and Skull and beteween GM and CSF
-        2. Outer bone layers are compact bone
-
-        works in-place
+    ''' Does morphological operations to
+        1. Smooth out the labeling and remove noise
+        2. A CSF layer between GM and Skull and between GM and CSF
+        3. Outer bone layers are compact bone
     '''
-    # Ensuring a CSF layer beteen GM and Skull and GM and Blood
-    # Relabel regions in the expanded GM which are in skull or blood to CSF
-    GM = label_img == simnibs_tissues["GM"]
-    C_BONE = label_img == simnibs_tissues["Compact_bone"]
-    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
-    BLOOD = label_img == simnibs_tissues["Blood"]
-    GM_dilated = ndimage.morphology.binary_dilation(
-        GM, ndimage.generate_binary_structure(3, 2)
-    )
-    label_img[GM_dilated * (C_BONE + S_BONE + BLOOD)] = simnibs_tissues["CSF"]
-    # Ensure the outer skull label is compact bone
-    C_BONE = label_img == simnibs_tissues["Compact_bone"]
-    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
-    SKULL_outer = (C_BONE + S_BONE) * ~ndimage.morphology.binary_erosion(
-        (C_BONE + S_BONE), ndimage.generate_binary_structure(3, 2)
-    )
-    label_img[SKULL_outer] = simnibs_tissues["Compact_bone"]
+    se = ndimage.generate_binary_structure(3,3)
+    se_n = ndimage.generate_binary_structure(3,1)
+    # Get list of masks
+    tissue_masks = []
+    tissue_names = []
+    for tkey in simnibs_tissues:
+        tmp_img = label_img == simnibs_tissues[tkey]
+        tissue_masks.append(tmp_img)
+        tissue_names.append(tkey)
 
+    # Do some clean-ups, mainly CSF and skull
+    # First combine the WM and GM
+    brain = tissue_masks[tissue_names.index('WM')] | \
+            tissue_masks[tissue_names.index('GM')]
+
+    dil = mrph.binary_dilation(_get_n_largest_components(
+        mrph.binary_erosion(brain, se, 1), se_n, 1), se, 1)
+
+    #Remove unattached components
+    unass = brain ^ dil
+    tissue_masks[tissue_names.index('WM')] = \
+    tissue_masks[tissue_names.index('WM')] & dil
+
+    tissue_masks[tissue_names.index('GM')] = \
+    tissue_masks[tissue_names.index('GM')] & dil
+
+    #Add the CSF and open again
+    brain_csf = brain + tissue_masks[tissue_names.index('CSF')]
+    dil = mrph.binary_opening(brain_csf, se, 1)
+
+    unass = unass + (brain_csf ^ dil)
+    tissue_masks[tissue_names.index('CSF')] = \
+        tissue_masks[tissue_names.index('CSF')] & dil
+
+    #Close the skull (spongy + compact), remove noise and assign to compact
+    bone = tissue_masks[tissue_names.index('Compact_bone')] | \
+           tissue_masks[tissue_names.index('Spongy_bone')]
+
+    dil = mrph.binary_fill_holes(bone,se)
+    dil = mrph.binary_opening(dil,se, 1)
+    dil = mrph.binary_dilation(_get_n_largest_components(
+                  mrph.binary_erosion(dil, se, 1), se, 20), se, 1)
+
+    unass = unass + (dil ^ bone)
+    tissue_masks[tissue_names.index('Compact_bone')] = \
+    tissue_masks[tissue_names.index('Compact_bone')] & dil
+
+    tissue_masks[tissue_names.index('Spongy_bone')] = \
+    tissue_masks[tissue_names.index('Spongy_bone')] & dil
+
+
+    # Open the veins
+    veins = tissue_masks[tissue_names.index('Blood')]
+    #dil = mrph.binary_opening(veins, se, 1)
+    dil = mrph.binary_dilation(_get_n_largest_components(
+        mrph.binary_erosion(veins, se, 1), se_n, 10), se, 1)
+    unass = unass + (dil ^ veins)
+    tissue_masks[tissue_names.index('Blood')] = \
+    tissue_masks[tissue_names.index('Blood')] & dil
+    # And finally the scalp
+    scalp = tissue_masks[tissue_names.index('Scalp')]
+    dil = mrph.binary_dilation(_get_n_largest_components(
+                  mrph.binary_erosion(scalp, se, 1), se_n, 1), se, 1)
+    unass = unass + (dil ^ scalp)
+
+    tissue_masks[tissue_names.index('Scalp')] = \
+    tissue_masks[tissue_names.index('Scalp')] & dil
+
+    # Temporarily add air here as a mask, otherwise smoothfill
+    # happily dilates tissues next to air
+    tissue_masks.append(label_img == 0)
+    # Now run the smoothfill
+    tissue_masks = _smoothfill(tissue_masks, unass)
+
+    #Now we can get rid of the air again
+    tissue_masks.pop()
+
+    # Ensuring a CSF layer between GM and Skull and GM and Blood
+    # Relabel regions in the expanded GM which are in skull or blood to CSF
+    GM = tissue_masks[tissue_names.index('GM')]
+    C_BONE = tissue_masks[tissue_names.index('Compact_bone')]
+    S_BONE = tissue_masks[tissue_names.index('Spongy_bone')]
+    BLOOD = tissue_masks[tissue_names.index('Blood')]
+    GM_dilated = mrph.binary_dilation(GM, se, 1)
+    GM_dilated = GM_dilated & (C_BONE | S_BONE | BLOOD)
+    #CSF = tissue_masks[tissue_names.index('CSF')]
+    #CSF[GM_dilated & (C_BONE | S_BONE | BLOOD)] = True
+    tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] | GM_dilated
+    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] & \
+                                                       ~GM_dilated
+    tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
+                                                       ~GM_dilated
+    tissue_masks[tissue_names.index('Blood')] = tissue_masks[tissue_names.index('Blood')] & \
+                                                       ~GM_dilated
+
+    # Ensure the outer skull label is compact bone
+    SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se)
+    #C_BONE[SKULL_outer] = True
+    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | SKULL_outer
+    tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
+                                                       ~SKULL_outer
+    # Finally dilate the Skin layer and relabel CSF to bone so we have skull everywhere
+    scalp = tissue_masks[tissue_names.index('Scalp')]
+    scalp = mrph.binary_dilation(scalp, se, 1)
+    relabel = scalp & tissue_masks[tissue_names.index('CSF')]
+    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | \
+                                                       relabel
+    tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] &\
+                                                ~relabel
+
+    #Relabel the tissues to produce the final label image
+    for tname, tmask in zip(tissue_names, tissue_masks):
+        label_img[tmask] = simnibs_tissues[tname]
+
+
+def _smoothfill(vols, unassign):
+    """Hackish way to fill unassigned voxels,
+       works by smoothing the masks and binarizing
+       the smoothed masks.
+    """
+    vols = [v.astype(np.float) for v in vols]
+    unassign = unassign.copy()
+    sum_of_unassigned = np.inf
+    # for as long as the number of unassigned is changing
+    while unassign.sum() < sum_of_unassigned:
+        sum_of_unassigned = unassign.sum()
+        for i, ivol in enumerate(vols):
+            cs = gaussian_filter(ivol.astype(np.float), 1)
+            cs[ivol == 1] = 1
+            vols[i] = cs
+
+        vols = _binarize(vols, return_empty=True)
+        unassign = vols.pop()
+
+    return vols
+
+
+def _get_n_largest_components(vol, se, n, return_sizes=False):
+    """Get the n largest components from a volume.
+
+    PARAMETERS
+    ----------
+    vol : ndarray
+        Image volume. A dimX x dimY x dimZ array containing the image data.
+    se : ndarray
+        Structuring element to use when detecting components (i.e. setting the
+        connectivity which defines a component).
+    n : int
+        Number of (largest) components to retain.
+    return_sizes : bool, optional
+        Whether or not to also return the sizes (in voxels) of each component
+        that was retained (default = False).
+
+    RETURNS
+    ----------
+    Components : ndarray
+        Binary dimX x dimY x dimZ array where entries corresponding to retained
+        components are True and the remaining entries are False.
+    """
+    vol_lbl = label(vol, se)[0]
+    labels, region_size = np.unique(vol_lbl, return_counts=True)
+    labels = labels[1:]  # disregard background (label=0)
+    region_size = region_size[1:]  #
+    labels = labels[np.argsort(region_size)[::-1]]
+    components = np.any(np.array([vol_lbl == i for i in labels[:n]]),
+                        axis=0)
+
+    # if no components are found, components will be reduced to false. Replace
+    # by array of appropriate size
+    if components.sum() == 0:
+        components = np.zeros_like(vol, dtype=bool)
+
+    if return_sizes:
+        return components, region_size[labels[:n]]
+    else:
+        return components
+
+def _binarize(vols, return_empty=False):
+    """Binarize a list of input volumes by finding the maximum posterior
+    probability of each and assigning the voxel to this volume.
+
+    PARAMETERS
+    ----------
+    vols : list
+        List of filenames or nibabel image objects (describing probabilities of
+        different tissue types).
+    return_empty : bool
+        If true, return an array containing all voxels which are not assigned
+        to either of the other volumes (default: False)
+    RETURNS
+    ----------
+    bin_vols : list
+        List of ndarrays describing binarized versions of the input volumes.
+    unassign : ndarray
+        Array containing any unassigned voxels.
+    """
+    # if filenames are provided, load data
+    volsi = [None] * len(vols)
+    for i in range(len(vols)):
+        volsi[i] = vols[i]
+
+    # Concatenate arrays/images
+    imgs = np.concatenate(tuple([v[..., np.newaxis] for v in volsi]), axis=3)
+    imgs = np.concatenate((np.zeros_like(volsi[0])[..., np.newaxis], imgs),
+                          axis=3)
+
+    # Find max indices
+    max_idx = np.argmax(imgs, axis=3)
+
+    # Binarize. Here vols_bin[0] contain voxels not assigned to any other
+    # volume
+    vols_bin = []
+    for i in range(imgs.shape[-1]):
+        vols_bin.append(max_idx == i)
+
+    if return_empty:
+        return vols_bin[1:] + [vols_bin[0]]
+    else:
+        return vols_bin[1:]
 
 def _registerT1T2(fixed_image, moving_image, output_image):
     registerer = samseg.gems.KvlImageRegisterer()
@@ -219,7 +426,7 @@ def view(subject_dir):
 
 def run(subject_dir=None, T1=None, T2=None,
         registerT2=False, initatlas=False, segment=False,
-        create_surfaces=True, mesh_image=False, usesettings=None,
+        create_surfaces=False, mesh_image=False, usesettings=None,
         noneck=False, options_str=None):
     """charm pipeline
 
@@ -360,10 +567,6 @@ def run(subject_dir=None, T1=None, T2=None,
                                 atlas_settings_names['atlas_level2'])
     neck_tissues = atlas_settings['neck_optimization']
     neck_tissues = neck_tissues['neck_tissues']
-    mni_deformation_file = os.path.join(atlas_path,
-                                        atlas_settings_names['mni_deformation'])
-    mni_node_positions_file = os.path.join(atlas_path,
-                                           atlas_settings_names['mni_node_positions'])
 
     if initatlas:
         # initial affine registration of atlas to input images,
@@ -401,11 +604,13 @@ def run(subject_dir=None, T1=None, T2=None,
             else:
                 input_images.append(sub_files.T2_reg)
 
+        segment_settings = settings['segment']
         logger.info('Estimating parameters.')
         segment_parameters_and_inputs = _estimate_parameters(
                 sub_files.segmentation_folder,
                 sub_files.template_coregistered,
                 atlas_path, input_images,
+                segment_settings,
                 visualizer)
 
         # Okay now the parameters have been estimated, and we can segment the
@@ -445,9 +650,7 @@ def run(subject_dir=None, T1=None, T2=None,
                 template_name,
                 sub_files.conf2mni_nonl,
                 sub_files.mni2conf_nonl,
-                segment_parameters_and_inputs,
-                mni_deformation_file,
-                mni_node_positions_file)
+                segment_parameters_and_inputs)
 
         # Run post-processing
         logger.info('Post-processing segmentation')
@@ -579,7 +782,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
 def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
          distance_slope=0.5, distance_range=(0.1, 3),
-         optimize=False, remove_spikes=True, smooth_steps=5):
+         optimize=True, remove_spikes=True, smooth_steps=5):
     ''' Creates a mesh from a labeled image
 
     The maximum element sizes (CGAL facet_size and cell_size) is given by:

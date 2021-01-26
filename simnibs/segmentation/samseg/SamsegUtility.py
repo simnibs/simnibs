@@ -24,7 +24,7 @@ def getModelSpecifications(atlasDir, userModelSpecifications={}):
         'brainMaskingSmoothingSigma': 3.0,  # sqrt of the variance of a Gaussian blurring kernel
         'brainMaskingThreshold': 0.01,
         'K': 0.1,  # stiffness of the mesh
-        'biasFieldSmoothingKernelSize': 50,  # distance in mm of sinc function center to first zero crossing
+        'biasFieldSmoothingKernelSize': 50  # distance in mm of sinc function center to first zero crossing
     }
 
     modelSpecifications.update(userModelSpecifications)

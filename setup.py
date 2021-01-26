@@ -34,11 +34,13 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 '''
 
 # Information for CGAL download
-CGAL_version = '5.0.2'
+#CGAL_version = '5.0.2'
+CGAL_version = '5.2'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 CGAL_url = (
     f'https://github.com/CGAL/cgal/releases/download/'
-    f'releases/CGAL-{CGAL_version}/'
+    #f'releases/CGAL-{CGAL_version}/'
+    f'v{CGAL_version}/'
     f'CGAL-{CGAL_version}-library.zip'
 )
 cgal_mesh_macros = [

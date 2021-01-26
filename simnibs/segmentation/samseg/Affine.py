@@ -15,15 +15,15 @@ import scipy.ndimage
 class initializationOptions:
     def __init__( self,
                   pitchAngles=np.array( [ 0 ] ) / 180.0 * np.pi, # in radians
-                  scales=[ 1.0 ],  
-                  horizontalTableShifts= [ 40.0, 20.0, 0.0, -20.0, -40.0 ], # in mm, in template space
-                  verticalTableShifts=[ 0.0 ], # in mm, in template space
+                  scales=[ 1.0 ],
+                  horizontalTableShifts= [ 20.0, 10.0, 0.0, -10.0, -20.0 ], # in mm, in template space
+                  verticalTableShifts=[-10.0, 0.0, 10.0], # in mm, in template space
                   tryCenterOfGravity=True,
                   searchForTableShiftsSeparately=False,
                   pitchCenter=[ 0.0, 0.0, 0.0 ], # in mm, in template space - anterior commissure
-                  scalingCenter=[ 0.0, 120.0, 0.0 ], # in mm, in template space - back of the head
-                  initialPitchAngle=-10.0/180.0*np.pi, # in radians
-                  initialScale=0.9,
+                  scalingCenter=[ 0.0, -120.0, 0.0 ], # in mm, in template space - back of the head
+                  initialPitchAngle= 0, # in radians
+                  initialScale=1.0,
                   initialTableShift=[ 0.0, 0.0, 0.0 ] # in mm, in template space
                 ):
         self.pitchAngles = pitchAngles
@@ -48,7 +48,7 @@ class Affine:
     def registerAtlas(self,
                       worldToWorldTransformMatrix=None,
                       initTransform=None,
-                      Ks=[ 20.0, 10.0, 5.0 ],
+                      Ks=[ 20.0, 10.0, 5.0],
                       initializationOptions = initializationOptions(),
                       targetDownsampledVoxelSpacing=3.0,
                       maximalDeformationStopCriterion=0.005,
@@ -70,7 +70,8 @@ class Affine:
         
     def optimizeTransformation(self, 
                                initialImageToImageTransformMatrix,
-                               K, maximalDeformationStopCriterion ):
+                               K, maximalDeformationStopCriterion,
+                               noneck):
         
         
         # In our models the mesh stiffness (scaling the log-prior) is relative to the log-likelihood,
@@ -86,7 +87,13 @@ class Affine:
                                               K=Keffective )
         originalNodePositions = mesh.points
 
-        
+        if noneck:
+            alphas = mesh.alphas
+            alphas_tmp = np.zeros((alphas.shape[0], alphas.shape[1]-1))
+            alphas_tmp[:,0] = alphas[:,0] + alphas[:,1]
+            alphas_tmp[:,1:] = alphas[:,2:]
+            mesh.alphas = alphas_tmp
+
         # Get a registration cost  and stick it in an optimizer
         calculator = gems.KvlCostAndGradientCalculator( 'MutualInformation', [self.image], 'Affine' )
         optimization_parameters = {
@@ -187,7 +194,7 @@ class Affine:
     #
     def  gridSearch(self, mesh,
                     positionsInTemplateSpace,
-                    pitchAngles=[ 0.0 ], scales=[ 1.0 ],
+                    pitchAngles=[ 0 ], scales=[ 0.9 ],
                     horizontalTableShifts=[ 0.0 ],
                     verticalTableShifts=[ 0.0 ],
                     initialTableShifts=[ 0.0, 0.0, 0.0 ],
@@ -283,9 +290,9 @@ class Affine:
             priors = mesh.rasterize( templateSize, -1 )
 
             if noneck:
-                head = np.sum( priors[:,:,:,2:], axis=3 )
+                head = np.sum(priors[:,:,:,2:], axis=3)
             else:
-                head = np.sum(priors[:, :, :, 2:], axis=3)
+                head = np.sum(priors[:, :, :, 1:], axis=3)
 
             centerOfGravityTemplate = np.array( scipy.ndimage.measurements.center_of_mass( head ) ) # in image space
 
@@ -299,7 +306,7 @@ class Affine:
                                    self.imageToWorldTransformMatrix[ 0:3, 3 ] # in world space
             centeringTableShift = centerOfGravityImage - centerOfGravityTemplate
                 
-            
+
             # Try which one is best
             initialTableShifts = [ initializationOptions.initialTableShift, centeringTableShift ]
             _, _, _, _, bestInitialTableShift, _ = \
@@ -308,7 +315,11 @@ class Affine:
                                                      initialTableShifts=initialTableShifts,
                                                      visualizerTitle='Affine grid search center of gravity' )
             
-            
+        #Remove neck alphas and back ground to get the scaling, rotation and shifts correctly
+        alphas_orig = mesh.alphas
+        alphas_tmp = alphas_orig.copy()
+        alphas_tmp = alphas_tmp[:,2:]
+        mesh.alphas = alphas_tmp
         if initializationOptions.searchForTableShiftsSeparately:
             # Perform grid search for intialization (done separately for translation and scaling/rotation to limit the
             # number of combinations to be tested)
@@ -341,7 +352,8 @@ class Affine:
                                    initialTableShifts=[ bestInitialTableShift ],
                                    visualizerTitle='Affine grid search' )         
 
-        #
+        #Stick the original alphas back
+        mesh.alphas = alphas_orig
         return bestImageToImageTransformMatrix
     
 
@@ -425,7 +437,7 @@ class Affine:
             for K in Ks:
                 imageToImageTransformMatrix, optimizationSummary = \
                     self.optimizeTransformation( imageToImageTransformMatrix,
-                                                 K, maximalDeformationStopCriterion )
+                                                 K, maximalDeformationStopCriterion, noneck )
 
             
             # Final result: the image-to-image (from template to image) as well as the world-to-world transform that

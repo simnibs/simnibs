@@ -13,6 +13,8 @@ dependencies:
   - requests=2.24
   - packaging=20.4
   - pip>19.3
+  - matplotlib
+  - boost
   - pip:
     - nibabel==3.1.*
     - pyqt5==5.12.*

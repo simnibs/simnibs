@@ -85,7 +85,7 @@ class SamsegWholeHead(Samseg):
                                  'biasFields': self.biasField.getBiasFields(),
                                  'mask': self.mask,
                                  'cropping': self.cropping,
-                                 'transform': self.transform,
+                                 'transform': self.transform.as_numpy_array,
                                  'names': self.modelSpecifications.names}
 
         if output_path is not None:
