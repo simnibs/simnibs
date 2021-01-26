@@ -5,6 +5,7 @@ from .GMM import GMM
 import numpy as np
 import nibabel as nib
 from simnibs.segmentation._cat_c_utils import cat_vbdist
+from simnibs.segmentation.samseg.utilities import requireNumpyArray
 
 # TODO! remove
 import os
@@ -38,7 +39,8 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
 
     # Next do the segmentation, first read in the mesh
     modelSpecifications = parameters_and_inputs['modelSpecifications']
-    transform = parameters_and_inputs['transform']
+    transform_matrix = parameters_and_inputs['transform']
+    transform = gems.KvlTransform(requireNumpyArray(transform_matrix))
     deformation = parameters_and_inputs['deformation']
     deformationAtlasFileName = parameters_and_inputs['deformationAtlas']
 
@@ -158,8 +160,7 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
 
 
 def saveWarpField(template_name, warp_to_mni,
-                  warp_from_mni, parameters_and_inputs,
-                  mni_deformation_file, mni_node_positions_file):
+                  warp_from_mni, parameters_and_inputs):
     # Save warp field two ways: the subject space world coordinates
     # in template space, i.e., the iamge voxel coordinates in
     # physical space for every voxel in the template.
@@ -207,11 +208,9 @@ def saveWarpField(template_name, warp_to_mni,
 
     # Rasterize the final node coordinates (in image space)
     # using the initial template mesh
-    mni_deformation = np.load(mni_deformation_file)
     mesh = probabilisticAtlas.getMesh(
                 modelSpecifications.atlasFileName,
-                K=modelSpecifications.K,
-                initialDeformation=mni_deformation)
+                K=modelSpecifications.K)
 
     # Get node positions in template voxel space
     nodePositionsTemplate = mesh.points
@@ -231,7 +230,6 @@ def saveWarpField(template_name, warp_to_mni,
                                               ((0, 0), (0, 1)),
                                               'constant', constant_values=1).T).T
     nodePositionsTemplateWorldSpace = nodePositionsTemplateWorldSpace[:, 0:3]
-    node_pos_in_mni = np.load(mni_node_positions_file)
     # Okay get the mesh in image space
     mesh = probabilisticAtlas.getMesh(
              modelSpecifications.atlasFileName,
@@ -241,7 +239,7 @@ def saveWarpField(template_name, warp_to_mni,
 
     imageBuffers = parameters_and_inputs['imageBuffers']
     coordmapImage = mesh.rasterize_values(imageBuffers.shape[0:-1],
-                                          node_pos_in_mni)
+                                          nodePositionsTemplateWorldSpace)
     # The image buffer is cropped so need to set
     # everything to the correct place
     uncroppedWarp = np.zeros(image_buffer.shape+(3,),
@@ -270,6 +268,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     data = biasCorrectedImageBuffers[mask, :]
     numberOfVoxels = data.shape[0]
     numberOfStructures = fractionsTable.shape[1]
+
     # We need an init of the GMM class
     # to call instance methods
     gmm = GMM(numberOfGaussiansPerClass, data.shape[1], True,
@@ -280,7 +279,9 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
                          dtype=np.float64)
     maxIndices = np.empty(biasCorrectedImageBuffers.shape[0:3],
                           dtype=np.uint16)
+
     maxIndices[:] = FreeSurferLabels[bg_label]
+    print('done')
 
     # We need the normalizer if we are writing out the normalized images
     # for CAT
@@ -306,6 +307,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     # need to normalize to find the label with highest probability.
     # But we're not going to compute the posteriors here.
     # We're also filling zero values (outside the mask) from the prior
+    print('Into the loop')
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
         # and cast to float from uint8
@@ -316,7 +318,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
         # to get the fractions correct
         print(structureNumber)
         classesToLoop = [i for i, val in enumerate(fractionsTable[:, structureNumber] > 1e-10) if val]
-        likelihoods = np.zeros(numberOfVoxels)
+        likelihoods = np.zeros(numberOfVoxels, dtype=np.float32)
         for classNumber in classesToLoop:
             # Compute likelihood for this class
             numberOfComponents = numberOfGaussiansPerClass[classNumber]
@@ -346,7 +348,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
 
         if structureNumber == 0:
             # In the first iteration just save the non-normalized values
-            # Indices are intialized to zero anyway
+            # Indices are initialized to zero anyway
             maxValues = nonNormalized
         else:
             # Check whether we have higher values and save indices
