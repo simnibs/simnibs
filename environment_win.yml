@@ -15,6 +15,8 @@ dependencies:
   - freeglut
   - vs2015_runtime
   - pip>19.3
+  - matplotlib
+  - boost
   - pip:
     - nibabel==3.0.*
     - pyqt5==5.12.*

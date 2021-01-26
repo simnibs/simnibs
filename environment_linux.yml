@@ -14,6 +14,8 @@ dependencies:
   - requests=2.24
   - freeglut
   - pip>19.3
+  - matplotlib
+  - boost
   - pip:
     - nibabel==3.0.*
     - pyqt5==5.12.*
