@@ -48,7 +48,6 @@ Transformations
 
    subject2mni_coords
    mni2subject_coords
-   eeg_positions
    subject_atlas
 
 Utilities

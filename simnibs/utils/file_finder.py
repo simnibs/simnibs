@@ -3,7 +3,7 @@
     Find templates and segmentation files of SimNIBS
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (C) 2019, 2020 Guilherme B Saturnino
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,32 +20,26 @@
 import sys
 import os
 import re
+import glob
+import collections
 import numpy as np
 import nibabel
 
 from .. import SIMNIBSDIR
 
-__all__ = ['templates', 'get_atlas', 'SubjectFiles']
+__all__ = ['templates', 'get_atlas', 'get_reference_surf', 'SubjectFiles', 'coil_models']
 
 class Templates:
     ''' Defines the Templates for file names used in SimNIBS
 
     Attributes
     ------------
-    cat_templates_surfaces: str
-        Path to the directory with the CAT12 template surfaces (dir)
-    cat_atlases_surfaces: str
-        Path to the directory with the CAT12 atlases surfaces (dir)
-    cat_lh_cortex_ref: str
-        Path to the GifTi surface with the FsAverage lh cortex template (.gii)
-    cat_rh_cortex_ref: str
-        Path to the GifTi surface with the FsAverage lh cortex template (.gii)
-    cat_lh_sphere_ref: str
-        Path to the GifTi surface with the FsAverage lh sphere template (.gii)
-    cat_rh_sphere_ref: str
-        Path to the GifTi surface with the FsAverage lh sphere template (.gii)
+    atlases_surfaces: str
+        Path to the directory with the atlases surfaces (dir)
+
     mni_volume: str
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
+<<<<<<< HEAD
     freesurfer_templates: str
         Path to the folder with FreeSurfer templates (dir)
     fs_lh_sphere_ref: str
@@ -58,47 +52,25 @@ class Templates:
         Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)
     simnibs_logo: str
         Path to the SimNIBS logo stored as triangle mesh (gmsh format)
+=======
+>>>>>>> charm
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
-        self._spm12 = os.path.join(self._resources, 'spm12')
-        # Cat 12 things
-        self.cat_templates_surfaces = os.path.join(
-            self._spm12, 'toolbox', 'cat12', 'templates_surfaces')
-        self.cat_atlases_surfaces = os.path.join(
-            self._spm12, 'toolbox', 'cat12', 'atlases_surfaces')
-        self.cat_lh_cortex_ref = os.path.join(
-            self.cat_templates_surfaces, 'lh.central.freesurfer.gii')
-        self.cat_rh_cortex_ref = os.path.join(
-            self.cat_templates_surfaces, 'rh.central.freesurfer.gii')
-        self.cat_lh_sphere_ref = os.path.join(
-            self.cat_templates_surfaces, 'lh.sphere.freesurfer.gii')
-        self.cat_rh_sphere_ref = os.path.join(
-            self.cat_templates_surfaces, 'rh.sphere.freesurfer.gii')
+        self.atlases_surfaces = os.path.join(
+            self._resources, 'templates', 'fsaverage_surf')
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
-        # FreeSurfer
-        try:
-            os.environ['FREESURFER_HOME']
-        except KeyError:
-            self.freesurfer_templates = None
-            self.fs_lh_sphere_ref = None
-            self.fs_rh_sphere_ref = None
-            self.fs_lh_cortex_ref = None
-            self.fs_rh_cortex_ref = None
-        else:
-            self.freesurfer_templates = os.path.join(
-                os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'surf')
-            self.fs_lh_sphere_ref = os.path.join(self.freesurfer_templates, 'lh.sphere.reg')
-            self.fs_rh_sphere_ref = os.path.join(self.freesurfer_templates, 'rh.sphere.reg')
-
-            self.fs_lh_cortex_ref = os.path.join(self.freesurfer_templates, 'lh.pial')
-            self.fs_rh_cortex_ref = os.path.join(self.freesurfer_templates, 'rh.pial')
         # SimNIBS logo
         self.simnibs_logo = os.path.join(self._resources, 'simnibslogo.msh')
 
+        #CHARM atlas path
+        self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
+
+
 templates = Templates()
+coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
 
 def get_atlas(atlas_name, hemi='both'):
     ''' Loads a brain atlas based of the FreeSurfer fsaverage template
@@ -136,10 +108,10 @@ def get_atlas(atlas_name, hemi='both'):
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
 
-    # If only one hemisphere
+        
     if hemi in ['lh', 'rh']:
         fn_atlas = os.path.join(
-            templates.cat_atlases_surfaces,
+            templates.atlases_surfaces,
             f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
         )
         labels, _ , names = nibabel.freesurfer.io.read_annot(fn_atlas)
@@ -165,6 +137,34 @@ def get_atlas(atlas_name, hemi='both'):
         raise ValueError('Invalid hemisphere name')
 
 
+def get_reference_surf(region, surf_type='central'):
+    ''' Gets the file name of a reference surface
+
+    Parameters
+    -----------
+    region: 'lh', 'rh', 'lc' or 'rc'
+        Name of the region of interest
+    surf_type: 'central', 'sphere', 'inflated' (optional)
+        Surface type. Default: central
+    
+    Returns
+    --------
+    fn_surf: str
+        Name of surface file
+
+    Raises
+    -------
+    FileNotFoundError if the specified reference surface is not found
+
+    '''
+    fn_surf = os.path.join(
+        SIMNIBSDIR, 'resources', 'templates',
+        'fsaverage_surf', f'{region}.{surf_type}.freesurfer.gii'
+    )
+    if os.path.isfile(fn_surf):
+        return fn_surf
+    else:
+        raise FileNotFoundError('Could not find reference surface')
 
 class SubjectFiles:
     ''' Class to find files for a given subject
@@ -199,6 +199,18 @@ class SubjectFiles:
     eeg_cap_folder: str
         Path to the folder with EEG caps (dir)
 
+    segmentation_folder: str
+        Path to the output from the segmentation
+
+    surface_folder: str
+        Path to the output from the segmentation
+
+    label_prep_folder: str
+        Path to the output from upsampling
+
+    mni_transf_folder: str
+        Path to MNI transformations
+
     eeg_cap_1010: str
         Path to the EEG 10-10 electrode file (.csv)
 
@@ -223,32 +235,19 @@ class SubjectFiles:
     surf_dir: str
         Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
 
-    seg_type: 'headreco' or 'mri2mesh'
-        Type of segmentation (only in mri2mesh and headreco+CAT)
+    central_surfaces: list
+        List of SurfaceFile objects which containts 2 fields:
+            fn: name of surface file (.gii format)
+            region: 'lh', 'rh', 'lc' or 'rc'
 
-    lh_midgm: str
-        Left hemisphere middle gray matter model (only for headreco+CAT segmentations) (.gii)
+    sphere_surfaces: list
+        Same as above but in a spherical geometry
 
-    rh_midgm: str
-        Right hemisphere middle right gray matter model (only for headreco+CAT segmentations) (.gii)
-    
-    lh_gm: str
-        Left hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)
+    sphere_reg_surfaces: list
+        Same as above but for the spherical registration files
 
-    rh_gm: str
-        Right hemisphere pial surface model (only for mri2mesh tranformations) (fs surface)
-
-    lh_wm: str
-        Left hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)
-
-    rh_wm: str
-        Right hemisphere white matter surface model (only for mri2mesh tranformations) (fs surface)
-
-    lh_reg: str
-        Left hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)
-
-    rh_reg: str
-        Right hemisphere sphere registration file (only in mri2mesh and headreco+CAT) (fs surface or .gii)
+    regions: list
+        list of region names (e.g. 'lh', 'rh') where all surfaces above are present
 
     final_contr: str
         Volume mask after meshing (.nii.gz)
@@ -258,7 +257,55 @@ class SubjectFiles:
 
     T1: str
         T1 image after applying transformations
+        
+    T2_reg: str
+        T2 image after rigid co-registration to T1
     
+    T1_denoised: str
+        T1 image after running filtering (optional)
+        
+    T2_reg_denoised: str
+        T2 image after co-registration and filtering (optional)
+    
+    T1_bias_corrected: str
+        T1 image after bias correction
+    
+    T2_reg_bias_corrected: str
+        T2 image after bias correction
+    
+    labeling: str
+        Output segmentation from samseg
+    
+    template_coregistered: str
+        Affine mapping from atlas voxel space to T1 voxel space
+    
+    T1_upsampled: str
+        Bias corrected T1 upsampled to 0.5mm^3 resolution
+        
+    T2_upsampled: str
+        Bias corrected T2 upsampled to 0.5mm^3 resolution
+        
+    tissue_labeling_upsampled: str
+        Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution
+    
+    head_mesh: str
+        Final head mesh
+        
+    cerebrum_mask: str
+        Mask indicating cerebrum and cerebellum. Needed for surfaces.
+    
+    norm_image: str
+        Normalized intensity image. Needed for surfaces.
+        
+    subcortical_mask: str
+        Mask of subcortical structures. Needed for surfaces
+        
+    parahippo_mask: str
+        Mask of parahippocampal area. Needed for surfaces.
+        
+    hemi_mask: str
+        Mask indicating left/right. Needed for surfaces.
+        
     Warning
     --------
     This class does not check for existance of the files
@@ -298,25 +345,29 @@ class SubjectFiles:
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
         self.eeg_cap_1010 = self.get_eeg_cap()
 
+        self.segmentation_folder = os.path.join(self.subpath, 'segmentation')
+        self.surface_folder = os.path.join(self.subpath, 'surfaces')
+        self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
+
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
-        mni_transf = os.path.join(self.subpath, 'toMNI')
+        self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
-        self.mni2conf_nonl = os.path.join(mni_transf, 'MNI2Conform_nonl.nii')
+        self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
         if os.path.isfile(self.mni2conf_nonl + '.gz'):
             self.mni2conf_nonl += '.gz'
 
-        self.conf2mni_nonl = os.path.join(mni_transf, 'Conform2MNI_nonl.nii')
+        self.conf2mni_nonl = os.path.join(self.mni_transf_folder, 'Conform2MNI_nonl.nii')
         if os.path.isfile(self.conf2mni_nonl + '.gz'):
             self.conf2mni_nonl += '.gz'
 
-        self.mni2conf_6dof = os.path.join(mni_transf, 'MNI2conform_6DOF')
+        self.mni2conf_6dof = os.path.join(self.mni_transf_folder, 'MNI2conform_6DOF')
         if os.path.isfile(self.mni2conf_6dof + '.txt'):
             self.mni2conf_6dof += '.txt'
         if os.path.isfile(self.mni2conf_6dof + '.mat'):
             self.mni2conf_6dof += '.mat'
 
-        self.mni2conf_12dof = os.path.join(mni_transf, 'MNI2conform_12DOF')
+        self.mni2conf_12dof = os.path.join(self.mni_transf_folder, 'MNI2conform_12DOF')
         if os.path.isfile(self.mni2conf_12dof + '.txt'):
             self.mni2conf_12dof += '.txt'
         if os.path.isfile(self.mni2conf_12dof + '.mat'):
@@ -325,37 +376,59 @@ class SubjectFiles:
         # Stuff for surface transformations
 
         self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
-        headreco_surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
-        mri2mesh_surf_dir = os.path.join(self.basedir, 'fs_' + self.subid, 'surf')
+        #TODO: Set here the path for CHARM files
+        self.surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
+        # Look for all .gii files in surf_dir
+        surfaces = glob.glob(os.path.join(self.surf_dir, '*.gii'))
+        # Organize the files in 3 separate lists
+        SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
+        self.sphere_reg_surfaces = []
+        self.sphere_surfaces = []
+        self.central_surfaces = []
+        for fn in surfaces:
+            s = os.path.basename(fn)
+            region = s[:2]
+            if '.sphere.reg' in s:
+                self.sphere_reg_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
+            elif '.sphere.' in s:
+                self.sphere_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
+            elif '.central.' in s:
+                self.central_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
 
-        if os.path.isdir(headreco_surf_dir):
-            self.surf_dir = headreco_surf_dir
-            self.seg_type = 'headreco'
-            self.lh_midgm = os.path.join(headreco_surf_dir, 'lh.central.T1fs_conform.gii')
-            self.rh_midgm = os.path.join(headreco_surf_dir, 'rh.central.T1fs_conform.gii')
-            self.lh_reg = os.path.join(headreco_surf_dir, 'lh.sphere.reg.T1fs_conform.gii')
-            self.rh_reg = os.path.join(headreco_surf_dir, 'rh.sphere.reg.T1fs_conform.gii')
-
-        elif os.path.isdir(mri2mesh_surf_dir):
-            self.surf_dir = mri2mesh_surf_dir
-            self.seg_type = 'mri2mesh'
-            self.lh_gm = os.path.join(mri2mesh_surf_dir, 'lh.pial')
-            self.lh_wm = os.path.join(mri2mesh_surf_dir, 'lh.white')
-            self.rh_gm = os.path.join(mri2mesh_surf_dir, 'rh.pial')
-            self.rh_wm = os.path.join(mri2mesh_surf_dir, 'rh.white')
-            self.lh_reg = os.path.join(mri2mesh_surf_dir, 'lh.sphere.reg')
-            self.rh_reg = os.path.join(mri2mesh_surf_dir, 'rh.sphere.reg')
-
-        else:
-            self.surf_dir = None
-            self.seg_type = None
-
+        self.regions = sorted(
+            set([s.region for s in self.sphere_reg_surfaces]) &
+            set([s.region for s in self.sphere_surfaces]) &
+            set([s.region for s in self.central_surfaces])
+        )
+        
         self.final_contr = os.path.join(
             self.subpath, self.subid + '_final_contr.nii.gz')
         self.masks_contr = os.path.join(
             self.subpath, self.subid + '_masks_contr.nii.gz')
-        self.T1 = os.path.join(
-            self.subpath, 'T1fs_nu_conform.nii.gz')
+        self.T1 = os.path.join(self.subpath, 'T1.nii.gz')
+        self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
+        self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
+        self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
+        self.T1_bias_corrected = os.path.join(self.segmentation_folder, 'T1_bias_corrected.nii.gz')
+        self.T2_bias_corrected = os.path.join(self.segmentation_folder, 'T2_bias_corrected.nii.gz')
+        self.labeling = os.path.join(self.subpath, 'labeling.nii.gz')
+        self.template_coregistered =  os.path.join(self.segmentation_folder, 'template_coregistered.nii.gz')
+        self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
+        self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
+        self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
+        self.settings = os.path.join(self.subpath, 'settings.ini')
+        self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
+        self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
+        self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
+        self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
+        self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
+        self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
@@ -376,6 +449,39 @@ class SubjectFiles:
 
         '''
         return os.path.join(self.eeg_cap_folder, cap_name)
+
+    def get_surface(self, region, surf_type='central'):
+        ''' Gets the file name of a subject CAT12 surface
+
+        Parameters
+        -----------
+        region: 'lh', 'rh', 'lc' or 'rc'
+            Name of the region of interest
+        surf_type: 'central', 'sphere', 'sphere_reg' (optional)
+            Surface type. Default: central
+        
+        Returns
+        --------
+        fn_surf: str
+            Name of surface file
+
+        Raises
+        -------
+        FileNotFoundError if the specified reference surface is not found
+
+        '''
+        if surf_type == 'central':
+            for s in self.central_surfaces:
+                if s.region == region: return s.fn
+        elif surf_type == 'sphere':
+            for s in self.sphere_surfaces:
+                if s.region == region: return s.fn
+        elif surf_type == 'sphere_reg':
+            for s in self.sphere_reg_surfaces:
+                if s.region == region: return s.fn
+        else:
+            raise ValueError('invalid surf_type')
+        raise FileNotFoundError('Could not find surface')
 
 
 def path2bin(program):
@@ -406,7 +512,7 @@ def path2bin(program):
     else:
         raise OSError('OS not supported!')
 
-    path_to_binary = os.path.join(SIMNIBSDIR, 'bin', p, program)
+    path_to_binary = os.path.join(SIMNIBSDIR, 'external', 'bin', p, program)
 
     return path_to_binary
 

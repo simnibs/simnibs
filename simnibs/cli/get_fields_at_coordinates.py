@@ -26,7 +26,7 @@ import sys
 import os
 import textwrap
 from argparse import RawTextHelpFormatter
-import simnibs.msh.mesh_io as mesh_io
+import simnibs.mesh_tools.mesh_io as mesh_io
 from simnibs.utils.simnibs_logger import logger
 import numpy as np
 from simnibs import __version__

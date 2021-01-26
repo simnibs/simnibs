@@ -110,12 +110,13 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         # Move the sitecustomize.py file to the site-packages directory
         # This should allow for using the python interpreter without activating the environment
         shutil.copy(
-            os.path.join(simnibs_root_dir, 'simnibs', 'utils', 'sitecustomize.py'),
+            os.path.join(simnibs_root_dir, 'simnibs', '_internal_resources', 'sitecustomize.py'),
             os.path.join(pack_dir, 'simnibs_env', 'Lib', 'site-packages')
         )
         #Use the installer.nsi template to create an NSIS installer
         shutil.copy(
-            os.path.join(simnibs_root_dir, 'simnibs', 'resources', 'gui_icon.ico'),
+            os.path.join(simnibs_root_dir, 'simnibs', '_internal_resources',
+                         'icons', 'simnibs', 'gui_icon.ico'),
             os.path.join(pack_dir, 'gui_icon.ico')
         )
         fn_script = os.path.join(pack_dir, 'installer.nsi')

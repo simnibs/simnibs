@@ -1132,7 +1132,7 @@ def _norm_opt_x0(
         norms = np.sqrt(x.dot(Qnorm).dot(x))
         # 2 Stoping criteria:
         # Energy should stop decreasing
-        # Norm should start increasing
+        # Norm should stop increasing
         norms_str = np.array2string(norms, formatter={'float_kind': lambda x: "%.2e" % x})
         logger.log(
             log_level,
@@ -1201,6 +1201,9 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
     minimize l^T x + 1/2 x^T Q x
     subject to  Cx <= d
                 Ax = b
+    
+    Numerically stable methods for quadratic programminga, Gill and Murray
+    https://link.springer.com/article/10.1007/BF01588976
     '''
     # get the active set:
     x = np.copy(x0)

@@ -1,15 +1,9 @@
-global-include *.md *.txt
+global-include *.md *.txt *.ini
 include simnibs/bash_modules/*
-include simnibs/matlab/*
-include simnibs/msh/*.m
-include simnibs/cython_code/*.pyx
+include simnibs/matlab_tools/*
+include simnibs/**/tests
 # We add all binaries here and remove the ones we don't need in the setup.py script
-include simnibs/cython_code/*.dll
-include simnibs/cython_code/*.dylib
-graft simnibs/ccd-files
-graft simnibs/bin
-graft simnibs/lib
-graft simnibs/include
+graft simnibs/external
 graft simnibs/resources
 graft simnibs/examples
-graft simnibs/tests
+graft simnibs/_internal_resources

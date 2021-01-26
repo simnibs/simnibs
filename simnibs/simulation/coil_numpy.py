@@ -6,9 +6,8 @@
 import numpy as np
 import nibabel as nib
 import os
-
 from .. import __version__
-from ..msh import mesh_io
+from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates
 
@@ -177,9 +176,10 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
     # Interpolates the values of the field in the given coordinates
     out = np.zeros((3, voxcoords.shape[1]))
     for dim in range(3):
-        out[dim] = interpolation.map_coordinates(nifti_image.get_data()[..., dim],
-                                                 voxcoords,
-                                                 order=1)
+        out[dim] = interpolation.map_coordinates(
+            np.asanyarray(nifti_image.dataobj)[..., dim],
+            voxcoords, order=1
+        )
 
     # Rotates the field
     out = np.dot(coil_matrix[:3, :3], out)

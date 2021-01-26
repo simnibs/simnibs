@@ -1,4 +1,3 @@
-#!/usr/bin/python2.7 -u
 # -*- coding: utf-8 -*-\
 '''
     Generalized Polynomial Chaos things for SimNIBS
@@ -29,8 +28,8 @@ import copy
 from collections import OrderedDict
 
 
-from .. import pygpc
-from ..msh import mesh_io
+from . import pygpc
+from ..mesh_tools import mesh_io
 from .sim_struct import SimuList
 from . import fem
 from . import coil_numpy as coil

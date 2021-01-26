@@ -1,8 +1,0 @@
-% Computational Anatomy Toolbox
-% Version  1278 CAT12.1 2018-02-14
-
-======================================================================
-Installation
-======================================================================
-
-First, unpack the zip-file and copy or link the cat12 folder to the spm12/toolbox directory. You can start the toolbox by choosing "cat12" in the "Toolbox" selector. Alternatively you can use the "Batch" button: select SPM | Tools | CAT12. 

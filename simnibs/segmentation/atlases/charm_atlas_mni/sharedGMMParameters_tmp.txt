@@ -1,0 +1,10 @@
+# The format is: mergedName numberOfComponents searchStrings
+
+
+Air_Background 1 Background Vein Optic-Nerve Air-Internal Bone-Cortical CorticalCSF Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Bone-Cancellous Optic-Nerve Eyes Spinal-Cord
+Global_WM 2 White Brain-Stem VentralDC Optic-Chiasm Thalamus 
+Global_GM 1 Cortex Caudate Hippocampus Amygdala Accumbens hypointensities Thalamus 
+Global_CSF_messy 1 Sub-CSF vessel choroid-plexus
+Global_CSF_clean 1 Ventricle Inf-Lat-Vent CorticalCSF
+Pallidum 1 Pallidum
+Putamen 1 Putamen

@@ -27,10 +27,7 @@ import numpy as np
 from .. import SIMNIBSDIR
 from ..simulation import sim_struct
 from ..simulation.cond import standard_cond
-from ..simulation import coil_numpy
 from ..simulation.run_simnibs import run_simnibs
-from ..msh import transformations
-from .. import msh
 from . import electrodeGUI
 from . import head_model_OGL
 from . import simulation_menu
@@ -95,7 +92,7 @@ class TDCS_GUI(QtWidgets.QMainWindow):
         self.setWindowTitle(f'SimNIBS {__version__}')
 
         try:
-            gui_icon = os.path.join(SIMNIBSDIR,'resources', 'gui_icon.gif')
+            gui_icon = os.path.join(SIMNIBSDIR,'_internal_resources', 'icons', 'simnibs', 'gui_icon.gif')
             self.setWindowIcon(QtGui.QIcon(gui_icon))
         except:
             pass
@@ -867,7 +864,7 @@ class ElcTable(QtWidgets.QWidget):
             tdcslist.electrode[i].substitute_positions_from_cap(eeg_cap)
             if tdcslist.electrode[i].pos_ydir is None or len(
                 tdcslist.electrode[i].pos_ydir) == 0:
-                while self.glHeadModel.getSurface('Scalp') is 'Loading':
+                while self.glHeadModel.getSurface('Scalp') == 'Loading':
                     time.sleep(1)
                 tdcslist.electrode[i].pos_ydir = _get_posy(
                     tdcslist.electrode[i].centre,
@@ -1112,7 +1109,7 @@ class CoilTable (QtWidgets.QWidget):
     def coilDialog(self):
         #get folder with ccd files
         try:
-            ccd_folder = os.path.join(SIMNIBSDIR, 'ccd-files')
+            ccd_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
         except:
             ccd_folder = './'
 

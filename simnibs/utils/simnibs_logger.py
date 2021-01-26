@@ -1,6 +1,7 @@
 import logging
 import sys
 import warnings
+import numpy as np
 
 global logger
 logger = logging.getLogger('simnibs')
@@ -39,3 +40,23 @@ def register_excepthook(logger):
 
 def unregister_excepthook():
     sys.excepthook = sys.__excepthook__
+
+
+def format_time(running_time):
+    """Format time in seconds as hours:minutes:seconds.
+    
+    PARAMETERS
+    ----------
+    running_time : float
+        Time in seconds.
+    
+    RETURNS
+    ----------
+    running_time : str
+        The time formatted as hours:minutes:seconds.
+    """
+    hrs = np.uint16(np.floor(running_time/(60.**2)))
+    mts = np.uint16(np.floor(running_time/60.-hrs*60))
+    sec = np.uint16(np.round(running_time-hrs*60.**2-mts*60.))
+
+    return "{:02d}:{:02d}:{:02d}".format(hrs,mts,sec)

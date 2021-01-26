@@ -3,7 +3,7 @@
 '''
 
 import sys
-from simnibs.msh.headreco import headmodel
+from simnibs.mesh_tools.headreco import headmodel
 
 
 def main():

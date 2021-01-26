@@ -1,8 +1,9 @@
 import sys
 import argparse
 
-from simnibs.msh.eeg_positions import *
-from simnibs.msh import surface, mesh_io
+from simnibs.mesh_tools.eeg_positions import *
+from simnibs.mesh_tools import surface, mesh_io
+from simnibs.utils.csv_reader import read_csv_positions
 from simnibs import __version__
 
 def parseArguments(argv):
@@ -34,7 +35,7 @@ def parseArguments(argv):
 
     if args.i is not None:
         print("Reading fiducials from .csv-file")
-        type_, coordinates, _, name, _, _ = transformations._read_csv(args.i)
+        type_, coordinates, _, name, _, _ = read_csv_positions(args.i)
 
         p = [i for i in range(len(type_)) if type_[i] == 'Fiducial']
 

@@ -26,7 +26,7 @@ import os
 import sys
 import argparse
 import nibabel
-from simnibs.msh.hmutils import check_volumes_meshed
+from simnibs.mesh_tools.hmutils import check_volumes_meshed
 from simnibs import file_finder
 import simnibs
 from simnibs import __version__

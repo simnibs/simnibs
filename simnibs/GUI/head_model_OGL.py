@@ -27,11 +27,9 @@ import math
 import sys
 import numpy
 
-from ..msh import mesh_io
 from ..simulation import coil_numpy as coil
-from ..msh import eeg_positions
-from ..msh import surface
-from ..msh import transformations
+from ..mesh_tools import eeg_positions, surface, mesh_io
+from ..utils.csv_reader import read_csv_positions
 
 global YELLOW
 global BLUE
@@ -618,7 +616,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
             self.update()
             return
         try:
-            type_, coordinates, _, name, _, _ = transformations._read_csv(cap_fn)
+            type_, coordinates, _, name, _, _ = read_csv_positions(cap_fn)
         except:
             raise IOError('Could not read EEG position file: ' + self.eeg_cap)
         self.eeg_cap = cap_fn
