@@ -174,7 +174,9 @@ def saveWarpField(template_name, warp_to_mni,
     # First write image -> template.
     # Get the node positions in image voxels
     modelSpecifications = parameters_and_inputs['modelSpecifications']
-    transform = parameters_and_inputs['transform']
+    transform_matrix = parameters_and_inputs['transform']
+    transform = gems.KvlTransform(requireNumpyArray(transform_matrix))
+
     deformation = parameters_and_inputs['deformation']
     deformationAtlasFileName = parameters_and_inputs['deformationAtlas']
     nodePositions = probabilisticAtlas.getMesh(
