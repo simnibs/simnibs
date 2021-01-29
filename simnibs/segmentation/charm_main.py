@@ -99,13 +99,14 @@ def _denoise_input_and_save(input_name, output_name):
 def _estimate_parameters(path_to_segment_folder,
                          template_coregistered_name,
                          path_to_atlas_folder, input_images,
-                         segment_settings, visualizer):
+                         segment_settings, gmm_parameters, visualizer):
 
     ds_targets = segment_settings['downsampling_targets']
     kernel_size = segment_settings['bias_kernel_width']
     bg_mask_sigma = segment_settings['background_mask_sigma']
     bg_mask_th = segment_settings['background_mask_threshold']
     stiffness = segment_settings['mesh_stiffness']
+    covariances = segment_settings['diagonal_covariances']
     user_optimization_options = {'multiResolutionSpecification':
                                  [{'atlasFileName':
                                    os.path.join(path_to_segment_folder,
@@ -125,7 +126,9 @@ def _estimate_parameters(path_to_segment_folder,
                                  'biasFieldSmoothingKernelSize': kernel_size,
                                  'brainMaskingSmoothingSigma': bg_mask_sigma,
                                  'brainMaskingThreshold': bg_mask_th,
-                                 'K': stiffness}
+                                 'K': stiffness,
+                                 'useDiagonalCovarianceMatrices': covariances,
+                                 'sharedGMMParameters': gmm_parameters}
 
     samseg_kwargs = dict(
         imageFileNames=input_images,
@@ -312,14 +315,14 @@ def _smoothfill(vols, unassign):
        works by smoothing the masks and binarizing
        the smoothed masks.
     """
-    vols = [v.astype(np.float) for v in vols]
+    vols = [v.astype(np.float32) for v in vols]
     unassign = unassign.copy()
     sum_of_unassigned = np.inf
     # for as long as the number of unassigned is changing
     while unassign.sum() < sum_of_unassigned:
         sum_of_unassigned = unassign.sum()
         for i, ivol in enumerate(vols):
-            cs = gaussian_filter(ivol.astype(np.float), 1)
+            cs = gaussian_filter(ivol.astype(np.float32), 1)
             cs[ivol == 1] = 1
             vols[i] = cs
 
@@ -565,6 +568,13 @@ def run(subject_dir=None, T1=None, T2=None,
                                 atlas_settings_names['atlas_level1'])
     atlas_level2 = os.path.join(atlas_path,
                                 atlas_settings_names['atlas_level2'])
+    if os.path.exists(sub_files.T2_reg):
+        gmm_parameters = os.path.join(atlas_path,
+                                      atlas_settings_names['gaussian_parameters_T2'])
+    else:
+        gmm_parameters = os.path.join(atlas_path,
+                                      atlas_settings_names['gaussian_parameters_T1'])
+
     neck_tissues = atlas_settings['neck_optimization']
     neck_tissues = neck_tissues['neck_tissues']
 
@@ -611,6 +621,7 @@ def run(subject_dir=None, T1=None, T2=None,
                 sub_files.template_coregistered,
                 atlas_path, input_images,
                 segment_settings,
+                gmm_parameters,
                 visualizer)
 
         # Okay now the parameters have been estimated, and we can segment the
