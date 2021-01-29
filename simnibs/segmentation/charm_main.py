@@ -570,10 +570,10 @@ def run(subject_dir=None, T1=None, T2=None,
                                 atlas_settings_names['atlas_level2'])
     if os.path.exists(sub_files.T2_reg):
         gmm_parameters = os.path.join(atlas_path,
-                                      atlas_settings_names['gaussian_parameters_T2'])
+                                      atlas_settings_names['gaussian_parameters_t2'])
     else:
         gmm_parameters = os.path.join(atlas_path,
-                                      atlas_settings_names['gaussian_parameters_T1'])
+                                      atlas_settings_names['gaussian_parameters_t1'])
 
     neck_tissues = atlas_settings['neck_optimization']
     neck_tissues = neck_tissues['neck_tissues']
