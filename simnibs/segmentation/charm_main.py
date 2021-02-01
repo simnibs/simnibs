@@ -107,6 +107,7 @@ def _estimate_parameters(path_to_segment_folder,
     bg_mask_th = segment_settings['background_mask_threshold']
     stiffness = segment_settings['mesh_stiffness']
     covariances = segment_settings['diagonal_covariances']
+    shared_gmm_parameters = samseg.io.kvlReadSharedGMMParameters(gmm_parameters)
     user_optimization_options = {'multiResolutionSpecification':
                                  [{'atlasFileName':
                                    os.path.join(path_to_segment_folder,
@@ -128,7 +129,7 @@ def _estimate_parameters(path_to_segment_folder,
                                  'brainMaskingThreshold': bg_mask_th,
                                  'K': stiffness,
                                  'useDiagonalCovarianceMatrices': covariances,
-                                 'sharedGMMParameters': gmm_parameters}
+                                 'sharedGMMParameters': shared_gmm_parameters}
 
     samseg_kwargs = dict(
         imageFileNames=input_images,
@@ -583,7 +584,12 @@ def run(subject_dir=None, T1=None, T2=None,
         # including break neck
         logger.info('Starting affine registration and neck correction.')
         init_atlas_settings = settings['initatlas']
-        _register_atlas_to_input_affine(T1, template_name,
+        if denoise_settings['denoise']:
+            inputT1 = sub_files.T1_denoised
+        else:
+            inputT1 = T1
+
+        _register_atlas_to_input_affine(inputT1, template_name,
                                         atlas_affine_name,
                                         atlas_level1,
                                         atlas_level2,
