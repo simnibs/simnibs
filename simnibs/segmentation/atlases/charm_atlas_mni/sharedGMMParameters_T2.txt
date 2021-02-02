@@ -7,7 +7,7 @@ Global_GM 2 Cortex Caudate Hippocampus Amygdala Accumbens hypointensities Thalam
 Global_CSF 1 Sub-CSF vessel choroid-plexus Inf-Lat-Vent Eyes
 Veins 1 Vein
 Soft_Tissues 1 Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Optic-Nerve Bone-Cancellous
-Bright_Stuff 1 Bone-Cancellous Other-Tissues CorticalCSF Ventricle 
+Bright_Stuff 1 Bone-Cancellous CorticalCSF Ventricle 
 Pallidum 1 Pallidum
 Putamen 1 Putamen
 Spine 1 Spinal-Cord

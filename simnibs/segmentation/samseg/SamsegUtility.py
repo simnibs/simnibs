@@ -140,11 +140,12 @@ def maskOutBackground(imageBuffers, atlasFileName, transform, brainMaskingSmooth
     # a non-background class mask; followed by a cropping to the area covered by the mesh (needed because
     # otherwise there will be voxels in the data with prior probability zero of belonging to any class)
     imageSize = imageBuffers.shape[0:3]
-    backgroundPrior = np.zeros(imageSize)
-    labelNumber = [0, 54, 44, 43, 51, 50, 42, 45, 52, 48]
-    for l in labelNumber:
-        backgroundPrior = backgroundPrior + mesh.rasterize_1a(imageSize, l)
-
+    ##backgroundPrior = np.zeros(imageSize)
+    ##labelNumber = [0, 54, 44, 46, 43, 51, 50, 42, 45, 49, 52, 48]
+    ##for l in labelNumber:
+    ##    backgroundPrior = backgroundPrior + np.float32(mesh.rasterize_1a(imageSize, l))
+    labelNumber = 0
+    backgroundPrior = mesh.rasterize_1a(imageSize, labelNumber)
     # Threshold background prior at 0.5 - this helps for atlases built from imperfect (i.e., automatic)
     # segmentations, whereas background areas don't have zero probability for non-background structures
     backGroundThreshold = 2 ** 8
