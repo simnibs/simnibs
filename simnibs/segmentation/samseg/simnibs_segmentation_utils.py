@@ -250,7 +250,7 @@ def saveWarpField(template_name, warp_to_mni,
     for c in range(coordmapImage.shape[-1]):
         uncroppedMap = np.zeros(image_buffer.shape,
                                 dtype=np.float32, order='F')
-        uncroppedMap[cropping] = coordmapImage[:, :, :, c]
+        uncroppedMap[cropping] = np.squeeze(coordmapImage[:, :, :, c])
         uncroppedWarp[:, :, :, c] = uncroppedMap
 
     # Write the warp

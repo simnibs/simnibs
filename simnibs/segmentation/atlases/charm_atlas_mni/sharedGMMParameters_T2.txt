@@ -4,11 +4,10 @@
 Air_Background 1 Background Air-Internal Bone-Cortical
 Global_WM 1 White Brain-Stem VentralDC Optic-Chiasm Thalamus Optic-Nerve
 Global_GM 2 Cortex Caudate Hippocampus Amygdala Accumbens hypointensities Thalamus 
-Global_CSF_messy 1 Sub-CSF vessel choroid-plexus 
-Global_CSF_clean 1 Ventricle Inf-Lat-Vent Eyes CorticalCSF
+Global_CSF 1 Sub-CSF vessel choroid-plexus Inf-Lat-Vent Eyes
 Veins 1 Vein
-Soft_Tissues 2 Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Optic-Nerve
-Bone_Spongy 1 Bone-Cancellous
+Soft_Tissues 1 Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Optic-Nerve Bone-Cancellous
+Bright_Stuff 1 Bone-Cancellous CorticalCSF Ventricle 
 Pallidum 1 Pallidum
 Putamen 1 Putamen
 Spine 1 Spinal-Cord
