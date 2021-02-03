@@ -43,9 +43,12 @@ Mesh.SurfaceFaces = 1; // Display faces of surface mesh?
 Mesh.VolumeEdges = 0; // Display edges of volume mesh?
 Mesh.Color.One = {230,230,230}; // Color 1 in color carousel
 Mesh.Color.Two = {129,129,129}; // Color 2 in color carousel
-Mesh.Color.Three = {104,163,255}; // Color 3 in color carousel
-Mesh.Color.Four = {255,239,179}; // Color 4 in color carousel
-Mesh.Color.Five = {255,166,133}; // Color 5 in color carousel
+Mesh.Color.Three = {104,163,255};
+Mesh.Color.Four = {255,239,179};
+Mesh.Color.Five = {255,166,133};
+Mesh.Color.Seven = {255,239,179};
+Mesh.Color.Eight = {255,138,57};
+Mesh.Color.Nine = {0,65,142};
 Mesh.LightTwoSide = 1;
 View.CenterGlyphs = 1; // Center glyphs (arrows, numbers, etc.)? (0=left, 1=centered, 2=right)
 View.GlyphLocation = 1; // Glyph (arrow, number, etc.) location (1=center of gravity, 2=node)

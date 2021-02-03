@@ -820,7 +820,7 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
         relationship between thickness and facet_distance. At small distance
         values, the meshing will follow the original image more strictly. This
         also means more elements. Default: 0.5
-    size_range: 2-element list (optional)
+    distance_range: 2-element list (optional)
         Minimum and maximum values for facet_distance, in mm. Default: (0.1, 3)
     optimize: bool (optional)
         Whether to run lloyd optimization on the mesh. Default: True
@@ -887,7 +887,7 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     # Reconctruct the mesh surfaces
     logger.info('Reconstructing Surfaces')
     mesh.fix_th_node_ordering()
-    mesh.reconstruct_surfaces()
+    mesh.reconstruct_surfaces(add_outer_as=1005)
     # Smooth the mesh
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')

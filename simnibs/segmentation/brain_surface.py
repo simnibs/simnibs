@@ -675,12 +675,6 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
                 surface again, which is instable and can result in selfintersections 
                 even when CAT_DeformSurf is run with the option listed in 1.
             (default = True)
-        fix_selfintersections : bool
-            remove self-intersections after surface expansion using meshfix.
-            CAT_FixTopology can cut away large parts of the initial surface.
-            CAT_DeformSurf tries to expand the surface again, which is 
-            instable and can result in selfintersections  
-            (default = True)
             
         --> these parameters will likely be skipped ...
         add_parahipp : float 
@@ -759,8 +753,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     
     logger.debug(f'iscerebellum: {iscerebellum}, vdist: {vdist}, voxsize_pbt: {voxsize_pbt}, voxsize_refineCS: {voxsize_refineCS}')
             
-    # crop
-    
+    # crop volume
     if debug:
         tmp = ndimage.uniform_filter(Ymfs, 3)
         Ymfs_filtered = nib.Nifti1Image(tmp, vox2mm)
@@ -776,8 +769,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         thres_magic = 1.5
     else:
         thres_magic = 1.2
-    thres_magic = 1.2
-    
+    thres_magic = 1.2     
     mask = ndimage.uniform_filter(Ymfs, 3) > thres_magic
     
     Ymfs, vox2mm_cropped, _ = crop_vol(Ymfs, vox2mm, mask, 4)
@@ -848,10 +840,6 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     # save to disk
     # this image will later be used by the CAT12 binaries (in refineCS)
     Yppt, vox2mm_Yppt, _  = resample_vol(Yppi, vox2mm_upsampled, voxsize_refineCS, order=1, mode='nearest')
-    # #AT!!!
-    # #print('for testing')
-    # #offset=0.04
-    # #Yppt=(Yppt-offset)/(1.0-offset)
     Yppt[np.isnan(Yppt)]=1
     Yppt[Yppt > 1] = 1
     Yppt[Yppt<0]=0
