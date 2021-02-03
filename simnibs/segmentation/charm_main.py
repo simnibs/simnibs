@@ -567,8 +567,13 @@ def run(subject_dir=None, T1=None, T2=None,
                                      atlas_settings_names['affine_atlas'])
     atlas_level1 = os.path.join(atlas_path,
                                 atlas_settings_names['atlas_level1'])
-    atlas_level2 = os.path.join(atlas_path,
-                                atlas_settings_names['atlas_level2'])
+
+    if samseg_settings['hires']:
+        atlas_level2 = os.path.join(atlas_path,
+                                    atlas_settings_names['atlas_level2_hires'])
+    else:
+        atlas_level2 = os.path.join(atlas_path,
+                                    atlas_settings_names['atlas_level2'])
     if os.path.exists(sub_files.T2_reg):
         gmm_parameters = os.path.join(atlas_path,
                                       atlas_settings_names['gaussian_parameters_t2'])
