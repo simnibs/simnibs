@@ -2430,8 +2430,8 @@ class Msh:
 
         return string
 
-    def reconstruct_surfaces(self, tags=None):
-        ''' Reconstruct the mhes surfaces for each label/connected component individually
+    def reconstruct_surfaces(self, tags=None, add_outer_as=None):
+        ''' Reconstruct the mesh surfaces for each label/connected component individually
         This function acts in-place, and will keep any surfaces already present in the
         mesh
 
@@ -2440,6 +2440,9 @@ class Msh:
         tags: list of ints or None (optional)
             List of tags where we should reconstruct the surface off. Defaut: all volume tags in the
             mesh
+        add_outer_as: int (optional)
+            add outer boundary to mesh using given index. NOTE: This boundary
+            will replace any other boundary with the same index (default: None)
 
         Note
         ------
@@ -2448,19 +2451,29 @@ class Msh:
         '''
         unique_tags = np.unique(self.elm.tag1[self.elm.elm_type == 4])
         if len(unique_tags) == 0:
-            raise InvalidMeshError('Could not find and tetraheda in mesh')
+            raise InvalidMeshError('Could not find any tetraheda in mesh')
         if tags is not None:
             unique_tags = unique_tags[np.in1d(unique_tags, tags)]
-        if len(unique_tags) == 0:
+            
+        if add_outer_as is not None:
+            if add_outer_as > 1000:
+                add_outer_as -= 1000
+            unique_tags = np.setdiff1d(unique_tags, add_outer_as)
+        elif len(unique_tags) == 0:
             raise ValueError('Could not find given tags in mesh')
+            
         tr_to_add = []
         for t in unique_tags:
             elm_in_tag = (self.elm.tag1 == t) * (self.elm.elm_type == 4)
             tr_to_add.append(self.elm.get_outside_faces(elm_in_tag))
-
-
+    
+        if add_outer_as is not None:
+            tr_to_add.append(self.elm.get_outside_faces())
+            unique_tags = np.append(unique_tags, add_outer_as)
+        
         for tr, tag in zip(tr_to_add, unique_tags):
             self.elm.add_triangles(tr, 1000+tag)
+
         self.fix_tr_node_ordering()
 
     def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
