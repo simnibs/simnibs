@@ -1878,7 +1878,7 @@ def make_volume_mesh(subject_id,input_files,out_dir, keep_air):
     
     msh = os.path.join(out_dir, subject_id+".msh")
     geo = os.path.join(out_dir, subject_id+".geo")
-    make_vol_mesh = '"{0}" -3 -bin -o "{1}" "{2}"'.format(gmsh, msh, geo)
+    make_vol_mesh = '"{0}" -3 -bin -format msh2 -o "{1}" "{2}"'.format(gmsh, msh, geo)
     
     # first try Frontal meshing
     # zero is exit code for succes
