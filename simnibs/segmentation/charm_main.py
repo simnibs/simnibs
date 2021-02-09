@@ -49,6 +49,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
     thetas_rad = [theta * np.pi/180 for theta in thetas]
     neck_search_bounds = init_atlas_settings['neck_search_bounds']
     ds_factor = init_atlas_settings['dowsampling_factor_affine']
+
     affine = samseg.AffineWholeHead(T1, affine_mesh_collection_name,
                                     template_file_name)
 
@@ -67,7 +68,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
     affine.saveResults(T1, template_file_name, save_path,
                        template_coregistered_name, image_to_image_transform,
                        world_to_world_transform)
-
+    
     logger.info('Template registration summary.')
     logger.info('Number of Iterations: %d, Cost: %f\n' %
                 (optimization_summary['numberOfIterations'],
