@@ -2134,7 +2134,7 @@ class Msh:
         if directions.ndim == 1:
             directions = directions[None, :]
         if not (points.shape[1] == 3 and directions.shape[1] == 3):
-            raise ValueError('near and far poins should be arrays of size (N, 3)')
+            raise ValueError('start points and directions should be arrays of size (N, 3)')
 
         idx, far = self._intersect_segment_getfarpoint(points, directions)
 
@@ -2154,7 +2154,7 @@ class Msh:
             intercpt_pos = []
 
         return indices, intercpt_pos
-
+    
 
     def _intersect_segment_getfarpoint(self, points, directions):
         """
@@ -2226,6 +2226,33 @@ class Msh:
         return np.where(has_far)[0], far
 
 
+    def pts_inside_surface(self, pts):
+        """
+        Test which points are inside the surface.
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+        pts: (Nx3) np.ndarray
+    
+        Returns
+        -------
+        idx_inside: 1d np.ndarray
+        Indices of points inside the surface
+    
+        NOTE: This function works but would benefit from improvements!
+        """
+        directions = np.zeros_like(pts)
+        directions[:,2] = 1    
+        idx_inside, _ = self.intersect_ray(pts, directions)
+        
+        if len(idx_inside):
+            return np.unique(idx_inside[:,0])
+        else:
+            return []
+    
+    
     def view(self,
              visible_tags=None,
              visible_fields=[]):
@@ -2475,6 +2502,64 @@ class Msh:
             self.elm.add_triangles(tr, 1000+tag)
 
         self.fix_tr_node_ordering()
+
+
+    def remove_triangle_twins(self, hierarchy=None):
+        """
+        Fix triangle twins created by reconstruct_surfaces.
+        
+        The triangle that has the tag with the lower hierarchy level will
+        be deleted from each twin pair.
+
+        Parameters
+        ----------
+        hierarchy: list of ints or None (optional)
+            List of triangle tags that determines which triangle will be kept
+            for twin pairs.
+            Default: (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+            Skin (1005) has the highest priority, WM (1001) comes next, ...
+        
+        Returns
+        -------
+            simnibs.msh.Msh
+                Mesh without triangle twins
+                
+        Note
+        ----
+        Will not fix any element_data that might be associated with this mesh
+        """
+        if hierarchy is None:
+            hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+            
+        # generate hash for all triangles, get their tags
+        idx_tr = np.where(self.elm.elm_type == 2)[0]
+        hash_tr = _hash_rows(self.elm.node_number_list[idx_tr,:3])
+        tag_tr = self.elm.tag1[idx_tr]
+        
+        # add any tags not listed in the hierarchy to its end
+        hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag_tr),hierarchy) )
+
+        # loop over hierarchy and mark overlapping triangles with lower hierarchy
+        idx_done = np.zeros(hash_tr.shape, dtype=bool)
+        idx_keep = np.zeros(hash_tr.shape, dtype=bool)
+        for i in hierarchy:          
+            test_tri = (tag_tr == i) & np.logical_not(idx_done)
+            idx_done[test_tri] = True
+            idx_keep[test_tri] = True
+    
+            other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
+            idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
+            idx_done[other_tri[idx_tricopies]] = True
+    
+        if np.sum(idx_done) != idx_done.shape[0]:
+            warnings.warn('Final mesh might contain overlapping triangles')
+        if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
+            warnings.warn('Final mesh might contain overlapping triangles')           
+    
+        # delete overlapping triangles
+        idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
+        return self.crop_mesh(elements=idx_keep)
+
 
     def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
         ''' In-place Smoothes the mesh surfaces using Taubin smoothing
