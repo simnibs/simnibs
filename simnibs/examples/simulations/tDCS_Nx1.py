@@ -334,7 +334,7 @@ S.pathfem = 'tdcs_Nx1' # output directory for the simulation
 #S.map_to_surf = True # map to subject's middle gray matter surface (optional)
 
 tdcs_list = S.add_tdcslist()
-tdcs_list.currents = 0.001  # Current flow through center channel (mA)
+tdcs_list.currents = 0.001  # Current flow through center channel (A)
 
 # define the center electrode
 center = tdcs_list.add_electrode()

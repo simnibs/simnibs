@@ -427,7 +427,7 @@ class TMSoptimize():
         m.write(fn_out)
         v = m.view(
             visible_tags=self.tissues,
-            visible_fields=['normE']
+            visible_fields=['magnE']
         )
         v.View[-1].CustomMax = 1
         v.View[-1].CustomMin = 0
@@ -482,9 +482,9 @@ class TMSoptimize():
         fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
         if os.path.isfile(fn_hdf5):
             os.remove(fn_hdf5)
-        dataset = 'tms_optimization/E_norm'
+        dataset = 'tms_optimization/E_magn'
         volumes = self.mesh.elements_volumes_and_areas()[target_region]
-        # Define postporcessing to calculate average field norm
+        # Define postporcessing to calculate average field magnitude
         if self.target_direction is None:
             direction = None
         else:
@@ -1262,12 +1262,12 @@ class TDCSoptimize():
         weight_fields = [t.as_field('avoid_{0}'.format(i+1)) for i, t in
                          enumerate(self.avoid)]
         e_field = self.field(currents)
-        e_norm_field = e_field.norm()
+        e_magn_field = e_field.norm()
         m = copy.deepcopy(self.mesh)
         if self.lf_type == 'node':
-            m.nodedata = [e_norm_field, e_field] + target_fields + weight_fields
+            m.nodedata = [e_magn_field, e_field] + target_fields + weight_fields
         elif self.lf_type == 'element':
-            m.elmdata = [e_norm_field, e_field] + target_fields + weight_fields
+            m.elmdata = [e_magn_field, e_field] + target_fields + weight_fields
         return m
 
 
@@ -1398,7 +1398,7 @@ class TDCSoptimize():
         s += '----------------------------\n'
         s += 'Peak Value (99.9 percentile): {0:.2f} ({1})\n'.format(
             field.get_percentiles(99.9)[0], self.field_units)
-        s += 'Mean field norm: {0:.2e} ({1})\n'.format(
+        s += 'Mean field magnitude: {0:.2e} ({1})\n'.format(
             field.mean_field_norm(), self.field_units)
         if np.any(self.mesh.elm.elm_type==4):
             v_units = 'mm3'
@@ -1421,7 +1421,7 @@ class TDCSoptimize():
 
         for i, a in enumerate(self.avoid):
             s += 'Avoid {0}\n'.format(i + 1)
-            s += '    Mean field norm in region: {0:.2e} ({1})\n'.format(
+            s += '    Mean field magnitude in region: {0:.2e} ({1})\n'.format(
                 a.mean_field_norm_in_region(field), self.field_units)
 
         return s
@@ -1436,8 +1436,8 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimied for each mesh point, the string
-        'normal' or None (for norm optimization), Default: 'normal'
+        List of Electric field directions to be optimized for each mesh point, the string
+        'normal' or None (for magnitude optimization), Default: 'normal'
     intensity: float (optional)
         Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
@@ -1450,7 +1450,7 @@ class TDCStarget:
         Tissues included in the target. Either a list of integer with tissue tags or None
         for all tissues. Default: None
 
-    THE ONES BELOW SHOULD NOT BE FILED BY THE USERS IN NORMAL CIRCUNTANCES:
+    THE ONES BELOW SHOULD NOT BE FILLED BY THE USERS IN NORMAL CIRCUNTANCES:
     mesh: simnibs.msh.mesh_io.Msh (optional)
         Mesh where the target is defined. Set by the TDCSoptimize methods
     lf_type: 'node' or 'element'
@@ -1488,7 +1488,7 @@ class TDCStarget:
             )
         if value is None and self.max_angle is not None:
             raise ValueError(
-                "Can't constrain angle in norm optimizations"
+                "Can't constrain angle in magnitude optimizations"
             )
         self._directions = value
 
@@ -1896,12 +1896,12 @@ class TDCSavoid:
 
 
     def mean_field_norm_in_region(self, field):
-        ''' Calculates the mean field norm in the region defined by the avoid structure
+        ''' Calculates the mean field magnitude in the region defined by the avoid structure
 
         Parameters
         -----------
         field: ElementData or NodeData
-            Field for which we calculate the mean norm
+            Field for which we calculate the mean magnitude
         '''
         assert self.mesh is not None, 'Please set a mesh'
         assert self.lf_type is not None, 'Please set a lf_type'
@@ -2323,7 +2323,7 @@ class TDCSDistributedOptimize():
             Mesh file
         ''' 
         e_field = self.field(currents)
-        e_norm_field = e_field.norm()
+        e_magn_field = e_field.norm()
         normals = self.normal_directions()
         e_normal_field = np.sum(e_field[:]*normals, axis=1)
         target_map, W = self._target_distribution()
@@ -2337,7 +2337,7 @@ class TDCSDistributedOptimize():
             add_field = m.add_element_field
 
         add_field(e_field, e_field.field_name)
-        add_field(e_norm_field, e_norm_field.field_name)
+        add_field(e_magn_field, e_magn_field.field_name)
         add_field(e_normal_field, 'normal' + e_field.field_name)
         add_field(target_map, 'target_map')
         add_field(erni, 'ERNI')

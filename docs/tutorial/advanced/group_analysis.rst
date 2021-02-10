@@ -29,7 +29,7 @@ We want to obtain the mean and standard deviation of the normal component of the
 
 .. figure:: ../../images/tutorial_normal.png
 
-   Norm (top) and Norma (bottom) of the electric field, from `Antonenko et al. 2019 <https://doi.org/10.1016/j.brs.2019.03.072>`_
+   Magnitude (aka Vector Norm) (top) and Normal (bottom) of the electric field, from `Antonenko et al. 2019 <https://doi.org/10.1016/j.brs.2019.03.072>`_
 
 \
 

@@ -21,7 +21,7 @@ Usage example
 
 \
 
-3. This will create the *ernie_TDCS_1_E.nii.gz*, *ernie_TDCS_1_J.nii.gz*, *ernie_TDCS_1_normE.nii.gz*, and *ernie_TDCS_1_normJ.nii.gz* files.
+3. This will create the *ernie_TDCS_1_E.nii.gz*, *ernie_TDCS_1_J.nii.gz*, *ernie_TDCS_1_magnE.nii.gz*, and *ernie_TDCS_1_magnJ.nii.gz* files.
 4. The files are in the same space as the *../m2m_ernie/T1fs_conform.nii.gz* file
 
 Further notes

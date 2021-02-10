@@ -2696,9 +2696,9 @@ def _substitute_el(pos, eeg_cap):
 
 def _field_preferences(postprocess):
     if 'e' in postprocess:
-        return ['normE']
+        return ['magnE']
     elif 'j' in postprocess:
-        return ['normJ']
+        return ['magnJ']
     elif 'E' in postprocess:
         return ['E']
     elif 'J' in postprocess:

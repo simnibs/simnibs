@@ -167,7 +167,7 @@ By using multiple targets, SimNIBS will try to hit each target with its respecti
 
 Electric Field Strength
 ~~~~~~~~~~~~~~~~~~~~~~~
-For using electric field strength (norm) rather than an specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a `novel optimization method <https://doi.org/10.1101/2020.05.27.118422>`_.
+For using electric field strength (magnitude) rather than an specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a `novel optimization method <https://doi.org/10.1101/2020.05.27.118422>`_.
  
 * *Python*
 
@@ -206,7 +206,7 @@ You can also add regions where the electric field should be more penalized than 
 \
 
 
-.. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **normE** in gmsh, and selecting **avoid_1**.
+.. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **magnE** in gmsh, and selecting **avoid_1**.
 
 References
 ------------

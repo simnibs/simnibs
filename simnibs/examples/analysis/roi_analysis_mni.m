@@ -32,7 +32,7 @@ elm_vols = mesh_get_tetrahedron_sizes(gray_matter);
 
 %% Get field and calculate the mean
 % Get the field of interest
-field_name = 'normE';
+field_name = 'magnE';
 field_idx = get_field_idx(gray_matter, field_name, 'elements');
 field = gray_matter.element_data{field_idx}.tetdata;
 

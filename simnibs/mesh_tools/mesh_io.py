@@ -2405,9 +2405,9 @@ class Msh:
 
         units = []
         for f in fields:
-            if f in ['E', 'normE', 'D', 'g']:
+            if f in ['E', 'magnE', 'D', 'g']:
                 units.append(' V/m')
-            elif f in ['J', 'normJ']:
+            elif f in ['J', 'magnJ']:
                 units.append(' A/m²')
             elif f == 'v':
                 units.append(' V')
@@ -2447,7 +2447,7 @@ class Msh:
         string = ''
         string += 'Field Percentiles\n'
         string += '-----------------\n'
-        string += 'Top percentiles of the field (or field norm for vector fields)\n'
+        string += 'Top percentiles of the field (or field magnitude for vector fields)\n'
         string += format_table(percentiles_table)
         string += '\n'
         string += 'Field Focality\n'
@@ -2917,9 +2917,9 @@ class Data(object):
 
     def mean_field_norm(self):
         ''' Calculates V*w/sum(w)
-        Where V is the norm of the field, and w is the volume or area of the mesh where
+        Where V is the magnitude of the field, and w is the volume or area of the mesh where
         the field is defined. This can be used as a focality metric. It should give out
-        small values when the field is focal and
+        small values when the field is focal.
 
         Returns
         ----------
@@ -2937,7 +2937,7 @@ class Data(object):
         return np.sum(norm * weights) / np.sum(weights)
 
     def get_percentiles(self, percentile=[99.9], roi=None):
-        ''' Get percentiles of field (or field norm, if a vector field)
+        ''' Get percentiles of field (or field magnitude, if a vector field)
 
         Parameters
         ------------
@@ -2975,7 +2975,7 @@ class Data(object):
 
     def get_focality(self, cuttofs=[50, 70], peak_percentile=99.9):
         ''' Caluclates field focality as the area/volume of the mesh experiencing a field
-        norm of above (cut_off% of the field peak). peak_percentile gives what is the
+        magnitude of above (cut_off% of the field peak). peak_percentile gives what is the
         field peak
 
         Parameters
@@ -3024,9 +3024,9 @@ class Data(object):
             Name of field units or automatically determine from name
         '''
         if units is None:
-            if self.field_name in ['E', 'normE', 'D', 'g']:
+            if self.field_name in ['E', 'magnE', 'D', 'g']:
                 units = 'V/m'
-            elif self.field_name in ['J', 'normJ']:
+            elif self.field_name in ['J', 'magnJ']:
                 units = 'A/m²'
             elif self.field_name == 'v':
                 units = 'V'
@@ -3648,12 +3648,12 @@ class ElementData(Data):
         return flux
 
     def norm(self, ord=2):
-        ''' Calculate the norm of the field
+        ''' Calculate the norm (magnitude) of the field
 
         Parameters
         ------------
         ord: float
-            Order of norm. Default: 2 (euclidian norm)
+            Order of norm. Default: 2 (euclidian norm, i.e. magnitude)
 
         Returns
         -----------
@@ -3662,11 +3662,11 @@ class ElementData(Data):
         '''
         if len(self.value.shape) == 1:
             ed = ElementData(np.abs(self.value),
-                             name='norm' + self.field_name,
+                             name='magn' + self.field_name,
                              mesh=self.mesh)
         else:
             ed = ElementData(np.linalg.norm(self.value, axis=1, ord=ord),
-                             name='norm' + self.field_name,
+                             name='magn' + self.field_name,
                              mesh=self.mesh)
         return ed
 
@@ -4101,12 +4101,12 @@ class NodeData(Data):
         return nd
     
     def norm(self, ord=2):
-        ''' Calculate the norm of the field
+        ''' Calculate the norm (magnitude) of the field
 
         Parameters
         ------------
         ord: float 
-            Order of norm. Default: 2 (euclidian norm)
+            Order of norm. Default: 2 (euclidian norm, i.e. magnitude)
 
         Returns
         ---------
@@ -4115,11 +4115,11 @@ class NodeData(Data):
         '''
         if len(self.value.shape) == 1:
             nd = NodeData(np.abs(self.value),
-                          name='norm' + self.field_name,
+                          name='magn' + self.field_name,
                           mesh=self.mesh)
         else:
             nd = NodeData(np.linalg.norm(self.value, axis=1, ord=ord),
-                          name='norm' + self.field_name,
+                          name='magn' + self.field_name,
                           mesh=self.mesh)
         return nd
 

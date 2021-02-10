@@ -81,7 +81,7 @@ end
 % get scaleLimits if needed
 if isempty(scaleLimits)
     if size(data,2)>1
-        disp('vector data: Using norm to get scales');
+        disp('vector data: Using magnitude to get scales');
         dataHlp=sqrt(sum(data.^2,2));
     else
         dataHlp=data;
