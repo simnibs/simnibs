@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Setting up and Running Simulations &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <title>Setting up and Running Simulations &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -161,7 +160,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <p></p>
 <ol class="arabic simple" start="6">
 <li><p>Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.</p></li>
-<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the norm of the primary electric field.</p></li>
+<li><p>When using a <em>.nii.gz</em> coil file, click on <em>Show dA/dt field</em> to see the magnitude of the primary electric field.</p></li>
 </ol>
 <img alt="../_images/tutorial_dadt.png" class="align-center" src="../_images/tutorial_dadt.png" />
 <p></p>
@@ -198,7 +197,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>norm E</strong>:</dt><dd><p>Norm (or strength) of the electric field. Units: V/m</p>
+<dt><strong>magn E</strong>:</dt><dd><p>Magnitude (or strength) of the electric field. Units: V/m</p>
 </dd>
 </dl>
 </li>
@@ -208,7 +207,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>norm J</strong>:</dt><dd><p>Norm of the current density. Units: A/m²</p>
+<dt><strong>magn J</strong>:</dt><dd><p>Magnitude of the current density. Units: A/m²</p>
 </dd>
 </dl>
 </li>
@@ -226,7 +225,7 @@ Units: S/m</p>
 </li>
 </ul>
 <blockquote>
-<div><p>Select <strong>vector E</strong> and <strong>norm E</strong>.</p>
+<div><p>Select <strong>vector E</strong> and <strong>magn E</strong>.</p>
 </div></blockquote>
 </div></blockquote>
 <ol class="arabic simple" id="tutorial-aditional-options" start="3">
@@ -405,10 +404,10 @@ selected.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

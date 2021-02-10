@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TDCS Optimization &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <title>TDCS Optimization &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -420,7 +419,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </div>
 <div class="section" id="electric-field-strength">
 <h3>Electric Field Strength<a class="headerlink" href="#electric-field-strength" title="Permalink to this headline">¶</a></h3>
-<p>For using electric field strength (norm) rather than an specific direction, just set the <strong>directions</strong> attribute to <em>None</em> (Python) or <em>‘none’</em> (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">novel optimization method</a>.</p>
+<p>For using electric field strength (magnitude) rather than an specific direction, just set the <strong>directions</strong> attribute to <em>None</em> (Python) or <em>‘none’</em> (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">novel optimization method</a>.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Optimize controlling electric field strength</span>
@@ -547,7 +546,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>. You can visualize the position of the avoided region in the results by deselecting <strong>normE</strong> in gmsh, and selecting <strong>avoid_1</strong>.</p>
+<p>For more options and information on avoidance regions please see the <a class="reference internal" href="../documentation/opt_struct/tdcsavoid.html#tdcsavoid-doc"><span class="std std-ref">referece for the TDCSavoid structure</span></a>. You can visualize the position of the avoided region in the results by deselecting <strong>magnE</strong> in gmsh, and selecting <strong>avoid_1</strong>.</p>
 </div>
 </div>
 </div>
@@ -652,10 +651,10 @@ In this structure, we need to select the leadfield we will use for the optimizat
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -31,7 +31,7 @@ Alternatively, you can start Gmsh by double clicking in the :file:`ernie_TDCS_1_
 
 \
 
-  There, we see the gray matter surface with the **norm** of the electric field (**normE**) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel
+  There, we see the gray matter surface with the **magnitude** of the electric field (**magnE**) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel
 
  
 Selecting Where to Visualize

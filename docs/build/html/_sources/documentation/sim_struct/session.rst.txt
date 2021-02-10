@@ -57,8 +57,8 @@ Attributes
   * **Description**: Fields to be output. Any combination of
      
     * 'v' for voltage (in V)
-    * 'e'/'E' for electric field norm/vector (in V/m)
-    * 'j'/'J' for current density norm/vector (int A/m2).
+    * 'e'/'E' for electric field magnitude/vector (in V/m)
+    * 'j'/'J' for current density magnitude/vector (int A/m2).
 
   * **Default**: 'eE'
   * **Example**: *Python/Matlab*

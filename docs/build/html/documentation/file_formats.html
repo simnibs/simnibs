@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Formats in SimNIBS &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <title>File Formats in SimNIBS &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -73,7 +72,7 @@ But it can’t write files with elements other then first order triangles and te
 There are 2 types of fields used in SimNIBS:</p>
 <ul class="simple">
 <li><p><em>NodeData</em> is defined at each nodes. By default, only the electric potential “v” is stored as <em>NodeData</em></p></li>
-<li><p><em>ElementData</em> is defined for each element. This is the format of choice for the electric field, current density and their respective norms.</p></li>
+<li><p><em>ElementData</em> is defined for each element. This is the format of choice for the electric field, current density and their respective magnitudes.</p></li>
 </ul>
 <p>The choice of format for each field is due to how the Finite Element Method works.
 After the FEM calculations, we obtain values of “v” at each node.
@@ -221,10 +220,10 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

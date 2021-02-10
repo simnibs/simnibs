@@ -21,6 +21,7 @@
       ~Elements.find_neighbouring_nodes
       ~Elements.get_faces
       ~Elements.get_outside_faces
+      ~Elements.get_surface_outline
       ~Elements.node_elm_adjacency
       ~Elements.nodes_with_tag
    

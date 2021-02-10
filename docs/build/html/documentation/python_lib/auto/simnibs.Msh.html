@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>simnibs.Msh &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <title>simnibs.Msh &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -56,7 +55,7 @@
 <dt id="simnibs.Msh">
 <em class="property">class </em><code class="sig-prename descclassname">simnibs.</code><code class="sig-name descname">Msh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">elements</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
 <dd><p>class to handle the meshes.
-Gatters Nodes, Elements and Data</p>
+Gathers Nodes, Elements and Data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -194,70 +193,91 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code>()</p></td>
 <td><p>Fixels labels of surfaces</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_orientation</span></code>()</p></td>
+<td><p>Ensure that the majority of triangle normals point outwards.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of tetrahedra in-place</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
 <td><p>Optimize the locations of the points by moving them towards the center of their patch.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of the triangles in-place</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gamma_metric</span></code>()</p></td>
+<td><p>calculates the (normalized) Gamma quality metric for tetrahedra</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code>()</p></td>
 <td><p>Calculates the Gaussian curvature at each node</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intercept_ray</span></code>(near, far)</p></td>
-<td><p>Finds the triangle (if any) that intercepts a line segment</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, …])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_ray</span></code>(points, directions)</p></td>
+<td><p>Finds the triangle (if any) that intersects with the rays starting</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_segment</span></code>(near, far)</p></td>
+<td><p>Finds the triangle (if any) that intersects a line segment</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
 <td><p>Join the current mesh with another</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
 <td><p>Areas for all nodes in a surface</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([smooth])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([triangles, smooth])</p></td>
 <td><p>Normals for all nodes in a surface</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
 <td><p>Return the volume (volume mesh) if area (surface mesh) of all nodes Only works for ordered values of mesh and node indices</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
 <td><p>Opens the mesh in gmsh</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pts_inside_surface</span></code>(pts)</p></td>
+<td><p>Test which points are inside the surface.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
 <td><p>Reads mesh information from an hdf5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags])</p></td>
-<td><p>Reconstruct the mhes surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags, add_outer_as])</p></td>
+<td><p>Reconstruct the mesh surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code>([tags, elm_type, nodes, …])</p></td>
 <td><p>Removes the specified tags from the mesh Generates a new mesh, with the specified tags removed The nodes are also reordered</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_inside_volume</span></code>(points)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_triangle_twins</span></code>([hierarchy])</p></td>
+<td><p>Fix triangle twins created by reconstruct_surfaces.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">smooth_surfaces</span></code>(n_steps[, step_size, …])</p></td>
+<td><p>In-place Smoothes the mesh surfaces using Taubin smoothing</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">surface_EC</span></code>()</p></td>
+<td><p>return euler characteristic of surfaces</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">test_inside_volume</span></code>(points)</p></td>
 <td><p>Tests if points are iside the volume using the Möller–Trumbore intersection algorithm</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tetrahedra_quality</span></code>()</p></td>
 <td><p>calculates the quality measures of the tetrahedra</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_angles</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_angles</span></code>()</p></td>
 <td><p>Calculates minimum angle of the mesh triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code>([smooth])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle_normals</span></code>([smooth])</p></td>
 <td><p>Calculates the normals of triangles</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([visible_tags, visible_fields])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([visible_tags, visible_fields])</p></td>
 <td><p>Visualize mesh in Gmsh</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(out_fn)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(out_fn)</p></td>
 <td><p>Writes out the mesh as a “.msh” file</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path, compression])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path, compression])</p></td>
 <td><p>Writes a HDF5 file with mesh information</p></td>
 </tr>
 </tbody>
@@ -375,10 +395,10 @@ Overides nodes and elements</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
