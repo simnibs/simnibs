@@ -1,6 +1,6 @@
 '''
     This example wil go throgh simulations and calculate
-    the average of the electric field norm in MNI space
+    the average of the electric field magnitude in MNI space
 
     It is a follow-up to the "run_simulations" example
 '''
@@ -11,7 +11,7 @@ import nibabel as nib
 
 subjects = ['sub01', 'sub09', 'sub10', 'sub12', 'sub15']
 results_folder = os.path.join('bipolar', 'mni_volumes')
-field_name = 'normE'
+field_name = 'magnE'
 
 mni_image_suffix = f'_TDCS_1_scalar_MNI_{field_name}.nii.gz'
 

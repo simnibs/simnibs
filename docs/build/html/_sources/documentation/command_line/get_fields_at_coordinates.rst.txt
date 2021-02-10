@@ -23,7 +23,7 @@ Usage example
 
 \
 
-  This will output one file CSV for each field in the mesh, named for example *positions_E.csv*, *positions_normE.csv*, …
+  This will output one file CSV for each field in the mesh, named for example *positions_E.csv*, *positions_magnE.csv*, …
   These files contain the fields (or field vectors) at each sampling position.
 
 Further notes

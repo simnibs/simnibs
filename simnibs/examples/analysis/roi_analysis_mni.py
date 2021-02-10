@@ -41,9 +41,9 @@ gray_matter.view(visible_fields='roi').show()
 
 ## Get field and calculate the mean
 # get the field of interest
-field_name = 'normE'
+field_name = 'magnE'
 field = gray_matter.field[field_name][:]
 
 # Calculate the mean
-mean_normE = np.average(field[roi], weights=elm_vols[roi])
-print('mean ', field_name, ' in M1 ROI: ', mean_normE)
+mean_magnE = np.average(field[roi], weights=elm_vols[roi])
+print('mean ', field_name, ' in M1 ROI: ', mean_magnE)

@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>simnibs.NodeData &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <title>simnibs.NodeData &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -157,13 +156,13 @@
 <td><p>Calculates the flux of a vector field though the given nodes</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_data_grid</span></code>(mesh, data_grid, affine[, …])</p></td>
-<td><p>Defines a NodeData field form a mesh and gridded data</p></td>
+<td><p>Defines an NodeData field from a mesh and gridded data</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_focality</span></code>([cuttofs, peak_percentile])</p></td>
-<td><p>Caluclates field focality as the area/volume of the mesh experiencing a field norm of above (cut_off% of the field peak).</p></td>
+<td><p>Caluclates field focality as the area/volume of the mesh experiencing a field magnitude of above (cut_off% of the field peak).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_percentiles</span></code>([percentile, roi])</p></td>
-<td><p>Get percentiles of field (or field norm, if a vector field)</p></td>
+<td><p>Get percentiles of field (or field magnitude, if a vector field)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gradient</span></code>()</p></td>
 <td><p>Calculates the gradient of a field in the middle of the tetrahedra</p></td>
@@ -174,17 +173,17 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_grid</span></code>(n_voxels, affine, **kwargs)</p></td>
 <td><p>Interpolates the NodeData into a grid.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_surface</span></code>(surface[, out_fill, …])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_surface</span></code>(surface[, out_fill])</p></td>
 <td><p>Interpolates the field in the nodes of a given surface The interpolation occurs in the tetrahedra!</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_field_norm</span></code>()</p></td>
-<td><p>Calculates V*w/sum(w) Where V is the norm of the field, and w is the volume or area of the mesh where the field is defined.</p></td>
+<td><p>Calculates V*w/sum(w) Where V is the magnitude of the field, and w is the volume or area of the mesh where the field is defined.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_data2elm_data</span></code>()</p></td>
 <td><p>Transforms an ElementData field into a NodeData field the value in the element is the average of the value in the nodes</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm</span></code>([ord])</p></td>
-<td><p>Calculate the norm of the field</p></td>
+<td><p>Calculate the norm (magnitude) of the field</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">normal</span></code>([fill])</p></td>
 <td><p>Calculate the normal component of the field in the mesh surfaces</p></td>
@@ -340,10 +339,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

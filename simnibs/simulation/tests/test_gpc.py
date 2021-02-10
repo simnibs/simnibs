@@ -142,7 +142,7 @@ class TestgPC_Regression:
             mean_E = f['mesh_roi/elmdata/E_mean'][()]
             mean_E_expected = -np.array([5, 0, 0]) * 1e3
             assert np.allclose(mean_E, mean_E_expected)
-            mean_e = f['mesh_roi/elmdata/normE_mean'][()]
+            mean_e = f['mesh_roi/elmdata/magnE_mean'][()]
             assert np.allclose(mean_e, 5e3)
             # J is a bit more complicated
             mean_J = f['mesh_roi/elmdata/J_mean'][()]
@@ -158,15 +158,15 @@ class TestgPC_Regression:
 
             std_E = f['mesh_roi/elmdata/E_std'][()]
             assert np.allclose(std_E, np.array([np.sqrt(1e8 / 12), 0., 0.]))
-            assert 'normE_std' in dsets
+            assert 'magnE_std' in dsets
             assert 'J_std' in dsets
 
             assert 'E_sobol_3' in dsets
-            assert 'normE_sobol_3' in dsets
+            assert 'magnE_sobol_3' in dsets
             assert 'J_sobol_3' in dsets
 
             assert 'E_sensitivity_3' in dsets
-            assert 'normE_sensitivity_3' in dsets
+            assert 'magnE_sensitivity_3' in dsets
             assert 'J_sensitivity_3' in dsets
 
         os.remove(fn)

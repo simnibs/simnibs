@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Python Library Documentation &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <title>Python Library Documentation &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -84,7 +83,7 @@ modules used in SimNIBS.</p>
 <td><p>Writes a freesurfer .curv file</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.read_stl.html#simnibs.read_stl" title="simnibs.read_stl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_stl</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Reads mesh surface in a .stl file</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.write_geo_spheres.html#simnibs.write_geo_spheres" title="simnibs.write_geo_spheres"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_geo_spheres</span></code></a></p></td>
 <td><p>Writes a .geo file with spheres in specified positions</p></td>
@@ -135,10 +134,7 @@ modules used in SimNIBS.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.mni2subject_coords.html#simnibs.mni2subject_coords" title="simnibs.mni2subject_coords"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mni2subject_coords</span></code></a></p></td>
 <td><p>Warps a set of coordinates in MNI space to subject space</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.eeg_positions.html#simnibs.eeg_positions" title="simnibs.eeg_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eeg_positions</span></code></a></p></td>
-<td><p>Returns a directory with EEG electrode positions</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.subject_atlas.html#simnibs.subject_atlas" title="simnibs.subject_atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_atlas</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.subject_atlas.html#simnibs.subject_atlas" title="simnibs.subject_atlas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_atlas</span></code></a></p></td>
 <td><p>Loads a brain atlas based of the FreeSurfer fsaverage template</p></td>
 </tr>
 </tbody>
@@ -179,7 +175,7 @@ modules used in SimNIBS.</p>
 <td><p>Given a mesh and the electric potentials at the nodes, calculates the fields</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.tdcs.html#simnibs.simulation.tdcs" title="simnibs.simulation.tdcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tdcs</span></code></a></p></td>
-<td><p>Simulates a tDCS electric potentil</p></td>
+<td><p>Simulates a tDCS electric potential</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.tdcs_neumann.html#simnibs.simulation.tdcs_neumann" title="simnibs.simulation.tdcs_neumann"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tdcs_neumann</span></code></a></p></td>
 <td><p>Simulates a tDCS electric potential using Neumann boundary conditions on the electrodes</p></td>
@@ -188,7 +184,7 @@ modules used in SimNIBS.</p>
 <td><p>Simulates tDCS fields using Neumann boundary conditions and writes the output Electric fields to an HDF5 file</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="auto/simnibs.simulation.tms_dadt.html#simnibs.simulation.tms_dadt" title="simnibs.simulation.tms_dadt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tms_dadt</span></code></a></p></td>
-<td><p>Simulates a TMS electric potential field using a dAdt field</p></td>
+<td><p>Simulates a TMS electric potential from a dA/dt field</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="auto/simnibs.simulation.tms_coil.html#simnibs.simulation.tms_coil" title="simnibs.simulation.tms_coil"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation.tms_coil</span></code></a></p></td>
 <td><p>Simulates TMS fields using a coil + matsimnibs + dIdt definition</p></td>
@@ -299,10 +295,10 @@ modules used in SimNIBS.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

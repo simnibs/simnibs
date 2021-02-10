@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Group Analysis &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <title>Group Analysis &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -67,7 +66,7 @@
 We want to obtain the mean and standard deviation of the normal component of the electric field (that is, the incoming or outgoing electric field component) in the middle gray matter surface across all subjects.</p>
 <div class="figure align-default" id="id3">
 <img alt="../../_images/tutorial_normal1.png" src="../../_images/tutorial_normal1.png" />
-<p class="caption"><span class="caption-text">Norm (top) and Norma (bottom) of the electric field, from <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et al. 2019</a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-text">Magnitude (aka Vector Norm) (top) and Normal (bottom) of the electric field, from <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et al. 2019</a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
 </div>
 <p></p>
 </div>
@@ -144,8 +143,8 @@ We want to obtain the mean and standard deviation of the normal component of the
 
 <span class="c">% Start a SESSION</span>
 <span class="n">S</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
-<span class="n">S</span><span class="p">.</span><span class="n">map_to_fsavg</span> <span class="p">=</span> <span class="n">true</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">map_to_mni</span> <span class="p">=</span> <span class="n">true</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">map_to_fsavg</span> <span class="p">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">map_to_mni</span> <span class="p">=</span> <span class="nb">true</span><span class="p">;</span>
 <span class="n">S</span><span class="p">.</span><span class="n">fields</span> <span class="p">=</span> <span class="s">&#39;eEjJ&#39;</span><span class="p">;</span>
 
 <span class="c">% Set a TDCSLIST with the simulation set-up</span>
@@ -255,7 +254,7 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 <span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;E_normal&#39;</span><span class="p">;</span>
 
 <span class="n">fields</span> <span class="p">=</span> <span class="p">{};</span>
-<span class="n">for</span> <span class="s">i</span> <span class="s">=</span> <span class="s">1:length(subjects)</span>
+<span class="n">for</span> <span class="s">i</span> <span class="p">=</span> <span class="mi">1</span><span class="p">:</span><span class="nb">length</span><span class="p">(</span><span class="n">subjects</span><span class="p">)</span>
     <span class="n">sub</span> <span class="p">=</span> <span class="n">subjects</span><span class="p">{</span><span class="nb">i</span><span class="p">};</span>
     <span class="c">% load mesh with results transformed to fsaverage space</span>
     <span class="n">m</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="n">fullfile</span><span class="p">(</span><span class="n">pwd</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="n">results_folder</span><span class="p">,</span> <span class="p">[</span><span class="n">sub</span> <span class="n">fsavg_msh_name</span><span class="p">]));</span>
@@ -399,10 +398,10 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

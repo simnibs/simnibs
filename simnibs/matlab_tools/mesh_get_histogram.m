@@ -10,7 +10,7 @@ function varargout = mesh_get_histogram(m, varargin)
 %   Supported options:
 %   field_idx: identifier of a results field;
 %              can be either the name or the index of the
-%              element_data or node_data field (standard: 'normE', or the
+%              element_data or node_data field (standard: 'magnE', or the
 %              first in case only one data field is loaded)
 %   region_idx: uses the elements with the given region numbers
 %               (standard: 2 for gray matter tetrahedra or all triangles
@@ -34,14 +34,14 @@ function varargout = mesh_get_histogram(m, varargin)
 %    in a figure when they are not defined)
 %
 % Examples:
-%  mesh_get_histogram(m); % plot histogram for normE for gray matter
-%  [BinCenters BinData] =  mesh_get_histogram(m,'normJ',1); % return histogram data 
-%                                                           % for normJ in white matter
+%  mesh_get_histogram(m); % plot histogram for magnE for gray matter
+%  [BinCenters BinData] =  mesh_get_histogram(m,'magnJ',1); % return histogram data 
+%                                                           % for magnJ in white matter
 %         
 % A. Thielscher 07-Sep-2018
 
 % standard settings and behavior
-s.field_idx = 'normE';
+s.field_idx = 'magnE';
 s.region_idx = 2;
 s.relscale = false;
 s.scaleLimits = [];
@@ -77,7 +77,7 @@ end
 
 % get data, field name, scaleLimits (when they are empty) and element sizes
 [data, name, s.scaleLimits, elemsizes] = get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
-% scaling is from 0 to 99.9 percentile (normE, normJ)
+% scaling is from 0 to 99.9 percentile (magnE, magnJ)
 % or from .1 to 99.9 percentile (normal components)
 % scaling will be only updated when empty
 
@@ -118,9 +118,9 @@ else
     end
     
     % x axis labeling
-    if strcmpi(name,'normE')
+    if strcmpi(name,'magnE')
         xlabel('electric field strength in [V/m]');
-    elseif strcmpi(name,'normJ')
+    elseif strcmpi(name,'magnJ')
         xlabel('current density in [A/m²]');
     elseif strcmpi(name,'E.normal')
         xlabel('normal component of electric field in [V/m]');

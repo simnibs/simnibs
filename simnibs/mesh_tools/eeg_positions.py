@@ -251,7 +251,7 @@ def traceArch2(Begin_Point, End_Point, Mid_Point):
 # Finds Cz iteractively
 # Cz is defined as the mid-point of both curves Nz-Iz and LPA-RPA
 def findCz(eeg):
-    # first estimate: projection of the cetral point in the head surface, perpendicular to LPA-RPA and Cz-Iz lines
+    # first estimate: projection of the central point in the head surface, perpendicular to LPA-RPA and Cz-Iz lines
     central_point = (eeg.pos['LPA'] + eeg.pos['RPA'] + eeg.pos['Nz'] + eeg.pos['Iz']) * 0.25
     direction = numpy.cross(eeg.pos['LPA'] - eeg.pos['RPA'], eeg.pos['Iz'] - eeg.pos['Nz'])
     direction /= numpy.linalg.norm(direction)

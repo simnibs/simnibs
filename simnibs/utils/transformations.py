@@ -1376,7 +1376,7 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
 
 
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth=0.5, quantities=['norm', 'normal', 'tangent','angle'],
+                            depth=0.5, quantities=['magn', 'normal', 'tangent','angle'],
                             fields=None, open_in_gmsh=False):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
@@ -1394,7 +1394,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     depth: float (optional)
         The distance bewteen grey and white matter where the
         interpolation should be done. p = depth * wm + (1 - depth) * gm (default: .5)
-    quantities: list with the elements {norm, normal, tangent, angle}
+    quantities: list with the elements {magn, normal, tangent, angle}
         Quantites to be calculated from vector field
     fields: list of strings (optional)
         Fields to be transformed. Default: all fields
@@ -1407,13 +1407,13 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     if depth < 0. or depth > 1.:
         raise ValueError('Invalid depth value. Should be between 0 and 1')
 
-    if any([q not in ['norm', 'normal', 'tangent', 'angle'] for q in quantities]):
+    if any([q not in ['magn', 'normal', 'tangent', 'angle'] for q in quantities]):
         raise ValueError('Invalid quanty in {0}'.format(quantities))
 
     def calc_quantities(nd, quantities):
         d = dict.fromkeys(quantities)
         for q in quantities:
-            if q == 'norm':
+            if q == 'magn':
                 d[q] = nd.norm()
             elif q == 'normal':
                 d[q] = nd.normal()
@@ -1478,7 +1478,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                 # Interpolate to middle gm
                 data = data.as_nodedata()
                 interpolated = data.interpolate_to_surface(middle_surf[hemi])
-                # For vector quantities, calculate quantities (normal, norm, ...)
+                # For vector quantities, calculate quantities (normal, magn, ...)
                 if data.nr_comp == 3:
                     q = calc_quantities(interpolated, quantities)
                     for q_name, q_data in q.items():

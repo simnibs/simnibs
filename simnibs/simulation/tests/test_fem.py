@@ -107,8 +107,8 @@ class Testcalc_fields:
         assert np.allclose(m.field['J'].value, cond.value[:, None] * E.value * 1e3)
         assert np.allclose(m.field['g'].value, -E.value * 1e3)
         assert np.allclose(m.field['conductivity'].value, cond.value)
-        assert np.allclose(m.field['normE'].value, np.linalg.norm(E.value, axis=1) * 1e3)
-        assert np.allclose(m.field['normJ'].value,
+        assert np.allclose(m.field['magnE'].value, np.linalg.norm(E.value, axis=1) * 1e3)
+        assert np.allclose(m.field['magnJ'].value,
                            np.linalg.norm(cond.value[:, None] * E.value, axis=1) * 1e3)
 
     def test_calc_dadt(self, sphere3_msh):
@@ -136,8 +136,8 @@ class Testcalc_fields:
         assert np.allclose(m.field['E'].value, E.value)
         assert np.allclose(m.field['J'].value, cond.value[:, None] * E.value)
         assert np.allclose(m.field['conductivity'].value, cond.value)
-        assert np.allclose(m.field['normE'].value, np.linalg.norm(E.value, axis=1))
-        assert np.allclose(m.field['normJ'].value,
+        assert np.allclose(m.field['magnE'].value, np.linalg.norm(E.value, axis=1))
+        assert np.allclose(m.field['magnJ'].value,
                            np.linalg.norm(cond.value[:, None] * E.value, axis=1))
 
     def test_calc_tensor(self, sphere3_msh):

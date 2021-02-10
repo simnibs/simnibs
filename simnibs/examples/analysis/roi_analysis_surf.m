@@ -24,7 +24,7 @@ mesh_show_surface(surf, 'field_idx', region_name)
 nodes_areas = mesh_get_node_areas(surf);
 
 % Get the field of interest
-field_name = 'E_normal';
+field_name = 'E_magn';
 field_idx = get_field_idx(surf, field_name, 'node');
 field = surf.node_data{field_idx}.data;
 

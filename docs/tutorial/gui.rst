@@ -141,7 +141,7 @@ Setting up a TMS Simulation
 
 6. Additionally, you can also set the dI/dt (the current change ratio) and the coil-skin distance.
 
-7. When using a *.nii.gz* coil file, click on *Show dA/dt field* to see the norm of the primary electric field.
+7. When using a *.nii.gz* coil file, click on *Show dA/dt field* to see the magnitude of the primary electric field.
 
 .. image:: ../images/tutorial_dadt.png
    :align: center
@@ -174,12 +174,12 @@ Setting Simulation Options
       Electrical Potential (Voltage). Units: Volts
   * **vector E**:
       Electric field vector. Units: V/m
-  * **norm E**:
-      Norm (or strength) of the electric field. Units: V/m
+  * **magn E**:
+      Magnitude (or strength) of the electric field. Units: V/m
   * **vector J**:
       Current density vector. Units: A/m²
-  * **norm J**:
-      Norm of the current density. Units: A/m²
+  * **magn J**:
+      Magnitude of the current density. Units: A/m²
   * **Conductivities**:
       Conductivity field. For isotropic conductivities, this is a scalar.
       For anisotropic conductivities, this is the largest eigenvector of the conductivity tensor.
@@ -187,7 +187,7 @@ Setting Simulation Options
   * **dA/dt**:
       Primary field caused by the coil. TMS only. This is a vector field. Units: V/m
 
-   Select **vector E** and **norm E**.
+   Select **vector E** and **magn E**.
 
 .. _tutorial_aditional_options:
 

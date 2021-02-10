@@ -66,7 +66,7 @@ MATLAB
 
 This will first generate a grid of positions and start simulating. After it is done
 simulating, SimNIBS will return with the position that causes the largest electric field
-norm at the target.
+magnitude at the target.
 
 The optimization will create the output file :file:`ernie_TMS_optimize_Magstim_70mm_Fig8_nii.msh`: Gmsh `.msh` file with the  optimized field and coil position
 

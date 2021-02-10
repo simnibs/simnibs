@@ -238,14 +238,14 @@ def test_recipcodemag():
     observation_dir = np.random.rand(100, 3)
     observation_dir /= np.linalg.norm(observation_dir, axis=1)[:, None]
 
-    normE_brute_force = np.zeros(len(observation_pos))
+    magnE_brute_force = np.zeros(len(observation_pos))
     for c in currents: 
         Hprim = calculate_Hprim(
             current_elm_positions, c,
             observation_pos
         )
-        normE_brute_force += np.sum(Hprim*observation_dir, axis=1)**2
-    normE_brute_force = np.sqrt(normE_brute_force)
+        magnE_brute_force += np.sum(Hprim*observation_dir, axis=1)**2
+    magnE_brute_force = np.sqrt(magnE_brute_force)
 
     # create MATSIMNIBS matrices
     coil_matrices = np.zeros((4, 4, len(observation_pos)))
@@ -260,12 +260,12 @@ def test_recipcodemag():
 
     coil_dipole_pos = np.array([[0, 0, 0]])
     coil_dipole_mom = np.array([[1, 0, 0]])
-    normE_recip = ADMlib.recipcodemag(
+    magnE_recip = ADMlib.recipcodemag(
         current_elm_positions.T,
         currents[0, ...].T, currents[1, ...].T, currents[2, ...].T,
         coil_dipole_pos.T, coil_dipole_mom.T, coil_matrices
     )
-    assert np.allclose(normE_brute_force, normE_recip, rtol=1e-3)
+    assert np.allclose(magnE_brute_force, magnE_recip, rtol=1e-3)
 
 
 def test_ADMmag():
@@ -292,7 +292,7 @@ def test_ADMmag():
     coil_matrices = np.repeat(np.eye(4)[..., None], len(observation_pos), axis=2)
     coil_matrices[:3, 3, :] = observation_pos.T
 
-    normE_adm = ADMlib.ADMmag(
+    magnE_adm = ADMlib.ADMmag(
         current_elm_positions.T,
         currents[0, ...].T, currents[1, ...].T, currents[2, ...].T,
         coil_dipole_pos.T, coil_dipole_weights.T, coil_matrices,
@@ -306,14 +306,14 @@ def test_ADMmag():
             rotation_matrix = np.array([np.cross(cd, z), cd, z]).T
             coil_dipole_pos_moved = rotation_matrix.dot(coil_dipole_pos.T).T + p
             coil_dipole_weights_rot = rotation_matrix.dot(coil_dipole_weights.T).T
-            normE = 0
+            magnE = 0
             for c in currents:
                 H = calculate_Hprim(
                     current_elm_positions, c,
                     coil_dipole_pos_moved
                 )
-                normE += np.sum(H*coil_dipole_weights_rot)**2
-            normE = np.sqrt(normE)
-            assert np.allclose(normE_adm[j, i], normE)
+                magnE += np.sum(H*coil_dipole_weights_rot)**2
+            magnE = np.sqrt(magnE)
+            assert np.allclose(magnE_adm[j, i], magnE)
 
 

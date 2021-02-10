@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analyzing Simulations &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <title>Analyzing Simulations &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -179,12 +178,12 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c1">## Get field and calculate the mean</span>
 <span class="c1"># get the field of interest</span>
-<span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;normE&#39;</span>
+<span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;magnE&#39;</span>
 <span class="n">field</span> <span class="o">=</span> <span class="n">gray_matter</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">field_name</span><span class="p">][:]</span>
 
 <span class="c1"># Calculate the mean</span>
-<span class="n">mean_normE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">elm_vols</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in M1 ROI: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
+<span class="n">mean_magnE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">elm_vols</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in M1 ROI: &#39;</span><span class="p">,</span> <span class="n">mean_magnE</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -197,8 +196,8 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 <span class="c">%% Load Simulation Result</span>
 
 <span class="c">% Read the simulation result</span>
-<span class="n">head_mesh</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="c">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="c">...</span>
+<span class="n">head_mesh</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
 <span class="p">);</span>
 
 <span class="c">% Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
@@ -224,7 +223,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c">%% Get field and calculate the mean</span>
 <span class="c">% Get the field of interest</span>
-<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;normE&#39;</span><span class="p">;</span>
+<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;magnE&#39;</span><span class="p">;</span>
 <span class="n">field_idx</span> <span class="p">=</span> <span class="n">get_field_idx</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s">&#39;elements&#39;</span><span class="p">);</span>
 <span class="n">field</span> <span class="p">=</span> <span class="n">gray_matter</span><span class="p">.</span><span class="n">element_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">tetdata</span><span class="p">;</span>
 
@@ -341,10 +340,10 @@ This is not possible for <a class="reference internal" href="../documentation/co
 <span class="c1"># calculate the node areas, we will use those later for averaging</span>
 <span class="n">node_areas</span> <span class="o">=</span> <span class="n">gm_surf</span><span class="o">.</span><span class="n">nodes_areas</span><span class="p">()</span>
 
-<span class="c1"># finally, calculate the mean of the field</span>
-<span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;E_normal&#39;</span>
-<span class="n">mean_normE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">gm_surf</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">field_name</span><span class="p">][</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">node_areas</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in &#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">mean_normE</span><span class="p">)</span>
+<span class="c1"># finally, calculate the mean of the field strength</span>
+<span class="n">field_name</span> <span class="o">=</span> <span class="s1">&#39;E_magn&#39;</span>
+<span class="n">mean_magnE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">gm_surf</span><span class="o">.</span><span class="n">field</span><span class="p">[</span><span class="n">field_name</span><span class="p">][</span><span class="n">roi</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">node_areas</span><span class="p">[</span><span class="n">roi</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in &#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">mean_magnE</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -356,9 +355,9 @@ This is not possible for <a class="reference internal" href="../documentation/co
 
 
 <span class="c">% Read the simulation results interpolated to the middle gray matter surface</span>
-<span class="n">surf</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="c">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="c">...</span>
-             <span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="c">...</span>
+<span class="n">surf</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
+             <span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="k">...</span>
 <span class="p">);</span>
 
 <span class="c">% Load the atlas and define the brain region of interest</span>
@@ -376,7 +375,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 <span class="n">nodes_areas</span> <span class="p">=</span> <span class="n">mesh_get_node_areas</span><span class="p">(</span><span class="n">surf</span><span class="p">);</span>
 
 <span class="c">% Get the field of interest</span>
-<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;E_normal&#39;</span><span class="p">;</span>
+<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;E_magn&#39;</span><span class="p">;</span>
 <span class="n">field_idx</span> <span class="p">=</span> <span class="n">get_field_idx</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s">&#39;node&#39;</span><span class="p">);</span>
 <span class="n">field</span> <span class="p">=</span> <span class="n">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">data</span><span class="p">;</span>
 
@@ -483,10 +482,10 @@ This is not possible for <a class="reference internal" href="../documentation/co
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

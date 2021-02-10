@@ -29,21 +29,28 @@
       ~Msh.find_shared_nodes
       ~Msh.find_tetrahedron_with_points
       ~Msh.fix_surface_labels
+      ~Msh.fix_surface_orientation
       ~Msh.fix_th_node_ordering
       ~Msh.fix_thin_tetrahedra
       ~Msh.fix_tr_node_ordering
+      ~Msh.gamma_metric
       ~Msh.gaussian_curvature
-      ~Msh.intercept_ray
       ~Msh.interp_matrix
+      ~Msh.intersect_ray
+      ~Msh.intersect_segment
       ~Msh.join_mesh
       ~Msh.nodes_areas
       ~Msh.nodes_normals
       ~Msh.nodes_volumes_or_areas
       ~Msh.open_in_gmsh
       ~Msh.prepare_surface_tags
+      ~Msh.pts_inside_surface
       ~Msh.read_hdf5
       ~Msh.reconstruct_surfaces
       ~Msh.remove_from_mesh
+      ~Msh.remove_triangle_twins
+      ~Msh.smooth_surfaces
+      ~Msh.surface_EC
       ~Msh.test_inside_volume
       ~Msh.tetrahedra_quality
       ~Msh.triangle_angles

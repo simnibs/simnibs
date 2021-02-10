@@ -27,7 +27,7 @@ gm_surf.view(visible_fields='ROI').show()
 # calculate the node areas, we will use those later for averaging
 node_areas = gm_surf.nodes_areas()
 
-# finally, calculate the mean of the field
-field_name = 'E_normal'
-mean_normE = np.average(gm_surf.field[field_name][roi], weights=node_areas[roi])
-print('mean ', field_name, ' in ', region_name, ': ', mean_normE)
+# finally, calculate the mean of the field strength
+field_name = 'E_magn'
+mean_magnE = np.average(gm_surf.field[field_name][roi], weights=node_areas[roi])
+print('mean ', field_name, ' in ', region_name, ': ', mean_magnE)

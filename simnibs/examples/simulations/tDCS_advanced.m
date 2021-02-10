@@ -9,9 +9,9 @@ S.subpath = 'm2m_ernie';
 S.pathfem = 'tdcs_simulation';
 
 % Output Options:
-%    Fields: e: Electric field norm
+%    Fields: e: Electric field magnitude
 %            E: Electric field vector
-%            j: Current density norm
+%            j: Current density magnitude
 %            J: Current density vector
 S.fields = 'eEjJ';
 % Transformations:

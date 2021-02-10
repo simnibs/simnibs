@@ -21,7 +21,7 @@ Usage example
 
 \
 
-  This will create the :file:`ernie_TDCS_1_MNI_E.nii.gz`, :file:`ernie_TDCS_1_MNI_J.nii.gz`, :file:`ernie_TDCS_1_MNI_normE.nii.gz`, and :file:`ernie_TDCS_1_MNI_normJ.nii.gz` files, with the fields transformed to MNI space.
+  This will create the :file:`ernie_TDCS_1_MNI_E.nii.gz`, :file:`ernie_TDCS_1_MNI_J.nii.gz`, :file:`ernie_TDCS_1_MNI_magnE.nii.gz`, and :file:`ernie_TDCS_1_MNI_magnJ.nii.gz` files, with the fields transformed to MNI space.
 
 Further notes
 ---------------

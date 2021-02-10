@@ -113,9 +113,9 @@ Simulation Options Window
 
   * **v**: Electric Potential (V)
   * **vector E**: Electric field vector (V/m)
-  * **norm E**: Norm of the electric field (V/m)
+  * **magn E**: Magnitude of the electric field (V/m)
   * **vector J**: Current density Vector (A/m2)
-  * **norm J**: Norm of the current density  (A/m2)
+  * **magn J**: Magnitude of the current density  (A/m2)
   * **conductivities**: Scalar field with conductivity files, if conductivity is of the  type “scalar”, else the principal eigenvector of the conductivity tensor (S/m)
   * **dA/dt**: Peak temporal change of the vector potential. This output is only available for TMS simulations (V/m)
 

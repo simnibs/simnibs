@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TDCSLEADFIELD &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <title>TDCSLEADFIELD &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -108,10 +107,16 @@ density <em>‘J’</em>.</p></li>
 <li><p><strong>Note</strong>: Only needs to be set by the user if not using the standard <em>.csv</em> cap file.</p></li>
 </ul>
 </li>
-<li><p><strong>map_to_surf</strong>: <em>bool, optional</em></p>
+<li><p><strong>interpolate</strong>: <em>‘middle gm’, None/[], or list/cell array of strings (Python/MATLAB), optional. Default: ‘middle gm’</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Whether to map the fields to the middle gray matter surface.</p></li>
-<li><p><strong>Default</strong>: True</p></li>
+<li><p><strong>Description</strong>: Where to interpolate fields</p>
+<ul>
+<li><p><em>‘middle_gm’</em>: Interpolate fields in the middle Gray Matter surface obtained from the head segmentation. Default value</p></li>
+<li><p><em>None/[]</em>: Do not interpolate the field anywhere, just store it in the region defined by the <strong>tissues</strong> attribute.</p></li>
+<li><p><em>list/cell array of strings</em>: List of mesh files in <em>‘.stl’</em>, <em>‘.gii’</em>, <em>‘.off’</em> or <em>‘.msh’</em> format. The files will be loaded and the fields will be interpolated at the mesh nodes.</p></li>
+</ul>
+</li>
+<li><p><strong>Default</strong>: <em>‘middle_gm’</em></p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -123,7 +128,7 @@ density <em>‘J’</em>.</p></li>
 <ul>
 <li><p><strong>tissues</strong>: <em>list (python) or array (MATLAB), optional</em></p>
 <ul class="simple">
-<li><p><strong>Description</strong>: Tissues numbers of where to record the electric field, in addition to <em>map_to_surf</em>. Mixing surfaces and volumes is not allowed.</p></li>
+<li><p><strong>Description</strong>: Tissues numbers of where to record the electric field, in addition to <strong>interpolate</strong>. Mixing surfaces and volumes is not allowed.</p></li>
 <li><p><strong>Default</strong>: [1006] (i.e. eye surfaces)</p></li>
 <li><p><strong>Example</strong>: <em>Python</em></p></li>
 </ul>
@@ -132,6 +137,12 @@ density <em>‘J’</em>.</p></li>
 </pre></div>
 </div>
 <p></p>
+</li>
+<li><p><strong>interpolation_tissue</strong>:  <em>list (python) or array (MATLAB), optional</em></p>
+<ul class="simple">
+<li><p><strong>Description</strong>: Tissues numbers to use as a base for the interpolation procedure. Nodes in the interpolated surfaces outside of the region defined by <strong>interpolation_tissue</strong> will be extrapolated using nearest neighbor. Ignored if <strong>interpolation</strong> is set to <em>None/[]</em>. Must correspond to a volume.</p></li>
+<li><p><strong>Default</strong>: [2] (i.e. gray matter surface)</p></li>
+</ul>
 </li>
 <li><p><strong>electrode</strong>: <em>ELECTRODE structure, list/array of ELECTRODE structures, or None/’none’ optional</em></p>
 <ul class="simple">
@@ -278,10 +289,10 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

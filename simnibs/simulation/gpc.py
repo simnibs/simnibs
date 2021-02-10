@@ -35,7 +35,7 @@ from . import fem
 from . import coil_numpy as coil
 from ..utils.simnibs_logger import logger
 
-FIELD_NAME = {'v': 'v', 'E': 'E', 'e': 'normE', 'J': 'J', 'j': 'normJ'}
+FIELD_NAME = {'v': 'v', 'E': 'E', 'e': 'magnE', 'J': 'J', 'j': 'magnJ'}
 
 def write_data_hdf5(data, data_name, hdf5_fn, path='data/', compression='gzip'):
     ''' Saves a field in an hdf5 file
@@ -170,8 +170,8 @@ class gPC_regression(pygpc.RegularizedRegression):
         -----------------------
         postprocessing_type: str
             A combination of 'v'(potential), 'E'(electric field vector),
-            'e'(electric field norm), 'J'(current density vector) and
-            'j'(current density norm) eg: 'eEJ'
+            'e'(electric field magnitude), 'J'(current density vector) and
+            'j'(current density magnitude) eg: 'eEJ'
 
         order_sobol_max: int (Optional)
             Maximum number of components for Sobol coefficients. Default: 1

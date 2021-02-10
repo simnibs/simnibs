@@ -34,7 +34,7 @@ function varargout = mesh_get_simulation_result
 
 
 % get name of mesh or of results mapped on surface
-[fname,pname] = uigetfile('*.msh;lh.*.norm;lh.*.normal;lh.*.tangent;lh.*.angle', ...
+[fname,pname] = uigetfile('*.msh;lh.*.magn;lh.*.normal;lh.*.tangent;lh.*.angle', ...
                           'Select .msh file or results in subject_overlays or fsavg_overlays');
 if isequal(fname,0) || isequal(pname,0); return; end
 
