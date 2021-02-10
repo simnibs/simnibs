@@ -36,7 +36,7 @@ def _thickness_3d_binary_image(image):
     ''' Calculate thicness in a 3D binary image '''
     thickness = np.zeros_like(image, dtype=np.float32)
     thickness[image > 0] = np.inf
-    # Calculate thickess per-slice along 3 different cuts
+    # Calculate thickness per-slice along 3 different cuts
     # and take the smallest one
     for i in range(3):
         thickness_ax = np.zeros(

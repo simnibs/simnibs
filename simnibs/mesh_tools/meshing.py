@@ -442,7 +442,7 @@ def despike(msh, adj_threshold=2,
             relabel_tol=1e-6,
             max_iter=20,
             log_level=logging.DEBUG):
-    ''' Goes through the mesh removing spiles
+    ''' Goes through the mesh removing spikes
 
     A spike is defined as a tetrahedron in a volume "a"
     which has at least one node in the other volume "b" and

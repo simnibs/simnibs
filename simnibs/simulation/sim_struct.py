@@ -1567,7 +1567,7 @@ class TDCSLIST(SimuList):
         self.electrode.append(electrode)
         return electrode
 
-    def _place_electrodes(self):
+    def _place_electrodes(self, fix_th=True):
         """ Add the defined electrodes to a mesh
 
         Parameters:
@@ -1578,14 +1578,16 @@ class TDCSLIST(SimuList):
         w_elec = copy.deepcopy(self.mesh)
         w_elec.fix_tr_node_ordering()
         electrode_surfaces = [None for i in range(len(self.electrode))]
-        mesh_surface = self.mesh.elm.get_outside_faces()
         for i, el in enumerate(self.electrode):
             logger.info('Placing Electrode:\n{0}'.format(str(el)))
-            w_elec, n = el.add_electrode_to_mesh(w_elec, mesh_surface=mesh_surface)
+            w_elec, n = el.add_electrode_to_mesh(w_elec)
             electrode_surfaces[i] = n
 
         w_elec.fix_th_node_ordering()
         w_elec.fix_tr_node_ordering()
+        if fix_th:
+            logger.info('Improving mesh quality')
+            w_elec.fix_thin_tetrahedra()
 
         gc.collect()
         return w_elec, electrode_surfaces
@@ -1842,7 +1844,7 @@ class ELECTRODE(object):
         if self.pos_ydir and isinstance(self.pos_ydir[0], str):
             self.pos_ydir = ''.join(self.pos_ydir)
 
-    def add_electrode_to_mesh(self, mesh, mesh_surface=None):
+    def add_electrode_to_mesh(self, mesh):
         """ Uses information in the structure in order to place an electrode
 
         Parameters:
@@ -1858,11 +1860,8 @@ class ELECTRODE(object):
             Tag of electrode surface
         """
         self._prepare()
-        if mesh_surface is None:
-            mesh_suface = mesh.elm.get_outside_faces()
         m, t = electrode_placement.put_electrode_on_mesh(
-            self, mesh, 100 + self.channelnr, mesh_surface
-        )
+            self, mesh, 100 + self.channelnr)
         return m, t
 
     def add_hole(self, hole=None):
