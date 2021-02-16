@@ -6,7 +6,8 @@ Global_WM 1 White Brain-Stem VentralDC Optic-Chiasm Thalamus Optic-Nerve
 Global_GM 2 Cortex Caudate Hippocampus Amygdala Accumbens hypointensities Thalamus 
 Global_CSF 1 Sub-CSF vessel choroid-plexus Inf-Lat-Vent Eyes CorticalCSF Ventricle
 Veins 1 Vein
-Soft_Tissues 2 Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Optic-Nerve Bone-Cancellous
+Soft_Tissues 2 Other-Tissues Rectus-Muscles Mucosa Skin Artery undetermined Optic-Nerve
+Bone_mixed 1 Bone-Cortical Bone-Cancellous
 Pallidum 1 Pallidum
 Putamen 1 Putamen
-Spine 1 Spinal-Cord
+Spine 1 Spinal-Cord CorticalCSF
