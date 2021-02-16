@@ -50,12 +50,12 @@ No. SimNIBS uses coordinates defined in the subject space. But we provide many t
 
 
 
-Electric Field Norm? Normal?
-----------------------------
+Electric Field Magnitude? Normal?
+---------------------------------
 
 The Electric Field is a `vector field <https://www.khanacademy.org/math/multivariable-calculus/thinking-about-multivariable-function/ways-to-represent-multivariable-functions/a/vector-fields>`_, meaning it has a direction everywhere in space.
 
-Vectors are hard to visualize (even though you can do it in SimNIBS!), so we often use scalars to represent information abut the vectors. The one we use the most is the **norm**, which is the *length* or *strength* of the vector, irrespective of direction.
+Vectors are hard to visualize (even though you can do it in SimNIBS!), so we often use scalars to represent information about the vectors. The one we use the most is the **magnitude** (short: *magn*), which is the *length* or *strength* of the vector, irrespective of direction (Note: up to version 3, the *magnitude* was called *norm*, as mathematicllay it is the vector norm).
 
 Another useful quantity is the **normal** with respect to a given surface, normally the middle cortical surface. The **normal** gives us the field that is incoming or outgoing from the surface. 
 
@@ -83,9 +83,9 @@ This means we have the units:
 
    * - Quantity
      - Units
-   * - Electric field (and respective norm, normal, ...)
+   * - Electric field (and respective magnitude, normal, ...)
      - V/m
-   * - Current Density (and respective norm, normal, ...)
+   * - Current Density (and respective magnitude, normal, ...)
      - A/m²
    * - Conductivities
      - S/m

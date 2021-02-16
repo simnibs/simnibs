@@ -72,7 +72,7 @@ class SimulationOptionsDialog (QtWidgets.QDialog):
         layout.addWidget(E_check)
 
         e_check = QtWidgets.QCheckBox()
-        e_check.setText('norm E')
+        e_check.setText('magn E')
         if 'e' in self.session.fields: e_check.toggle()
         e_check.toggled.connect(self.changeFields)
         layout.addWidget(e_check)
@@ -84,7 +84,7 @@ class SimulationOptionsDialog (QtWidgets.QDialog):
         layout.addWidget(J_check)
 
         j_check = QtWidgets.QCheckBox()
-        j_check.setText('norm J')
+        j_check.setText('magn J')
         if 'j' in self.session.fields: j_check.toggle()
         j_check.toggled.connect(self.changeFields)
         layout.addWidget(j_check)

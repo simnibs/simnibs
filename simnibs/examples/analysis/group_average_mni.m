@@ -1,12 +1,12 @@
 %
 %  This example wil go throgh simulations and calculate
-%  the average a of the electric field norm in MNI space
+%  the average of the electric field magnitude in MNI space
 %
 % It is a follow-up to the "run_simulations" example
 
 subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
 results_folder = fullfile('bipolar', 'mni_volumes');
-field_name = 'normE';
+field_name = 'magnE';
 
 mni_image_suffix = ['_TDCS_1_scalar_MNI_' field_name '.nii.gz'];
 

@@ -4,7 +4,7 @@
  *
  * Sphinx JavaScript utilities for the full-text search.
  *
- * :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2021 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -59,10 +59,10 @@ var Search = {
   _pulse_status : -1,
 
   htmlToText : function(htmlString) {
-      var htmlElement = document.createElement('span');
-      htmlElement.innerHTML = htmlString;
-      $(htmlElement).find('.headerlink').remove();
-      docContent = $(htmlElement).find('[role=main]')[0];
+      var virtualDocument = document.implementation.createHTMLDocument('virtual');
+      var htmlElement = $(htmlString, virtualDocument);
+      htmlElement.find('.headerlink').remove();
+      docContent = htmlElement.find('[role=main]')[0];
       if(docContent === undefined) {
           console.warn("Content block not found. Sphinx search tries to obtain it " +
                        "via '[role=main]'. Could you check your theme or template.");
@@ -327,12 +327,13 @@ var Search = {
     for (var prefix in objects) {
       for (var name in objects[prefix]) {
         var fullname = (prefix ? prefix + '.' : '') + name;
-        if (fullname.toLowerCase().indexOf(object) > -1) {
+        var fullnameLower = fullname.toLowerCase()
+        if (fullnameLower.indexOf(object) > -1) {
           var score = 0;
-          var parts = fullname.split('.');
+          var parts = fullnameLower.split('.');
           // check for different match types: exact matches of full name or
           // "last name" (i.e. last dotted part)
-          if (fullname == object || parts[parts.length - 1] == object) {
+          if (fullnameLower == object || parts[parts.length - 1] == object) {
             score += Scorer.objNameMatch;
           // matches in last name
           } else if (parts[parts.length - 1].indexOf(object) > -1) {

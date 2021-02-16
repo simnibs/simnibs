@@ -860,7 +860,7 @@ class TestConstrainedEigenvalue:
 
 
 class TestTESNormContrained:
-    def test_norm_constrained_tes_opt(self):
+    def test_magn_constrained_tes_opt(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -871,10 +871,10 @@ class TestTESNormContrained:
 
         max_total_current = 0.2
         max_el_current = 0.1
-        target_norm = 0.1
+        target_magn = 0.1
 
         x = optimization_methods._norm_constrained_tes_opt(
-            Qnorm, target_norm, Q,
+            Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
 
@@ -886,22 +886,22 @@ class TestTESNormContrained:
                 leadfield, 0, d, np.ones(10)
             )
             x_ = optimization_methods._linear_constrained_tes_opt(
-                l[None, :], np.atleast_1d(target_norm),
+                l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
                 max_total_current, log_level=0
             )
             norm_ = np.sqrt(x_.dot(Qnorm).dot(x_))
             energy_ = x_.dot(Q).dot(x_)
-            if np.isclose(norm_, target_norm, rtol=1e-1) and energy_ < energy_bf:
+            if np.isclose(norm_, target_magn, rtol=1e-1) and energy_ < energy_bf:
                 energy_bf = energy_
 
         assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x)), target_magn, rtol=1e-1)
         assert x.dot(Q).dot(x) < energy_bf
 
-    def test_norm_constrained_tes_opt_infeasible(self):
+    def test_magn_constrained_tes_opt_infeasible(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -912,10 +912,10 @@ class TestTESNormContrained:
 
         max_total_current = 0.2
         max_el_current = 0.1
-        target_norm = 20
+        target_magn = 20
 
         x = optimization_methods._norm_constrained_tes_opt(
-            Qnorm[None, ...], target_norm, Q,
+            Qnorm[None, ...], target_magn, Q,
             max_el_current, max_total_current
         )
 
@@ -927,7 +927,7 @@ class TestTESNormContrained:
                 leadfield, 0, d, np.ones(10)
             )
             x_ = optimization_methods._linear_constrained_tes_opt(
-                l[None, :], np.atleast_1d(target_norm),
+                l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
                 max_total_current, log_level=0
             )
@@ -941,7 +941,7 @@ class TestTESNormContrained:
         assert np.sqrt(x.dot(Qnorm).dot(x)) > norm_bf*0.999
 
 
-    def test_norm_constrained_tes_opt_multi(self):
+    def test_magn_constrained_tes_opt_multi(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -954,20 +954,20 @@ class TestTESNormContrained:
 
         max_total_current = 0.2
         max_el_current = 0.1
-        target_norm = np.array([0.1, 0.1])
+        target_magn = np.array([0.1, 0.1])
 
         x = optimization_methods._norm_constrained_tes_opt(
-            Qnorm, target_norm, Q,
+            Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
 
         assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.allclose(np.sqrt(x.dot(Qnorm).dot(x)), target_norm, rtol=1e-1)
+        assert np.allclose(np.sqrt(x.dot(Qnorm).dot(x)), target_magn, rtol=1e-1)
 
 
-    def test_norm_constrained_tes_opt_multi_infeasible(self):
+    def test_magn_constrained_tes_opt_multi_infeasible(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -980,19 +980,19 @@ class TestTESNormContrained:
 
         max_total_current = 0.2
         max_el_current = 0.1
-        target_norm = np.array([0.1, 0.2])
+        target_magn = np.array([0.1, 0.2])
 
         x = optimization_methods._norm_constrained_tes_opt(
-            Qnorm, target_norm, Q,
+            Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
 
         assert np.all(np.abs(x) <= max_el_current*1.001)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current*1.001)
         assert np.isclose(np.sum(x), 0)
-        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_norm[0], rtol=1e-1)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_magn[0], rtol=1e-1)
 
-    def test_add_norm_constaint(self):
+    def test_add_magn_constraint(self):
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         volumes = np.array([1, 2, 2, 2, 2])
@@ -1006,29 +1006,29 @@ class TestTESNormContrained:
         assert np.allclose(avg_sq, currents.T @ tes_problem.Qnorm @ currents)
         assert np.allclose(0.2, tes_problem.target_means)
 
-    def test_solve_norm_constraint(self):
+    def test_solve_magn_constraint(self):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
 
         max_total_current = 0.2
         max_el_current = 0.1
-        target_norm = np.array([0.1, 0.1])
+        target_magn = np.array([0.1, 0.1])
 
         tes_opt = optimization_methods.TESNormConstrained(
             leadfield, max_total_current, max_el_current
         )
-        tes_opt.add_norm_constraint(0, target_norm[0])
-        tes_opt.add_norm_constraint(1, target_norm[1])
+        tes_opt.add_norm_constraint(0, target_magn[0])
+        tes_opt.add_norm_constraint(1, target_magn[1])
         x = tes_opt.solve()
 
         assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
-        assert np.allclose(np.sqrt(x.dot(tes_opt.Qnorm).dot(x)), target_norm, rtol=1e-1)
+        assert np.allclose(np.sqrt(x.dot(tes_opt.Qnorm).dot(x)), target_magn, rtol=1e-1)
 
 
-class TestNormElecConstrained:
+class TestMagnElecConstrained:
     @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
     def test_solve_feasible(self, init_startegy):
         np.random.seed(1)

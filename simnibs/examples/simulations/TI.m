@@ -57,17 +57,17 @@ maxTI=get_maxTI( m1.element_data{get_field_idx(m1,'E','elem')}, ...
 % amplitude of the TI envelope for visualization
 mout = m1;
 mout.element_data={};
-mout.element_data{1} = m1.element_data{get_field_idx(m1,'normE','elem')};
-mout.element_data{1}.name = 'normE_1';
-mout.element_data{2} = m2.element_data{get_field_idx(m2,'normE','elem')};
-mout.element_data{2}.name = 'normE_2';
+mout.element_data{1} = m1.element_data{get_field_idx(m1,'magnE','elem')};
+mout.element_data{1}.name = 'magnE_1';
+mout.element_data{2} = m2.element_data{get_field_idx(m2,'magnE','elem')};
+mout.element_data{2}.name = 'magnE_2';
 mout.element_data{3} = maxTI;
 
 % save for visualization in gmsh
 mesh_save_gmsh4(mout, fullfile(S.pathfem, 'ernie_TIenvelope.msh'));
 
 % show field strengths and amplitude of TI envelope on GM surface
-mesh_show_surface(mout,'field_idx','normE_1');
-mesh_show_surface(mout,'field_idx','normE_2');
+mesh_show_surface(mout,'field_idx','magnE_1');
+mesh_show_surface(mout,'field_idx','magnE_2');
 mesh_show_surface(mout,'field_idx','maxTIamplitude');
 

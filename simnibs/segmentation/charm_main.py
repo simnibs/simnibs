@@ -19,7 +19,6 @@ from ..utils.simnibs_logger import logger
 from ..utils import file_finder
 from ..utils import transformations
 from . import samseg
-import nibabel as nib
 from ._cat_c_utils import sanlm
 import numpy as np
 from scipy import ndimage
@@ -27,6 +26,7 @@ import scipy.ndimage.morphology as mrph
 from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
+from .brain_surface import dilate, erosion
 from ..mesh_tools.mesh_io import write_msh
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import label
@@ -769,15 +769,29 @@ def run(subject_dir=None, T1=None, T2=None,
         mesh_settings = settings['mesh']
         size_slope = mesh_settings['size_slope']
         size_range = mesh_settings['size_range']
+        skin_facet_size = mesh_settings['skin_facet_size']
         distance_slope = mesh_settings['distance_slope']
         distance_range = mesh_settings['distance_range']
         optimize = mesh_settings['optimize']
         remove_spikes = mesh_settings['remove_spikes']
+        skin_tag = mesh_settings['skin_tag']
+        if not skin_tag:
+            skin_tag = None
+        remove_twins = mesh_settings['remove_twins']
+        hierarchy = mesh_settings['hierarchy']
+        if not hierarchy:
+            hierarchy = None
         smooth_steps = mesh_settings['smooth_steps']
-        final_mesh = mesh(label_buffer, label_affine, size_slope=size_slope,
-                          size_range=size_range, distance_slope=distance_slope,
-                          distance_range=distance_range, optimize=optimize,
+        
+        final_mesh = mesh(label_buffer, label_affine,
+                          size_slope=size_slope, size_range=size_range,
+                          skin_facet_size=skin_facet_size,
+                          distance_slope=distance_slope, distance_range=distance_range,
+                          optimize=optimize,
                           remove_spikes=remove_spikes,
+                          skin_tag=skin_tag,
+                          remove_twins=remove_twins,
+                          hierarchy=hierarchy,
                           smooth_steps=smooth_steps)
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.head_mesh)
@@ -800,9 +814,10 @@ def run(subject_dir=None, T1=None, T2=None,
 
 
 def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
-         distance_slope=0.5, distance_range=(0.1, 3),
-         optimize=True, remove_spikes=True, smooth_steps=5):
-    ''' Creates a mesh from a labeled image
+         skin_facet_size=1.5, distance_slope=0.5, distance_range=(0.1, 3),
+         optimize=True, remove_spikes=True, skin_tag=1005,
+         remove_twins=True, hierarchy=None, smooth_steps=5):
+    """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) is given by:
         size = size_slope * thickness
@@ -814,7 +829,7 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     This allows for the meshing to adjust sizes according to local needs.
 
     Parameters
-    -----------
+    ----------
     label_img: 3D np.ndarray in uint8 format
         Labeled image from segmentation
     affine: 4x4 np.ndarray
@@ -824,6 +839,10 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
         the larger the elements will be. Default: 1
     size_range: 2-element list (optional)
         Minimum and maximum values for element sizes, in mm. Default: (1, 5)
+    skin_facet_size: float (optional)
+        Maximum size for the triangles of the outermost surface. If set to None,
+        the elements of the outermost surface will be scaled the same way as
+        the other surfaces. Default:  1.5
     distance_slope: float (optinal)
         relationship between thickness and facet_distance. At small distance
         values, the meshing will follow the original image more strictly. This
@@ -834,14 +853,29 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
         Whether to run lloyd optimization on the mesh. Default: True
     remove_spikes: bool (optional)
         Whether to remove spikes to create smoother meshes. Default: True
+    skin_tag: float (optional)
+        Add outer surface to mesh using given tag. Set to None to disable.
+        NOTE: This surface will replace any other surface with the same tag.
+        Default: 1005
+    remove_twins: bool (optional)
+        Remove triangle twins created during surface reconstruction.
+        Default: True
+    hierarchy: list of ints or None (optional)
+        List of surface tags that determines the order in which triangles 
+        are kept for twin pairs (for remove_twins=True). Default for hierarchy=None:
+        (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+        i.e. Skin (1005) has highest priority, WM (1001) comes next, etc; 
     smooth_steps: int (optional)
         Number of smoothing steps to apply to the final mesh surfaces. Default: 5
 
     Returns
-    --------
+    -------
     msh: simnibs.Msh
         Mesh structure
-    '''
+    """
+    if hierarchy is None:
+        hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+                
     # Calculate thickness
     logger.info('Calculating tissue thickness')
     thickness = _thickness._calc_thickness(label_img)
@@ -852,29 +886,42 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     if not np.allclose(np.diff(voxel_size), 0):
         logger.warn('Anisotropic image, meshing may contain extra artifacts')
     thickness *= np.average(voxel_size)
-
-    # Define size field and distance field
-    size_field = _sizing_field_from_thickness(
+    
+    # Define size fields and distance field
+    cell_size_field = _sizing_field_from_thickness(
         thickness, size_slope, size_range
     )
+    if skin_facet_size is None:
+        facet_size_field = cell_size_field
+    else:
+        boundary = (label_img > 0).astype('int8')
+        boundary = boundary-erosion(boundary,1)
+        boundary = dilate(boundary,2).astype('bool')
+        
+        facet_size_field = cell_size_field.flatten()
+        facet_size_field[boundary.flatten()] = skin_facet_size
+        facet_size_field = facet_size_field.reshape(label_img.shape)
+        
     distance_field = _sizing_field_from_thickness(
         thickness, distance_slope, distance_range
     )
+    
     # Run meshing
     logger.info('Meshing')
     start = time.time()
     mesh = meshing.image2mesh(
         label_img,
         affine,
-        facet_size=size_field,
+        facet_size=facet_size_field,
         facet_distance=distance_field,
-        cell_size=size_field,
+        cell_size=cell_size_field,
         optimize=optimize
     )
     logger.info(
         'Time to mesh: ' +
         utils.simnibs_logger.format_time(time.time()-start)
     )
+    
     start = time.time()
     # Separate out tetrahedron (will reconstruct triangles later)
     mesh = mesh.crop_mesh(elm_type=4)
@@ -885,6 +932,7 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
         new_tags[mesh.elm.tag1 == i+1] = t
     mesh.elm.tag1 = new_tags
     mesh.elm.tag2 = new_tags.copy()
+    
     # Remove spikes from mesh
     if remove_spikes:
         logger.info('Removing Spikes')
@@ -892,10 +940,14 @@ def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
             mesh, relabel_tol=1e-5,
             adj_threshold=2
         )
+        
     # Reconctruct the mesh surfaces
     logger.info('Reconstructing Surfaces')
     mesh.fix_th_node_ordering()
-    mesh.reconstruct_surfaces(add_outer_as=1005)
+    mesh.reconstruct_surfaces(add_outer_as=skin_tag)
+    if remove_twins:
+        mesh = mesh.remove_triangle_twins(hierarchy=hierarchy)
+        
     # Smooth the mesh
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')

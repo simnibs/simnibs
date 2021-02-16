@@ -99,7 +99,7 @@ In the example below, we set-up a UQ TMS problem with the ROI being the whole br
 Secondary Quantities
 ---------------------
 
-It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field norm
+It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude
 
 .. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uq_secondary_quantities.py
    :language: python

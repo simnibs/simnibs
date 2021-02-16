@@ -1137,7 +1137,7 @@ class TestTDCSDistributedoptimize:
         normals = sphere_surf.nodes_normals()[:]
         assert isinstance(m.field['Field'], mesh_io.NodeData)
         assert np.allclose(m.field['Field'][:], -leadfield_surf[0])
-        assert np.allclose(m.field['normField'][:], np.linalg.norm(leadfield_surf[0], axis=1))
+        assert np.allclose(m.field['magnField'][:], np.linalg.norm(leadfield_surf[0], axis=1))
         assert np.allclose(m.field['normalField'][:], np.sum(leadfield_surf[0]*normals, axis=1))
         assert np.allclose(m.field['target_map'][:], sphere_surf.nodes[:, 0], atol=1e-3)
 

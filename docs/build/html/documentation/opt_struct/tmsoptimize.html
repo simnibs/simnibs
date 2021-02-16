@@ -5,14 +5,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TMSoptimize &#8212; SimNIBS 3.2.2 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <title>TMSoptimize &#8212; SimNIBS 4.0a documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/language_data.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -111,7 +110,7 @@
 </li>
 <li><p><strong>target_direction</strong>: <em>None/[] or (3x1) list/array (Python/MATLAB) of floats, optional</em></p>
 <ul class="simple">
-<li><p><strong>Desctiption</strong>: Direction of the electric field to be optimized. If <code class="code docutils literal notranslate"><span class="pre">None</span></code> (Python) or <code class="code docutils literal notranslate"><span class="pre">[]</span></code> (MATLAB), will optimize the elctric field norm. Default: optimize field norm</p></li>
+<li><p><strong>Desctiption</strong>: Direction of the electric field to be optimized. If <code class="code docutils literal notranslate"><span class="pre">None</span></code> (Python) or <code class="code docutils literal notranslate"><span class="pre">[]</span></code> (MATLAB), will optimize the elctric field magnitude. Default: optimize field magnitude</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target_direction</span> <span class="p">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
@@ -321,10 +320,10 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2019, SimNIBS Developers.
+      &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

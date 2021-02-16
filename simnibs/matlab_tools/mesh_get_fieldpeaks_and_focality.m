@@ -11,7 +11,7 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %   Supported options:
 %   field_idx: identifier of a results field;
 %              can be either the name or the index of the
-%              element_data or node_data field (standard: 'normE', or the
+%              element_data or node_data field (standard: 'magnE', or the
 %              first in case only one data field is loaded)
 %   region_idx: uses the elements with the given region numbers
 %               (standard: 2 for gray matter tetrahedra or all triangles
@@ -72,7 +72,7 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 % A. Thielscher 07-Sep-2018
 
 % standard settings and behavior
-s.field_idx = 'normE';
+s.field_idx = 'magnE';
 s.region_idx = 2;
 s.datatype = 'tet';
 s.percentiles=[95 99 99.9];
@@ -128,9 +128,9 @@ elempos=elempos(idx,:);
 % extract peak and percentile values
 s.field_name=name;
 s.valueunits='';
-if strcmpi(name,'normE')||strcmpi(name,'E.normal')
+if strcmpi(name,'magnE')||strcmpi(name,'E.normal')
     s.valueunits='[V/m]';
-elseif strcmpi(name,'normJ')||strcmpi(name,'J.normal')
+elseif strcmpi(name,'magnJ')||strcmpi(name,'J.normal')
     s.valueunits='[A/m�]';
 end
 s.max=max(data);

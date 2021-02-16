@@ -71,9 +71,9 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
         Fields to output
         v: electric potential at the nodes
         E: Electric field at the elements
-        e: Electric field norm at the elements
+        e: Electric field magnitude at the elements
         J: Current density at the elements
-        j: Current density norm at the elements
+        j: Current density magnitude at the elements
         s: Conductivity at the elements
         D: dA/dt at the nodes
         g: gradiet of the potential at the elements
@@ -179,7 +179,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
             e = np.linalg.norm(E.value, axis=1)
             out_mesh.elmdata.append(
                 mesh_io.ElementData(
-                    e, name='normE', mesh=out_mesh))
+                    e, name='magnE', mesh=out_mesh))
 
         if any(f in ['J', 'j', 's'] for f in fields):
             if cond is None:
@@ -203,7 +203,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
                 j = np.linalg.norm(J.value, axis=1)
                 out_mesh.elmdata.append(
                     mesh_io.ElementData(
-                        j, name='normJ', mesh=mesh))
+                        j, name='magnJ', mesh=mesh))
 
     return out_mesh
 

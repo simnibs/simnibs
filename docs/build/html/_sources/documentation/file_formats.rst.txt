@@ -30,7 +30,7 @@ There are 2 types of fields used in SimNIBS:
 
 * *NodeData* is defined at each nodes. By default, only the electric potential "v" is stored as *NodeData*
 
-* *ElementData* is defined for each element. This is the format of choice for the electric field, current density and their respective norms.
+* *ElementData* is defined for each element. This is the format of choice for the electric field, current density and their respective magnitudes.
 
 The choice of format for each field is due to how the Finite Element Method works.
 After the FEM calculations, we obtain values of "v" at each node.

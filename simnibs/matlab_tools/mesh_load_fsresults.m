@@ -73,10 +73,10 @@ fnameStripped=fnameStripped(idx+1:end);
 
 idx=find(fnameStripped=='.',2,'last');
 fieldname=fnameStripped(idx(1)+1:end);
-if strcmpi(fieldname,'E.norm')
-    fieldname='normE';
-elseif strcmpi(fieldname,'J.norm')
-    fieldname='normJ';
+if strcmpi(fieldname,'E.magn')
+    fieldname='magnE';
+elseif strcmpi(fieldname,'J.magn')
+    fieldname='magnJ';
 end
 
 % load surface(s) if needed

@@ -32,7 +32,7 @@ def parse_arguments(argv):
 
     # argument parsing exception handling
     q_help = "(Optional) Scalar quantities to calculate from vector fields"
-    q_help += " (N: norm,"
+    q_help += " (N: magnitude,"
     q_help += " n: normal component,"
     q_help += " t: tangent component,"
     q_help += " a: angle between vector and surface normal)"
@@ -83,7 +83,7 @@ def main():
     quantities = []
     for q in args.quantities:
         if q == 'N':
-            quantities += ['norm']
+            quantities += ['magn']
         elif q == 'n':
             quantities += ['normal']
         elif q == 't':

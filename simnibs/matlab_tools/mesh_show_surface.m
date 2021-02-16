@@ -10,7 +10,7 @@ function varargout = mesh_show_surface(m, varargin)
 %   Supported options:
 %   field_idx: identifier of a results field;
 %              can be either the name or the index of the
-%              element_data or node_data field (standard: 'normE', or the
+%              element_data or node_data field (standard: 'magnE', or the
 %              first in case only one data field is loaded)
 %   region_idx: uses the triangle surface(s) with the given region numbers
 %               (standard: 1002 for gray matter for .msh-files or all regions
@@ -34,14 +34,14 @@ function varargout = mesh_show_surface(m, varargin)
 %   hfig: handle of the created figure (optional)
 %
 % Examples:
-%  mesh_show_surface(m); % plots normE on the gray matter surface
-%  mesh_show_surface(m,'field_idx','normJ','region_numbers',1001); % plots normJ on white matter
+%  mesh_show_surface(m); % plots magnE on the gray matter surface
+%  mesh_show_surface(m,'field_idx','magnJ','region_numbers',1001); % plots magnJ on white matter
 %  mesh_show_surface(m,'showElec',false); % doesn't show the electrodes
 %         
 % A. Thielscher 09-Sep-2018
 
 % standard settings and behavior
-s.field_idx = 'normE';
+s.field_idx = 'magnE';
 s.region_idx = 1002;
 s.datatype = 'tri';
 s.showElec = true;
@@ -77,7 +77,7 @@ m=mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
 % get data, name and lower and upper limits
 if ~s.showSurface
     [data, name, s.scaleLimits] = get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
-    % scaling is from 0 to 99.9 percentile (normE, normJ)
+    % scaling is from 0 to 99.9 percentile (magnE, magnJ)
     % or from .1 to 99.9 percentile (normal components)
     % scaling will be only updated when empty
     
@@ -126,9 +126,9 @@ else
     set(gca,'CLim',s.scaleLimits);
     
     title(name,'Interpreter','none');        
-    if strcmpi(name,'normE')
+    if strcmpi(name,'magnE')
         set(h,'String','electric field strength in [V/m]');
-    elseif strcmpi(name,'normJ')
+    elseif strcmpi(name,'magnJ')
         set(h,'String','current density in [A/m²]');
     elseif strcmpi(name,'E.normal')
         set(h,'String','normal component of electric field in [V/m]');

@@ -226,6 +226,43 @@ def _add_logo(msh_stl):
     return msh_stl
 
 
+def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False):
+    """ Applies a 4x4 transformation matrix to mesh nodes.
+                
+        Parameters
+        -----------
+        msh_stl: simnibs.mesh_io.Msh
+            mesh structure with the coil surface
+        coil_matrix: np.ndarray (4x4)
+            transformation matrix
+        msh_skin: simnibs.mesh_io.Msh (optional)
+            Mesh structure with the skin. When given, it will be tested
+            whether any nodes of msh_stl are inside msh_skin. The triangles
+            with these nodes will be marked by setting tag1=1 (other: tag1=0).
+        add_logo:
+            if set to True, a SimNIBS logo will be added to the coil surface.
+            The tags will be marked as 2 and 3.
+  
+        Returns
+        -------
+        msh_stl: simnibs.mesh_io.Msh
+            transfomred coil surface
+    """
+    msh_stl.elm.tag1[:]=0 # tag1=0 will be shown as gray
+    if add_logo:
+        msh_stl = _add_logo(msh_stl)
+    d_position = np.hstack([msh_stl.nodes[:], np.ones((msh_stl.nodes.nr, 1))])
+    msh_stl.nodes.node_coord = coil_matrix.dot(d_position.T).T[:, :3]
+    
+    if msh_skin is not None:
+        idx_inside = msh_skin.pts_inside_surface(msh_stl.nodes[:])
+        if len(idx_inside):
+            idx_hlp = np.zeros((msh_stl.nodes.nr, 1),dtype=bool)
+            idx_hlp[idx_inside] = True
+            idx_hlp = np.any(np.squeeze(idx_hlp[msh_stl.elm[:,:3]-1]), axis=1)
+            msh_stl.elm.tag1[idx_hlp & (msh_stl.elm.tag1 == 0)] = 1      
+    return msh_stl
+
 
 def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
     
@@ -253,11 +290,10 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
         if not os.path.isfile(fn_stl):
             raise IOError('Could not find stl file: {0}'.format(fn_stl))
         msh_stl = mesh_io.read_stl(fn_stl)
-        msh_stl.elm.tag1[:]=0 # tag1 will be shown as gray
-        if add_logo:
-            msh_stl = _add_logo(msh_stl)
-        d_position = np.hstack([msh_stl.nodes[:], np.ones((msh_stl.nodes.nr, 1))])
-        msh_stl.nodes = coil_matrix.dot(d_position.T).T[:, :3]
+        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) | 
+                                        (msh.elm.tag1 == 5) )
+        msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
+        msh_stl = _transform_coil_surface(msh_stl,coil_matrix,msh_skin,add_logo)
         mesh_io.write_geo_triangles(msh_stl.elm[:,:3]-1, msh_stl.nodes[:],
                                     fn_geo, values=msh_stl.elm.tag1,
                                     name='coil_casing', mode='ba')

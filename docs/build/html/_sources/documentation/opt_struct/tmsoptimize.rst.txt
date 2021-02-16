@@ -69,7 +69,7 @@ Attributes
 
 * **target_direction**: *None/[] or (3x1) list/array (Python/MATLAB) of floats, optional*
 
-  * **Desctiption**: Direction of the electric field to be optimized. If :code:`None` (Python) or :code:`[]` (MATLAB), will optimize the elctric field norm. Default: optimize field norm
+  * **Desctiption**: Direction of the electric field to be optimized. If :code:`None` (Python) or :code:`[]` (MATLAB), will optimize the elctric field magnitude. Default: optimize field magnitude
   * **Example**: *Python/MATLAB*
 
   .. code-block:: matlab

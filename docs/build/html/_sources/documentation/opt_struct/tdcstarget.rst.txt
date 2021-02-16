@@ -54,7 +54,7 @@ Attributes
   * **Description**: Direction of the field to be controlled.
 
     * If set to :code:`'normal'` (default) and the leadfield was run with :code:`map_to_surf` (default) or surface ROIs, will control the electric fields in the normal direction.
-    * If set to :code:`None` (Python) or :code:`'none'` (MATLAB), will control electric field strength (norm).
+    * If set to :code:`None` (Python) or :code:`'none'` (MATLAB), will control electric field strength (magnitude).
 
   * **Defaut**: :code:`'normal'`
 

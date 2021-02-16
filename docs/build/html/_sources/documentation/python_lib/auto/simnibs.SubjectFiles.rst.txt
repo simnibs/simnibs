@@ -15,6 +15,7 @@
    
       ~SubjectFiles.__init__
       ~SubjectFiles.get_eeg_cap
+      ~SubjectFiles.get_surface
    
    
 

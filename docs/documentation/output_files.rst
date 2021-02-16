@@ -80,7 +80,7 @@ Inside the folders, we have
 * :file:`<sub_id>_<simulation_name>_<central/fsavg>.msh`
     Transformed result as a Gmsh *.msh* file for easy visualization
 * :file:`<lh/rh>_<simulation_name>.<central/fsavg>.<field>.<quantity>`
-    FreeSurfer generic overlay with given quantity (such as **norm** or **normal**) related to a given field.
+    FreeSurfer generic overlay with given quantity (such as **magn** or **normal**) related to a given field.
 
 
 Volume Mapping
