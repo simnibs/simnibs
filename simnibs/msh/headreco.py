@@ -1576,9 +1576,14 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
             hmu.decouple_surfaces(f, off["skin"], "inner-from-outer",
                                   min_distance=mdist) 
             firstpass = False
-    
-    hmu.log("Voxelizing")
-    voxelize(off[key], ref, nii[key], merge=True)
+
+    if len(off[key]) != 0:
+        hmu.log("Voxelizing")
+        voxelize(off[key], ref, nii[key], merge=True)
+    else:
+        hmu.log("Warning: seems the eyes are missing.")
+        del off[key]
+        del stl[key]
     
     print("")
     hmu.log("{:{}s}{:>10}", ("{} processing time:".format(key.upper()),
@@ -1600,22 +1605,27 @@ def make_surface_meshes(input_files,out_dir,temp_dir,vertex_density=0.5,
     hmu.write_nifti(mAIR_IN_Y_mod, mod[key], ref, dtype=dtype)
     if mAIR_IN_Y_mod.any():
         hmu.log("Extracting surface(s)")
-        off[key] = hmu.make_surface_mesh(mod[key],off[key], 9, 100, vertex_density, 5)
-        
-        hmu.log("Decoupling")
-        for f in off[key]:
-            fb = os.path.splitext(os.path.basename(f))[0]
-            firstpass = True
-            while firstpass or any_intersect_1st([f,off["csf"],off["bone"]]):
-                hmu.log("Decoupling {} from CSF", fb)
-                hmu.decouple_surfaces(f,off["csf"], "neighbor", min_distance=mdist)
-                hmu.log("Decoupling {} from bone", fb)
-                hmu.decouple_surfaces(f,off["bone"], "inner-from-outer",
-                                      min_distance=mdist)
-                firstpass = False
-        
-        hmu.log("Voxelizing")
-        voxelize(off[key], ref, nii[key], merge=True)
+        off[key] = hmu.make_surface_mesh(mod[key], off[key], 9, 100, vertex_density, 5)
+
+        if len(off[key]) != 0:
+            hmu.log("Decoupling")
+            for f in off[key]:
+                fb = os.path.splitext(os.path.basename(f))[0]
+                firstpass = True
+                while firstpass or any_intersect_1st([f, off["csf"], off["bone"]]):
+                    hmu.log("Decoupling {} from CSF", fb)
+                    hmu.decouple_surfaces(f, off["csf"], "neighbor", min_distance=mdist)
+                    hmu.log("Decoupling {} from bone", fb)
+                    hmu.decouple_surfaces(f, off["bone"], "inner-from-outer",
+                                          min_distance=mdist)
+                    firstpass = False
+
+            hmu.log("Voxelizing")
+            voxelize(off[key], ref, nii[key], merge=True)
+        else:
+            hmu.log("Warning: cavities removed.")
+            del off[key]
+            del stl[key]
     else:
         del off[key]
         del stl[key]
