@@ -157,7 +157,7 @@ def _estimate_parameters(path_to_segment_folder,
                     (multiResolutionLevel, item['numberOfIterations'],
                      item['perVoxelCost']))
 
-    return samsegment.saveParametersAndInput()
+    return samsegment.saveParametersAndInput(path_to_segment_folder)
 
 
 def _post_process_segmentation(bias_corrected_image_names,
@@ -184,6 +184,11 @@ def _post_process_segmentation(bias_corrected_image_names,
                         parameters_and_inputs,
                         transformed_template_name)
 
+    #Cast the upsampled image to int16  to save space
+    for upsampled_image in upsampled_image_names:
+        upsampled = nib.load(upsampled_image)
+        upsampled.set_data_dtype(np.int16)
+        nib.save(upsampled, upsampled_image)
     # Do morphological operations
     simnibs_tissues = tissue_settings['simnibs_tissues']
     _morphological_operations(upsampled_tissues, simnibs_tissues)
@@ -305,7 +310,7 @@ def _morphological_operations(label_img, simnibs_tissues):
     tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | \
                                                        relabel
     tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] &\
-                                                ~relabel
+                                              ~relabel
 
     #Relabel the tissues to produce the final label image
     for tname, tmask in zip(tissue_names, tissue_masks):
@@ -316,21 +321,39 @@ def _smoothfill(vols, unassign):
        works by smoothing the masks and binarizing
        the smoothed masks.
     """
-    vols = [v.astype(np.float32) for v in vols]
+    #Cast to uint8, note this is done in-place, and
+    #map to 0->255
+    vols = [255*v.astype(np.uint8, copy=False) for v in vols]
     unassign = unassign.copy()
     sum_of_unassigned = np.inf
     # for as long as the number of unassigned is changing
+    # let's find the binarized version using a running
+    # max index as we need to loop anyway. This way we
+    # don't need to call np.argmax
     while unassign.sum() < sum_of_unassigned:
         sum_of_unassigned = unassign.sum()
+        #Note here that unassigned voxels
+        #in the end will have index 255
+        #so if we at some point will have
+        #255 different labels here this
+        #will result in weird behavior
+        inds = 255*np.ones_like(vols[0])
+        max_val = np.zeros_like(vols[0],dtype=np.float32)
         for i, ivol in enumerate(vols):
             cs = gaussian_filter(ivol.astype(np.float32), 1)
-            cs[ivol == 1] = 1
-            vols[i] = cs
+            #cs = cs.astype(np.uint8, copy=False)
+            cs[ivol == 255] = 255
+            #Check the max values and update
+            max_mask = cs > max_val
+            inds[max_mask] = i
+            max_val[max_mask] = cs[max_mask]
 
-        vols = _binarize(vols, return_empty=True)
-        unassign = vols.pop()
+
+        vols = [inds==i for i in range(len(vols))]
+        unassign = inds == 255
 
     return vols
+
 
 
 def _get_n_largest_components(vol, se, n, return_sizes=False):
@@ -392,14 +415,9 @@ def _binarize(vols, return_empty=False):
     unassign : ndarray
         Array containing any unassigned voxels.
     """
-    # if filenames are provided, load data
-    volsi = [None] * len(vols)
-    for i in range(len(vols)):
-        volsi[i] = vols[i]
-
     # Concatenate arrays/images
-    imgs = np.concatenate(tuple([v[..., np.newaxis] for v in volsi]), axis=3)
-    imgs = np.concatenate((np.zeros_like(volsi[0])[..., np.newaxis], imgs),
+    imgs = np.concatenate(tuple([v[..., np.newaxis] for v in vols]), axis=3)
+    imgs = np.concatenate((np.zeros_like(vols[0])[..., np.newaxis], imgs),
                           axis=3)
 
     # Find max indices
@@ -422,6 +440,13 @@ def _registerT1T2(fixed_image, moving_image, output_image):
     registerer.initialize_transform()
     registerer.register()
     registerer.write_out_result(output_image)
+
+    #The register function uses double internally
+    #Let's cast to float32
+    if os.path.exists(output_image):
+        T2_reg = nib.load(output_image)
+        T2_reg.set_data_dtype(np.float32)
+        nib.save(T2_reg, output_image)
 
 
 def view(subject_dir):
@@ -491,10 +516,11 @@ def run(subject_dir=None, T1=None, T2=None,
     if T1 is not None:
         if not os.path.exists(T1):
             raise FileNotFoundError(f'Could not find input T1 file: {T1}')
-        if len(T1) > 7 and T1[-7:].lower() == '.nii.gz':
-            shutil.copyfile(T1, sub_files.T1)
         else:
-            nib.save(nib.load(T1), sub_files.T1)
+            #Cast to float32 and save
+            T1_tmp = nib.load(T1)
+            T1_tmp.set_data_dtype(np.float32)
+            nib.save(T1_tmp, sub_files.T1)
 
     if registerT2 and T2 is not None:
         if not os.path.exists(T2):
@@ -503,10 +529,9 @@ def run(subject_dir=None, T1=None, T2=None,
             _registerT1T2(T1, T2, sub_files.T2_reg)
     elif T2 is not None:
         if os.path.exists(T2):
-            if len(T2) > 7 and T2[-7:].lower() == '.nii.gz':
-                shutil.copyfile(T2, sub_files.T2_reg)
-            else:
-                nib.save(nib.load(T2), sub_files.T2_reg)
+            T2_tmp = nib.load(T2)
+            T2_tmp.set_data_dtype(np.float32)
+            nib.save(T2_tmp, sub_files.T2_reg)
 
     # read settings and copy settings file
     if usesettings is None:
