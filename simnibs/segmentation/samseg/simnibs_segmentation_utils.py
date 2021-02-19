@@ -110,6 +110,7 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
 
     # Log-transform the intensities, note the scans are already
     # bias corrected so no need to remove the bias contribution
+
     imageBuffersUpsampled = logTransform(imageBuffersUpsampled,
                                          maskUpsampled)
 
@@ -153,9 +154,14 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
 
     example_image = gems.KvlImage(input_bias_corrected[0])
     uncropped_tissue_labeling = np.zeros(
-            example_image.getImageBuffer().shape, dtype=np.float32, order='F')
+            example_image.getImageBuffer().shape, dtype=np.uint16, order='F')
     uncropped_tissue_labeling[croppingUpsampled] = tissue_labeling
 
+    upsampled_image = nib.load(input_bias_corrected[0])
+    affine_upsampled = upsampled_image.affine
+    upsampled_tissues = nib.Nifti1Image(uncropped_tissue_labeling,
+                                        affine_upsampled)
+    nib.save(upsampled_tissues, './test_labeling_mem.nii.gz')
     return uncropped_tissue_labeling
 
 
@@ -278,7 +284,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
 
     # These will store the max values and indices
     maxValues = np.zeros(biasCorrectedImageBuffers.shape[0:3],
-                         dtype=np.float64)
+                         dtype=np.float32)
     maxIndices = np.empty(biasCorrectedImageBuffers.shape[0:3],
                           dtype=np.uint16)
 
@@ -291,13 +297,13 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
         cat_tissue_dict = cat_opts['cat_tissues']
         cat_mask_dict = cat_opts['cat_masks']
         wm_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
-                            dtype=np.float64)
+                            dtype=np.float32)
         gm_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
-                            dtype=np.float64)
+                            dtype=np.float32)
         csf_probs = np.zeros(biasCorrectedImageBuffers.shape[0:3],
-                             dtype=np.float64)
+                             dtype=np.float32)
         normalizer = np.zeros(biasCorrectedImageBuffers.shape[0:3],
-                              dtype=np.float64)
+                              dtype=np.float32)
 
     # The different structures can share their mixtures between classes
     # E.g., thalamus can be half wm and half gm. This needs to be accounted
@@ -312,7 +318,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     print('Into the loop')
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
-        # and cast to float from uint8
+        # and cast to float from uint16
         nonNormalized = mesh.rasterize_1a(mask.shape, structureNumber)/65535.0
         prior = nonNormalized[mask]
 

@@ -172,7 +172,7 @@ def _post_process_segmentation(bias_corrected_image_names,
         resampled_input, new_affine, orig_res = resample_vol(
                                                     corrected_input.get_data(),
                                                     corrected_input.affine,
-                                                    0.5, order=3)
+                                                    0.5, order=1)
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
         nib.save(upsampled, upsampled_image_names[input_number])
 
@@ -269,7 +269,7 @@ def _morphological_operations(label_img, simnibs_tissues):
     # happily dilates tissues next to air
     tissue_masks.append(label_img == 0)
     # Now run the smoothfill
-    tissue_masks = _smoothfill(tissue_masks, unass)
+    tissue_masks = _smoothfill_mem(tissue_masks, unass)
 
     #Now we can get rid of the air again
     tissue_masks.pop()
@@ -310,7 +310,6 @@ def _morphological_operations(label_img, simnibs_tissues):
     #Relabel the tissues to produce the final label image
     for tname, tmask in zip(tissue_names, tissue_masks):
         label_img[tmask] = simnibs_tissues[tname]
-
 
 def _smoothfill(vols, unassign):
     """Hackish way to fill unassigned voxels,
