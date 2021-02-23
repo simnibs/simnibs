@@ -37,6 +37,14 @@ case `uname` in
 	;;
 esac
 
+
+echo $DWI2CONDPATH
+echo $SIMNIBSDIR
+echo $BINDIR
+
+
+ls $BINDIR
+
 # ======================================
 # STANDARD SETTINGS
 # ======================================
