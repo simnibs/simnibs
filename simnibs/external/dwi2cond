@@ -26,24 +26,16 @@ FSLOUTPUTTYPE=NIFTI_GZ
 EXIT_ON_ERROR=true # exit script when a called program returns an error 
 
 DWI2CONDPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" # directory containing bash scrips for dwi2cond
-SIMNIBSDIR=$(dirname $DWI2CONDPATH) # SIMNIBSDIR
 # directory containing binaries
 case `uname` in
 	Linux )
-		BINDIR=${SIMNIBSDIR}/bin/linux
+		BINDIR=${DWI2CONDPATH}/bin/linux
 	;;
 	Darwin )
-		BINDIR=${SIMNIBSDIR}/bin/osx
+		BINDIR=${DWI2CONDPATH}/bin/osx
 	;;
 esac
 
-
-echo $DWI2CONDPATH
-echo $SIMNIBSDIR
-echo $BINDIR
-
-
-ls $BINDIR
 
 # ======================================
 # STANDARD SETTINGS
@@ -286,7 +278,7 @@ fi
 # ======================================
 SUBJECTS_DIR=`pwd`
 M2M_DIR=`pwd`/m2m_$SUBJECT
-D2C_DIR=`pwd`/d2c_$SUBJECT
+D2C_DIR=$M2M_DIR/dMRI_prep
 
 RAW_DIR=$D2C_DIR/raw # for raw dMRI data
 TOPUP_DIR=$D2C_DIR/topup # input files to and results of FSL topup
