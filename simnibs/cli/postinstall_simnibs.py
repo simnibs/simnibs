@@ -83,30 +83,34 @@ def create_scripts(dest_dir):
             gui = True
         else:
             gui = False
-        # Normal things
-        bash_name = os.path.join(dest_dir, basename)
-
-        # Special treatment to meshfix and gmsh
-        if basename in ['meshfix', 'gmsh']:
-            if sys.platform == 'win32':
-                with open(bash_name + '.cmd', 'w') as f:
-                    f.write("@echo off\n")
-                    f.write(f'"{file_finder.path2bin(basename)}" %*')
-            else:
-                if os.path.lexists(bash_name):
-                    os.remove(bash_name)
-                os.symlink(file_finder.path2bin(basename), bash_name)
-        # Other stuff
-        else:
-            if sys.platform == 'win32':
-                _write_windows_cmd(s, bash_name, gui)
-            else:
-                _write_unix_sh(s, bash_name)
             
+        bash_name = os.path.join(dest_dir, basename)        
+        if sys.platform == 'win32':
+            _write_windows_cmd(s, bash_name, gui)
+        else:
+            _write_unix_sh(s, bash_name)
+        
+    # meshfix and gmsh binaries
+    for basename in ['meshfix', 'gmsh']:
+        bash_name = os.path.join(dest_dir, basename)
+        if sys.platform == 'win32':
+            with open(bash_name + '.cmd', 'w') as f:
+                f.write("@echo off\n")
+                f.write(f'"{file_finder.path2bin(basename)}" %*')
+        else:
+            if os.path.lexists(bash_name):
+                os.remove(bash_name)
+            os.symlink(file_finder.path2bin(basename), bash_name)
+
+    # dwi2cond bash script
+    if not sys.platform == 'win32':
+        if os.path.lexists('dwi2cond'):
+                os.remove('dwi2cond')
+        os.symlink(file_finder.path2bin(basename), bash_name)
+
     # simnibs_python interpreter
     if sys.platform == 'win32':
         _write_windows_cmd(None, os.path.join(dest_dir, 'simnibs_python'))
-
     else:
         if os.path.lexists(os.path.join(dest_dir, 'simnibs_python')):
             os.remove(os.path.join(dest_dir, 'simnibs_python'))
