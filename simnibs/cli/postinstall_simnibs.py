@@ -104,9 +104,11 @@ def create_scripts(dest_dir):
 
     # dwi2cond bash script
     if not sys.platform == 'win32':
-        if os.path.lexists('dwi2cond'):
-                os.remove('dwi2cond')
-        os.symlink(file_finder.path2bin(basename), bash_name)
+        basename = os.path.join(SIMNIBSDIR, 'external', 'dwi2cond')
+        bash_name = os.path.join(dest_dir, 'dwi2cond')
+        if os.path.lexists(bash_name):
+            os.remove(bash_name)
+        os.symlink(basename, bash_name)
 
     # simnibs_python interpreter
     if sys.platform == 'win32':

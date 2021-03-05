@@ -54,13 +54,15 @@ DENOISE=true # denoise phase map using median filtering
 READOUTTIME='' # read-out time of DWI sequence
 PHASEDIR='' # phase encoding direction of DWI sequence
 EDDYOPT='--repol' # detect and replace outlier slices, enabling it is "always a good idea" according to fsl user guide
-#EDDYOPT='--repol --slm=quadratic --flm=cubic --niter=20' # maybe overdoing it a bit...
 
 # FSL dtifit
 DTIFITOPT='--wls' # using weighted least squares to improve stability of tensor fitting
 
 # method for registration to T1
 T1REGMTHD='nonl'
+
+# keep only final tensor and a few images for QA
+TIDY_UP=true
 
 # which eddy binary?
 EDDYBINARY=$(which eddy)
@@ -80,7 +82,7 @@ dwi2cond --help    # display the complete help'
 PRINT_HELP() {
 echo 'dwi2cond -- Preprocess diffusion MRI images data
 	    for conductivity tensor estimation in SimNIBS.
-            It requires that mri2mesh or headreco was already run.
+            It requires that charm was already run.
 
 USAGE (depending on options):
   dwi2cond [options] <subjectID> <input files>
@@ -97,9 +99,10 @@ OPTIONS:
  --all		--prepro and --T1reg
  --prepro       preprocess data: eddy current correction, distortion
                 correction, DTI fitting
- --T1reg 	registration to T1fs_conform
+ --T1reg 	registration to the structural T1 of the subject
    --regmthd=XX registration method (6dof, 12dof, nonl; standard is "nonl"
 		which calls FSL fnirt)
+ --keepstuff    keep also intermediate results
  -c, --check    show final results for visual check
 
 SETTINGS for --prepro:
@@ -131,11 +134,11 @@ SETTINGS for --prepro:
 
 DESCRIPTION:
  This program preprocesses diffusion MRI data to create a diffusion tensor image
- which is used for conductivity tensor estimation in SimNIBS. Unlike the first
- version, the functionality of dwi2cond is now restricted to cover only the
+ which is used for conductivity tensor estimation in SimNIBS. It covers the
  steps up to the fitting of the diffusion tensors and coregistration to the
- T1fs_conform image. Only single shell diffusion MRI data with a single phase
- encoding direction for the EPI readout is supported.
+ T1 image of the subject. Conversion from diffusion to conductivity tensors is 
+ done as part of the simulations. Only single shell diffusion MRI data with a 
+ single phase encoding direction for the EPI readout is supported.
 
  The program can be used in the following ways:
  * "Standard" eddy current correction based on affine registrations
@@ -146,7 +149,7 @@ DESCRIPTION:
    using FSL topup (input files w/o topup: DWIs bvals bvecs; 
    input files with topup: DWIs bvals bvecs DWI_B0_revphase)
  * A preprocessed DTI tensor (written out by FSL dtifit using --save_tensor).
-   In this case, the data will be coregistered to the T1fs_conform image.
+   In this case, the data will be coregistered to the T1 image of the subject.
 
 AUTHOR:
  Axel Thielscher.'
@@ -164,7 +167,7 @@ source $DWI2CONDPATH/dwi2cond.functions.source.sh
 # ======================================
 OPTIONS=$*; # only stored for logging later on
 optarr=$($BINDIR/getopt -o 'chv' --long 'help,version,all,prepro,T1reg,check,udir:,dontdenoise,\
-readout:,te_diff:,dwidwell:,eddy,phasedir:,regmthd:,nomoco' -n "$0" -- "$@")
+readout:,te_diff:,dwidwell:,eddy,phasedir:,regmthd:,nomoco,keepstuff' -n "$0" -- "$@")
 eval declare -a optarr=($optarr); # change into array (for handling of strings with white spaces)
 run_prepro=false;
 run_t1reg=false;
@@ -175,7 +178,7 @@ for opt in "${optarr[@]}"; do # first check for --help or --version
     -h|--help)
       PRINT_HELP; exit;;
     -v|--version)
-      echo 'Version 0.3'; exit;;
+      echo 'Version 0.4'; exit;;
   esac
 done
 
@@ -198,6 +201,7 @@ for opt in "${optarr[@]}"; do
     --eddy) DOEDDY=true; shift;;
     --phasedir) PHASEDIR=${optarr[$OPTNR]}; SKIPNEXT=true; shift;;
     --nomoco) NOMOCO=true; shift;;
+    --keepstuff) TIDY_UP=false; shift;;
     --) break;;
     -*) echo "ERROR: Unimplemented option '$opt' chosen."; break;;   # Default.
     *) break;;
@@ -304,7 +308,7 @@ source $DWI2CONDPATH/dwi2cond.prepro.source.sh
 fi
 
 if $run_t1reg; then
-SAY "--T1reg: Registration of preprocessed DWI data to conformed T1 image"
+SAY "--T1reg: Registration of preprocessed DWI data to T1 image"
 source $DWI2CONDPATH/dwi2cond.t1reg.source.sh
 fi
 
