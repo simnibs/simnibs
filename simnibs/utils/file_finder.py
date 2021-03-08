@@ -190,9 +190,6 @@ class SubjectFiles:
     subid: str
         The subject ID (eg: ernie)
 
-    basedir: str
-        Path to the folder where the m2m_subid folder is located (dir)
-
     tensor_file: str
         Path to the NifTi file with the tensor conductivity information (.nii.gz)
 
@@ -215,7 +212,7 @@ class SubjectFiles:
         Path to the EEG 10-10 electrode file (.csv)
 
     reference_volume: str
-        Path to the reference subject volume (.nii.gz)
+        Path to the reference subject volume (T1.nii.gz)
 
     mni2conf_nonl: str
         MNI to conform nonlinear transformation (.nii or .nii.gz)
@@ -320,11 +317,10 @@ class SubjectFiles:
                 raise IOError('fnamehead must be a gmsh .msh file')
             self.fnamehead = os.path.normpath(os.path.expanduser(fnamehead))
             if not subpath:
-                basedir, subid = os.path.split(self.fnamehead)
+                subpath, subid = os.path.split(self.fnamehead)
                 self.subid = os.path.splitext(subid)[0]
-                self.basedir = os.path.normpath(os.path.expanduser(basedir))
-                self.subpath = os.path.join(self.basedir, 'm2m_' + self.subid)
-
+                self.subpath = os.path.normpath(os.path.expanduser(subpath))
+                
         if subpath:
             self.subpath = os.path.normpath(os.path.expanduser(subpath))
             folder_name = self.subpath.split(os.sep)[-1]
@@ -333,14 +329,10 @@ class SubjectFiles:
             except:
                 raise IOError('Could not find subject ID from subpath. '
                               'Does the folder have the format m2m_subID?')
-            self.basedir = os.path.normpath(os.path.join(self.subpath, '..'))
-
             if not fnamehead:
-                self.fnamehead = os.path.join(self.basedir, self.subid + '.msh')
+                self.fnamehead = os.path.join(self.subpath, self.subid + '.msh')
 
-        self.tensor_file = os.path.join(
-            self.basedir, 'd2c_' + self.subid,
-            'dti_results_T1space', 'DTI_conf_tensor.nii.gz')
+        self.tensor_file = os.path.join(self.subpath, 'DTI_coregT1_tensor.nii.gz')
 
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
         self.eeg_cap_1010 = self.get_eeg_cap()
@@ -350,7 +342,7 @@ class SubjectFiles:
         self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
 
         # Stuff for volume transformations
-        self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
+        self.reference_volume = os.path.join(self.subpath, 'T1.nii.gz')
         self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
         self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
@@ -373,6 +365,9 @@ class SubjectFiles:
         if os.path.isfile(self.mni2conf_12dof + '.mat'):
             self.mni2conf_12dof += '.mat'
 
+
+        # TODO:update the stuff below
+        
         # Stuff for surface transformations
 
         self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
@@ -411,7 +406,10 @@ class SubjectFiles:
             self.subpath, self.subid + '_final_contr.nii.gz')
         self.masks_contr = os.path.join(
             self.subpath, self.subid + '_masks_contr.nii.gz')
-        self.T1 = os.path.join(self.subpath, 'T1.nii.gz')
+        # TODO:update the stuff above
+        
+        
+        self.T1 = self.reference_volume
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
         self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
         self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
