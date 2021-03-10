@@ -130,7 +130,7 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs # I use my connection because github does not generate OAuth token for organizations
+      gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
