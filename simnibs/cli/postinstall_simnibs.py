@@ -161,7 +161,7 @@ def _get_conda_env():
     except KeyError:
         return ''
 
-def setup_gmsh_options(force=False, silent=False):
+def setup_gmsh_options(force=True, silent=False):
     ''' Copies the gmsh_options file to the appropriate place '''
     if sys.platform in ['linux', 'darwin']:
         target = os.path.expanduser('~/.gmsh-options')
@@ -900,7 +900,7 @@ def install(install_dir,
         download_extra_coils(timeout=10*60)
     if copy_gmsh_options:
         print('Copying Gmsh Options')
-        setup_gmsh_options(silent, force=True)
+        setup_gmsh_options(silent)
     if add_shortcut_icons:
         print('Adding Shortcut Icons', flush=True)
         setup_shortcut_icons(scripts_dir, force, silent)
