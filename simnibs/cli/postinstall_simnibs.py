@@ -900,7 +900,7 @@ def install(install_dir,
         download_extra_coils(timeout=10*60)
     if copy_gmsh_options:
         print('Copying Gmsh Options')
-        setup_gmsh_options(force=True, silent)
+        setup_gmsh_options(silent, force=True)
     if add_shortcut_icons:
         print('Adding Shortcut Icons', flush=True)
         setup_shortcut_icons(scripts_dir, force, silent)
