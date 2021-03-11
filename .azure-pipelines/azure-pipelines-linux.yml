@@ -45,6 +45,8 @@ jobs:
         containerImage: ubuntu:16.04
       ubuntu18:
         containerImage: ubuntu:18.04
+      ubuntu20:
+        containerImage: ubuntu:20.04
   pool:
     vmImage: 'ubuntu-16.04'
     maxParallel: 4
