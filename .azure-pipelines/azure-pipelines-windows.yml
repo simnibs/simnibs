@@ -86,7 +86,7 @@ jobs:
     displayName: Download Installer
 
   - bash: |
-      choco install octave
+      choco install octave.install --version=5.1.0
     displayName: Install Octave
 
   - script: |
