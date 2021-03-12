@@ -25,7 +25,15 @@ FSLOUTPUTTYPE=NIFTI_GZ
 
 EXIT_ON_ERROR=true # exit script when a called program returns an error 
 
-DWI2CONDPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )" # directory containing bash scrips for dwi2cond
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DWI2CONDPATH="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )" # directory containing bash scrips for dwi2cond
+
 # directory containing binaries
 case `uname` in
 	Linux )
