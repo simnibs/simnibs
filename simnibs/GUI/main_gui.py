@@ -198,7 +198,8 @@ class TDCS_GUI(QtWidgets.QMainWindow):
                 self.session.eeg_cap = sub_files.eeg_cap_1010
 
         if not self.session.pathfem:
-            pathfem = os.path.join(sub_files.basedir, 'simnibs_simulation')
+            basedir = os.path.abspath(os.path.join(sub_files.subpath,'..'))
+            pathfem = os.path.join(basedir, 'simnibs_simulation')
             self.out_folder_lineEdit.setText(pathfem)
             self.session.pathfem = pathfem
 

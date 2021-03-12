@@ -158,10 +158,16 @@ class SESSION(object):
         #    raise Exception('Re-using a Python SESSION '
         #                    'structure can cause bugs!'
         #                    ' Please initialize a new SESSION')
-        self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
-        if not os.path.isfile(self.fnamehead):
-            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
-
+        
+        if self.fnamehead:
+            self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
+            if not os.path.isfile(self.fnamehead):
+                raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+        else:
+            self.subpath = os.path.abspath(os.path.expanduser(self.subpath))
+            if not os.path.isdir(self.subpath):
+                raise IOError('Cannot locate subjects m2m folder: %s' % self.subpath)
+                
         sub_files = SubjectFiles(self.fnamehead, self.subpath)
         self.fnamehead = sub_files.fnamehead
         self.subpath = sub_files.subpath
