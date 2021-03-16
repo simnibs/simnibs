@@ -157,7 +157,7 @@ def _estimate_parameters(path_to_segment_folder,
                     (multiResolutionLevel, item['numberOfIterations'],
                      item['perVoxelCost']))
 
-    return samsegment.saveParametersAndInput(path_to_segment_folder)
+    return samsegment.saveParametersAndInput()
 
 
 def _post_process_segmentation(bias_corrected_image_names,
@@ -172,7 +172,7 @@ def _post_process_segmentation(bias_corrected_image_names,
         resampled_input, new_affine, orig_res = resample_vol(
                                                     corrected_input.get_data(),
                                                     corrected_input.affine,
-                                                    0.5, order=3)
+                                                    0.5, order=1)
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
         nib.save(upsampled, upsampled_image_names[input_number])
 
