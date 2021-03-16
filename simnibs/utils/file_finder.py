@@ -190,9 +190,6 @@ class SubjectFiles:
     subid: str
         The subject ID (eg: ernie)
 
-    basedir: str
-        Path to the folder where the m2m_subid folder is located (dir)
-
     tensor_file: str
         Path to the NifTi file with the tensor conductivity information (.nii.gz)
 
@@ -215,7 +212,7 @@ class SubjectFiles:
         Path to the EEG 10-10 electrode file (.csv)
 
     reference_volume: str
-        Path to the reference subject volume (.nii.gz)
+        Path to the reference subject volume (T1.nii.gz)
 
     mni2conf_nonl: str
         MNI to conform nonlinear transformation (.nii or .nii.gz)
@@ -320,10 +317,13 @@ class SubjectFiles:
                 raise IOError('fnamehead must be a gmsh .msh file')
             self.fnamehead = os.path.normpath(os.path.expanduser(fnamehead))
             if not subpath:
-                basedir, subid = os.path.split(self.fnamehead)
+                subpath, subid = os.path.split(self.fnamehead)
                 self.subid = os.path.splitext(subid)[0]
-                self.basedir = os.path.normpath(os.path.expanduser(basedir))
-                self.subpath = os.path.join(self.basedir, 'm2m_' + self.subid)
+                self.subpath = os.path.normpath(os.path.expanduser(subpath))
+                if not re.search('m2m_(.+)', self.subpath):
+                    # some mesh without m2m_folder
+                    subpath = None
+                    self.subpath = None
 
         if subpath:
             self.subpath = os.path.normpath(os.path.expanduser(subpath))
@@ -333,14 +333,13 @@ class SubjectFiles:
             except:
                 raise IOError('Could not find subject ID from subpath. '
                               'Does the folder have the format m2m_subID?')
-            self.basedir = os.path.normpath(os.path.join(self.subpath, '..'))
-
             if not fnamehead:
-                self.fnamehead = os.path.join(self.basedir, self.subid + '.msh')
+                self.fnamehead = os.path.join(self.subpath, self.subid + '.msh')
 
-        self.tensor_file = os.path.join(
-            self.basedir, 'd2c_' + self.subid,
-            'dti_results_T1space', 'DTI_conf_tensor.nii.gz')
+        if not self.subpath:
+            self.subpath = '' # otherwise SESSION._prepare fails for meshes that do not have a m2m_folder
+        
+        self.tensor_file = os.path.join(self.subpath, 'DTI_coregT1_tensor.nii.gz')
 
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
         self.eeg_cap_1010 = self.get_eeg_cap()
@@ -350,7 +349,7 @@ class SubjectFiles:
         self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
 
         # Stuff for volume transformations
-        self.reference_volume = os.path.join(self.subpath, 'T1fs_conform.nii.gz')
+        self.reference_volume = os.path.join(self.subpath, 'T1.nii.gz')
         self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
         self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
@@ -374,16 +373,13 @@ class SubjectFiles:
             self.mni2conf_12dof += '.mat'
 
         # Stuff for surface transformations
-
-        self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
-        #TODO: Set here the path for CHARM files
-        self.surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
+        self.surf_dir = os.path.join(self.subpath, 'surfaces')
         # Look for all .gii files in surf_dir
         surfaces = glob.glob(os.path.join(self.surf_dir, '*.gii'))
         # Organize the files in 3 separate lists
         SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
         self.sphere_reg_surfaces = []
-        self.sphere_surfaces = []
+        #self.sphere_surfaces = []
         self.central_surfaces = []
         for fn in surfaces:
             s = os.path.basename(fn)
@@ -392,10 +388,10 @@ class SubjectFiles:
                 self.sphere_reg_surfaces.append(
                     SurfaceFile(fn, region)
                 )
-            elif '.sphere.' in s:
-                self.sphere_surfaces.append(
-                    SurfaceFile(fn, region)
-                )
+            # elif '.sphere.' in s:
+            #     self.sphere_surfaces.append(
+            #         SurfaceFile(fn, region)
+            #     )
             elif '.central.' in s:
                 self.central_surfaces.append(
                     SurfaceFile(fn, region)
@@ -403,15 +399,11 @@ class SubjectFiles:
 
         self.regions = sorted(
             set([s.region for s in self.sphere_reg_surfaces]) &
-            set([s.region for s in self.sphere_surfaces]) &
+            #set([s.region for s in self.sphere_surfaces]) &
             set([s.region for s in self.central_surfaces])
         )
         
-        self.final_contr = os.path.join(
-            self.subpath, self.subid + '_final_contr.nii.gz')
-        self.masks_contr = os.path.join(
-            self.subpath, self.subid + '_masks_contr.nii.gz')
-        self.T1 = os.path.join(self.subpath, 'T1.nii.gz')
+        self.T1 = self.reference_volume
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
         self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
         self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
@@ -429,6 +421,18 @@ class SubjectFiles:
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
         self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
+        
+        #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
+        self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
+        
+        # TODO:update the stuff below
+        print('leftover stuff: needed?')
+        self.final_contr = os.path.join(
+            self.subpath, self.subid + '_final_contr.nii.gz')
+        self.masks_contr = os.path.join(
+            self.subpath, self.subid + '_masks_contr.nii.gz')
+        # TODO:update the stuff above
+        
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject

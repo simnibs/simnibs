@@ -380,7 +380,6 @@ class Elements:
             return_counts=True,
             axis=0)
 
-
         if np.any(count > 2):
             warnings.warn(
                 'Found a face with more than 2 adjacent tetrahedra!')

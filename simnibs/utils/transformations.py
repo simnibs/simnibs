@@ -1427,7 +1427,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         return d
 
     m = mesh_io.read_msh(mesh_fn)
-    subdir, sim_name = os.path.split(mesh_fn)
+    _, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
     # Crop out GM
     m = m.crop_mesh(2)
@@ -1439,7 +1439,6 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         os.mkdir(out_fsaverage)
     if out_fsaverage is not None:
         out_fsaverage = os.path.abspath(os.path.normpath(out_fsaverage))
-
 
     names_subj = []
     names_fsavg = []

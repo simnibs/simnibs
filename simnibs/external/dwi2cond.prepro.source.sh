@@ -175,6 +175,8 @@ else
   e2 cd $DTIRAW_DIR
   e fslmaths DWIforfit -thr 0 DWIforfit
   e dtifit -k DWIforfit -m nodif_brain_mask -r DWIbvecs -b DWIbvals -o DTI --sse --save_tensor $DTIFITOPT
+  e rm DTI_V?.* DTI_L?.* DTI_M?.* DTI_S0.*
+
 
 fi # if $DTI_EXISTS; then ... else
 e2 cd $OLD_PWD
