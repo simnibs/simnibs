@@ -228,6 +228,7 @@ class SubjectFiles:
 
     ref_fs: str
         Reference FreeSurfer space file (.nii.gz)
+        Now always set to True, so that a standard header is added, which seems to work
 
     surf_dir: str
         Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
@@ -236,9 +237,6 @@ class SubjectFiles:
         List of SurfaceFile objects which containts 2 fields:
             fn: name of surface file (.gii format)
             region: 'lh', 'rh', 'lc' or 'rc'
-
-    sphere_surfaces: list
-        Same as above but in a spherical geometry
 
     sphere_reg_surfaces: list
         Same as above but for the spherical registration files
@@ -403,6 +401,7 @@ class SubjectFiles:
             set([s.region for s in self.central_surfaces])
         )
         
+        print('self.T1 = self.reference_volume --> remove one')
         self.T1 = self.reference_volume
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
         self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
@@ -415,6 +414,8 @@ class SubjectFiles:
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
+        
+        print('self.head_mesh: same as self.fnamehead???')
         self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')

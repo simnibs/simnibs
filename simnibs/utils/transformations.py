@@ -1655,4 +1655,3 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
         return atlas
     else:
         raise ValueError('Invalid hemisphere name')
-
