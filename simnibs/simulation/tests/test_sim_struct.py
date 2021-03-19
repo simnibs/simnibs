@@ -387,3 +387,12 @@ class TestTDCSLEADFIELD:
         assert np.allclose(p.electrode[0].centre, [1.2,2.4,7.1])
         assert p.electrode[0].pos_ydir == []
         assert p.electrode[0].shape == 'rect'
+
+
+class TestGetSurroundPos:
+    def test_get_surround_pos(self,sphere3_fn):
+        P = sim_struct.get_surround_pos([0, 0, 95], sphere3_fn,
+                                        radius_surround = 94.5*np.pi, N = 3,
+                                        pos_dir_1stsurround = [10, 0, 95])
+        P = np.asarray(P)
+        assert np.max(np.abs(np.diff(P,axis=0))) < 0.1
