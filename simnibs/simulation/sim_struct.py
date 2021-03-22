@@ -2909,7 +2909,8 @@ def sphereFit(pts, bounds = None):
 
     
 def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4, 
-                     pos_dir_1stsurround = None, phis_surround = None):
+                     pos_dir_1stsurround = None, phis_surround = None,
+                     tissue_idx = 1005):
     """
     Determine the positions of surround electrodes.
 
@@ -2934,7 +2935,10 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
         direction defined by pos_dir_1stsurround. The default is None, in which 
         case the electrodes will be placed at [0, 1/N*360, ..., (N-1)/N*360] 
         degrees.
-
+    tissue_idx : int, optional    
+        Index of the tissue on which the surround positions will be planned on.
+        (standard: 1005 for skin)
+    
     Returns
     -------
     P_surround : list of arrays (3,)
@@ -2951,7 +2955,9 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     tmp.substitute_positions_from_cap(ff.get_eeg_cap())
     
     m = mesh_io.read_msh(fnamehead)
-    idx = (m.elm.elm_type == 2)&( (m.elm.tag1 == 1005) | (m.elm.tag1 == 5) )
+    if tissue_idx < 1000:
+        tissue_idx += 1000
+    idx = (m.elm.elm_type == 2)&( (m.elm.tag1 == tissue_idx) | (m.elm.tag1 == tissue_idx-1000) )
     m = m.crop_mesh(elements = m.elm.elm_number[idx])
     P_centre = m.find_closest_element(tmp.centre)
     idx = np.sum((m.nodes[:] - P_centre)**2,1) <= (np.max(radius_surround)+10)**2

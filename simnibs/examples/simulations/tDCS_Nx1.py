@@ -117,9 +117,11 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
         Center position of the central electrode.
     fnamehead : string
         Filename of head mesh.
-    radius_surround : float, optional
-        Distance (centre-to-centre) between the centre and 
-        surround electrodes (mm). The default is 50.
+    radius_surround : float or array (N,), optional
+        Distance (centre-to-centre) between the centre and surround
+        electrodes. The default is 50. Either a single number (same
+        radius for all electrodes) or an array with N numbers 
+        (N: number of surround electrodes)
     N : int, optional
         Number of surround electrodes. The default is 4.
     pos_dir_1stsurround : array (3,) or string, optional
@@ -150,7 +152,7 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     idx = (m.elm.elm_type == 2)&( (m.elm.tag1 == 1005) | (m.elm.tag1 == 5) )
     m = m.crop_mesh(elements = m.elm.elm_number[idx])
     P_centre = m.find_closest_element(tmp.centre)
-    idx = np.sum((m.nodes[:] - P_centre)**2,1) <= (radius_surround+10)**2
+    idx = np.sum((m.nodes[:] - P_centre)**2,1) <= (np.max(radius_surround)+10)**2
     m = m.crop_mesh(nodes = m.nodes.node_number[idx])
     
     
@@ -159,7 +161,6 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     #   x-axis: direction of first surround
     #   z-axis: from sphere center to centre electrode
     r_sph, sph_centre = sphereFit(m.nodes[:])
-    theta_on_sph = radius_surround/r_sph
     
     M_sph = np.eye(4)
     M_sph[:3,3] = sph_centre
@@ -183,13 +184,19 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     
     # fit arcs to the skin to get the distances accurate
     N_pts = 50
-    arc = np.vstack(( r_sph*np.sin(theta_on_sph*np.arange(N_pts)/(N_pts-1)),
-                      np.zeros((1,N_pts)),
-                      r_sph*np.cos(theta_on_sph*np.arange(N_pts)/(N_pts-1)),
-                      np.ones((1,N_pts)) ))
     P_surround = []
     surround_fit = []
     for phi in range(N):
+        if len(radius_surround)>1:
+            theta_on_sph = radius_surround[phi]/r_sph
+        else:
+            theta_on_sph = radius_surround/r_sph
+        
+        arc = np.vstack(( r_sph*np.sin(theta_on_sph*np.arange(N_pts)/(N_pts-1)),
+                          np.zeros((1,N_pts)),
+                          r_sph*np.cos(theta_on_sph*np.arange(N_pts)/(N_pts-1)),
+                          np.ones((1,N_pts)) ))
+
         M_rot = np.eye(4)
         M_rot[:3,:3] = R.from_euler('z', phi/N*2*np.pi ).as_dcm()
         M_to_world = M_sph @ M_rot
@@ -224,9 +231,9 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
                          r_arc*np.cos(theta_on_arc) + arc_centre[1],
                          1. ))    
         P_surround.append(m.find_closest_element( (M_to_world @ tmp).T[:3] ))
-        surround_fit.append((arc_centre, r_arc, theta_on_arc, theta_z0_on_arc, M_to_world))
     
         if DEBUG:
+            surround_fit.append((arc_centre, r_arc, theta_on_arc, theta_z0_on_arc, M_to_world))
             arc_fit = np.vstack(( 
                  r_arc*np.sin(theta_z0_on_arc + (theta_on_arc-theta_z0_on_arc)*np.arange(N_pts)/(N_pts-1)) + arc_centre[0],
                  r_arc*np.cos(theta_z0_on_arc + (theta_on_arc-theta_z0_on_arc)*np.arange(N_pts)/(N_pts-1)) + arc_centre[1]
@@ -242,7 +249,7 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     return P_surround
 
 
-def expand_to_center_surround(S, fnamehead, radius_surround = 50, N = 4, 
+def expand_to_center_surround(S, subpath, radius_surround = 50, N = 4, 
                               pos_dir_1stsurround = None, multichannel = False):
     """
     Generate a center-surround montage (standard: 4x1) from a TDCSLIST.
@@ -254,11 +261,13 @@ def expand_to_center_surround(S, fnamehead, radius_surround = 50, N = 4,
     ----------
     S : TDCSLIST
         TDCSLIST with the center electrode.
-    fnamehead : string
-        Filename of the head mesh.
-    radius_surround : float, optional
+    subpath : string
+        m2m_folder of the subject
+    radius_surround : float or array (N,), optional
         Distance (centre-to-centre) between the centre and surround
-        electrodes. The default is 50.
+        electrodes. The default is 50. Either a single number (same
+        radius for all electrodes) or an array with N numbers 
+        (N: number of surround electrodes)
     N : int, optional
         Number of surround electrodes. The default is 4.
     pos_dir_1stsurround : array (3,) or string, optional
@@ -280,8 +289,8 @@ def expand_to_center_surround(S, fnamehead, radius_surround = 50, N = 4,
         raise TypeError('The first parameter needs to be a TDCSLIST.')
     if len(S.electrode) != 1:
         raise ValueError('The TDCSLIST has to contain exactly one ELECTRODE.')
-    if not os.path.isfile(fnamehead):
-        raise IOError('Could not find head mesh: {0}'.format(fnamehead))
+    if not os.path.isdir(subpath):
+        raise IOError('Could not find m2m-folder: {0}'.format(subpath))
     
     C = S.electrode[0]
     C.channelnr = 1  # Connect center to channel 1
@@ -303,13 +312,13 @@ def expand_to_center_surround(S, fnamehead, radius_surround = 50, N = 4,
         Channel_surround = 2*np.ones(N,dtype = int)
     
     # get centers of surround electrodes
-    P_surround = get_surround_pos(C.centre, fnamehead, radius_surround = radius_surround,
+    ff = file_finder.SubjectFiles(subpath = subpath)
+    P_surround = get_surround_pos(C.centre, ff.fnamehead, radius_surround = radius_surround,
                                   N = N, pos_dir_1stsurround = pos_dir_1stsurround)
     
     # get direction vector
     ydir = []
-    if len(C.pos_ydir):    
-        ff = file_finder.SubjectFiles(fnamehead = fnamehead)
+    if len(C.pos_ydir):
         tmp = deepcopy(C)
         tmp.substitute_positions_from_cap(ff.get_eeg_cap())
         ydir = tmp.pos_ydir - tmp.centre
@@ -329,7 +338,7 @@ def expand_to_center_surround(S, fnamehead, radius_surround = 50, N = 4,
 ###     SETUP
 ###################
 S = sim_struct.SESSION()
-S.fnamehead = 'ernie.msh'  # head mesh
+S.subpath = 'm2m_ernie'  # m2m-folder of the subject
 S.pathfem = 'tdcs_Nx1' # output directory for the simulation
 #S.map_to_surf = True # map to subject's middle gray matter surface (optional)
 
@@ -338,7 +347,8 @@ tdcs_list.currents = 0.001  # Current flow through center channel (A)
 
 # define the center electrode
 center = tdcs_list.add_electrode()
-center.centre = 'C3'  # Place it over C3
+#center.centre = 'C3'  # Place it over C3
+center.centre = [-46, 30.8, 80.8]
 center.shape = 'ellipse'  # round shape
 center.dimensions = [30, 30]  # 30 mm diameter
 center.thickness = [2, 1]  # 2 mm rubber electrodes on top of 1 mm gel layer
@@ -346,9 +356,13 @@ center.thickness = [2, 1]  # 2 mm rubber electrodes on top of 1 mm gel layer
 # parameters for setting up the surround electrodes
 radius_surround = 80 # distance (centre-to-centre) between the centre and 
                      # surround electrodes (optional; standard: 50 mm)
-pos_dir_1stsurround = 'C4' # a position indicating the direction in which the 
+                     # either a single number or an array with N entries
+                     # (N: number of electrodes)
+#pos_dir_1stsurround = 'C4' # a position indicating the direction in which the 
                            # first surround electrode should be placed 
-                           # (optional; standard: None)
+                          # (optional; standard: None)
+#-12 25 96.8
+pos_dir_1stsurround = None                           
 N = 4 # number of surround electrodes (optional; standard: 4)
 multichannel = True # when set to True: Simulation of multichannel stimulator 
                      # with each suround channel receiving 1/N-th of the
@@ -356,10 +370,10 @@ multichannel = True # when set to True: Simulation of multichannel stimulator
                      # surround electrodes connected to the same channel)
 
 # set up surround electrodes
-tdcs_list = expand_to_center_surround(tdcs_list, S.fnamehead, radius_surround, 
+tdcs_list = expand_to_center_surround(tdcs_list, S.subpath, radius_surround, 
                                       N, pos_dir_1stsurround, multichannel)
     
 
 ### RUN SIMULATION
 ###################
-run_simnibs(S)
+#run_simnibs(S)
