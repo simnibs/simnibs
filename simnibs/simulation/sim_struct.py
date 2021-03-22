@@ -2910,7 +2910,7 @@ def sphereFit(pts, bounds = None):
     
 def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4, 
                      pos_dir_1stsurround = None, phis_surround = None,
-                     tissue_idx = 1005):
+                     tissue_idx = 1005, DEBUG = False):
     """
     Determine the positions of surround electrodes.
 
@@ -2938,6 +2938,9 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     tissue_idx : int, optional    
         Index of the tissue on which the surround positions will be planned on.
         (standard: 1005 for skin)
+    DEBUG : Boolean, optional
+        When set to True, a visualization in gmsh will open for control
+        (standard: False)
     
     Returns
     -------
@@ -2945,7 +2948,6 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
         List of the centre positions of the surround electrodes.
 
     """
-    DEBUG=False
     
     # replace electrode name with position if needed
     # and get skin ROI around centre position
