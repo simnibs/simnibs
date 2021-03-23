@@ -12,6 +12,7 @@ import shutil
 import time
 import subprocess
 import nibabel as nib
+import glob
 from sys import platform
 from .. import utils
 from simnibs import SIMNIBSDIR
@@ -27,7 +28,7 @@ from ..utils.transformations import resample_vol
 from ..mesh_tools import meshing
 from . import _thickness
 from .brain_surface import dilate, erosion
-from ..mesh_tools.mesh_io import write_msh
+from ..mesh_tools.mesh_io import write_msh, ElementData
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import label
 
@@ -521,7 +522,7 @@ def run(subject_dir=None, T1=None, T2=None,
             #Cast to float32 and save
             T1_tmp = nib.load(T1)
             T1_tmp.set_data_dtype(np.float32)
-            nib.save(T1_tmp, sub_files.T1)
+            nib.save(T1_tmp, sub_files.reference_volume)
 
     if registerT2 and T2 is not None:
         if not os.path.exists(T2):
@@ -692,8 +693,8 @@ def run(subject_dir=None, T1=None, T2=None,
         os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
         samseg.simnibs_segmentation_utils.saveWarpField(
                 template_name,
-                sub_files.conf2mni_nonl,
                 sub_files.mni2conf_nonl,
+                sub_files.conf2mni_nonl,
                 segment_parameters_and_inputs)
 
         # Run post-processing
@@ -808,7 +809,7 @@ def run(subject_dir=None, T1=None, T2=None,
             hierarchy = None
         smooth_steps = mesh_settings['smooth_steps']
         
-        final_mesh = mesh(label_buffer, label_affine,
+        final_mesh = create_mesh(label_buffer, label_affine,
                           size_slope=size_slope, size_range=size_range,
                           skin_facet_size=skin_facet_size,
                           distance_slope=distance_slope, distance_range=distance_range,
@@ -819,7 +820,39 @@ def run(subject_dir=None, T1=None, T2=None,
                           hierarchy=hierarchy,
                           smooth_steps=smooth_steps)
         logger.info('Writing mesh')
-        write_msh(final_mesh, sub_files.head_mesh)
+        write_msh(final_mesh, sub_files.fnamehead)
+        
+        logger.info('Transforming EEG positions')
+        idx = (final_mesh.elm.elm_type == 2)&(final_mesh.elm.tag1 == skin_tag)
+        mesh = final_mesh.crop_mesh(elements = final_mesh.elm.elm_number[idx])
+        
+        if not os.path.exists(sub_files.eeg_cap_folder):
+            os.mkdir(sub_files.eeg_cap_folder)
+                    
+        cap_files = glob.glob(os.path.join(file_finder.ElectrodeCaps_MNI, '*.csv'))
+        for fn in cap_files:
+            fn_out = os.path.splitext(os.path.basename(fn))[0]
+            fn_out = os.path.join(sub_files.eeg_cap_folder, fn_out)
+            
+            transformations.warp_coordinates(
+                    fn, sub_files.subpath,
+                    transformation_direction='mni2subject',
+                    out_name=fn_out+'.csv',
+                    out_geo=fn_out+'.geo',
+                    mesh_in = mesh)
+        
+        logger.info('Write label image from mesh')
+        MNI_template = file_finder.Templates().mni_volume
+        mesh = final_mesh.crop_mesh(elm_type=4)
+        field = np.zeros(mesh.elm.nr, dtype=np.int32)
+        field = mesh.elm.tag1
+        ed = ElementData(field)
+        ed.mesh = mesh
+        ed.to_deformed_grid(sub_files.mni2conf_nonl, MNI_template, 
+                            out=sub_files.final_labels_MNI,
+                            out_original=sub_files.final_labels,
+                            method='assign',
+                            reference_original=sub_files.reference_volume)
 
     # -------------------------TIDY UP-----------------------------------------
 
@@ -838,7 +871,7 @@ def run(subject_dir=None, T1=None, T2=None,
         f.close()
 
 
-def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
+def create_mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
          skin_facet_size=1.5, distance_slope=0.5, distance_range=(0.1, 3),
          optimize=True, remove_spikes=True, skin_tag=1005,
          remove_twins=True, hierarchy=None, smooth_steps=5):

@@ -24,6 +24,7 @@ import warnings
 import os
 from functools import partial
 import gc
+import copy
 
 import numpy as np
 import scipy.ndimage
@@ -546,13 +547,13 @@ def warp_volume(image_fn, m2m_folder, out_name,
                         inverse_warp=inverse_warp, binary=binary)
 
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
-                          method='linear', continuous=False):
+                          method='linear', continuous=False, create_label=False):
     ''' Interpolates the fields in a mesh and writem them to nifti files
 
     Parameters:
     -----------
-    fn_mesh: str
-        Name of mesh file
+    fn_mesh: str, or simnibs.msh.Msh
+        Name of mesh file, or a preloaded mesh
     reference: str
         Path to the m2m_{subject_id} folder, generated during the segmantation, or to a
         reference nifti file
@@ -560,26 +561,32 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         Name of output nifti file. If the input is a mesh, the names will be appended with the field
         names.
     create_masks: bool
-        Mask mode: write tissue masks intead of fields
+        Mask mode: write tissue masks instead of fields
     method: {'assign' or 'linear'} (Optional)
         Method for gridding the data. If 'assign', gives to each voxel the value of the element that contains
         it. If linear, first assign fields to nodes, and then perform
         baricentric interpolatiom. Default: linear
     continuous: bool
         Wether fields is continuous across tissue boundaries. Default: False
+    create_label: bool
+        Label mode: write label image from mesh instead of fields   
     '''
     from ..mesh_tools.mesh_io import read_msh, ElementData
     if os.path.isdir(reference):
         names = get_names_from_folder_structure(reference)
         reference = names['reference_conf']
     if not os.path.isfile(reference):
-        raise IOError('Could not find reference file: {0}'.format(reference))
-    if not os.path.isfile(fn_mesh):
-        raise IOError('Could not find mesh file: {0}'.format(fn_mesh))
+        raise IOError('Could not find reference file: {0}'.format(reference))   
+    if isinstance(fn_mesh, str):
+        if not os.path.isfile(fn_mesh):
+            raise IOError('Could not find mesh file: {0}'.format(fn_mesh))
+        mesh = read_msh(fn_mesh)
+    else:
+        mesh = copy.deepcopy(fn_mesh)
+        
     image = nib.load(reference)
     affine = image.affine
     n_voxels = image.header['dim'][1:4]
-    mesh = read_msh(fn_mesh)
     fn, ext = os.path.splitext(fn_out)
     if ext == '':
         ext = '.nii.gz'
@@ -603,6 +610,14 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
             ed.mesh = mesh
             ed.to_nifti(n_voxels, affine, fn=name, qform=image.header.get_qform(),
                         method='assign')
+    elif create_label:
+        mesh = mesh.crop_mesh(elm_type=4)
+        field = np.zeros(mesh.elm.nr, dtype=np.int32)
+        field = mesh.elm.tag1
+        ed = ElementData(field)
+        ed.mesh = mesh
+        ed.to_nifti(n_voxels, affine, fn=fn_out, qform=image.header.get_qform(),
+                    method='assign')
     else:
         if len(mesh.elmdata) + len(mesh.nodedata) == 0:
             warnings.warn('No fields found in mesh!')
@@ -956,7 +971,8 @@ def warp_coordinates(coordinates, m2m_folder,
                      transformation_direction='subject2mni',
                      transformation_type='nonl',
                      out_name=None,
-                     out_geo=None):
+                     out_geo=None,
+                     mesh_in=None):
     ''' Warps a set of coordinates
     For simpler calls, please see subject2mni_coords and mni2subject_coords
 
@@ -1000,6 +1016,12 @@ def warp_coordinates(coordinates, m2m_folder,
 
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
+        
+    mesh_in : mesh file, optional 
+        scalp or head mesh, used to project electrodes onto scalp or ensure
+        TMS coil distances from scalp; is used only for direction 'mni2subject'
+        (standard: None; the head mesh file will then be automatically loaded,
+         which is slower for repeated applications)
 
     Returns
     ----------
@@ -1079,7 +1101,10 @@ def warp_coordinates(coordinates, m2m_folder,
 
     # delay reading the mesh
     if len(generic) != len(type_) and transformation_direction == 'mni2subject':
-        mesh = read_msh(names['mesh'])
+        if mesh_in is None:
+            mesh = read_msh(names['mesh'])
+        else:
+            mesh = mesh_in
 
     # Transform all electrode types
     electrode = [i for i, t in enumerate(type_) if t in ['Fiducial', 'Electrode', 'ReferenceElectrode']]

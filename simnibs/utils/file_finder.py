@@ -39,7 +39,6 @@ class Templates:
 
     mni_volume: str
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
-<<<<<<< HEAD
     freesurfer_templates: str
         Path to the folder with FreeSurfer templates (dir)
     fs_lh_sphere_ref: str
@@ -52,8 +51,6 @@ class Templates:
         Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)
     simnibs_logo: str
         Path to the SimNIBS logo stored as triangle mesh (gmsh format)
-=======
->>>>>>> charm
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
@@ -68,9 +65,9 @@ class Templates:
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
-
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
+ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, 'resources', 'ElectrodeCaps_MNI')
 
 def get_atlas(atlas_name, hemi='both'):
     ''' Loads a brain atlas based of the FreeSurfer fsaverage template
@@ -215,16 +212,19 @@ class SubjectFiles:
         Path to the reference subject volume (T1.nii.gz)
 
     mni2conf_nonl: str
-        MNI to conform nonlinear transformation (.nii or .nii.gz)
+        MNI to conform nonlinear transformation (.nii.gz)
 
     conf2mni_nonl: str
-        Conform to MNI nonlinear tansformation (.nii or .nii.gz)
+        Conform to MNI nonlinear tansformation (.nii.gz)
 
     mni2conf_6dof: str
         MNI to conform 6 DOF transfomation (.txt or .mat)
 
     mni2conf_12dof: str
         MNI to conform 12 DOF transfomation (.txt or .mat)
+    
+    final_labels_MNI: str
+        Label image created from final mesh in MNI space
 
     ref_fs: str
         Reference FreeSurfer space file (.nii.gz)
@@ -243,12 +243,6 @@ class SubjectFiles:
 
     regions: list
         list of region names (e.g. 'lh', 'rh') where all surfaces above are present
-
-    final_contr: str
-        Volume mask after meshing (.nii.gz)
-
-    masks_contr: str
-        Volume mask before meshing (.nii.gz)
 
     T1: str
         T1 image after applying transformations
@@ -270,6 +264,9 @@ class SubjectFiles:
     
     labeling: str
         Output segmentation from samseg
+        
+    final_labels: str
+        Label image created from final mesh
     
     template_coregistered: str
         Affine mapping from atlas voxel space to T1 voxel space
@@ -350,13 +347,9 @@ class SubjectFiles:
         self.reference_volume = os.path.join(self.subpath, 'T1.nii.gz')
         self.mni_transf_folder = os.path.join(self.subpath, 'toMNI')
 
-        self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii')
-        if os.path.isfile(self.mni2conf_nonl + '.gz'):
-            self.mni2conf_nonl += '.gz'
-
-        self.conf2mni_nonl = os.path.join(self.mni_transf_folder, 'Conform2MNI_nonl.nii')
-        if os.path.isfile(self.conf2mni_nonl + '.gz'):
-            self.conf2mni_nonl += '.gz'
+        self.mni2conf_nonl = os.path.join(self.mni_transf_folder, 'MNI2Conform_nonl.nii.gz')
+        self.conf2mni_nonl = os.path.join(self.mni_transf_folder, 'Conform2MNI_nonl.nii.gz')
+        self.final_labels_MNI = os.path.join(self.mni_transf_folder, 'final_tissues_MNI.nii.gz')
 
         self.mni2conf_6dof = os.path.join(self.mni_transf_folder, 'MNI2conform_6DOF')
         if os.path.isfile(self.mni2conf_6dof + '.txt'):
@@ -401,22 +394,19 @@ class SubjectFiles:
             set([s.region for s in self.central_surfaces])
         )
         
-        print('self.T1 = self.reference_volume --> remove one')
-        self.T1 = self.reference_volume
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
         self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
         self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
         self.T1_bias_corrected = os.path.join(self.segmentation_folder, 'T1_bias_corrected.nii.gz')
         self.T2_bias_corrected = os.path.join(self.segmentation_folder, 'T2_bias_corrected.nii.gz')
         self.labeling = os.path.join(self.subpath, 'labeling.nii.gz')
+        self.final_labels = os.path.join(self.subpath, 'final_tissues.nii.gz')
         self.template_coregistered =  os.path.join(self.segmentation_folder, 'template_coregistered.nii.gz')
         self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
         
-        print('self.head_mesh: same as self.fnamehead???')
-        self.head_mesh = os.path.join(self.subpath, self.subid + '.msh')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
@@ -425,15 +415,7 @@ class SubjectFiles:
         
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
-        
-        # TODO:update the stuff below
-        print('leftover stuff: needed?')
-        self.final_contr = os.path.join(
-            self.subpath, self.subid + '_final_contr.nii.gz')
-        self.masks_contr = os.path.join(
-            self.subpath, self.subid + '_masks_contr.nii.gz')
-        # TODO:update the stuff above
-        
+                
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
