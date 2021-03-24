@@ -264,7 +264,8 @@ def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False)
     return msh_stl
 
 
-def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
+def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None,
+                    add_scalp_to_geo=False):
     
     add_logo = True # add simnibs logo to coil surface visulization
     
@@ -286,24 +287,29 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
     else:
         raise ValueError('coil file must be either a .ccd file or a nifti file')
     
-    if fn_stl is not None:
-        if not os.path.isfile(fn_stl):
-            raise IOError('Could not find stl file: {0}'.format(fn_stl))
-        msh_stl = mesh_io.read_stl(fn_stl)
-        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) | 
-                                        (msh.elm.tag1 == 5) )
+    if fn_geo is not None:
+        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) |
+                                        (msh.elm.tag1 == 5) ) 
         msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
-        msh_stl = _transform_coil_surface(msh_stl,coil_matrix,msh_skin,add_logo)
-        mesh_io.write_geo_triangles(msh_stl.elm[:,:3]-1, msh_stl.nodes[:],
-                                    fn_geo, values=msh_stl.elm.tag1,
-                                    name='coil_casing', mode='ba')
-    
+        if fn_stl is not None:
+            if not os.path.isfile(fn_stl):
+                raise IOError('Could not find stl file: {0}'.format(fn_stl))
+            msh_stl = mesh_io.read_stl(fn_stl)
+            msh_stl = _transform_coil_surface(msh_stl,coil_matrix,msh_skin,add_logo)
+            mesh_io.write_geo_triangles(msh_stl.elm[:,:3]-1, msh_stl.nodes[:],
+                                        fn_geo, values=msh_stl.elm.tag1,
+                                        name='coil_casing', mode='ba')
+        if add_scalp_to_geo:
+            mesh_io.write_geo_triangles(msh_skin.elm[:,:3]-1, msh_skin.nodes[:],
+                                        fn_geo, name='scalp', mode='ba')
+            
     dadt.mesh = msh
     dadt = dadt.node_data2elm_data()
     return dadt
 
 
-def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
+def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None,
+               add_scalp_to_geo=False):
     """ sets up a tms simulation
 
     Parameters
@@ -319,6 +325,13 @@ def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
    fn_geo(optional): str
         name of .geo file with coil representation
         default: don't output a geo file
+   fn_stl(optional): str
+        name of .stl file of coil casing
+        that will be added to fn_geo
+        default: None
+   add_scalp_to_geo(optional): Bool
+        if True, scalp will be added to geo fiel for coil representation.
+        Standard: False
 
    Returns
    ---------
@@ -326,4 +339,5 @@ def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
         dAdt at the elements
     """
     coil_matrix = np.array(coil_matrix, dtype=float)
-    return set_up_tms_dAdt(msh, coil_file, coil_matrix, didt, fn_geo, fn_stl)
+    return set_up_tms_dAdt(msh, coil_file, coil_matrix, didt, fn_geo, fn_stl, 
+                           add_scalp_to_geo)

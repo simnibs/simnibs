@@ -226,7 +226,8 @@ class SESSION(object):
         self._prepare()
         dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
         final_names = []
-
+        final_names_geo = []
+        
         if os.path.isdir(dir_name):
             g = glob.glob(os.path.join(dir_name, 'simnibs_simulation*.mat'))
             if len(g) > 0 and not allow_multiple_runs:
@@ -258,9 +259,10 @@ class SESSION(object):
                     simu_name = os.path.join(dir_name, '{0}_TDCS_{1}'.format(name, i + 1))
                 else:
                     simu_name = os.path.join(dir_name, '{0}'.format(i + 1))
-            fn = PL.run_simulation(simu_name, cpus=cpus, view=self.open_in_gmsh)
+            fn, fn_geo  = PL.run_simulation(simu_name, cpus=cpus, view=self.open_in_gmsh)
             PL.mesh = None
             final_names += fn
+            final_names_geo += fn_geo
             logger.info('Finished Running Poslist Number: {0}'.format(i + 1))
             logger.info('Result Files:\n{0}'.format('\n'.join(fn)))
             gc.collect()
@@ -282,12 +284,12 @@ class SESSION(object):
                 folders += [out_fsavg]
             else:
                 out_fsavg = None
-            for f in final_names:
+            for f, f_geo in zip(final_names, final_names_geo):
                 if f.endswith('.msh'):
                     transformations.middle_gm_interpolation(
                         f, self.subpath, out_folder,
                         out_fsaverage=out_fsavg, depth=0.5,
-                        open_in_gmsh=self.open_in_gmsh)
+                        open_in_gmsh=self.open_in_gmsh, f_geo=f_geo)
 
         if self.map_to_vol:
             logger.info('Mapping to volume')
@@ -913,6 +915,12 @@ class SimuList(object):
             except KeyError:
                 self.anisotropy_vol = None
 
+    def _scalp_geo(self, m, fn_out, scalp_idx=1005):
+        ''' write out scalp surface as geo file '''
+        idx = (m.elm.tag1 == scalp_idx)&(m.elm.elm_type == 2)
+        mesh_io.write_geo_triangles(m.elm[idx,:3]-1, 
+                                    m.nodes.node_coord, fn_out, 
+                                    name='scalp', mode='ba')
 
 class TMSLIST(SimuList):
     """List of TMS coil position
@@ -1082,8 +1090,10 @@ class TMSLIST(SimuList):
         final_name: list
           List with the names of the output files. 
           We return a list for consistency with the TMS version
-
+        geo_names: list
+            List with the names of the geo-files that accompany the output files. 
         """
+        add_scalp_to_geo=True
         if len(self.pos) == 0:
             raise ValueError('There are no positions defined for this poslist!')
         fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
@@ -1124,7 +1134,7 @@ class TMSLIST(SimuList):
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
                      solver_options=self.solver_options, n_workers=cpus,
-                     fn_stl=fn_stl)
+                     fn_stl=fn_stl,add_scalp_to_geo=add_scalp_to_geo)
 
         logger.info('Creating visualizations')
         summary = ''
@@ -1140,6 +1150,8 @@ class TMSLIST(SimuList):
                 v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
                            Visible=1, ShowScale=0, CustomMin=-0.5,
                            CustomMax=3.5, RangeType=2)
+            if add_scalp_to_geo:
+                v.add_view(ColormapNumber=8, ColormapAlpha=.3, Visible=0, ShowScale=0) # scalp
             v.write_opt(n)
 
             if view:
@@ -1154,7 +1166,7 @@ class TMSLIST(SimuList):
 
         del cond
         gc.collect()
-        return output_names
+        return output_names, geo_names
 
     def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
         from .gpc import run_tms_gpc
@@ -1699,7 +1711,10 @@ class TDCSLIST(SimuList):
         final_name: list
           List with one element: the name of the output file.
           We return a list for consistency with the TMS version
+        geo_name: list
+            List with the name of the geo-file that accompanies the output file.
         """
+        add_scalp_to_geo=True
         fn_simu = os.path.abspath(os.path.expanduser(fn_simu))
         if not self.mesh:
             raise ValueError('The mesh for this simulation is not set')
@@ -1739,6 +1754,9 @@ class TDCSLIST(SimuList):
         self._electrode_current_geo(m, el_geo_fn)
         v.add_merge(el_geo_fn)
         v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
+        if add_scalp_to_geo:
+            self._scalp_geo(m, el_geo_fn)
+            v.add_view(ColormapNumber=8, ColormapAlpha=.3, Visible=0, ShowScale=0)
         v.write_opt(final_name)
 
         if view:
@@ -1753,7 +1771,7 @@ class TDCSLIST(SimuList):
         del m
 
         gc.collect()
-        return [final_name]
+        return [final_name], [el_geo_fn]
 
     def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
         from .gpc import run_tcs_gpc

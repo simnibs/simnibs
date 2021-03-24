@@ -29,12 +29,14 @@ import copy
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
+import shutil
 import nibabel as nib
 
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
 from ..utils.file_finder import templates, SubjectFiles, get_atlas, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
+from ..mesh_tools import gmsh_view
 
 __all__ = [
     'warp_volume',
@@ -1401,8 +1403,8 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
 
 
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth=0.5, quantities=['magn', 'normal', 'tangent','angle'],
-                            fields=None, open_in_gmsh=False):
+                            depth = 0.5, quantities=['magn', 'normal', 'tangent','angle'],
+                            fields=None, open_in_gmsh=False, f_geo=None):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
     Parameters
@@ -1425,6 +1427,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         Fields to be transformed. Default: all fields
     open_in_gmsh: bool
         If true, opens a Gmsh window with the interpolated fields
+    f_geo: str
+        String with file name to geo file that accompanies the mesh
     '''
     from ..mesh_tools import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
@@ -1578,7 +1582,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     # I only work with lh and rh at least for now
     # It also needs to be nicely ordered, otherwise will
     # screw up the atlases
-    def join_and_write(surfs, fn_out, open_in_gmsh):
+    def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
         mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
@@ -1587,9 +1591,29 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         for k in surfs['lh'].field.keys():
             mesh.add_node_field(
                 np.append(surfs['lh'].field[k].value,
-                          surfs['rh'].field[k].value),
-                k)
+                          surfs['rh'].field[k].value),k)
         v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
+    
+        if f_geo is not None:
+            if not os.path.exists(f_geo):
+                raise FileNotFoundError(f'Could not find file: {f_geo}')
+            v.add_merge(f_geo)    
+            with open(f_geo, 'r') as fp:
+                content = fp.read()  
+                fp.close()
+                views = [line for line in content.split('\n') if "View" in line]
+                for view in views:                
+                    if 'scalp' in view:
+                    	v.add_view(ColormapNumber=8, ColormapAlpha=.3, 
+                                   Visible=0, ShowScale=0)
+                    elif 'electrode_currents' in view:
+                    	v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
+                    elif 'coil_casing' in view:
+                    	v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
+                               Visible=1, ShowScale=0, CustomMin=-0.5,
+                               CustomMax=3.5, RangeType=2)
+                    else:
+                    	v.add_view(ShowScale=0)
         v.write_opt(fn_out)
         mesh_io.write_msh(mesh, fn_out)
         if open_in_gmsh:
@@ -1598,7 +1622,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     join_and_write(
         middle_surf,
         os.path.join(out_folder, sim_name[1:] + '_central.msh'),
-        open_in_gmsh)
+        open_in_gmsh, f_geo)
     if out_fsaverage:
         join_and_write(
             avg_surf,

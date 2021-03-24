@@ -83,7 +83,6 @@ if is_binary
     fprintf(fid, '\n');
 end
 fprintf(fid, '$EndMeshFormat\n');
-    
 
 %% write nodes
 fprintf(fid, '$Nodes\n');

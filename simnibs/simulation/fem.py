@@ -1195,7 +1195,7 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
              output_names, geo_names=None, solver_options=None, n_workers=1, 
-             fn_stl=None):
+             fn_stl=None, add_scalp_to_geo=False):
     ''' Simulates TMS fields using a coil + matsimnibs + dIdt definition
 
 
@@ -1223,6 +1223,9 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         Number of workers to use
     fn_stl: string
         Name of stl-file for coil visualization
+    add_scalp_to_geo: Bool
+        if true, scalp is added to the geo file for coil visualizatoin
+        standard: False
 
     Returns
     --------
@@ -1243,7 +1246,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                 matsimnibs_list, didt_list, output_names, geo_names):
             _run_tms(
                 mesh, cond, fn_coil, fields,
-                matsimnibs, didt, fn_out, fn_geo, fn_stl)
+                matsimnibs, didt, fn_out, fn_geo, fn_stl, add_scalp_to_geo)
         _finalize_global_solver()
     else:
         with multiprocessing.Pool(processes=n_workers,
@@ -1256,7 +1259,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                     pool.apply_async(
                         _run_tms,
                         (mesh, cond, fn_coil, fields,
-                         matsimnibs, didt, fn_out, fn_geo, fn_stl)))
+                         matsimnibs, didt, fn_out, fn_geo, fn_stl, add_scalp_to_geo)))
             pool.close()
             pool.join()
 
@@ -1266,12 +1269,14 @@ def _set_up_global_solver(S):
     tms_global_solver = S
 
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo, fn_stl):
+def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo, 
+             fn_stl, add_scalp_to_geo):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     start = time.time()
     dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt,
-                               fn_geo=fn_geo, fn_stl=fn_stl)
+                               fn_geo=fn_geo, fn_stl=fn_stl, 
+                               add_scalp_to_geo=add_scalp_to_geo)
     logger.info(f'{time.time() - start:.2f}s to calculate dA/dt')
     b = tms_global_solver.assemble_tms_rhs(dAdt)
     v = tms_global_solver.solve(b)

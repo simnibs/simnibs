@@ -1,3 +1,4 @@
+
 import os
 import tempfile
 import subprocess
@@ -39,6 +40,7 @@ class Visualization:
         self.General = General()
         self.Mesh = Mesh()
         self.View = View()
+        self.PhysicalNames = PhysicalNames(mesh)
         self.visibility = None
         self.mesh = mesh
         self.merge = []
@@ -128,6 +130,7 @@ class Visualization:
             f.write('// Visualization File Created by SimNIBS\n')
             dirname = os.path.dirname(fn)
             [f.write(f'Merge "{os.path.relpath(m, dirname)}";\n') for m in self.merge]
+            f.write(str(self.PhysicalNames))
             f.write(str(self.General))
             f.write(str(self.Mesh))
             try:
@@ -352,7 +355,7 @@ class Color(object):
         Color 4 in color carousel
     Five: list of ints
         Color 5 in color carousel
-
+    etc.
 
     References
     ------------
@@ -366,6 +369,11 @@ class Color(object):
         self.Three = [104, 163, 255]  # Color 3 in color carousel
         self.Four = [255, 239, 179]  # Color 4 in color carousel
         self.Five = [255, 166, 133]  # Color 5 in color carousel
+        self.Six = [255, 240, 0]
+        self.Seven = [255, 239, 179]
+        self.Eight = [255, 138, 57]
+        self.Nine = [0, 65, 142]
+        self.Ten = [0, 118, 14]
         self.__dict__.update(kwargs)
 
     def __str__(self):
@@ -488,6 +496,72 @@ class View(object):
 
             else:
                 gmsh.option.setNumber(name, v)
+
+
+
+class PhysicalNames(object):
+    ''' physical names of volumes and surfaces.
+    For more information see http://gmsh.info/doc/texinfo/gmsh.html
+
+    Parameters
+    -----------
+    mesh: Mesh object
+
+    Attributes
+    -----------
+    PhysicalSurfaces: dictionary of surface names
+    PhysicalVolumes: dictionary of volume names
+        
+    References
+    ------------
+     `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html>`_
+
+    '''
+    def __init__(self, m):
+        
+        from ..simulation.cond import standard_cond
+        
+        self.PhysicalSurfaces = dict()
+        self.PhysicalVolumes = dict()
+        
+        tri_tags=np.unique(m.elm.tag1[m.elm.elm_type==2])
+        tet_tags=np.unique(m.elm.tag1[m.elm.elm_type==4])
+        
+        cond_names = [c.name for c in standard_cond()]
+        
+        if tet_tags.size > 0 and len(cond_names) < np.max(tet_tags):  
+            raise ValueError('The cond_list size is too small'
+                             ', should be at least of size {0}'
+                             ''.format(np.max(tet_tags)))
+        for i in tet_tags:
+            if i < 100:
+                self.PhysicalVolumes[i] = ' '+cond_names[i-1]
+            elif i < 500:
+                self.PhysicalVolumes[i] = 'Ch. '+str(i-100)+' '+cond_names[99]
+            else:
+                self.PhysicalVolumes[i] = 'Ch. '+str(i-500)+' '+cond_names[499]
+                
+        for i in tri_tags:
+            if i < 100:
+                self.PhysicalSurfaces[i] = ' '+cond_names[i-1]
+            if i > 1000 and i < 1100:
+                self.PhysicalSurfaces[i] = ' '+cond_names[i-1001]
+            if i > 1100 and i < 1500:
+                self.PhysicalSurfaces[i] = 'Ch. '+str(i-1100)+' top'
+            if i > 1500 and i < 2000:
+                self.PhysicalSurfaces[i] = 'Ch. '+str(i-1500)   
+            if i > 2100:
+                self.PhysicalSurfaces[i] = 'Ch. '+str(i-2100)+' plug'    
+        
+    def __str__(self):
+        string = ''        
+        for key in self.PhysicalVolumes:
+            st = 'Physical Volume (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalVolumes[key])  
+            string += st
+        for key in self.PhysicalSurfaces:
+            st = 'Physical Surface (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalSurfaces[key])  
+            string += st   
+        return string
 
 
 def _run(command, remove=[]):

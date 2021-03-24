@@ -821,6 +821,8 @@ def run(subject_dir=None, T1=None, T2=None,
                           smooth_steps=smooth_steps)
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.fnamehead)
+        v = final_mesh.view()
+        v.write_opt(sub_files.fnamehead)
         
         logger.info('Transforming EEG positions')
         idx = (final_mesh.elm.elm_type == 2)&(final_mesh.elm.tag1 == skin_tag)
