@@ -337,7 +337,10 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
     img.header.set_xyzt_units(reference_nifti.header.get_xyzt_units()[0])
     img.header.set_qform(reference_nifti.header.get_qform(), code=2)
     img.update_header()
-
+    
+    if image.dtype == np.float64:
+        img.set_data_dtype(np.float32)
+                
     if out is not None:
         nib.save(img, out)
 
@@ -364,8 +367,6 @@ def get_names_from_folder_structure(m2m_folder):
                 templates.mni_volume))
 
     sub_files = SubjectFiles(subpath=m2m_folder)
-
-
     if not os.path.isdir(sub_files.subpath):
         raise IOError('The given m2m folder name does not correspond to a directory')
 
@@ -417,7 +418,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 order=1,
                 method='linear',
                 continuous=False,
-                binary=False):
+                binary=False,
+                keep_tissues=None):
     ''' Warps a nifti image or a mesh using a linear or non-linar transform, writes out
     the output as a nifti file
 
@@ -437,7 +439,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
     transformation_type: {'nonlinear', '6dof', '12dof'}
         Type of tranformation
     reference: str (optional)
-        Path to reference mesh. Default: look it up
+        Path to reference nifti. Default: look it up
     mask: str (optional)
         Path to a mask, only applied if input is a nifti volume
     labels: list (optional)
@@ -453,6 +455,9 @@ def warp_volume(image_fn, m2m_folder, out_name,
         baricentric interpolatiom. Default: linear
     continuous: bool (option)
         Wether fields is continuous across tissue boundaries. Default: False
+    keep_tissues: list of tissue tags (Optional)
+        Only the fields for the listed tissues are interpolated, rest is set to
+        zero. Only applied to mesh inputs. Default: None (all tissues are kept)
     '''
     from ..mesh_tools.mesh_io import read_msh
     names = get_names_from_folder_structure(m2m_folder)
@@ -515,6 +520,9 @@ def warp_volume(image_fn, m2m_folder, out_name,
 
     if os.path.splitext(image_fn)[1] == '.msh':
         m = read_msh(image_fn)
+        if keep_tissues is not None:
+            m=m.crop_mesh(tags=keep_tissues)
+            
         logger.info('Warping mesh: {0}'.format(image_fn))
         for ed in m.elmdata + m.nodedata:
             name = append_name(out_name, ed.field_name)
@@ -544,12 +552,13 @@ def warp_volume(image_fn, m2m_folder, out_name,
         logger.info('To file: {0}'.format(out_name))
         logger.debug('Transformation type: {0}'.format(transformation_type))
         logger.debug('Mask: {0}'.format(mask))
-        nifti_transform(image_fn, warp, reference,
-                        out=out_name, mask=mask, order=order,
-                        inverse_warp=inverse_warp, binary=binary)
+        nifti_transform(image_fn, warp, reference, out=out_name, 
+                        mask=mask, order=order, inverse_warp=inverse_warp, 
+                        binary=binary)
 
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
-                          method='linear', continuous=False, create_label=False):
+                          method='linear', continuous=False, create_label=False,
+                          keep_tissues=None):
     ''' Interpolates the fields in a mesh and writem them to nifti files
 
     Parameters:
@@ -571,7 +580,10 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
     continuous: bool
         Wether fields is continuous across tissue boundaries. Default: False
     create_label: bool
-        Label mode: write label image from mesh instead of fields   
+        Label mode: write label image from mesh instead of fields
+    keep_tissues: list of tissue tags (Optional)
+        Only the fields for the listed tissues are interpolated, rest is set to
+        zero. Default: None (all tissues are kept)
     '''
     from ..mesh_tools.mesh_io import read_msh, ElementData
     if os.path.isdir(reference):
@@ -585,6 +597,9 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         mesh = read_msh(fn_mesh)
     else:
         mesh = copy.deepcopy(fn_mesh)
+        
+    if keep_tissues is not None:
+        mesh=mesh.crop_mesh(tags=keep_tissues)
         
     image = nib.load(reference)
     affine = image.affine
@@ -629,7 +644,8 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
             logger.info('To file: {0}'.format(name))
             logger.debug('Method: {0}'.format(method))
             logger.debug('Continuous: {0}'.format(continuous))
-            ed.to_nifti(n_voxels, affine, fn=name, method=method, continuous=continuous)
+            ed.to_nifti(n_voxels, affine, fn=name, method=method,
+                        continuous=continuous)
             gc.collect()
 
 
@@ -1592,30 +1608,16 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
             mesh.add_node_field(
                 np.append(surfs['lh'].field[k].value,
                           surfs['rh'].field[k].value),k)
-        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
-    
+        mesh_io.write_msh(mesh, fn_out)
+        
+        # write .opt-file
+        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])    
         if f_geo is not None:
             if not os.path.exists(f_geo):
                 raise FileNotFoundError(f'Could not find file: {f_geo}')
-            v.add_merge(f_geo)    
-            with open(f_geo, 'r') as fp:
-                content = fp.read()  
-                fp.close()
-                views = [line for line in content.split('\n') if "View" in line]
-                for view in views:                
-                    if 'scalp' in view:
-                    	v.add_view(ColormapNumber=8, ColormapAlpha=.3, 
-                                   Visible=0, ShowScale=0)
-                    elif 'electrode_currents' in view:
-                    	v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
-                    elif 'coil_casing' in view:
-                    	v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
-                               Visible=1, ShowScale=0, CustomMin=-0.5,
-                               CustomMax=3.5, RangeType=2)
-                    else:
-                    	v.add_view(ShowScale=0)
+            v.add_merge(f_geo, append_views_from_geo = True)    
         v.write_opt(fn_out)
-        mesh_io.write_msh(mesh, fn_out)
+        
         if open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
 

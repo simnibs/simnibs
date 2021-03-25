@@ -14,23 +14,25 @@ import subprocess
 import nibabel as nib
 import glob
 from sys import platform
-from .. import utils
-from simnibs import SIMNIBSDIR
-from ..utils.simnibs_logger import logger
-from ..utils import file_finder
-from ..utils import transformations
-from . import samseg
-from ._cat_c_utils import sanlm
 import numpy as np
 from scipy import ndimage
 import scipy.ndimage.morphology as mrph
-from ..utils.transformations import resample_vol
-from ..mesh_tools import meshing
-from . import _thickness
-from .brain_surface import dilate, erosion
-from ..mesh_tools.mesh_io import write_msh, ElementData
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import label
+from simnibs import SIMNIBSDIR
+
+from . import samseg
+from ._cat_c_utils import sanlm
+from . import _thickness
+from .brain_surface import dilate, erosion
+from .. import utils
+from ..utils.simnibs_logger import logger
+from ..utils import file_finder
+from ..utils import transformations
+from ..utils.transformations import resample_vol
+from ..mesh_tools import meshing
+from ..mesh_tools.mesh_io import write_msh, ElementData
+from ..simulation import cond
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -821,7 +823,7 @@ def run(subject_dir=None, T1=None, T2=None,
                           smooth_steps=smooth_steps)
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.fnamehead)
-        v = final_mesh.view()
+        v = final_mesh.view(cond_list = cond.standard_cond())
         v.write_opt(sub_files.fnamehead)
         
         logger.info('Transforming EEG positions')
@@ -1004,6 +1006,8 @@ def create_mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
     # Reconctruct the mesh surfaces
     logger.info('Reconstructing Surfaces')
     mesh.fix_th_node_ordering()
+    idx=mesh.elm.connected_components()
+    mesh = mesh.crop_mesh(elements=max(idx,key=np.size))
     mesh.reconstruct_surfaces(add_outer_as=skin_tag)
     if remove_twins:
         mesh = mesh.remove_triangle_twins(hierarchy=hierarchy)

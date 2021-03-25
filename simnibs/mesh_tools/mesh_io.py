@@ -2254,7 +2254,8 @@ class Msh:
     
     def view(self,
              visible_tags=None,
-             visible_fields=[]):
+             visible_fields=[],
+             cond_list=None):
         ''' Visualize mesh in Gmsh
 
         Parameters
@@ -2263,6 +2264,8 @@ class Msh:
             List of tags to be visible. Default: all tags
         visible_fields: list (optional) or 'all'
             Name of visible fields or 'all' to view all fields. Default: no fields visible
+        cond_list: list (optional)
+            Conductivity list, used to assign names to the tissue numbers. Default: None
 
         Returns
         --------
@@ -2275,7 +2278,7 @@ class Msh:
         >>> vis = mesh.view()
         >>> vis.show()
         '''
-        vis = gmsh_view.Visualization(self)
+        vis = gmsh_view.Visualization(self,cond_list)
         if visible_tags is not None:
             vis.visibility = visible_tags
         vis.View = []
@@ -2789,6 +2792,8 @@ class Data(object):
                                         continuous=continuous)
         if data.dtype == np.bool or data.dtype == bool:
             data = data.astype(np.uint8)
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
         img = nibabel.Nifti1Pair(data, affine)
         img.header.set_xyzt_units(units)
         if qform is not None:
@@ -2884,6 +2889,8 @@ class Data(object):
             img = nibabel.Nifti1Pair(image, affine)
             img.header.set_xyzt_units('mm')
             img.set_qform(affine)
+            if image.dtype == np.float64:
+                img.set_data_dtype(np.float32)
             nibabel.save(img, out_original)
 
         img = nifti_transform(
@@ -3589,9 +3596,9 @@ class ElementData(Data):
 
             else:
                 if self.nr_comp != 1:
-                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=float)
+                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=np.float)
                 else:
-                    image = np.zeros(list(n_voxels), dtype=float)
+                    image = np.zeros(list(n_voxels), dtype=np.float)
                 # Interpolate each tag separetelly
                 tags = np.unique(msh_th.elm.tag1)
                 msh_th.elmdata = [ElementData(v, mesh=msh_th)]
@@ -4042,7 +4049,7 @@ class NodeData(Data):
         nd = inv_affine.dot(nd.T).T[:, :3]
 
         # initialize image
-        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
+        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
         field = v.astype(float)
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '

@@ -10,7 +10,7 @@ from simnibs import sim_struct, run_simnibs
 
 ### general Information
 S = sim_struct.SESSION()
-S.fnamehead = 'ernie.msh'  # head mesh
+S.subpath = 'm2m_ernie'  # head mesh
 S.pathfem = 'TACSchallenge'  # Directory for the simulation
 S.map_to_surf=True
 S.open_in_gmsh=True # open results once they are ready

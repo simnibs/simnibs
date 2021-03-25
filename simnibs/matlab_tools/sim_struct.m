@@ -56,6 +56,9 @@ switch S.type
        S.map_to_fsavg=false; % map results further onto fsaverage template
        S.map_to_vol=false; % write fields as nifti
        S.map_to_MNI=false; % write fields as nifti in MNI space
+       S.tissues_in_niftis = '';  % determines for which tissues the fields will be written
+                                  % to the NifTI volumes (for map_to_vol and map_to_MNI);
+                                  % either 'all' or a list of tags (standard: 2 for GM)
        S.fields= 'eE'; % type of results saved in final mesh; a string containing a combination of:
                        % e (electric field strength) E (electric field vector) j (current density strength) 
                        % J (current density vector) v (electric potential) D (dA/dt vector) s (conductivity)

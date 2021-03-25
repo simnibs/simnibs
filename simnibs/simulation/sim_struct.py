@@ -79,6 +79,10 @@ class SESSION(object):
         Whether to map fields to a NifTI volume
     map_to_MNI: bool
         Whether to map fields to the MNI template
+    tissues_in_niftis: str or list of tissue tags, optional
+        determines for which tissues the fields will be written
+        to the NifTI volumes (for map_to_vol and map_to_MNI);
+        either 'all' or a list of tags (standard: 2 for GM)
     fiducials: FIDUCIALS
         Structure with fiducil points
     fields: str
@@ -109,6 +113,7 @@ class SESSION(object):
         self.map_to_fsavg = False
         self.map_to_vol = False
         self.map_to_MNI = False
+        self.tissues_in_niftis = None
         self.fiducials = FIDUCIALS()
         self.fields = 'eE'
         self.eeg_cap = None
@@ -184,6 +189,9 @@ class SESSION(object):
         if not self.eeg_cap:
             self.eeg_cap = sub_files.eeg_cap_1010
 
+        if not self.tissues_in_niftis:
+            self.tissues_in_niftis = [2]
+            
         logger.info('Head Mesh: {0}'.format(self.fnamehead))
         logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
@@ -291,20 +299,23 @@ class SESSION(object):
                         out_fsaverage=out_fsavg, depth=0.5,
                         open_in_gmsh=self.open_in_gmsh, f_geo=f_geo)
 
+        keep_tissues = None
+        if type(self.tissues_in_niftis) == list:
+            keep_tissues = self.tissues_in_niftis
+
         if self.map_to_vol:
             logger.info('Mapping to volume')
             out_folder = os.path.join(dir_name, 'subject_volumes')
             folders += [out_folder]
             if not os.path.isdir(out_folder):
                 os.mkdir(out_folder)
-
             for f in final_names:
                 if f.endswith('.msh'):
                     name = os.path.split(f)[1]
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
                     transformations.interpolate_to_volume(
-                        f, self.subpath, name)
+                        f, self.subpath, name, keep_tissues=keep_tissues)
 
         if self.map_to_MNI:
             logger.info('Mapping to MNI space')
@@ -319,7 +330,7 @@ class SESSION(object):
                     name = os.path.splitext(name)[0] + '.nii.gz'
                     name = os.path.join(out_folder, name)
                     transformations.warp_volume(
-                        f, self.subpath, name)
+                        f, self.subpath, name, keep_tissues=keep_tissues)
 
         logger.info('=====================================')
         logger.info('SimNIBS finished running simulations')
@@ -363,7 +374,13 @@ class SESSION(object):
             mat, 'map_to_surf', bool, self.map_to_surf)
         self.map_to_fsavg = try_to_read_matlab_field(
             mat, 'map_to_fsavg', bool, self.map_to_fsavg)
-
+        self.tissues_in_niftis = try_to_read_matlab_field(
+            mat, 'tissues_in_niftis', list, self.tissues_in_niftis)
+        if (self.tissues_in_niftis is not None
+            and type(self.tissues_in_niftis[0]) == str
+            and self.tissues_in_niftis[0] == 'a'):
+                self.tissues_in_niftis = 'all'
+    
         self.fields = try_to_read_matlab_field(
             mat, 'fields', str, self.fields)
 
@@ -400,6 +417,7 @@ class SESSION(object):
         mat['map_to_MNI'] = remove_None(self.map_to_MNI)
         mat['map_to_fsavg'] = remove_None(self.map_to_fsavg)
         mat['map_to_surf'] = remove_None(self.map_to_surf)
+        mat['tissues_in_niftis'] = remove_None(self.tissues_in_niftis)
         mat['fields'] = remove_None(self.fields)
         mat['fiducials'] = self.fiducials.sim_struct2mat()
         mat['poslist'] = []
@@ -1134,23 +1152,26 @@ class TMSLIST(SimuList):
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
                      solver_options=self.solver_options, n_workers=cpus,
-                     fn_stl=fn_stl,add_scalp_to_geo=add_scalp_to_geo)
-
+                     fn_stl=fn_stl)
+        
         logger.info('Creating visualizations')
         summary = ''
         for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
             p.fnamefem = n
             m = mesh_io.read_msh(n)
+            # write .opt-file
             v = m.view(
                 visible_tags=_surf_preferences(m),
-                visible_fields=_field_preferences(self.postprocess))
+                visible_fields=_field_preferences(self.postprocess),
+                cond_list=self.cond)
             v.add_merge(g)            
             v.add_view(ShowScale=0) # dipoles or direction "hook"
-            if fn_stl is not None:
+            if fn_stl is not None: # coil casing
                 v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
                            Visible=1, ShowScale=0, CustomMin=-0.5,
                            CustomMax=3.5, RangeType=2)
             if add_scalp_to_geo:
+                self._scalp_geo(m, g) # append scalp to .geo-file
                 v.add_view(ColormapNumber=8, ColormapAlpha=.3, Visible=0, ShowScale=0) # scalp
             v.write_opt(n)
 
@@ -1531,10 +1552,10 @@ class TDCSLIST(SimuList):
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
             if self.cond[99 + i].value is None:
-                self.cond[99 + i].name = 'el' + str(i)
+                self.cond[99 + i].name = str(i) + ' el'
                 self.cond[99 + i].value = self.cond[99].value
             if self.cond[499 + i].value is None:
-                self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
+                self.cond[499 + i].name = str(i) + ' gel_sponge'
                 self.cond[499 + i].value = self.cond[499].value
 
         self.check_conductivities()
@@ -1646,7 +1667,7 @@ class TDCSLIST(SimuList):
             Channel_surround = 2*np.ones(N,dtype = int)
         
         # get centers of surround electrodes
-        ff = file_finder.SubjectFiles(subpath = subpath)
+        ff = SubjectFiles(subpath = subpath)
         P_surround = get_surround_pos(C.centre, ff.fnamehead, 
                                       radius_surround = radius_surround, N = N,
                                       pos_dir_1stsurround = pos_dir_1stsurround, 
@@ -1746,16 +1767,19 @@ class TDCSLIST(SimuList):
         self.fnamefem = final_name
 
         logger.info('Creating visualizations')
-        v = m.view(
-            visible_tags=_surf_preferences(m),
-            visible_fields=_field_preferences(self.postprocess))
-
+        # .geo-file
         el_geo_fn = fn_simu + '_el_currents.geo'
         self._electrode_current_geo(m, el_geo_fn)
-        v.add_merge(el_geo_fn)
-        v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
         if add_scalp_to_geo:
             self._scalp_geo(m, el_geo_fn)
+        # .opt-file    
+        v = m.view(
+            visible_tags=_surf_preferences(m),
+            visible_fields=_field_preferences(self.postprocess),
+            cond_list=self.cond)
+        v.add_merge(el_geo_fn)
+        v.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1) # el_currents
+        if add_scalp_to_geo:
             v.add_view(ColormapNumber=8, ColormapAlpha=.3, Visible=0, ShowScale=0)
         v.write_opt(final_name)
 
@@ -2969,7 +2993,7 @@ def get_surround_pos(center_pos, fnamehead, radius_surround = 50, N = 4,
     
     # replace electrode name with position if needed
     # and get skin ROI around centre position
-    ff = file_finder.SubjectFiles(fnamehead = fnamehead)
+    ff = SubjectFiles(fnamehead = fnamehead)
     tmp = ELECTRODE()
     tmp.centre = center_pos
     tmp.substitute_positions_from_cap(ff.get_eeg_cap())
