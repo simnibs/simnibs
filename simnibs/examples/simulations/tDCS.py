@@ -27,6 +27,6 @@ so_electrode.channelnr = 2
 so_electrode.centre = 'AF4'
 so_electrode.shape = 'rect'
 so_electrode.dimensions = [50, 70]
-so_electrode.thickness = [1, 4]
+so_electrode.thickness = 4
 
 run_simnibs(S)

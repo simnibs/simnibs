@@ -56,13 +56,13 @@ ConditionA.electrode[-1].centre = 'CP6'
 # Define retinal control electrodes
 Retcontr = ConditionA.add_electrode()
 Retcontr.channelnr = 3; # connect to the "pseudochannel"
-Retcontr.centre = [37.2, 79.2, -35.6]; # coordinates determined in simnibs_gui
+Retcontr.centre = [35.4, 106.0, -40.6]; # coordinates determined in simnibs_gui
 Retcontr.shape = 'ellipse';
 Retcontr.dimensions = [25, 25];
 Retcontr.thickness = [1.5, 1.5];
 
 ConditionA.electrode.append(deepcopy(Retcontr))
-ConditionA.electrode[-1].centre = [-41.2, 78.8, -34.1]; # coordinates determined in simnibs_gui
+ConditionA.electrode[-1].centre = [-33.2, 108, -40.6]; # coordinates determined in simnibs_gui
 
 
 # Define Condition B
