@@ -1636,7 +1636,7 @@ class TDCSLIST(SimuList):
             (standard: False, i.e. all surround electrodes connected to the 
              same return channel).
         phis_surround : array (N,), optional 
-            Angles in degree at which the electrodes will be place relative to the 
+            Angles in degree at which the electrodes will be placed relative to the 
             direction defined by pos_dir_1stsurround. The default is None, in which 
             case the electrodes will be placed at [0, 1/N*360, ..., (N-1)/N*360] 
             degrees.

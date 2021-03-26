@@ -12,7 +12,7 @@ S.pathfem = 'tdcs'; %Folder for the simulation output
 
 %% Define tDCS simulation
 S.poslist{1} = sim_struct('TDCSLIST');
-S.poslist{1}.currents = [0.001, -0.001]; % Current flow though each channel (mA)
+S.poslist{1}.currents = [0.001, -0.001]; % Current flow though each channel (A)
 
 %First Electrode
 S.poslist{1}.electrode(1).channelnr = 1; % Connect the electrode to the first channel
