@@ -8,7 +8,7 @@
 %% General information
 
 S = sim_struct('SESSION'); % Define a stimulation sessions
-S.fnamehead = 'ernie.msh'; % Choose the head mesh
+S.subpath = 'm2m_ernie'; % Choose the head mesh
 S.pathfem = 'tdcs_ring'; % Folder for the simulation output
 
 %% Define the tDCS simulation

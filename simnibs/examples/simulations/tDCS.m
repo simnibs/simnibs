@@ -7,8 +7,8 @@
 %% General information
 
 S = sim_struct('SESSION');
-S.fnamehead = 'ernie.msh'; % head mesh
-S.pathfem = 'tdcs'; %Folder for the simulation output
+S.subpath = 'm2m_ernie'; % subject folder
+S.pathfem = 'tdcs_simu'; % Folder for the simulation output
 
 %% Define tDCS simulation
 S.poslist{1} = sim_struct('TDCSLIST');
