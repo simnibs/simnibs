@@ -391,14 +391,8 @@ def get_names_from_folder_structure(m2m_folder):
                        conf2mni_nonl))
 
     mni2conf_6dof = sub_files.mni2conf_6dof
-    if not os.path.isfile(mni2conf_6dof):
-        warnings.warn('Could not find MNI2Conform 6DOF transform at: {0}'.format(
-                       mni2conf_6dof))
-
     mni2conf_12dof = sub_files.mni2conf_12dof
-    if not os.path.isfile(mni2conf_12dof):
-        warnings.warn('Could not find MNI2Conform 12DOF transform at: {0}'.format(
-                      mni2conf_12dof))
+
     names = {
         'mesh': mesh,
         'reference_mni': templates.mni_volume,

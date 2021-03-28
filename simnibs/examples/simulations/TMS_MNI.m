@@ -1,6 +1,6 @@
 % General Infoarmation
 S = sim_struct('SESSION');
-S.fnamehead = 'ernie.msh';  % head mesh
+S.subpath = 'm2m_ernie'; % subject folder
 S.pathfem = 'tms_hand';  % Directory for the simulation
 
 
