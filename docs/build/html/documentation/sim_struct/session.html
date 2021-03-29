@@ -168,6 +168,12 @@ It contains information about the head mesh, the simulations to be performed, th
 <li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
 </li>
+<li><p><strong>tissues_in_niftis</strong>: <em>list of tissue indices, or str (‘all’), optional</em></p>
+<ul>
+<li><p><strong>Description</strong>: List of the tissues for which the data will be interpolated to the niftis. To get fields everywhere, set to ‘all’.</p></li>
+<li><p><strong>Default</strong>: 2 (i.e. gray matter)</p></li>
+</ul>
+</li>
 <li><p><strong>subpath</strong>: <em>string (Python)/character array (MATLAB), optional</em></p>
 <ul>
 <li><p><strong>Description</strong>: Name of <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">*</span></code> folder</p></li>
