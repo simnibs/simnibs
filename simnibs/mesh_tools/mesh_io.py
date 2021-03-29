@@ -2544,9 +2544,12 @@ class Msh:
         # loop over hierarchy and mark overlapping triangles with lower hierarchy
         idx_done = np.zeros(hash_tr.shape, dtype=bool)
         idx_keep = np.zeros(hash_tr.shape, dtype=bool)
-        for i in hierarchy:          
-            test_tri = (tag_tr == i) & np.logical_not(idx_done)
+        for i in hierarchy:
+            test_tri = np.where((tag_tr == i) & np.logical_not(idx_done))[0]
             idx_done[test_tri] = True
+            
+            _, idx_hlp = np.unique(hash_tr[test_tri], return_index=True)
+            test_tri = test_tri[idx_hlp]
             idx_keep[test_tri] = True
     
             other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
@@ -2556,8 +2559,8 @@ class Msh:
         if np.sum(idx_done) != idx_done.shape[0]:
             warnings.warn('Final mesh might contain overlapping triangles')
         if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
-            warnings.warn('Final mesh might contain overlapping triangles')           
-    
+            warnings.warn('Final mesh might contain overlapping triangles - 2')           
+            
         # delete overlapping triangles
         idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
         return self.crop_mesh(elements=idx_keep)

@@ -1139,6 +1139,33 @@ class TestMsh:
         low_q = mesh_before.gamma_metric()[:] >= 3
         assert np.all(mesh_before.gamma_metric()[~low_q] < 3)
 
+    def test_remove_triangle_twins(self):
+        m=mesh_io.Msh()
+        m.nodes.node_coord = 100*np.random.randn(100,3)
+        m.elm.node_number_list = -1*np.ones([10000, 4],dtype=np.int32)
+        m.elm.node_number_list[:,:3] = np.random.choice(np.arange(1,101),30000).reshape([10000,3])
+        m.elm.tag1 = 1005*np.ones(10000,dtype=np.int16)
+        m.elm.elm_type = 2*np.ones(10000,dtype=np.int8)
+        n_unique_elms = np.unique(np.sort(m.elm.node_number_list,axis=1),
+                                  axis=0).shape[0]
+        
+        m2=copy.deepcopy(m)
+        m2.elm.tag1[:]=np.random.permutation(np.arange(1010,11010))
+        shuffle = np.random.permutation(np.arange(10000))
+        m2.elm.node_number_list[:,:3] = m2.elm.node_number_list[shuffle,:3]
+        shuffle=np.argsort(np.random.randn(10000,3),axis=1)
+        m2.elm.node_number_list[:,:3] = np.take_along_axis(m2.elm.node_number_list,
+                                                           shuffle, axis=1)
+        
+        m.elm.node_number_list = np.vstack((m.elm.node_number_list,
+                                            m2.elm.node_number_list))
+        m.elm.tag1 = np.hstack((m.elm.tag1, m2.elm.tag1))
+        m.elm.tag2 = m.elm.tag1
+        m.elm.elm_type = np.hstack((m.elm.elm_type, m2.elm.elm_type))
+        
+        m = m.remove_triangle_twins()
+        assert(m.elm.nr == n_unique_elms)
+        assert(np.all(m.elm.tag1==1005))
 
 
 class TestData:
