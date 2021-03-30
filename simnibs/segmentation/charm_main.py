@@ -729,7 +729,7 @@ def run(subject_dir=None, T1=None, T2=None,
         multithreading_script = [os.path.join(SIMNIBSDIR), 'segmentation',
                                  'run_cat_multiprocessing.py']
 
-        fsavgDir = file_finder.Templates().atlases_surfaces
+        fsavgDir = file_finder.Templates().freesurfer_templates
         args = ['--Ymf', sub_files.norm_image,
                 '--Yleft_path', sub_files.hemi_mask,
                 '--Ymaskhemis_path', sub_files.cereb_mask,

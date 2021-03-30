@@ -36,7 +36,6 @@ class Templates:
     ------------
     atlases_surfaces: str
         Path to the directory with the atlases surfaces (dir)
-
     mni_volume: str
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
     freesurfer_templates: str
@@ -54,11 +53,19 @@ class Templates:
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
+        
+        # atlases in fsaverage space
         self.atlases_surfaces = os.path.join(
-            self._resources, 'templates', 'fsaverage_surf')
+            self._resources, 'templates', 'fsaverage_atlases')
+        
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
+        
+        # path to fsaverage surfaces
+        self.freesurfer_templates = os.path.join(
+            self._resources, 'templates', 'fsaverage_surf')
+        
         # SimNIBS logo
         self.simnibs_logo = os.path.join(self._resources, 'simnibslogo.msh')
 
@@ -444,7 +451,7 @@ class SubjectFiles:
         -----------
         region: 'lh', 'rh', 'lc' or 'rc'
             Name of the region of interest
-        surf_type: 'central', 'sphere', 'sphere_reg' (optional)
+        surf_type: 'central', 'sphere_reg' (optional)
             Surface type. Default: central
         
         Returns
@@ -459,9 +466,6 @@ class SubjectFiles:
         '''
         if surf_type == 'central':
             for s in self.central_surfaces:
-                if s.region == region: return s.fn
-        elif surf_type == 'sphere':
-            for s in self.sphere_surfaces:
                 if s.region == region: return s.fn
         elif surf_type == 'sphere_reg':
             for s in self.sphere_reg_surfaces:
