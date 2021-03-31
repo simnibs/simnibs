@@ -35,7 +35,7 @@ class TestMeshing:
     def test_mesh(self):
         rings = create_rings([10, 15, 20, 25], 60)
         rings[rings == 2] = 4
-        m = charm_main.mesh(rings, np.eye(4))
+        m = charm_main.create_mesh(rings, np.eye(4))
         # volumes
         vols = m.elements_volumes_and_areas()
         assert np.isclose(

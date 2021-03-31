@@ -582,7 +582,7 @@ class TestTMS:
         os.remove(fn_out)
         mock_set_up.assert_called_once_with(m, 'coil.ccd',
                                             matsimnibs, didt,
-                                            fn_geo=None)
+                                            fn_geo=None,fn_stl=None)
         assert rdm(E, E_analytical) < .2
         assert np.abs(mag(E, E_analytical)) < np.log(1.1)
 
