@@ -2,7 +2,7 @@ tms_opt = opt_struct('TMSoptimize');
 % Subject folder
 tms_opt.subpath = 'm2m_ernie';
 % Select output folder
-tms_opt.pathfem = 'tms_optimization/';
+tms_opt.pathfem = 'tms_optimization_adm';
 % Select the coil model
 % The ADM method requires a '.ccd' coil model
 tms_opt.fnamecoil = 'Magstim_70mm_Fig8.ccd';
