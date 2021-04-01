@@ -27,7 +27,7 @@ opt.max_active_electrodes = 8
 target = opt.add_target()
 # Position of target, in subject space!
 # please see tdcs_optimize_mni.py for how to use MNI coordinates
-target.positions = [-55.4, -20.7, 73.4]
+target.positions = [-50.7, 5.1, 55.5]
 # Intensity of the electric field (in V/m)
 target.intensity = 0.2
 

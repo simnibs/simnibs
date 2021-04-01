@@ -13,12 +13,12 @@ opt.max_active_electrodes = 8
 
 # Target in the left motor cortex
 target_left = opt.add_target()
-target_left.positions = [-34.0, -21.4, 88.5]
+target_left.positions = [-30.3, 5.4, 71.6]
 target_left.intensity = 0.2
 target_left.directions = None
 # Target in the right motor cortex
 target_right = opt.add_target()
-target_right.positions = [32.4, -25.5, 90.4]
+target_right.positions = 36.0, 2.5, 72.6]
 target_right.intensity = 0.2
 target_right.directions = None
 

@@ -8,7 +8,7 @@
 from simnibs import sim_struct, run_simnibs
 
 S = sim_struct.SESSION()
-S.fnamehead = 'ernie.msh'
+S.subpath = 'm2m_ernie'
 S.pathfem = 'tdcs_uq'
 
 tdcs = S.add_tdcslist()

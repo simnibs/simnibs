@@ -6,11 +6,11 @@ from simnibs.simulation import gpc
 ## Define the TMS simulation
 tms = simnibs.sim_struct.TMSLIST()
 tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
-tms.mesh = simnibs.read_msh('ernie.msh')
+tms.mesh = simnibs.read_msh(os.path.join('m2m_ernie','ernie.msh'))
 
 # We need to set the EEG cap as we are giving the coil
 # Coordinates as EEG positions
-sub_files = simnibs.SubjectFiles('ernie.msh')
+sub_files = simnibs.SubjectFiles(subpath='m2m_ernie')
 tms.eeg_cap = sub_files.eeg_cap_1010
 
 # Define the coil position

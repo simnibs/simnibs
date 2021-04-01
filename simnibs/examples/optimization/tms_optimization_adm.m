@@ -1,6 +1,6 @@
 tms_opt = opt_struct('TMSoptimize');
-% Select the head mesh
-tms_opt.fnamehead = 'ernie.msh';
+% Subject folder
+tms_opt.subpath = 'm2m_ernie';
 % Select output folder
 tms_opt.pathfem = 'tms_optimization/';
 % Select the coil model
