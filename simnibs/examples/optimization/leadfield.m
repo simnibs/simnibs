@@ -5,7 +5,7 @@
 
 tdcs_lf = sim_struct('TDCSLEADFIELD');
 % subject folder
-tdcs_lf.subpath = 'ernie.msh';
+tdcs_lf.subpath = 'm2m_ernie';
 % Output directory
 tdcs_lf.pathfem = 'leadfield';
 
