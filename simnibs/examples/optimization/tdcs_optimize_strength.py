@@ -18,7 +18,7 @@ target_left.intensity = 0.2
 target_left.directions = None
 # Target in the right motor cortex
 target_right = opt.add_target()
-target_right.positions = 36.0, 2.5, 72.6]
+target_right.positions = [36.0, 2.5, 72.6]
 target_right.intensity = 0.2
 target_right.directions = None
 
