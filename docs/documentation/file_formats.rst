@@ -42,30 +42,9 @@ Together with the *.msh* files, we often also save *.opt* files to facilitate vi
 Surface Fields
 ---------------
 
-When fields are mapped to the middle gray matter surface, either on the subject or on the  *FsAverage*, it saves results as a *FreeSurfer* *.curv* file, which contains values for each point in the surface.  SimNIBS has the *mesh_load_fsresults* *MATLAB* function and the :func:`simnibs.msh.read_curv` *Python* function to load this kind of file.
+When fields are mapped to the middle gray matter surface, either on the subject or on the  *FsAverage*, it saves results as a *FreeSurfer* *.curv* file, which contains values for each point in the surface. SimNIBS has the *mesh_load_fsresults* *MATLAB* function and the :func:`simnibs.msh.read_curv` *Python* function to load this kind of file.
 
-The surfaces themselves are stored in different places depend on how the head model was
-created:
-
-* :ref:`headreco_docs`:
-
-  * Subject surfaces: :file:`m2m_{subID}/segment/cat/surf/`
-  * FsAverage surfaces: :file:`SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/`
-  * Format: gifti
-  * Functions:
-
-    * *Python*: :func:`simnibs.msh.read_gifti_surface`
-    * *MATLAB*: *mesh_load_fssurf*
-
-* :ref:`mri2mesh_docs`:
-
-  * Subject surfaces: :file:`fs_{subID}/surf/`
-  * FsAverage surfaces: :file:`$FREESURFER_HOME/subjects/fsaverage/surf/`
-  * format: *FreeSurfer* surface format
-  * Functions:
-
-    * *Python*: :func:`simnibs.msh.read_freesurfer_surface`
-    * *MATLAB*: *mesh_load_fssurf*
+The surfaces themselves are stored as GIFTI files in :file:`m2m_{subID}/surfaces/`. They can be read using *mesh_load_fssurf* in *MATLAB* and :func:`simnibs.msh.read_gifti_surface` in *Python*.
 
 
 Volumes

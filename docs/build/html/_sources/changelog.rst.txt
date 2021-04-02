@@ -1,9 +1,26 @@
+.. _changelog:
+
 Changelog
 ===========
 
+4.0.0
+------
+ * New head segmentation and meshing pipeline *charm*.
+ * Headreco and mri2mesh are deprecated.
+ * NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
+ 
+3.2.4
+------
+ * Small bug fix related to gmsh options.
+
+3.2.3
+------
+ * Gmsh version changed to avoid issues with Big Sur (only MacOS)
+ * Headreco bug fixes to make meshing more stable in the eye region and air cavities
+ * Added a Nx1 example for a center-surround electrode montage
+
 3.2.2
 ------
-
  * Added matlab and python examples for TACSchallenge
  * Added matlab examples to calculate TI amplitudes
  * TMS optimization now prints optimal position in log file

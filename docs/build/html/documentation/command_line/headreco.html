@@ -16,8 +16,6 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="mri2mesh" href="mri2mesh.html" />
-    <link rel="prev" title="Command Line Tools" href="command_line.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -34,14 +32,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="command_line.html" title="Previous document">Command Line Tools</a>
-        </li>
-        <li>
-          <a href="mri2mesh.html" title="Next document">mri2mesh</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -51,6 +41,10 @@
             
   <div class="section" id="headreco">
 <span id="headreco-docs"></span><h1>headreco<a class="headerlink" href="#headreco" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><em>Headreco</em> is deprecated. Please use <a class="reference internal" href="charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
+</div>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>headreco reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but it will achieve more reliable skull segmentations when a T2w image is supplied.</p>
@@ -104,13 +98,30 @@
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
+<ul>
 <li><p>Mesh resolution can be controlled using the -v option, which allows setting the vertex density (nodes per mm²) of the surface meshes. As a standard, <code class="code docutils literal notranslate"><span class="pre">headreco</span></code> uses 0.5 nodes per mm², resulting in head meshes with around 4 million tetrahedra.</p></li>
 <li><p>After the head mesh creation, temporary files are deleted to save disk space. Adding <code class="code docutils literal notranslate"><span class="pre">--noclean</span></code> prevents this.</p></li>
 <li><p>Manual editing: Edit one or more of the binary masks stored in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mask_prep/</span></code>. Then run <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">surfacemesh</span> <span class="pre">subID</span></code> and <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">volumemesh</span> <span class="pre">subID</span></code> to re-create the head mesh based on the edited masks. Add <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> to the surfacemesh step in case you did nott use CAT12. Note: When using CAT12, surfaces instead of voxel masks will be stored for GM and WM in the <code class="file docutils literal notranslate"><span class="pre">mask_prep/</span></code> folder. For now, these surfaces cannot be manually improved.</p></li>
 <li><p>Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template that is determined during the SPM12 segmentation procedure. The transformations are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> directory. Subject space is defined by the qform set in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/</span><em><span class="pre">subID</span></em><span class="pre">_T1fs_conform.nii.gz</span></code>, which can be found in the same folder as the head mesh.</p></li>
 <li><p>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/headreco_log.html</span></code> file.</p></li>
+<li><p>For headreco to run, MATLAB needs to be configured such that typing <code class="code docutils literal notranslate"><span class="pre">matlab</span></code> on a terminal window will start it. This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the <code class="code docutils literal notranslate"><span class="pre">matlab</span></code> executable somewhere in your system <code class="code docutils literal notranslate"><span class="pre">$PATH</span></code>. This can be done with the commands</p></li>
+<li><p>Linux</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /usr/local/MATLAB/R&lt;VERSION&gt;/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p>MacOSX</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo ln -s /Applications/MATLAB_R&lt;VERSION&gt;.app/bin/matlab /usr/local/bin/matlab
+</pre></div>
+</div>
+<p></p>
+</li>
 </ul>
+<p>If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">matlabroot</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
@@ -124,14 +135,6 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
-        <li>
-          &larr;
-          <a href="command_line.html" title="Previous document">Command Line Tools</a>
-        </li>
-        <li>
-          <a href="mri2mesh.html" title="Next document">mri2mesh</a>
-          &rarr;
-        </li>
     </ul>
   </nav>
               </div>
@@ -155,24 +158,13 @@
 
 
 <h3>Navigation</h3>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
@@ -183,12 +175,6 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../documentation.html">Documentation</a><ul>
-  <li><a href="command_line.html">Command Line Tools</a><ul>
-      <li>Previous: <a href="command_line.html" title="previous chapter">Command Line Tools</a></li>
-      <li>Next: <a href="mri2mesh.html" title="next chapter">mri2mesh</a></li>
-  </ul></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>

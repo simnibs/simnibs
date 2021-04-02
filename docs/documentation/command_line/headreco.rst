@@ -3,6 +3,8 @@
 headreco
 =========
 
+.. warning:: *Headreco* is deprecated. Please use :ref:`charm_docs` instead. 
+
 Description
 ------------
 
@@ -62,6 +64,30 @@ Further notes
 * Manual editing: Edit one or more of the binary masks stored in :file:`m2m_{subID}/mask_prep/`. Then run :code:`headreco surfacemesh subID` and :code:`headreco volumemesh subID` to re-create the head mesh based on the edited masks. Add :code:`--no-cat` to the surfacemesh step in case you did nott use CAT12. Note: When using CAT12, surfaces instead of voxel masks will be stored for GM and WM in the :file:`mask_prep/` folder. For now, these surfaces cannot be manually improved.
 * Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template that is determined during the SPM12 segmentation procedure. The transformations are stored in the :file:`m2m_{subID}/toMNI/` directory. Subject space is defined by the qform set in the :file:`m2m_{subID}/{subID}_T1fs_conform.nii.gz`, which can be found in the same folder as the head mesh. 
 * When something goes wrong, you can check the :file:`m2m_{subID}/headreco_log.html` file.
+* For headreco to run, MATLAB needs to be configured such that typing :code:`matlab` on a terminal window will start it. This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the :code:`matlab` executable somewhere in your system :code:`$PATH`. This can be done with the commands
+
+* Linux
+
+  .. code-block:: bash
+  
+     sudo ln -s /usr/local/MATLAB/R<VERSION>/bin/matlab /usr/local/bin/matlab
+  
+  \
+
+* MacOSX
+
+  .. code-block:: bash
+  
+     sudo ln -s /Applications/MATLAB_R<VERSION>.app/bin/matlab /usr/local/bin/matlab
+  
+  \
+
+If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal
+
+.. code-block:: matlab
+
+   matlabroot
+
 
 References
 -----------

@@ -3,10 +3,12 @@
 Creating Head Models
 =====================
 
+.. note:: The following describes head model creation using *charm*. For head modeling with *headreco* or *mri2mesh* in older SimNIBS versions, please see :ref:`here <head_modeling_tutorial_old>`.
+
 MRI Scan
 ---------
 
-To create individualized models, SimNIBS **requireas** a T1-weighted image. T2-weighted images are optional, but **highly recommended**.
+To create individualized models, SimNIBS **requires** a T1-weighted image. T2-weighted images are optional, but **recommended**.
 
 T1-weighted images
 ~~~~~~~~~~~~~~~~~~~
@@ -45,65 +47,38 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
 
 2. Navigate to the folder where the NifTI files are located (use the :code:`cd` command)
 
-3. Run a segmentation and meshing pipeline. SimNIBS offers two tools for this job, :ref:`headreco_docs` and :ref:`mri2mesh_docs`. *headreco* is the most recent tool, and should be preferred in most cases.
+3. Run the segmentation and meshing pipeline *charm*. For example, for the *ernie* dataset, run
 
-.. list-table::
-   :widths: 33 33 33
-   :header-rows: 1
-
-   * -
-     - :ref:`headreco_docs`
-     - :ref:`mri2mesh_docs`
-   * - Operating Systems
-     - Windows, Linux, MacOSX
-     - Linux, MacOSX
-   * - External Dependencies
-     - MATLAB
-     - FreeSurfer and FSL
-   * - Coverage
-     - Whole head and neck
-     - Above the mouth
-   * - Time to run
-     - ~2 hours (with CAT12), ~1 hour (without CAT12)
-     - ~10 hours
-   * - Reference
-     - `Nielsen et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_
-     - `Windhoff et al., 2013 <https://doi.org/10.1002/hbm.21479>`_
-
-\
-  Before running, please read the documentation of the tool of your choice.
-
-4. Check the segmentation. This can be done with :code:`headreco check <SUB_ID>` for models ran with *headreco* or :code:`mri2mesh -c <SUB_ID>` for models ran with *mri2mesh*. Please see the documentation for your tool of choice for more information. With *FreeSurfer* installed, this command opens two *freeview* windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For *headreco*, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.
-
-.. figure:: ../images/check_segmentation_good.png
-
-   **Good** segmentation. Notice how the surface oulines (in white) nicely follows the tissue shapes in the T1w image
+  .. code-block:: bash
+  
+     charm ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
+  
+  \
+  The subject ID (subID) :code:`ernie` is given as first argument. Charm will create named a folder :file:`m2m_ernie` that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).
 
 \
 
-.. figure:: ../images/check_segmentation_bad.png
+  Alternatively, the reconstruction can be run with only the T1w image as input, but this can result in a less accurate skull region:
 
-   **Bad** segmentation. Notice how part of the skull is missing
+  .. code-block:: bash
+  
+     charm ernie org/ernie_T1.nii.gz
+  
+  \
+  
+Please see :ref:`charm_docs` for details and available options.
 
-\
-
-.. figure:: ../images/check_mni.png
-
-   Example of a good MNI registration.
-
-\
-
-5. Load the head model in *Gmsh* and check the head mesh to ensure that head meshing went fine. First go to *Tools -> Options -> Mesh* and select *Volume faces*.  Then go to *Tools -> Visibility* and select the volumes one by one.
+4. Check the segmentation. **We will let you know how to do this once we figured something out**.
 
 Troubleshooting
 ----------------
 
-* Sometimes, Gmsh fails to mesh one on more tissue compartments. When this happens, running the whole pipeline again and increasing the mesh density with the :code:`-v` argument in :ref:`headreco_docs` or the :code:`--numvertices` argument in :ref:`mri2mesh_docs`.
+* ** To come... **
 
 
 Further Reading
 ---------------
 
-For more information on head meshing, please see our `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_, `Nielsen et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_ and `Windhoff et al., 2013 <https://doi.org/10.1002/hbm.21479>`_.
+For more information on head meshing, please see our `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_, **CITE OULAS PAPER**.
 
 

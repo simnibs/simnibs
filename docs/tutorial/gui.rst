@@ -21,13 +21,12 @@ Starting the GUI and selecting a Head Model
 .. image:: ../images/tutorial_emptygui.png
    :align: center
 
-2. Click on the *Browse* button next to the *Head Mesh* box
+2. Click on the *Browse* button next to the *m2m Folder* box
 
 .. image:: ../images/tutorial_bowse.png
    :align: center
 
-3. Navigate to the example dataset folder and select the :file:`ernie.msh` file, in the
-   example data set
+3. Navigate to the example dataset folder and select the :file:`m2m_ernie` directory
 
 .. image:: ../images/tutorial_selectmsh.png
    :align: center

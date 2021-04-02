@@ -8,13 +8,8 @@ Here, we will describe the output files of many SimNIBS see :ref:`file_formats` 
 Head Segmentation
 ------------------
 
-Both :ref:`headreco_docs` and :ref:`mri2mesh_docs` generate the same type of output 
+:ref:`charm_docs` generates a folder :file:`m2m_<sub_id>/` with the segmentation results and the head mesh :file:`<sub_id>.msh` for the FEM simulations.
 
-* :file:`<sub_id>.msh`
-    *Gmsh* mesh file with head segmentation
-
-* :file:`m2m_<sub_id>/`
-    Folder with secondary output of the head segmentation process
 
 Simulations
 -------------

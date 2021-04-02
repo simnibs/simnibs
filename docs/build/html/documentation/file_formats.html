@@ -82,37 +82,8 @@ However, the gradient operation is defined element-wise, and not node-wise.</p>
 </div>
 <div class="section" id="surface-fields">
 <h2>Surface Fields<a class="headerlink" href="#surface-fields" title="Permalink to this headline">¶</a></h2>
-<p>When fields are mapped to the middle gray matter surface, either on the subject or on the  <em>FsAverage</em>, it saves results as a <em>FreeSurfer</em> <em>.curv</em> file, which contains values for each point in the surface.  SimNIBS has the <em>mesh_load_fsresults</em> <em>MATLAB</em> function and the <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_curv()</span></code> <em>Python</em> function to load this kind of file.</p>
-<p>The surfaces themselves are stored in different places depend on how the head model was
-created:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>:</p>
-<ul>
-<li><p>Subject surfaces: <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/segment/cat/surf/</span></code></p></li>
-<li><p>FsAverage surfaces: <code class="file docutils literal notranslate"><span class="pre">SIMNIBSDIR/resources/spm12/toolbox/cat12/templates_surfaces/</span></code></p></li>
-<li><p>Format: gifti</p></li>
-<li><p>Functions:</p>
-<ul>
-<li><p><em>Python</em>: <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_gifti_surface()</span></code></p></li>
-<li><p><em>MATLAB</em>: <em>mesh_load_fssurf</em></p></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p><a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>:</p>
-<ul>
-<li><p>Subject surfaces: <code class="file docutils literal notranslate"><span class="pre">fs_</span><em><span class="pre">subID</span></em><span class="pre">/surf/</span></code></p></li>
-<li><p>FsAverage surfaces: <code class="file docutils literal notranslate"><span class="pre">$FREESURFER_HOME/subjects/fsaverage/surf/</span></code></p></li>
-<li><p>format: <em>FreeSurfer</em> surface format</p></li>
-<li><p>Functions:</p>
-<ul>
-<li><p><em>Python</em>: <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_freesurfer_surface()</span></code></p></li>
-<li><p><em>MATLAB</em>: <em>mesh_load_fssurf</em></p></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<p>When fields are mapped to the middle gray matter surface, either on the subject or on the  <em>FsAverage</em>, it saves results as a <em>FreeSurfer</em> <em>.curv</em> file, which contains values for each point in the surface. SimNIBS has the <em>mesh_load_fsresults</em> <em>MATLAB</em> function and the <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_curv()</span></code> <em>Python</em> function to load this kind of file.</p>
+<p>The surfaces themselves are stored as GIFTI files in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/surfaces/</span></code>. They can be read using <em>mesh_load_fssurf</em> in <em>MATLAB</em> and <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_gifti_surface()</span></code> in <em>Python</em>.</p>
 </div>
 <div class="section" id="volumes">
 <h2>Volumes<a class="headerlink" href="#volumes" title="Permalink to this headline">¶</a></h2>
@@ -180,6 +151,7 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>

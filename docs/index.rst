@@ -9,9 +9,14 @@
 **SimNIBS 4** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
 A SimNIBS workflow consists of three main parts:
-   * :ref:`Generate high-quality head models <head_modeling_tutorial>` from MR images
-   * Set up and run simulation in the :ref:`graphical user interface <gui_tutorial>`, :ref:`MATLAB or Python<scripting_tutorial>`
-   * :ref:`Visualize simulation results <visualization_tutorial>`, and transform them to *FsAverage* or *MNI* space.
+
+   * :ref:`Generate high-quality head models <head_modeling_tutorial>` from MR images.
+   
+   * Set up and run simulation using our fast FEM solvers in the :ref:`graphical user interface <gui_tutorial>`, or via :ref:`MATLAB or Python scripts <scripting_tutorial>`. 
+   
+   * :ref:`Visualize simulation results <visualization_tutorial>`, and easily transform them to *FsAverage* or *MNI* space via in-built functions.
+
+SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <tms_optimize>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <tdcs_distributed_opt>`.
 
 |
 
@@ -66,14 +71,9 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
  News
 ======
 
-  * **Version 3.2.2 is now avaliable**.  This version includes a number of bug fixes and small improvements. Please see details in  `changelog`_. 
+  * **Version 4.0.0** is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. *Charm* replaces the previous methods *mri2mesh* and *headreco* which are discontinued. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
 
-.. _changelog: https://simnibs.github.io/simnibs/build/html/changelog.html
-
-  
-  * **Version 3.2 is now avaliable**  featuring :ref:`TMS optimization  using the ADM method <tms_optimize>` (contributed by Luis Gomez), TES :ref:`field strength <tdcs_opt>` and :ref:`brain network <tdcs_distributed_opt>` optimization and magnetic field calculations for MRCDI and MREIT 
-  * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` (contributed by Konstantin Weise and Ole Numssen) and even faster FEM solvers for leadfield calculations
-  * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!
+Please see details in the :ref:`changelog <changelog>`. 
     
 .. toctree::
    :maxdepth: 2
@@ -84,6 +84,7 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
    tutorial/tutorial
    documentation/documentation
    faq
+   gallery
    contributors
    publications
    changelog
