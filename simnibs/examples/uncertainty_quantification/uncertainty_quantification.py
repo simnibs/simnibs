@@ -36,8 +36,8 @@ tdcs.cond[0].distribution_parameters = [3, 3, .1, .4]
 # Gray Matter
 tdcs.cond[1].distribution_type = 'beta'
 tdcs.cond[1].distribution_parameters = [3, 3, .1, .6]
-# Skull
-tdcs.cond[3].distribution_type = 'beta'
-tdcs.cond[3].distribution_parameters = [3, 3, 0.003, 0.012]
+# Compact Bone
+tdcs.cond[6].distribution_type = 'beta'
+tdcs.cond[6].distribution_parameters = [3, 3, 0.001, 0.012]
 
 run_simnibs(S)

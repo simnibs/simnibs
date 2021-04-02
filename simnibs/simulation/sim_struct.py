@@ -268,7 +268,7 @@ class SESSION(object):
                 else:
                     simu_name = os.path.join(dir_name, '{0}'.format(i + 1))
             fn, fn_geo  = PL.run_simulation(simu_name, cpus=cpus, view=self.open_in_gmsh)
-            PL.mesh = None
+            PL.mesh = None 
             final_names += fn
             final_names_geo += fn_geo
             logger.info('Finished Running Poslist Number: {0}'.format(i + 1))
@@ -1121,7 +1121,8 @@ class TMSLIST(SimuList):
         for c in self.cond:
             if c.distribution_type:
                 logger.warning('Distribution value for conductivity found, starting gPC')
-                return self.run_gpc(fn_simu, cpus=cpus)
+                fn = self.run_gpc(fn_simu, cpus=cpus)
+                return fn, [None]*len(fn)
 
         logger.info('Began to run TMS simulations')
         logger.info(f'Coil file: {self.fnamecoil}')
@@ -1743,7 +1744,7 @@ class TDCSLIST(SimuList):
         for c in self.cond:
             if c.distribution_type:
                 logger.warning('Distribution value for conductivity found, starting gPC')
-                return self.run_gpc(fn_simu, cpus=cpus)
+                return self.run_gpc(fn_simu, cpus=cpus), [None]
 
         logger.info('Began to run tDCS simulation')
         logger.info('Channels: {0}'.format(self.unique_channels))
