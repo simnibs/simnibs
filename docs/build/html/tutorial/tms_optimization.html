@@ -89,14 +89,14 @@ solver uses approximately three times more memory than the standard solver.</p>
 
 <span class="c1"># Initialize structure</span>
 <span class="n">tms_opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TMSoptimize</span><span class="p">()</span>
-<span class="c1"># Select the head mesh</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># Subject folder</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="c1"># Select output folder</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization/&#39;</span>
 <span class="c1"># Select the coil model</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
 <span class="c1"># Select a target for the optimization</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">83.4</span><span class="p">]</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">]</span>
 <span class="c1"># Optional: Use the MKL PARDISO solver</span>
 <span class="c1"># Will make the simulations much faster</span>
 <span class="c1"># but has large (approx 12GB) memory usage</span>
@@ -112,14 +112,14 @@ solver uses approximately three times more memory than the standard solver.</p>
 <span class="c">% Guilherme Saturnino, 2019</span>
 
 <span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
-<span class="c">% Select the head mesh</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% Subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Select output folder</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization/&#39;</span><span class="p">;</span>
 <span class="c">% Select the coil model</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span>
 <span class="c">% Select a target for the optimization</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">83.4</span><span class="p">];</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">];</span>
 <span class="c">% Optional: Use the MKL PARDISO solver</span>
 <span class="c">% Will make the simulations much faster</span>
 <span class="c">% but has large (approx 12GB) memory usage</span>
@@ -145,27 +145,27 @@ refine the search by precisely specifying the search region, search angles and r
 
 <span class="c1"># Initialize structure</span>
 <span class="n">tms_opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TMSoptimize</span><span class="p">()</span>
-<span class="c1"># Select the head mesh</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># Subject folder</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="c1"># Select output folder</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization_refined/&#39;</span>
 <span class="c1"># Select the coil model</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
 <span class="c1"># Select a target for the optimization</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">83.4</span><span class="p">]</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">]</span>
 <span class="c1"># Optional: Use the MKL PARDISO solver</span>
 <span class="c1"># Will make the simulations much faster</span>
 <span class="c1"># but has large (approx 12GB) memory usage</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">solver_options</span> <span class="o">=</span> <span class="s1">&#39;pardiso&#39;</span>
 
 <span class="c1"># Set the center of the search area</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.0</span><span class="p">,</span> <span class="mf">96.4</span><span class="p">]</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">8.8</span><span class="p">,</span> <span class="mf">78.7</span><span class="p">]</span>
 <span class="c1"># Change the search radius</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">search_radius</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="c1"># Change the search resolution</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">spatial_resolution</span> <span class="o">=</span> <span class="mf">2.5</span>
 <span class="c1"># Set the coil direction reference</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">56.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">22.2</span><span class="p">,</span> <span class="mf">96.0</span><span class="p">]</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">]</span>
 <span class="c1"># Change the angles to include in the search</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">search_angle</span> <span class="o">=</span> <span class="mi">90</span>
 <span class="c1"># Change the angular resolution</span>
@@ -183,27 +183,27 @@ refine the search by precisely specifying the search region, search angles and r
 
 <span class="c">% Initialize structure</span>
 <span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
-<span class="c">% Select the head mesh</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Select output folder</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization_refined/&#39;</span><span class="p">;</span>
 <span class="c">% Select the coil model</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span>
 <span class="c">% Select a target for the optimization</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">83.4</span><span class="p">];</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">];</span>
 <span class="c">% Optional: Use the MKL PARDISO solver</span>
 <span class="c">% Will make the simulations much faster</span>
 <span class="c">% but has large (approx 12GB) memory usage</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">solver_options</span> <span class="p">=</span> <span class="s">&#39;pardiso&#39;</span><span class="p">;</span>
 
 <span class="c">% Set the center of the search area</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">centre</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">18.0</span><span class="p">,</span> <span class="mf">96.4</span><span class="p">];</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">centre</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">8.8</span><span class="p">,</span> <span class="mf">78.7</span><span class="p">];</span>
 <span class="c">% Change the search radius</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">search_radius</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
 <span class="c">% Change the search resolution</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">spatial_resolution</span> <span class="p">=</span> <span class="mf">2.5</span><span class="p">;</span>
 <span class="c">% Set the coil direction reference</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pos_ydir</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">56.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">22.2</span><span class="p">,</span> <span class="mf">96.0</span><span class="p">];</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pos_ydir</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">];</span>
 <span class="c">% Change the angles to include in the search</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">search_angle</span> <span class="p">=</span> <span class="mi">90</span><span class="p">;</span>
 <span class="c">% Change the angular resolution</span>
@@ -228,10 +228,10 @@ refine the search by precisely specifying the search region, search angles and r
 
 <span class="c1"># Initialize structure</span>
 <span class="n">tms_opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TMSoptimize</span><span class="p">()</span>
-<span class="c1"># Select the head mesh</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># Subject folder</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="c1"># Select output folder</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization/&#39;</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization_adm&#39;</span>
 <span class="c1"># Select the coil model</span>
 <span class="c1"># The ADM method requires a &#39;.ccd&#39; coil model</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span>
@@ -247,10 +247,10 @@ refine the search by precisely specifying the search region, search angles and r
 <div class="section" id="id4">
 <h3>MATLAB<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
-<span class="c">% Select the head mesh</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% Subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Select output folder</span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization/&#39;</span><span class="p">;</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization_adm&#39;</span><span class="p">;</span>
 <span class="c">% Select the coil model</span>
 <span class="c">% The ADM method requires a &#39;.ccd&#39; coil model</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">;</span>

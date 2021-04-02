@@ -87,7 +87,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
 
 <span class="n">S</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
-<span class="n">S</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="n">S</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="n">S</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tdcs_uq&#39;</span>
 
 <span class="n">tdcs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
@@ -115,9 +115,9 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c1"># Gray Matter</span>
 <span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
 <span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">]</span>
-<span class="c1"># Skull</span>
-<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
-<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+<span class="c1"># Compact Bone</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
 
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
 </pre></div>
@@ -133,7 +133,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c">%% General information</span>
 
 <span class="n">S</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
-<span class="n">S</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span> <span class="c">% head mesh</span>
+<span class="n">S</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span> <span class="c">% subject folder</span>
 <span class="n">S</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tdcs_uq&#39;</span><span class="p">;</span> <span class="c">%Folder for the simulation output</span>
 
 <span class="c">%% Define tDCS simulation</span>
@@ -161,9 +161,9 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c">% Gray Matter</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.6</span><span class="p">];</span>
-<span class="c">% Skull</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">];</span>
+<span class="c">% Compact Bone</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">];</span>
 
 <span class="c">%% Run Simulation</span>
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
@@ -249,11 +249,11 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="c1">## Define the TMS simulation</span>
 <span class="n">tms</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;m2m_ernie&#39;</span><span class="p">,</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">))</span>
 
 <span class="c1"># We need to set the EEG cap as we are giving the coil</span>
 <span class="c1"># Coordinates as EEG positions</span>
-<span class="n">sub_files</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">)</span>
+<span class="n">sub_files</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="n">subpath</span><span class="o">=</span><span class="s1">&#39;m2m_ernie&#39;</span><span class="p">)</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">eeg_cap</span> <span class="o">=</span> <span class="n">sub_files</span><span class="o">.</span><span class="n">eeg_cap_1010</span>
 
 <span class="c1"># Define the coil position</span>
@@ -267,8 +267,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">4</span><span class="p">]</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">6</span><span class="p">]</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
 
 <span class="c1"># Run the UQ calling with White and Gray matter as an ROI and tolerance of 1e-2</span>
 <span class="n">gpc</span><span class="o">.</span><span class="n">run_tms_gpc</span><span class="p">(</span><span class="n">tms</span><span class="p">,</span> <span class="s1">&#39;tms_gpc/TMS_UQ&#39;</span><span class="p">,</span> <span class="n">tissues</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>

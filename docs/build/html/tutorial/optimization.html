@@ -81,8 +81,8 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
 
 <span class="n">tdcs_lf</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TDCSLEADFIELD</span><span class="p">()</span>
-<span class="c1"># head mesh</span>
-<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="c1"># subject folder</span>
+<span class="n">tdcs_lf</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="c1"># output directory</span>
 <span class="n">tdcs_lf</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;leadfield&#39;</span>
 
@@ -107,8 +107,8 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <span class="c">% place script in the &#39;ernie&#39; folder of the example dataset</span>
 
 <span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
-<span class="c">% Head mesh</span>
-<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="c">% subject folder</span>
+<span class="n">tdcs_lf</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Output directory</span>
 <span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;leadfield&#39;</span><span class="p">;</span>
 
@@ -184,7 +184,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
 <span class="c1"># Position of target, in subject space!</span>
 <span class="c1"># please see tdcs_optimize_mni.py for how to use MNI coordinates</span>
-<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">50.7</span><span class="p">,</span> <span class="mf">5.1</span><span class="p">,</span> <span class="mf">55.5</span><span class="p">]</span>
 <span class="c1"># Intensity of the electric field (in V/m)</span>
 <span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
 
@@ -219,7 +219,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="c">% Define optimization target</span>
 <span class="c">% Position of target, in subject space!</span>
 <span class="c">% please see tdcs_optimize_mni.m for how to use MNI coordinates</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">50.7</span><span class="p">,</span> <span class="mf">5.1</span><span class="p">,</span> <span class="mf">55.5</span><span class="p">];</span>
 <span class="c">% Intensity of the electric field (in V/m)</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 <span class="c">% Run optimization</span>
@@ -264,7 +264,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="o">.</span><span class="n">max_active_electrodes</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="n">target</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">]</span>
+<span class="n">target</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">50.7</span><span class="p">,</span> <span class="mf">5.1</span><span class="p">,</span> <span class="mf">55.5</span><span class="p">]</span>
 <span class="c1"># Set the intensity to a large value (e.g, 100)</span>
 <span class="n">target</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mi">100</span>
 
@@ -290,7 +290,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="p">.</span><span class="n">max_individual_current</span> <span class="p">=</span> <span class="mf">1e-3</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
 
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">55.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span> <span class="mf">73.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">50.7</span><span class="p">,</span> <span class="mf">5.1</span><span class="p">,</span> <span class="mf">55.5</span><span class="p">];</span>
 <span class="c">% Set the intensity to a large value (e.g, 100)</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">.</span><span class="n">intensity</span> <span class="p">=</span> <span class="mi">100</span><span class="p">;</span>
 
@@ -375,11 +375,11 @@ In this structure, we need to select the leadfield we will use for the optimizat
 
 <span class="c1"># Target in the left motor cortex</span>
 <span class="n">target_left</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">21.4</span><span class="p">,</span> <span class="mf">88.5</span><span class="p">]</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">30.3</span><span class="p">,</span> <span class="mf">5.4</span><span class="p">,</span> <span class="mf">71.6</span><span class="p">]</span>
 <span class="n">target_left</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
 <span class="c1"># Target in the right motor cortex</span>
 <span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">36.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">72.6</span><span class="p">]</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.2</span> <span class="c1"># negative value reverses direction</span>
 
 <span class="n">simnibs</span><span class="o">.</span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
@@ -402,10 +402,10 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
 
 <span class="c">% Target in the left motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span> <span class="o">-</span><span class="mf">21.4</span> <span class="mf">88.5</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">30.3</span><span class="p">,</span> <span class="mf">5.4</span><span class="p">,</span> <span class="mf">71.6</span><span class="p">];</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 <span class="c">% Target in the right motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">32.4</span> <span class="o">-</span><span class="mf">25.5</span> <span class="mf">90.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">36.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">72.6</span><span class="p">];</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">;</span>
 
 
@@ -437,12 +437,12 @@ In this structure, we need to select the leadfield we will use for the optimizat
 
 <span class="c1"># Target in the left motor cortex</span>
 <span class="n">target_left</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">21.4</span><span class="p">,</span> <span class="mf">88.5</span><span class="p">]</span>
+<span class="n">target_left</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">30.3</span><span class="p">,</span> <span class="mf">5.4</span><span class="p">,</span> <span class="mf">71.6</span><span class="p">]</span>
 <span class="n">target_left</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
 <span class="n">target_left</span><span class="o">.</span><span class="n">directions</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="c1"># Target in the right motor cortex</span>
 <span class="n">target_right</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_target</span><span class="p">()</span>
-<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">32.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">25.5</span><span class="p">,</span> <span class="mf">90.4</span><span class="p">]</span>
+<span class="n">target_right</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="mf">36.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">72.6</span><span class="p">]</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="mf">0.2</span>
 <span class="n">target_right</span><span class="o">.</span><span class="n">directions</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -466,11 +466,11 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <span class="n">opt</span><span class="p">.</span><span class="n">max_active_electrodes</span> <span class="p">=</span> <span class="mi">8</span><span class="p">;</span>
 
 <span class="c">% Target in the left motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">34.0</span> <span class="o">-</span><span class="mf">21.4</span> <span class="mf">88.5</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">positions</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">30.3</span><span class="p">,</span> <span class="mf">5.4</span><span class="p">,</span> <span class="mf">71.6</span><span class="p">];</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">directions</span><span class="p">=</span><span class="s">&#39;none&#39;</span><span class="p">;</span>
 <span class="c">% Target in the right motor cortex</span>
-<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">32.4</span> <span class="o">-</span><span class="mf">25.5</span> <span class="mf">90.4</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">positions</span>  <span class="p">=</span> <span class="p">[</span><span class="mf">36.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="mf">72.6</span><span class="p">];</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">intensity</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 <span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">directions</span><span class="p">=</span><span class="s">&#39;none&#39;</span><span class="p">;</span>
 

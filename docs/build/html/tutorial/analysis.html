@@ -148,7 +148,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c1"># Read the simulation result</span>
 <span class="n">head_mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s1">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s1">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="c1"># Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
@@ -197,7 +197,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c">% Read the simulation result</span>
 <span class="n">head_mesh</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
 <span class="p">);</span>
 
 <span class="c">% Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
@@ -324,7 +324,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 
 <span class="c1"># Read the simulation result mapped to the gray matter surface</span>
 <span class="n">gm_surf</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s1">&#39;subject_overlays&#39;</span><span class="p">,</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s1">&#39;subject_overlays&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span>
 <span class="p">)</span>
 
@@ -356,7 +356,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 
 <span class="c">% Read the simulation results interpolated to the middle gray matter surface</span>
 <span class="n">surf</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
              <span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="k">...</span>
 <span class="p">);</span>
 

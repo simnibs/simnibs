@@ -40,14 +40,6 @@ class Templates:
         Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
     freesurfer_templates: str
         Path to the folder with FreeSurfer templates (dir)
-    fs_lh_sphere_ref: str
-        Path to the fs surface file with the reference lh sphere (freesurfer surface)
-    fs_rh_sphere_ref: str
-        Path to the fs surface file with the reference rh sphere (freesurfer surface)
-    fs_lh_cortex_ref: str
-        Path to the fs surface file with the Fsavarage ls pial (freesurfer surface)
-    fs_rh_cortex_ref: str
-        Path to the fs surface file with the Fsavarage rs pial (freesurfer surface)
     simnibs_logo: str
         Path to the SimNIBS logo stored as triangle mesh (gmsh format)
     '''

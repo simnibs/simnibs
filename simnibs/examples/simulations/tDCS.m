@@ -9,6 +9,7 @@
 S = sim_struct('SESSION');
 S.subpath = 'm2m_ernie'; % subject folder
 S.pathfem = 'tdcs_simu'; % Folder for the simulation output
+S.map_to_surf = true;   %  Map to subject's middle gray matter surface (optional)
 
 %% Define tDCS simulation
 S.poslist{1} = sim_struct('TDCSLIST');
