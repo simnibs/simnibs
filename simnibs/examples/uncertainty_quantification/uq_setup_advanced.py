@@ -24,8 +24,8 @@ tms.cond[0].distribution_type = 'beta'
 tms.cond[0].distribution_parameters = [3, 3, .1, .4]
 tms.cond[1].distribution_type = 'beta'
 tms.cond[1].distribution_parameters = [3, 3, .1, .6]
-tms.cond[3].distribution_type = 'beta'
-tms.cond[3].distribution_parameters = [3, 3, 0.003, 0.012]
+tms.cond[6].distribution_type = 'beta'
+tms.cond[6].distribution_parameters = [3, 3, 0.003, 0.012]
 
 # Run the UQ calling with White and Gray matter as an ROI and tolerance of 1e-2
 gpc.run_tms_gpc(tms, 'tms_gpc/TMS_UQ', tissues=[1, 2], eps=1e-2)
