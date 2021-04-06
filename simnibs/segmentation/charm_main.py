@@ -669,26 +669,20 @@ def run(subject_dir=None, T1=None, T2=None,
             bias_corrected_image_names.append(sub_files.T2_bias_corrected)
 
         logger.info('Writing out normalized images and labelings.')
-        if create_surfaces:
-            os.makedirs(sub_files.surface_folder, exist_ok=True)
-            cat_images = [sub_files.norm_image,
-                          sub_files.cereb_mask,
-                          sub_files.subcortical_mask,
-                          sub_files.parahippo_mask,
-                          sub_files.hemi_mask]
+        os.makedirs(sub_files.surface_folder, exist_ok=True)
+        cat_images = [sub_files.norm_image,
+                      sub_files.cereb_mask,
+                      sub_files.subcortical_mask,
+                      sub_files.parahippo_mask,
+                      sub_files.hemi_mask]
 
-            cat_structs = atlas_settings['CAT_structures']
-            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
-                            bias_corrected_image_names,
-                            sub_files.labeling,
-                            segment_parameters_and_inputs,
-                            cat_structure_options=cat_structs,
-                            cat_images=cat_images)
-        else:
-            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
-                            bias_corrected_image_names,
-                            sub_files.labeling,
-                            segment_parameters_and_inputs)
+        cat_structs = atlas_settings['CAT_structures']
+        samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+                        bias_corrected_image_names,
+                        sub_files.labeling,
+                        segment_parameters_and_inputs,
+                        cat_structure_options=cat_structs,
+                        cat_images=cat_images)
 
         # Write out MNI warps
         logger.info('Writing out MNI warps.')
