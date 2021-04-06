@@ -559,7 +559,7 @@ def run(subject_dir=None, T1=None, T2=None,
         _denoise_input_and_save(T1, sub_files.T1_denoised)
 
     # denoise if needed
-    if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg):
+    if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg) and T2 is not None:
         logger.info('Denoising the registered T2 and saving.')
         _denoise_input_and_save(sub_files.T2_reg,
                                 sub_files.T2_reg_denoised)
@@ -726,8 +726,7 @@ def run(subject_dir=None, T1=None, T2=None,
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
         python_interpreter = 'simnibs_python'
-        multithreading_script = [os.path.join(SIMNIBSDIR), 'segmentation',
-                                 'run_cat_multiprocessing.py']
+        multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
 
         fsavgDir = file_finder.Templates().freesurfer_templates
         args = ['--Ymf', sub_files.norm_image,
