@@ -553,15 +553,16 @@ class PhysicalNames(object):
                                  ', should be at least of size {0}'
                                  ''.format(np.max(tet_tags)))
             for i in tet_tags:
-                if i < 100:
-                    self.PhysicalVolumes[i] = ' '+cond_names[i-1]
-                else:
-                    self.PhysicalVolumes[i] = cond_names[i-1]
+                if cond_names[i-1] is not None:
+                    if i < 100:
+                        self.PhysicalVolumes[i] = ' '+cond_names[i-1]
+                    else:
+                        self.PhysicalVolumes[i] = cond_names[i-1]
                     
             for i in tri_tags:
-                if i < 100:
+                if i < 100 and (cond_names[i-1] is not None):
                     self.PhysicalSurfaces[i] = ' '+cond_names[i-1]
-                if i > 1000 and i < 1100:
+                if i > 1000 and i < 1100 and (cond_names[i-1001] is not None):
                     self.PhysicalSurfaces[i] = ' '+cond_names[i-1001]
                 if i > 1100 and i < 1500:
                     self.PhysicalSurfaces[i] = str(i-1100)+' top'
