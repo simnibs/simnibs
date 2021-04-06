@@ -13,7 +13,7 @@ import time
 import subprocess
 import nibabel as nib
 import glob
-from sys import platform
+import sys
 import numpy as np
 from scipy import ndimage
 import scipy.ndimage.morphology as mrph
@@ -719,7 +719,6 @@ def run(subject_dir=None, T1=None, T2=None,
     if create_surfaces:
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
-        python_interpreter = 'simnibs_python'
         multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
 
         fsavgDir = file_finder.Templates().freesurfer_templates
@@ -743,8 +742,8 @@ def run(subject_dir=None, T1=None, T2=None,
 
         starttime = time.time()
         # A hack to get multithreading to work on Windows
-        if platform == 'win32':
-            proc = subprocess.run([shutil.which(python_interpreter)] +
+        if sys.platform == 'win32':
+            proc = subprocess.run([sys.executable] +
                                   multithreading_script + args,
                                   capture_output=True)
         else:
