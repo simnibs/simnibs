@@ -51,7 +51,7 @@
             
   <div class="section" id="scripting-simulations">
 <span id="scripting-tutorial"></span><h1>Scripting Simulations<a class="headerlink" href="#scripting-simulations" title="Permalink to this headline">¶</a></h1>
-<p>This tutorial is based on the <a class="reference external" href="https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip">Example Dataset</a>.
+<p>This tutorial is based on the <a class="reference external" href="https://github.com/simnibs/example-dataset/releases/download/v4.0/simnibs_examples.zip">Example Dataset</a>.
 Please download it before continuing.</p>
 <p>SimNIBS offers both <em>Python</em> and <em>MATLAB</em> interfaces for setting up and running simulations.
 In both, we use a set of nested structures to define the simulation, and then use the <em>run_simnibs</em> function to run the simulation.</p>
@@ -108,8 +108,8 @@ In both, we use a set of nested structures to define the simulation, and then us
 <p>The base structure for SimNIBS scripts is the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a>. It may contain many
 simulations of different types (TMS or tDCS), sharing the same head model.</p>
 <p>We always start our scripts by initializing a <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> <em>class</em> (<em>Python</em>) or <em>struct</em> (<em>MATLAB</em>), selecting a head mesh and the output folder.
-Here, we will assume that the scripts are placed together with the <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code> file of the example dataset.
-If the scripts are not in the same folder as the head mesh, you should also give the path to the head mesh.</p>
+Here, we will assume that the scripts are placed in the same directory as the <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code> directory of the example dataset.
+If the scripts are not in the same folder as the subject folder, you should also give the path to the subject folder.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
@@ -117,7 +117,7 @@ If the scripts are not in the same folder as the head mesh, you should also give
 <span class="c1"># Initalize a session</span>
 <span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
 <span class="c1"># Name of head mesh</span>
-<span class="n">s</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
+<span class="n">s</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
 <span class="c1"># Output folder</span>
 <span class="n">s</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tutorial/&#39;</span>
 </pre></div>
@@ -127,7 +127,7 @@ If the scripts are not in the same folder as the head mesh, you should also give
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Initialize a session</span>
 <span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
 <span class="c">% Name of head mesh</span>
-<span class="n">s</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
+<span class="n">s</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Output folder</span>
 <span class="n">s</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tutorial/&#39;</span><span class="p">;</span>
 </pre></div>
@@ -399,6 +399,7 @@ After the simulations are finished running the results can be found in the newly
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>

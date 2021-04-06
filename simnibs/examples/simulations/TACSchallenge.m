@@ -7,7 +7,7 @@
 
 %% General information
 S = sim_struct('SESSION');
-S.fnamehead = 'ernie.msh'; % head mesh
+S.subpath = 'm2m_ernie'; % subject folder
 S.pathfem   = 'TACSchallenge'; % folder for the simulation output
 S.map_to_surf = true;
 S.open_in_gmsh = true; % open results once they are ready
@@ -51,13 +51,13 @@ S.poslist{1}.electrode(6).centre = 'CP6';
 
 % Define retinal control electrodes
 S.poslist{1}.electrode(7).channelnr = 3; % Connect to the "pseudochannel"
-S.poslist{1}.electrode(7).centre = [37.2, 79.2, -35.6]; % coordinates determined in simnibs_gui
+S.poslist{1}.electrode(7).centre = [35.4, 106.0, -40.6]; % coordinates determined in simnibs_gui
 S.poslist{1}.electrode(7).shape = 'ellipse';
 S.poslist{1}.electrode(7).dimensions = [25, 25];
 S.poslist{1}.electrode(7).thickness = [1.5, 1.5];
 
 S.poslist{1}.electrode(8) = S.poslist{1}.electrode(7);
-S.poslist{1}.electrode(8).centre = [-41.2, 78.8, -34.1]; % coordinates determined in simnibs_gui
+S.poslist{1}.electrode(8).centre = [-33.2, 108, -40.6]; % coordinates determined in simnibs_gui
 
 
 %% Define Condition B (retinal control)

@@ -7,9 +7,8 @@ These command line tools can be accessed through the Windows Command Prompt (see
 
 .. toctree::
    :maxdepth: 1
-
-   headreco
-   mri2mesh
+   
+   charm
    dwi2cond
    simnibs
    simnibs_gui

@@ -10,8 +10,8 @@
 from simnibs import sim_struct, run_simnibs
 
 tdcs_lf = sim_struct.TDCSLEADFIELD()
-# head mesh
-tdcs_lf.fnamehead = 'ernie.msh'
+# subject folder
+tdcs_lf.subpath = 'm2m_ernie'
 # output directory
 tdcs_lf.pathfem = 'leadfield'
 

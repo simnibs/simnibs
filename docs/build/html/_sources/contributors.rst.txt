@@ -7,32 +7,18 @@ Current Contributors
 ---------------------
 * Axel Thielscher
    * Project coordination
-   * Debugging and maintenance of :ref:`mri2mesh_docs`, :ref:`headreco_docs` and meshfix.
+   * Debugging and maintenance across the complete code.
    * :ref:`dwi2cond_docs` (2.1)
    * Example dataset *ernie* (2.1)
 
-* Guilherme B. Saturnino
-   * TES optimiaztion algorithms (3.1, 3.2)
-   * Installation procedure (3.0, 3.2)
-   * Documentation (3.0, 3.1 and 3.2)
-   * Fast FEM code (3.0)
-   * (together with K. Weise) UQ functionality (3.0)
-   * New python core (2.1)
-   * GUI (2.0)
-   * Electrode modeling for TES (2.0)
-   * Bug-fixing
-
-* Jesper D. Nielsen
-   * Main author of :ref:`headreco_docs` pipeline (2.1)
+* Oula Puonti
+   * Main author of :ref:`charm_docs` (4.0)
+   * New MNI head mesh (2.1)
 
 * Kristoffer H. Madsen
    * MNI transformation (2.1)
    * Fast I/O for gmsh-meshes in python (2.0)
    * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
-
-* Oula Puonti
-   * :ref:`headreco_docs` (2.1)
-   * New MNI head mesh (2.1)
 
 * Hassan Yazdanian and Kim Knudsen
    * Magnetic Field Calculations (3.2)
@@ -52,21 +38,36 @@ Current Contributors
 
 Former Contributors
 ---------------------
-* Mirko Windhoff
-   * Main contributor to SimNIBS 1.0
+* Andre Antunes
+   * Main contributor to the FEM pipeline in SimNIBS 2.0
+   * Implementation of a range of post-processing programs in SimNIBS 2.0
+   
+* Andreas Bungert
+   * Testing of the new FEM pipeline in SimNIBS 2.0
 
+* Jesper D. Nielsen
+   * Main author of the *headreco* pipeline, now discontinued (2.1)
+   
 * Alex Opitz
    * Implementation of first diffusion-to-conductivity mapping approach
    * Co-contributor to many other parts in SimNIBS 1.0
    * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
 
-* Andre Antunes
-   * Main contributor to the FEM pipeline in SimNIBS 2.0
-   * Implementation of a range of post-processing programs in SimNIBS 2.0
-
-* Andreas Bungert
-   * Testing of the new FEM pipeline in SimNIBS 2.0
-
+* Guilherme B. Saturnino
+   * Main contributor to many SimNIBS features: 
+	   * TES optimiaztion algorithms (3.1, 3.2)
+	   * Installation procedure (3.0, 3.2)
+	   * Documentation (3.0, 3.1 and 3.2)
+	   * Fast FEM code (3.0)
+	   * (together with K. Weise) UQ functionality (3.0)
+	   * New python core (2.1)
+	   * GUI (2.0)
+	   * Electrode modeling for TES (2.0)
+	   * Bug-fixing
+   
+* Mirko Windhoff
+   * Main contributor to SimNIBS 1.0
+   
 Acknowledgements 
 -----------------
 SimNIBS integrates free software for Neuroimaging, computer graphics

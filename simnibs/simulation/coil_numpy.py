@@ -286,18 +286,17 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
     else:
         raise ValueError('coil file must be either a .ccd file or a nifti file')
     
-    if fn_stl is not None:
+    if (fn_geo is not None) and (fn_stl is not None):
+        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) |
+                                        (msh.elm.tag1 == 5) ) 
+        msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
         if not os.path.isfile(fn_stl):
             raise IOError('Could not find stl file: {0}'.format(fn_stl))
         msh_stl = mesh_io.read_stl(fn_stl)
-        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) | 
-                                        (msh.elm.tag1 == 5) )
-        msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
         msh_stl = _transform_coil_surface(msh_stl,coil_matrix,msh_skin,add_logo)
         mesh_io.write_geo_triangles(msh_stl.elm[:,:3]-1, msh_stl.nodes[:],
                                     fn_geo, values=msh_stl.elm.tag1,
                                     name='coil_casing', mode='ba')
-    
     dadt.mesh = msh
     dadt = dadt.node_data2elm_data()
     return dadt
@@ -319,6 +318,10 @@ def set_up_tms(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
    fn_geo(optional): str
         name of .geo file with coil representation
         default: don't output a geo file
+   fn_stl(optional): str
+        name of .stl file of coil casing
+        that will be added to fn_geo
+        default: None
 
    Returns
    ---------

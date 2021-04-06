@@ -8,11 +8,12 @@
 from simnibs import sim_struct, run_simnibs
 
 S = sim_struct.SESSION()
-S.fnamehead = 'ernie.msh'  # head mesh
-S.pathfem = 'tdcs'  # Directory for the simulation
+S.subpath = 'm2m_ernie'  # m2m-folder of the subject
+S.pathfem = 'tdcs_simu'  # Directory for the simulation
+S.map_to_surf = True # map to subject's middle gray matter surface (optional)
 
 tdcs = S.add_tdcslist()
-tdcs.currents = [0.001, -0.001]  # Current flow though each channel (mA)
+tdcs.currents = [0.001, -0.001]  # Current flow though each channel (A)
 
 mc_electrode = tdcs.add_electrode()
 mc_electrode.channelnr = 1  # Connect the electrode to the first channel

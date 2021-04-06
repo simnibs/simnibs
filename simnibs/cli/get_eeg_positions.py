@@ -25,7 +25,7 @@ import argparse
 import sys
 import os
 from simnibs import SIMNIBSDIR
-from simnibs.transformations import warp_coordinates
+from simnibs.utils.transformations import warp_coordinates
 from simnibs import __version__
 
 

@@ -7,8 +7,8 @@ This tutorial comes after the tutorial on :ref:`gui_tutorial`. Please be sure to
 
 Visualizing Results in Gmsh
 ----------------------------
-`Gmsh <http://gmsh.info/>`_ is a powerful program for 3D visualization. However, it has somewhat steep learning curve.
-For this reason, in SimNIBS 3.0 we now write the *.opt* files with basic visualization configurations.
+`Gmsh <http://gmsh.info/>`_ is a powerful program for 3D visualization. However, it has a somewhat steep learning curve.
+For this reason, SimNIBS writes *.opt* files with basic visualization configurations in addition to the mesh files.
 Here we will give a walk-through of a few useful features in Gmsh.
 
 .. note:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS, you don't need to install it separately

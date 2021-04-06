@@ -38,7 +38,7 @@ for sub in subjects:
     s.map_to_fsavg = True
     s.map_to_MNI = True
     s.fields = 'eEjJ'
-    s.fnamehead = os.path.join(sub, sub + '.msh')
+    s.subpath = os.path.join(sub, 'm2m_' + sub)
     s.pathfem = os.path.join(sub, 'bipolar')
     # Don't open in gmsh
     s.open_in_gmsh = False

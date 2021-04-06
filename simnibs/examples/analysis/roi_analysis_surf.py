@@ -11,7 +11,7 @@ import simnibs
 
 # Read the simulation result mapped to the gray matter surface
 gm_surf = simnibs.read_msh(
-    os.path.join('tdcs', 'subject_overlays',
+    os.path.join('tdcs_simu', 'subject_overlays',
                  'ernie_TDCS_1_scalar_central.msh')
 )
 

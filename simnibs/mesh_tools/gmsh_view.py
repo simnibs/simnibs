@@ -1,3 +1,4 @@
+
 import os
 import tempfile
 import subprocess
@@ -32,13 +33,14 @@ class Visualization:
     merge: list
         Files to be merged
     '''
-    def __init__(self, mesh):
+    def __init__(self, mesh, cond=None):
         if isinstance(mesh, str):
             if not mesh.endswith('.msh'):
                 raise ValueError('mesh file name should end with .msh')
         self.General = General()
         self.Mesh = Mesh()
         self.View = View()
+        self.PhysicalNames = PhysicalNames(mesh, cond)
         self.visibility = None
         self.mesh = mesh
         self.merge = []
@@ -112,22 +114,44 @@ class Visualization:
         self.View.append(new_view)
         return new_view
 
-    def add_merge(self, fn):
+    def add_merge(self, fn, append_views_from_geo = False):
         ''' adds a file to be merged to the current Visualization
 
         Parameters
         -----------
         fn: str
             file name
+            
+        append_views_from_geo: Bool, optional
+            if true, all views in the geo file will be appended to the 
+            Visualization, thereby guessing hopefully useful 
+            visualization settings from the view name
         '''
         self.merge.append(fn)
-
+        if append_views_from_geo:
+            with open(fn, 'r') as fp:
+                content = fp.read()  
+                fp.close()
+                views = [line for line in content.split('\n') if "View" in line]
+                for view in views:                
+                    if 'scalp' in view:
+                    	self.add_view(ColormapNumber=8, ColormapAlpha=.3, 
+                                   Visible=0, ShowScale=0)
+                    elif 'electrode_currents' in view:
+                    	self.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
+                    elif 'coil_casing' in view:
+                    	self.add_view(ColorTable=_gray_red_lightblue_blue_cm(),
+                               Visible=1, ShowScale=0, CustomMin=-0.5,
+                               CustomMax=3.5, RangeType=2)
+                    else:
+                    	self.add_view(ShowScale=0)
 
     def _write(self, fn, mode='w'):
         with open(fn, mode) as f:
             f.write('// Visualization File Created by SimNIBS\n')
             dirname = os.path.dirname(fn)
             [f.write(f'Merge "{os.path.relpath(m, dirname)}";\n') for m in self.merge]
+            f.write(str(self.PhysicalNames))
             f.write(str(self.General))
             f.write(str(self.Mesh))
             try:
@@ -352,7 +376,7 @@ class Color(object):
         Color 4 in color carousel
     Five: list of ints
         Color 5 in color carousel
-
+    etc.
 
     References
     ------------
@@ -366,6 +390,11 @@ class Color(object):
         self.Three = [104, 163, 255]  # Color 3 in color carousel
         self.Four = [255, 239, 179]  # Color 4 in color carousel
         self.Five = [255, 166, 133]  # Color 5 in color carousel
+        self.Six = [255, 240, 0]
+        self.Seven = [255, 239, 179]
+        self.Eight = [255, 138, 57]
+        self.Nine = [0, 65, 142]
+        self.Ten = [0, 118, 14]
         self.__dict__.update(kwargs)
 
     def __str__(self):
@@ -488,6 +517,68 @@ class View(object):
 
             else:
                 gmsh.option.setNumber(name, v)
+
+
+
+class PhysicalNames(object):
+    ''' physical names of volumes and surfaces.
+    For more information see http://gmsh.info/doc/texinfo/gmsh.html
+
+    Parameters
+    -----------
+    mesh: Mesh object
+
+    Attributes
+    -----------
+    PhysicalSurfaces: dictionary of surface names
+    PhysicalVolumes: dictionary of volume names
+        
+    References
+    ------------
+     `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html>`_
+
+    '''
+    def __init__(self, m, cond):
+        self.PhysicalSurfaces = dict()
+        self.PhysicalVolumes = dict()
+        
+        if cond is not None:
+            tri_tags=np.unique(m.elm.tag1[m.elm.elm_type==2])
+            tet_tags=np.unique(m.elm.tag1[m.elm.elm_type==4])
+            
+            cond_names = [c.name for c in cond]
+            
+            if tet_tags.size > 0 and len(cond_names) < np.max(tet_tags):  
+                raise ValueError('The cond_list size is too small'
+                                 ', should be at least of size {0}'
+                                 ''.format(np.max(tet_tags)))
+            for i in tet_tags:
+                if i < 100:
+                    self.PhysicalVolumes[i] = ' '+cond_names[i-1]
+                else:
+                    self.PhysicalVolumes[i] = cond_names[i-1]
+                    
+            for i in tri_tags:
+                if i < 100:
+                    self.PhysicalSurfaces[i] = ' '+cond_names[i-1]
+                if i > 1000 and i < 1100:
+                    self.PhysicalSurfaces[i] = ' '+cond_names[i-1001]
+                if i > 1100 and i < 1500:
+                    self.PhysicalSurfaces[i] = str(i-1100)+' top'
+                if i > 1500 and i < 2000:
+                    self.PhysicalSurfaces[i] = str(i-1500)   
+                if i > 2100:
+                    self.PhysicalSurfaces[i] = str(i-2100)+' plug'    
+        
+    def __str__(self):
+        string = ''        
+        for key in self.PhysicalVolumes:
+            st = 'Physical Volume (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalVolumes[key])  
+            string += st
+        for key in self.PhysicalSurfaces:
+            st = 'Physical Surface (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalSurfaces[key])  
+            string += st   
+        return string
 
 
 def _run(command, remove=[]):

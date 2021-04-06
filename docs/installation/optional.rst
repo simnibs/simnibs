@@ -7,40 +7,13 @@ Optional Dependencies
 
 MATLAB
 -------
-**Required by:** :ref:`headreco_docs` head segmentation pipeline
 
-For :ref:`headreco_docs`, MATLAB needs to be configured such that typing :code:`matlab` on a terminal window will start it.
+SimNIBS has a MATLAB API, available in the :file:`matlab_tools/` subfolder of the SimNIBS installation directory. Please add it to the matlab search path to make it available in your matlab.
 
-This is already the case in most Windows installations. However, on Linux and MacOSX you might need to create a link to the :code:`matlab` executable somewhere in your system :code:`$PATH`. This can be done with the commands
-
-* Linux
-
-  .. code-block:: bash
-  
-     sudo ln -s /usr/local/MATLAB/R<VERSION>/bin/matlab /usr/local/bin/matlab
-  
-  \
-
-* MacOSX
-
-  .. code-block:: bash
-  
-     sudo ln -s /Applications/MATLAB_R<VERSION>.app/bin/matlab /usr/local/bin/matlab
-  
-  \
-
-If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal
-
-.. code-block:: matlab
-
-   matlabroot
-
-
-SimNIBS also has a MATLAB API, available in the :file:`matlab/` subfolder of the SimNIBS installation directory.
 
 FSL
 ----
-**Required by:** :ref:`mri2mesh_docs` head segmentation pipeline and :ref:`dwi2cond_docs` conductivity tensor reconstruction pipeline
+**Required by:** :ref:`dwi2cond_docs`
 
 1. Follow the instructions on `this link <http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation>`_
 
@@ -52,15 +25,3 @@ FSL
 
 \
   in the end of the :file:`~/.bashrc` (Linux) or :file:`~/.bash_profile` (MacOSX) file (assuming that fsl is installed as usually into :file:`/etc/fsl/5.0`).
-
-
-FreeSurfer
-----------
-**Required by:** :ref:`mri2mesh_docs` head segmentation pipeline
-
-1. Follow the instructions `here <http://freesurfer.net/fswiki/DownloadAndInstall>`_
-
-2. Make sure that you have a registration file, and set the path in the :file:`~/.bashrc` (Linux) or :file:`~/.bash_profile` (MacOS).
-
-
-

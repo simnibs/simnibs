@@ -324,24 +324,25 @@ class TestTryToReadMat:
 
 class TestLeadfield:
     def test_prepare_find_m2m(self, sphere3_fn):
-        l = sim_struct.LEADFIELD()
-        l.pathfem = ''
-        l.fnamehead = sphere3_fn
         path, n = os.path.split(sphere3_fn)
         dir_fn = os.path.join(path, 'm2m_'+n[:-4])
+        if os.path.exists(dir_fn):
+            shutil.rmtree(dir_fn)
         os.mkdir(dir_fn)
-        l._prepare()
-        assert os.path.abspath(l.subpath) == os.path.abspath(dir_fn)
-        os.rmdir(dir_fn)
+        shutil.copy(sphere3_fn,dir_fn) # meshes are inside the m2m dir since version 4
+        
         l = sim_struct.LEADFIELD()
         l.pathfem = ''
-        l.fnamehead = sphere3_fn
-        path, n = os.path.split(sphere3_fn)
-        dir_fn = os.path.join(path, 'm2m_'+n[:-4])
-        os.mkdir(dir_fn)
+        l.fnamehead = os.path.join(dir_fn, n)       
         l._prepare()
         assert os.path.abspath(l.subpath) == os.path.abspath(dir_fn)
-        os.rmdir(dir_fn)
+        
+        l = sim_struct.LEADFIELD()
+        l.pathfem = ''
+        l.subpath = dir_fn
+        l._prepare()
+        assert os.path.abspath(l.fnamehead) == os.path.abspath(os.path.join(dir_fn, n))
+        shutil.rmtree(dir_fn)
 
 
 class TestTDCSLEADFIELD:
@@ -387,3 +388,12 @@ class TestTDCSLEADFIELD:
         assert np.allclose(p.electrode[0].centre, [1.2,2.4,7.1])
         assert p.electrode[0].pos_ydir == []
         assert p.electrode[0].shape == 'rect'
+
+
+class TestGetSurroundPos:
+    def test_get_surround_pos(self,sphere3_fn):
+        P = sim_struct.get_surround_pos([0, 0, 95], sphere3_fn,
+                                        radius_surround = 94.5*np.pi, N = 3,
+                                        pos_dir_1stsurround = [10, 0, 95])
+        P = np.asarray(P)
+        assert np.max(np.abs(np.diff(P,axis=0))) < 0.1

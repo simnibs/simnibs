@@ -54,10 +54,6 @@
 <p>A SimNIBS installation takes about 3 GB disk space.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The installation procedure has changed in version 3.2. The previous simnibs installer app is now deprecated and will be removed in the near future.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
 <p>In case you have problems during the installation, please check <a class="reference internal" href="throubleshooting.html#install-throubleshooting"><span class="std std-ref">Troubleshooting</span></a></p>
 </div>
 <div class="section" id="windows">
@@ -127,15 +123,7 @@ simnibs_installer/install
 </div>
 <div class="section" id="software-dependencies">
 <h2>Software Dependencies<a class="headerlink" href="#software-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>SimNIBS does not require any external dependencies for running simulations and post-processing operations on existing head models.</p>
-<dl class="simple">
-<dt>However, the head modelling pipelines have external dependencies.</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> requires MATLAB</p></li>
-<li><p><a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> requires FSL and FreeSurfer</p></li>
-</ul>
-</dd>
-</dl>
-<p>Please see <a class="reference internal" href="optional.html#optional-deps"><span class="std std-ref">Optional Dependencies</span></a> for more information on how to configure these dependencies</p>
+<p>SimNIBS does not require any external dependencies for creating head models, running simulations and post-processing operations. The preparation of conductivity tensors for GM and WM from diffusion MRI data using <a class="reference internal" href="../documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> requires FSL. Please see <a class="reference internal" href="optional.html#optional-deps"><span class="std std-ref">Optional Dependencies</span></a> for more information.</p>
 </div>
 </div>
 
@@ -190,6 +178,7 @@ simnibs_installer/install
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>

@@ -3,6 +3,8 @@
 mri2mesh
 ==========
 
+.. warning:: *Mri2mesh* is deprecated. Please use :ref:`charm_docs` instead. 
+
 Description
 -------------
 

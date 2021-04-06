@@ -73,10 +73,8 @@ if nargin<1; error('file or path name needed as input'); end
 s=parse_input(s,varargin{:});
 
 % determine what to load
-path_to_spm12 = fullfile(SIMNIBSDIR, 'resources', 'spm12');
-path_to_cat12 = fullfile(path_to_spm12, 'toolbox','cat12','templates_surfaces');
-path_to_labels = fullfile(path_to_spm12, 'toolbox','cat12','atlases_surfaces');
-addpath(path_to_spm12);
+path_to_avg_surf = fullfile(SIMNIBSDIR, 'resources', 'templates', 'fsaverage_surf');
+path_to_labels = fullfile(SIMNIBSDIR, 'resources', 'templates', 'fsaverage_atlases');
 
 load_lh = false; load_rh = false;
 if strcmpi(s.hemi,'lh')||strcmpi(s.hemi,'both'); load_lh=true; end
@@ -85,23 +83,16 @@ lh={}; rh={};
 
 if strcmpi(fnameIn,'fsaverage')
     % look up fsaverage template in cat12 folder
-    if load_lh; lh={ fullfile(path_to_cat12,'lh.central.freesurfer.gii') }; end
-    if load_rh; rh={ fullfile(path_to_cat12,'rh.central.freesurfer.gii') }; end
+    if load_lh; lh={ fullfile(path_to_avg_surf,'lh.central.freesurfer.gii') }; end
+    if load_rh; rh={ fullfile(path_to_avg_surf,'rh.central.freesurfer.gii') }; end
     
 elseif exist(fnameIn,'dir')
     % load subject-specific surfaces
-    if exist(fullfile(fnameIn,'headreco_log.html'),'file')
-        if load_lh; lh={ fullfile(fnameIn,'segment','cat','surf','lh.central.T1fs_conform.gii') }; end
-        if load_rh; rh={ fullfile(fnameIn,'segment','cat','surf','rh.central.T1fs_conform.gii') }; end
-    elseif exist(fullfile(fnameIn,'mri2mesh_log.html'),'file')
-        [~,subID,extHlp]=fileparts(fnameIn);
-        subID=[subID(5:end) extHlp];
-        fs_path=fullfile(fnameIn,'..',['fs_' subID], 'surf');
-        
-        if load_lh; lh={ fullfile(fs_path, 'lh.pial'),  fullfile(fs_path, 'lh.white') }; end
-        if load_rh; rh={ fullfile(fs_path, 'rh.pial'),  fullfile(fs_path, 'rh.white') }; end
+    if exist(fullfile(fnameIn,'charm_log.html'),'file')
+        if load_lh; lh={ fullfile(fnameIn,'surfaces','lh.central.gii') }; end
+        if load_rh; rh={ fullfile(fnameIn,'surfaces','rh.central.gii') }; end
     else
-        error(['No .._log.html found in ' fnameIn '. Unclear whether it was created by mri2mesh or headreco']);
+        error(['No .._log.html found in ' fnameIn '. Unclear whether it was created by charm']);
     end
     
 elseif exist(fnameIn,'file')

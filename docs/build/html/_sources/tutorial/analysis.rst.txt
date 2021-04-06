@@ -92,7 +92,6 @@ An alternative analysis method is to use the **middle cortical surfaces** create
 .. note:: This analysis method requires that the simulation has been interpolated to a cortical surface.
           This can be done either by setting checking the *Interpolate to cortical surface* option in the :ref:`sim_opt`. (under *Edit* -> *Simulation Options*),
           or by setting the **map_to_surf** option in the :ref:`session_doc` structure.
-          This is not possible for :ref:`headreco_docs` models ran with the :code:`--no-cat` option
 
 For this kind of analysis, we have to
 

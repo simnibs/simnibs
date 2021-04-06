@@ -23,8 +23,8 @@ function m = mesh_load_gmsh4( varargin )
 %       element_node_data{idx}.data: vector or matrix (only tetrahedra data)
 %
 %
-% Note: This function was written for the meshes created by SimNIBS 2.1 and
-% does not support all features of Gmsh meshes:
+% Note: This function was written for the meshes created by SimNIBS 2.1 or
+% later and does not support all features of Gmsh meshes:
 % * only triangles and tetrahedra are supported element types
 % * other elements will be skipped; if this occurs, reading of element-data
 %   will skipped as well

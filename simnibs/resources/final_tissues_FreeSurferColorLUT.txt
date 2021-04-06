@@ -1,0 +1,13 @@
+#No.	  Label Name:			   R   G   B   A
+1	  White-Matter			   230 230 230 255 
+2 	  Gray-Matter		           129 129 129 255 
+3	  CSF			    	   104 163 255 255 
+4	  Bone			   	   255 239 179 255 
+5	  Scalp			     	   255 166 133 255
+6	  Eye_balls			   255 240 0 255 
+7	  Compact_bone     		   255 239 179 255 
+8	  Spongy_bone     	   	   255 138 57 255 
+9 	  Blood				   0 65 142 255 
+10	  Muscle     	   		   0 118 14 255 
+100 	  Electrode			   37 79 255 255 
+500 	  Saline_or_gel			   103 255 226 255 

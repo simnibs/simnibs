@@ -90,17 +90,12 @@ def main():
             f'{hemi}.aparc_{args.atlas}.freesurfer.annot'
         )
         labels, colors, names = nibabel.freesurfer.io.read_annot(fn_atlas)
-        if subject_files.seg_type == 'headreco':
-            read_fun = read_gifti_surface
-        elif subject_files.seg_type == 'mri2mesh':
-            read_fun = read_freesurfer_surface
-
         if hemi == 'lh':
-            ref_surf = read_gifti_surface(file_finder.templates.lh_sphere)
-            sub_surf = read_fun(subject_files.lh_reg)
+            ref_surf = read_gifti_surface(file_finder.get_reference_surf('lh','sphere'))
+            sub_surf = read_gifti_surface(subject_files.get_surface('lh','sphere_reg'))
         if hemi == 'rh':
-            ref_surf = read_gifti_surface(file_finder.templates.rh_sphere)
-            sub_surf = read_fun(subject_files.rh_reg)
+            ref_surf = read_gifti_surface(file_finder.get_reference_surf('rh','sphere'))
+            sub_surf = read_gifti_surface(subject_files.get_surface('rh','sphere_reg'))
 
         labels_sub, _ = transformations._surf2surf(labels, ref_surf, sub_surf)
         fn_out = os.path.join(

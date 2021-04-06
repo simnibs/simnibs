@@ -8,7 +8,7 @@ Operating Systems
 
 Windows
 ''''''''
-SimNIBS has been tested on 64 bit Windows 7 and 10
+SimNIBS has been tested on 64 bit Windows 10
 
 
 Linux

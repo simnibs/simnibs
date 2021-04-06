@@ -53,13 +53,7 @@
 <span id="coords-doc"></span><h1>Coordinates in SimNIBS<a class="headerlink" href="#coordinates-in-simnibs" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="definitions">
 <h2>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h2>
-<p>Coordinates in SimNIBS are <strong>always world coordinates in subject space</strong>. Coordinates are given in <strong>millimiters</strong> and along <em>x</em>, <em>y</em> and <em>z</em> axis.</p>
-<p>The origin and the alignment of the axes can vary in head models ran with <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a>. In head models ran with <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>, the coordinates are based on the conform coordinate system used in FreeSurfer.</p>
-</div>
-<div class="section" id="voxel-to-simnibs-coordinates">
-<h2>Voxel to SimNIBS Coordinates<a class="headerlink" href="#voxel-to-simnibs-coordinates" title="Permalink to this headline">¶</a></h2>
-<p>The head meshing procedures create a NifTI file called <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code>. This file contains a transformed T1 image of the subject, with the world coordinates used by SimNIBS.</p>
-<p>Please notice that <a class="reference internal" href="command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> changes the coordinate system of the input T1 image, while <a class="reference internal" href="command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> does not change it by default.</p>
+<p>Coordinates in SimNIBS are <strong>always world coordinates in subject space</strong>. Coordinates are given in <strong>millimiters</strong> and along <em>x</em>, <em>y</em> and <em>z</em> axis. The origin and the alignment of the axes correspond to those of the original T1w image that was used for head model creation in <em>charm</em> (stored as <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1.nii.gz</span></code>).</p>
 </div>
 <div class="section" id="mni-transformations">
 <h2>MNI Transformations<a class="headerlink" href="#mni-transformations" title="Permalink to this headline">¶</a></h2>
@@ -147,6 +141,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
