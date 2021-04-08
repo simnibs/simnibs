@@ -23,8 +23,9 @@ def create_rings(radii, img_size):
 class TestMeshing:
     def test_sizing_field_from_thicknes(self):
         thickness = np.arange(100)
+        elem_sizes={"standard": {"range": [50, 150], "slope": 2.0}}
         sf = charm_main._sizing_field_from_thickness(
-            thickness, 2, (50, 150)
+            thickness, thickness, elem_sizes
         )
         assert np.isclose(np.min(sf), 50)
         assert np.isclose(np.max(sf), 150)
