@@ -83,7 +83,7 @@ int _mesh_image(
   CGAL::perturb_mesh_3(c3t3, domain);
   std::cout << "Exude \n";
   CGAL::exude_mesh_3(c3t3);
-  
+  std::cout << "Exude done\n";
 
   // Output
   std::ofstream medit_file(fn_out);
