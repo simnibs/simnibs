@@ -14,6 +14,7 @@ dependencies:
   - pip>19.3
   - packaging
   - requests
+  - numba
   - pip:
     - nibabel==2.3.*
     - pyqt5==5.12.*
