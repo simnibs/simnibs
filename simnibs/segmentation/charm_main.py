@@ -21,6 +21,7 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import label
 from simnibs import SIMNIBSDIR
 
+from .. import __version__
 from . import samseg
 from ._cat_c_utils import sanlm
 from .. import utils
@@ -507,10 +508,13 @@ def run(subject_dir=None, T1=None, T2=None,
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
 
-    if options_str is not None:
-        logger.debug('options: '+options_str)
+    logger.info('simnibs version '+__version__)
     logger.info('charm run started: '+time.asctime())
-
+    if options_str is not None:    
+        logger.debug('options: '+options_str)
+    else:
+        logger.debug('options: none')
+    
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
 
@@ -542,6 +546,8 @@ def run(subject_dir=None, T1=None, T2=None,
         fn_settings = usesettings
     settings = utils.settings_reader.read_ini(fn_settings)
     shutil.copyfile(fn_settings, sub_files.settings)
+    logger.debug(settings)
+    
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
     # Could be before as well but doesn't probably matter that much.
@@ -671,7 +677,6 @@ def run(subject_dir=None, T1=None, T2=None,
         cat_images = [sub_files.norm_image,
                       sub_files.cereb_mask,
                       sub_files.subcortical_mask,
-                      sub_files.parahippo_mask,
                       sub_files.hemi_mask]
 
         cat_structs = atlas_settings['CAT_structures']
@@ -717,63 +722,53 @@ def run(subject_dir=None, T1=None, T2=None,
     if create_surfaces:
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
-        multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
-
-        fsavgDir = file_finder.Templates().freesurfer_templates
-        args = ['--Ymf', sub_files.norm_image,
-                '--Yleft_path', sub_files.hemi_mask,
-                '--Ymaskhemis_path', sub_files.cereb_mask,
-                '--Ymaskparahipp_path', sub_files.parahippo_mask,
-                '--surface_folder', sub_files.surface_folder,
-                '--fsavgdir', fsavgDir,
-                '--surf', 'lh', 'rh']
-
-        # These values are defaults in the multiprocessing scripts, can be
-        # added to args if needed
-        # ['--vdist', 1.0, 0.75,
-        #  '--voxsize_pbt', 0.5, 0.25,
-        #  '--voxsizeCS', 0.75, 0.5,
-        #  '--th_initial', 0.5,
-        #  '--no_intersect', True,
-        #  '--add_parahipp', False,
-        #  '--close_parahipp', False,
-
         starttime = time.time()
-        # A hack to get multithreading to work on Windows
+        fsavgDir = file_finder.Templates().freesurfer_templates
+        
+        surface_settings = settings['surfaces']
+        surf = surface_settings['surf']
+        vdist = surface_settings['vdist']
+        voxsize_pbt = surface_settings['voxsize_pbt']
+        voxsize_refineCS = surface_settings['voxsize_refinecs']
+        th_initial = surface_settings['th_initial']
+        no_selfintersections = surface_settings['no_selfintersections']
+        
         if sys.platform == 'win32':
+            # A hack to get multithreading to work on Windows
+            multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
+            argslist = ['--Ymf', sub_files.norm_image,
+                    '--Yleft_path', sub_files.hemi_mask,
+                    '--Ymaskhemis_path', sub_files.cereb_mask,
+                    '--surface_folder', sub_files.surface_folder,
+                    '--fsavgdir', fsavgDir,
+                    '--surf'] + surf + [
+                    '--vdist', str(vdist[0]), str(vdist[1]),
+                    '--voxsize_pbt', str(voxsize_pbt[0]), str(voxsize_pbt[1]),
+                    '--voxsizeCS', str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
+                    '--th_initial', str(th_initial),
+                    '--no_intersect', str(no_selfintersections)]
+
             proc = subprocess.run([sys.executable] +
-                                  multithreading_script + args,
+                                  multithreading_script + argslist,
                                   capture_output=True)
         else:
             from simnibs.segmentation.run_cat_multiprocessing import run_cat_multiprocessing
             Ymf = nib.load(sub_files.norm_image)
             Yleft = nib.load(sub_files.hemi_mask)
             Yhemis = nib.load(sub_files.cereb_mask)
-            Yparahipp = nib.load(sub_files.parahippo_mask)
-            vox2mm = Ymf.affine
-            vdist = [1.0, 0.75]
-            voxsize_pbt = [0.5, 0.25]
-            voxsize_refineCS = [0.75, 0.5]
-            th_initial = 0.714
-            no_selfintersections = True
-            add_parahipp = False
-            close_parahipp = False
-            surf = ['lh', 'rh']
-
+            
             run_cat_multiprocessing(Ymf.get_fdata(),
                                     Yleft.get_fdata(),
                                     Yhemis.get_fdata(),
-                                    Yparahipp.get_fdata(),
-                                    vox2mm, sub_files.surface_folder,
-                                    fsavgDir, vdist,
-                                    voxsize_pbt, voxsize_refineCS,
-                                    th_initial, no_selfintersections,
-                                    add_parahipp, close_parahipp, surf)
+                                    Ymf.affine, sub_files.surface_folder,
+                                    fsavgDir, vdist, voxsize_pbt, 
+                                    voxsize_refineCS, th_initial,
+                                    no_selfintersections, surf)
 
         # print time duration
         elapsed = time.time() - starttime
-        print('\nTotal time cost (HH:MM:SS):')
-        print(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+        logger.info('\nTotal time cost (HH:MM:SS):')
+        logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
     if mesh_image:
         # create mesh from label image

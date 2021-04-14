@@ -95,23 +95,23 @@ class TestSubjectFiles:
     
     def test_surfaces(self):
         with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
-            surf_dir = file_finder.SubjectFiles(subpath=tmpdir).surf_dir
-            os.makedirs(surf_dir)
+            surface_folder = file_finder.SubjectFiles(subpath=tmpdir).surface_folder
+            os.makedirs(surface_folder)
             for region in ['lh', 'rh']:
                 for surf_type in ['central', 'sphere.reg']:
                     pathlib.Path(
-                        os.path.join(surf_dir, f'{region}.{surf_type}.SOMETHING.gii')
+                        os.path.join(surface_folder, f'{region}.{surf_type}.SOMETHING.gii')
                     ).touch()
-            pathlib.Path(os.path.join(surf_dir, 'lc.sphere.reg.SOMETHING.gii')).touch()
-            pathlib.Path(os.path.join(surf_dir, 'rh.thickness.SOMETHING')).touch()
+            pathlib.Path(os.path.join(surface_folder, 'lc.sphere.reg.SOMETHING.gii')).touch()
+            pathlib.Path(os.path.join(surface_folder, 'rh.thickness.SOMETHING')).touch()
             s = file_finder.SubjectFiles(subpath=tmpdir)
 
             assert s.get_surface('lh', 'central') == \
-                    os.path.join(surf_dir, 'lh.central.SOMETHING.gii')
+                    os.path.join(surface_folder, 'lh.central.SOMETHING.gii')
             assert s.get_surface('rh', 'central') == \
-                    os.path.join(surf_dir, 'rh.central.SOMETHING.gii')
+                    os.path.join(surface_folder, 'rh.central.SOMETHING.gii')
             assert s.get_surface('lc', 'sphere_reg') == \
-                    os.path.join(surf_dir, 'lc.sphere.reg.SOMETHING.gii')
+                    os.path.join(surface_folder, 'lc.sphere.reg.SOMETHING.gii')
 
             with pytest.raises(FileNotFoundError):
                 s.get_surface('lc', 'central')

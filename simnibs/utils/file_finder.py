@@ -196,7 +196,7 @@ class SubjectFiles:
         Path to the output from the segmentation
 
     surface_folder: str
-        Path to the output from the segmentation
+        Path to surfaces from middle GM reconstruction
 
     label_prep_folder: str
         Path to the output from upsampling
@@ -228,9 +228,6 @@ class SubjectFiles:
     ref_fs: str
         Reference FreeSurfer space file (.nii.gz)
         Now always set to True, so that a standard header is added, which seems to work
-
-    surf_dir: str
-        Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
 
     central_surfaces: list
         List of SurfaceFile objects which containts 2 fields:
@@ -363,9 +360,8 @@ class SubjectFiles:
             self.mni2conf_12dof += '.mat'
 
         # Stuff for surface transformations
-        self.surf_dir = os.path.join(self.subpath, 'surfaces')
-        # Look for all .gii files in surf_dir
-        surfaces = glob.glob(os.path.join(self.surf_dir, '*.gii'))
+        # Look for all .gii files in surface_folder
+        surfaces = glob.glob(os.path.join(self.surface_folder, '*.gii'))
         # Organize the files in 3 separate lists
         SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
         self.sphere_reg_surfaces = []
@@ -409,7 +405,7 @@ class SubjectFiles:
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
-        self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
+        #self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
         
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
