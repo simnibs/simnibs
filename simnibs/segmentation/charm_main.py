@@ -767,7 +767,7 @@ def run(subject_dir=None, T1=None, T2=None,
 
         # print time duration
         elapsed = time.time() - starttime
-        logger.info('\nTotal time cost (HH:MM:SS):')
+        logger.info('Total time cost surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
     if mesh_image:
