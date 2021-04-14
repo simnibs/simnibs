@@ -690,7 +690,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
         This function is adapted from cat_surf_createCS.m of CAT12
         (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).  
     """
-    debug=True # keep intermediate results if set to True
+    debug=False # keep intermediate results if set to True
     
     if sys.platform == 'win32':
         # Ugly hack to get logging working for multithreading on Windows
