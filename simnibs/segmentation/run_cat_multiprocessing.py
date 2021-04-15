@@ -13,7 +13,7 @@ import multiprocessing
 def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis,
                             vox2mm, surface_folder, fsavgDir, vdist,
                             voxsize_pbt, voxsize_refineCS, th_initial,
-                            no_selfintersections, surf):
+                            no_selfintersections, surf, nprocesses = 0):
 
     Pcentral_all = []
     Pspherereg_all = []
@@ -21,7 +21,11 @@ def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis,
     EC_all = []
     defect_size_all = []
 
-    with multiprocessing.Pool(processes=len(surf)) as pool:
+    processes = len(surf)
+    if nprocesses > 0:
+        processes=min(nprocesses,processes)
+        
+    with multiprocessing.Pool(processes=processes) as pool:
         partial_create_cs = functools.partial(
             createCS, Ymf, Yleft, Ymaskhemis, vox2mm,
             surffolder=surface_folder, fsavgDir=fsavgDir, vdist=vdist,
@@ -58,7 +62,9 @@ if __name__ == '__main__':
                                  default=[0.714])
     argument_parser.add_argument('--no_intersect', nargs='+', type=bool, default=[True])
     argument_parser.add_argument('--surf', nargs='+',
-                                 default=['lh', 'rh', 'lc', 'rc'])    
+                                 default=['lh', 'rh', 'lc', 'rc'])
+    argument_parser.add_argument('--nprocesses', nargs='+', type=int,
+                                 default=[0])
     parsed = argument_parser.parse_args()
     
     Ymf = nib.load(parsed.Ymf_path[0])
@@ -72,9 +78,10 @@ if __name__ == '__main__':
     th_initial = parsed.th_initial[0]
     no_selfintersections = parsed.no_intersect[0]
     surf = parsed.surf
+    nprocesses = parsed.nprocesses[0]
     
     run_cat_multiprocessing(Ymf.get_fdata(), Yleft.get_fdata(), Yhemis.get_fdata(),
                             Ymf.affine, surf_folder, fsavgdir, vdist,
                             voxsize_pbt, voxsize_refineCS, th_initial,
-                            no_selfintersections, surf)
+                            no_selfintersections, surf, nprocesses)
     

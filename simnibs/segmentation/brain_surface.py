@@ -693,18 +693,10 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
     debug=False # keep intermediate results if set to True
     
     if sys.platform == 'win32':
-        # Ugly hack to get logging working for multithreading on Windows
-        # This needs to be here and not in run_cat_multiprocessing.py to work
-        from ..utils.simnibs_logger import register_excepthook, unregister_excepthook
-        subject_dir = os.path.split(surffolder)[0]
-        logfile = os.path.join(subject_dir, "charm_log.html")
-        fh = logging.FileHandler(logfile, mode='a')
-        formatter = logging.Formatter('%(levelname)s: %(message)s')
-        fh.setFormatter(formatter)
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-        register_excepthook(logger)
-            
+        # Make logging to stderrr more talkative to capture
+        # all logging output in case of multiprocessing
+        logger.handlers[0].setLevel(logging.DEBUG)
+
     # add surface name to logger
     formatter_list=[]
     for i in range(len(logger.handlers)):
@@ -718,10 +710,20 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
     if 'lh' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 1))
         Yside=np.array(Yleft, copy=True)
+        
+        # logger.info('INFO INFO lh')
+        # logger.debug('DEBUG DEBUG lh')
+        # logger.info('2222 INFO INFO lh')
+        # time.sleep(1)
+        # raise ValueError('error lh: debug')
 
     elif 'rh' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 2))
         Yside=np.logical_not(Yleft)
+        
+        # logger.debug('debug RH')
+        # time.sleep(2)
+        # raise ValueError('error rh: debug')
 
     elif 'lc' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 3))
@@ -866,12 +868,9 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
         logger.handlers[i].setFormatter(formatter)
     
     if sys.platform == 'win32':
-        # Ugly hack to get logging working for multithreading on Windows: Part 2
-        while logger.hasHandlers():
-            logger.removeHandler(logger.handlers[0])
-            unregister_excepthook()
-            logging.shutdown()
-      
+        # Make logging to stderrr less talkative again
+        logger.handlers[0].setLevel(logging.INFO)
+              
     return Pcentral, Pspherereg, Pthick, EC, defect_size
         
 

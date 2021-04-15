@@ -726,6 +726,7 @@ def run(subject_dir=None, T1=None, T2=None,
         fsavgDir = file_finder.Templates().freesurfer_templates
         
         surface_settings = settings['surfaces']
+        nprocesses = surface_settings['processes']
         surf = surface_settings['surf']
         vdist = surface_settings['vdist']
         voxsize_pbt = surface_settings['voxsize_pbt']
@@ -746,11 +747,15 @@ def run(subject_dir=None, T1=None, T2=None,
                     '--voxsize_pbt', str(voxsize_pbt[0]), str(voxsize_pbt[1]),
                     '--voxsizeCS', str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
                     '--th_initial', str(th_initial),
-                    '--no_intersect', str(no_selfintersections)]
+                    '--no_intersect', str(no_selfintersections),
+                    '--nprocesses', str(nprocesses)]
 
             proc = subprocess.run([sys.executable] +
                                   multithreading_script + argslist,
-                                  capture_output=True)
+                                  stderr=subprocess.PIPE) # stderr: standard stream for simnibs logger
+            logger.debug(proc.stderr.decode('ASCII', errors='ignore').replace('\r', ''))
+            proc.check_returncode()
+             
         else:
             from simnibs.segmentation.run_cat_multiprocessing import run_cat_multiprocessing
             Ymf = nib.load(sub_files.norm_image)
@@ -763,7 +768,7 @@ def run(subject_dir=None, T1=None, T2=None,
                                     Ymf.affine, sub_files.surface_folder,
                                     fsavgDir, vdist, voxsize_pbt, 
                                     voxsize_refineCS, th_initial,
-                                    no_selfintersections, surf)
+                                    no_selfintersections, surf, nprocesses)
 
         # print time duration
         elapsed = time.time() - starttime
