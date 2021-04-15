@@ -543,9 +543,14 @@ def run(subject_dir=None, T1=None, T2=None,
     if usesettings is None:
         fn_settings = os.path.join(SIMNIBSDIR, 'charm.ini')
     else:
+        if type(usesettings) == list:
+            usesettings = usesettings[0]
         fn_settings = usesettings
     settings = utils.settings_reader.read_ini(fn_settings)
-    shutil.copyfile(fn_settings, sub_files.settings)
+    try:
+        shutil.copyfile(fn_settings, sub_files.settings)
+    except shutil.SameFileError:
+        pass
     logger.debug(settings)
     
     # -------------------------PIPELINE STEPS---------------------------------
