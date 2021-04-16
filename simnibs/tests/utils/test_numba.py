@@ -25,7 +25,7 @@ def sum_numba(y):
 
 class TestNumba:
     def test_numba(self):
-        #just a test to see if numba will work after being packaged
+        #just a test to see if numba will work after being packaged 
         x = np.random.randint(0,5000,size=5000000)
         w = np.random.randn(x.shape[0])
         t0=time.time()
