@@ -7,8 +7,11 @@
 from scipy import ndimage as ndi
 import numpy as np
 import cython
+import time
 
 import nibabel
+from multiprocessing.pool import ThreadPool
+import multiprocessing
 
 cimport numpy as np
 
@@ -17,17 +20,22 @@ cdef inline np.float_t float_max(np.float_t a, np.float_t b) nogil: return a if 
 cdef inline np.uint32_t int_max(np.int32_t a, np.int32_t b) nogil: return a if a >= b else b
 cdef inline np.uint32_t int_min(np.int32_t a, np.int32_t b) nogil: return a if a <= b else b
 
-
-def _calc_thickness(label_img):
+def _calc_thickness(label_img, parallel=True):
     ''' Calculates the thichkess of each layer in a 3D binary image'''
     thickness = np.zeros_like(label_img, dtype=np.float32)
     for t in np.unique(label_img):
         if t == 0:
             continue
         else:
-            thickness += _thickness_3d_binary_image(
-                (label_img == t).astype(np.uint8)
-            )
+            if parallel:
+                thickness += _thickness_3d_binary_image_par(
+                    (label_img == t).astype(np.uint8)
+                    )
+            else:
+                thickness += _thickness_3d_binary_image(
+                    (label_img == t).astype(np.uint8)
+                    )
+            
     # If for some reason a voxel had unasigned thickness
     thickness[np.isinf(thickness)] = 1
     return thickness
@@ -53,12 +61,46 @@ def _thickness_3d_binary_image(image):
 
     return thickness
 
+def _thickness_3d_binary_image_par(image):
+    ''' Calculate thicness in a 3D binary image '''
+    #Use a ThreadPool with as many threads as CPUs
+    pool = ThreadPool(multiprocessing.cpu_count())
+    #Preallocate list for threads, just to make code cleaner
+    threads = [None for i in range(3)]
+    
+    thickness = np.zeros_like(image, dtype=np.float32)
+    thickness[image > 0] = np.inf
+    # Calculate thickness per-slice along 3 different cuts
+    # and take the smallest one
+    
+    for i in range(3):
+        #Initialize list of threads for each slice (may not all be used)
+        threads[i]=[None for j in range(image.shape[i])]
+        for j, slice_ in enumerate(image.swapaxes(0, i)):
+            if not np.any(slice_):
+                continue
+            #add a thread to the ThreadPool
+            threads[i][j]=pool.apply_async(_thickness_slice,args=(slice_,))
+    for i in range(3):
+        thickness_ax = np.zeros(
+            image.swapaxes(0, i).shape, dtype=np.float32
+        )
+        for j in range(len(image.swapaxes(0, i))):
+            if not threads[i][j] is None: #only if thread are actually used
+                thick_slice = threads[i][j].get() # get data from thread
+                thickness_ax[j, ...] = thick_slice
+        thickness_ax = thickness_ax.swapaxes(0, i)
+        thickness_ax[(thickness_ax < 1e-3) * (image > 0)] = np.inf
+        thickness = np.min([thickness, thickness_ax], axis=0)
+
+    return thickness
+
 def _thickness_slice(np.ndarray[np.uint8_t, ndim=2] slice_):
-    """ Based on Hilderbrand and Ruegsegger, J. of Microscopy, 1997 """
+    """ Based on Hildebrand and Ruegsegger, J. of Microscopy, 1997 https://doi.org/10.1046/j.1365-2818.1997.1340694.x"""
 
     if not np.any(slice_):
         return np.zeros_like(slice_, dtype=np.float32)
-
+    
     ma, distances = medial_axis(
         slice_, return_distance=True
     )
@@ -82,24 +124,25 @@ def _thickness_slice(np.ndarray[np.uint8_t, ndim=2] slice_):
 
 
     # For each voxel in the medial axis
-    for x_ma in range(sx):
-        for y_ma in range(sy):
-            if medial_axis_mask[x_ma, y_ma]:
-                # look into the l_infty ball centered around the
-                # medial axis voxel
-                for x in range(int_max(x_ma - r[x_ma, y_ma], 0),
-                               int_min(x_ma + r[x_ma, y_ma] + 1, sx)):
-                    for y in range(int_max(y_ma - r[x_ma, y_ma], 0),
-                                   int_min(y_ma + r[x_ma, y_ma] + 1, sy)):
-                    # if is in the mask
-                        if slice_[x, y]:
-                            # and in the L2 ball
-                            if (x_ma - x)**2 + (y_ma - y)**2 < radius_sq[x_ma, y_ma] + eps:
-                                # update thickness
-                                thickness[x, y] = float_max(
-                                    radius_sq[x_ma, y_ma],
-                                    thickness[x, y]
-                                )
+    with nogil:
+        for x_ma in range(sx):
+            for y_ma in range(sy):
+                if medial_axis_mask[x_ma, y_ma]:
+                    # look into the l_infty ball centered around the
+                    # medial axis voxel
+                    for x in range(int_max(x_ma - r[x_ma, y_ma], 0),
+                                   int_min(x_ma + r[x_ma, y_ma] + 1, sx)):
+                        for y in range(int_max(y_ma - r[x_ma, y_ma], 0),
+                                       int_min(y_ma + r[x_ma, y_ma] + 1, sy)):
+                        # if is in the mask
+                            if slice_[x, y]:
+                                # and in the L2 ball
+                                if (x_ma - x)**2 + (y_ma - y)**2 < radius_sq[x_ma, y_ma] + eps:
+                                    # update thickness
+                                    thickness[x, y] = float_max(
+                                        radius_sq[x_ma, y_ma],
+                                        thickness[x, y]
+                                    )
 
     return np.sqrt(thickness)
 
