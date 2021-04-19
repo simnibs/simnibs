@@ -477,12 +477,12 @@ def despike(msh, adj_threshold=2,
         for j, t2 in enumerate(tags[i+1:]):
             if t1 == t2:
                 continue
-            if not np.any(nodes_label[i] * nodes_label[j]):
+            if not np.any(nodes_label[i] * nodes_label[j+i+1]):
                 continue
             for k, t3 in enumerate(tags):
                 if t1 == t3 or t2 == t3:
                     continue
-                if not np.any(nodes_label[i] * nodes_label[j] * nodes_label[k]):
+                if not np.any(nodes_label[i] * nodes_label[j+i+1] * nodes_label[k]):
                     continue
                 relabel_spikes(
                     msh, t1, t2, t3,
