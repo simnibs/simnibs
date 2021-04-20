@@ -846,8 +846,7 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.info('Write label image from mesh')
         MNI_template = file_finder.Templates().mni_volume
         mesh = final_mesh.crop_mesh(elm_type=4)
-        field = np.zeros(mesh.elm.nr, dtype=np.int32)
-        field = mesh.elm.tag1
+        field = mesh.elm.tag1.astype(np.uint16)
         ed = ElementData(field)
         ed.mesh = mesh
         ed.to_deformed_grid(sub_files.mni2conf_nonl, MNI_template, 
