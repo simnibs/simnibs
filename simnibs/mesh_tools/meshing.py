@@ -188,7 +188,7 @@ def image2mesh(image, affine, facet_angle=30,
 
     rot, voxel_dims, shearing = _decompose_affine(affine)
 
-    if not np.allclose(shearing, np.eye(3)):
+    if not np.allclose(shearing, np.eye(3), atol=1.e-5):
         raise ValueError('Affine matrix has a shearing component')
 
     if facet_size is None:
