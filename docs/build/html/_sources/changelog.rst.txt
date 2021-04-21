@@ -1,6 +1,18 @@
 Changelog
 ===========
 
+3.2.4
+------
+* small bug fix related to gmsh options
+
+
+3.2.3
+------
+* Gmsh version changed to avoid issues with Big Sur (only MacOS)
+* Headreco bug fixes to make meshing more stable in the eye region and air cavities
+* Added a Nx1 example for a center-surround electrode montage
+
+
 3.2.2
 ------
 
@@ -25,6 +37,7 @@ Known issues:
  * mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now
  * SimNIBS is so far not tested on Macs with Apple Silicon, and is likely to give errors on those machines
 
+
 3.2
 ----
  * Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)
@@ -35,6 +48,7 @@ Known issues:
  * Refactoring of optimization code
  * Calculating coil-cortex distances during TMS simulations
  * New installers
+
 
 3.1
 ----

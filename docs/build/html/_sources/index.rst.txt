@@ -66,7 +66,7 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
  News
 ======
 
-  * **Version 3.2.2 is now avaliable**.  This version includes a number of bug fixes and small improvements. Please see details in  `changelog`_. 
+  * **Version 3.2.4 is now avaliable**.  This version includes a number of bug fixes and small improvements. Please see details in  `changelog`_. 
 
 .. _changelog: https://simnibs.github.io/simnibs/build/html/changelog.html
 
