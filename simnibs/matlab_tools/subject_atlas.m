@@ -32,11 +32,11 @@ assert(any(strcmp(atlas_name,{'a2009s', 'DK40', 'HCP_MMP1'})), ...
        ['invalid atlas name: ' atlas_name])
 
 tmp_folder = tempname;
-res = system([simnibs_cli_call('subject_atlas')...
-              ' -m ' subdir ' -a ' atlas_name ' -o ' tmp_folder]);
-if res ~= 0
+[status,result] = system([simnibs_cli_call('subject_atlas')...
+                         ' -m ' subdir ' -a ' atlas_name ' -o ' tmp_folder]);
+if status ~= 0
     rmdir(tmp_folder, 's');
-    error('There was an error running subject_atlas')
+    error('There was an error running subject_atlas:\n %s',result)
 end
 fn_lh = dir([tmp_folder filesep 'lh.*']);
 [m, struct_names] = mesh_load_fsannot(m, [tmp_folder filesep fn_lh.name]);

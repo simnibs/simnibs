@@ -31,14 +31,14 @@ fclose( fid );
 fn_out = [tempname,'.csv'];
 
 % Run mni2subject_coords
-res = system([simnibs_cli_call('mni2subject_coords')...
-              ' -m "' subdir '" -s ' fn_in ' -o ' fn_out ...
-              ' -t ' transformation_type]);
+[status,result] = system([simnibs_cli_call('mni2subject_coords')...
+                         ' -m "' subdir '" -s ' fn_in ' -o ' fn_out ...
+                         ' -t ' transformation_type]);
 % Check if call was successefull
-if res ~= 0
+if status ~= 0
     delete(fn_in);
     delete(fn_out);
-    error('There was an error running mni2subject_coords')
+    error('There was an error running mni2subject_coords:\n %s',result)
 end
 
 % Read output
