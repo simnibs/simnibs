@@ -62,12 +62,12 @@ for k=1:numel(fn)
         end
     end
 end
-res = system(cmdstr);
+[status,result] = system(cmdstr);
 
-if res ~= 0
+if status ~= 0
     delete(fn_in);
     delete(fn_out);
-    error('There was an error running expand_to_center_surround')
+    error('There was an error running expand_to_center_surround:\n %s',result)
 end
 S_out = load(fn_out);
 delete(fn_in);
