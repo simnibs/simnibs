@@ -386,7 +386,7 @@ def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b,
     '''
     logger.log(
         log_level,
-        f'Relabeling spikes in {label_a} and {label_b} to {target_label}'
+        f'Relabeling spikes in {labels[label_a]} and {labels[label_b]} to {labels[target_label]}'
     )
     if not np.any(with_labels[label_a] * with_labels[label_b]):
         return
@@ -409,12 +409,19 @@ def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b,
                      label_b, target_label, labels, nodes_label)
         
         logger.log(log_level,
-                   f'Relabeled {np.sum(A_to_relabel)} from {label_a} '
-                   f'and {np.sum(B_to_relabel)} from {label_b}'
+                   f'Relabeled {np.sum(A_to_relabel)} from {labels[label_a]} '
+                   f'and {np.sum(B_to_relabel)} from {labels[label_b]}'
                    )
-        # Break if converge has been reached
+
+        # Stop if converge has been reached
         if frac_A_relabeled < relabel_tol and frac_B_relabeled < relabel_tol:
             break
+        
+    # A_to_relabel, frac_A_relabeled = _find_spikes(tag, label_a, label_b,
+    #           with_labels, adj_labels, target_label, labels, adj_threshold)
+    # B_to_relabel, frac_B_relabeled = _find_spikes(tag, label_b, label_a,
+    #           with_labels, adj_labels, target_label, labels, adj_threshold)
+    # print(f'converged after {i+1} iterations, {np.sum(A_to_relabel)+np.sum(B_to_relabel)} left to relabel')
         
 @numba.njit(parallel=True, fastmath=True)
 def _find_spikes(tag, label, label2, with_labels, adj_labels, target_label, labels, adj_threshold=2):
@@ -455,12 +462,12 @@ def _find_spikes(tag, label, label2, with_labels, adj_labels, target_label, labe
     for i in numba.prange(tag.shape[0]):
     # if element has the label
         if tag[i] == labels[label]:
-            # local variable (for thread) holding spikes count
-            spikes = 0
             # increment element count with label
             na += 1
             # if we have the other label too
             if with_labels[label2, i]:
+                # local variable (for thread) holding spikes count
+                spikes = 0
                 # loop over adjacent element
                 for j in range(adj_labels.shape[1]):
                     # if they have the target label too
@@ -473,7 +480,7 @@ def _find_spikes(tag, label, label2, with_labels, adj_labels, target_label, labe
                             # increment number of spikes found
                             nspikes += 1
                             # it is already a spike no need to go on
-                        break
+                            break
     # return found spikes and ratio of spikes (to check convergence)
     return found_spikes, float(nspikes) / float(na)
 
@@ -517,8 +524,9 @@ def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label,
             tag[i] = labels[target_label]
             # update count of nodes with labels
             for j in range(elm.shape[1]):
-                nodes_label[label, elm[i, j]] -= 1  # decrease original label
-                nodes_label[target_label, elm[i, j]] += 1  # increase intended label
+                if elm[i, j]>=0:
+                    nodes_label[label, elm[i, j]] -= 1  # decrease original label
+                    nodes_label[target_label, elm[i, j]] += 1  # increase intended label
             # loop over neighboors (4)
             for k in range(adj_th.shape[1]):
                 adj_i = adj_th[i, k] - 1  # indexing is from 1, 0 indicate no neighbor
@@ -536,25 +544,27 @@ def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label,
     for i in numba.prange(elm.shape[0]):
         # Loop over the nodes (4)
         for j in range(elm.shape[1]):
-            # Update only relevant if the element actually had the node
-            if with_labels[label, i]:
-                # initially relabel to False
-                with_labels[label, i] = False
-                # loop over the nodes
-                for j in range(elm.shape[1]):
-                    # set to True if any nodes has the original label
-                    if nodes_label[label, elm[i, j]] > 0:
-                        with_labels[label, i] = True
-                        # no need to go on it is already True
-                        break
-            # Update can also be relevant if element does not have target label
-            if not with_labels[target_label, i]:
-                for j in range(elm.shape[1]):
-                    # Update target label if nodes has it
-                    if nodes_label[target_label, elm[i, j]] > 0:
-                        with_labels[target_label, i] = True
-                        # no need to go on it is already True
-                        break
+            # do not do this if node is -1 (unconnected)
+            if elm[i, j]>=0:
+                # Update only relevant if the element actually had the node
+                if with_labels[label, i]:
+                    # initially relabel to False
+                    with_labels[label, i] = False
+                    # loop over the nodes
+                    for j in range(elm.shape[1]):
+                        # set to True if any nodes has the original label
+                        if nodes_label[label, elm[i, j]] > 0:
+                            with_labels[label, i] = True
+                            # no need to go on it is already True
+                            break
+                # Update can also be relevant if element does not have target label
+                if not with_labels[target_label, i]:
+                    for j in range(elm.shape[1]):
+                        # Update target label if nodes has it
+                        if nodes_label[target_label, elm[i, j]] > 0:
+                            with_labels[target_label, i] = True
+                            # no need to go on it is already True
+                            break
 
 @numba.njit
 def _with_label_numba_all(elm, tag1, labels, N):
@@ -562,8 +572,9 @@ def _with_label_numba_all(elm, tag1, labels, N):
         and all elements in the mesh which have a node that is in
         a region with each label
     '''
-    # output for counting label types for each node
-    nodes_label = np.zeros((len(labels), N), dtype='uint8')
+    # output for counting label types for each node indexing starts from 1
+    # so first element is empty.
+    nodes_label = np.zeros((len(labels), N+1), dtype='uint16')
     # output for boolean array indicating if element touches each node type
     with_label = np.zeros((len(labels), elm.shape[0]), dtype='bool')
     # loop over labels
@@ -573,7 +584,9 @@ def _with_label_numba_all(elm, tag1, labels, N):
             # increment count if elements has current label
             if tag1[i] == labels[k]:
                 for j in range(elm.shape[1]):
-                    nodes_label[k, elm[i, j]] += 1
+                    #-1 indicates unconnected, therfore do not count these 
+                    if elm[i, j]>=0:
+                        nodes_label[k, elm[i, j]] += 1
     # Loop over labels
     for k in range(len(labels)):
         # Loop over elements
@@ -581,26 +594,10 @@ def _with_label_numba_all(elm, tag1, labels, N):
         # Loop over nodes within label (4)
             for j in range(elm.shape[1]):
                 # Indicate if element contains label
-                if nodes_label[k, elm[i, j]] > 0:
+                if elm[i, j]>=0 and nodes_label[k, elm[i, j]] > 0:
                     with_label[k, i] = True
                     break
     return nodes_label, with_label
-
-def _with_label(m, label):
-    ''' Returns all elements in the mesh which have a node that is in
-        a region with the given label
-    '''
-    nodes_label = np.bincount(
-        m.elm[m.elm.elm_type == 4].reshape(-1),
-        np.repeat(m.elm.tag1[m.elm.elm_type == 4] == label, 4),
-        minlength=m.nodes.nr + 1
-    ).astype(bool)
-
-    with_label_nodes = np.any(
-        nodes_label[m.elm[:]],
-        axis=1
-    )
-    return with_label_nodes
 
 def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
             log_level=logging.DEBUG):
@@ -621,16 +618,24 @@ def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
     max_iter: int
         Maximum number of relabeling iterations
     '''
+    
+    if np.any(msh.elm.elm_type != 4):
+        logger.log(log_level,
+                   'Error: Attempting to despike mesh containing not only'
+                   'tetrahedra. Please consider cropping the mesh first.' 
+                   )
+        raise ValueError()
+        return
 
     tags = np.unique(msh.elm.tag1)
     adj_th = msh.elm.find_adjacent_tetrahedra()
-    elm = msh.elm[msh.elm.elm_type == 4]
-    tag = msh.elm.tag1[msh.elm.elm_type == 4]
+    elm = msh.elm[:]
+    tag = msh.elm.tag1
     adj_labels = tag[adj_th - 1]
     adj_labels[adj_th == -1] = -1
 
     # Total number of nodes
-    N = msh.nodes.nr + 1
+    N = msh.nodes.nr
     # Count how many labels of each type belongs to each node - first output
     # and determine if elements touch each labels (has a node with that label) - second output
     nodes_label, with_labels = _with_label_numba_all(elm, tag, tags, N)
@@ -660,8 +665,8 @@ def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
                                max_iter = max_iter, log_level = log_level, 
                                nodes_label = nodes_label)
     #set tag1/tag2 in msh structure
-    msh.elm.tag1[msh.elm.elm_type == 4] = tag
-    msh.elm.tag2[msh.elm.elm_type == 4] = tag
+    msh.elm.tag1 = tag
+    msh.elm.tag2 = tag
 
 
 
