@@ -34,14 +34,14 @@ fn_in = [tempname,'.csv'];
 csvwrite(fn_in, coords);
 
 % Run mni2subject_coords
-res = system([simnibs_cli_call('get_fields_at_coordinates')...
-              ' -m ' fn_mesh ' -s ' fn_in, ' --out_fill ' out_fill]);
-if res ~= 0
+[status,result] = system([simnibs_cli_call('get_fields_at_coordinates')...
+                         ' -m ' fn_mesh ' -s ' fn_in, ' --out_fill ' out_fill]);
+if status ~= 0
     if is_temp
         delete(fn_mesh);
     end
     delete(fn_in);
-    error('There was an error running get_fields_at_coordinates')
+    error('There was an error running get_fields_at_coordinates:\n %s',result)
 end
 
 field_values = {};

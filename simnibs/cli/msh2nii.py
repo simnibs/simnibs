@@ -45,6 +45,8 @@ def parse_arguments(argv):
     parser.add_argument("--create_masks", action="store_true",
                         help="Create Masks for each volume in the mesh instead of "
                         "interpolating fields")
+    parser.add_argument("--create_label", action="store_true",
+                        help="write tissue labels instead of interpolating fields")
     parser.add_argument('--version', action='version', version=__version__)
     return parser.parse_args(argv)
 
@@ -54,7 +56,9 @@ def main():
     if not os.path.isfile(args.fn_mesh):
         raise IOError('Could not find file: {0}'.format(args.fn_mesh))
     transformations.interpolate_to_volume(
-        args.fn_mesh, args.fn_reference, args.fn_out, create_masks=args.create_masks)
+        args.fn_mesh, args.fn_reference, args.fn_out, 
+        create_masks=args.create_masks, 
+        create_label=args.create_label)
 
 if __name__ == '__main__':
     main()

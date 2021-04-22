@@ -24,16 +24,19 @@ import warnings
 import os
 from functools import partial
 import gc
+import copy
 
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
+import shutil
 import nibabel as nib
 
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
 from ..utils.file_finder import templates, SubjectFiles, get_atlas, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
+from ..mesh_tools import gmsh_view
 
 __all__ = [
     'warp_volume',
@@ -334,7 +337,10 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
     img.header.set_xyzt_units(reference_nifti.header.get_xyzt_units()[0])
     img.header.set_qform(reference_nifti.header.get_qform(), code=2)
     img.update_header()
-
+    
+    if image.dtype == np.float64:
+        img.set_data_dtype(np.float32)
+                
     if out is not None:
         nib.save(img, out)
 
@@ -361,8 +367,6 @@ def get_names_from_folder_structure(m2m_folder):
                 templates.mni_volume))
 
     sub_files = SubjectFiles(subpath=m2m_folder)
-
-
     if not os.path.isdir(sub_files.subpath):
         raise IOError('The given m2m folder name does not correspond to a directory')
 
@@ -387,14 +391,8 @@ def get_names_from_folder_structure(m2m_folder):
                        conf2mni_nonl))
 
     mni2conf_6dof = sub_files.mni2conf_6dof
-    if not os.path.isfile(mni2conf_6dof):
-        warnings.warn('Could not find MNI2Conform 6DOF transform at: {0}'.format(
-                       mni2conf_6dof))
-
     mni2conf_12dof = sub_files.mni2conf_12dof
-    if not os.path.isfile(mni2conf_12dof):
-        warnings.warn('Could not find MNI2Conform 12DOF transform at: {0}'.format(
-                      mni2conf_12dof))
+
     names = {
         'mesh': mesh,
         'reference_mni': templates.mni_volume,
@@ -414,7 +412,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 order=1,
                 method='linear',
                 continuous=False,
-                binary=False):
+                binary=False,
+                keep_tissues=None):
     ''' Warps a nifti image or a mesh using a linear or non-linar transform, writes out
     the output as a nifti file
 
@@ -434,7 +433,7 @@ def warp_volume(image_fn, m2m_folder, out_name,
     transformation_type: {'nonlinear', '6dof', '12dof'}
         Type of tranformation
     reference: str (optional)
-        Path to reference mesh. Default: look it up
+        Path to reference nifti. Default: look it up
     mask: str (optional)
         Path to a mask, only applied if input is a nifti volume
     labels: list (optional)
@@ -450,6 +449,9 @@ def warp_volume(image_fn, m2m_folder, out_name,
         baricentric interpolatiom. Default: linear
     continuous: bool (option)
         Wether fields is continuous across tissue boundaries. Default: False
+    keep_tissues: list of tissue tags (Optional)
+        Only the fields for the listed tissues are interpolated, rest is set to
+        zero. Only applied to mesh inputs. Default: None (all tissues are kept)
     '''
     from ..mesh_tools.mesh_io import read_msh
     names = get_names_from_folder_structure(m2m_folder)
@@ -512,6 +514,9 @@ def warp_volume(image_fn, m2m_folder, out_name,
 
     if os.path.splitext(image_fn)[1] == '.msh':
         m = read_msh(image_fn)
+        if keep_tissues is not None:
+            m=m.crop_mesh(tags=keep_tissues)
+            
         logger.info('Warping mesh: {0}'.format(image_fn))
         for ed in m.elmdata + m.nodedata:
             name = append_name(out_name, ed.field_name)
@@ -541,18 +546,19 @@ def warp_volume(image_fn, m2m_folder, out_name,
         logger.info('To file: {0}'.format(out_name))
         logger.debug('Transformation type: {0}'.format(transformation_type))
         logger.debug('Mask: {0}'.format(mask))
-        nifti_transform(image_fn, warp, reference,
-                        out=out_name, mask=mask, order=order,
-                        inverse_warp=inverse_warp, binary=binary)
+        nifti_transform(image_fn, warp, reference, out=out_name, 
+                        mask=mask, order=order, inverse_warp=inverse_warp, 
+                        binary=binary)
 
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
-                          method='linear', continuous=False):
+                          method='linear', continuous=False, create_label=False,
+                          keep_tissues=None):
     ''' Interpolates the fields in a mesh and writem them to nifti files
 
     Parameters:
     -----------
-    fn_mesh: str
-        Name of mesh file
+    fn_mesh: str, or simnibs.msh.Msh
+        Name of mesh file, or a preloaded mesh
     reference: str
         Path to the m2m_{subject_id} folder, generated during the segmantation, or to a
         reference nifti file
@@ -560,26 +566,38 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         Name of output nifti file. If the input is a mesh, the names will be appended with the field
         names.
     create_masks: bool
-        Mask mode: write tissue masks intead of fields
+        Mask mode: write tissue masks instead of fields
     method: {'assign' or 'linear'} (Optional)
         Method for gridding the data. If 'assign', gives to each voxel the value of the element that contains
         it. If linear, first assign fields to nodes, and then perform
         baricentric interpolatiom. Default: linear
     continuous: bool
         Wether fields is continuous across tissue boundaries. Default: False
+    create_label: bool
+        Label mode: write label image from mesh instead of fields
+    keep_tissues: list of tissue tags (Optional)
+        Only the fields for the listed tissues are interpolated, rest is set to
+        zero. Default: None (all tissues are kept)
     '''
     from ..mesh_tools.mesh_io import read_msh, ElementData
     if os.path.isdir(reference):
         names = get_names_from_folder_structure(reference)
         reference = names['reference_conf']
     if not os.path.isfile(reference):
-        raise IOError('Could not find reference file: {0}'.format(reference))
-    if not os.path.isfile(fn_mesh):
-        raise IOError('Could not find mesh file: {0}'.format(fn_mesh))
+        raise IOError('Could not find reference file: {0}'.format(reference))   
+    if isinstance(fn_mesh, str):
+        if not os.path.isfile(fn_mesh):
+            raise IOError('Could not find mesh file: {0}'.format(fn_mesh))
+        mesh = read_msh(fn_mesh)
+    else:
+        mesh = copy.deepcopy(fn_mesh)
+        
+    if keep_tissues is not None:
+        mesh=mesh.crop_mesh(tags=keep_tissues)
+        
     image = nib.load(reference)
     affine = image.affine
     n_voxels = image.header['dim'][1:4]
-    mesh = read_msh(fn_mesh)
     fn, ext = os.path.splitext(fn_out)
     if ext == '':
         ext = '.nii.gz'
@@ -603,6 +621,14 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
             ed.mesh = mesh
             ed.to_nifti(n_voxels, affine, fn=name, qform=image.header.get_qform(),
                         method='assign')
+    elif create_label:
+        mesh = mesh.crop_mesh(elm_type=4)
+        field = np.zeros(mesh.elm.nr, dtype=np.int32)
+        field = mesh.elm.tag1
+        ed = ElementData(field)
+        ed.mesh = mesh
+        ed.to_nifti(n_voxels, affine, fn=fn_out, qform=image.header.get_qform(),
+                    method='assign')
     else:
         if len(mesh.elmdata) + len(mesh.nodedata) == 0:
             warnings.warn('No fields found in mesh!')
@@ -612,7 +638,8 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
             logger.info('To file: {0}'.format(name))
             logger.debug('Method: {0}'.format(method))
             logger.debug('Continuous: {0}'.format(continuous))
-            ed.to_nifti(n_voxels, affine, fn=name, method=method, continuous=continuous)
+            ed.to_nifti(n_voxels, affine, fn=name, method=method,
+                        continuous=continuous)
             gc.collect()
 
 
@@ -956,7 +983,8 @@ def warp_coordinates(coordinates, m2m_folder,
                      transformation_direction='subject2mni',
                      transformation_type='nonl',
                      out_name=None,
-                     out_geo=None):
+                     out_geo=None,
+                     mesh_in=None):
     ''' Warps a set of coordinates
     For simpler calls, please see subject2mni_coords and mni2subject_coords
 
@@ -1000,6 +1028,12 @@ def warp_coordinates(coordinates, m2m_folder,
 
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
+        
+    mesh_in : mesh file, optional 
+        scalp or head mesh, used to project electrodes onto scalp or ensure
+        TMS coil distances from scalp; is used only for direction 'mni2subject'
+        (standard: None; the head mesh file will then be automatically loaded,
+         which is slower for repeated applications)
 
     Returns
     ----------
@@ -1079,7 +1113,10 @@ def warp_coordinates(coordinates, m2m_folder,
 
     # delay reading the mesh
     if len(generic) != len(type_) and transformation_direction == 'mni2subject':
-        mesh = read_msh(names['mesh'])
+        if mesh_in is None:
+            mesh = read_msh(names['mesh'])
+        else:
+            mesh = mesh_in
 
     # Transform all electrode types
     electrode = [i for i, t in enumerate(type_) if t in ['Fiducial', 'Electrode', 'ReferenceElectrode']]
@@ -1376,8 +1413,8 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
 
 
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth=0.5, quantities=['magn', 'normal', 'tangent','angle'],
-                            fields=None, open_in_gmsh=False):
+                            depth = 0.5, quantities=['magn', 'normal', 'tangent','angle'],
+                            fields=None, open_in_gmsh=False, f_geo=None):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
     Parameters
@@ -1400,6 +1437,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         Fields to be transformed. Default: all fields
     open_in_gmsh: bool
         If true, opens a Gmsh window with the interpolated fields
+    f_geo: str
+        String with file name to geo file that accompanies the mesh
     '''
     from ..mesh_tools import mesh_io
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
@@ -1427,7 +1466,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         return d
 
     m = mesh_io.read_msh(mesh_fn)
-    subdir, sim_name = os.path.split(mesh_fn)
+    _, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
     # Crop out GM
     m = m.crop_mesh(2)
@@ -1439,7 +1478,6 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         os.mkdir(out_fsaverage)
     if out_fsaverage is not None:
         out_fsaverage = os.path.abspath(os.path.normpath(out_fsaverage))
-
 
     names_subj = []
     names_fsavg = []
@@ -1554,7 +1592,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     # I only work with lh and rh at least for now
     # It also needs to be nicely ordered, otherwise will
     # screw up the atlases
-    def join_and_write(surfs, fn_out, open_in_gmsh):
+    def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
         mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
@@ -1563,18 +1601,24 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         for k in surfs['lh'].field.keys():
             mesh.add_node_field(
                 np.append(surfs['lh'].field[k].value,
-                          surfs['rh'].field[k].value),
-                k)
-        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
-        v.write_opt(fn_out)
+                          surfs['rh'].field[k].value),k)
         mesh_io.write_msh(mesh, fn_out)
+        
+        # write .opt-file
+        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])    
+        if f_geo is not None:
+            if not os.path.exists(f_geo):
+                raise FileNotFoundError(f'Could not find file: {f_geo}')
+            v.add_merge(f_geo, append_views_from_geo = True)    
+        v.write_opt(fn_out)
+        
         if open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
 
     join_and_write(
         middle_surf,
         os.path.join(out_folder, sim_name[1:] + '_central.msh'),
-        open_in_gmsh)
+        open_in_gmsh, f_geo)
     if out_fsaverage:
         join_and_write(
             avg_surf,
@@ -1656,4 +1700,3 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
         return atlas
     else:
         raise ValueError('Invalid hemisphere name')
-

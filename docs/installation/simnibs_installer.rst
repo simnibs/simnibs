@@ -7,8 +7,6 @@ Install SimNIBS
 
 A SimNIBS installation takes about 3 GB disk space.
 
-.. note:: The installation procedure has changed in version 3.2. The previous simnibs installer app is now deprecated and will be removed in the near future.
-
 .. note:: In case you have problems during the installation, please check :ref:`install_throubleshooting`
 
 Windows
@@ -88,10 +86,4 @@ New feature versions require a new installation.
 
 Software Dependencies
 -----------------------
-SimNIBS does not require any external dependencies for running simulations and post-processing operations on existing head models.
-
-However, the head modelling pipelines have external dependencies.
-  * :ref:`headreco_docs` requires MATLAB
-  * :ref:`mri2mesh_docs` requires FSL and FreeSurfer
-
-Please see :ref:`optional_deps` for more information on how to configure these dependencies
+SimNIBS does not require any external dependencies for creating head models, running simulations and post-processing operations. The preparation of conductivity tensors for GM and WM from diffusion MRI data using :ref:`dwi2cond_docs` requires FSL. Please see :ref:`optional_deps` for more information.

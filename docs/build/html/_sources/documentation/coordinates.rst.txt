@@ -7,17 +7,7 @@ Coordinates in SimNIBS
 Definitions
 ------------
 
-Coordinates in SimNIBS are **always world coordinates in subject space**. Coordinates are given in **millimiters** and along *x*, *y* and *z* axis.
-
-The origin and the alignment of the axes can vary in head models ran with :ref:`headreco <headreco_docs>`. In head models ran with :ref:`mri2mesh <mri2mesh_docs>`, the coordinates are based on the conform coordinate system used in FreeSurfer.
-
-
-Voxel to SimNIBS Coordinates
------------------------------
-
-The head meshing procedures create a NifTI file called :file:`m2m_{subID}/T1fs_conform.nii.gz`. This file contains a transformed T1 image of the subject, with the world coordinates used by SimNIBS.
-
-Please notice that :ref:`mri2mesh <mri2mesh_docs>` changes the coordinate system of the input T1 image, while :ref:`headreco <headreco_docs>` does not change it by default.
+Coordinates in SimNIBS are **always world coordinates in subject space**. Coordinates are given in **millimiters** and along *x*, *y* and *z* axis. The origin and the alignment of the axes correspond to those of the original T1w image that was used for head model creation in *charm* (stored as :file:`m2m_{subID}/T1.nii.gz`).
 
 
 MNI Transformations

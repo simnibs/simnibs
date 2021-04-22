@@ -8,14 +8,14 @@ Created on Sat Nov 23 18:35:47 2019
 
 import gc
 import logging
-from math import log, sqrt
+#from math import log, sqrt
 #from multiprocessing import Process
 import nibabel as nib
 import numpy as np
 import os
 #from queue import Queue, Empty
 from scipy.spatial import cKDTree
-from scipy.special import erf
+#from scipy.special import erf
 import scipy.ndimage as ndimage
 import scipy.ndimage.morphology as mrph
 from scipy.ndimage.measurements import label
@@ -619,10 +619,9 @@ def mask_from_surface(vertices, faces, affine, shape):
 
 # --------------- central surface creation ------------------
 
-def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf, 
+def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf, 
              surffolder, fsavgDir, vdist=[1.0, 0.75], voxsize_pbt=[0.5, 0.25],
-             voxsize_refineCS=[0.75, 0.5], th_initial=0.714, no_selfintersections=True, 
-             add_parahipp=0.1, close_parahipp=False):
+             voxsize_refineCS=[0.75, 0.5], th_initial=0.714, no_selfintersections=True):
     """ reconstruction of cortical surfaces based on probalistic label image
     
     PARAMETERS
@@ -633,9 +632,6 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
             binary mask to distinguish between left and right parts of brain
         Ymaskhemis : uint8
             volume with the following labels: lh - 1, rh - 2, lc - 3, rc - 4 
-        Ymaskparahipp : uint8
-            binary volume mask of hippocampi and gyri parahippocampalis, used to
-            "fix" the cutting of the surfaces in these regsions
         vox2mm : 4x4 array of float
             affine transformation from voxel indices to mm space
         actualsurf : str
@@ -675,26 +671,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
                 surface again, which is instable and can result in selfintersections 
                 even when CAT_DeformSurf is run with the option listed in 1.
             (default = True)
-            
-        --> these parameters will likely be skipped ...
-        add_parahipp : float 
-            increases the intensity values in the parahippocampal area to prevent 
-            large cuts in the parahippocampal gyrus. Higher values for 
-            add_parahipp will shift the initial surface in this area
-            closer to GM/CSF border.
-            If the parahippocampal gyrus is still cut you can try to increase 
-            this value (start with 0.15).
-            (default = 0.1)
-        close_parahipp : bool
-            optionally applies  closing inside mask for parahippocampal gyrus 
-            to get rid of the holes that lead to large cuts in gyri after 
-            topology correction. However, this may also lead to poorer quality 
-            of topology correction for other data and should be only used if 
-            large cuts in the parahippocampal areas occur.
-            (AT: improved results in some parts of that area, but made it less
-             accurate in others for ernie)
-            (default = False)
-            
+                        
     RETURNS
     ----------
         Pcentral : string
@@ -715,6 +692,11 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     """
     debug=False # keep intermediate results if set to True
     
+    if sys.platform == 'win32':
+        # Make logging to stderrr more talkative to capture
+        # all logging output in case of multiprocessing
+        logger.handlers[0].setLevel(logging.DEBUG)
+
     # add surface name to logger
     formatter_list=[]
     for i in range(len(logger.handlers)):
@@ -723,16 +705,25 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         logger.handlers[i].setFormatter(formatter)
     
     logger.info(f'Processing {actualsurf}')
-
     
     # ------- crop and upsample subvolume -------
     if 'lh' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 1))
         Yside=np.array(Yleft, copy=True)
+        
+        # logger.info('INFO INFO lh')
+        # logger.debug('DEBUG DEBUG lh')
+        # logger.info('2222 INFO INFO lh')
+        # time.sleep(1)
+        # raise ValueError('error lh: debug')
 
     elif 'rh' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 2))
         Yside=np.logical_not(Yleft)
+        
+        # logger.debug('debug RH')
+        # time.sleep(2)
+        # raise ValueError('error rh: debug')
 
     elif 'lc' == actualsurf.lower():
         Ymfs=np.multiply(Ymf,(Ymaskhemis == 3))
@@ -750,54 +741,37 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     vdist=vdist[int(iscerebellum)]
     voxsize_pbt=voxsize_pbt[int(iscerebellum)]
     voxsize_refineCS=voxsize_refineCS[int(iscerebellum)]
-    
     logger.debug(f'iscerebellum: {iscerebellum}, vdist: {vdist}, voxsize_pbt: {voxsize_pbt}, voxsize_refineCS: {voxsize_refineCS}')
             
-    # crop volume
     if debug:
         tmp = ndimage.uniform_filter(Ymfs, 3)
         Ymfs_filtered = nib.Nifti1Image(tmp, vox2mm)
         fname_ymfsfiltered=os.path.join(surffolder, 'Ymfs_filtered_' + actualsurf + '.nii.gz')
         nib.save(Ymfs_filtered, fname_ymfsfiltered)
     
-    # Okay CAT12 uses the magical threshold of 1.5 in multiple places,
-    # based on a single example (Ernie) this is not the optimal magical
-    # threshold for charm. So from hereon wherever there read thres_magic,
-    # it will be 1.3 for charm whereas the original one in CAT12 is 1.5
-    iscat = True
-    if iscat:
-        thres_magic = 1.5
-    else:
-        thres_magic = 1.2
-    thres_magic = 1.2     
-    mask = ndimage.uniform_filter(Ymfs, 3) > thres_magic
-    
+    # crop volume
+    # NOTE: CAT12 uses the threshold of 1.5 in multiple places as estimate
+    # of the position of the middle of gray matter. For our segmentation
+    # results, tweaking it to 1.2 works better (based on a single example, Ernie) 
+    mask = ndimage.uniform_filter(Ymfs, 3) > 1.2 # original threshold for CAT12: > 1.5
     Ymfs, vox2mm_cropped, _ = crop_vol(Ymfs, vox2mm, mask, 4)
+    Yside = crop_vol(Yside, vox2mm, mask, 4)[0]
     
     if debug:
         Ymfs_tmp = nib.Nifti1Image(Ymfs, vox2mm_cropped)
         fname_ymfstest=os.path.join(surffolder,'Ymfs_masked_' + actualsurf + '.nii.gz')
         nib.save(Ymfs_tmp, fname_ymfstest)   
     
-    Yside = crop_vol(Yside, vox2mm, mask, 4)[0]
-    if not iscerebellum:
-        mask_parahipp = dilate(Ymaskparahipp,6)
-        mask_parahipp = crop_vol(mask_parahipp, vox2mm, mask, 4)[0]
-
     # upsample using linear interpolation (linear is better than cubic for small thicknesses)
     Ymfs, vox2mm_upsampled, _ =resample_vol(np.maximum(1,Ymfs), vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')
     Ymfs=np.minimum(3,np.maximum(1,Ymfs))
+    Yside=resample_vol(Yside, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
     
-    # TESTING
     if debug:
         Ymfs_upsampled = nib.Nifti1Image(Ymfs, vox2mm_upsampled)
         fname_ymfstest = os.path.join(surffolder,'Ymfs_test_upsampled_'+actualsurf+'.nii.gz')
         nib.save(Ymfs_upsampled, fname_ymfstest)
         
-    Yside=resample_vol(Yside, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
-    if not iscerebellum:
-        mask_parahipp = resample_vol(mask_parahipp, vox2mm_cropped, voxsize_pbt, order=1, mode='nearest')[0] > 0.5
-
 
     #  -------- pbt calculation and some postprocessing of thickness -------- 
     #  ----------------  and GM percentage position map ---------------- 
@@ -835,7 +809,14 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     Ymsk=((Yppi > 0.95) & dilate((Yppi < 0.1),1))
     Yppi=_cat_c_utils.cat_vol_median3(np.float32(Yppi),Ymsk,np.logical_not(Ymsk))
     del Ymsk
-    gc.collect()    
+    gc.collect()
+    
+    if debug:
+        Vppi = nib.Nifti1Image(Yppi, vox2mm_upsampled)
+        fname=os.path.join(surffolder,actualsurf+'_Yppi.nii')
+        nib.save(Vppi, fname)
+        del Vppi
+        gc.collect()
         
     # save to disk
     # this image will later be used by the CAT12 binaries (in refineCS)
@@ -850,34 +831,11 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     nib.save(Vpp, fname_ppimg)
     del Yppt, Vpp
     gc.collect()
-    
     logger.info(f'Thickness estimation ({"{0:.2f}".format(voxsize_pbt)} mm{chr(179)})...'+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     
     # ---------- generation of initial central surface (using Yppi) -------
     stimet = time.time()
-
-    # some more tweaking of parahippocampal area in Yppi
-    if not iscerebellum:
-        Yppi = Yppi + add_parahipp * spm_smooth(np.float32(mask_parahipp), [8., 8., 8.])
-    Yppi[Yppi < 0] = 0
-
-    # optionally apply closing inside mask for parahippocampal gyrus to get rid of the holes that lead to large cuts in gyri
-    # after topology correction
-    if close_parahipp and not iscerebellum:
-        tmp=labclose(Yppi, 1)
-        Yppi[mask_parahipp]=tmp[mask_parahipp]
-        del tmp
-        gc.collect()
-
-    if debug:
-        Vppi = nib.Nifti1Image(Yppi, vox2mm_upsampled)
-        fname=os.path.join(surffolder,actualsurf+'_Yppi.nii')
-        nib.save(Vppi, fname)
-        del Vppi
-        gc.collect()
-     
-    # generate intial surface and save as gifti  
     CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial,
                            step_size=round(vdist/voxsize_pbt), only_largest_component=True, n_uniform=2)
                            
@@ -885,14 +843,12 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     mesh_io.write_gifti_surface(CS, Praw)
     del Yppi, CS
     gc.collect()    
-    
     logger.info(f'Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
     
     
     # -------- refine intial surface and register to fsaverage template -------- 
     Pcentral, Pspherereg, Pthick, defect_size = refineCS(Praw, fname_thkimg, fname_ppimg, 
                                                          fsavgDir, vdist, no_selfintersections, debug)
-    
     logger.info(f'Surface Euler number: {EC}')
     logger.info(f'Overall size of topology defects: {defect_size}')
         
@@ -901,10 +857,8 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
     if not debug:
         if os.path.isfile(Praw):
             os.remove(Praw)
-    
         if os.path.isfile(fname_ppimg):
             os.remove(fname_ppimg)
-            
         if os.path.isfile(fname_thkimg):
             os.remove(fname_thkimg)
             
@@ -913,6 +867,10 @@ def createCS(Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm, actualsurf,
         formatter = logging.Formatter(formatter_list[i])
         logger.handlers[i].setFormatter(formatter)
     
+    if sys.platform == 'win32':
+        # Make logging to stderrr less talkative again
+        logger.handlers[0].setLevel(logging.INFO)
+              
     return Pcentral, Pspherereg, Pthick, EC, defect_size
         
 
@@ -964,25 +922,19 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
        NeuroImage 65 (2013) 226-248.
 
     """
-
+    debug=int(debug)
+    
     if (np.sum(np.round(np.asanyarray(Ymf).reshape(-1, 1)) == np.asanyarray(Ymf).reshape(-1, 1)) / np.asarray(Ymf).size) > 0.9:
         binary = True
     else:
         binary = False
-
+    
     minfdist = 2
-
-    debug=int(debug)
-
-    # CAT12's original magical threshold is 1.5
-    iscat = True
+    # NOTE: CAT12 uses the threshold of 1.5 in multiple places as estimate
+    # of the position of the middle of gray matter. For our segmentation
+    # results, tweaking it to 1.2 works better (based on a single example, Ernie) 
+    thres_magic = 1.2 # CAT12's original magical threshold is 1.5
     
-    if iscat:
-        thres_magic = 1.5
-    else:
-        thres_magic = 1.2
-    
-    thres_magic = 1.2
     #  WM distance
     #  Estimate WM distance Ywmd and the outer CSF distance Ycsfdc to correct
     #  the values in CSF area are to limit the Ywmd to the maximum value that
@@ -1002,57 +954,43 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
 
     YMM = np.logical_or(erosion(Ymf < thres_magic, 1), np.isnan(Ymf))
     F = np.fmax(0.5, np.fmin(1, Ymf / 2))
+    YM = np.fmax(0, np.fmin(1, (Ymf - 2)))
+    # In CAT12 this extends quite far into gray matter, as there are
+    # values that are > 2 quite close to CSF. In our case the values drop
+    # off faster, so could change the 2 into 1.9
+    # YM = np.fmax(0, np.fmin(1, (Ymf - 1.9))) --> didn't do much
+    YM[YMM] = np.nan
+    Ywmd = _cat_c_utils.cat_vol_eidist(
+            YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
     
     ## DEBUG
     if debug:
         F_image = nib.Nifti1Image(F, vox2mm)
         fname_F=os.path.join(surffolder,'F_' + actualsurf + '.nii.gz')
         nib.save(F_image, fname_F)
-    
-    # In CAT12 this extends quite far into gray matter, as there are
-    # values that are > 2 quite close to CSF. In our case the values drop
-    # off faster, so could change the 2 into 1.9
-    # YM = np.fmax(0, np.fmin(1, (Ymf - 1.9)))
-    if iscat:
-        tmp_param = 2
-    else:
-        tmp_param = 1.9
-        
-    YM = np.fmax(0, np.fmin(1, (Ymf - tmp_param)))
-    YM[YMM] = np.nan
-    
-    ## DEBUG
-    if debug:
+
         YM_image = nib.Nifti1Image(YM, vox2mm)
         fname_YM=os.path.join(surffolder,'YM_' + actualsurf + '.nii.gz')
         nib.save(YM_image, fname_YM)
-    
-    Ywmd = _cat_c_utils.cat_vol_eidist(
-        YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
-    
-    ## DEBUG
-    if debug:
+
         Ywmd_image = nib.Nifti1Image(Ywmd, vox2mm)
         fname_Ywmd=os.path.join(surffolder,'Ywmd_' + actualsurf + '.nii.gz')
         nib.save(Ywmd_image, fname_Ywmd)
     
-    
     F = np.fmax(1.0, np.fmin(1, Ymf / 2))
-    
     YM = np.fmax(0, np.fmin(1, (Ymf - 1)))
     YM[YMM] = np.nan
     Ycsfdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
-
-    ## FOR DEBUGGING
+    del F, YMM
+    gc.collect()
+    
+    ## DEBUG
     if debug:
         Ycsfdc_image = nib.Nifti1Image(Ycsfdc, vox2mm)
         fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_' + actualsurf + '.nii.gz')
         nib.save(Ycsfdc_image, fname_Ycsfdc)
     
-    del F, YMM
-    gc.collect()
-
     if not binary:
         # limit the distance values outside the GM/CSF boudary to the distance possible in the GM
         notnan = ~np.isnan(Ywmd)
@@ -1088,16 +1026,11 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
             YwmdM = _cat_c_utils.cat_vol_localstat(YwmdM, YM, 1, 1)[0]
         Ywmd[YM] = YwmdM[YM]
 
-        if iscat:
-            tmp_param9 = 2.0
-        else:
-            tmp_param9 = 1.5
-
         # reducing outliers in the GM/CSF area
         notnan = ~np.isnan(Ywmd)
         YM = np.full(Ywmd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ywmd[notnan] > minfdist), (Ymf[notnan] < tmp_param9))
+            (Ywmd[notnan] > minfdist), (Ymf[notnan] < 2.0))
         YwmdM = np.array(Ywmd, copy=True)
         YwmdM = _cat_c_utils.cat_vol_median3(YwmdM, YM, YM)
         Ywmd[YM] = YwmdM[YM]
@@ -1117,25 +1050,11 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     #  Similar to the WM distance, but keep in mind that this map is
     #  incorrect in blurred sulci that is handled by PBT
     stimet = time.time()
-    if iscat:
-        tmp_param6 = 2.5
-    else:
-        tmp_param6 = 2.2
-        
-
     YMM = np.any((erosion(Ymf < thres_magic, 1), erosion(
-        Ymf > tmp_param6, 1), np.isnan(Ymf)), axis=0)
-
-    
+        Ymf > 2.5, 1), np.isnan(Ymf)), axis=0)
     F = np.fmax(0.5, np.fmin(1, (4 - Ymf) / 2))
-
-    if iscat:
-        tmp_param10 = 2
-    else:
-        tmp_param10 = 1.5
         
-    tmp_param10 = 1.6 #seems to be better than 1.5
-    
+    tmp_param10 = 1.6 # in CAT12 originally set to 2    
     YM = np.fmax(0, np.fmin(1, (tmp_param10 - Ymf)))
     YM[YMM] = np.nan
     Ycsfd = _cat_c_utils.cat_vol_eidist(
@@ -1146,31 +1065,14 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     YM[YMM] = np.nan
     Ywmdc = _cat_c_utils.cat_vol_eidist(
         YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0]
-    
-    # The original CAT12 command was: 
-    # YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
-    # This looks slightly fishy as it's not really a half
-    # Let's try to set this to 3 and see what happens
-    if iscat:
-        tmp_param2 = 2.7
-    else:
-        tmp_param2 = 2.2
         
-    YM = np.fmax(0, np.fmin(1, (tmp_param2 - Ymf)))
-    
+    YM = np.fmax(0, np.fmin(1, (2.7 - Ymf)))
     YM[YMM] = np.nan
-    
-    # I presume the 0.3 links to the 2.7 above so let's remove it
-    # Here the original CAT12 call was:
-    if iscat:
-        Ywmdx = _cat_c_utils.cat_vol_eidist(
+    Ywmdx = _cat_c_utils.cat_vol_eidist(
             YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.3
-    else:
-        Ywmdx = _cat_c_utils.cat_vol_eidist(
-            YM, F, np.array([1, 1, 1]), 1, 1, 0, debug)[0] + 0.8
-    
     del F, YMM
     gc.collect()
+    Ywmdc = np.fmin(Ywmdc, Ywmdx)
     
     ## DEBUG
     if debug:
@@ -1178,16 +1080,10 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ywmdx=os.path.join(surffolder,'Ywmdx_'+actualsurf+'.nii.gz')
         nib.save(Ywmdx_image, fname_Ywmdx)
 
-    Ywmdc = np.fmin(Ywmdc, Ywmdx)
-    
-    ## DEBUG
-    if debug:
         Ywmdc_image = nib.Nifti1Image(Ywmdc, vox2mm)
         fname_Ywmdc=os.path.join(surffolder,'Ywmdc_'+ actualsurf+ '.nii.gz')
         nib.save(Ywmdc_image, fname_Ywmdc)
     
-    ## DEBUG
-    if debug:
         Ycsfdc_image = nib.Nifti1Image(Ycsfd, vox2mm)
         fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_before_a_million_steps_' + actualsurf + '.nii.gz')
         nib.save(Ycsfdc_image, fname_Ycsfdc)
@@ -1196,7 +1092,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= tmp_param6))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
         Ycsfd[YM] = Ycsfd[YM] - Ywmdc[YM]
         Ycsfd[np.isinf(- Ycsfd)] = 0
         del Ywmdc
@@ -1204,14 +1100,14 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] < tmp_param6))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] < 2.5))
         YcsfdM = np.array(Ycsfd, copy=True)
         YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
         Ycsfd[YM] = YcsfdM[YM]
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= tmp_param6))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] >= 2.5))
         YcsfdM = np.array(Ycsfd, copy=True)
         for i in np.arange(1, 3):
             YcsfdM = _cat_c_utils.cat_vol_localstat(YcsfdM, YM, 1, 1)[0]
@@ -1219,7 +1115,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         notnan = ~np.isnan(Ycsfd)
         YM = np.full(Ycsfd.shape, False, dtype=bool)
         YM[notnan] = np.logical_and(
-            (Ycsfd[notnan] > minfdist), (Ymf[notnan] > tmp_param9))
+            (Ycsfd[notnan] > minfdist), (Ymf[notnan] > 2.0))
         YcsfdM = np.array(Ycsfd, copy=True)
         YcsfdM = _cat_c_utils.cat_vol_median3(YcsfdM, YM, YM)
         Ycsfd[YM] = YcsfdM[YM]
@@ -1262,13 +1158,11 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     notnan = ~np.isnan(Ygmt1)
     YM = np.full(Ygmt1.shape, False, dtype=bool)
     YM[notnan] = Ygmt1[notnan] > 0
-
     Ygmt1 = _cat_c_utils.cat_vol_median3(Ygmt1, YM, YM)
 
     notnan = ~np.isnan(Ygmt2)
     YM = np.full(Ygmt2.shape, False, dtype=bool)
     YM[notnan] = Ygmt2[notnan] > 0
-
     Ygmt2 = _cat_c_utils.cat_vol_median3(Ygmt2, YM, YM)
     
     ## DEBUG
@@ -1280,18 +1174,11 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ygmt2=os.path.join(surffolder,'Ygmt2_' + actualsurf + '.nii.gz')
         nib.save(Ygmt2_image, fname_Ygmt2)
     
-
     # estimation of Ypp for further GM filtering without sulcul blurring
-    # 2.2 was 2.5 originally
-    if iscat:
-        tmpparam3 = 2.5
-    else:
-        tmpparam3 = 2.2
-        
     Ygmt = np.fmin(Ygmt1, Ygmt2)
-    YM = np.logical_and((Ymf >= thres_magic), (Ymf < tmpparam3))
+    YM = np.logical_and((Ymf >= thres_magic), (Ymf < 2.5))
     Ypp = np.zeros(Ymf.shape, dtype=np.float32)
-    Ypp[Ymf >= tmpparam3] = 1
+    Ypp[Ymf >= 2.5] = 1
     eps = np.finfo(float).eps
     Ypp[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM]) / (Ygmt[YM] + eps)
     Ypp[Ypp > 2] = 0
@@ -1304,24 +1191,17 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, Ygmt1 > 0, 1, 1)[0]
 
-    Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
-
-    # filter result 1.3 was 1.8 in original CAT12 code
-    if iscat:
-        tmpparam4 = 1.8
-    else:
-        tmpparam4 = 1.2
-        
+    Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]        
     Ygmts = np.array(Ygmt1, copy=True)
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmt > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt1[Ygmts > 0] = Ygmts[Ygmts > 0]
     Ygmts = np.array(Ygmt2, copy=True)
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmt > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
+            Ygmt > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt2[Ygmts > 0] = Ygmts[Ygmts > 0]
 
@@ -1335,31 +1215,19 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ygmt=os.path.join(surffolder,'Ygmt_' + actualsurf + '.nii.gz')
         nib.save(Ygmt_image, fname_Ygmt)
 
-    Ygmts = np.array(Ygmt, copy=True)
-    
-    # The original CAT12 version of this loop was:
-    # for i in np.arange(1, iterator):
-    #     Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-    #         Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
-    # Here the 1.8 looks suspicious, so changing that to 2
-    
+    Ygmts = np.array(Ygmt, copy=True)    
     for i in np.arange(1, iterator):
         Ygmts = _cat_c_utils.cat_vol_localstat(Ygmts, (((Ygmt > 1) | (Ypp > 0.1)) & (
-            Ygmts > 0) & ((Ygmt > 1) | (Ymf > tmpparam4))), 1, 1)[0]
+            Ygmts > 0) & ((Ygmt > 1) | (Ymf > 1.8))), 1, 1)[0]
 
     Ygmt[Ygmts > 0] = Ygmts[Ygmts > 0]
 
-    # Estimation of a mixed percentual possion map Ypp. 2.3 should be 2.5
-    if iscat:
-        tmpparam5 = 2.5
-    else:
-        tmpparam5 = 2.2
-        
-    YM = ((Ymf >= thres_magic) & (Ymf < tmpparam5) & (Ygmt > eps))
+    # Estimation of a mixed percentual possion map Ypp.
+    YM = ((Ymf >= thres_magic) & (Ymf < 2.5) & (Ygmt > eps))
     Ycsfdc = np.array(Ycsfd, copy=True)
     Ycsfdc[YM] = np.fmin(Ycsfd[YM], Ygmt[YM] - Ywmd[YM])
     Ypp = np.zeros(Ymf.shape, dtype=np.float32)
-    Ypp[Ymf >= tmpparam5] = 1
+    Ypp[Ymf >= 2.5] = 1
     Ypp[YM] = Ycsfdc[YM] / (Ygmt[YM] + eps)
     Ypp[Ypp > 2] = 0
     notnan = ~np.logical_or(np.isnan(Ywmd), np.isnan(Ygmt))
@@ -1367,24 +1235,16 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     YM[notnan] = np.squeeze((Ygmt[notnan] <= resV) & (
         Ywmd[notnan] <= resV) & (Ygmt[notnan] > 0))
     
-    # Here the original CAT12 call was 
-    # Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
-    # Maybe the 0.2 is linked to the 1.8 above, 
-    # so getting rid of that
-    if iscat:
-        Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
-    else:
-        Ypp[YM] = (Ymf[YM] - 1) / 2
-
+    Ypp[YM] = (Ymf[YM] - 1) / 2 - 0.2
     Ypp[np.isnan(Ypp)] = 0
     Ypp[Ypp < 0] = 0
+    
     ## DEBUG
     if debug:
         Ypp_image = nib.Nifti1Image(Ypp, vox2mm)
         fname_Ypp=os.path.join(surffolder,'Ypp_pbt_' + actualsurf + '.nii.gz')
         nib.save(Ypp_image, fname_Ypp)
     
-
     # Final corrections for thickness map with thickness limit of 10 mm.
     # Resolution correction of the thickness map after all other operations,
     # because PBT actually works only with the voxel-distance (isotropic 1 mm)
@@ -1671,115 +1531,115 @@ def labclose(image,n):
     return ~lab(~tmp)
 
 
-def spm_smoothkern(fwhm, t=1):
-    """  Generate a Gaussian smoothing kernel
+# def spm_smoothkern(fwhm, t=1):
+#     """  Generate a Gaussian smoothing kernel
 
-    PARAMETERS
-    ----------
-        fwhm : full width at half maximum
+#     PARAMETERS
+#     ----------
+#         fwhm : full width at half maximum
 
-        --> optional parameters:
-        t    : either 0 (nearest neighbour) or 1 (linear).
-            [Default: 1]
+#         --> optional parameters:
+#         t    : either 0 (nearest neighbour) or 1 (linear).
+#             [Default: 1]
 
-    RETURNS
-    ----------
-        krn  : value of kernel at position x
+#     RETURNS
+#     ----------
+#         krn  : value of kernel at position x
 
-    NOTES
-    ----------      
-        This function returns a Gaussian convolved with a triangular (1st 
-        degree B-spline) basis function.
+#     NOTES
+#     ----------      
+#         This function returns a Gaussian convolved with a triangular (1st 
+#         degree B-spline) basis function.
 
-        It is adapted from spm_smoothkern.m of SPM12
-        (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
+#         It is adapted from spm_smoothkern.m of SPM12
+#         (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
 
-     Reference
-     ----------
-        John Ashburner
-        $Id: spm_smoothkern.m 7460 2018-10-29 15:55:12Z john $
+#      Reference
+#      ----------
+#         John Ashburner
+#         $Id: spm_smoothkern.m 7460 2018-10-29 15:55:12Z john $
 
-        Martin TB, Prunet S, Drissen L. Optimal fitting of Gaussian-apodized
-        or under-resolved emission lines in Fourier transform spectra
-        providing new insights on the velocity structure of NGC 6720. Monthly
-        Notices of the Royal Astronomical Society. 2016 Sep 14;463(4):4223-38.
+#         Martin TB, Prunet S, Drissen L. Optimal fitting of Gaussian-apodized
+#         or under-resolved emission lines in Fourier transform spectra
+#         providing new insights on the velocity structure of NGC 6720. Monthly
+#         Notices of the Royal Astronomical Society. 2016 Sep 14;463(4):4223-38.
 
-    """
+#     """
 
-    length = np.rint(3 * fwhm / sqrt(2*log(2)))
-    x = np.arange(-length, length+1, 1)
+#     length = np.rint(3 * fwhm / sqrt(2*log(2)))
+#     x = np.arange(-length, length+1, 1)
 
-    # Variance from FWHM
-    s = fwhm ** 2 / (8*log(2)) + np.finfo(float).eps
+#     # Variance from FWHM
+#     s = fwhm ** 2 / (8*log(2)) + np.finfo(float).eps
 
-    if t == 0:
-        # Gaussian convolved with 0th degree B-spline
-        w1 = 1.0 / sqrt(2*s)
-        krn = 0.5*(erf(w1 * (x + 0.5)) - erf(w1 * (x - 0.5)))
+#     if t == 0:
+#         # Gaussian convolved with 0th degree B-spline
+#         w1 = 1.0 / sqrt(2*s)
+#         krn = 0.5*(erf(w1 * (x + 0.5)) - erf(w1 * (x - 0.5)))
 
-    elif t == 1:
-        # Gaussian convolved with 1st degree B-spline
-        w1 = 0.5 * sqrt(2/s)
-        w2 = - 0.5 / s
-        w3 = sqrt(s * 0.5 / np.pi)
-        krn = 0.5*(erf(w1 * (x + 1)) * (x + 1) + erf(w1 * (x - 1)) * (x - 1) - 2 * erf(w1 * x) * x) + \
-            w3 * (np.exp(w2 * ((x + 1) ** 2)) + np.exp(w2 *
-                                                       ((x - 1) ** 2)) - 2*np.exp(w2 * (x ** 2)))
-    else:
-        logger.error(
-            f'Only defined for nearest neighbour and linear interpolation.')
-        raise ValueError('spm_smoothkern only supports zero and first order')
+#     elif t == 1:
+#         # Gaussian convolved with 1st degree B-spline
+#         w1 = 0.5 * sqrt(2/s)
+#         w2 = - 0.5 / s
+#         w3 = sqrt(s * 0.5 / np.pi)
+#         krn = 0.5*(erf(w1 * (x + 1)) * (x + 1) + erf(w1 * (x - 1)) * (x - 1) - 2 * erf(w1 * x) * x) + \
+#             w3 * (np.exp(w2 * ((x + 1) ** 2)) + np.exp(w2 *
+#                                                        ((x - 1) ** 2)) - 2*np.exp(w2 * (x ** 2)))
+#     else:
+#         logger.error(
+#             f'Only defined for nearest neighbour and linear interpolation.')
+#         raise ValueError('spm_smoothkern only supports zero and first order')
 
-    krn[krn < 0] = 0
-    krn = krn / np.sum(krn)
-    return krn
+#     krn[krn < 0] = 0
+#     krn = krn / np.sum(krn)
+#     return krn
         
 
-def spm_smooth(P, s):
-    """ Convolve a three dimensional image
+# def spm_smooth(P, s):
+#     """ Convolve a three dimensional image
 
-    PARAMETERS
-    ----------    
-        P     : 3D array to be smoothed
-        s     : [sx sy sz] Gaussian filter width {FWHM} in edges
+#     PARAMETERS
+#     ----------    
+#         P     : 3D array to be smoothed
+#         s     : [sx sy sz] Gaussian filter width {FWHM} in edges
 
-    RETURNS
-    ----------
-        Q     : 3D array of the smoothed image (or 3D array)    
+#     RETURNS
+#     ----------
+#         Q     : 3D array of the smoothed image (or 3D array)    
 
-    NOTES
-    ----------   
-        spm_smooth is used to smooth or convolve image. This function is
-        adapted from spm_smooth.m and smooth1.m of SPM12
-        (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
+#     NOTES
+#     ----------   
+#         spm_smooth is used to smooth or convolve image. This function is
+#         adapted from spm_smooth.m and smooth1.m of SPM12
+#         (version 2019-03-22, https://www.fil.ion.ucl.ac.uk/spm/software/spm12/).
 
-        The sum of kernel coeficients are set to unity.  Boundary
-        conditions assume data does not exist outside the image in z (i.e.
-        the kernel is truncated in z at the boundaries of the image space). S
-        can be a vector of 3 FWHM values that specifiy an anisotropic
-        smoothing.
+#         The sum of kernel coeficients are set to unity.  Boundary
+#         conditions assume data does not exist outside the image in z (i.e.
+#         the kernel is truncated in z at the boundaries of the image space). S
+#         can be a vector of 3 FWHM values that specifiy an anisotropic
+#         smoothing.
 
-        The inconsistencies in dealing with the convolution in the x/y 
-        direction and z direction in the C function spm_conv_vol.c is removed 
-        from the python version spm_smooth(P, s).
+#         The inconsistencies in dealing with the convolution in the x/y 
+#         direction and z direction in the C function spm_conv_vol.c is removed 
+#         from the python version spm_smooth(P, s).
 
-     Reference
-     ----------        
-        John Ashburner & Tom Nichols
-        $Id: spm_smooth.m 4419 2011-08-03 18:42:35Z guillaume $
+#      Reference
+#      ----------        
+#         John Ashburner & Tom Nichols
+#         $Id: spm_smooth.m 4419 2011-08-03 18:42:35Z guillaume $
 
-    """
+#     """
 
-    x = spm_smoothkern(s[0], 1)
-    y = spm_smoothkern(s[1], 1)
-    z = spm_smoothkern(s[2], 1)
+#     x = spm_smoothkern(s[0], 1)
+#     y = spm_smoothkern(s[1], 1)
+#     z = spm_smoothkern(s[2], 1)
 
-    # Convolve the image in dimension x, y and z iteratively
-    Q = P.copy()
-    Q[np.isinf(Q)] = 0
-    for i, k in enumerate((x.flatten(), y.flatten(), z.flatten())):
-        Q = ndimage.convolve1d(
-            Q, k, axis=i, mode='constant', cval=0.0, origin=0)
+#     # Convolve the image in dimension x, y and z iteratively
+#     Q = P.copy()
+#     Q[np.isinf(Q)] = 0
+#     for i, k in enumerate((x.flatten(), y.flatten(), z.flatten())):
+#         Q = ndimage.convolve1d(
+#             Q, k, axis=i, mode='constant', cval=0.0, origin=0)
 
-    return Q
+#     return Q
 

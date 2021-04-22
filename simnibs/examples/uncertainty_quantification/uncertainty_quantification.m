@@ -6,7 +6,7 @@
 %% General information
 
 S = sim_struct('SESSION');
-S.fnamehead = 'ernie.msh'; % head mesh
+S.subpath = 'm2m_ernie'; % subject folder
 S.pathfem = 'tdcs_uq'; %Folder for the simulation output
 
 %% Define tDCS simulation
@@ -34,9 +34,9 @@ S.poslist{1}.cond(1).distribution_parameters = [3, 3, .1, .4];
 % Gray Matter
 S.poslist{1}.cond(2).distribution_type = 'beta';
 S.poslist{1}.cond(2).distribution_parameters = [3, 3, .1, .6];
-% Skull
-S.poslist{1}.cond(4).distribution_type = 'beta';
-S.poslist{1}.cond(4).distribution_parameters = [3, 3, 0.003, 0.012];
+% Compact Bone
+S.poslist{1}.cond(7).distribution_type = 'beta'
+S.poslist{1}.cond(7).distribution_parameters = [3, 3, 0.001, 0.012];
 
 %% Run Simulation
 run_simnibs(S)

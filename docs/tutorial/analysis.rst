@@ -92,7 +92,6 @@ An alternative analysis method is to use the **middle cortical surfaces** create
 .. note:: This analysis method requires that the simulation has been interpolated to a cortical surface.
           This can be done either by setting checking the *Interpolate to cortical surface* option in the :ref:`sim_opt`. (under *Edit* -> *Simulation Options*),
           or by setting the **map_to_surf** option in the :ref:`session_doc` structure.
-          This is not possible for :ref:`headreco_docs` models ran with the :code:`--no-cat` option
 
 For this kind of analysis, we have to
 
@@ -115,7 +114,6 @@ For this kind of analysis, we have to
 
    2.2. Select a region from the atlas
 
-   .. note:: Instead of an atlas, it is also possible to define the ROI using the same methods as described in the 
 3. Calculate field in ROI using a weighted average.
 
    3.1. Calculate node areas

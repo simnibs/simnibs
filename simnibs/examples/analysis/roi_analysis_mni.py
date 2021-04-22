@@ -11,7 +11,7 @@ import simnibs
 
 # Read the simulation result
 head_mesh = simnibs.read_msh(
-    os.path.join('tdcs', 'ernie_TDCS_1_scalar.msh')
+    os.path.join('tdcs_simu', 'ernie_TDCS_1_scalar.msh')
 )
 
 # Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)

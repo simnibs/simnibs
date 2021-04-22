@@ -148,7 +148,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c1"># Read the simulation result</span>
 <span class="n">head_mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s1">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s1">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="c1"># Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
@@ -197,7 +197,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 
 <span class="c">% Read the simulation result</span>
 <span class="n">head_mesh</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
 <span class="p">);</span>
 
 <span class="c">% Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
@@ -241,8 +241,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 <p class="admonition-title">Note</p>
 <p>This analysis method requires that the simulation has been interpolated to a cortical surface.
 This can be done either by setting checking the <em>Interpolate to cortical surface</em> option in the <a class="reference internal" href="../documentation/gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a>. (under <em>Edit</em> -&gt; <em>Simulation Options</em>),
-or by setting the <strong>map_to_surf</strong> option in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> structure.
-This is not possible for <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> models ran with the <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> option</p>
+or by setting the <strong>map_to_surf</strong> option in the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> structure.</p>
 </div>
 <p>For this kind of analysis, we have to</p>
 <ol class="arabic">
@@ -324,7 +323,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 
 <span class="c1"># Read the simulation result mapped to the gray matter surface</span>
 <span class="n">gm_surf</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s1">&#39;subject_overlays&#39;</span><span class="p">,</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s1">&#39;subject_overlays&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span>
 <span class="p">)</span>
 
@@ -356,7 +355,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 
 <span class="c">% Read the simulation results interpolated to the middle gray matter surface</span>
 <span class="n">surf</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
+    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
              <span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="k">...</span>
 <span class="p">);</span>
 
@@ -442,6 +441,7 @@ This is not possible for <a class="reference internal" href="../documentation/co
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>

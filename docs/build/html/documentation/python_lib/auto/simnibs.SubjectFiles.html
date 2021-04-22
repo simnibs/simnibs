@@ -99,17 +99,6 @@ preference when it comes to finding other files</p></li>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="simnibs.SubjectFiles.basedir">
-<code class="sig-name descname">basedir</code><a class="headerlink" href="#simnibs.SubjectFiles.basedir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the folder where the m2m_subid folder is located (dir)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
 <dt id="simnibs.SubjectFiles.tensor_file">
 <code class="sig-name descname">tensor_file</code><a class="headerlink" href="#simnibs.SubjectFiles.tensor_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the NifTi file with the tensor conductivity information (.nii.gz)</p>
@@ -189,7 +178,7 @@ preference when it comes to finding other files</p></li>
 <dl class="py attribute">
 <dt id="simnibs.SubjectFiles.reference_volume">
 <code class="sig-name descname">reference_volume</code><a class="headerlink" href="#simnibs.SubjectFiles.reference_volume" title="Permalink to this definition">¶</a></dt>
-<dd><p>Path to the reference subject volume (.nii.gz)</p>
+<dd><p>Path to the reference subject volume (T1.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -200,7 +189,7 @@ preference when it comes to finding other files</p></li>
 <dl class="py attribute">
 <dt id="simnibs.SubjectFiles.mni2conf_nonl">
 <code class="sig-name descname">mni2conf_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_nonl" title="Permalink to this definition">¶</a></dt>
-<dd><p>MNI to conform nonlinear transformation (.nii or .nii.gz)</p>
+<dd><p>MNI to conform nonlinear transformation (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -211,7 +200,7 @@ preference when it comes to finding other files</p></li>
 <dl class="py attribute">
 <dt id="simnibs.SubjectFiles.conf2mni_nonl">
 <code class="sig-name descname">conf2mni_nonl</code><a class="headerlink" href="#simnibs.SubjectFiles.conf2mni_nonl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Conform to MNI nonlinear tansformation (.nii or .nii.gz)</p>
+<dd><p>Conform to MNI nonlinear tansformation (.nii.gz)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -242,9 +231,21 @@ preference when it comes to finding other files</p></li>
 </dd></dl>
 
 <dl class="py attribute">
+<dt id="simnibs.SubjectFiles.final_labels_MNI">
+<code class="sig-name descname">final_labels_MNI</code><a class="headerlink" href="#simnibs.SubjectFiles.final_labels_MNI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Label image created from final mesh in MNI space</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
 <dt id="simnibs.SubjectFiles.ref_fs">
 <code class="sig-name descname">ref_fs</code><a class="headerlink" href="#simnibs.SubjectFiles.ref_fs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reference FreeSurfer space file (.nii.gz)</p>
+<dd><p>Reference FreeSurfer space file (.nii.gz)
+Now always set to True, so that a standard header is added, which seems to work</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -279,17 +280,6 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="simnibs.SubjectFiles.sphere_surfaces">
-<code class="sig-name descname">sphere_surfaces</code><a class="headerlink" href="#simnibs.SubjectFiles.sphere_surfaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as above but in a spherical geometry</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
 <dt id="simnibs.SubjectFiles.sphere_reg_surfaces">
 <code class="sig-name descname">sphere_reg_surfaces</code><a class="headerlink" href="#simnibs.SubjectFiles.sphere_reg_surfaces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Same as above but for the spherical registration files</p>
@@ -307,28 +297,6 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.SubjectFiles.final_contr">
-<code class="sig-name descname">final_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.final_contr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Volume mask after meshing (.nii.gz)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="simnibs.SubjectFiles.masks_contr">
-<code class="sig-name descname">masks_contr</code><a class="headerlink" href="#simnibs.SubjectFiles.masks_contr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Volume mask before meshing (.nii.gz)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -403,6 +371,17 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <dt id="simnibs.SubjectFiles.labeling">
 <code class="sig-name descname">labeling</code><a class="headerlink" href="#simnibs.SubjectFiles.labeling" title="Permalink to this definition">¶</a></dt>
 <dd><p>Output segmentation from samseg</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="simnibs.SubjectFiles.final_labels">
+<code class="sig-name descname">final_labels</code><a class="headerlink" href="#simnibs.SubjectFiles.final_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Label image created from final mesh</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
@@ -607,6 +586,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>

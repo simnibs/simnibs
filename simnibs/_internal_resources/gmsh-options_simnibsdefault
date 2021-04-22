@@ -44,9 +44,11 @@ Mesh.Color.Two = {129,129,129}; // Color 2 in color carousel
 Mesh.Color.Three = {104,163,255};
 Mesh.Color.Four = {255,239,179};
 Mesh.Color.Five = {255,166,133};
+Mesh.Color.Six = {255,240,0};
 Mesh.Color.Seven = {255,239,179};
 Mesh.Color.Eight = {255,138,57};
 Mesh.Color.Nine = {0,65,142};
+Mesh.Color.Ten = {0,118,14};
 Mesh.LightTwoSide = 1;
 View.CenterGlyphs = 1; // Center glyphs (arrows, numbers, etc.)? (0=left, 1=centered, 2=right)
 View.GlyphLocation = 1; // Glyph (arrow, number, etc.) location (1=center of gravity, 2=node)

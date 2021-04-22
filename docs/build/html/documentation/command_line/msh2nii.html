@@ -58,24 +58,25 @@
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
-<li><p>Open a simulation results folder, for example <em>ernie/simu</em> if you ran <em>ernie_simu.mat</em></p></li>
+<li><p>Open a simulation results folder. For the following, it is assumed that you ran a TDCS simulation on ernie.</p></li>
 <li><p>Run</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>msh2nii ernie_TDCS_1_scalar.msh ../m2m_ernie/T1fs_conform.nii.gz ernie_TDCS_1
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>msh2nii ernie_TDCS_1_scalar.msh ../m2m_ernie/T1.nii.gz ernie_TDCS_1
 </pre></div>
 </div>
 <p></p>
 <ol class="arabic simple" start="3">
-<li><p>This will create the <em>ernie_TDCS_1_E.nii.gz</em>, <em>ernie_TDCS_1_J.nii.gz</em>, <em>ernie_TDCS_1_magnE.nii.gz</em>, and <em>ernie_TDCS_1_magnJ.nii.gz</em> files.</p></li>
-<li><p>The files are in the same space as the <em>../m2m_ernie/T1fs_conform.nii.gz</em> file</p></li>
+<li><p>This will create one file for each data field in the mesh, e.g. <em>ernie_TDCS_1_E.nii.gz</em>, <em>ernie_TDCS_1_J.nii.gz</em>, <em>ernie_TDCS_1_magnE.nii.gz</em>, and <em>ernie_TDCS_1_magnJ.nii.gz</em> …</p></li>
+<li><p>The files are in the same coordinate space as the <em>../m2m_ernie/T1.nii.gz</em> file</p></li>
 </ol>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">msh2nii</span> <span class="pre">-h</span></code> for more information and options.</p></li>
-<li><p>This tool equivalent to selecting the <strong>Interpolate to a nifti volume</strong> option in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or set <strong>map_to_vol</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</p></li>
-<li><p>Can also be used to create tissue masks with the <code class="code docutils literal notranslate"><span class="pre">--create_masks</span></code> argument.</p></li>
+<li><p>This tool performs an equivalent function to selecting the <strong>Interpolate to a nifti volume</strong> option in the <a class="reference internal" href="../gui.html#sim-opt"><span class="std std-ref">GUI</span></a> or set <strong>map_to_vol</strong> to <em>true</em> in the <a class="reference internal" href="../sim_struct/session.html#session-doc"><span class="std std-ref">SESSION structure</span></a>.</p></li>
+<li><p>Can also be used to create tissue masks with the <code class="code docutils literal notranslate"><span class="pre">--create_masks</span></code> argument (one binary mask per tissue).</p></li>
+<li><p>Using the <code class="code docutils literal notranslate"><span class="pre">--create_label</span></code> argument will create an image with the tissue labels in the mesh.</p></li>
 </ul>
 </div>
 </div>
@@ -135,6 +136,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>

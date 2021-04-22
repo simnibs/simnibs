@@ -10,14 +10,10 @@
   FSLEYESBIN=$(which fsleyes)
   if [ ${#FSLEYESBIN} -gt 0 ]; then
     # check of final results
-    e fsleyes T1_brain DTI_conf_FA -a 70 -dr 0.1 0.8 -cm red-yellow DTI_conf_V1 -a 0 -ot linevector &
+    e fsleyes T1_brain DTI_coregT1_FA -a 70 -dr 0.1 0.8 -cm red-yellow DTI_coregT1_V1 -a 0 -ot linevector &
 
     # check of sse of tensor fit and effect of distortion correction
-    HLPSTR=''
-    if [ -f DTIraw_FA_6dof_QA.nii.gz ]; then 
-	HLPSTR=$HLPSTR'DTIraw_FA_6dof_QA -dr 0.1 0.8 -cm red-yellow '
-    fi
-    HLPSTR=$HLPSTR'DTI_FA_6dof_QA -dr 0.1 0.8 -cm red-yellow '
+    HLPSTR='DTI_FA_6dof_QA -dr 0.1 0.8 -cm red-yellow '
     if [ -f DTIraw_SSE_6dof_QA.nii.gz ]; then 
 	HLPSTR=$HLPSTR'DTIraw_SSE_6dof_QA -dr 0.0 1.0 -cm hot '
     fi
@@ -28,14 +24,10 @@
 
   else
     # check of final results
-    e fslview T1_brain DTI_conf_FA -t 0.7 -b 0.1,0.8 -l Red-Yellow DTI_conf_V1 -t 0 &
+    e fslview T1_brain DTI_coregT1_FA -t 0.7 -b 0.1,0.8 -l Red-Yellow DTI_coregT1_V1 -t 0 &
 
     # check of sse of tensor fit and effect of distortion correction
-    HLPSTR=''
-    if [ -f DTIraw_FA_6dof_QA.nii.gz ]; then 
-	HLPSTR=$HLPSTR'DTIraw_FA_6dof_QA -b 0.1,0.8 -l Red-Yellow '
-    fi
-    HLPSTR=$HLPSTR'DTI_FA_6dof_QA -b 0.1,0.8 -l Red-Yellow '
+    HLPSTR='DTI_FA_6dof_QA -b 0.1,0.8 -l Red-Yellow '
     if [ -f DTIraw_SSE_6dof_QA.nii.gz ]; then 
 	HLPSTR=$HLPSTR'DTIraw_SSE_6dof_QA -b 0.0,1.0 -l Hot '
     fi

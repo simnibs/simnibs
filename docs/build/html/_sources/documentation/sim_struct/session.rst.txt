@@ -115,6 +115,11 @@ Attributes
   * **Default**: False
   * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
+* **tissues_in_niftis**: *list of tissue indices, or str ('all'), optional*
+
+  * **Description**: List of the tissues for which the data will be interpolated to the niftis. To get fields everywhere, set to 'all'.  
+  * **Default**: 2 (i.e. gray matter)  
+
 * **subpath**: *string (Python)/character array (MATLAB), optional*
 
   * **Description**: Name of :file:`m2m_{subID}*` folder

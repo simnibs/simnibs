@@ -12,24 +12,26 @@ import shutil
 import time
 import subprocess
 import nibabel as nib
-from sys import platform
-from .. import utils
-from simnibs import SIMNIBSDIR
-from ..utils.simnibs_logger import logger
-from ..utils import file_finder
-from ..utils import transformations
-from . import samseg
-from ._cat_c_utils import sanlm
+import glob
+import sys
 import numpy as np
 from scipy import ndimage
 import scipy.ndimage.morphology as mrph
-from ..utils.transformations import resample_vol
-from ..mesh_tools import meshing
-from . import _thickness
-from .brain_surface import dilate, erosion
-from ..mesh_tools.mesh_io import write_msh
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.measurements import label
+from simnibs import SIMNIBSDIR
+
+from .. import __version__
+from . import samseg
+from ._cat_c_utils import sanlm
+from .. import utils
+from ..utils.simnibs_logger import logger
+from ..utils import file_finder
+from ..utils import transformations
+from ..utils.transformations import resample_vol, crop_vol
+from ..mesh_tools.meshing import create_mesh
+from ..mesh_tools.mesh_io import write_msh, ElementData
+from ..simulation import cond
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -157,7 +159,7 @@ def _estimate_parameters(path_to_segment_folder,
                     (multiResolutionLevel, item['numberOfIterations'],
                      item['perVoxelCost']))
 
-    return samsegment.saveParametersAndInput(path_to_segment_folder)
+    return samsegment.saveParametersAndInput()
 
 
 def _post_process_segmentation(bias_corrected_image_names,
@@ -508,10 +510,13 @@ def run(subject_dir=None, T1=None, T2=None,
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
 
-    if options_str is not None:
-        logger.debug('options: '+options_str)
+    logger.info('simnibs version '+__version__)
     logger.info('charm run started: '+time.asctime())
-
+    if options_str is not None:    
+        logger.debug('options: '+options_str)
+    else:
+        logger.debug('options: none')
+    
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
 
@@ -523,7 +528,7 @@ def run(subject_dir=None, T1=None, T2=None,
             #Cast to float32 and save
             T1_tmp = nib.load(T1)
             T1_tmp.set_data_dtype(np.float32)
-            nib.save(T1_tmp, sub_files.T1)
+            nib.save(T1_tmp, sub_files.reference_volume)
 
     if registerT2 and T2 is not None:
         if not os.path.exists(T2):
@@ -540,9 +545,16 @@ def run(subject_dir=None, T1=None, T2=None,
     if usesettings is None:
         fn_settings = os.path.join(SIMNIBSDIR, 'charm.ini')
     else:
+        if type(usesettings) == list:
+            usesettings = usesettings[0]
         fn_settings = usesettings
     settings = utils.settings_reader.read_ini(fn_settings)
-    shutil.copyfile(fn_settings, sub_files.settings)
+    try:
+        shutil.copyfile(fn_settings, sub_files.settings)
+    except shutil.SameFileError:
+        pass
+    logger.debug(settings)
+    
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
     # Could be before as well but doesn't probably matter that much.
@@ -558,7 +570,7 @@ def run(subject_dir=None, T1=None, T2=None,
         _denoise_input_and_save(T1, sub_files.T1_denoised)
 
     # denoise if needed
-    if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg):
+    if denoise_settings['denoise'] and os.path.exists(sub_files.T2_reg) and T2 is not None:
         logger.info('Denoising the registered T2 and saving.')
         _denoise_input_and_save(sub_files.T2_reg,
                                 sub_files.T2_reg_denoised)
@@ -668,34 +680,27 @@ def run(subject_dir=None, T1=None, T2=None,
             bias_corrected_image_names.append(sub_files.T2_bias_corrected)
 
         logger.info('Writing out normalized images and labelings.')
-        if create_surfaces:
-            os.makedirs(sub_files.surface_folder, exist_ok=True)
-            cat_images = [sub_files.norm_image,
-                          sub_files.cereb_mask,
-                          sub_files.subcortical_mask,
-                          sub_files.parahippo_mask,
-                          sub_files.hemi_mask]
+        os.makedirs(sub_files.surface_folder, exist_ok=True)
+        cat_images = [sub_files.norm_image,
+                      sub_files.cereb_mask,
+                      sub_files.subcortical_mask,
+                      sub_files.hemi_mask]
 
-            cat_structs = atlas_settings['CAT_structures']
-            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
-                            bias_corrected_image_names,
-                            sub_files.labeling,
-                            segment_parameters_and_inputs,
-                            cat_structure_options=cat_structs,
-                            cat_images=cat_images)
-        else:
-            samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
-                            bias_corrected_image_names,
-                            sub_files.labeling,
-                            segment_parameters_and_inputs)
+        cat_structs = atlas_settings['CAT_structures']
+        samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+                        bias_corrected_image_names,
+                        sub_files.labeling,
+                        segment_parameters_and_inputs,
+                        cat_structure_options=cat_structs,
+                        cat_images=cat_images)
 
         # Write out MNI warps
         logger.info('Writing out MNI warps.')
         os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
         samseg.simnibs_segmentation_utils.saveWarpField(
                 template_name,
-                sub_files.conf2mni_nonl,
                 sub_files.mni2conf_nonl,
+                sub_files.conf2mni_nonl,
                 segment_parameters_and_inputs)
 
         # Run post-processing
@@ -724,81 +729,75 @@ def run(subject_dir=None, T1=None, T2=None,
     if create_surfaces:
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
-        python_interpreter = 'simnibs_python'
-        multithreading_script = [os.path.join(SIMNIBSDIR), 'segmentation',
-                                 'run_cat_multiprocessing.py']
-
-        fsavgDir = file_finder.Templates().atlases_surfaces
-        args = ['--Ymf', sub_files.norm_image,
-                '--Yleft_path', sub_files.hemi_mask,
-                '--Ymaskhemis_path', sub_files.cereb_mask,
-                '--Ymaskparahipp_path', sub_files.parahippo_mask,
-                '--surface_folder', sub_files.surface_folder,
-                '--fsavgdir', fsavgDir,
-                '--surf', 'lh', 'rh']
-
-        # These values are defaults in the multiprocessing scripts, can be
-        # added to args if needed
-        # ['--vdist', 1.0, 0.75,
-        #  '--voxsize_pbt', 0.5, 0.25,
-        #  '--voxsizeCS', 0.75, 0.5,
-        #  '--th_initial', 0.5,
-        #  '--no_intersect', True,
-        #  '--add_parahipp', False,
-        #  '--close_parahipp', False,
-
         starttime = time.time()
-        # A hack to get multithreading to work on Windows
-        if platform == 'win32':
-            proc = subprocess.run([shutil.which(python_interpreter)] +
-                                  multithreading_script + args,
-                                  capture_output=True)
+        fsavgDir = file_finder.Templates().freesurfer_templates
+        
+        surface_settings = settings['surfaces']
+        nprocesses = surface_settings['processes']
+        surf = surface_settings['surf']
+        vdist = surface_settings['vdist']
+        voxsize_pbt = surface_settings['voxsize_pbt']
+        voxsize_refineCS = surface_settings['voxsize_refinecs']
+        th_initial = surface_settings['th_initial']
+        no_selfintersections = surface_settings['no_selfintersections']
+        
+        if sys.platform == 'win32':
+            # A hack to get multithreading to work on Windows
+            multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
+            argslist = ['--Ymf', sub_files.norm_image,
+                    '--Yleft_path', sub_files.hemi_mask,
+                    '--Ymaskhemis_path', sub_files.cereb_mask,
+                    '--surface_folder', sub_files.surface_folder,
+                    '--fsavgdir', fsavgDir,
+                    '--surf'] + surf + [
+                    '--vdist', str(vdist[0]), str(vdist[1]),
+                    '--voxsize_pbt', str(voxsize_pbt[0]), str(voxsize_pbt[1]),
+                    '--voxsizeCS', str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
+                    '--th_initial', str(th_initial),
+                    '--no_intersect', str(no_selfintersections),
+                    '--nprocesses', str(nprocesses)]
+
+            proc = subprocess.run([sys.executable] +
+                                  multithreading_script + argslist,
+                                  stderr=subprocess.PIPE) # stderr: standard stream for simnibs logger
+            logger.debug(proc.stderr.decode('ASCII', errors='ignore').replace('\r', ''))
+            proc.check_returncode()
+             
         else:
             from simnibs.segmentation.run_cat_multiprocessing import run_cat_multiprocessing
             Ymf = nib.load(sub_files.norm_image)
             Yleft = nib.load(sub_files.hemi_mask)
             Yhemis = nib.load(sub_files.cereb_mask)
-            Yparahipp = nib.load(sub_files.parahippo_mask)
-            vox2mm = Ymf.affine
-            vdist = [1.0, 0.75]
-            voxsize_pbt = [0.5, 0.25]
-            voxsize_refineCS = [0.75, 0.5]
-            th_initial = 0.714
-            no_selfintersections = True
-            add_parahipp = False
-            close_parahipp = False
-            surf = ['lh', 'rh']
-
+            
             run_cat_multiprocessing(Ymf.get_fdata(),
                                     Yleft.get_fdata(),
                                     Yhemis.get_fdata(),
-                                    Yparahipp.get_fdata(),
-                                    vox2mm, sub_files.surface_folder,
-                                    fsavgDir, vdist,
-                                    voxsize_pbt, voxsize_refineCS,
-                                    th_initial, no_selfintersections,
-                                    add_parahipp, close_parahipp, surf)
+                                    Ymf.affine, sub_files.surface_folder,
+                                    fsavgDir, vdist, voxsize_pbt, 
+                                    voxsize_refineCS, th_initial,
+                                    no_selfintersections, surf, nprocesses)
 
         # print time duration
         elapsed = time.time() - starttime
-        print('\nTotal time cost (HH:MM:SS):')
-        print(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+        logger.info('Total time cost surface creation (HH:MM:SS):')
+        logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
     if mesh_image:
         # create mesh from label image
         logger.info('Starting mesh')
         label_image = nib.load(sub_files.tissue_labeling_upsampled)
-        label_buffer = label_image.get_data()
-        # Cast to uint16, otherwise meshing complains
-        label_buffer = label_buffer.astype(np.uint16)
+        label_buffer = label_image.get_fdata().astype(np.uint16) # Cast to uint16, otherwise meshing complains
         label_affine = label_image.affine
+        label_buffer, label_affine, _ = crop_vol(label_buffer, label_affine, 
+                                                 label_buffer>0, thickness_boundary=5) 
+                                                 # reduce memory consumption a bit
+                                                 
         # Read in settings for meshing
         mesh_settings = settings['mesh']
-        size_slope = mesh_settings['size_slope']
-        size_range = mesh_settings['size_range']
+        elem_sizes = mesh_settings['elem_sizes']
+        smooth_size_field = mesh_settings['smooth_size_field']
         skin_facet_size = mesh_settings['skin_facet_size']
-        distance_slope = mesh_settings['distance_slope']
-        distance_range = mesh_settings['distance_range']
+        facet_distances = mesh_settings['facet_distances']
         optimize = mesh_settings['optimize']
         remove_spikes = mesh_settings['remove_spikes']
         skin_tag = mesh_settings['skin_tag']
@@ -810,18 +809,53 @@ def run(subject_dir=None, T1=None, T2=None,
             hierarchy = None
         smooth_steps = mesh_settings['smooth_steps']
         
-        final_mesh = mesh(label_buffer, label_affine,
-                          size_slope=size_slope, size_range=size_range,
-                          skin_facet_size=skin_facet_size,
-                          distance_slope=distance_slope, distance_range=distance_range,
-                          optimize=optimize,
-                          remove_spikes=remove_spikes,
-                          skin_tag=skin_tag,
-                          remove_twins=remove_twins,
-                          hierarchy=hierarchy,
-                          smooth_steps=smooth_steps)
+        # Meshing
+        final_mesh = create_mesh(label_buffer, label_affine,
+                elem_sizes=elem_sizes,
+                smooth_size_field=smooth_size_field,
+                skin_facet_size=skin_facet_size, 
+                facet_distances=facet_distances,
+                optimize=optimize, 
+                remove_spikes=remove_spikes, 
+                skin_tag=skin_tag,
+                remove_twins=remove_twins, 
+                hierarchy=hierarchy,
+                smooth_steps=smooth_steps)
+        
         logger.info('Writing mesh')
-        write_msh(final_mesh, sub_files.head_mesh)
+        write_msh(final_mesh, sub_files.fnamehead)
+        v = final_mesh.view(cond_list = cond.standard_cond())
+        v.write_opt(sub_files.fnamehead)
+        
+        logger.info('Transforming EEG positions')
+        idx = (final_mesh.elm.elm_type == 2)&(final_mesh.elm.tag1 == skin_tag)
+        mesh = final_mesh.crop_mesh(elements = final_mesh.elm.elm_number[idx])
+        
+        if not os.path.exists(sub_files.eeg_cap_folder):
+            os.mkdir(sub_files.eeg_cap_folder)
+                    
+        cap_files = glob.glob(os.path.join(file_finder.ElectrodeCaps_MNI, '*.csv'))
+        for fn in cap_files:
+            fn_out = os.path.splitext(os.path.basename(fn))[0]
+            fn_out = os.path.join(sub_files.eeg_cap_folder, fn_out)
+            transformations.warp_coordinates(
+                    fn, sub_files.subpath,
+                    transformation_direction='mni2subject',
+                    out_name=fn_out+'.csv',
+                    out_geo=fn_out+'.geo',
+                    mesh_in = mesh)
+        
+        logger.info('Write label image from mesh')
+        MNI_template = file_finder.Templates().mni_volume
+        mesh = final_mesh.crop_mesh(elm_type=4)
+        field = mesh.elm.tag1.astype(np.uint16)
+        ed = ElementData(field)
+        ed.mesh = mesh
+        ed.to_deformed_grid(sub_files.mni2conf_nonl, MNI_template, 
+                            out=sub_files.final_labels_MNI,
+                            out_original=sub_files.final_labels,
+                            method='assign',
+                            reference_original=sub_files.reference_volume)
 
     # -------------------------TIDY UP-----------------------------------------
 
@@ -839,159 +873,3 @@ def run(subject_dir=None, T1=None, T2=None,
         f.write('</pre></BODY></HTML>')
         f.close()
 
-
-def mesh(label_img, affine, size_slope=1.0, size_range=(1, 5),
-         skin_facet_size=1.5, distance_slope=0.5, distance_range=(0.1, 3),
-         optimize=True, remove_spikes=True, skin_tag=1005,
-         remove_twins=True, hierarchy=None, smooth_steps=5):
-    """Create a mesh from a labeled image.
-
-    The maximum element sizes (CGAL facet_size and cell_size) is given by:
-        size = size_slope * thickness
-        size[size < size_range[0]] = size_range[0]
-        size[size > size_range[1]] = size_range[1]
-
-    where "thickness" is the local tissue thickness.
-    The distance (CGAL facet_distance) parameter is calcualted in a similar way.
-    This allows for the meshing to adjust sizes according to local needs.
-
-    Parameters
-    ----------
-    label_img: 3D np.ndarray in uint8 format
-        Labeled image from segmentation
-    affine: 4x4 np.ndarray
-        Affine transformation from voxel coordinates to world coordinates
-    size_slope: float (optinal)
-        relationship between thickness and slopes. The largest this value,
-        the larger the elements will be. Default: 1
-    size_range: 2-element list (optional)
-        Minimum and maximum values for element sizes, in mm. Default: (1, 5)
-    skin_facet_size: float (optional)
-        Maximum size for the triangles of the outermost surface. If set to None,
-        the elements of the outermost surface will be scaled the same way as
-        the other surfaces. Default:  1.5
-    distance_slope: float (optinal)
-        relationship between thickness and facet_distance. At small distance
-        values, the meshing will follow the original image more strictly. This
-        also means more elements. Default: 0.5
-    distance_range: 2-element list (optional)
-        Minimum and maximum values for facet_distance, in mm. Default: (0.1, 3)
-    optimize: bool (optional)
-        Whether to run lloyd optimization on the mesh. Default: True
-    remove_spikes: bool (optional)
-        Whether to remove spikes to create smoother meshes. Default: True
-    skin_tag: float (optional)
-        Add outer surface to mesh using given tag. Set to None to disable.
-        NOTE: This surface will replace any other surface with the same tag.
-        Default: 1005
-    remove_twins: bool (optional)
-        Remove triangle twins created during surface reconstruction.
-        Default: True
-    hierarchy: list of ints or None (optional)
-        List of surface tags that determines the order in which triangles 
-        are kept for twin pairs (for remove_twins=True). Default for hierarchy=None:
-        (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
-        i.e. Skin (1005) has highest priority, WM (1001) comes next, etc; 
-    smooth_steps: int (optional)
-        Number of smoothing steps to apply to the final mesh surfaces. Default: 5
-
-    Returns
-    -------
-    msh: simnibs.Msh
-        Mesh structure
-    """
-    if hierarchy is None:
-        hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
-                
-    # Calculate thickness
-    logger.info('Calculating tissue thickness')
-    thickness = _thickness._calc_thickness(label_img)
-    # I set the background thickness to some large value
-    thickness[thickness < .5] = 100
-    # Scale thickenss with voxel size
-    voxel_size = transformations.get_vox_size(affine)
-    if not np.allclose(np.diff(voxel_size), 0):
-        logger.warn('Anisotropic image, meshing may contain extra artifacts')
-    thickness *= np.average(voxel_size)
-    
-    # Define size fields and distance field
-    cell_size_field = _sizing_field_from_thickness(
-        thickness, size_slope, size_range
-    )
-    if skin_facet_size is None:
-        facet_size_field = cell_size_field
-    else:
-        boundary = (label_img > 0).astype('int8')
-        boundary = boundary-erosion(boundary,1)
-        boundary = dilate(boundary,2).astype('bool')
-        
-        facet_size_field = cell_size_field.flatten()
-        facet_size_field[boundary.flatten()] = skin_facet_size
-        facet_size_field = facet_size_field.reshape(label_img.shape)
-        
-    distance_field = _sizing_field_from_thickness(
-        thickness, distance_slope, distance_range
-    )
-    
-    # Run meshing
-    logger.info('Meshing')
-    start = time.time()
-    mesh = meshing.image2mesh(
-        label_img,
-        affine,
-        facet_size=facet_size_field,
-        facet_distance=distance_field,
-        cell_size=cell_size_field,
-        optimize=optimize
-    )
-    logger.info(
-        'Time to mesh: ' +
-        utils.simnibs_logger.format_time(time.time()-start)
-    )
-    
-    start = time.time()
-    # Separate out tetrahedron (will reconstruct triangles later)
-    mesh = mesh.crop_mesh(elm_type=4)
-    # Assign the right labels to the mesh as CGAL modifies them
-    indices_seg = np.unique(label_img)[1:]
-    new_tags = np.copy(mesh.elm.tag1)
-    for i, t in enumerate(indices_seg):
-        new_tags[mesh.elm.tag1 == i+1] = t
-    mesh.elm.tag1 = new_tags
-    mesh.elm.tag2 = new_tags.copy()
-    
-    # Remove spikes from mesh
-    if remove_spikes:
-        logger.info('Removing Spikes')
-        meshing.despike(
-            mesh, relabel_tol=1e-5,
-            adj_threshold=2
-        )
-        
-    # Reconctruct the mesh surfaces
-    logger.info('Reconstructing Surfaces')
-    mesh.fix_th_node_ordering()
-    mesh.reconstruct_surfaces(add_outer_as=skin_tag)
-    if remove_twins:
-        mesh = mesh.remove_triangle_twins(hierarchy=hierarchy)
-        
-    # Smooth the mesh
-    if smooth_steps > 0:
-        logger.info('Smoothing Mesh Surfaces')
-        mesh.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
-
-    logger.info(
-        'Time to post-process mesh: ' +
-        utils.simnibs_logger.format_time(time.time()-start)
-    )
-    return mesh
-
-
-def _sizing_field_from_thickness(thickness, slope, ranges):
-    ''' Calculates a sizing field from thickness '''
-    if ranges[0] > ranges[1]:
-        raise ValueError('Ranges value should be in format (min, max)')
-    field = np.array(slope*thickness, dtype=np.float32, order='F')
-    field[field < ranges[0]] = ranges[0]
-    field[field > ranges[1]] = ranges[1]
-    return field

@@ -1266,7 +1266,8 @@ def _set_up_global_solver(S):
     tms_global_solver = S
 
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo, fn_stl):
+def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo, 
+             fn_stl):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     start = time.time()

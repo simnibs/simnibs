@@ -13,7 +13,7 @@ opt.max_individual_current = 1e-3
 opt.max_active_electrodes = 8
 
 target = opt.add_target()
-target.positions = [-55.4, -20.7, 73.4]
+target.positions = [-50.7, 5.1, 55.5]
 # Set the intensity to a large value (e.g, 100)
 target.intensity = 100
 

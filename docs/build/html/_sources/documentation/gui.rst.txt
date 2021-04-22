@@ -9,7 +9,7 @@ Main GUI
 .. image:: ../images/doc_guimain.png
 
 1. Path to the *m2m_<subid>* folder, created during the head segmentation. It is filled out automatically if the Head Mesh (2) is correctly specified. For the *ernie* head model in the example dataset, it is :file:`simnibs_examples/ernie/m2m_ernie/`
-2. Name of the head mesh file. It is filled out automatically if the m2m Folder is correctly specified. For the *ernie* head model, this is :file:`simnibs_examples/ernie/ernie.msh`
+2. Name of the head mesh file. It is filled out automatically if the m2m Folder is correctly specified. For the *ernie* head model, this is :file:`simnibs_examples/ernie/m2m_ernie/ernie.msh`
 3. Folder where the simulations will be saved. Only one simulation can be stored per folder and SimNIBS will raise an error when it find results from another simulation already stored in this folder. A folder name is automatically created if either Head Mesh or m2m Folder are specified. For ernie, this would default to :file:`simnibs_examples/ernie/simnibs_simulation/`
 4. The tabs are used to specify the details of the TMS and tDCS simulations.
 5. Add a new tDCS **Poslist** to set up a tDCS simulation.

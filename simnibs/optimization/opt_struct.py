@@ -170,14 +170,14 @@ class TMSoptimize():
         empty fields are set to default values,
         check if required fields exist
         """
-        self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
-        if not os.path.isfile(self.fnamehead):
-            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
-
         sub_files = SubjectFiles(self.fnamehead, self.subpath)
         self.fnamehead = sub_files.fnamehead
         self.subpath = sub_files.subpath
-
+        
+        self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
+        if not os.path.isfile(self.fnamehead):
+            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+            
         if not os.path.isdir(self.subpath):
             logger.warning('Cannot locate subjects m2m folder')
             logger.warning('some postprocessing options might fail')

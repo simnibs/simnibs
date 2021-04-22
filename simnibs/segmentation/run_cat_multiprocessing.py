@@ -8,15 +8,12 @@ Created on Thu Sep 17 16:28:21 2020
 from simnibs.segmentation.brain_surface import createCS
 import functools
 import multiprocessing
-import argparse
-import nibabel as nib
 
 
-def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis, Ymaskparahipp,
+def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis,
                             vox2mm, surface_folder, fsavgDir, vdist,
                             voxsize_pbt, voxsize_refineCS, th_initial,
-                            no_selfintersections, add_parahipp,
-                            close_parahipp, surf):
+                            no_selfintersections, surf, nprocesses = 0):
 
     Pcentral_all = []
     Pspherereg_all = []
@@ -24,13 +21,16 @@ def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis, Ymaskparahipp,
     EC_all = []
     defect_size_all = []
 
-    with multiprocessing.Pool(processes=len(surf)) as pool:
+    processes = len(surf)
+    if nprocesses > 0:
+        processes=min(nprocesses,processes)
+        
+    with multiprocessing.Pool(processes=processes) as pool:
         partial_create_cs = functools.partial(
-            createCS, Ymf, Yleft, Ymaskhemis, Ymaskparahipp, vox2mm,
+            createCS, Ymf, Yleft, Ymaskhemis, vox2mm,
             surffolder=surface_folder, fsavgDir=fsavgDir, vdist=vdist,
             voxsize_pbt=voxsize_pbt, voxsize_refineCS=voxsize_refineCS,
-            th_initial=th_initial, no_selfintersections=no_selfintersections,
-            add_parahipp=add_parahipp, close_parahipp=close_parahipp)
+            th_initial=th_initial, no_selfintersections=no_selfintersections)
 
         # call pool.map to run in parallel
         results = pool.map(partial_create_cs, surf)
@@ -43,11 +43,13 @@ def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis, Ymaskparahipp,
 
 
 if __name__ == '__main__':
+    import argparse
+    import nibabel as nib
+   
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("--Ymf_path", nargs="+", type=str)
     argument_parser.add_argument('--Yleft_path', nargs='+', type=str)
     argument_parser.add_argument('--Ymaskhemis_path', nargs='+', type=str)
-    argument_parser.add_argument('--Ymaskparahipp_path', nargs='+', type=str)
     argument_parser.add_argument('--surface_folder', nargs='+', type=str)
     argument_parser.add_argument('--fsavgdir', nargs='+', type=str)
     argument_parser.add_argument('--vdist', nargs='+', type=float,
@@ -57,19 +59,17 @@ if __name__ == '__main__':
     argument_parser.add_argument('--voxsizeCS', nargs='+', type=float,
                                  default=[0.75, 0.5])
     argument_parser.add_argument('--th_initial', nargs='+', type=float,
-                                 default=[0.5])
+                                 default=[0.714])
     argument_parser.add_argument('--no_intersect', nargs='+', type=bool, default=[True])
-    argument_parser.add_argument('--add_parahipp', nargs='+', type=bool, default=[False])
-    argument_parser.add_argument('--close_parahipp', nargs='+', type=bool,
-                                 default=[False])
     argument_parser.add_argument('--surf', nargs='+',
                                  default=['lh', 'rh', 'lc', 'rc'])
-
+    argument_parser.add_argument('--nprocesses', nargs='+', type=int,
+                                 default=[0])
     parsed = argument_parser.parse_args()
+    
     Ymf = nib.load(parsed.Ymf_path[0])
     Yleft = nib.load(parsed.Yleft_path[0])
     Yhemis = nib.load(parsed.Ymaskhemis_path[0])
-    Yparahipp = nib.load(parsed.Ymaskparahipp_path[0])
     surf_folder = parsed.surface_folder[0]
     fsavgdir = parsed.fsavgdir[0]
     vdist = parsed.vdist
@@ -77,14 +77,11 @@ if __name__ == '__main__':
     voxsize_refineCS = parsed.voxsizeCS
     th_initial = parsed.th_initial[0]
     no_selfintersections = parsed.no_intersect[0]
-    add_parahipp = parsed.add_parahipp[0]
-    close_parahipp = parsed.close_parahipp[0]
     surf = parsed.surf
-
-    vox2mm = Ymf.affine
-    run_cat_multiprocessing(Ymf.get_fdata(), Yleft.get_fdata(),
-                            Yhemis.get_fdata(), Yparahipp.get_fdata(),
-                            vox2mm, surf_folder, fsavgdir, vdist,
+    nprocesses = parsed.nprocesses[0]
+    
+    run_cat_multiprocessing(Ymf.get_fdata(), Yleft.get_fdata(), Yhemis.get_fdata(),
+                            Ymf.affine, surf_folder, fsavgdir, vdist,
                             voxsize_pbt, voxsize_refineCS, th_initial,
-                            no_selfintersections, add_parahipp,
-                            close_parahipp, surf)
+                            no_selfintersections, surf, nprocesses)
+    

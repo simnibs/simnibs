@@ -409,13 +409,13 @@ def _prep_scans_and_masks(tissue_prob_list, normalizer, maxInds,
     # Make boolean
     mask_subcortical = mask_subcortical > 0
 
-    # Create parahippo mask
-    mask_parahippo = np.zeros_like(normalizer)
-    for struct in mask_dict['Parahippo']:
-        mask_parahippo += 1*(maxInds == FreeSurferLabels[struct])
+    # # Create parahippo mask
+    # mask_parahippo = np.zeros_like(normalizer)
+    # for struct in mask_dict['Parahippo']:
+    #     mask_parahippo += 1*(maxInds == FreeSurferLabels[struct])
 
-    # Make boolean
-    mask_parahippo = mask_parahippo > 0
+    # # Make boolean
+    # mask_parahippo = mask_parahippo > 0
 
     # Create left/right mask by interpolating the cereb mask into the background 
     mask = 2*(mask_cereb == 1) + 2*(mask_cereb == 3) + 1*(mask_cereb == 2) + 1*(mask_cereb == 4)
@@ -424,5 +424,6 @@ def _prep_scans_and_masks(tissue_prob_list, normalizer, maxInds,
     mask_hemi = mask_hemi > 1
     mask_hemi = mask_hemi.astype(np.uint8)
 
-    return [normalized_scan, mask_cereb, mask_subcortical,
-            mask_parahippo, mask_hemi]
+    # return [normalized_scan, mask_cereb, mask_subcortical,
+    #         mask_parahippo, mask_hemi]
+    return [normalized_scan, mask_cereb, mask_subcortical, mask_hemi]

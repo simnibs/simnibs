@@ -380,7 +380,6 @@ class Elements:
             return_counts=True,
             axis=0)
 
-
         if np.any(count > 2):
             warnings.warn(
                 'Found a face with more than 2 adjacent tetrahedra!')
@@ -2255,7 +2254,8 @@ class Msh:
     
     def view(self,
              visible_tags=None,
-             visible_fields=[]):
+             visible_fields=[],
+             cond_list=None):
         ''' Visualize mesh in Gmsh
 
         Parameters
@@ -2264,6 +2264,8 @@ class Msh:
             List of tags to be visible. Default: all tags
         visible_fields: list (optional) or 'all'
             Name of visible fields or 'all' to view all fields. Default: no fields visible
+        cond_list: list (optional)
+            Conductivity list, used to assign names to the tissue numbers. Default: None
 
         Returns
         --------
@@ -2276,7 +2278,7 @@ class Msh:
         >>> vis = mesh.view()
         >>> vis.show()
         '''
-        vis = gmsh_view.Visualization(self)
+        vis = gmsh_view.Visualization(self,cond_list)
         if visible_tags is not None:
             vis.visibility = visible_tags
         vis.View = []
@@ -2542,9 +2544,12 @@ class Msh:
         # loop over hierarchy and mark overlapping triangles with lower hierarchy
         idx_done = np.zeros(hash_tr.shape, dtype=bool)
         idx_keep = np.zeros(hash_tr.shape, dtype=bool)
-        for i in hierarchy:          
-            test_tri = (tag_tr == i) & np.logical_not(idx_done)
+        for i in hierarchy:
+            test_tri = np.where((tag_tr == i) & np.logical_not(idx_done))[0]
             idx_done[test_tri] = True
+            
+            _, idx_hlp = np.unique(hash_tr[test_tri], return_index=True)
+            test_tri = test_tri[idx_hlp]
             idx_keep[test_tri] = True
     
             other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
@@ -2554,8 +2559,8 @@ class Msh:
         if np.sum(idx_done) != idx_done.shape[0]:
             warnings.warn('Final mesh might contain overlapping triangles')
         if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
-            warnings.warn('Final mesh might contain overlapping triangles')           
-    
+            warnings.warn('Final mesh might contain overlapping triangles - 2')           
+            
         # delete overlapping triangles
         idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
         return self.crop_mesh(elements=idx_keep)
@@ -2790,6 +2795,8 @@ class Data(object):
                                         continuous=continuous)
         if data.dtype == np.bool or data.dtype == bool:
             data = data.astype(np.uint8)
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
         img = nibabel.Nifti1Pair(data, affine)
         img.header.set_xyzt_units(units)
         if qform is not None:
@@ -2885,6 +2892,8 @@ class Data(object):
             img = nibabel.Nifti1Pair(image, affine)
             img.header.set_xyzt_units('mm')
             img.set_qform(affine)
+            if image.dtype == np.float64:
+                img.set_data_dtype(np.float32)
             nibabel.save(img, out_original)
 
         img = nifti_transform(
@@ -3590,9 +3599,9 @@ class ElementData(Data):
 
             else:
                 if self.nr_comp != 1:
-                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=float)
+                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=np.float)
                 else:
-                    image = np.zeros(list(n_voxels), dtype=float)
+                    image = np.zeros(list(n_voxels), dtype=np.float)
                 # Interpolate each tag separetelly
                 tags = np.unique(msh_th.elm.tag1)
                 msh_th.elmdata = [ElementData(v, mesh=msh_th)]
@@ -4043,7 +4052,7 @@ class NodeData(Data):
         nd = inv_affine.dot(nd.T).T[:, :3]
 
         # initialize image
-        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
+        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
         field = v.astype(float)
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '

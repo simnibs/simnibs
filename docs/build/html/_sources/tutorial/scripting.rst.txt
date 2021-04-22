@@ -3,7 +3,7 @@
 Scripting Simulations
 ======================
 
-This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v3.0/simnibs_examples.zip>`_.
+This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v4.0/simnibs_examples.zip>`_.
 Please download it before continuing.
 
 SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running simulations.
@@ -75,8 +75,8 @@ The base structure for SimNIBS scripts is the :ref:`session_doc`. It may contain
 simulations of different types (TMS or tDCS), sharing the same head model.
 
 We always start our scripts by initializing a :ref:`session_doc` *class* (*Python*) or *struct* (*MATLAB*), selecting a head mesh and the output folder.
-Here, we will assume that the scripts are placed together with the :file:`ernie.msh` file of the example dataset.
-If the scripts are not in the same folder as the head mesh, you should also give the path to the head mesh.
+Here, we will assume that the scripts are placed in the same directory as the :file:`m2m_ernie` directory of the example dataset.
+If the scripts are not in the same folder as the subject folder, you should also give the path to the subject folder.
 
 
 * *Python*
@@ -88,7 +88,7 @@ If the scripts are not in the same folder as the head mesh, you should also give
      # Initalize a session
      s = sim_struct.SESSION()
      # Name of head mesh
-     s.fnamehead = 'ernie.msh'
+     s.subpath = 'm2m_ernie'
      # Output folder
      s.pathfem = 'tutorial/'
 
@@ -99,7 +99,7 @@ If the scripts are not in the same folder as the head mesh, you should also give
     % Initialize a session
     s = sim_struct('SESSION');
     % Name of head mesh
-    s.fnamehead = 'ernie.msh';
+    s.subpath = 'm2m_ernie';
     % Output folder
     s.pathfem = 'tutorial/';
 

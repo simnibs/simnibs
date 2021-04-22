@@ -53,7 +53,7 @@
 <span id="id1"></span><h1>nii2msh<a class="headerlink" href="#nii2msh" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Interpolates NifTI volumes to mesh files. Mostly used internally by <strong>dwi2cond</strong></p>
+<p>Interpolates NifTI volumes to mesh files.</p>
 </div>
 <div class="section" id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
@@ -61,18 +61,20 @@
 <li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
 <li><p>Run</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nii2msh -ev d2c_ernie/dti_results_T1space/DTI_conf_tensor.nii.gz ernie.msh ernie_tensor.msh
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nii2msh m2m_ernie/T1.nii.gz m2m_ernie/ernie.msh ernie_with_T1.msh
 </pre></div>
 </div>
 <p></p>
 <ol class="arabic simple" start="3">
-<li><p>This will create the <em>ernie_tensor.msh file</em>. This file will contain the eigenvectors associated with the largest eigenvalues of the conductivity tensors (for visual control).</p></li>
+<li><p>The <em>ernie_with_T1.msh file</em> will contain the intensity values of the T1 image as data field.</p></li>
 </ol>
 </div>
 <div class="section" id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">nii2msh</span> <span class="pre">-h</span></code> for more information and options</p></li>
+<li><p>The -ev option will map the eigenvectors associated with the largest eigenvalues of a tensor to the mesh, which can be useful for visual control of the vector orientations (e.g. <code class="code docutils literal notranslate"><span class="pre">nii2msh</span> <span class="pre">-ev</span> <span class="pre">m2m_ernie/DTI_coregT1_tensor.nii.gz</span> <span class="pre">m2m_ernie/ernie.msh</span> <span class="pre">ernie_tensor.msh</span></code> adds the first conductivity eigenvector to the mesh).</p></li>
+<li><p>The data will be added to the elements (tetrahedra) as default. To add it to the nodes, use the option <code class="code docutils literal notranslate"><span class="pre">--type</span> <span class="pre">nodes</span></code>.</p></li>
 </ul>
 </div>
 </div>
@@ -132,6 +134,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>

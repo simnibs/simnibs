@@ -206,7 +206,7 @@ class Surface():
 
         else:
             # most of the time, there will only be one candidate
-            triangle_index = candidates[np.argmin(r[candidates])]
+            triangle_index = candidates[np.argmax(r[candidates])]
             intersect_point = V0[triangle_index, :] + s[triangle_index] * \
                 u[triangle_index, :] + t[triangle_index] * v[triangle_index, :]
             intersect_normal = self.tr_normals[triangle_index]

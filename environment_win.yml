@@ -17,6 +17,9 @@ dependencies:
   - pip>19.3
   - matplotlib
   - boost
+  - numba
+  - llvmlite
+  - tbb
   - pip:
     - nibabel==3.0.*
     - pyqt5==5.12.*

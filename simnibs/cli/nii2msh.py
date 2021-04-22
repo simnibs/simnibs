@@ -43,7 +43,7 @@ def parseArguments(argv):
     parser.add_argument('fn_out', help="Output file name")
     parser.add_argument("-ev", action="store_true",
                         help="If the NifTI contains a tensor, save only the maximum "
-                        "eigenvector in brain tissue")
+                        "eigenvector in brain tissue - e.g. for visual control")
     parser.add_argument('--type', default='elements', choices=['elements', 'nodes'],
                         help=
                         "Whether to store field in mesh elements or nodes. "

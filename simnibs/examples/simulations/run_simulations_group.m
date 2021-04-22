@@ -32,7 +32,7 @@ S.poslist{1}.electrode(2).thickness = 4;
 % Run the simulation in each subject
 for i = 1:length(subjects)
      sub = subjects{i};
-     S.fnamehead = fullfile(sub, [sub '.msh']);  % head mesh
+     S.subpath = fullfile(sub, ['m2m_' sub]);  % head mesh
      S.pathfem = fullfile(sub, 'bipolar'); % Output directory
      run_simnibs(S);
 end

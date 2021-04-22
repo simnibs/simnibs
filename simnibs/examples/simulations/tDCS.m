@@ -7,12 +7,13 @@
 %% General information
 
 S = sim_struct('SESSION');
-S.fnamehead = 'ernie.msh'; % head mesh
-S.pathfem = 'tdcs'; %Folder for the simulation output
+S.subpath = 'm2m_ernie'; % subject folder
+S.pathfem = 'tdcs_simu'; % Folder for the simulation output
+S.map_to_surf = true;   %  Map to subject's middle gray matter surface (optional)
 
 %% Define tDCS simulation
 S.poslist{1} = sim_struct('TDCSLIST');
-S.poslist{1}.currents = [0.001, -0.001]; % Current flow though each channel (mA)
+S.poslist{1}.currents = [0.001, -0.001]; % Current flow though each channel (A)
 
 %First Electrode
 S.poslist{1}.electrode(1).channelnr = 1; % Connect the electrode to the first channel

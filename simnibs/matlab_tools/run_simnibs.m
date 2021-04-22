@@ -24,8 +24,8 @@ function result = run_simnibs(session)
 
 name_mat = [tempname,'.mat'];
 save('-v7', name_mat, 'session');
-result = system([simnibs_cli_call('run_simnibs') ' ' name_mat]);
+[status,result] = system([simnibs_cli_call('run_simnibs') ' ' name_mat]);
 
-if result ~= 0
-    error('There was an error running SimNIBS')
+if status ~= 0
+    error('There was an error running SimNIBS:\n %s',result)
 end

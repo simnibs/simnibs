@@ -58,6 +58,8 @@ if nargin<1
     error('at least one argument is needed');
 end
 
+s=parse_input(s,varargin{:});
+
 keepTri=false;
 keepTet=false;
 if strcmpi(s.elemtype,'tri')
@@ -70,8 +72,6 @@ elseif strcmpi(s.elemtype,'both')
 else
     error(['unclear elemtype ' s.elemtype]);
 end
-
-s=parse_input(s,varargin{:});
 
 % determine what to keep
 idx_kept_nodes=false(size(m.nodes,1),1);
@@ -146,7 +146,6 @@ else
         idx_kept_tet=idx_kept_tet&(sum(idx_kept_nodes(m.tetrahedra),2)==4);
     end
 end
-
 
 % update node indices, delete unused nodes, triangles and tetrahedra
 ab_map=zeros(size(m.nodes,1),1);

@@ -4,8 +4,8 @@
 % place script in the 'ernie' folder of the example dataset
 
 tdcs_lf = sim_struct('TDCSLEADFIELD');
-% Head mesh
-tdcs_lf.fnamehead = 'ernie.msh';
+% subject folder
+tdcs_lf.subpath = 'm2m_ernie';
 % Output directory
 tdcs_lf.pathfem = 'leadfield';
 
