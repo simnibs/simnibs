@@ -49,7 +49,7 @@ ShowInstDetails show
 
 Section -SETTINGS
   SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
+  SetOverwrite on
 SectionEnd
 
 
