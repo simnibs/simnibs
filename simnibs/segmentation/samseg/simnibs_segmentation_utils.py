@@ -157,11 +157,11 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
             example_image.getImageBuffer().shape, dtype=np.uint16, order='F')
     uncropped_tissue_labeling[croppingUpsampled] = tissue_labeling
 
-    upsampled_image = nib.load(input_bias_corrected[0])
-    affine_upsampled = upsampled_image.affine
-    upsampled_tissues = nib.Nifti1Image(uncropped_tissue_labeling,
-                                        affine_upsampled)
-    nib.save(upsampled_tissues, './test_labeling_mem.nii.gz')
+    #upsampled_image = nib.load(input_bias_corrected[0])
+    #affine_upsampled = upsampled_image.affine
+    #upsampled_tissues = nib.Nifti1Image(uncropped_tissue_labeling,
+    #                                    affine_upsampled)
+    #nib.save(upsampled_tissues, './test_labeling_mem.nii.gz')
     return uncropped_tissue_labeling
 
 
