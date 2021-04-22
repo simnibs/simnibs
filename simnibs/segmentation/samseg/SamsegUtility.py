@@ -11,8 +11,16 @@ import charm_gems as gems
 def getModelSpecifications(atlasDir, userModelSpecifications={}):
 
     # Create default model specifications as a dictionary
-    FreeSurferLabels, names, colors = kvlReadCompressionLookupTable(os.path.join(atlasDir, 'compressionLookupTable.txt'))
-    sharedGMMParameters = kvlReadSharedGMMParameters(os.path.join(atlasDir, 'sharedGMMParameters.txt'))
+    if 'FreeSurferLabels' not in userModelSpecifications.keys():
+        FreeSurferLabels, names, colors = kvlReadCompressionLookupTable(os.path.join(atlasDir, 'compressionLookupTable.txt'))
+    else:
+        FreeSurferLabels = None
+        names = None
+        colors = None
+    if 'sharedGMMParameters' not in userModelSpecifications.keys():
+        sharedGMMParameters = kvlReadSharedGMMParameters(os.path.join(atlasDir, 'sharedGMMParameters.txt'))
+    else:
+        sharedGMMParameters = None
 
     modelSpecifications = {
         'FreeSurferLabels': FreeSurferLabels,

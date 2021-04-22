@@ -318,7 +318,6 @@ def _morphological_operations(label_img, simnibs_tissues):
     for tname, tmask in zip(tissue_names, tissue_masks):
         label_img[tmask] = simnibs_tissues[tname]
 
-
 def _smoothfill(vols, unassign):
     """Hackish way to fill unassigned voxels,
        works by smoothing the masks and binarizing
@@ -445,11 +444,14 @@ def _registerT1T2(fixed_image, moving_image, output_image):
     registerer.write_out_result(output_image)
 
     #The register function uses double internally
-    #Let's cast to float32
+    #Let's cast to float32 and copy the header from
+    # the fixed image to avoid any weird behaviour
     if os.path.exists(output_image):
         T2_reg = nib.load(output_image)
-        T2_reg.set_data_dtype(np.float32)
-        nib.save(T2_reg, output_image)
+        fixed_tmp = nib.load(fixed_image)
+        T2_data = T2_reg.get_data().astype(np.float32)
+        T2_im = nib.Nifti1Image(T2_data,fixed_tmp.affine)
+        nib.save(T2_im, output_image)
 
 
 def view(subject_dir):
