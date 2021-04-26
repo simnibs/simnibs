@@ -588,18 +588,23 @@ def _with_label_numba_all(elm, tag1, labels, N):
                 for j in range(elm.shape[1]):
                     nodes_label[k, elm[i, j]] += 1
                     maxn[elm[i,j]] += 1
+    # cummulative count of how many elements is connected nodes
+    # equivalent to np.cumsum(maxn) but in-place
     for i in range(2,N+1):
         maxn[i] += maxn[i-1]
-    # create an array containing element number that each node is connected to
-    # do this only if this is managable in terms of memory
+    # create an array containing the element number that each node is connected to
     nlist = np.zeros((elm.shape[0]*elm.shape[1]),dtype=elm.dtype)
+    # list for counting how many elements a nodes has currently been asigned to
     ncount = np.zeros((N+1,),dtype='uint16')
     for i in range(elm.shape[0]):
         for j in range(elm.shape[1]):
+            # element index (starting from 0 here)
             n = elm[i,j]-1
+            # set the n'th element that the node is connected to 
+            # ncount[n] counts how many has already been set
             nlist[maxn[n] + ncount[n]] = i
+            #increment the elements that the node is connected to
             ncount[n] += 1
-    
     # Loop over labels
     for k in range(len(labels)):
         # Loop over elements
