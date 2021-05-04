@@ -73,7 +73,7 @@ def _rotate_system(R, angle_limits, angle_res):
 
 
 def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
-                 resolution_pos=1, resolution_angle=20, angle_limits=None):
+                 resolution_pos=1, resolution_angle=20, angle_limits=None, scalp_normals_smoothing_steps=20):
     """ Determine the coil positions and orientations for bruteforce TMS optimization
 
     Parameters
@@ -96,6 +96,8 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-180, 180])
+    scalp_normals_smoothing_steps: int
+        number of smoothing steps for scalp surface (Default: 20)
 
     Returns
     -------
@@ -218,6 +220,8 @@ def get_opt_grid_ADM(mesh, pos, handle_direction_ref=None, distance=1., radius=2
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-180, 180])
+    scalp_normals_smoothing_steps: int
+        number of smoothing steps for scalp surface (Default: 20)
 
     Returns
     -------

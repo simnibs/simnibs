@@ -470,7 +470,7 @@ class TMSoptimize():
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
             angle_limits=[-self.search_angle/2, self.search_angle/2],
-	    scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
+            scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
         )
 
     def _get_target_region(self):
@@ -539,7 +539,7 @@ class TMSoptimize():
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
             angle_limits=[-self.search_angle/2, self.search_angle/2],
-	    scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
+            scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
         )
         # trasnform coil matrix to meters
         coil_matrices[:3, 3, :] *= 1e-3
