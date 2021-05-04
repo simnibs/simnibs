@@ -96,6 +96,8 @@ class TMSoptimize():
         Method to be used. Either 'direct' for running full TMS optimizations or
         'ADM' for using the Auxiliary Dipole Method. 'ADM' is only compatible with ".ccd"
         coil format
+    scalp_normals_smoothing_steps (optional): float
+        Number of iterations for smoothing the scalp normals to control tangential scalp placement of TMS coil
     '''
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
@@ -131,7 +133,7 @@ class TMSoptimize():
         self.spatial_resolution = 5
         self.search_angle = 360
         self.angle_resolution = 30
-
+        self.scalp_normals_smoothing_steps = 20
         self.open_in_gmsh = True
         self.solver_options = ''
         self.method = 'direct'
@@ -232,7 +234,7 @@ class TMSoptimize():
         mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
         mat['solver_options'] = remove_None(self.solver_options)
         mat['method'] = remove_None(self.method)
-
+        mat['scalp_normals_smoothing_steps'] = remove_None(self.scalp_normals_smoothing_steps)
         return mat
 
     @classmethod
@@ -308,7 +310,9 @@ class TMSoptimize():
         self.method = try_to_read_matlab_field(
             mat, 'method', str, self.method
         )
-
+        self.scalp_normals_smoothing_steps = try_to_read_matlab_field(
+            mat, 'scalp_normals_smoothing_steps', int, self.scalp_normals_smoothing_steps
+        )
         return self
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
@@ -465,7 +469,8 @@ class TMSoptimize():
             distance=self.distance, radius=self.search_radius,
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
+            angle_limits=[-self.search_angle/2, self.search_angle/2],
+	    scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
         )
 
     def _get_target_region(self):
@@ -533,7 +538,8 @@ class TMSoptimize():
             distance=self.distance, radius=self.search_radius,
             resolution_pos=self.spatial_resolution,
             resolution_angle=self.angle_resolution,
-            angle_limits=[-self.search_angle/2, self.search_angle/2]
+            angle_limits=[-self.search_angle/2, self.search_angle/2],
+	    scalp_normals_smoothing_steps=self.scalp_normals_smoothing_steps
         )
         # trasnform coil matrix to meters
         coil_matrices[:3, 3, :] *= 1e-3
