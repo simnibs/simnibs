@@ -251,7 +251,7 @@ def headmodel(argv):
         # Call MATLAB
         hmu.log("Starting MATLAB")
         hmu.log("="*width)
-        exitcode = hmu.spawn_process(cmd, verbose=True, return_exit_status=True)
+        exitcode = hmu.spawn_process(cmd, verbose=True, shell=True, return_exit_status=True)
         
         if exitcode is 2:
             raise RuntimeError("Segmentation using CAT12 failed. Could not find CAT12.")
@@ -1897,9 +1897,9 @@ def make_volume_mesh(subject_id,input_files,out_dir, keep_air):
         #section_start = time.time()
         exitcode = hmu.spawn_process(make_vol_mesh, return_exit_status=True,
                                      verbose=True)
-        
+        hmu.log("Gmsh exit code: "+str(exitcode))
         # if gmsh fails meshing
-        if exitcode is not 0:
+        if exitcode is not 0:    
             # if this was first attempt, try to remesh all surfaces and see if
             # this helps
             if attempts is 1:

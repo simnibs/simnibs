@@ -104,7 +104,7 @@ from scipy.ndimage              import map_coordinates
 from scipy.spatial              import cKDTree
 import shlex
 import struct
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 import sys
 import textwrap
 from threading import Thread
@@ -3357,7 +3357,7 @@ def spawn_process(cmd, return_exit_status=False, new_thread=False,
 
         p = Popen(cmd, stdout=PIPE,
                   bufsize=1, close_fds=ON_POSIX,
-                  shell=True)
+                  shell=shell)
 
         q = Queue()
         if new_thread:
@@ -3369,19 +3369,23 @@ def spawn_process(cmd, return_exit_status=False, new_thread=False,
         return t
 
     else: 
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        #p = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        p = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=shell)
         for line in iter(p.stdout.readline, b''):
             # to prevent massive output to the logfile retain only the last
             # line starting with \r
-            try:
-                line = line.decode().split("\r")[-1]
-            except UnicodeDecodeError:
-                log('Could not print line', level=logging.DEBUG)
-                continue
+            # try:
+            #     line = line.decode().split("\r")[-1]
+            # except UnicodeDecodeError:
+            #     log('Could not print line', level=logging.DEBUG)
+            #     continue
+        
+            # get all output
+            line = line.decode('ASCII', errors='ignore').replace('\r', '')
             
             # remove one \n since logger.log adds one itself
             if line[-1]=="\n":
-                line = line[:-1]
+                 line = line[:-1]
             
             try:
                 log(line, level=lvl)
