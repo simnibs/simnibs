@@ -1,7 +1,7 @@
 global-include *.md *.txt *.ini
-include simnibs/bash_modules/*
+include simnibs/external/*
 include simnibs/matlab_tools/*
-include simnibs/**/tests
+include simnibs/*/tests/*.py
 # We add all binaries here and remove the ones we don't need in the setup.py script
 graft simnibs/external
 graft simnibs/resources
