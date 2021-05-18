@@ -17,7 +17,7 @@ def labeled_image():
 
 @pytest.fixture
 def cube_image():
-    img = np.zeros((50, 50, 50), dtype=np.float)
+    img = np.zeros((50, 50, 50), dtype=float)
     img[10:40, 10:40, 10:40] = 1
     return img
 

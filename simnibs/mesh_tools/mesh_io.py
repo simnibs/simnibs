@@ -450,7 +450,7 @@ class Elements:
             tetrahedra
         '''
         faces, th_faces, adjacency_list = self.get_faces()
-        adj_th = -np.ones((self.nr, 4), dtype=np.int)
+        adj_th = -np.ones((self.nr, 4), dtype=int)
         # Triangles
         if len(self.triangles) > 0:
             # stack faces and triangles
@@ -1507,11 +1507,11 @@ class Msh:
 
         # Starting position for walking algorithm: the closest baricenter
         _, closest_th = kdtree.query(points)
-        pts = np.array(points, dtype=np.float)
-        th_nodes = np.array(th_nodes, dtype=np.float)
-        closest_th = np.array(closest_th, dtype=np.int)
-        th_faces = np.array(th_faces, dtype=np.int)
-        adjacency_list = np.array(adjacency_list, dtype=np.int)
+        pts = np.array(points, dtype=float)
+        th_nodes = np.array(th_nodes, dtype=float)
+        closest_th = np.array(closest_th, dtype=int)
+        th_faces = np.array(th_faces, dtype=int)
+        adjacency_list = np.array(adjacency_list, dtype=int)
         th_with_points = cython_msh.find_tetrahedron_with_points(
             pts, th_nodes, closest_th, th_faces, adjacency_list)
 
@@ -1577,7 +1577,7 @@ class Msh:
         '''
         triangles = self.nodes[self.elm.get_outside_faces()]
         quantities = cython_msh.calc_quantities_for_test_point_in_triangle(triangles)
-        points = np.array(points, dtype=np.float)
+        points = np.array(points, dtype=float)
         inside = cython_msh.test_point_in_triangle(points, *quantities)
 
         return inside
@@ -2620,7 +2620,7 @@ class Msh:
         '''
         assert step_size > 0 and step_size < 1
         if nodes_mask is None:
-            nodes_mask = np.ones(self.nodes.nr, dtype=np.bool)
+            nodes_mask = np.ones(self.nodes.nr, dtype=bool)
 
         if len(nodes_mask) != self.nodes.nr:
             raise ValueError(
@@ -2649,7 +2649,7 @@ class Msh:
             )
 
         surf_nodes = np.unique(tr)
-        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, np.float)
+        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
         for i in range(n_steps):
             cf = cython_msh.gauss_smooth(
                 surf_nodes.astype(np.uint),
@@ -3657,11 +3657,11 @@ class ElementData(Data):
             nd = inv_affine.dot(nd.T).T[:, :3]
 
             # initialize image
-            image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
-            field = v.astype(np.float)
+            image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
+            field = v.astype(float)
             image = cython_msh.interp_grid(
-                np.array(n_voxels, dtype=np.int), field, nd.astype(np.float),
-                (msh_th.elm.node_number_list - 1).astype(np.int))
+                np.array(n_voxels, dtype=int), field, nd.astype(float),
+                (msh_th.elm.node_number_list - 1).astype(int))
             image = image.astype(self.value.dtype)
             if self.nr_comp == 1:
                 image = np.squeeze(image, axis=3)
@@ -3673,9 +3673,9 @@ class ElementData(Data):
 
             else:
                 if self.nr_comp != 1:
-                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=np.float)
+                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=float)
                 else:
-                    image = np.zeros(list(n_voxels), dtype=np.float)
+                    image = np.zeros(list(n_voxels), dtype=float)
                 # Interpolate each tag separetelly
                 tags = np.unique(msh_th.elm.tag1)
                 msh_th.elmdata = [ElementData(v, mesh=msh_th)]
@@ -4155,13 +4155,13 @@ class NodeData(Data):
         nd = inv_affine.dot(nd.T).T[:, :3]
 
         # initialize image
-        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
+        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
         field = v.astype(float)
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '
                              'the number of nodes present in the volume-only mesh')
         image = cython_msh.interp_grid(
-            np.array(n_voxels, dtype=np.int), field, nd,
+            np.array(n_voxels, dtype=int), field, nd,
             msh_th.elm.node_number_list - 1)
         image = image.astype(self.value.dtype)
         if self.nr_comp == 1:
@@ -4831,7 +4831,7 @@ def _read_msh_4(fn, m):
             node_nr = int(node_nr)
         n_read = 0
         node_number = np.zeros(node_nr, dtype=np.int32)
-        node_coord = np.zeros((node_nr, 3), dtype=np.float)
+        node_coord = np.zeros((node_nr, 3), dtype=float)
         for block in range(entity_blocks):
             if binary:
                 _, _, parametric, n_in_block = struct.unpack(
@@ -4852,8 +4852,8 @@ def _read_msh_4(fn, m):
                 node_nbr_block = temp['id']
                 node_coord_block = temp['coord']
             else:
-                node_nbr_block = np.zeros(n_in_block, dtype=np.int)
-                node_coord_block = np.zeros(3 * n_in_block, dtype=np.float)
+                node_nbr_block = np.zeros(n_in_block, dtype=int)
+                node_coord_block = np.zeros(3 * n_in_block, dtype=float)
                 for i in range(n_in_block):
                     line = f.readline().decode().strip().split()
                     node_nbr_block[i] = line[0]
@@ -5206,7 +5206,7 @@ def read_res_file(fn_res, fn_pre=None):
 
         if type_of_file == '0':
             v = np.loadtxt(f, comments='$', skiprows=3, usecols=[
-                           0], delimiter=' ', dtype=np.float)
+                           0], delimiter=' ', dtype=float)
 
         elif type_of_file == '1':
             f.readline()
@@ -5219,7 +5219,7 @@ def read_res_file(fn_res, fn_pre=None):
                 else:
                     s += line
             s = s.strip()
-            cols = np.frombuffer(s, dtype=np.float)
+            cols = np.frombuffer(s, dtype=float)
             v = cols[::2]
 
         else:
@@ -5709,7 +5709,7 @@ def read_stl(fn):
                 line = line.decode().lstrip().split()
                 if line[0] == "vertex":
                     mesh_flat.append(line[1:])
-        mesh_flat = np.array(mesh_flat, dtype=np.float)
+        mesh_flat = np.array(mesh_flat, dtype=float)
 
     _, uidx, iidx = np.unique(mesh_flat, axis=0, return_index=True,
                               return_inverse=True)
@@ -5885,7 +5885,7 @@ def read_medit(fn):
             raise IOError('invalid mesh format')
         n_vertices = int(f.readline().strip())
         assert n_vertices > 0
-        vertices = np.loadtxt(f, dtype=np.float, max_rows=n_vertices)[:, :-1]
+        vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)
         elm = Elements()
         while True:
@@ -5899,13 +5899,13 @@ def read_medit(fn):
             else:
                 raise IOError(f'Cant read element type: {element_type}')
             n_elements = int(f.readline().strip())
-            elements_tag = np.loadtxt(f, dtype=np.int, max_rows=n_elements)
+            elements_tag = np.loadtxt(f, dtype=int, max_rows=n_elements)
             elements = elements_tag[:, :-1]
             tag = elements_tag[:, -1]
             if elements.shape[1] == 3:
-                elements = np.hstack((elements, -1*np.ones((n_elements, 1), np.int)))
+                elements = np.hstack((elements, -1*np.ones((n_elements, 1), int)))
             elm.node_number_list = np.vstack((elm.node_number_list, elements))
-            elm.elm_type = np.hstack((elm.elm_type, elm_type*np.ones(n_elements, np.int)))
+            elm.elm_type = np.hstack((elm.elm_type, elm_type*np.ones(n_elements, int)))
             elm.tag1 = np.hstack((elm.tag1, tag))
 
         elm.tag2 = elm.tag1.copy()
@@ -5989,7 +5989,7 @@ def _fix_indexing_one(index):
 
     def is_integer(index):
         answer = isinstance(index, int)
-        answer += isinstance(index, np.int)
+        answer += isinstance(index, int)
         answer += isinstance(index, np.intc)
         answer += isinstance(index, np.intp)
         answer += isinstance(index, np.int8)

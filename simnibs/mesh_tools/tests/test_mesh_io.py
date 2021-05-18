@@ -1070,7 +1070,7 @@ class TestMsh:
              [-1./6. * np.sqrt(3), 1./2., 0],
              [-1./6. * np.sqrt(3), -1./2., 0],
              [0, 0, 1./3. * np.sqrt(6)],
-             [0, 0, 1./3. * np.sqrt(6)]], dtype=np.float)
+             [0, 0, 1./3. * np.sqrt(6)]], dtype=float)
         gamma = mesh_io.cython_msh.calc_gamma(nodes, tetrahedra)
         assert np.isclose(gamma, 1., rtol=1e-3)
 
@@ -1118,7 +1118,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 1
         curvature_before = mesh.gaussian_curvature()
-        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
         mask_nodes[tr_nodes - 1] = True
         mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=100)
         curvature_after = mesh.gaussian_curvature()
@@ -1131,7 +1131,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 0.1
         mesh_before = copy.deepcopy(mesh)
-        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
         mask_nodes[tr_nodes - 1] = True
         mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=3)
         curvature_after = mesh.gaussian_curvature()
@@ -1663,7 +1663,7 @@ class TestElmData:
                               np.arange(-100, 100),
                               np.arange(-100, 100),
                               indexing='ij')
-        X = X.astype(np.float)
+        X = X.astype(float)
         affine = np.array([[1, 0, 0, -100],
                            [0, 1, 0, -100],
                            [0, 0, 1, -100],

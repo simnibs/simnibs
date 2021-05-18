@@ -1384,7 +1384,7 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
     original_res = get_vox_size(affine)
 
     transform = np.squeeze(target_res/original_res)
-    new_affine = affine.astype(np.float)
+    new_affine = affine.astype(float)
     new_affine[:3, :3] *= transform
     # We need to change the translation component of the affine
     # to make sure the voxel centers match

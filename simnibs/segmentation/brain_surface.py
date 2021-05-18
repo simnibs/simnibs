@@ -290,7 +290,7 @@ def smooth_vertices(vertices, faces, verts2consider=None,
 
     for i in range(Ndilate):
         f2c = [v2f_map[n] for n in verts2consider]
-        f2c, f2cok = list2numpy(f2c,dtype=np.int)
+        f2c, f2cok = list2numpy(f2c,dtype=int)
         f2c = f2c[f2cok]  # faces of verts2consider
         verts2consider = np.unique(faces[f2c])
 
@@ -414,14 +414,14 @@ def verts2faces(vertices, faces, pad_val=0, array_out_type="list"):
     if array_out_type == "list":
         return v2f        
     elif array_out_type == "numpy_array":        
-        v2f, ok = list2numpy(v2f, pad_val, np.int)        
+        v2f, ok = list2numpy(v2f, pad_val, int)        
         return v2f, ok
     else:
         raise ValueError("Array output type must be list or numpy array.")    
 
 
         
-def list2numpy(L, pad_val=0, dtype=np.float):
+def list2numpy(L, pad_val=0, dtype=float):
     """Convert a python list of lists (the sublists being of varying length)
     to a numpy array.
     
@@ -464,7 +464,7 @@ def get_triangle_normals(mesh):
         Normal vectors of each triangle in "mesh".
     """
 
-    tnormals = np.cross(mesh[:,1,:]-mesh[:,0,:],mesh[:,2,:]-mesh[:,0,:]).astype(np.float)
+    tnormals = np.cross(mesh[:,1,:]-mesh[:,0,:],mesh[:,2,:]-mesh[:,0,:]).astype(float)
     tnormals /= np.sqrt(np.sum(tnormals**2,1))[:,np.newaxis]
     return tnormals
 
@@ -551,8 +551,8 @@ def _rasterize_surface(vertices, faces, affine, shape, axis='z'):
         )
 
     # "z" voxels where intersections occurs
-    #inter_z = np.around(positions[:, 2]).astype(np.int)
-    inter_z = (positions[:, 2] + 1).astype(np.int)
+    #inter_z = np.around(positions[:, 2]).astype(int)
+    inter_z = (positions[:, 2] + 1).astype(int)
     inter_z[inter_z < 0] = 0
     inter_z[inter_z > out_shape[2]] = out_shape[2]
 

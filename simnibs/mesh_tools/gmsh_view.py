@@ -849,7 +849,7 @@ def _coolwarm_cm():
         [183,17,40],
         [181,11,39],
         [180,4,38]
-    ], dtype=np.int)
+    ], dtype=int)
     alpha = np.abs(np.arange(len(cm)) - len(cm)/2)**1.5
     alpha = (alpha * 255/alpha.max()).astype(int)
     cm = np.append(cm, alpha[:, None], axis=1)
@@ -858,7 +858,7 @@ def _coolwarm_cm():
 
 def _gray_red_lightblue_blue_cm():
    # simple colormap to visualize coils    
-    cm = np.zeros((255,4),dtype = np.int)
+    cm = np.zeros((255,4),dtype = int)
     cm[0:64,0:3] = 132 # first quarter is gray 
     cm[64:128,0] = 255 # second quarter is red
     cm[128:192,2] = 255 # third quarter is lightblue
