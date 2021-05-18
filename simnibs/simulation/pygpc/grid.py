@@ -30,7 +30,7 @@ from .misc import allVL1leq
 def quadrature_jacobi_1D(N, b, a):
     """ Get knots and weights of Jacobi polynomials (beta distribution) """
     # make array to count N: 0, 1, ..., N-1
-    N_arr = np.array(range(1, np.int(N), 1))
+    N_arr = np.array(range(1, int(N), 1))
                 
     # compose diagonals for companion matrix
     t01 = 1.0*(b-a) / (2+a+b)             
@@ -55,7 +55,7 @@ def quadrature_jacobi_1D(N, b, a):
         
 def quadrature_hermite_1D(N):
     """ Get knots and weights of prob. Hermite polynomials (normal distribution) """
-    N = np.int(N)
+    N = int(N)
     knots, weights = np.polynomial.hermite_e.hermegauss(N)
     weights = np.array(list(2.0*weights/np.sum(weights)))        
             
@@ -63,7 +63,7 @@ def quadrature_hermite_1D(N):
    
 def quadrature_cc_1D(N):
     """ Computes the Clenshaw Curtis nodes and weights """
-    N = np.int(N)        
+    N = int(N)        
     if N == 1:
         knots = 0
         weights = 2
@@ -104,7 +104,7 @@ def quadrature_fejer1_1D(N):
         BIT Numerical Mathematics,
         Volume 43, Number 1, 2003, pages 1-18.
    """
-    N = np.int(N)
+    N = int(N)
         
     theta = np.zeros ( N )
 
@@ -154,7 +154,7 @@ def quadrature_fejer2_1D(N):
         BIT Numerical Mathematics,
         Volume 43, Number 1, 2003, pages 1-18.
     """
-    N = np.int(N)
+    N = int(N)
         
     if ( N == 1 ):
 
@@ -571,8 +571,8 @@ class sparsegrid():
     
             for i_dim in range(self.DIM): 
         
-                knots_temp.append(np.asarray(dl_k[np.int(self.l_level[i_l_level,i_dim])][i_dim],dtype=float))
-                weights_temp.append(np.asarray(dl_w[np.int(self.l_level[i_l_level,i_dim])][i_dim],dtype=float))
+                knots_temp.append(np.asarray(dl_k[int(self.l_level[i_l_level,i_dim])][i_dim],dtype=float))
+                weights_temp.append(np.asarray(dl_w[int(self.l_level[i_l_level,i_dim])][i_dim],dtype=float))
     
             # tensor product of knots    
             dL_k.append(combvec(knots_temp))

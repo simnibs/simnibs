@@ -2825,7 +2825,7 @@ class Data(object):
         '''
         data = self.interpolate_to_grid(n_voxels, affine, method=method,
                                         continuous=continuous)
-        if data.dtype == np.bool or data.dtype == bool:
+        if data.dtype == np.bool_ or data.dtype == bool:
             data = data.astype(np.uint8)
         if data.dtype == np.float64:
             data = data.astype(np.float32)
