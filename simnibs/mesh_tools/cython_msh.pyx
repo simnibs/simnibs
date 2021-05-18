@@ -32,13 +32,13 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.transpose(th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1)))
 
     cdef np.ndarray[np.int_t, ndim=2] th_boxes_min = np.rint(
-        np.min(th_coords, axis=1)).astype(np.int)
+        np.min(th_coords, axis=1)).astype(int)
 
     cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
-        np.max(th_coords, axis=1)).astype(np.int)
+        np.max(th_coords, axis=1)).astype(int)
 
     cdef np.ndarray[np.int_t, ndim=1] in_roi = np.where(
-        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(np.int)
+        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
 
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
     th_boxes_min = np.maximum(th_boxes_min, 0)
@@ -46,7 +46,7 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
     #invM[in_roi] = np.linalg.inv(M[in_roi])
  
     cdef int i, j, k, x, y, z, info
-    cdef np.ndarray[np.float_t, ndim=1] b = np.zeros((4, ), dtype=np.float)
+    cdef np.ndarray[np.float_t, ndim=1] b = np.zeros((4, ), dtype=float)
     cdef np.float_t xc, yc, zc
     cdef np.float_t eps = 1e-5
 
@@ -94,11 +94,11 @@ def find_tetrahedron_with_points(np.ndarray[np.float_t, ndim=2] points,
                                  np.ndarray[np.int_t, ndim=2] adjacency_list):
 
     cdef np.ndarray[np.int_t, ndim=2] face_points = np.array(
-        [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]], np.int)
+        [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]], int)
     cdef np.ndarray[np.int_t, ndim=1] th_with_points = -np.ones(points.shape[0],
-                                                                dtype=np.int)
+                                                                dtype=int)
     # We can now start the walking algorithm
-    cdef np.ndarray[np.int_t, ndim=1] face_order = np.arange(4, dtype=np.int)
+    cdef np.ndarray[np.int_t, ndim=1] face_order = np.arange(4, dtype=int)
     cdef np.ndarray[np.float_t, ndim=1] p
     cdef np.int_t previous_t, adjacent, nr_cycles
     cdef np.uint_t end, outside, t, j, face
@@ -156,7 +156,7 @@ def find_tetrahedron_with_points(np.ndarray[np.float_t, ndim=2] points,
 def orientation(np.ndarray[np.float_t, ndim=1] p, int th, int face,
                 np.ndarray[np.float_t, ndim=3] th_nodes,
                 np.ndarray[np.int_t, ndim=2] face_points):
-    cdef np.ndarray[np.float_t, ndim=2] d = np.empty((3, 3), dtype=np.float)
+    cdef np.ndarray[np.float_t, ndim=2] d = np.empty((3, 3), dtype=float)
     for i in range(3):
         for j in range(3):
             d[i, j] = th_nodes[th, face_points[face][j], i] - p[i]
@@ -174,7 +174,7 @@ def orientation(np.ndarray[np.float_t, ndim=1] p, int th, int face,
 cdef np.float_t orientation(np.float_t[:] p,
                             np.float_t[:, :] th_nodes,
                             np.int_t[:] face_points):
-    #cdef np.ndarray[np.float_t, ndim=2] d = np.empty((3, 3), dtype=np.float)
+    #cdef np.ndarray[np.float_t, ndim=2] d = np.empty((3, 3), dtype=float)
     cdef np.float_t[3][3] d
     for i in range(3):
         for j in range(3):
@@ -204,7 +204,7 @@ def test_point_in_triangle(np.ndarray[np.float_t, ndim=2] points,
 
     cdef float eps = 1e-5
     cdef np.ndarray[np.float_t, ndim=1] ray_direction = \
-            np.array([1, 0, 0], dtype=np.float)
+            np.array([1, 0, 0], dtype=float)
     cdef np.ndarray[np.uint8_t, ndim=1] inside = np.zeros(len(points), dtype=np.uint8)
     cdef np.ndarray[np.uint8_t, ndim=1] can_cross
     cdef np.ndarray[np.float_t, ndim=2] T, Q
@@ -213,18 +213,18 @@ def test_point_in_triangle(np.ndarray[np.float_t, ndim=2] points,
     for i in range(len(points)):
         p = points[i]
         can_cross = np.ones(len(triangle0), dtype=np.uint8)
-        can_cross[det_zero.view(np.bool)] = 0
+        can_cross[det_zero.view(bool)] = 0
         can_cross[np.any(bb_max[:, 1:] < p[1:], axis=1)] = 0
         can_cross[np.any(bb_min[:, 1:] > p[1:], axis=1)] = 0
         can_cross[bb_max[:, 0] < p[0]] = 0
-        T = p - triangle0[can_cross.view(np.bool)]
-        u = (T * P[can_cross.view(np.bool)]).sum(axis=1) * \
-            inv_det[can_cross.view(np.bool)]
-        Q = np.cross(T, edge0[can_cross.view(np.bool)])
-        v = np.dot(ray_direction, Q.T) * inv_det[can_cross.view(np.bool)]
+        T = p - triangle0[can_cross.view(bool)]
+        u = (T * P[can_cross.view(bool)]).sum(axis=1) * \
+            inv_det[can_cross.view(bool)]
+        Q = np.cross(T, edge0[can_cross.view(bool)])
+        v = np.dot(ray_direction, Q.T) * inv_det[can_cross.view(bool)]
         q = 1 - v - u
-        t = (edge1[can_cross.view(np.bool)] * Q).sum(axis=1) * \
-            inv_det[can_cross.view(np.bool)]
+        t = (edge1[can_cross.view(bool)] * Q).sum(axis=1) * \
+            inv_det[can_cross.view(bool)]
         n_crosses = np.sum(
             (u > 0.0 - eps) * (u < 1.0 + eps) * \
             (v > 0.0 - eps) * (q > 0.0 - eps) * \
@@ -232,7 +232,7 @@ def test_point_in_triangle(np.ndarray[np.float_t, ndim=2] points,
         if n_crosses % 2 == 1:
             inside[i] = 1
 
-    return inside.view(np.bool)
+    return inside.view(bool)
 
 
 def calc_quantities_for_test_point_in_triangle(triangles):
@@ -249,14 +249,14 @@ def calc_quantities_for_test_point_in_triangle(triangles):
     inv_det = np.ones(len(triangles), dtype=float)
     inv_det[~det_zero] = 1.0 / det[~det_zero]
     
-    triangle0 = np.array(triangles[:, 0, :], dtype=np.float)
-    edge0 = np.array(edge0, dtype=np.float)
-    edge1 = np.array(edge1, dtype=np.float)
-    bb_max = np.array(bb_max, dtype=np.float)
-    bb_min = np.array(bb_min, dtype=np.float)
-    inv_det = np.array(inv_det, dtype=np.float)
+    triangle0 = np.array(triangles[:, 0, :], dtype=float)
+    edge0 = np.array(edge0, dtype=float)
+    edge1 = np.array(edge1, dtype=float)
+    bb_max = np.array(bb_max, dtype=float)
+    bb_min = np.array(bb_min, dtype=float)
+    inv_det = np.array(inv_det, dtype=float)
     det_zero = np.array(det_zero, dtype=np.uint8)
-    P = np.array(P, np.float)
+    P = np.array(P, float)
 
     return triangle0, edge0, edge1, bb_max, bb_min, inv_det, det_zero, P
 

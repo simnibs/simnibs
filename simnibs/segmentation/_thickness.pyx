@@ -271,7 +271,7 @@ def medial_axis(image, mask=None, return_distance=False):
 
     """
     if mask is None:
-        masked_image = image.astype(np.bool)
+        masked_image = image.astype(bool)
     else:
         masked_image = image.astype(bool).copy()
         masked_image[~mask] = False
