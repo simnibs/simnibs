@@ -16,7 +16,7 @@ import multiprocessing
 cimport numpy as np
 
 
-cdef inline np.float_t float_max(np.float_t a, np.float_t b) nogil: return a if a >= b else b
+cdef inline double float_max(double a, double b) nogil: return a if a >= b else b
 cdef inline np.uint32_t int_max(np.int32_t a, np.int32_t b) nogil: return a if a >= b else b
 cdef inline np.uint32_t int_min(np.int32_t a, np.int32_t b) nogil: return a if a <= b else b
 
@@ -120,7 +120,7 @@ def _thickness_slice(np.ndarray[np.uint8_t, ndim=2] slice_):
     cdef np.int32_t sy = slice_.shape[1]
 
     cdef np.float32_t distance
-    cdef np.float_t eps = 1e-3
+    cdef double eps = 1e-3
 
 
     # For each voxel in the medial axis
