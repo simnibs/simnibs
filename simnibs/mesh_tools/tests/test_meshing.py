@@ -198,7 +198,7 @@ class TestImage2mesh():
         affine = 2*np.eye(4)
         mesh = meshing.image2mesh(
             labeled_image, affine, facet_distance=1, facet_size=5, cell_size=5
-        )
+            )
         assert np.allclose(np.min(mesh.nodes[:], axis=0), [2*9.5, 2*14.5, 2*19.5], rtol=1e-2)
         assert np.allclose(np.max(mesh.nodes[:], axis=0), [2*39.5, 2*34.5, 2*29.5], rtol=1e-2)
         vol_1, vol_2 = volumes(mesh)
@@ -374,7 +374,7 @@ class TestRelabelSpikes:
         assert np.all(spikyblob.elm.tag2 == elmdata.value)
 
 class TestMeshing:
-    def test_sizing_field_from_thicknes(self):
+    def test_sizing_field_from_thickness(self):
         thickness = np.arange(100)
         elem_sizes={"standard": {"range": [50, 150], "slope": 2.0}}
         sf = meshing._sizing_field_from_thickness(

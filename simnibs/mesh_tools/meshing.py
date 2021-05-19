@@ -127,7 +127,7 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=True):
+               optimize=False):
     ''' Creates a mesh from a 3D image
 
     Parameters
