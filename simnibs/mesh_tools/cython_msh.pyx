@@ -213,18 +213,18 @@ def test_point_in_triangle(np.ndarray[double, ndim=2] points,
     for i in range(len(points)):
         p = points[i]
         can_cross = np.ones(len(triangle0), dtype=np.uint8)
-        can_cross[det_zero.view(bool)] = 0
+        can_cross[det_zero.view(np.bool_)] = 0
         can_cross[np.any(bb_max[:, 1:] < p[1:], axis=1)] = 0
         can_cross[np.any(bb_min[:, 1:] > p[1:], axis=1)] = 0
         can_cross[bb_max[:, 0] < p[0]] = 0
-        T = p - triangle0[can_cross.view(bool)]
-        u = (T * P[can_cross.view(bool)]).sum(axis=1) * \
-            inv_det[can_cross.view(bool)]
-        Q = np.cross(T, edge0[can_cross.view(bool)])
-        v = np.dot(ray_direction, Q.T) * inv_det[can_cross.view(bool)]
+        T = p - triangle0[can_cross.view(np.bool_)]
+        u = (T * P[can_cross.view(np.bool_)]).sum(axis=1) * \
+            inv_det[can_cross.view(np.bool_)]
+        Q = np.cross(T, edge0[can_cross.view(np.bool_)])
+        v = np.dot(ray_direction, Q.T) * inv_det[can_cross.view(np.bool_)]
         q = 1 - v - u
-        t = (edge1[can_cross.view(bool)] * Q).sum(axis=1) * \
-            inv_det[can_cross.view(bool)]
+        t = (edge1[can_cross.view(np.bool_)] * Q).sum(axis=1) * \
+            inv_det[can_cross.view(np.bool_)]
         n_crosses = np.sum(
             (u > 0.0 - eps) * (u < 1.0 + eps) * \
             (v > 0.0 - eps) * (q > 0.0 - eps) * \
@@ -232,7 +232,7 @@ def test_point_in_triangle(np.ndarray[double, ndim=2] points,
         if n_crosses % 2 == 1:
             inside[i] = 1
 
-    return inside.view(bool)
+    return inside.view(np.bool_)
 
 
 def calc_quantities_for_test_point_in_triangle(triangles):
