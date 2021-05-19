@@ -34,6 +34,11 @@ def sphere3():
             SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
+@pytest.fixture
+def spikyblob():
+    fn = os.path.join(
+            SIMNIBSDIR, '_internal_resources', 'testing_files', 'spikyblob.msh')
+    return mesh_io.read_msh(fn)
 
 def volumes(mesh):
     vols = mesh.elements_volumes_and_areas()
@@ -349,19 +354,6 @@ def test_remesh(sphere3):
     assert np.isclose(vols[2], 4/3*np.pi*(95**3 - 90**3), rtol=1e-1)
 
 class TestRelabelSpikes:
-    #relabel function changed the input, so test needs to be done differently
-    # def test_relabel_spikes(self, sphere3):
-    #     mesh = copy.deepcopy(sphere3)
-    #     mesh.elm.tag1[9033] = 3
-    #     mesh.elm.tag2[9033] = 3
-    #     mesh.elm.tag1[8343] = 5
-    #     mesh.elm.tag2[8343] = 5
-    #     meshing.relabel_spikes(
-    #         mesh, 3, 5, 4
-    #     )
-    #     assert np.all(mesh.elm.tag1 == sphere3.elm.tag1)
-    #     assert np.all(mesh.elm.tag2 == sphere3.elm.tag2)
-
     def test_despike(self, sphere3):
         sphere3_th = sphere3.crop_mesh(elm_type=4)
         mesh = copy.deepcopy(sphere3_th)
@@ -372,6 +364,14 @@ class TestRelabelSpikes:
         meshing.despike(mesh, adj_threshold=3)
         assert np.all(mesh.elm.tag1 == sphere3_th.elm.tag1)
         assert np.all(mesh.elm.tag2 == sphere3_th.elm.tag2)
+    
+    def test_despikeblob(self, spikyblob):
+        elmdata = spikyblob.elmdata[0]
+        assert (elmdata.field_name == 'despiked')
+        assert np.any(spikyblob.elm.tag1 != elmdata.value)
+        meshing.despike(spikyblob, relabel_tol=1e-5, adj_threshold=2)
+        assert np.all(spikyblob.elm.tag1 == elmdata.value)
+        assert np.all(spikyblob.elm.tag2 == elmdata.value)
 
 class TestMeshing:
     def test_sizing_field_from_thicknes(self):
