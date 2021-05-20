@@ -127,7 +127,7 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=True):
+               optimize=False):
     ''' Creates a mesh from a 3D image
 
     Parameters
@@ -726,7 +726,7 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                remove_twins=True, hierarchy=None, smooth_steps=5):
+                remove_twins=True, hierarchy=None, smooth_steps=5, sizing_field=None):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -792,6 +792,10 @@ def create_mesh(label_img, affine,
         i.e. Skin (1005) has highest priority, WM (1001) comes next, etc; 
     smooth_steps: int (optional)
         Number of smoothing steps to apply to the final mesh surfaces. Default: 5
+    sizing_field: 3D np.ndarray in float format (optional)
+        Sizing field to control the element sizes. Its shape has to be the same
+        as label_img.shape. Zeros will be replaced by values from the 
+        standard sizing field. Default: None
 
     Returns
     -------
@@ -859,6 +863,11 @@ def create_mesh(label_img, affine,
         'Time to prepare meshing: ' +
         format_time(time.time()-start)
     )
+    
+    # Replace values in size_field at positions where sizing_field > 0 
+    if sizing_field is not None:
+        assert sizing_field.shape == label_img.shape
+        size_field[sizing_field>0] = sizing_field[sizing_field>0]
     
     # Run meshing
     logger.info('Meshing')
