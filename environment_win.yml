@@ -2,26 +2,26 @@ name: simnibs_env
 channels:
   - defaults
 dependencies:
-  - python=3.8
-  - numpy=1.19
-  - scipy=1.5
-  - h5py=2.10
-  - pyopengl=3.1
-  - pytest=6.0
-  - cython=0.29
-  - mock=4.0
-  - packaging=20.4
-  - requests=2.24
-  - freeglut
+  - python=3.8.8
+  - numpy=1.20.1
+  - scipy=1.6.2
+  - h5py=2.10.0
+  - pyopengl=3.1.1a1
+  - pytest=6.2.3
+  - cython=0.29.23
+  - mock=4.0.3
+  - packaging=20.9
+  - requests=2.25.1
+  - freeglut=3.0.0
   - vs2015_runtime
-  - pip>19.3
-  - matplotlib
-  - boost
-  - numba
-  - llvmlite
-  - tbb
+  - pip=21.0.1
+  - matplotlib=3.3.4
+  - boost=1.73.0
+  - numba=0.53.1
+  - llvmlite=0.36.0
+  - tbb=2020.3
   - pip:
-    - nibabel==3.0.*
-    - pyqt5==5.12.*
+    - nibabel==3.2.1
+    - pyqt5==5.15.4
     - fmm3dpy==0.0.5
     - charm_gems==1.0
