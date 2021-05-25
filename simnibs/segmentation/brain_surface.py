@@ -1344,11 +1344,11 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     stimet = time.time()
     
     # spherical surface mapping 1 of the uncorrected surface for topology correction
-    cmd = f'\"{file_finder.path2bin("CAT_Surf2Sphere")}\" \"{Praw}\" \"{Psphere0}\" 5' 
+    cmd = [file_finder.path2bin("CAT_Surf2Sphere"), Praw, Psphere0, '5'] 
     spawn_process(cmd)
 
     # estimate size of topology defects (in relation to number of vertices and mean brain with 100000 vertices)
-    cmd = f'\"{file_finder.path2bin("CAT_MarkDefects")}\" \"{Praw}\" \"{Psphere0}\" \"{Pdefects0}\"'     
+    cmd = [file_finder.path2bin("CAT_MarkDefects"), Praw, Psphere0, Pdefects0]
     spawn_process(cmd)
 
     defect_sizes=mesh_io.read_curv(Pdefects0)
@@ -1374,7 +1374,9 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     # --------- topology correction ---------
     stimet = time.time()
     
-    cmd=f'\"{file_finder.path2bin("CAT_FixTopology")}\" -lim 128 -bw 512 -n 81920 -refine_length {2 * vdist} \"{Praw}\" \"{Psphere0}\" \"{Pcentral}\"' 
+    cmd=[file_finder.path2bin("CAT_FixTopology"), '-lim', '128', '-bw', '512',
+         '-n', '81920', '-refine_length', "{:.2f}".format(2 * vdist),
+         Praw, Psphere0, Pcentral]
     spawn_process(cmd)
     
     if debug:
@@ -1392,11 +1394,15 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     stimet = time.time()
     
     if no_selfintersections: 
-        force_no_selfintersections = 1
+        force_no_selfintersections = '1'
     else:
-        force_no_selfintersections = 0
+        force_no_selfintersections = '0'
         
-    cmd=f'\"{file_finder.path2bin("CAT_DeformSurf")}\" \"{fname_ppimg}\" none 0 0 0 \"{Pcentral}\" \"{Pcentral}\" none 0 1 -1 .1 avg -0.1 0.1 .2 .1 5 0 0.5 0.5 n 0 0 0 150 0.01 0.0 {force_no_selfintersections}' 
+    #cmd=f'\"{file_finder.path2bin("CAT_DeformSurf")}\" \"{fname_ppimg}\" none 0 0 0 \"{Pcentral}\" \"{Pcentral}\" none 0 1 -1 .1 avg -0.1 0.1 .2 .1 5 0 0.5 0.5 n 0 0 0 150 0.01 0.0 {force_no_selfintersections}' 
+    cmd=[file_finder.path2bin("CAT_DeformSurf"), fname_ppimg, 'none', '0', '0', '0',
+         Pcentral, Pcentral, 'none', '0', '1', '-1', '.1', 
+         'avg', '-0.1', '0.1', '.2', '.1', '5', '0', '0.5', '0.5',
+         'n', '0', '0', '0', '150', '0.01', '0.0', force_no_selfintersections]
     spawn_process(cmd)
     
     if no_selfintersections:
@@ -1404,7 +1410,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         CS = mesh_io.read_gifti_surface(Pcentral)
         mesh_io.write_off(CS, Pcentral+'.off')
         
-        cmd=f'\"{file_finder.path2bin("meshfix")}\"  \"{Pcentral+".off"}\" -o \"{Pcentral+".off"}\"'
+        cmd=[file_finder.path2bin("meshfix"), Pcentral+'.off', '-o', Pcentral+'.off']
         spawn_process(cmd)
         
         CS = mesh_io.read_off(Pcentral+'.off')
@@ -1415,12 +1421,15 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         gc.collect()
         
     # need some more refinement because some vertices are distorted after CAT_DeformSurf
-    cmd=f'\"{file_finder.path2bin("CAT_RefineMesh")}\" \"{Pcentral}\" \"{Pcentral}\" {"%.2f" % (1.5 * vdist )} 0' 
+    cmd=[file_finder.path2bin("CAT_RefineMesh"), Pcentral, Pcentral, "{:.2f}".format(1.5 * vdist ), '0'] 
     spawn_process(cmd)
 
-    cmd=f'\"{file_finder.path2bin("CAT_DeformSurf")}\" \"{fname_ppimg}\" none 0 0 0 \"{Pcentral}\" \"{Pcentral}\" none 0 1 -1 .2 avg -0.05 0.05 .1 .1 5 0 0.5 0.5 n 0 0 0 50 0.01 0.0 {force_no_selfintersections}' 
+    cmd=[file_finder.path2bin("CAT_DeformSurf"), fname_ppimg, 'none', '0', '0', '0', 
+         Pcentral, Pcentral, 'none', '0', '1', '-1', '.2',
+         'avg', '-0.05', '0.05', '.1', '.1', '5', '0', '0.5', '0.5',
+         'n', '0', '0', '0', '50', '0.01', '0.0', force_no_selfintersections]
     spawn_process(cmd)
-        
+    
     # map thickness data on final surface  
     CS = mesh_io.read_gifti_surface(Pcentral)
     Vthk=nib.load(fname_thkimg)
@@ -1450,7 +1459,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     # ----------------  with high mean curvature -------------- 
     stimet = time.time()
 
-    cmd = f'\"{file_finder.path2bin("CAT_Central2Pial")}\" -equivolume -weight 0.3 \"{Pcentral}\" \"{Pthick}\" \"{Pcentral}\" 0' 
+    cmd = [file_finder.path2bin("CAT_Central2Pial"), '-equivolume', 
+           '-weight', '0.3', Pcentral, Pthick, Pcentral, '0']
     spawn_process(cmd)
     
     if debug:
@@ -1469,11 +1479,12 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     stimet = time.time()
     
     # spherical surface mapping 2 of corrected surface    
-    cmd = f'\"{file_finder.path2bin("CAT_Surf2Sphere")}\" \"{Pcentral}\" \"{Psphere}\" 10' 
+    cmd = [file_finder.path2bin("CAT_Surf2Sphere"), Pcentral, Psphere, '10']
     spawn_process(cmd)
     
     # spherical registration to fsaverage template
-    cmd = f'\"{file_finder.path2bin("CAT_WarpSurf")}\" -steps 2 -avg -i \"{Pcentral}\" -is \"{Psphere}\" -t \"{Pfsavg}\" -ts \"{Pfsavgsph}\" -ws \"{Pspherereg}\"' 
+    cmd = [file_finder.path2bin("CAT_WarpSurf"), '-steps', '2', '-avg', 
+           '-i', Pcentral, '-is', Psphere, '-t', Pfsavg, '-ts', Pfsavgsph, '-ws', Pspherereg] 
     spawn_process(cmd)
 
     logger.info(f'Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
