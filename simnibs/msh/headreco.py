@@ -251,7 +251,7 @@ def headmodel(argv):
         # Call MATLAB
         hmu.log("Starting MATLAB")
         hmu.log("="*width)
-        exitcode = hmu.spawn_process(cmd, verbose=True, shell=True, return_exit_status=True)
+        exitcode = hmu.spawn_process(cmd, verbose=True, return_exit_status=True)
         
         if exitcode is 2:
             raise RuntimeError("Segmentation using CAT12 failed. Could not find CAT12.")
