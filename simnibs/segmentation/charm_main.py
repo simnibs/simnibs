@@ -694,6 +694,9 @@ def run(subject_dir=None, T1=None, T2=None,
                         cat_structure_options=cat_structs,
                         cat_images=cat_images)
 
+        fn_LUT=sub_files.labeling.rsplit('.',2)[0]+'_LUT.txt'
+        shutil.copyfile(file_finder.templates.labeling_LUT, fn_LUT)
+        
         # Write out MNI warps
         logger.info('Writing out MNI warps.')
         os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
@@ -725,7 +728,10 @@ def run(subject_dir=None, T1=None, T2=None,
         upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues,
                                             affine_upsampled)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
-
+        
+        fn_LUT=sub_files.tissue_labeling_upsampled.rsplit('.',2)[0]+'_LUT.txt'
+        shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
+        
     if create_surfaces:
         # Create surfaces ala CAT12
         logger.info('Starting surface creation')
@@ -856,6 +862,9 @@ def run(subject_dir=None, T1=None, T2=None,
                             out_original=sub_files.final_labels,
                             method='assign',
                             reference_original=sub_files.reference_volume)
+        
+        fn_LUT=sub_files.final_labels.rsplit('.',2)[0]+'_LUT.txt'
+        shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
     # -------------------------TIDY UP-----------------------------------------
 
