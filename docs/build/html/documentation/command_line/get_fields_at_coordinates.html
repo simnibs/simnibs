@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>get_fields_at_coordinates &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>get_fields_at_coordinates &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -49,17 +49,17 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="get-fields-at-coordinates">
+  <section id="get-fields-at-coordinates">
 <span id="get-fields-at-coordinates-doc"></span><h1>get_fields_at_coordinates<a class="headerlink" href="#get-fields-at-coordinates" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="description">
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>Interpolate field values at given points</p>
-</div>
-<div class="section" id="usage-example">
+</section>
+<section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Suppose you want to accurately determine the electric field at a set of positions. The electric fields are in a mesh called <em>ernie_TDCS_1_scalar.msh</em></p></li>
-<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/b4120ee8fd8ba5a0099a3ded107b7ac0/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
+<li><p>Write the positions (x, y, z) where you want to sample the fields to a CSV file, as in <a class="reference download internal" download="" href="../../_downloads/716fa30a741512e54cab1705862869e2/positions.csv"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">example</span></code></a></p></li>
 <li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>get_fields_at_coordinates -s positions.csv -m ernie_TDCS_1_scalar.msh
@@ -70,14 +70,14 @@
 <div><p>This will output one file CSV for each field in the mesh, named for example <em>positions_E.csv</em>, <em>positions_magnE.csv</em>, …
 These files contain the fields (or field vectors) at each sampling position.</p>
 </div></blockquote>
-</div>
-<div class="section" id="further-notes">
+</section>
+<section id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">get_fields_at_coordinates</span> <span class="pre">-h</span></code> for more information and options</p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -180,7 +180,7 @@ These files contain the fields (or field vectors) at each sampling position.</p>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

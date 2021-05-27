@@ -4,8 +4,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FAQ &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>FAQ &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -49,9 +50,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="faq">
+  <section id="faq">
 <span id="id1"></span><h1>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="can-simnibs-simulate-tacs">
+<section id="can-simnibs-simulate-tacs">
 <h2>Can SimNIBS simulate TACS?<a class="headerlink" href="#can-simnibs-simulate-tacs" title="Permalink to this headline">¶</a></h2>
 <p>Yes! Frequencies used in TACS are usually low, so we can employ a <em>quasi-static approximation</em>. This means that if we have a sinusoidal current with a frequency <span class="math notranslate nohighlight">\(f\)</span> and amplitude <span class="math notranslate nohighlight">\(I_0\)</span></p>
 <div class="math notranslate nohighlight">
@@ -61,8 +62,8 @@
 \[\boldsymbol E (t) = \boldsymbol E_0\sin\left(2 \pi f t\right)\]</div>
 <p>Where <span class="math notranslate nohighlight">\(\boldsymbol E_0\)</span> is the electric field obtained with the current <span class="math notranslate nohighlight">\(I_0\)</span>. In practice, this means you can just simulate the electric field obtained at peak currents, and the temporal variations of the current will just scale the field, and not change its distribution in the brain.</p>
 <p>When multiple channels are involved, and especially when they are out of phase, more care needs to be taken. Please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2017.09.024">(Saturnino et. al., 2017)</a> for a more detailed discussion</p>
-</div>
-<div class="section" id="what-is-the-di-dt-in-tms-simulations">
+</section>
+<section id="what-is-the-di-dt-in-tms-simulations">
 <h2>What is the dI/dt in TMS simulations?<a class="headerlink" href="#what-is-the-di-dt-in-tms-simulations" title="Permalink to this headline">¶</a></h2>
 <p>The dI/dt is the speed of variation of the current through the coil. This values depends on coil model, stimulator model and pulse intensity. In some stimulators, this value is displayed in the screen after a pulse. The variation with pulse is usually linear, meaning that an 80% maximum stimulator output will also give 80% of the <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value if the maximum stimulator output.</p>
 <p>The <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> also varies in time. We normally take maximum value, which usually happens right at the beginning of the pulse.</p>
@@ -70,24 +71,26 @@
 <div class="math notranslate nohighlight">
 \[\boldsymbol E(t) = \boldsymbol E_0 \frac{dI}{dt}(t)\]</div>
 <p>Where <span class="math notranslate nohighlight">\(\boldsymbol E_0\)</span> is the electric field obtained with a unit <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value</p>
-</div>
-<div class="section" id="are-the-simnibs-coordinates-in-mni-space">
+</section>
+<section id="are-the-simnibs-coordinates-in-mni-space">
 <h2>Are the SimNIBS coordinates in MNI Space?<a class="headerlink" href="#are-the-simnibs-coordinates-in-mni-space" title="Permalink to this headline">¶</a></h2>
 <p>No. SimNIBS uses coordinates defined in the subject space. But we provide many tools to transform between subject and MNI spaces. Please see <a class="reference internal" href="documentation/coordinates.html#coords-doc"><span class="std std-ref">Coordinates in SimNIBS</span></a> for more information.</p>
-</div>
-<div class="section" id="electric-field-magnitude-normal">
+</section>
+<section id="electric-field-magnitude-normal">
 <h2>Electric Field Magnitude? Normal?<a class="headerlink" href="#electric-field-magnitude-normal" title="Permalink to this headline">¶</a></h2>
 <p>The Electric Field is a <a class="reference external" href="https://www.khanacademy.org/math/multivariable-calculus/thinking-about-multivariable-function/ways-to-represent-multivariable-functions/a/vector-fields">vector field</a>, meaning it has a direction everywhere in space.</p>
 <p>Vectors are hard to visualize (even though you can do it in SimNIBS!), so we often use scalars to represent information about the vectors. The one we use the most is the <strong>magnitude</strong> (short: <em>magn</em>), which is the <em>length</em> or <em>strength</em> of the vector, irrespective of direction (Note: up to version 3, the <em>magnitude</em> was called <em>norm</em>, as mathematicllay it is the vector norm).</p>
 <p>Another useful quantity is the <strong>normal</strong> with respect to a given surface, normally the middle cortical surface. The <strong>normal</strong> gives us the field that is incoming or outgoing from the surface.</p>
-<div class="figure align-center" id="id2">
+<figure class="align-center" id="id2">
 <img alt="_images/tutorial_normal.png" src="_images/tutorial_normal.png" />
-<p class="caption"><span class="caption-text">From <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et. al. (2019)</a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text">From <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et. al. (2019)</a></span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p></p>
 <p>The effect that the different polarities have on neuronal modulation suggests that the field <strong>normal</strong> is important in tDCS. For TMS, it is harder to determine which field component if any is more relevant for stimulation.</p>
-</div>
-<div class="section" id="which-units-does-simnibs-use">
+</section>
+<section id="which-units-does-simnibs-use">
 <h2>Which Units does SimNIBS Use?<a class="headerlink" href="#which-units-does-simnibs-use" title="Permalink to this headline">¶</a></h2>
 <p>SimNIBS almost always uses units in the International System of Units (SI units).
 The exceptions are head model node positions, which are in millimiter and current values in the GUI, which are in mA.</p>
@@ -126,8 +129,8 @@ The exceptions are head model node positions, which are in millimiter and curren
 </tr>
 </tbody>
 </table>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -221,7 +224,7 @@ The exceptions are head model node positions, which are in millimiter and curren
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

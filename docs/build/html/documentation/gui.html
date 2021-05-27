@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Graphical User Interface Documentation &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Graphical User Interface Documentation &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,9 +49,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="graphical-user-interface-documentation">
+  <section id="graphical-user-interface-documentation">
 <span id="gui-docs"></span><h1>Graphical User Interface Documentation<a class="headerlink" href="#graphical-user-interface-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="main-gui">
+<section id="main-gui">
 <h2>Main GUI<a class="headerlink" href="#main-gui" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guimain.png" src="../_images/doc_guimain.png" />
 <ol class="arabic simple">
@@ -66,8 +66,8 @@
 <li><p>Select to view either the scalp surface or the gray matter surface.</p></li>
 <li><p>Window for visualizing the 3D Head Model.</p></li>
 </ol>
-</div>
-<div class="section" id="tms-tab">
+</section>
+<section id="tms-tab">
 <h2>TMS Tab<a class="headerlink" href="#tms-tab" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guitms.png" src="../_images/doc_guitms.png" />
 <ol class="arabic simple">
@@ -81,8 +81,8 @@
 <li><p>Previews the current row <em>dA/dt</em> field in the head mesh. This only works for coil files with the ending <em>.nii.gz.</em></p></li>
 <li><p>Change the tissue conductivities for this TMS <strong>Poslist</strong> from the predefined standard conductivities.</p></li>
 </ol>
-</div>
-<div class="section" id="tdcs-tab">
+</section>
+<section id="tdcs-tab">
 <h2>tDCS Tab<a class="headerlink" href="#tdcs-tab" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guitdcs.png" src="../_images/doc_guitdcs.png" />
 <ol class="arabic simple">
@@ -96,8 +96,8 @@
 <li><p>Change the conductivities for this tDCS simulation from the predefined standard values.</p></li>
 <li><p>Hide the electrode shapes.</p></li>
 </ol>
-</div>
-<div class="section" id="position-window">
+</section>
+<section id="position-window">
 <h2>Position Window<a class="headerlink" href="#position-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guipos.png" src="../_images/doc_guipos.png" />
 <ol class="arabic simple">
@@ -107,8 +107,8 @@
 <li><p>Coordinates of the reference position, used to determine the orientation of the electrode (tDCS) or coil (TMS). Specifically, the “y” axis is defined to be oriented according to the line from the center position to the reference position. Please note that the coil or electrode orientation relative to the scalp surface will be automatically determined (the “z” axis of the coil or electrode is automatically oriented to be orthogonal to the local scalp surface).</p></li>
 <li><p>Projects the current position on the scalp. This can be used if, for example, you have a set of coordinates in the brain and want to find the closest positions on the scalp.</p></li>
 </ol>
-</div>
-<div class="section" id="electrode-window">
+</section>
+<section id="electrode-window">
 <h2>Electrode Window<a class="headerlink" href="#electrode-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guielec.png" src="../_images/doc_guielec.png" />
 <ol class="arabic simple">
@@ -134,8 +134,8 @@
 <ol class="arabic simple" start="3">
 <li><p>Electrode connector (or plug). The user has a choice on whether or not to model the area where the  electrode is connected to the cable. If it is modeled, its position in relation  to the surface as well as its shape can be set.</p></li>
 </ol>
-</div>
-<div class="section" id="conductivities-window">
+</section>
+<section id="conductivities-window">
 <h2>Conductivities Window<a class="headerlink" href="#conductivities-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guicond.png" src="../_images/doc_guicond.png" />
 <ol class="arabic simple">
@@ -151,8 +151,8 @@
 <li><p>Mean conductivity: Spatially varying isotropic conductivities. The sizes of the conductivity tensors are determined using the rescaling factor for the  direct mapping.</p></li>
 </ul>
 </div></blockquote>
-</div>
-<div class="section" id="simulation-options-window">
+</section>
+<section id="simulation-options-window">
 <span id="sim-opt"></span><h2>Simulation Options Window<a class="headerlink" href="#simulation-options-window" title="Permalink to this headline">¶</a></h2>
 <img alt="../_images/doc_guiopt.png" src="../_images/doc_guiopt.png" />
 <ol class="arabic simple">
@@ -180,8 +180,8 @@
 <li><p><strong>Transform to MNI space</strong>: Interpolates the field to a grid, and subsequently transform it to MNI space.</p></li>
 </ul>
 </div></blockquote>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -282,7 +282,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

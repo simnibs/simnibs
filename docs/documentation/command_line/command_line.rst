@@ -14,6 +14,7 @@ These command line tools can be accessed through the Windows Command Prompt (see
    simnibs_gui
    simnibs_python
    eeg_positions
+   meshmesh
    msh2cortex
    msh2nii
    nii2msh

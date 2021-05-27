@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SESSION &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>SESSION &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -49,11 +49,11 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="session">
+  <section id="session">
 <span id="session-doc"></span><h1>SESSION<a class="headerlink" href="#session" title="Permalink to this headline">¶</a></h1>
 <p>This is the basis of a SimNIBS simulation.
 It contains information about the head mesh, the simulations to be performed, the post-processing steps and the output folder.</p>
-<div class="section" id="initialization">
+<section id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>Python</strong></p>
@@ -64,14 +64,14 @@ It contains information about the head mesh, the simulations to be performed, th
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
 </li>
 </ul>
-</div>
-<div class="section" id="attributes">
+</section>
+<section id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>fnamehead</strong>: <em>string (Python)/character array (MATLAB)</em></p>
@@ -79,7 +79,7 @@ It contains information about the head mesh, the simulations to be performed, th
 <li><p><strong>Desctiption</strong> Name of head mesh file (<code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">.msh</span></code> file)</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ernie.msh&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -89,7 +89,7 @@ It contains information about the head mesh, the simulations to be performed, th
 <li><p><strong>Desctiption</strong> Name of output folder</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;simulation_outputs/&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;simulation_outputs/&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -106,7 +106,7 @@ It contains information about the head mesh, the simulations to be performed, th
 <li><p><strong>Default</strong>: ‘eE’</p></li>
 <li><p><strong>Example</strong>: <em>Python/Matlab</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">fields</span> <span class="p">=</span> <span class="s">&#39;eEjJ&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">.</span><span class="n">fields</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;eEjJ&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -196,8 +196,8 @@ It contains information about the head mesh, the simulations to be performed, th
 </ul>
 </li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -300,7 +300,7 @@ It contains information about the head mesh, the simulations to be performed, th
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

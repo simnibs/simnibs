@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Visualizing Results &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Visualizing Results &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,10 +49,10 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="visualizing-results">
+  <section id="visualizing-results">
 <span id="visualization-tutorial"></span><h1>Visualizing Results<a class="headerlink" href="#visualizing-results" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial comes after the tutorial on <a class="reference internal" href="gui.html#gui-tutorial"><span class="std std-ref">Setting up and Running Simulations</span></a>. Please be sure to complete it before going further.</p>
-<div class="section" id="visualizing-results-in-gmsh">
+<section id="visualizing-results-in-gmsh">
 <h2>Visualizing Results in Gmsh<a class="headerlink" href="#visualizing-results-in-gmsh" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is a powerful program for 3D visualization. However, it has a somewhat steep learning curve.
 For this reason, SimNIBS writes <em>.opt</em> files with basic visualization configurations in addition to the mesh files.
@@ -61,7 +61,7 @@ Here we will give a walk-through of a few useful features in Gmsh.</p>
 <p class="admonition-title">Note</p>
 <p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is distributed together with SimNIBS, you don’t need to install it separately</p>
 </div>
-<div class="section" id="starting-gmsh">
+<section id="starting-gmsh">
 <h3>Starting Gmsh<a class="headerlink" href="#starting-gmsh" title="Permalink to this headline">¶</a></h3>
 <p>Gmsh automatically opens when a simulation is finished.
 Alternatively, you can start Gmsh by double clicking in the <code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_scalar.msh</span></code> file or typing in the terminal</p>
@@ -76,8 +76,8 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 <blockquote>
 <div><p>There, we see the gray matter surface with the <strong>magnitude</strong> of the electric field (<strong>magnE</strong>) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel</p>
 </div></blockquote>
-</div>
-<div class="section" id="selecting-where-to-visualize">
+</section>
+<section id="selecting-where-to-visualize">
 <h3>Selecting Where to Visualize<a class="headerlink" href="#selecting-where-to-visualize" title="Permalink to this headline">¶</a></h3>
 <p>To visualize another surface, such as while matter</p>
 <ol class="arabic simple">
@@ -105,8 +105,8 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 </ol>
 <img alt="../_images/tutorial_gmshwmfield.png" class="align-center" src="../_images/tutorial_gmshwmfield.png" />
 <p></p>
-</div>
-<div class="section" id="selecting-what-to-visualize">
+</section>
+<section id="selecting-what-to-visualize">
 <h3>Selecting What to Visualize<a class="headerlink" href="#selecting-what-to-visualize" title="Permalink to this headline">¶</a></h3>
 <p>You can select the field to be visualized by checking the boxes in the left of the Gmsh window</p>
 <img alt="../_images/tutorial_gmshnorme.png" class="align-center" src="../_images/tutorial_gmshnorme.png" />
@@ -114,43 +114,43 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 <p>To visualize the surfaces or volumes without any field, go to <em>Tools</em> -&gt; <em>Options</em> -&gt; <em>Mesh</em> and click on <em>Surface Faces</em> or <em>Volume Faces</em></p>
 <img alt="../_images/tutorial_gmshdeselecsurf.png" class="align-center" src="../_images/tutorial_gmshdeselecsurf.png" />
 <p></p>
-</div>
-<div class="section" id="changing-the-scale">
+</section>
+<section id="changing-the-scale">
 <h3>Changing the Scale<a class="headerlink" href="#changing-the-scale" title="Permalink to this headline">¶</a></h3>
 <p>To change the scale of a field visualization <em>Tools</em> → <em>Options</em> → <em>View [N]</em> and change the <em>Min</em> and <em>Max</em> values</p>
 <img alt="../_images/tutorial_gmshview.png" class="align-center" src="../_images/tutorial_gmshview.png" />
 <p></p>
-</div>
-<div class="section" id="exporting-an-image">
+</section>
+<section id="exporting-an-image">
 <h3>Exporting an Image<a class="headerlink" href="#exporting-an-image" title="Permalink to this headline">¶</a></h3>
 <p>To create an image, go to <em>File</em> -&gt; <em>Export</em> (or press <em>Ctrl+E</em>)and type in a file name with a  <em>.png</em> or  <em>.jpg</em> extension.</p>
-</div>
-<div class="section" id="other-functionalities">
+</section>
+<section id="other-functionalities">
 <h3>Other Functionalities<a class="headerlink" href="#other-functionalities" title="Permalink to this headline">¶</a></h3>
 <p>We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image bellow by selecting the Volume 2 for visualization an clipping the model in <em>Tools</em> →  <em>Clipping</em></p>
 <img alt="../_images/tutorial_gmshclip.png" class="align-center" src="../_images/tutorial_gmshclip.png" />
 <p></p>
-</div>
-</div>
-<div class="section" id="visualizing-results-in-matlab">
+</section>
+</section>
+<section id="visualizing-results-in-matlab">
 <h2>Visualizing Results in MATLAB<a class="headerlink" href="#visualizing-results-in-matlab" title="Permalink to this headline">¶</a></h2>
 <p>To visualize results in MATLAB, add the <code class="file docutils literal notranslate"><span class="pre">&lt;SIMNIBS_INSTALL_DIR&gt;/matlab/</span></code> folder to your MATLAB path. Afterwards, type</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_get_simulation_result</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_get_simulation_result</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
 <p>or use</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_show_surface</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_show_surface</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
 <p>to have more control over the visualization.</p>
-</div>
-<div class="section" id="further-reading">
+</section>
+<section id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
 <p>For more information on visualization and simulation output, please see the <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>.</p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -250,7 +250,7 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TDCSLEADFIELD &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>TDCSLEADFIELD &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -49,10 +49,10 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="tdcsleadfield">
+  <section id="tdcsleadfield">
 <span id="tdcsleadfield-doc"></span><h1>TDCSLEADFIELD<a class="headerlink" href="#tdcsleadfield" title="Permalink to this headline">¶</a></h1>
 <p>Describes the simulations for a Leadfield. Required for optimization</p>
-<div class="section" id="initialization">
+<section id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>Python</strong></p>
@@ -63,14 +63,14 @@
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
 </li>
 </ul>
-</div>
-<div class="section" id="attributes">
+</section>
+<section id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>fnamehead</strong>: <em>string (Python)/character array (MATLAB)</em></p>
@@ -78,7 +78,7 @@
 <li><p><strong>Desctiption</strong> Name of head mesh file (<code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">.msh</span></code> file)</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span> <span class="p">=</span> <span class="s">&#39;ernie.msh&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ernie.msh&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -88,7 +88,7 @@
 <li><p><strong>Desctiption</strong> Name of output folder</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tdcs_leadfield/&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcs_lf</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tdcs_leadfield/&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -185,12 +185,12 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
 <p><a class="reference internal" href="tdcslist.html#solver-options-doc"><span class="std std-ref">Follow this link</span></a>.</p>
 </li>
 </ul>
-</div>
-<div class="section" id="references">
+</section>
+<section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -293,7 +293,7 @@ them. This allows to set up electrodes on your own, without using a eeg cap prov
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

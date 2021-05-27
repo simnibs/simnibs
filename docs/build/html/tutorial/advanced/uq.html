@@ -4,19 +4,19 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Uncertainty Quantification &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Uncertainty Quantification &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
+    <link rel="next" title="How to create and use a custom mesh" href="custom_meshing.html" />
     <link rel="prev" title="TDCS Network Optimization" href="tdcs_distributed_opt.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -39,7 +39,7 @@
           <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
         </li>
         <li>
-          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
           &rarr;
         </li>
     </ul>
@@ -49,12 +49,12 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="uncertainty-quantification">
+  <section id="uncertainty-quantification">
 <span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Permalink to this headline">¶</a></h1>
 <p>Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.</p>
 <p>For that reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
 <p>Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
-<div class="section" id="introduction">
+<section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>In UQ via gPC, we quantify the uncertainty of the input variables (the conductivities) using a probability distribution.
 SimNIBS supports two types of conductivity distribution: Normal and Beta.</p>
@@ -63,8 +63,8 @@ In gPC, we build a polynomial representation of the output variable (such as the
 For SimNIBS, we developed an adaptive approach to select the polynomials to obtain fast convergence.
 At each step, the error is evaluated using a K-means cross-validation scheme. The iteration stops when a tolerance is reached.</p>
 <p>For more information on methodology, please see the supplementary material in  <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
-</div>
-<div class="section" id="setting-up-a-simulation-with-uq">
+</section>
+<section id="setting-up-a-simulation-with-uq">
 <h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Permalink to this headline">¶</a></h2>
 <p>It is simple to set-up a simulation with UQ. All you need to do is to set-up the  <strong>distribution_type</strong> and <strong>distribution_parameters</strong> parameters in the <a class="reference internal" href="../../documentation/sim_struct/cond.html#cond-struct-doc"><span class="std std-ref">COND</span></a> structures.</p>
 <div class="admonition note">
@@ -75,7 +75,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <p class="admonition-title">Warning</p>
 <p>Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.</p>
 </div>
-<div class="section" id="python">
+<section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS simulation in Python</span>
 <span class="sd">    Run with:</span>
@@ -122,56 +122,56 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="matlab">
+</section>
+<section id="matlab">
 <h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% example script that runs an Uncertainty Quantification analysis</span>
-<span class="c">% </span>
-<span class="c">% G. Saturnino, 2019</span>
-<span class="c">%</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% example script that runs an Uncertainty Quantification analysis</span><span class="w"></span>
+<span class="c">% </span><span class="w"></span>
+<span class="c">% G. Saturnino, 2019</span><span class="w"></span>
+<span class="c">%</span><span class="w"></span>
 
-<span class="c">%% General information</span>
+<span class="c">%% General information</span><span class="w"></span>
 
-<span class="n">S</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
-<span class="n">S</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span> <span class="c">% subject folder</span>
-<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tdcs_uq&#39;</span><span class="p">;</span> <span class="c">%Folder for the simulation output</span>
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% subject folder</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tdcs_uq&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">%Folder for the simulation output</span><span class="w"></span>
 
-<span class="c">%% Define tDCS simulation</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span> <span class="p">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">];</span> <span class="c">% Current flow though each channel (mA)</span>
+<span class="c">%% Define tDCS simulation</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.001</span><span class="p">];</span><span class="w"> </span><span class="c">% Current flow though each channel (mA)</span><span class="w"></span>
 
-<span class="c">%First Electrode</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span> <span class="p">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c">% Connect the electrode to the first channel</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span> <span class="p">=</span> <span class="s">&#39;C3&#39;</span><span class="p">;</span> <span class="c">% Place it over C3</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span> <span class="p">=</span> <span class="s">&#39;rect&#39;</span><span class="p">;</span> <span class="c">%Rectangular electrode</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span> <span class="p">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">];</span> <span class="c">% Dimension in mm</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span> <span class="p">=</span> <span class="mi">4</span><span class="p">;</span> <span class="c">% 4 mm thickness</span>
+<span class="c">%First Electrode</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="c">% Connect the electrode to the first channel</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% Place it over C3</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">%Rectangular electrode</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w"> </span><span class="c">% Dimension in mm</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"> </span><span class="c">% 4 mm thickness</span><span class="w"></span>
 
-<span class="c">%Second Electrode</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span> <span class="p">=</span> <span class="mi">2</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span> <span class="p">=</span> <span class="s">&#39;AF4&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span> <span class="p">=</span> <span class="s">&#39;rect&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span> <span class="p">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">70</span><span class="p">];</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span> <span class="p">=</span> <span class="mi">4</span><span class="p">;</span>
+<span class="c">%Second Electrode</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;AF4&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">];</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"></span>
 
-<span class="c">% Set-up the uncertain conductivities</span>
-<span class="c">% White Matter</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.4</span><span class="p">];</span>
-<span class="c">% Gray Matter</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span><span class="p">;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.6</span><span class="p">];</span>
-<span class="c">% Compact Bone</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_type</span> <span class="p">=</span> <span class="s">&#39;beta&#39;</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_parameters</span> <span class="p">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">];</span>
+<span class="c">% Set-up the uncertain conductivities</span><span class="w"></span>
+<span class="c">% White Matter</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">.1</span><span class="p">,</span><span class="w"> </span><span class="mf">.4</span><span class="p">];</span><span class="w"></span>
+<span class="c">% Gray Matter</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">.1</span><span class="p">,</span><span class="w"> </span><span class="mf">.6</span><span class="p">];</span><span class="w"></span>
+<span class="c">% Compact Bone</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.012</span><span class="p">];</span><span class="w"></span>
 
-<span class="c">%% Run Simulation</span>
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="c">%% Run Simulation</span><span class="w"></span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span><span class="w"></span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="output-files">
+</section>
+</section>
+<section id="output-files">
 <h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h2>
 <p>In the output folder of the examples above (the <code class="file docutils literal notranslate"><span class="pre">tdcs_uq/</span></code> folder) we have the output files</p>
 <ul>
@@ -236,8 +236,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </div>
 </li>
 </ul>
-</div>
-<div class="section" id="more-options">
+</section>
+<section id="more-options">
 <h2>More Options<a class="headerlink" href="#more-options" title="Permalink to this headline">¶</a></h2>
 <p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
@@ -274,8 +274,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="n">gpc</span><span class="o">.</span><span class="n">run_tms_gpc</span><span class="p">(</span><span class="n">tms</span><span class="p">,</span> <span class="s1">&#39;tms_gpc/TMS_UQ&#39;</span><span class="p">,</span> <span class="n">tissues</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="secondary-quantities">
+</section>
+<section id="secondary-quantities">
 <h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Permalink to this headline">¶</a></h2>
 <p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -312,17 +312,17 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <span class="n">breakpoint</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="acknowledgements">
+</section>
+<section id="acknowledgements">
 <h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
 <p>We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc library</a>.</p>
-</div>
-<div class="section" id="further-reading">
+</section>
+<section id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018</a></p>
 <p><a class="reference external" href="https://doi.org/10.1016/j.softx.2020.100450">Weise, et al. Pygpc: A sensitivity and uncertainty analysis toolbox for Python, SoftwareX 11, 2020</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -335,7 +335,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
           <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
         </li>
         <li>
-          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
           &rarr;
         </li>
     </ul>
@@ -392,7 +392,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
   <li><a href="../tutorial.html">Tutorial</a><ul>
   <li><a href="advanced.html">Advanced Features</a><ul>
       <li>Previous: <a href="tdcs_distributed_opt.html" title="previous chapter">TDCS Network Optimization</a></li>
-      <li>Next: <a href="../win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
+      <li>Next: <a href="custom_meshing.html" title="next chapter">How to create and use a custom mesh</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
@@ -424,7 +424,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
