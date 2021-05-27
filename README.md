@@ -16,7 +16,6 @@ The pipeline is divided in three parts:
 ## Getting Started
 
 
-
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.
 Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions on how to download and install SimNIBS.
 
