@@ -24,19 +24,22 @@ def example_dataset():
         'download/v3.0-lowres/ernie_lowres.zip'
     )
     fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ernie_lowres'))
-    tmpname = tempfile.mktemp(".zip")
-    # Download the dataset
-    with requests.get(url, stream=True) as r:
-        r.raw.read = functools.partial(r.raw.read, decode_content=True)
-        with open(tmpname, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
-    # Unzip the dataset
-    with zipfile.ZipFile(tmpname) as z:
-        z.extractall(os.path.dirname(__file__), )
-    os.remove(tmpname)
+    # Commented by Fang 20210531. Change it back in the future.
+    # tmpname = tempfile.mktemp(".zip")
+    # # Download the dataset
+    # with requests.get(url, stream=True) as r:
+    #     r.raw.read = functools.partial(r.raw.read, decode_content=True)
+    #     with open(tmpname, 'wb') as f:
+    #         shutil.copyfileobj(r.raw, f)
+    # # Unzip the dataset
+    # with zipfile.ZipFile(tmpname) as z:
+    #     z.extractall(os.path.dirname(__file__), )
+    # os.remove(tmpname)
     yield fn_folder
     try:
-        shutil.rmtree(fn_folder)
+        # Commented by Fang 20210531. Change it back in the future.
+        # shutil.rmtree(fn_folder)
+        pass
     except:
         print('Could not remove example dataset folder')
 
@@ -127,10 +130,10 @@ class TestPythonErnie:
 
     def test_roi_analysis_surf(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        simnibs.transformations.middle_gm_interpolation(
-            'tdcs/ernie_TDCS_1_scalar.msh',
+        simnibs.utils.transformations.middle_gm_interpolation(
+            'tdcs_simu/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
-            'tdcs/subject_overlays'
+            'tdcs_simu/subject_overlays'
         )
         ret = self.run_script('analysis', 'roi_analysis_surf.py')
         assert ret.returncode == 0
@@ -189,8 +192,8 @@ class TestPythonErnie:
         os.chdir(example_dataset)
         shutil.copy(
             os.path.join(
-                simnibs.SIMNIBSDIR, '_internal_resources',
-                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+                os.path.dirname(simnibs.SIMNIBSDIR), 'docs',
+                'data', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
@@ -225,9 +228,9 @@ class TestMatlabErnie:
     def test_roi_analysis_surf(self, example_dataset, replace_show_surface):
         os.chdir(example_dataset)
         simnibs.transformations.middle_gm_interpolation(
-            'tdcs/ernie_TDCS_1_scalar.msh',
+            'tdcs_simu/ernie_TDCS_1_scalar.msh',
             'm2m_ernie',
-            'tdcs/subject_overlays'
+            'tdcs_simu/subject_overlays'
         )
         ret = self.run_script('analysis', 'roi_analysis_surf.m')
         assert ret.returncode == 0
@@ -286,8 +289,8 @@ class TestMatlabErnie:
         os.chdir(example_dataset)
         shutil.copy(
             os.path.join(
-                simnibs.SIMNIBSDIR, '_internal_resources',
-                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
+                os.path.dirname(simnibs.SIMNIBSDIR), 'docs',
+                'data', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')
