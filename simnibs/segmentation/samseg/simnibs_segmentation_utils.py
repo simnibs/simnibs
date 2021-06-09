@@ -87,7 +87,7 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
 
 
 def segmentUpsampled(input_bias_corrected, tissue_settings,
-                     parameters_and_inputs, transformedTemplateFileName):
+                     parameters_and_inputs, transformedTemplateFileName, affine_atlas):
 
     # We need an init of the probabilistic segmentation class
     # to call instance methods
@@ -157,12 +157,16 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
             example_image.getImageBuffer().shape, dtype=np.uint16, order='F')
     uncropped_tissue_labeling[croppingUpsampled] = tissue_labeling
 
-    #upsampled_image = nib.load(input_bias_corrected[0])
-    #affine_upsampled = upsampled_image.affine
-    #upsampled_tissues = nib.Nifti1Image(uncropped_tissue_labeling,
-    #                                    affine_upsampled)
-    #nib.save(upsampled_tissues, './test_labeling_mem.nii.gz')
-    return uncropped_tissue_labeling
+    #Create a head mask for post-processing
+    affine_upsampled= probabilisticAtlas.getMesh(
+                      affine_atlas,
+                      transformUpsampled)
+
+    upper_part = np.zeros(example_image.getImageBuffer().shape, dtype=np.bool, order='F')
+    upper_part_cropped = affine_upsampled.rasterize(maskUpsampled.shape, 1)
+    upper_part[croppingUpsampled] = (65535 - upper_part_cropped) > 32768
+
+    return uncropped_tissue_labeling, upper_part
 
 
 def saveWarpField(template_name, warp_to_mni,

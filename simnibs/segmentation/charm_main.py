@@ -18,7 +18,9 @@ import numpy as np
 from scipy import ndimage
 import scipy.ndimage.morphology as mrph
 from scipy.ndimage.filters import gaussian_filter
+from functools import partial
 from scipy.ndimage.measurements import label
+from simnibs.segmentation._thickness import  _calc_thickness
 from simnibs import SIMNIBSDIR
 
 from .. import __version__
@@ -162,11 +164,76 @@ def _estimate_parameters(path_to_segment_folder,
     return samsegment.saveParametersAndInput()
 
 
+def _post_process_segmentation_quick(bias_corrected_image_names,
+                               upsampled_image_names,
+                               tissue_settings,
+                               label_image,
+                               label_prep_folder,
+                               FreeSurferLabels):
+
+    def _upsample_tissues_quick(label_buffer, label_affine, dim_upsampled,
+                                simnibs_tissues, FreeSurferLabels, segmentation_tissues):
+
+        upsampled_tissues = np.zeros(dim_upsampled, dtype=np.uint8)
+        max_values = np.zeros(dim_upsampled, dtype=np.float32)
+        for t, label in simnibs_tissues.items():
+            tissue_mask = np.zeros_like(label_buffer, dtype=np.float32)
+            tissue_mask[np.isin(label_buffer,
+                                FreeSurferLabels[segmentation_tissues[t]])] = 1
+            upsampled_mask, _, _ = resample_vol(tissue_mask, label_affine, 0.5, order=1)
+            if max_values.sum() == 0:
+                # In the first iteration just save the non-normalized values
+                # Indices are initialized to zero anyway
+                max_values = upsampled_mask
+                upsampled_tissues[max_values > 0] = label
+            else:
+                # Check whether we have higher values and save indices
+                higher_values = upsampled_mask > max_values
+                max_values[higher_values] = upsampled_mask[higher_values]
+                upsampled_tissues[higher_values] = label
+
+        return upsampled_tissues
+
+
+
+    logger.info('Upsampling bias corrected images.')
+    for input_number, bias_corrected in enumerate(bias_corrected_image_names):
+        corrected_input = nib.load(bias_corrected)
+        resampled_input, new_affine, orig_res = resample_vol(
+                                                    corrected_input.get_data(),
+                                                    corrected_input.affine,
+                                                    0.5, order=1)
+        upsampled = nib.Nifti1Image(resampled_input, new_affine)
+        nib.save(upsampled, upsampled_image_names[input_number])
+
+    dim_upsampled = resampled_input.shape
+    label_im = nib.load(label_image)
+    label_buffer = label_im.get_fdata()
+    label_affine = label_im.affine
+    simnibs_tissues = tissue_settings['simnibs_tissues']
+    segmentation_tissues = tissue_settings['segmentation_tissues']
+
+    upsampled_tissues = _upsample_tissues_quick(label_buffer, label_affine, dim_upsampled,
+                                                simnibs_tissues, FreeSurferLabels, segmentation_tissues)
+
+    upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues,
+                                           new_affine)
+    nib.save(upsampled_tissues_im, os.path.join(label_prep_folder, 'before_morpho_simple.nii.gz'))
+
+    # Do morphological operations
+    simnibs_tissues = tissue_settings['simnibs_tissues']
+    _morphological_operations(upsampled_tissues, simnibs_tissues)
+
+    return upsampled_tissues
+
+
 def _post_process_segmentation(bias_corrected_image_names,
                                upsampled_image_names,
                                tissue_settings,
                                parameters_and_inputs,
-                               transformed_template_name):
+                               transformed_template_name,
+                               label_prep_folder,
+                               affine_atlas):
 
     logger.info('Upsampling bias corrected images.')
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
@@ -180,30 +247,42 @@ def _post_process_segmentation(bias_corrected_image_names,
 
     # Next we need to reconstruct the segmentation with the upsampled data
     # and map it into the simnibs tissues
-    upsampled_tissues = samseg.simnibs_segmentation_utils.segmentUpsampled(
-                        upsampled_image_names,
-                        tissue_settings,
-                        parameters_and_inputs,
-                        transformed_template_name)
+    upsampled_tissues, upper_part = samseg.simnibs_segmentation_utils.segmentUpsampled(
+                                    upsampled_image_names,
+                                    tissue_settings,
+                                    parameters_and_inputs,
+                                    transformed_template_name,
+                                    affine_atlas)
 
     #Cast the upsampled image to int16  to save space
     for upsampled_image in upsampled_image_names:
         upsampled = nib.load(upsampled_image)
         upsampled.set_data_dtype(np.int16)
         nib.save(upsampled, upsampled_image)
+
+    affine_upsampled = upsampled.affine
+    upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues,
+                                        affine_upsampled)
+    upsampled_tissues_im.set_data_dtype(np.int16)
+    nib.save(upsampled_tissues_im, os.path.join(label_prep_folder,'before_morpho.nii.gz'))
+
+    upper_part_im = nib.Nifti1Image(upper_part.astype(np.int16),affine_upsampled)
+    upper_part_im.set_data_dtype(np.int16)
+    nib.save(upper_part_im, os.path.join(label_prep_folder, 'upper_part.nii.gz'))
     # Do morphological operations
     simnibs_tissues = tissue_settings['simnibs_tissues']
-    _morphological_operations(upsampled_tissues, simnibs_tissues)
+    _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
 
     return upsampled_tissues
 
 
-def _morphological_operations(label_img, simnibs_tissues):
+def _morphological_operations(label_img, upper_part, simnibs_tissues):
     ''' Does morphological operations to
         1. Smooth out the labeling and remove noise
         2. A CSF layer between GM and Skull and between GM and CSF
         3. Outer bone layers are compact bone
     '''
+
     se = ndimage.generate_binary_structure(3,3)
     se_n = ndimage.generate_binary_structure(3,1)
     # Get list of masks
@@ -218,9 +297,10 @@ def _morphological_operations(label_img, simnibs_tissues):
     # First combine the WM and GM
     brain = tissue_masks[tissue_names.index('WM')] | \
             tissue_masks[tissue_names.index('GM')]
-
-    dil = mrph.binary_dilation(_get_n_largest_components(
-        mrph.binary_erosion(brain, se, 1), se_n, 1), se, 1)
+    dil = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(brain, se_n, 1), se_n, vol_limit=10), se_n, 1)
+    #dil = mrph.binary_opening(brain, se_n, 1)
+    #dil = _get_largest_components(dil, se_n, vol_limit=5)
 
     #Remove unattached components
     unass = brain ^ dil
@@ -231,23 +311,40 @@ def _morphological_operations(label_img, simnibs_tissues):
     tissue_masks[tissue_names.index('GM')] & dil
 
     #Add the CSF and open again
-    brain_csf = brain + tissue_masks[tissue_names.index('CSF')]
-    dil = mrph.binary_opening(brain_csf, se, 1)
-
-    unass = unass + (brain_csf ^ dil)
+    csf = tissue_masks[tissue_names.index('CSF')]
+    brain_csf = brain | csf
+    # Vol limit in voxels
+    dil = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(brain_csf, se, 1), se_n, vol_limit=80), se, 1)
+    unass = unass | (csf & ~dil)
     tissue_masks[tissue_names.index('CSF')] = \
         tissue_masks[tissue_names.index('CSF')] & dil
 
-    #Close the skull (spongy + compact), remove noise and assign to compact
+    #Clean the outer border of the skull
     bone = tissue_masks[tissue_names.index('Compact_bone')] | \
            tissue_masks[tissue_names.index('Spongy_bone')]
+    veins = tissue_masks[tissue_names.index('Blood')]
+    air_pockets = tissue_masks[tissue_names.index('Air_pockets')]
+    scalp = tissue_masks[tissue_names.index('Scalp')]
+    muscle = tissue_masks[tissue_names.index('Muscle')]
+    eyes = tissue_masks[tissue_names.index('Eyes')]
+    #Use scalp to clean out noisy skull bits within the scalp
+    skull_outer = brain_csf | bone | veins | air_pockets
+    skull_outer = mrph.binary_fill_holes(skull_outer, se_n)
+    num_iter = 2
+    skull_outer = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(skull_outer, se, num_iter), se_n, vol_limit=50), se, num_iter)
+    skull_inner = bone | scalp | air_pockets | muscle | eyes
+    skull_inner = mrph.binary_fill_holes(skull_inner, se_n)
+    skull_inner = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(skull_inner, se, num_iter), se_n, vol_limit=50), se, num_iter)
+    dil = bone & skull_outer & skull_inner
+    #Protect thin areas that would be removed by erosion
+    bone_thickness = _calc_thickness(dil)
+    thin_parts = bone & (bone_thickness < 3.5) & (bone_thickness > 0)
+    dil = dil | thin_parts
 
-    dil = mrph.binary_fill_holes(bone,se)
-    dil = mrph.binary_opening(dil,se, 1)
-    dil = mrph.binary_dilation(_get_n_largest_components(
-                  mrph.binary_erosion(dil, se, 1), se, 20), se, 1)
-
-    unass = unass + (dil ^ bone)
+    unass = unass | (dil ^ bone)
     tissue_masks[tissue_names.index('Compact_bone')] = \
     tissue_masks[tissue_names.index('Compact_bone')] & dil
 
@@ -257,68 +354,148 @@ def _morphological_operations(label_img, simnibs_tissues):
 
     # Open the veins
     veins = tissue_masks[tissue_names.index('Blood')]
-    #dil = mrph.binary_opening(veins, se, 1)
-    dil = mrph.binary_dilation(_get_n_largest_components(
-        mrph.binary_erosion(veins, se, 1), se_n, 10), se, 1)
-    unass = unass + (dil ^ veins)
+    dil = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(veins, se, 1), se_n, vol_limit=10), se, 1)
+    unass = unass | (dil ^ veins)
     tissue_masks[tissue_names.index('Blood')] = \
     tissue_masks[tissue_names.index('Blood')] & dil
+
+    # Clean the eyes
+    eyes = tissue_masks[tissue_names.index('Eyes')]
+    dil = mrph.binary_dilation(_get_largest_components(
+        mrph.binary_erosion(eyes, se, 1), se_n, vol_limit=10), se, 1)
+    #dil = mrph.binary_opening(eyes, se, 1)
+    unass = unass | (dil ^ eyes)
+    tissue_masks[tissue_names.index('Eyes')] = \
+        tissue_masks[tissue_names.index('Eyes')] & dil
+
+    #Clean muscles
+    muscles = tissue_masks[tissue_names.index('Muscle')]
+    dil = mrph.binary_opening(muscles, se, 1)
+    unass = unass | (dil ^ muscles)
+    tissue_masks[tissue_names.index('Muscle')] = \
+        tissue_masks[tissue_names.index('Muscle')] & dil
+
     # And finally the scalp
     scalp = tissue_masks[tissue_names.index('Scalp')]
-    dil = mrph.binary_dilation(_get_n_largest_components(
-                  mrph.binary_erosion(scalp, se, 1), se_n, 1), se, 1)
-    unass = unass + (dil ^ scalp)
-
+    head = scalp | skull_outer | eyes | muscles
+    dil = mrph.binary_dilation(_get_largest_components(
+                  mrph.binary_erosion(head, se, 2), se_n, num_limit=1), se, 2)
+    unass = unass | (scalp & ~dil)
     tissue_masks[tissue_names.index('Scalp')] = \
     tissue_masks[tissue_names.index('Scalp')] & dil
 
-    # Temporarily add air here as a mask, otherwise smoothfill
-    # happily dilates tissues next to air
-    tissue_masks.append(label_img == 0)
-    # Now run the smoothfill
-    tissue_masks = _smoothfill(tissue_masks, unass)
+    # Filling missing parts
+    if 0:
+        label_img.fill(0)
+        for tname, tmask in zip(tissue_names, tissue_masks):
+            label_img[tmask] = simnibs_tissues[tname]
 
-    #Now we can get rid of the air again
-    tissue_masks.pop()
+        _fill_missing(label_img, unass)
+
+        tissue_masks = []
+        tissue_names = []
+        for tkey in simnibs_tissues:
+            tmp_img = label_img == simnibs_tissues[tkey]
+            tissue_masks.append(tmp_img)
+            tissue_names.append(tkey)
+
+    else:
+        tissue_masks.append(label_img == 0)
+        # Now run the smoothfill
+        tissue_masks = _smoothfill(tissue_masks, unass, tissue_names.index('WM'))
+        #Now we can get rid of the air again
+        tissue_masks.pop()
 
     # Ensuring a CSF layer between GM and Skull and GM and Blood
     # Relabel regions in the expanded GM which are in skull or blood to CSF
-    GM = tissue_masks[tissue_names.index('GM')]
-    C_BONE = tissue_masks[tissue_names.index('Compact_bone')]
-    S_BONE = tissue_masks[tissue_names.index('Spongy_bone')]
-    BLOOD = tissue_masks[tissue_names.index('Blood')]
-    GM_dilated = mrph.binary_dilation(GM, se, 1)
-    GM_dilated = GM_dilated & (C_BONE | S_BONE | BLOOD)
-    #CSF = tissue_masks[tissue_names.index('CSF')]
-    #CSF[GM_dilated & (C_BONE | S_BONE | BLOOD)] = True
-    tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] | GM_dilated
-    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] & \
-                                                       ~GM_dilated
-    tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
-                                                       ~GM_dilated
-    tissue_masks[tissue_names.index('Blood')] = tissue_masks[tissue_names.index('Blood')] & \
-                                                       ~GM_dilated
+    if 1:
+        WM = tissue_masks[tissue_names.index('WM')]
+        GM = tissue_masks[tissue_names.index('GM')]
+        C_BONE = tissue_masks[tissue_names.index('Compact_bone')]
+        S_BONE = tissue_masks[tissue_names.index('Spongy_bone')]
 
-    # Ensure the outer skull label is compact bone
-    SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se)
-    #C_BONE[SKULL_outer] = True
-    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | SKULL_outer
-    tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
-                                                       ~SKULL_outer
-    # Finally dilate the Skin layer and relabel CSF to bone so we have skull everywhere
-    scalp = tissue_masks[tissue_names.index('Scalp')]
-    scalp = mrph.binary_dilation(scalp, se, 1)
-    relabel = scalp & tissue_masks[tissue_names.index('CSF')]
-    tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | \
-                                                       relabel
-    tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] &\
-                                              ~relabel
+        brain_gm = GM
+        brain_dilated = mrph.binary_dilation(brain_gm, se, 1)
+        overlap = brain_dilated & (C_BONE | S_BONE)
+        tissue_masks[tissue_names.index('CSF')] = tissue_masks[tissue_names.index('CSF')] | overlap
+        tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] & \
+                                                           ~overlap
+        tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
+                                                          ~overlap
 
+        CSF_brain = brain_gm | tissue_masks[tissue_names.index('CSF')]
+        CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, 1)
+        spongy_csf = CSF_brain_dilated & S_BONE
+        upper_part = mrph.binary_erosion(upper_part,se,6)
+        skin_csf = CSF_brain_dilated & tissue_masks[tissue_names.index('Scalp')] & upper_part
+
+        tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] |\
+                                                           spongy_csf
+        tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
+                                                          ~spongy_csf
+
+        tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | \
+                                                           skin_csf
+
+        tissue_masks[tissue_names.index('Scalp')] = tissue_masks[tissue_names.index('Scalp')] & \
+                                                    ~skin_csf
+
+        # Ensure the outer skull label is compact bone
+        C_BONE = tissue_masks[tissue_names.index('Compact_bone')]
+        S_BONE = tissue_masks[tissue_names.index('Spongy_bone')]
+        SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se, 1)
+        tissue_masks[tissue_names.index('Compact_bone')] = tissue_masks[tissue_names.index('Compact_bone')] | SKULL_outer
+        tissue_masks[tissue_names.index('Spongy_bone')] = tissue_masks[tissue_names.index('Spongy_bone')] & \
+                                                        ~SKULL_outer
+
+
+    label_img.fill(0)
     #Relabel the tissues to produce the final label image
     for tname, tmask in zip(tissue_names, tissue_masks):
         label_img[tmask] = simnibs_tissues[tname]
 
-def _smoothfill(vols, unassign):
+    #Relabel air pockets to air
+    label_img[tissue_masks[tissue_names.index('Air_pockets')]] = 0
+
+def _fill_missing(label_img, unassign):
+    """Hackish way to fill unassigned voxels,
+       works by smoothing the masks and binarizing
+       the smoothed masks. Works in-place
+    """
+
+    def _get_most_frequent_label(x, y, z, label_im, pad):
+        nhood = label_im[max(0,x-pad):min(label_im.shape[0],x+pad),
+                         max(0,y-pad):min(label_im.shape[1],y+pad),
+                         max(0,z-pad):min(label_im.shape[2],z+pad)]
+
+        dim = nhood.shape
+
+        return np.bincount(nhood.reshape((np.prod(dim)))).argmax()
+
+
+    label_img[unassign] = 255
+    inds_tmp = unassign.nonzero()
+    inds_tmp = np.array(inds_tmp)
+    num_unassigned = (label_img==255).sum()
+    num_unassigned_new = num_unassigned
+    while num_unassigned_new > 0:
+        fill_map = map(partial(_get_most_frequent_label, label_im=label_img, pad=5),
+                       np.nditer(inds_tmp[0,:]), np.nditer(inds_tmp[1,:]), np.nditer(inds_tmp[2,:]))
+        fill_array = np.array(list(fill_map))
+        label_img[inds_tmp[0,:], inds_tmp[1,:], inds_tmp[2,:]] = fill_array
+        inds_tmp = inds_tmp[:,fill_array==255]
+        num_unassigned_new = (label_img==255).sum()
+        print('Unassigned: ' + str(num_unassigned_new))
+        if num_unassigned_new == num_unassigned:
+            print('Number of unassigned voxels not going down. Breaking.')
+            break
+
+        num_unassigned = num_unassigned_new
+
+
+
+def _smoothfill(vols, unassign, wm_index):
     """Hackish way to fill unassigned voxels,
        works by smoothing the masks and binarizing
        the smoothed masks.
@@ -342,7 +519,11 @@ def _smoothfill(vols, unassign):
         inds = 255*np.ones_like(vols[0])
         max_val = np.zeros_like(vols[0],dtype=np.float32)
         for i, ivol in enumerate(vols):
-            cs = gaussian_filter(ivol.astype(np.float32), 1)
+            #Don't smooth WM
+            if i == wm_index:
+                cs = ivol.astype(np.float32)
+            else:
+                cs = gaussian_filter(ivol.astype(np.float32), 1)
             #cs = cs.astype(np.uint8, copy=False)
             cs[ivol == 255] = 255
             #Check the max values and update
@@ -357,8 +538,7 @@ def _smoothfill(vols, unassign):
     return vols
 
 
-
-def _get_n_largest_components(vol, se, n, return_sizes=False):
+def _get_largest_components(vol, se, vol_limit=0, num_limit=-1, return_sizes=False):
     """Get the n largest components from a volume.
 
     PARAMETERS
@@ -384,9 +564,15 @@ def _get_n_largest_components(vol, se, n, return_sizes=False):
     labels, region_size = np.unique(vol_lbl, return_counts=True)
     labels = labels[1:]  # disregard background (label=0)
     region_size = region_size[1:]  #
+    mask = region_size > vol_limit
+    region_size = region_size[mask]
+    labels = labels[mask]
+
+    if num_limit == -1:
+        num_limit = len(labels)
+
     labels = labels[np.argsort(region_size)[::-1]]
-    components = np.any(np.array([vol_lbl == i for i in labels[:n]]),
-                        axis=0)
+    components = np.any(np.array([vol_lbl == i for i in labels[:num_limit]]),axis=0)
 
     # if no components are found, components will be reduced to false. Replace
     # by array of appropriate size
@@ -394,9 +580,11 @@ def _get_n_largest_components(vol, se, n, return_sizes=False):
         components = np.zeros_like(vol, dtype=bool)
 
     if return_sizes:
-        return components, region_size[labels[:n]]
+        return components, region_size[labels[:num_limit]]
     else:
         return components
+
+
 
 def _binarize(vols, return_empty=False):
     """Binarize a list of input volumes by finding the maximum posterior
@@ -717,7 +905,9 @@ def run(subject_dir=None, T1=None, T2=None,
                                     upsampled_image_names,
                                     tissue_settings,
                                     segment_parameters_and_inputs,
-                                    sub_files.template_coregistered)
+                                    sub_files.template_coregistered,
+                                    sub_files.label_prep_folder,
+                                    atlas_affine_name)
 
         # Write to disk
         upsampled_image = nib.load(sub_files.T1_upsampled)
@@ -725,6 +915,7 @@ def run(subject_dir=None, T1=None, T2=None,
         upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues,
                                             affine_upsampled)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
+
 
     if create_surfaces:
         # Create surfaces ala CAT12
