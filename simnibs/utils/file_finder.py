@@ -42,6 +42,13 @@ class Templates:
         Path to the folder with FreeSurfer templates (dir)
     simnibs_logo: str
         Path to the SimNIBS logo stored as triangle mesh (gmsh format)
+    charm_atlas_path: str
+        Path to the charm atlas folders
+    labeling_LUT: str
+        Path to freeview color LUT for the labeling.nii.gz
+    final_tissues_LUT: str
+        Path to freeview color LUT for the final_tissues.nii.gz and 
+        label_prep/tissue_labeling_upsampled.nii.gz
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
@@ -60,7 +67,13 @@ class Templates:
         
         # SimNIBS logo
         self.simnibs_logo = os.path.join(self._resources, 'simnibslogo.msh')
-
+        
+        # labeling_LUT
+        self.labeling_LUT = os.path.join(self._resources, 'labeling_FreeSurferColorLUT.txt')
+        
+        # final_tissues_LUT
+        self.final_tissues_LUT = os.path.join(self._resources, 'final_tissues_FreeSurferColorLUT.txt')
+    
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 

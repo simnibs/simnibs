@@ -9,7 +9,7 @@ from .. import _cat_c_utils
 
 @pytest.fixture
 def cube_image():
-    img = np.zeros((50, 60, 70), dtype=np.float)
+    img = np.zeros((50, 60, 70), dtype=float)
     img[10:40, 10:40, 10:40] = 1
     return img
 
@@ -41,7 +41,7 @@ class TestMedian3:
 
 class TestVolEidist:
     def test_simple(self):
-        img = np.zeros((50, 60, 70), dtype=np.float)
+        img = np.zeros((50, 60, 70), dtype=float)
         img[:25] = np.linspace(0, 1, 25)[:, None, None]
         img[25:] *= np.nan
         F = np.ones_like(img)
@@ -52,7 +52,7 @@ class TestVolEidist:
 
 class TestVolLocalstat:
     def test_simple(self):
-        img = np.zeros((50, 60, 70), dtype=np.float)
+        img = np.zeros((50, 60, 70), dtype=float)
         img[:] = np.arange(50)[:, None, None]
         mask = np.zeros_like(img, dtype=bool)
         mask[25:] = True
@@ -63,7 +63,7 @@ class TestVolLocalstat:
 
 class TestVolPbtp:
     def test_simple(self):
-        SEG = np.zeros((60, 50, 70), dtype=np.float)
+        SEG = np.zeros((60, 50, 70), dtype=float)
         SEG[:20] = 1    # CSF
         SEG[20:40] = 2  # GM
         SEG[40:] = 3    # WM

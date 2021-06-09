@@ -20,24 +20,22 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+
 import warnings
 import os
 from functools import partial
 import gc
 import copy
-
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
 import shutil
 import nibabel as nib
-
 from ..utils.simnibs_logger import logger
 from .. import SIMNIBSDIR
 from ..utils.file_finder import templates, SubjectFiles, get_atlas, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
 from ..mesh_tools import gmsh_view
-
 __all__ = [
     'warp_volume',
     'warp_coordinates',
@@ -47,6 +45,7 @@ __all__ = [
     'middle_gm_interpolation'
 
 ]
+
 
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
                          target_dimensions=None, intorder=1, cpus=1,
@@ -130,7 +129,8 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
     if len(im_data.shape) == 4 and im_data.shape[3] == 3:
         if inverse_deformation is not None:
             inv_df_data, inv_df_affine = inverse_deformation
-            if len(inv_df_data.shape) > 4: inv_df_data = inv_df_data.squeeze()
+            if len(inv_df_data.shape) > 4:
+                inv_df_data = inv_df_data.squeeze()
             im_data_rotated = np.zeros_like(im_data)
             # Spacing in voxel space, for gradient transformations
             spacing = np.linalg.norm(inv_df_affine[:3, :3], axis=1)
@@ -158,9 +158,9 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
 
             if keep_vector_length:
                 im_data_rotated = im_data_rotated * \
-                        (np.linalg.norm(im_data, axis=3))[:, :, :, None] /\
-                        (1e-32 +
-                         np.linalg.norm(im_data_rotated, axis=3))[:, :, :, None]
+                    (np.linalg.norm(im_data, axis=3))[:, :, :, None] /\
+                    (1e-32 +
+                     np.linalg.norm(im_data_rotated, axis=3))[:, :, :, None]
             im_data = im_data_rotated
 
     # Interpolate to the target space
@@ -205,12 +205,12 @@ def volumetric_affine(image, affine, target_space_affine,
     if im_data.ndim == 4:
         outdata = np.stack(
             [scipy.ndimage.affine_transform(
-                    im_data[..., i], iM[:3, :3], iM[:3, 3], target_dimensions,
-                    order=intorder) for i in range(im_data.shape[3])], axis=-1)
+                im_data[..., i], iM[:3, :3], iM[:3, 3], target_dimensions,
+                order=intorder) for i in range(im_data.shape[3])], axis=-1)
     else:
         outdata = scipy.ndimage.affine_transform(
-                    im_data, iM[:3, :3], iM[:3, 3], target_dimensions,
-                    order=intorder)
+            im_data, iM[:3, :3], iM[:3, 3], target_dimensions,
+            order=intorder)
 
     # Rotate vectors
     if len(outdata.shape) == 4 and outdata.shape[3] == 3:
@@ -218,9 +218,9 @@ def volumetric_affine(image, affine, target_space_affine,
             'ij,klmj->klmi', np.linalg.inv(affine[:3, :3]), outdata)
         if keep_vector_length:
             outdata_rotated = outdata_rotated * \
-                    (np.linalg.norm(outdata, axis=3))[:, :, :, None] /\
-                    (1e-32 +
-                     np.linalg.norm(outdata_rotated, axis=3))[:, :, :, None]
+                (np.linalg.norm(outdata, axis=3))[:, :, :, None] /\
+                (1e-32 +
+                 np.linalg.norm(outdata_rotated, axis=3))[:, :, :, None]
 
         outdata = outdata_rotated
 
@@ -337,10 +337,10 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
     img.header.set_xyzt_units(reference_nifti.header.get_xyzt_units()[0])
     img.header.set_qform(reference_nifti.header.get_qform(), code=2)
     img.update_header()
-    
+
     if image.dtype == np.float64:
         img.set_data_dtype(np.float32)
-                
+
     if out is not None:
         nib.save(img, out)
 
@@ -368,13 +368,14 @@ def get_names_from_folder_structure(m2m_folder):
 
     sub_files = SubjectFiles(subpath=m2m_folder)
     if not os.path.isdir(sub_files.subpath):
-        raise IOError('The given m2m folder name does not correspond to a directory')
+        raise IOError(
+            'The given m2m folder name does not correspond to a directory')
 
     ref_conf = sub_files.reference_volume
     if not os.path.isfile(ref_conf):
         warnings.warn(
             'Could not find reference volume in subject space at: {0}'.format(
-             ref_conf))
+                ref_conf))
 
     mesh = sub_files.fnamehead
     if not os.path.isfile(mesh):
@@ -383,12 +384,12 @@ def get_names_from_folder_structure(m2m_folder):
     mni2conf_nonl = sub_files.mni2conf_nonl
     if not os.path.isfile(mni2conf_nonl):
         warnings.warn('Could not find MNI2Conform non-linear transform at: {0}'.format(
-                       mni2conf_nonl))
+            mni2conf_nonl))
 
     conf2mni_nonl = sub_files.conf2mni_nonl
     if not os.path.isfile(conf2mni_nonl):
         warnings.warn('Could not find Conform2MNI non-linear transform at: {0}'.format(
-                       conf2mni_nonl))
+            conf2mni_nonl))
 
     mni2conf_6dof = sub_files.mni2conf_6dof
     mni2conf_12dof = sub_files.mni2conf_12dof
@@ -402,6 +403,7 @@ def get_names_from_folder_structure(m2m_folder):
         'mni2conf_6dof': mni2conf_6dof,
         'mni2conf_12dof': mni2conf_12dof}
     return names
+
 
 def warp_volume(image_fn, m2m_folder, out_name,
                 transformation_direction='subject2mni',
@@ -515,8 +517,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
     if os.path.splitext(image_fn)[1] == '.msh':
         m = read_msh(image_fn)
         if keep_tissues is not None:
-            m=m.crop_mesh(tags=keep_tissues)
-            
+            m = m.crop_mesh(tags=keep_tissues)
+
         logger.info('Warping mesh: {0}'.format(image_fn))
         for ed in m.elmdata + m.nodedata:
             name = append_name(out_name, ed.field_name)
@@ -526,7 +528,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 name_original = None
             logger.info('Warping field: {0}'.format(ed.field_name))
             logger.info('To file: {0}'.format(name))
-            logger.debug('Transformation type: {0}'.format(transformation_type))
+            logger.debug('Transformation type: {0}'.format(
+                transformation_type))
             logger.debug('Method: {0}'.format(method))
             logger.debug('Labels: {0}'.format(labels))
             logger.debug('Continuous: {0}'.format(continuous))
@@ -546,9 +549,10 @@ def warp_volume(image_fn, m2m_folder, out_name,
         logger.info('To file: {0}'.format(out_name))
         logger.debug('Transformation type: {0}'.format(transformation_type))
         logger.debug('Mask: {0}'.format(mask))
-        nifti_transform(image_fn, warp, reference, out=out_name, 
-                        mask=mask, order=order, inverse_warp=inverse_warp, 
+        nifti_transform(image_fn, warp, reference, out=out_name,
+                        mask=mask, order=order, inverse_warp=inverse_warp,
                         binary=binary)
+
 
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
                           method='linear', continuous=False, create_label=False,
@@ -584,17 +588,17 @@ def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
         names = get_names_from_folder_structure(reference)
         reference = names['reference_conf']
     if not os.path.isfile(reference):
-        raise IOError('Could not find reference file: {0}'.format(reference))   
+        raise IOError('Could not find reference file: {0}'.format(reference))
     if isinstance(fn_mesh, str):
         if not os.path.isfile(fn_mesh):
             raise IOError('Could not find mesh file: {0}'.format(fn_mesh))
         mesh = read_msh(fn_mesh)
     else:
         mesh = copy.deepcopy(fn_mesh)
-        
+
     if keep_tissues is not None:
-        mesh=mesh.crop_mesh(tags=keep_tissues)
-        
+        mesh = mesh.crop_mesh(tags=keep_tissues)
+
     image = nib.load(reference)
     affine = image.affine
     n_voxels = image.header['dim'][1:4]
@@ -899,7 +903,8 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
     if transf_type == 'affine':
         coords_transf = coordinates_affine(coords, transf_def)
         if mesh:
-            coords_transf = project_on_scalp(coords_transf, mesh, distance=distances)
+            coords_transf = project_on_scalp(
+                coords_transf, mesh, distance=distances)
         vy_transf = vectors_affine(v_y, transf_def)
         vz_transf = vectors_affine(v_z, transf_def)
 
@@ -909,15 +914,18 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
         coords_transf, vz_transf = coordinates_nonlinear(coords, transf_def,
                                                          vectors=v_z)
         if mesh:
-            coords_transf = project_on_scalp(coords_transf, mesh, distance=distances)
+            coords_transf = project_on_scalp(
+                coords_transf, mesh, distance=distances)
     else:
         raise ValueError('Invalid transformation type')
 
     vz_transf /= np.linalg.norm(vz_transf, axis=1)[:, None]
-    vy_transf = vy_transf - vz_transf * np.sum(vz_transf * vy_transf, axis=1)[:, None]
+    vy_transf = vy_transf - vz_transf * \
+        np.sum(vz_transf * vy_transf, axis=1)[:, None]
     vy_transf /= np.linalg.norm(vy_transf, axis=1)[:, None]
 
     return coords_transf, vy_transf, vz_transf
+
 
 def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     ''' Warps a set of coordinates in subject space to MNI space
@@ -939,7 +947,7 @@ def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
         Array with transformed coordinates
 
     '''
-    transformed =  warp_coordinates(
+    transformed = warp_coordinates(
         coordinates, m2m_folder,
         transformation_direction='subject2mni',
         transformation_type=transformation_type,
@@ -948,6 +956,7 @@ def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     if np.array(coordinates).ndim == 1:
         transformed = np.squeeze(transformed)
     return transformed
+
 
 def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     ''' Warps a set of coordinates in MNI space to subject space
@@ -969,7 +978,7 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
         Array with transformed coordinates
 
     '''
-    transformed =  warp_coordinates(
+    transformed = warp_coordinates(
         coordinates, m2m_folder,
         transformation_direction='mni2subject',
         transformation_type=transformation_type,
@@ -978,6 +987,7 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     if np.array(coordinates).ndim == 1:
         transformed = np.squeeze(transformed)
     return transformed
+
 
 def warp_coordinates(coordinates, m2m_folder,
                      transformation_direction='subject2mni',
@@ -1028,7 +1038,7 @@ def warp_coordinates(coordinates, m2m_folder,
 
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
-        
+
     mesh_in : mesh file, optional 
         scalp or head mesh, used to project electrodes onto scalp or ensure
         TMS coil distances from scalp; is used only for direction 'mni2subject'
@@ -1052,7 +1062,8 @@ def warp_coordinates(coordinates, m2m_folder,
     names = get_names_from_folder_structure(m2m_folder)
     # Read CSV
     if isinstance(coordinates, str):
-        type_, coordinates, extra, name, extra_cols, header = read_csv_positions(coordinates)
+        type_, coordinates, extra, name, extra_cols, header = read_csv_positions(
+            coordinates)
     else:
         try:
             type_, coordinates, extra, name, extra_cols, header = coordinates
@@ -1076,7 +1087,6 @@ def warp_coordinates(coordinates, m2m_folder,
 
     if transformation_type not in ['nonl', '6dof', '12dof']:
         raise ValueError('Invalid transformation type')
-
 
     # Here we use the inverse transforms from the ones in the volumetric transforms
     if transformation_direction == 'subject2mni':
@@ -1119,7 +1129,8 @@ def warp_coordinates(coordinates, m2m_folder,
             mesh = mesh_in
 
     # Transform all electrode types
-    electrode = [i for i, t in enumerate(type_) if t in ['Fiducial', 'Electrode', 'ReferenceElectrode']]
+    electrode = [i for i, t in enumerate(
+        type_) if t in ['Fiducial', 'Electrode', 'ReferenceElectrode']]
     if len(electrode) > 0:
         transformed_coords[electrode, :] = transform_tdcs_positions(
             coordinates[electrode, :], ttype, warp, mesh=mesh)
@@ -1170,6 +1181,7 @@ def warp_coordinates(coordinates, m2m_folder,
 
     return type_, transformed_coords, transformed_extra, name
 
+
 def csv_to_geo(fn_csv, fn_out):
     ''' Writes a .geo file based on a .csv file
 
@@ -1184,18 +1196,20 @@ def csv_to_geo(fn_csv, fn_out):
     file_text = 'View"' + '' + '"{\n'
 
     def write_electrode(file_text, coordinates, extra, name):
-        file_text += "SP(" + ", ".join([str(c) for c in coordinates]) + "){0};\n"
+        file_text += "SP(" + ", ".join([str(c)
+                                        for c in coordinates]) + "){0};\n"
         if extra is not None:
             file_text += "SL(" + ", ".join([str(c) for c in coordinates]) +\
-                    ", " + ", ".join([str(c) for c in extra]) + "){0, 0};\n"
+                ", " + ", ".join([str(c) for c in extra]) + "){0, 0};\n"
         if name is not None:
             text_coords = coordinates + [0., 0., 5.]
             file_text += 'T3(' + ', '.join([str(c) for c in text_coords]) +\
-                    ', 0){"' + name + '"};\n'
+                ', 0){"' + name + '"};\n'
         return file_text
 
     def write_coil(file_text, coordinates, extra, name):
-        file_text += "SP(" + ", ".join([str(c) for c in coordinates]) + "){0};\n"
+        file_text += "SP(" + ", ".join([str(c)
+                                        for c in coordinates]) + "){0};\n"
         ez = coordinates + extra[:3] * 30
         ey = coordinates + extra[3:6] * 10
         file_text += "SL(" + ", ".join([str(c) for c in coordinates]) +\
@@ -1205,9 +1219,8 @@ def csv_to_geo(fn_csv, fn_out):
         if name is not None:
             text_coords = coordinates + [0., 0., 5.]
             file_text += 'T3(' + ', '.join([str(c) for c in text_coords]) +\
-                    ', 0){"' + name + '"};\n'
+                ', 0){"' + name + '"};\n'
         return file_text
-
 
     for t, c, e, n in zip(type_, coordinates, extra, name):
         if t in ['Fiducial', 'Electrode', 'ReferenceElectrode', 'Generic']:
@@ -1352,7 +1365,7 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
     mode: str (optional)
         How to handle boundaries. Default: 'nearest'
         see https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.affine_transform.html#scipy.ndimage.affine_transform
-        
+
 
     Returns
     ------------
@@ -1371,7 +1384,7 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
     original_res = get_vox_size(affine)
 
     transform = np.squeeze(target_res/original_res)
-    new_affine = affine.astype(np.float)
+    new_affine = affine.astype(float)
     new_affine[:3, :3] *= transform
     # We need to change the translation component of the affine
     # to make sure the voxel centers match
@@ -1388,7 +1401,8 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
         resampled = scipy.ndimage.affine_transform(
             vol,
             transform,
-            offset=(transform - 1)/2.,  # the voxel coordinates define the center of the voxels
+            # the voxel coordinates define the center of the voxels
+            offset=(transform - 1)/2.,
             output_shape=(vol.shape/transform).astype(int),
             order=order,
             mode=mode
@@ -1413,7 +1427,7 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
 
 
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth = 0.5, quantities=['magn', 'normal', 'tangent','angle'],
+                            depth=0.5, quantities=['magn', 'normal', 'tangent', 'angle'],
                             fields=None, open_in_gmsh=False, f_geo=None):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
@@ -1468,8 +1482,13 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     m = mesh_io.read_msh(mesh_fn)
     _, sim_name = os.path.split(mesh_fn)
     sim_name = '.' + os.path.splitext(sim_name)[0]
-    # Crop out GM
-    m = m.crop_mesh(2)
+
+    # Crop out WM, GM, and CSF. We add WM and CSF to make the mesh convex.
+    m = m.crop_mesh(tags=[1, 2, 3])
+
+    # Set the volume to be GM. The interpolation will use only the tetrahedra in the volume.
+    th_indices = m.elm.elm_number[m.elm.tag1 == 2]
+
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
     out_folder = os.path.abspath(os.path.normpath(out_folder))
@@ -1498,7 +1517,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
             ref_surf[hemi] = mesh_io.read_gifti_surface(
                 get_reference_surf(hemi, 'sphere')
             )
-            avg_surf[hemi] =  mesh_io.read_gifti_surface(
+            avg_surf[hemi] = mesh_io.read_gifti_surface(
                 get_reference_surf(hemi, 'central')
             )
 
@@ -1515,7 +1534,9 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
             if fields is None or name in fields:
                 # Interpolate to middle gm
                 data = data.as_nodedata()
-                interpolated = data.interpolate_to_surface(middle_surf[hemi])
+                interpolated = data.interpolate_to_surface(
+                    middle_surf[hemi], th_indices=th_indices)
+
                 # For vector quantities, calculate quantities (normal, magn, ...)
                 if data.nr_comp == 3:
                     q = calc_quantities(interpolated, quantities)
@@ -1528,7 +1549,8 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             middle_surf[hemi].elm.nr
                         )
                         names_subj.append(out_subj)
-                        middle_surf[hemi].add_node_field(q_data, name + '_' + q_name)
+                        middle_surf[hemi].add_node_field(
+                            q_data, name + '_' + q_name)
                         h.append(hemi)
                         # Interpolate to fsavg
                         if out_fsaverage is not None:
@@ -1539,16 +1561,17 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                                 kdtree[hemi]
                             )
                             out_avg = os.path.join(
-                                          out_fsaverage,
-                                          hemi + sim_name + '.fsavg.'
-                                          + name + '.' + q_name
+                                out_fsaverage,
+                                hemi + sim_name + '.fsavg.'
+                                + name + '.' + q_name
                             )
                             mesh_io.write_curv(
                                 out_avg,
                                 q_transformed,
                                 ref_surf[hemi].elm.nr
                             )
-                            avg_surf[hemi].add_node_field(q_transformed, name + '_' + q_name)
+                            avg_surf[hemi].add_node_field(
+                                q_transformed, name + '_' + q_name)
                             names_fsavg.append(out_avg)
 
                 # For scalar quantities
@@ -1587,11 +1610,11 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             names_fsavg.append(out_avg)
                             avg_surf[hemi].add_node_field(f_transformed, name)
 
-
     # Join surfaces, fields and open in gmsh
     # I only work with lh and rh at least for now
     # It also needs to be nicely ordered, otherwise will
     # screw up the atlases
+
     def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
         mesh = surfs['lh'].join_mesh(surfs['rh'])
         mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
@@ -1601,17 +1624,17 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         for k in surfs['lh'].field.keys():
             mesh.add_node_field(
                 np.append(surfs['lh'].field[k].value,
-                          surfs['rh'].field[k].value),k)
+                          surfs['rh'].field[k].value), k)
         mesh_io.write_msh(mesh, fn_out)
-        
+
         # write .opt-file
-        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])    
+        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
         if f_geo is not None:
             if not os.path.exists(f_geo):
                 raise FileNotFoundError(f'Could not find file: {f_geo}')
-            v.add_merge(f_geo, append_views_from_geo = True)    
+            v.add_merge(f_geo, append_views_from_geo=True)
         v.write_opt(fn_out)
-        
+
         if open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
 
@@ -1652,7 +1675,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
 
     m2m_folder: str
         Path to the m2m_{subject_id} folder, generated during the segmantation
- 
+
     hemi (optional): 'lh', 'rh' or 'both'
         Hemisphere to use. In the case of 'both', will assume that left hemisphere
         nodes comes before right hemisphere nodes
@@ -1673,7 +1696,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
             templates.atlases_surfaces,
             f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
         )
-        labels, _ , names = nib.freesurfer.io.read_annot(fn_atlas)
+        labels, _, names = nib.freesurfer.io.read_annot(fn_atlas)
         labels_sub, _ = _surf2surf(
             labels,
             read_gifti_surface(get_reference_surf(hemi, 'sphere')),

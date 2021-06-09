@@ -163,10 +163,10 @@ def potential_homogeneous_dipole(sphere_radius, conductivity, dipole_pos, dipole
     assert detector_positions.shape[1] == 3
     assert np.linalg.norm(dipole_pos) < sphere_radius
 
-    sphere_radius = np.float(sphere_radius * 1e-3)
-    dipole_pos = np.array(dipole_pos, dtype=np.float) * 1e-3
-    dipole_moment = np.array(dipole_moment, dtype=np.float)
-    detector_positions = np.array(detector_positions, dtype=np.float) * 1e-3
+    sphere_radius = float(sphere_radius * 1e-3)
+    dipole_pos = np.array(dipole_pos, dtype=float) * 1e-3
+    dipole_moment = np.array(dipole_moment, dtype=float)
+    detector_positions = np.array(detector_positions, dtype=float) * 1e-3
 
     R = sphere_radius
     r0 = np.linalg.norm(dipole_pos)
@@ -177,7 +177,7 @@ def potential_homogeneous_dipole(sphere_radius, conductivity, dipole_pos, dipole
         warnings.warn('Some points are not in the surface!!')
 
     if np.isclose(r0, 0):
-        cos_phi = np.zeros(len(detector_positions), dtype=np.float)
+        cos_phi = np.zeros(len(detector_positions), dtype=float)
     else:
         cos_phi = dipole_pos.dot(detector_positions.T) / \
             (np.linalg.norm(dipole_pos) * np.linalg.norm(detector_positions, axis=1))

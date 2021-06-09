@@ -94,7 +94,8 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
         with tempfile.NamedTemporaryFile(suffix='.off') as f:
             mesh_fn = f.name
         mesh_io.write_off(surface, mesh_fn)
-        cmd=f'\"{file_finder.path2bin("meshfix")}\" \"{mesh_fn}\" -u {n_uniform} -a 2.0 -q -o \"{mesh_fn}\"'
+        cmd=[file_finder.path2bin("meshfix"), mesh_fn, '-u', str(n_uniform), 
+             '-a', '2.0', '-q', '-o', mesh_fn]
         spawn_process(cmd)
         surface = mesh_io.read_off(mesh_fn)
         if os.path.isfile(mesh_fn):

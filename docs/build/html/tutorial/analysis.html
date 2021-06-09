@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Analyzing Simulations &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Analyzing Simulations &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,12 +49,12 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="analyzing-simulations">
+  <section id="analyzing-simulations">
 <span id="analysis-tutorial"></span><h1>Analyzing Simulations<a class="headerlink" href="#analyzing-simulations" title="Permalink to this headline">¶</a></h1>
 <p>SimNIBS offers tools to help analyzing your simulation results.
 Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. However, their arguments and outputs might be slightly different.</p>
 <p>To run the analysis scripts, please follow the same steps needed to run the <a class="reference internal" href="scripting.html#run-scripts"><span class="std std-ref">simulation scripts</span></a></p>
-<div class="section" id="roi-analysis-using-mni-coordinates">
+<section id="roi-analysis-using-mni-coordinates">
 <span id="roi-mni-analysis"></span><h2>ROI Analysis Using MNI Coordinates<a class="headerlink" href="#roi-analysis-using-mni-coordinates" title="Permalink to this headline">¶</a></h2>
 <p>The objective of this example is to evaluate the mean electric field in an ROI, defined using MNI coordinates</p>
 <p>This analysis follows the steps:</p>
@@ -133,7 +133,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 <p>4.3. Calculate an weighted average</p>
 </li>
 </ol>
-<div class="section" id="python">
+<section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Simple ROI analysis of the electric field from a simulation.</span>
@@ -186,55 +186,55 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in M1 ROI: &#39;</span><span class="p">,</span> <span class="n">mean_magnE</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="matlab">
+</section>
+<section id="matlab">
 <h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Simple ROI analysis of the electric field from a simulation.</span>
-<span class="c">% We will calculate the mean electric field in a gray matter ROI</span>
-<span class="c">% The ROI is defined using an MNI coordinates</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Simple ROI analysis of the electric field from a simulation.</span><span class="w"></span>
+<span class="c">% We will calculate the mean electric field in a gray matter ROI</span><span class="w"></span>
+<span class="c">% The ROI is defined using an MNI coordinates</span><span class="w"></span>
 
-<span class="c">%% Load Simulation Result</span>
+<span class="c">%% Load Simulation Result</span><span class="w"></span>
 
-<span class="c">% Read the simulation result</span>
-<span class="n">head_mesh</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span> <span class="k">...</span>
-<span class="p">);</span>
+<span class="c">% Read the simulation result</span><span class="w"></span>
+<span class="n">head_mesh</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span><span class="w"></span>
+<span class="w">    </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;ernie_TDCS_1_scalar.msh&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">...</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="c">% Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span>
-<span class="n">gray_matter</span> <span class="p">=</span> <span class="n">mesh_extract_regions</span><span class="p">(</span><span class="n">head_mesh</span><span class="p">,</span> <span class="s">&#39;region_idx&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="c">% Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)</span><span class="w"></span>
+<span class="n">gray_matter</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_extract_regions</span><span class="p">(</span><span class="n">head_mesh</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;region_idx&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
 
 
-<span class="c">%% Define the ROI</span>
+<span class="c">%% Define the ROI</span><span class="w"></span>
 
-<span class="c">% Define M1 from MNI coordinates (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2034289/)</span>
-<span class="c">% the first argument is the MNI coordinates</span>
-<span class="c">% the second argument is the subject &quot;m2m&quot; folder</span>
-<span class="n">ernie_coords</span> <span class="p">=</span> <span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="n">fullfile</span><span class="p">(</span><span class="n">pwd</span><span class="p">,</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">));</span>
-<span class="c">% we will use a sphere of radius 10 mm</span>
-<span class="n">r</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
+<span class="c">% Define M1 from MNI coordinates (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2034289/)</span><span class="w"></span>
+<span class="c">% the first argument is the MNI coordinates</span><span class="w"></span>
+<span class="c">% the second argument is the subject &quot;m2m&quot; folder</span><span class="w"></span>
+<span class="n">ernie_coords</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="w"> </span><span class="mi">58</span><span class="p">],</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="nb">pwd</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">));</span><span class="w"></span>
+<span class="c">% we will use a sphere of radius 10 mm</span><span class="w"></span>
+<span class="n">r</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
 
-<span class="c">% Electric fields are defined in the center of the elements</span>
-<span class="c">% get element centers</span>
-<span class="n">elm_centers</span> <span class="p">=</span> <span class="n">mesh_get_tetrahedron_centers</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">);</span>
-<span class="c">% determine the elements in the ROI</span>
-<span class="n">roi</span> <span class="p">=</span> <span class="nb">sqrt</span><span class="p">(</span><span class="n">sum</span><span class="p">(</span><span class="nb">bsxfun</span><span class="p">(@</span><span class="n">minus</span><span class="p">,</span> <span class="n">elm_centers</span><span class="p">,</span> <span class="n">ernie_coords</span><span class="p">)</span><span class="o">.^</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">r</span><span class="p">;</span>
-<span class="c">% get element volumes, we will use those for averaging</span>
-<span class="n">elm_vols</span> <span class="p">=</span> <span class="n">mesh_get_tetrahedron_sizes</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">);</span>
+<span class="c">% Electric fields are defined in the center of the elements</span><span class="w"></span>
+<span class="c">% get element centers</span><span class="w"></span>
+<span class="n">elm_centers</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_get_tetrahedron_centers</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">);</span><span class="w"></span>
+<span class="c">% determine the elements in the ROI</span><span class="w"></span>
+<span class="n">roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">bsxfun</span><span class="p">(@</span><span class="n">minus</span><span class="p">,</span><span class="w"> </span><span class="n">elm_centers</span><span class="p">,</span><span class="w"> </span><span class="n">ernie_coords</span><span class="p">)</span><span class="o">.^</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">r</span><span class="p">;</span><span class="w"></span>
+<span class="c">% get element volumes, we will use those for averaging</span><span class="w"></span>
+<span class="n">elm_vols</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_get_tetrahedron_sizes</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">);</span><span class="w"></span>
 
-<span class="c">%% Get field and calculate the mean</span>
-<span class="c">% Get the field of interest</span>
-<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;magnE&#39;</span><span class="p">;</span>
-<span class="n">field_idx</span> <span class="p">=</span> <span class="n">get_field_idx</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s">&#39;elements&#39;</span><span class="p">);</span>
-<span class="n">field</span> <span class="p">=</span> <span class="n">gray_matter</span><span class="p">.</span><span class="n">element_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">tetdata</span><span class="p">;</span>
+<span class="c">%% Get field and calculate the mean</span><span class="w"></span>
+<span class="c">% Get the field of interest</span><span class="w"></span>
+<span class="n">field_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;magnE&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">field_idx</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">get_field_idx</span><span class="p">(</span><span class="n">gray_matter</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;elements&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gray_matter</span><span class="p">.</span><span class="n">element_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">tetdata</span><span class="p">;</span><span class="w"></span>
 
-<span class="c">% Calculate the mean</span>
-<span class="n">avg_field_roi</span> <span class="p">=</span> <span class="n">sum</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">roi</span><span class="p">)</span> <span class="o">.*</span> <span class="n">elm_vols</span><span class="p">(</span><span class="n">roi</span><span class="p">))</span><span class="o">/</span><span class="n">sum</span><span class="p">(</span><span class="n">elm_vols</span><span class="p">(</span><span class="n">roi</span><span class="p">));</span>
-<span class="n">fprintf</span><span class="p">(</span><span class="s">&#39;mean %s in ROI: %f\n&#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">avg_field_roi</span><span class="p">)</span>
+<span class="c">% Calculate the mean</span><span class="w"></span>
+<span class="n">avg_field_roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sum</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">roi</span><span class="p">)</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">elm_vols</span><span class="p">(</span><span class="n">roi</span><span class="p">))</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">elm_vols</span><span class="p">(</span><span class="n">roi</span><span class="p">));</span><span class="w"></span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;mean %s in ROI: %f\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">,</span><span class="w"> </span><span class="n">avg_field_roi</span><span class="p">)</span><span class="w"></span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="roi-analysis-using-surfaces">
+</section>
+</section>
+<section id="roi-analysis-using-surfaces">
 <h2>ROI Analysis Using Surfaces<a class="headerlink" href="#roi-analysis-using-surfaces" title="Permalink to this headline">¶</a></h2>
 <p>An alternative analysis method is to use the <strong>middle cortical surfaces</strong> created by SimNIBS.</p>
 <div class="admonition note">
@@ -269,10 +269,6 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
 </ul>
 </div></blockquote>
 <p>2.2. Select a region from the atlas</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Instead of an atlas, it is also possible to define the ROI using the same methods as described in the</p>
-</div>
 </li>
 <li><p>Calculate field in ROI using a weighted average.</p>
 <p>3.1. Calculate node areas</p>
@@ -308,7 +304,7 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
 <p>3.3. Calculate an weighted average</p>
 </li>
 </ol>
-<div class="section" id="id1">
+<section id="id1">
 <h3>Python<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">ROI analysis of the electric field from a simulation using an atlas.</span>
@@ -345,47 +341,47 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean &#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s1">&#39; in &#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="s1">&#39;: &#39;</span><span class="p">,</span> <span class="n">mean_magnE</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="id2">
+</section>
+<section id="id2">
 <h3>MATLAB<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% ROI analysis of the electric field from a simulation using an atlas.</span>
-<span class="c">% We will calculate the mean electric field in a gray matter </span>
-<span class="c">% ROI defined using an atlas</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% ROI analysis of the electric field from a simulation using an atlas.</span><span class="w"></span>
+<span class="c">% We will calculate the mean electric field in a gray matter </span><span class="w"></span>
+<span class="c">% ROI defined using an atlas</span><span class="w"></span>
 
 
-<span class="c">% Read the simulation results interpolated to the middle gray matter surface</span>
-<span class="n">surf</span> <span class="p">=</span> <span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span>
-    <span class="n">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span> <span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span> <span class="k">...</span>
-             <span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="k">...</span>
-<span class="p">);</span>
+<span class="c">% Read the simulation results interpolated to the middle gray matter surface</span><span class="w"></span>
+<span class="nb">surf</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_load_gmsh4</span><span class="p">(</span><span class="k">...</span><span class="w"></span>
+<span class="w">    </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;tdcs_simu&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;subject_overlays&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">...</span><span class="w"></span>
+<span class="w">             </span><span class="s">&#39;ernie_TDCS_1_scalar_central.msh&#39;</span><span class="p">)</span><span class="k">...</span><span class="w"></span>
+<span class="p">);</span><span class="w"></span>
 
-<span class="c">% Load the atlas and define the brain region of interest</span>
-<span class="p">[</span><span class="n">labels</span><span class="p">,</span> <span class="n">snames</span><span class="p">]</span> <span class="p">=</span> <span class="n">subject_atlas</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">fullfile</span><span class="p">(</span><span class="n">pwd</span><span class="p">,</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">),</span> <span class="s">&#39;HCP_MMP1&#39;</span><span class="p">);</span>
-<span class="n">region_name</span> <span class="p">=</span> <span class="s">&#39;lh.4&#39;</span><span class="p">;</span>
-<span class="n">roi_idx</span><span class="p">=</span><span class="nb">find</span><span class="p">(</span><span class="n">strcmpi</span><span class="p">(</span><span class="n">snames</span><span class="p">,</span> <span class="n">region_name</span><span class="p">));</span>
-<span class="n">node_idx</span> <span class="p">=</span> <span class="n">labels</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="p">}.</span><span class="n">data</span><span class="o">==</span><span class="n">roi_idx</span><span class="p">;</span>
+<span class="c">% Load the atlas and define the brain region of interest</span><span class="w"></span>
+<span class="p">[</span><span class="n">labels</span><span class="p">,</span><span class="w"> </span><span class="n">snames</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">subject_atlas</span><span class="p">(</span><span class="nb">surf</span><span class="p">,</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="nb">pwd</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">),</span><span class="w"> </span><span class="s">&#39;HCP_MMP1&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">region_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;lh.4&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">roi_idx</span><span class="p">=</span><span class="nb">find</span><span class="p">(</span><span class="nb">strcmpi</span><span class="p">(</span><span class="n">snames</span><span class="p">,</span><span class="w"> </span><span class="n">region_name</span><span class="p">));</span><span class="w"></span>
+<span class="n">node_idx</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">labels</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="p">}.</span><span class="n">data</span><span class="o">==</span><span class="n">roi_idx</span><span class="p">;</span><span class="w"></span>
 
-<span class="c">% Plot the ROI</span>
-<span class="n">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="o">+</span><span class="mi">1</span><span class="p">}.</span><span class="n">data</span> <span class="p">=</span> <span class="n">int8</span><span class="p">(</span><span class="n">node_idx</span><span class="p">);</span>
-<span class="n">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="p">}.</span><span class="n">name</span> <span class="p">=</span> <span class="n">region_name</span><span class="p">;</span>
-<span class="n">mesh_show_surface</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="s">&#39;field_idx&#39;</span><span class="p">,</span> <span class="n">region_name</span><span class="p">)</span>
+<span class="c">% Plot the ROI</span><span class="w"></span>
+<span class="nb">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="o">+</span><span class="mi">1</span><span class="p">}.</span><span class="n">data</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">int8</span><span class="p">(</span><span class="n">node_idx</span><span class="p">);</span><span class="w"></span>
+<span class="nb">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="k">end</span><span class="p">}.</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">region_name</span><span class="p">;</span><span class="w"></span>
+<span class="n">mesh_show_surface</span><span class="p">(</span><span class="nb">surf</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;field_idx&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">region_name</span><span class="p">)</span><span class="w"></span>
 
-<span class="c">% calculate the node areas, we will use those later for averaging</span>
-<span class="n">nodes_areas</span> <span class="p">=</span> <span class="n">mesh_get_node_areas</span><span class="p">(</span><span class="n">surf</span><span class="p">);</span>
+<span class="c">% calculate the node areas, we will use those later for averaging</span><span class="w"></span>
+<span class="n">nodes_areas</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mesh_get_node_areas</span><span class="p">(</span><span class="nb">surf</span><span class="p">);</span><span class="w"></span>
 
-<span class="c">% Get the field of interest</span>
-<span class="n">field_name</span> <span class="p">=</span> <span class="s">&#39;E_magn&#39;</span><span class="p">;</span>
-<span class="n">field_idx</span> <span class="p">=</span> <span class="n">get_field_idx</span><span class="p">(</span><span class="n">surf</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="s">&#39;node&#39;</span><span class="p">);</span>
-<span class="n">field</span> <span class="p">=</span> <span class="n">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">data</span><span class="p">;</span>
+<span class="c">% Get the field of interest</span><span class="w"></span>
+<span class="n">field_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;E_magn&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">field_idx</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">get_field_idx</span><span class="p">(</span><span class="nb">surf</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;node&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">surf</span><span class="p">.</span><span class="n">node_data</span><span class="p">{</span><span class="n">field_idx</span><span class="p">}.</span><span class="n">data</span><span class="p">;</span><span class="w"></span>
 
-<span class="c">% Calculate the mean</span>
-<span class="n">avg_field_roi</span> <span class="p">=</span> <span class="n">sum</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">node_idx</span><span class="p">)</span><span class="o">.*</span><span class="n">nodes_areas</span><span class="p">(</span><span class="n">node_idx</span><span class="p">))</span><span class="o">/</span><span class="n">sum</span><span class="p">(</span><span class="n">nodes_areas</span><span class="p">(</span><span class="n">node_idx</span><span class="p">));</span>
-<span class="n">fprintf</span><span class="p">(</span><span class="s">&#39;Average %s in %s: %f\n&#39;</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">region_name</span><span class="p">,</span> <span class="n">avg_field_roi</span><span class="p">)</span>
+<span class="c">% Calculate the mean</span><span class="w"></span>
+<span class="n">avg_field_roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sum</span><span class="p">(</span><span class="n">field</span><span class="p">(</span><span class="n">node_idx</span><span class="p">)</span><span class="o">.*</span><span class="n">nodes_areas</span><span class="p">(</span><span class="n">node_idx</span><span class="p">))</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">nodes_areas</span><span class="p">(</span><span class="n">node_idx</span><span class="p">));</span><span class="w"></span>
+<span class="nb">fprintf</span><span class="p">(</span><span class="s">&#39;Average %s in %s: %f\n&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">field_name</span><span class="p">,</span><span class="w"> </span><span class="n">region_name</span><span class="p">,</span><span class="w"> </span><span class="n">avg_field_roi</span><span class="p">)</span><span class="w"></span>
 </pre></div>
 </div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
           </div>
@@ -485,7 +481,7 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

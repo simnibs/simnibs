@@ -450,7 +450,7 @@ class Elements:
             tetrahedra
         '''
         faces, th_faces, adjacency_list = self.get_faces()
-        adj_th = -np.ones((self.nr, 4), dtype=np.int)
+        adj_th = -np.ones((self.nr, 4), dtype=int)
         # Triangles
         if len(self.triangles) > 0:
             # stack faces and triangles
@@ -1507,11 +1507,11 @@ class Msh:
 
         # Starting position for walking algorithm: the closest baricenter
         _, closest_th = kdtree.query(points)
-        pts = np.array(points, dtype=np.float)
-        th_nodes = np.array(th_nodes, dtype=np.float)
-        closest_th = np.array(closest_th, dtype=np.int)
-        th_faces = np.array(th_faces, dtype=np.int)
-        adjacency_list = np.array(adjacency_list, dtype=np.int)
+        pts = np.array(points, dtype=float)
+        th_nodes = np.array(th_nodes, dtype=float)
+        closest_th = np.array(closest_th, dtype=int)
+        th_faces = np.array(th_faces, dtype=int)
+        adjacency_list = np.array(adjacency_list, dtype=int)
         th_with_points = cython_msh.find_tetrahedron_with_points(
             pts, th_nodes, closest_th, th_faces, adjacency_list)
 
@@ -1577,7 +1577,7 @@ class Msh:
         '''
         triangles = self.nodes[self.elm.get_outside_faces()]
         quantities = cython_msh.calc_quantities_for_test_point_in_triangle(triangles)
-        points = np.array(points, dtype=np.float)
+        points = np.array(points, dtype=float)
         inside = cython_msh.test_point_in_triangle(points, *quantities)
 
         return inside
@@ -2040,34 +2040,66 @@ class Msh:
             th_with_points[~np.isin(th_with_points, th_indices)] = -1
         inside = th_with_points != -1
         pos_nr = np.arange(len(pos))
-        th_nodes = self.elm[th_with_points[inside]]
-
-        M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
-        for i in range(4):
-            M += scipy.sparse.csc_matrix(
-                (bar[inside, i],
-                 (pos_nr[inside], th_nodes[:, i] - 1)),
-                shape=M.shape)
-
-        if out_fill != 'nearest':
-            v = out_fill * np.ones(np.sum(~inside))
-            M += scipy.sparse.csc_matrix(
-                (v, (pos_nr[~inside], np.zeros(np.sum(~inside)))),
-                shape=M.shape)
+        
+        if th_indices is None:
+            th_nodes = self.elm[th_with_points[inside]]
+            M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
 
         else:
-            _, nearest = self.nodes.find_closest_node(
-                    pos[~inside], return_index=True)
-            M += scipy.sparse.csc_matrix(
-                (np.ones(np.sum(~inside)), (pos_nr[~inside], nearest-1)),
-                shape=M.shape)
+            # get the mask of elements in the volume defined by 'th_indices'
+            is_in = np.in1d(self.elm.elm_number, th_indices)
+
+            # get the 'elm_number' of the tetrahedra in 'self' which has 'is_in' == True
+            elm_in_volume = self.elm.elm_number[is_in]
+
+            # 'msh_in_volume' contains only the tetrahedra with 'elm_number == elm_in_volume'
+            msh_in_volume = self.crop_mesh(elements=elm_in_volume)
+
+            # the 'elm_number' of elements in 'self' with 'inside' == True
+            th = th_with_points[inside]
+
+            # get the indices of elements in 'msh_in_volume'. The 'elm_number' of the same elements are 'th' in 'self'. 'idx' starts from 0, not 1.
+            idx = np.searchsorted(elm_in_volume, th)
+
+            # get the 'node_number_list' of the tetrahedra with indices of 'idx'
+            th_nodes = msh_in_volume.elm[idx+1]
+
+            M = scipy.sparse.csc_matrix((len(pos), msh_in_volume.nodes.nr))
+
+        # if any points are inside
+        if np.any(inside):
+            for i in range(4):
+                M += scipy.sparse.csc_matrix(
+                    (bar[inside, i],
+                    (pos_nr[inside], th_nodes[:, i] - 1)),
+                    shape=M.shape)
+
+        # if any points are outside, fill in the unassigned values
+        if np.any(~inside):
+
+            if out_fill != 'nearest':
+                v = out_fill * np.ones(np.sum(~inside))
+                M += scipy.sparse.csc_matrix(
+                    (v, (pos_nr[~inside], np.zeros(np.sum(~inside)))),
+                    shape=M.shape)
+            else:
+                if th_indices is None:
+                    _, nearest = self.nodes.find_closest_node(
+                        pos[~inside], return_index=True)
+                else:
+                    _, nearest = msh_in_volume.nodes.find_closest_node(
+                        pos[~inside], return_index=True)
+
+                M += scipy.sparse.csc_matrix(
+                    (np.ones(np.sum(~inside)), (pos_nr[~inside], nearest-1)),
+                    shape=M.shape)
 
         if element_wise:
             if th_indices is None:
-                M = M.dot(self.elm2node_matrix())
+                M = M @ self.elm2node_matrix()
             else:
-                M = M.dot(self.elm2node_matrix(th_indices))
-
+                M = M @ msh_in_volume.elm2node_matrix()
+ 
         return M
 
 
@@ -2588,7 +2620,7 @@ class Msh:
         '''
         assert step_size > 0 and step_size < 1
         if nodes_mask is None:
-            nodes_mask = np.ones(self.nodes.nr, dtype=np.bool)
+            nodes_mask = np.ones(self.nodes.nr, dtype=bool)
 
         if len(nodes_mask) != self.nodes.nr:
             raise ValueError(
@@ -2617,7 +2649,7 @@ class Msh:
             )
 
         surf_nodes = np.unique(tr)
-        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, np.float)
+        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
         for i in range(n_steps):
             cf = cython_msh.gauss_smooth(
                 surf_nodes.astype(np.uint),
@@ -2743,7 +2775,7 @@ class Data(object):
         except IndexError:
             return 1
 
-    def interpolate_to_surface(self, surface, out_fill='nearest'):
+    def interpolate_to_surface(self, surface, out_fill='nearest', th_indices=None):
         ''' Interpolates the field in the nodes of a given surface
         The interpolation occurs in the tetrahedra!
 
@@ -2759,7 +2791,7 @@ class Data(object):
         node_data: NodeData
             Node data structure with the interpolated field
         '''
-        interp = self.interpolate_scattered(surface.nodes.node_coord, out_fill=out_fill)
+        interp = self.interpolate_scattered(surface.nodes.node_coord, out_fill=out_fill, th_indices=th_indices)
         return NodeData(interp, name=self.field_name, mesh=surface)
 
     def to_nifti(self, n_voxels, affine, fn=None, units='mm', qform=None,
@@ -2793,7 +2825,7 @@ class Data(object):
         '''
         data = self.interpolate_to_grid(n_voxels, affine, method=method,
                                         continuous=continuous)
-        if data.dtype == np.bool or data.dtype == bool:
+        if data.dtype == np.bool_ or data.dtype == bool:
             data = data.astype(np.uint8)
         if data.dtype == np.float64:
             data = data.astype(np.float32)
@@ -3421,7 +3453,7 @@ class ElementData(Data):
         return self.elm_data2node_data()
 
     def interpolate_scattered(self, points, out_fill=np.nan, method='linear',
-                              continuous=False, squeeze=True):
+                              continuous=False, squeeze=True, th_indices=None):
         ''' Interpolates the ElementData into the points by finding the element
         containing the point and assigning the value in it
 
@@ -3441,91 +3473,133 @@ class ElementData(Data):
             behaviour of the function only if method == 'linear'. Default: False
         squeeze: bool
             Wether to squeeze the output. Default: True
+        th_indices: np.ndarray (optional)
+            Indices of the tetrahedra to be considered in the volume. Default: use all
+            tetrahedra
 
         Returns
         -------
         f: np.ndarray
             Value of function in the points
         '''
+
         self._test_msh()
-        msh = self.mesh
+
+        msh = copy.deepcopy(self.mesh)
+
         if len(msh.elm.tetrahedra) == 0:
             raise InvalidMeshError('Mesh has no volume elements')
         if len(self.value.shape) > 1:
             f = np.zeros((points.shape[0], self.nr_comp), self.value.dtype)
         else:
             f = np.zeros((points.shape[0], ), self.value.dtype)
-        th_with_points = \
-            msh.find_tetrahedron_with_points(points, compute_baricentric=False)
-        inside = th_with_points != -1
 
         if method == 'assign':
-            f[inside] = self[th_with_points[inside]]
-            if out_fill == 'nearest':
-                _, nearest = msh.find_closest_element(
-                    points[~inside], return_index=True)
 
-                f[~inside] = self[nearest]
+            th_with_points = \
+                msh.find_tetrahedron_with_points(points, compute_baricentric=False)
+
+            if th_indices is not None:
+                th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
+            inside = th_with_points != -1
+
+            f[inside] = self[th_with_points[inside]]
+
+        elif method == 'linear':
+
+            if continuous:
+                nd = self.elm_data2node_data()
+                f = nd.interpolate_scattered(points, out_fill=out_fill, squeeze=False, th_indices=th_indices)
+
+                # nd.interpolate_scattered has taken care of the points outside, so set all elements in 'inside' to be True
+                inside = np.ones((points.shape[0],), dtype='bool')
+
+            else:
+
+                th_with_points, bar = msh.find_tetrahedron_with_points(points, compute_baricentric=True)
+
+                if th_indices is not None:
+                    th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
+                inside = th_with_points != -1
+
+                # if any points are inside
+                if np.any(inside):
+
+                    # get the indices of True elements in 'inside'
+                    where_inside = np.where(inside)[0]
+
+                    # get the 'elm_number' of the tetrahedra in 'msh' which contain 'points' in 'points' order
+                    # assert where_inside.shape == th.shape
+                    th = th_with_points[where_inside]
+
+                    # get sorted unique elements of `th`
+                    sorted_th, arg_th, arg_inv = np.unique(th, return_index=True, return_inverse=True)
+
+                    # get the 'tag1' from 'msh' for every element in 'th' in 'points' order
+                    sorted_tag = msh.elm.tag1[sorted_th - 1]
+
+                    # assign 'msh.elmdata'
+                    msh.elmdata = [ElementData(self.value, mesh=msh)]
+
+                    for t in np.unique(sorted_tag):
+                        # find the elements in 'sorted_tag' which equals to 't'
+                        is_t = sorted_tag == t
+
+                        # 'msh_tag' contains only the tetrahedra with 'elm_number == th_with_t'
+                        msh_tag = msh.crop_mesh(tags=t)
+
+                        # convert the 'elmdata' to 'nodedata'
+                        nd = msh_tag.elmdata[0].elm_data2node_data()
+
+                        # 'msh_with_t' is sorted because 'elm_number' is always sorted
+                        msh_with_t = msh.elm.elm_number[msh.elm.tag1 == t]
+
+                        # use 'is_t' to select the indices of the tetrahedra inside and with 'tag1 == t'
+                        where_inside_with_t = where_inside[is_t[arg_inv]]
+
+                        # the 'elm_number' of elements in 'msh'. These elements contain points and 'tag1 == t'
+                        th_with_t = th_with_points[where_inside_with_t]
+
+                        # get the indices of elements in 'msh_tag'. The 'elm_number' of the same elements are 'th_with_t' in 'msh'. 'idx' starts from 0, not 1.
+                        idx = np.searchsorted(msh_with_t, th_with_t)
+
+                        if where_inside_with_t.size and len(nd.value.shape) == 1:
+                            f[where_inside_with_t] = np.einsum('ik, ik -> i',
+                                                               nd[msh_tag.elm[idx+1]],
+                                                               bar[where_inside_with_t])
+                        elif where_inside_with_t.size:
+                            f[where_inside_with_t] = np.einsum('ikj, ik -> ij',
+                                                               nd[msh_tag.elm[idx+1]],
+                                                               bar[where_inside_with_t])
+                                                               
+        else:
+            raise ValueError('Invalid interpolation method!')
+
+        # Finally, fill in the unassigned values
+        if np.any(~inside):
+
+            if out_fill == 'nearest':
+                if th_indices is not None:
+
+                    msh.add_element_field(self.value, self.field_name)
+
+                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    elm_in_volume = msh.elm.elm_number[is_in]
+                    msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
+
+                    _, nearest = msh_in_volume.find_closest_element(points[~inside], return_index=True)
+
+                    f[~inside] = msh_in_volume.elmdata[-1][nearest]
+                else:
+
+                    _, nearest = msh.find_closest_element(points[~inside], return_index=True)
+
+                    f[~inside] = self[nearest]
 
             else:
                 f[~inside] = out_fill
-
-        elif method == 'linear':
-            if continuous:
-                nd = self.elm_data2node_data()
-                f = nd.interpolate_scattered(points, out_fill=out_fill, squeeze=False)
-            else:
-                # if all points are outside
-                if not np.any(inside):
-                    tags = [np.unique(msh.elm.tag1[msh.elm.elm_type==4])]
-                # if there are points inside
-                else:
-                    tags = np.unique(msh.elm.tag1[th_with_points[inside] - 1])
-                msh_copy = copy.deepcopy(msh)
-                msh_copy.elmdata = [ElementData(self.value, mesh=msh_copy)]
-                # create a list of fields at each tag
-                field_at_tags = []
-                for t in tags:
-                    msh_tag = msh_copy.crop_mesh(tags=t)
-                    nd = msh_tag.elmdata[0].elm_data2node_data()
-                    field_at_tags.append(nd.interpolate_scattered(points, out_fill=np.nan, squeeze=False))
-                    del msh_tag
-                    del nd
-                # Join the list of field values
-                del msh_copy
-                f = field_at_tags[0]
-                count = np.ones(len(f), dtype=int)
-                for f_t in field_at_tags[1:]:
-                    # find where f and f_t are unasigned
-                    unasigned_f = np.isnan(f)
-                    if unasigned_f.ndim == 2:
-                        unasigned_f = np.any(unasigned_f, axis=1)
-                    unasigned_ft = np.isnan(f_t)
-                    if unasigned_ft.ndim == 2:
-                        unasigned_ft = np.any(unasigned_ft, axis=1)
-                    # Assign to f unassigned values
-                    f[unasigned_f] = f_t[unasigned_f]
-                    # if for some reason a value is in 2 tissues, calculate the average
-                    f[~unasigned_f * ~unasigned_ft] += f_t[~unasigned_f * ~unasigned_ft]
-                    count[~unasigned_f * ~unasigned_ft] += 1
-                del field_at_tags
-                if f.ndim == 2:
-                    f /= count[:, None]
-                else:
-                    f /= count
-
-                # Finally, fill in the unassigned values
-                unasigned_f = np.isnan(f)
-                if unasigned_f.ndim == 2:
-                    unasigned_f = np.any(unasigned_f, axis=1)
-                if out_fill == 'nearest':
-                    _, nearest = msh.find_closest_element(points[unasigned_f],
-                                                          return_index=True)
-                    f[unasigned_f] = self[nearest]
-                else:
-                    f[unasigned_f] = out_fill
-        else:
-            raise ValueError('Invalid interpolation method!')
 
         if squeeze:
             f = np.squeeze(f)
@@ -3583,11 +3657,11 @@ class ElementData(Data):
             nd = inv_affine.dot(nd.T).T[:, :3]
 
             # initialize image
-            image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
-            field = v.astype(np.float)
+            image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
+            field = v.astype(float)
             image = cython_msh.interp_grid(
-                np.array(n_voxels, dtype=np.int), field, nd.astype(np.float),
-                (msh_th.elm.node_number_list - 1).astype(np.int))
+                np.array(n_voxels, dtype=int), field, nd.astype(float),
+                (msh_th.elm.node_number_list - 1).astype(int))
             image = image.astype(self.value.dtype)
             if self.nr_comp == 1:
                 image = np.squeeze(image, axis=3)
@@ -3599,9 +3673,9 @@ class ElementData(Data):
 
             else:
                 if self.nr_comp != 1:
-                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=np.float)
+                    image = np.zeros(list(n_voxels) + [self.nr_comp], dtype=float)
                 else:
-                    image = np.zeros(list(n_voxels), dtype=np.float)
+                    image = np.zeros(list(n_voxels), dtype=float)
                 # Interpolate each tag separetelly
                 tags = np.unique(msh_th.elm.tag1)
                 msh_th.elmdata = [ElementData(v, mesh=msh_th)]
@@ -3962,7 +4036,7 @@ class NodeData(Data):
             np.sum(normals[nodes] * self[nodes], axis=1) * areas[nodes])
         return flux
 
-    def interpolate_scattered(self, points, out_fill=np.nan, squeeze=True):
+    def interpolate_scattered(self, points, out_fill=np.nan, squeeze=True, th_indices=None):
         ''' Interpolates the NodeaData into the points by finding the element
         containing the point and performing linear interpolation inside the element
 
@@ -3975,6 +4049,9 @@ class NodeData(Data):
             value of th nearest node. (default: NaN)
         squeeze: bool
             Wether to squeeze the output. Default: True
+        th_indices: np.ndarray (optional)
+            Indices of the tetrahedra to be considered in the volume. Default: use all
+            tetrahedra
 
         Returns
         -------
@@ -3982,7 +4059,9 @@ class NodeData(Data):
             Value of function in the points
         '''
         self._test_msh()
-        msh = self.mesh
+
+        msh = copy.deepcopy(self.mesh)
+        
         if len(msh.elm.tetrahedra) == 0:
             raise InvalidMeshError('Mesh has no volume elements')
         if len(self.value.shape) > 1:
@@ -3992,7 +4071,13 @@ class NodeData(Data):
 
         th_with_points, bar = \
             msh.find_tetrahedron_with_points(points, compute_baricentric=True)
+
+        if th_indices is not None:
+            th_with_points[~np.isin(th_with_points, th_indices)] = -1
+
         inside = th_with_points != -1
+
+        # if any points are inside
         if np.any(inside) and len(self.value.shape) == 1:
             f[inside] = np.einsum('ik, ik -> i',
                                   self[msh.elm[th_with_points[inside]]],
@@ -4002,12 +4087,30 @@ class NodeData(Data):
                                   self[msh.elm[th_with_points[inside]]],
                                   bar[inside])
 
-        if out_fill == 'nearest':
-            _, nearest = msh.nodes.find_closest_node(points[~inside],
-                                                     return_index=True)
-            f[~inside] = self[nearest]
-        else:
-            f[~inside] = out_fill
+        # if any points are outside, fill in the unassigned values
+        if np.any(~inside):
+
+            if out_fill == 'nearest':
+                if th_indices is not None:
+
+                    msh.add_node_field(self.value, self.field_name)
+
+                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    elm_in_volume = msh.elm.elm_number[is_in]
+                    msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
+
+                    _, nearest = msh_in_volume.nodes.find_closest_node(points[~inside],
+                                                                       return_index=True)
+
+                    f[~inside] = msh_in_volume.nodedata[-1][nearest]
+
+                else:
+                    _, nearest = msh.nodes.find_closest_node(points[~inside],
+                                                             return_index=True)
+                    f[~inside] = self[nearest]
+
+            else:
+                f[~inside] = out_fill
 
         if squeeze:
             f = np.squeeze(f)
@@ -4052,13 +4155,13 @@ class NodeData(Data):
         nd = inv_affine.dot(nd.T).T[:, :3]
 
         # initialize image
-        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=np.float)
+        image = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2], self.nr_comp], dtype=float)
         field = v.astype(float)
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '
                              'the number of nodes present in the volume-only mesh')
         image = cython_msh.interp_grid(
-            np.array(n_voxels, dtype=np.int), field, nd,
+            np.array(n_voxels, dtype=int), field, nd,
             msh_th.elm.node_number_list - 1)
         image = image.astype(self.value.dtype)
         if self.nr_comp == 1:
@@ -4728,7 +4831,7 @@ def _read_msh_4(fn, m):
             node_nr = int(node_nr)
         n_read = 0
         node_number = np.zeros(node_nr, dtype=np.int32)
-        node_coord = np.zeros((node_nr, 3), dtype=np.float)
+        node_coord = np.zeros((node_nr, 3), dtype=float)
         for block in range(entity_blocks):
             if binary:
                 _, _, parametric, n_in_block = struct.unpack(
@@ -4749,8 +4852,8 @@ def _read_msh_4(fn, m):
                 node_nbr_block = temp['id']
                 node_coord_block = temp['coord']
             else:
-                node_nbr_block = np.zeros(n_in_block, dtype=np.int)
-                node_coord_block = np.zeros(3 * n_in_block, dtype=np.float)
+                node_nbr_block = np.zeros(n_in_block, dtype=int)
+                node_coord_block = np.zeros(3 * n_in_block, dtype=float)
                 for i in range(n_in_block):
                     line = f.readline().decode().strip().split()
                     node_nbr_block[i] = line[0]
@@ -5103,7 +5206,7 @@ def read_res_file(fn_res, fn_pre=None):
 
         if type_of_file == '0':
             v = np.loadtxt(f, comments='$', skiprows=3, usecols=[
-                           0], delimiter=' ', dtype=np.float)
+                           0], delimiter=' ', dtype=float)
 
         elif type_of_file == '1':
             f.readline()
@@ -5116,7 +5219,7 @@ def read_res_file(fn_res, fn_pre=None):
                 else:
                     s += line
             s = s.strip()
-            cols = np.frombuffer(s, dtype=np.float)
+            cols = np.frombuffer(s, dtype=float)
             v = cols[::2]
 
         else:
@@ -5606,7 +5709,7 @@ def read_stl(fn):
                 line = line.decode().lstrip().split()
                 if line[0] == "vertex":
                     mesh_flat.append(line[1:])
-        mesh_flat = np.array(mesh_flat, dtype=np.float)
+        mesh_flat = np.array(mesh_flat, dtype=float)
 
     _, uidx, iidx = np.unique(mesh_flat, axis=0, return_index=True,
                               return_inverse=True)
@@ -5782,7 +5885,7 @@ def read_medit(fn):
             raise IOError('invalid mesh format')
         n_vertices = int(f.readline().strip())
         assert n_vertices > 0
-        vertices = np.loadtxt(f, dtype=np.float, max_rows=n_vertices)[:, :-1]
+        vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)
         elm = Elements()
         while True:
@@ -5796,13 +5899,13 @@ def read_medit(fn):
             else:
                 raise IOError(f'Cant read element type: {element_type}')
             n_elements = int(f.readline().strip())
-            elements_tag = np.loadtxt(f, dtype=np.int, max_rows=n_elements)
+            elements_tag = np.loadtxt(f, dtype=int, max_rows=n_elements)
             elements = elements_tag[:, :-1]
             tag = elements_tag[:, -1]
             if elements.shape[1] == 3:
-                elements = np.hstack((elements, -1*np.ones((n_elements, 1), np.int)))
+                elements = np.hstack((elements, -1*np.ones((n_elements, 1), int)))
             elm.node_number_list = np.vstack((elm.node_number_list, elements))
-            elm.elm_type = np.hstack((elm.elm_type, elm_type*np.ones(n_elements, np.int)))
+            elm.elm_type = np.hstack((elm.elm_type, elm_type*np.ones(n_elements, int)))
             elm.tag1 = np.hstack((elm.tag1, tag))
 
         elm.tag2 = elm.tag1.copy()
@@ -5886,7 +5989,7 @@ def _fix_indexing_one(index):
 
     def is_integer(index):
         answer = isinstance(index, int)
-        answer += isinstance(index, np.int)
+        answer += isinstance(index, int)
         answer += isinstance(index, np.intc)
         answer += isinstance(index, np.intp)
         answer += isinstance(index, np.int8)

@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mri2mesh &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>mri2mesh &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -39,21 +39,21 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="mri2mesh">
+  <section id="mri2mesh">
 <span id="mri2mesh-docs"></span><h1>mri2mesh<a class="headerlink" href="#mri2mesh" title="Permalink to this headline">¶</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><em>Mri2mesh</em> is deprecated. Please use <a class="reference internal" href="charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
 </div>
-<div class="section" id="description">
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>mri2mesh reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but will create better skull segmentations when also a T2w image is available.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>mri2mesh depends on <a class="reference external" href="https://surfer.nmr.mgh.harvard.edu/">FreeSurfer</a> (5.3.0 or newer) and <a class="reference external" href="https://fsl.fmrib.ox.ac.uk/fsl/fslwiki">FSL</a> (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see <a class="reference internal" href="../../installation/optional.html#optional-deps"><span class="std std-ref">Optional Dependencies</span></a> for instructions on how to set-up FreeSurfer and FSL</p>
 </div>
-</div>
-<div class="section" id="usage-example">
+</section>
+<section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
@@ -83,8 +83,8 @@
 <div><p>This will show the reconstructed surfaces overlaid over the MR images using freeview. The red lines indicate the final surfaces used for volume meshing, the yellow indicate the GM and WM surfaces created by FreeSurfer. A second freeview will show the subject T1 overlaid on the MNI template for a visual check of the registration accuracy. In addition, you should have a look at the tetrahedral head mesh by loading it into gmsh.</p>
 </div></blockquote>
 </div></blockquote>
-</div>
-<div class="section" id="further-notes">
+</section>
+<section id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>A quick check can be performed by looking at the final volume masks overlaid over the structural images in fslview: <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">--qc</span> <span class="pre">ernie</span></code></p></li>
@@ -95,12 +95,12 @@
 <li><p>Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template, using FSL’s fnirt command. Even though fnirt was developed for registering the brain, usually acceptable results are achieved by <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> for the whole head. When a T1 without fat suppression is used as input, the bright skull might be warped into the skin or brain. Using the option <code class="code docutils literal notranslate"><span class="pre">–mnimaskskull</span></code> can prevent this. A skull mask will then be applied to down-weight the skull intensity. The transformations are stored in the <em>toMNI</em> subdirectory of the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/</span></code> folder. Subject space is defined by the qform set in the <code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">_T1fs_conform.nii.gz</span></code>, which can be found in the same folder as the head mesh.</p></li>
 <li><p>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mri2mesh_log.html</span></code> file.</p></li>
 </ul>
-</div>
-<div class="section" id="references">
+</section>
+<section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1002/hbm.21479">Windhoff, M., Opitz, A., and Thielscher, A. (2013). Electric field calculations in brain stimulation based on finite elements: an optimized processing pipeline for the generation and usage of accurate individual head models. Human brain mapping, 34(4), 923-935.</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -177,7 +177,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -114,7 +114,6 @@ For this kind of analysis, we have to
 
    2.2. Select a region from the atlas
 
-   .. note:: Instead of an atlas, it is also possible to define the ROI using the same methods as described in the 
 3. Calculate field in ROI using a weighted average.
 
    3.1. Calculate node areas

@@ -1,0 +1,251 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Creating Head Models &#8212; SimNIBS 4.0a0 documentation</title>
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <div class="admonition warning" id="head-modeling-tutorial-old">
+<p class="admonition-title">Warning</p>
+<p>The following describes head model creation based on <em>headreco</em> or <em>mri2mesh</em>. Both are deprecated. Please use <a class="reference internal" href="../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
+</div>
+<section id="creating-head-models">
+<h1>Creating Head Models<a class="headerlink" href="#creating-head-models" title="Permalink to this headline">¶</a></h1>
+<section id="mri-scan">
+<h2>MRI Scan<a class="headerlink" href="#mri-scan" title="Permalink to this headline">¶</a></h2>
+<p>To create individualized models, SimNIBS <strong>requires</strong> a T1-weighted image. T2-weighted images are optional, but <strong>highly recommended</strong>.</p>
+<section id="t1-weighted-images">
+<h3>T1-weighted images<a class="headerlink" href="#t1-weighted-images" title="Permalink to this headline">¶</a></h3>
+<p>Commonly used for segmentation of the brain. Usually acquired at a rather low readout bandwidth to maximize SNR. However, using a low readout bandwidth comes with the disadvantage that the positions of the (fatty) spongy bone and subcutaneous fat will be displaced in the MR images due to the chemical shift artifact. This can result in the spongy bone touching brain gray matter (GM), rendering an accurate segmentation of the GM pial surface and the boundary between cerebrospinal fluid (CSF) and skull difficult. For this reason, we recommend to <strong>acquire the T1w images with a fat suppression method</strong> such as selective water excitation. Specific sequence parameters can be seen at <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., NeuroImage, 2018</a>.</p>
+</section>
+<section id="t2-weighted-images">
+<h3>T2-weighted images<a class="headerlink" href="#t2-weighted-images" title="Permalink to this headline">¶</a></h3>
+<p>As both CSF and compact bone are dark in T1w images (also spongy bone will be dark when fat suppression is used), an accurate reconstruction of the skull is difficult when only a T1w image is available. For this reason, we recommend to additionally <strong>acquire a T2w image without fat suppression</strong>. T2w images are usually acquired at a high readout bandwidth, minimizing the chemical shift artifact. As they also provide very good contrast between CSF (bright) and compact bone (dark), they are a good starting point for segmenting the skull. For specific sequence parameters, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., NeuroImage, 2018</a>.</p>
+</section>
+<section id="good-and-bad-t1w-and-t2w-images">
+<h3>Good and Bad T1w and T2w images<a class="headerlink" href="#good-and-bad-t1w-and-t2w-images" title="Permalink to this headline">¶</a></h3>
+<figure class="align-default" id="id4">
+<img alt="../_images/t1_t2.jpg" src="../_images/t1_t2.jpg" />
+<figcaption>
+<p><span class="caption-text"><strong>Good</strong> T1w and T2w images</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p></p>
+<figure class="align-default" id="id5">
+<a class="reference internal image-reference" href="../_images/bad_t1.png"><img alt="../_images/bad_t1.png" src="../_images/bad_t1.png" style="width: 450.0px; height: 404.5px;" /></a>
+<figcaption>
+<p><span class="caption-text"><strong>Bad</strong> T1w image. The spongy bone is in part very bright (indicated by the red arrows) and a dark CSF region to separate GM and skull is missing at several positions (purple arrows indicate example positions).</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p></p>
+</section>
+</section>
+<section id="segmentation-and-meshing">
+<h2>Segmentation and Meshing<a class="headerlink" href="#segmentation-and-meshing" title="Permalink to this headline">¶</a></h2>
+<p>After scanning and having the MRI images in NifTI format, the next step is to create a head mesh. To do it,</p>
+<ol class="arabic simple">
+<li><p>Start a Command Prompt/Terminal window (<a class="reference internal" href="win_prompt.html#windows-terminal"><span class="std std-ref">Windows Instructions</span></a>)</p></li>
+<li><p>Navigate to the folder where the NifTI files are located (use the <code class="code docutils literal notranslate"><span class="pre">cd</span></code> command)</p></li>
+<li><p>Run a segmentation and meshing pipeline. SimNIBS offers two tools for this job, <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> and <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>. <em>headreco</em> is the most recent tool, and should be preferred in most cases.</p></li>
+</ol>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p><a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a></p></th>
+<th class="head"><p><a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Operating Systems</p></td>
+<td><p>Windows, Linux, MacOSX</p></td>
+<td><p>Linux, MacOSX</p></td>
+</tr>
+<tr class="row-odd"><td><p>External Dependencies</p></td>
+<td><p>MATLAB</p></td>
+<td><p>FreeSurfer and FSL</p></td>
+</tr>
+<tr class="row-even"><td><p>Coverage</p></td>
+<td><p>Whole head and neck</p></td>
+<td><p>Above the mouth</p></td>
+</tr>
+<tr class="row-odd"><td><p>Time to run</p></td>
+<td><p>~2 hours (with CAT12), ~1 hour (without CAT12)</p></td>
+<td><p>~10 hours</p></td>
+</tr>
+<tr class="row-even"><td><p>Reference</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., 2018</a></p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1002/hbm.21479">Windhoff et al., 2013</a></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="simple">
+<dt></dt><dd><p>Before running, please read the documentation of the tool of your choice.</p>
+</dd>
+</dl>
+<ol class="arabic simple" start="4">
+<li><p>Check the segmentation. This can be done with <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">check</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>headreco</em> or <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">-c</span> <span class="pre">&lt;SUB_ID&gt;</span></code> for models ran with <em>mri2mesh</em>. Please see the documentation for your tool of choice for more information. With <em>FreeSurfer</em> installed, this command opens two <em>freeview</em> windows, one with the T1w image, surface outlines and tissue masks, and another with the MNI transformed T1w image overlaid on the MNI template. For <em>headreco</em>, if FreeSurfer is not installed, a SPM window opens showing the MNI registration.</p></li>
+</ol>
+<figure class="align-default" id="id6">
+<img alt="../_images/check_segmentation_good.png" src="../_images/check_segmentation_good.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Good</strong> segmentation. Notice how the surface oulines (in white) nicely follows the tissue shapes in the T1w image</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p></p>
+<figure class="align-default" id="id7">
+<img alt="../_images/check_segmentation_bad.png" src="../_images/check_segmentation_bad.png" />
+<figcaption>
+<p><span class="caption-text"><strong>Bad</strong> segmentation. Notice how part of the skull is missing</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p></p>
+<figure class="align-default" id="id8">
+<img alt="../_images/check_mni.png" src="../_images/check_mni.png" />
+<figcaption>
+<p><span class="caption-text">Example of a good MNI registration.</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p></p>
+<ol class="arabic simple" start="5">
+<li><p>Load the head model in <em>Gmsh</em> and check the head mesh to ensure that head meshing went fine. First go to <em>Tools -&gt; Options -&gt; Mesh</em> and select <em>Volume faces</em>.  Then go to <em>Tools -&gt; Visibility</em> and select the volumes one by one.</p></li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Sometimes, Gmsh fails to mesh one on more tissue compartments. When this happens, running the whole pipeline again and increasing the mesh density with the <code class="code docutils literal notranslate"><span class="pre">-v</span></code> argument in <a class="reference internal" href="../documentation/command_line/headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> or the <code class="code docutils literal notranslate"><span class="pre">--numvertices</span></code> argument in <a class="reference internal" href="../documentation/command_line/mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a>.</p></li>
+</ul>
+</section>
+<section id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<p>For more information on head meshing, please see our <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>, <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., 2018</a> and <a class="reference external" href="https://doi.org/10.1002/hbm.21479">Windhoff et al., 2013</a>.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/tutorial/head_meshing_old.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

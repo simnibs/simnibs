@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>charm &#8212; SimNIBS 4.0a0 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="dwi2cond" href="dwi2cond.html" />
+    <link rel="prev" title="Command Line Tools" href="command_line.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="command_line.html" title="Previous document">Command Line Tools</a>
+        </li>
+        <li>
+          <a href="dwi2cond.html" title="Next document">dwi2cond</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="charm">
+<span id="charm-docs"></span><h1>charm<a class="headerlink" href="#charm" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Charm replaces <a class="reference internal" href="headreco.html#headreco-docs"><span class="std std-ref">headreco</span></a> or <a class="reference internal" href="mri2mesh.html#mri2mesh-docs"><span class="std std-ref">mri2mesh</span></a> that were included in older SimNIBS versions.</p>
+</div>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>charm reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but it will achieve more reliable skull segmentations when a T2w image is supplied.</p>
+</section>
+<section id="usage-example">
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Open a terminal and go to the <code class="file docutils literal notranslate"><span class="pre">ernie/</span></code> folder of the example data set.</p></li>
+<li><p>Run the reconstruction:</p></li>
+</ol>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>charm ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
+</pre></div>
+</div>
+<p>The subject ID (subID) <code class="code docutils literal notranslate"><span class="pre">ernie</span></code> is given as first argument. Charm will create a folder named <code class="file docutils literal notranslate"><span class="pre">m2m_ernie/</span></code> that contains the segmentation results and the final head mesh <code class="file docutils literal notranslate"><span class="pre">ernie.msh</span></code>. The input images are given as final arguments (first the T1, then the T2).</p>
+</div></blockquote>
+<p></p>
+<blockquote>
+<div><p>Alternatively, the reconstruction can be run with only the T1w image as input, but this can result in a less accurate skull region:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>charm ernie org/ernie_T1.nii.gz
+</pre></div>
+</div>
+<p></p>
+</div></blockquote>
+<p>REST NEEDS UPDATING
+3. Check the results:</p>
+<blockquote>
+<div><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>headreco check ernie
+</pre></div>
+</div>
+<dl class="simple">
+<dt></dt><dd><p>This will show the reconstructed surfaces overlaid over the MR images using freeview. A second freeview will show the subject T1 registered to the  MNI template for visual inspection of the accuracy of the registration. In addition, you should have a look at the tetrahedral head mesh by loading it into Gmsh. In case freeview is not available, the spm viewer will be opened to allow for a basic check of the results.</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+<section id="further-notes">
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Mesh resolution can be controlled using the -v option, which allows setting the vertex density (nodes per mm²) of the surface meshes. As a standard, <code class="code docutils literal notranslate"><span class="pre">headreco</span></code> uses 0.5 nodes per mm², resulting in head meshes with around 4 million tetrahedra.</p></li>
+<li><p>After the head mesh creation, temporary files are deleted to save disk space. Adding <code class="code docutils literal notranslate"><span class="pre">--noclean</span></code> prevents this.</p></li>
+<li><p>Manual editing: Edit one or more of the binary masks stored in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/mask_prep/</span></code>. Then run <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">surfacemesh</span> <span class="pre">subID</span></code> and <code class="code docutils literal notranslate"><span class="pre">headreco</span> <span class="pre">volumemesh</span> <span class="pre">subID</span></code> to re-create the head mesh based on the edited masks. Add <code class="code docutils literal notranslate"><span class="pre">--no-cat</span></code> to the surfacemesh step in case you did nott use CAT12. Note: When using CAT12, surfaces instead of voxel masks will be stored for GM and WM in the <code class="file docutils literal notranslate"><span class="pre">mask_prep/</span></code> folder. For now, these surfaces cannot be manually improved.</p></li>
+<li><p>Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template that is determined during the SPM12 segmentation procedure. The transformations are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> directory. Subject space is defined by the qform set in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/</span><em><span class="pre">subID</span></em><span class="pre">_T1fs_conform.nii.gz</span></code>, which can be found in the same folder as the head mesh.</p></li>
+<li><p>When something goes wrong, you can check the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/headreco_log.html</span></code> file.</p></li>
+</ul>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen, J. D., Madsen, K. H., Puonti, O., Siebner, H. R., Bauer, C., Madsen, C. G., …, and Thielscher, A. (2018). Automatic skull segmentation from MR images for realistic volume conductor models of the head: Assessment of the state-of-the-art. NeuroImage, 174, 587-598.</a></p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="command_line.html" title="Previous document">Command Line Tools</a>
+        </li>
+        <li>
+          <a href="dwi2cond.html" title="Next document">dwi2cond</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="command_line.html">Command Line Tools</a><ul>
+      <li>Previous: <a href="command_line.html" title="previous chapter">Command Line Tools</a></li>
+      <li>Next: <a href="dwi2cond.html" title="next chapter">dwi2cond</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/documentation/command_line/charm.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

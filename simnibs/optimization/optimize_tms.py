@@ -8,7 +8,7 @@ Adapted by Guilherme Saturnino, 2019
 import numpy as np
 
 
-def _create_grid(mesh, pos, distance, radius, resolution_pos):
+def _create_grid(mesh, pos, distance, radius, resolution_pos, scalp_normals_smoothing_steps=20):
     ''' Creates a position grid '''
     # extract ROI
     msh_surf = mesh.crop_mesh(elm_type=2)
@@ -38,7 +38,7 @@ def _create_grid(mesh, pos, distance, radius, resolution_pos):
     # project grid-points to skin surface
     coords_mapped = []
     coords_normals = []
-    normals_roi = msh_roi.triangle_normals(smooth=1)
+    normals_roi = msh_roi.triangle_normals(smooth=scalp_normals_smoothing_steps)
 
     q1 = coords_plane + 1e2 * resolution_pos * vh[:, 2]
     q2 = coords_plane - 1e2 * resolution_pos * vh[:, 2]
@@ -78,7 +78,7 @@ def _rotate_system(R, angle_limits, angle_res):
 
 
 def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
-                 resolution_pos=1, resolution_angle=20, angle_limits=None):
+                 resolution_pos=1, resolution_angle=20, angle_limits=None, scalp_normals_smoothing_steps=20):
     """ Determine the coil positions and orientations for bruteforce TMS optimization
 
     Parameters
@@ -101,6 +101,8 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-180, 180])
+    scalp_normals_smoothing_steps: int
+        number of smoothing steps for scalp surface (Default: 20)
 
     Returns
     -------
@@ -109,7 +111,7 @@ def get_opt_grid(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
     """
     # creates the spatial grid
     coords_mapped, coords_normals = _create_grid(
-        mesh, pos, distance, radius, resolution_pos)
+        mesh, pos, distance, radius, resolution_pos, scalp_normals_smoothing_steps)
     
     # Determines the seed y direction
     if handle_direction_ref is None:
@@ -200,7 +202,7 @@ def define_target_region(mesh, target_position, target_radius, tags, elm_type=4)
 
 
 def get_opt_grid_ADM(mesh, pos, handle_direction_ref=None, distance=1., radius=20,
-                 resolution_pos=1, resolution_angle=20, angle_limits=None):
+                 resolution_pos=1, resolution_angle=20, angle_limits=None, scalp_normals_smoothing_steps=20):
     """ Determine the coil positions and orientations for ADM TMS optimization
 
     Parameters
@@ -223,6 +225,8 @@ def get_opt_grid_ADM(mesh, pos, handle_direction_ref=None, distance=1., radius=2
         Resolution in deg of the coil positions in the region of interest (Default: 20)
     angle_limits: list of float or None
         Range of angles to get coil rotations for (Default: [-180, 180])
+    scalp_normals_smoothing_steps: int
+        number of smoothing steps for scalp surface (Default: 20)
 
     Returns
     -------
@@ -233,7 +237,7 @@ def get_opt_grid_ADM(mesh, pos, handle_direction_ref=None, distance=1., radius=2
     """
     # creates the spatial grid
     coords_mapped, coords_normals = _create_grid(
-        mesh, pos, distance, radius, resolution_pos)
+        mesh, pos, distance, radius, resolution_pos, scalp_normals_smoothing_steps)
     
     # Determines the seed y direction
     if handle_direction_ref is None:

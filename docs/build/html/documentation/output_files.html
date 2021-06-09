@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Output Files &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>Output Files &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -49,14 +49,14 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="output-files">
+  <section id="output-files">
 <span id="id1"></span><h1>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h1>
 <p>Here, we will describe the output files of many SimNIBS see <a class="reference internal" href="file_formats.html#file-formats"><span class="std std-ref">File Formats in SimNIBS</span></a> for a detailed description of each file type</p>
-<div class="section" id="head-segmentation">
+<section id="head-segmentation">
 <h2>Head Segmentation<a class="headerlink" href="#head-segmentation" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> generates a folder <code class="file docutils literal notranslate"><span class="pre">m2m_&lt;sub_id&gt;/</span></code> with the segmentation results and the head mesh <code class="file docutils literal notranslate"><span class="pre">&lt;sub_id&gt;.msh</span></code> for the FEM simulations.</p>
-</div>
-<div class="section" id="simulations">
+</section>
+<section id="simulations">
 <h2>Simulations<a class="headerlink" href="#simulations" title="Permalink to this headline">¶</a></h2>
 <p>The final simulation results are in the <em>Output Folder</em>, which can be set in the GUI or in scripts. By default, this folder is called <code class="file docutils literal notranslate"><span class="pre">simnibs_simulation/</span></code>, and is located in the same folder as the mesh file.</p>
 <p>Below, we have:</p>
@@ -67,7 +67,7 @@
 <li><p><code class="file docutils literal notranslate"><span class="pre">position_nr</span></code>: <a class="reference internal" href="sim_struct/tmslist.html#tmslist-pos"><span class="std std-ref">Coil position number</span></a>.</p></li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">coil_name</span></code>: Name of TMS coil model.</p></li>
 </ul>
-<div class="section" id="tdcs">
+<section id="tdcs">
 <h3>TDCS<a class="headerlink" href="#tdcs" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><dl class="simple">
@@ -81,8 +81,8 @@
 </dl>
 </li>
 </ul>
-</div>
-<div class="section" id="tms">
+</section>
+<section id="tms">
 <h3>TMS<a class="headerlink" href="#tms" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><dl class="simple">
@@ -96,8 +96,8 @@
 </dl>
 </li>
 </ul>
-</div>
-<div class="section" id="others">
+</section>
+<section id="others">
 <h3>Others<a class="headerlink" href="#others" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><dl class="simple">
@@ -116,8 +116,8 @@
 </dl>
 </li>
 </ul>
-</div>
-<div class="section" id="post-processing">
+</section>
+<section id="post-processing">
 <h3>Post-Processing<a class="headerlink" href="#post-processing" title="Permalink to this headline">¶</a></h3>
 <p>In the section below, we will use</p>
 <ul class="simple">
@@ -132,7 +132,7 @@
 </dl>
 </li>
 </ul>
-<div class="section" id="surface-mapping">
+<section id="surface-mapping">
 <h4>Surface Mapping<a class="headerlink" href="#surface-mapping" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><dl class="simple">
@@ -159,8 +159,8 @@
 </dl>
 </li>
 </ul>
-</div>
-<div class="section" id="volume-mapping">
+</section>
+<section id="volume-mapping">
 <h4>Volume Mapping<a class="headerlink" href="#volume-mapping" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li><dl class="simple">
@@ -175,10 +175,10 @@
 </li>
 </ul>
 <p>Inside the folders, we have <em>NIfTI</em> files with the field values. For vector fields such as <strong>E</strong> and <strong>J</strong>, the <em>NIfTI</em> files are composed of 3 volumes, each corresponding to a direction</p>
-</div>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
+</section>
 
 
           </div>
@@ -279,7 +279,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>headreco &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>headreco &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -39,13 +39,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="headreco">
+  <section id="headreco">
 <span id="headreco-docs"></span><h1>headreco<a class="headerlink" href="#headreco" title="Permalink to this headline">¶</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><em>Headreco</em> is deprecated. Please use <a class="reference internal" href="charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
 </div>
-<div class="section" id="description">
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>headreco reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but it will achieve more reliable skull segmentations when a T2w image is supplied.</p>
 <div class="admonition attention">
@@ -56,8 +56,8 @@
 <p class="admonition-title">Note</p>
 <p>headreco relies on <a class="reference external" href="https://www.fil.ion.ucl.ac.uk/spm/software/spm12/">SPM12</a> and <a class="reference external" href="http://www.neuro.uni-jena.de/cat/">CAT12</a> for segmentation. Both libraries are distributed together with SimNIBS, so you don’t need to download anything extra</p>
 </div>
-</div>
-<div class="section" id="usage-example">
+</section>
+<section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Open a terminal and go to the <code class="file docutils literal notranslate"><span class="pre">ernie/</span></code> folder of the example data set.</p></li>
@@ -95,8 +95,8 @@
 </dd>
 </dl>
 </div></blockquote>
-</div>
-<div class="section" id="further-notes">
+</section>
+<section id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p>Mesh resolution can be controlled using the -v option, which allows setting the vertex density (nodes per mm²) of the surface meshes. As a standard, <code class="code docutils literal notranslate"><span class="pre">headreco</span></code> uses 0.5 nodes per mm², resulting in head meshes with around 4 million tetrahedra.</p></li>
@@ -119,15 +119,15 @@
 </li>
 </ul>
 <p>If MATLAB is not installed in the default location, you can find out where it is installed by typing in a MATLAB terminal</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">matlabroot</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">matlabroot</span><span class="w"></span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="references">
+</section>
+<section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen, J. D., Madsen, K. H., Puonti, O., Siebner, H. R., Bauer, C., Madsen, C. G., …, and Thielscher, A. (2018). Automatic skull segmentation from MR images for realistic volume conductor models of the head: Assessment of the state-of-the-art. NeuroImage, 174, 587-598.</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -204,7 +204,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -978,14 +978,13 @@ class TestMsh:
         inside = np.ones(len(interp_points), dtype=bool)
         inside[m_out.elm.nr:] = False
         M = m.interp_matrix(interp_points,
-                            th_indices=m.elm.elm_number[m.elm.tag1 == 3],
+                            th_indices=m.elm.elm_number[np.in1d(m.elm.tag1, [3, 4, 5])],
                             element_wise=element_wise)
         if element_wise:
             x = m.elements_baricenters().value[:, 0]
         else:
             x = m.nodes.node_coord[:, 0]
-        assert np.allclose(M.dot(x)[inside], interp_points[inside, 0], atol=1, rtol=1e-1)
-        assert np.all(np.isnan(M.dot(x)[~inside]))
+        assert np.allclose(M.dot(x), interp_points[:, 0], atol=1, rtol=1e-1)
 
     def test_find_shared_nodes(self, sphere3_msh):
         shared_nodes = sphere3_msh.find_shared_nodes([3, 4])
@@ -1071,7 +1070,7 @@ class TestMsh:
              [-1./6. * np.sqrt(3), 1./2., 0],
              [-1./6. * np.sqrt(3), -1./2., 0],
              [0, 0, 1./3. * np.sqrt(6)],
-             [0, 0, 1./3. * np.sqrt(6)]], dtype=np.float)
+             [0, 0, 1./3. * np.sqrt(6)]], dtype=float)
         gamma = mesh_io.cython_msh.calc_gamma(nodes, tetrahedra)
         assert np.isclose(gamma, 1., rtol=1e-3)
 
@@ -1119,7 +1118,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 1
         curvature_before = mesh.gaussian_curvature()
-        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
         mask_nodes[tr_nodes - 1] = True
         mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=100)
         curvature_after = mesh.gaussian_curvature()
@@ -1132,7 +1131,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 0.1
         mesh_before = copy.deepcopy(mesh)
-        mask_nodes = np.zeros(mesh.nodes.nr, dtype=np.bool)
+        mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
         mask_nodes[tr_nodes - 1] = True
         mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=3)
         curvature_after = mesh.gaussian_curvature()
@@ -1334,6 +1333,15 @@ class TestElmData:
         interp = bar.interpolate_scattered(interp_points, method='assign')
         assert np.allclose(interp, interp_points, atol=5, rtol=1e-1)
 
+    def test_interpolate_scattered_th(self, sphere3_msh):
+        bar = sphere3_msh.elements_baricenters()
+        bar.mesh = sphere3_msh
+        interp_points = sphere3_msh.nodes.node_coord[:10]
+        th_indices = sphere3_msh.elm.elm_number[np.in1d(
+            sphere3_msh.elm.tag1, [3, 4, 5])]
+        interp = bar.interpolate_scattered(
+            interp_points, th_indices=th_indices)
+        assert np.allclose(interp, interp_points, atol=5, rtol=1e-1)
 
     def test_interpolate_grid_const_nn(self, sphere3_msh):
         data = sphere3_msh.elm.tag1
@@ -1655,7 +1663,7 @@ class TestElmData:
                               np.arange(-100, 100),
                               np.arange(-100, 100),
                               indexing='ij')
-        X = X.astype(np.float)
+        X = X.astype(float)
         affine = np.array([[1, 0, 0, -100],
                            [0, 1, 0, -100],
                            [0, 0, 1, -100],
@@ -1797,6 +1805,16 @@ class TestNodeData:
         nd.mesh = msh
         interp_points = msh.elements_baricenters().value[:10]
         interp = nd.interpolate_scattered(interp_points)
+        assert np.allclose(interp, interp_points, atol=1e-1, rtol=1e-1)
+
+    def test_interpolate_scattered_th(self, sphere3_msh):
+        msh = sphere3_msh.crop_mesh([3, 4, 5])
+        nd = mesh_io.NodeData(msh.nodes.node_coord)
+        nd.mesh = msh
+        interp_points = msh.elements_baricenters().value[:10]
+        th_indices = msh.elm.elm_number[np.in1d(msh.elm.tag1, [3, 4, 5])]
+        interp = nd.interpolate_scattered(
+            interp_points,  th_indices=th_indices)
         assert np.allclose(interp, interp_points, atol=1e-1, rtol=1e-1)
 
     def test_norm(self, sphere3_msh):

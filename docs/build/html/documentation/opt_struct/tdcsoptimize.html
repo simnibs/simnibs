@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TDCSoptimize &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>TDCSoptimize &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -49,10 +49,10 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="tdcsoptimize">
+  <section id="tdcsoptimize">
 <span id="tdcsoptimize-doc"></span><h1>TDCSoptimize<a class="headerlink" href="#tdcsoptimize" title="Permalink to this headline">¶</a></h1>
 <p>Describes a tDCS optimization problem</p>
-<div class="section" id="initialization">
+<section id="initialization">
 <h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p><strong>Python</strong></p>
@@ -63,14 +63,14 @@
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TDCSoptimize&#39;</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
 </li>
 </ul>
-</div>
-<div class="section" id="attributes">
+</section>
+<section id="attributes">
 <h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
 <ul id="leadfield-hdf-doc">
 <li><p><strong>leadfield_hdf</strong>: <em>string (Python)/character array (MATLAB)</em></p>
@@ -78,7 +78,7 @@
 <li><p><strong>Desctiption</strong>: Name of HDF5 file with leadfield (see <a class="reference internal" href="../sim_struct/tdcsleadfield.html#tdcsleadfield-doc"><span class="std std-ref">TDCSLEADFIELD</span></a>)</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span> <span class="p">=</span> <span class="s">&#39;tdcs_leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">leadfield_hdf</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tdcs_leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -94,7 +94,7 @@ the output files</p></li>
 and the <code class="file docutils literal notranslate"><span class="pre">motor_cortex</span></code> prefix</p>
 </li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;tdcs_leadfield/motor_cortex&#39;</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tdcs_leadfield/motor_cortex&#39;</span><span class="w"></span>
 </pre></div>
 </div>
 <p></p>
@@ -130,12 +130,12 @@ number of electrodes</p></li>
 </ul>
 </li>
 </ul>
-</div>
-<div class="section" id="references">
+</section>
+<section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -238,7 +238,7 @@ number of electrodes</p></li>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

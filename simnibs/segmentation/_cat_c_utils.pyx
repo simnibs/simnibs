@@ -358,7 +358,7 @@ def cat_vol_genus0(vol, th, any_genus=0):
 
     # return Tris and Verts
     Tris = np.zeros(3*g0.tri_count, dtype=np.int32)
-    Verts = np.zeros(3*g0.vert_count, dtype=np.float)
+    Verts = np.zeros(3*g0.vert_count, dtype=float)
 
     for i in range(3*g0.tri_count):
       Tris[i] = g0.triangles[i] + 1;

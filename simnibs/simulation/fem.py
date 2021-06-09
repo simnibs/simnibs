@@ -1079,7 +1079,7 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
         'Currents should sum to 0'
 
     ref_electrode = electrode_surface_tags[0]
-    total_p = np.zeros(mesh.nodes.nr, dtype=np.float)
+    total_p = np.zeros(mesh.nodes.nr, dtype=float)
 
     n_workers = min(len(currents) - 1, n_workers)
     if n_workers == 1:

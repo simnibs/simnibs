@@ -51,8 +51,8 @@ RUN ONLY PARTS OF CHARM:
     Note: Parts can be concatenated, e.g. charm subID --initatlas --segment
 
 MANUAL EDITING:
-    edit m2m_{subID}/label_prep/label.nii.gz using a viewer of your choice,
-    then call charm subID --mesh to recreate head mesh
+    edit m2m_{subID}/label_prep/tissue_labeling_upsampled.nii.gz using a 
+    viewer of your choice, then call charm subID --mesh to recreate head mesh
 
     ''')
     
@@ -94,7 +94,7 @@ MANUAL EDITING:
                         it to the T1-weighted image""")
     parser.add_argument('--usesettings',nargs=1,metavar="settings.ini",
                         help="""ini-file with settings (default: charm.ini in 
-                        simnibs folder""")
+                        simnibs folder)""")
     parser.add_argument('--noneck', action='store_true', default=False,
                         help="""Inform the segmentation that there's no neck in the scan.""")
 

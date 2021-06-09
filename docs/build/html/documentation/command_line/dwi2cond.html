@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>dwi2cond &#8212; SimNIBS 4.0a documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>dwi2cond &#8212; SimNIBS 4.0a0 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -49,17 +49,17 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="dwi2cond">
+  <section id="dwi2cond">
 <span id="dwi2cond-docs"></span><h1>dwi2cond<a class="headerlink" href="#dwi2cond" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="description">
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>This optional tool prepares diffusion tensors for GM and WM from diffusion MRI (dMRI) data. The prepared tensors can then be used by SimNIBS to estimate anisotropic conductivities for GM and WM during the FEM calculations. Only single shell data (i.e., with a single b-value in addition to some b=0 images) with a single phase encoding direction for the EPI readout is supported. For other data, a preprocessed DTI tensor can be used as input to dwi2cond instead. All processing steps are based on FSL tools.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>dwi2cond depends on <a class="reference external" href="https://fsl.fmrib.ox.ac.uk/fsl/fslwiki">FSL</a> (5.0.5 or newer), and is therefore <em>not</em> compatible with Windows. Please see <a class="reference internal" href="../../installation/optional.html#optional-deps"><span class="std std-ref">Optional Dependencies</span></a> for instructions on how to set up FSL.</p>
 </div>
-</div>
-<div class="section" id="usage-example">
+</section>
+<section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
 <p>This example uses FSL eddy and FSL topup for eddy current correction and static distortion correction.</p>
 <ol class="arabic simple">
@@ -86,29 +86,35 @@
 <blockquote>
 <div><p>Overall, three windows appear. The first shows the fractional anisotropy (FA) image superimposed on the structural T1 of the subject in fslview or fsleyes for visual control of the coregistration accuracy. In addition, the first eigenvectors can be seen when increasing their opacity and deselecting FA (subplot A below). When zooming in, their orientations can be checked. A second window shows the first eigenvectors exemplarily in a coronal slice of the head mesh (subplot B), again for visual control of their orientations in white matter. Please note that gray matter is close to isotropic, so that the eigenvectors can have rather arbitrary orientations there.</p>
 </div></blockquote>
-<div class="figure align-center" id="id1">
+<figure class="align-center" id="id1">
 <img alt="../../_images/dwi2cond_1.jpg" src="../../_images/dwi2cond_1.jpg" />
-<p class="caption"><span class="caption-text">Visualization of first eigenvectors, useful to confirm that the directions of the vectors in white matter are correct <strong>(A)</strong> in FSLeyes, and <strong>(B)</strong> in gmsh.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text">Visualization of first eigenvectors, useful to confirm that the directions of the vectors in white matter are correct <strong>(A)</strong> in FSLeyes, and <strong>(B)</strong> in gmsh.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p></p>
 <blockquote>
 <div><p>In the third window, FA images determined from the dMRI data before and after preprocessing are shown to allow for controlling the effects of the preprocessing. These FA images are registered to the T1 using a rigid body (6DoF) transformation, so that spatial distortions remain visible, which is useful to confirm that the phase encoding directions (–phasedir or –udir options) were set correctly.</p>
 </div></blockquote>
-<div class="figure align-center" id="id2">
+<figure class="align-center" id="id2">
 <a class="reference internal image-reference" href="../../_images/dwi2cond_3.jpg"><img alt="../../_images/dwi2cond_3.jpg" src="../../_images/dwi2cond_3.jpg" style="width: 442.0px; height: 372.40000000000003px;" /></a>
-<p class="caption"><span class="caption-text">FA images for correct and incorrect –phasedir settings. For the latter, the position of the corpus callosum differs between the FA and T1 images.</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text">FA images for correct and incorrect –phasedir settings. For the latter, the position of the corpus callosum differs between the FA and T1 images.</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 <p></p>
 <blockquote>
 <div><p>Also sum-of-squared-error (SSE) images of the tensor fitting procedure can be checked in the third window. The SSE images are in arbitrary units, but are helpful to check the effectiveness of the preprocessing steps (the brain gets more “red” in subplot A below, and the white rims in frontal gray matter get thinner) and to identify putative artifacts in the dMRI datam (subplot B below shows an example of insufficient fat suppression).</p>
-<div class="figure align-center" id="id3">
+<figure class="align-center" id="id3">
 <img alt="../../_images/dwi2cond_2.jpg" src="../../_images/dwi2cond_2.jpg" />
-<p class="caption"><span class="caption-text">SSE images <strong>(A)</strong> before and after eddy current correction and <strong>(B)</strong> for scans with insufficient fat suppression.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
-</div>
+<figcaption>
+<p><span class="caption-text">SSE images <strong>(A)</strong> before and after eddy current correction and <strong>(B)</strong> for scans with insufficient fat suppression.</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
 </div></blockquote>
 <p></p>
-</div>
-<div class="section" id="further-usages">
+</section>
+<section id="further-usages">
 <h2>Further usages<a class="headerlink" href="#further-usages" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic simple">
 <li><p>“Standard” eddy current correction based on affine registrations:</p></li>
@@ -130,8 +136,8 @@
 <div><p><code class="code docutils literal notranslate"><span class="pre">dwi2cond</span> <span class="pre">--all</span> <span class="pre">&lt;subjectID&gt;</span> <span class="pre">&lt;DTI-tensor&gt;</span></code></p>
 <p>Dwi2cond will coregister the tensor image with the structural T1 of the subject for further use with SimNIBS.</p>
 </div></blockquote>
-</div>
-<div class="section" id="further-notes">
+</section>
+<section id="further-notes">
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>dwi2cond uses a non-linear registration based on FSL fnirt to transform the diffusion tensors to the space of the structural T1 image. In case the distortion correction during preprocessing is good enough, 12 or 6 DoF affine registrations can be used instead (controlled by the argument <code class="code docutils literal notranslate"><span class="pre">–regmthd</span></code>).</p></li>
@@ -147,8 +153,8 @@
 </li>
 <li><p>SimNIBS ensures that all conductivity tensors are positive definite. This is done to ensure that the FEM solver will robustly converge. In addition, a maximal conductivity of 2 S/m and a maximal ratio of 10 between the largest and smallest conductivity eigenvalues is enforced to guarantee a realistic conductivity range. The latter values can be changed in the GUI or scripts.</p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -251,7 +257,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

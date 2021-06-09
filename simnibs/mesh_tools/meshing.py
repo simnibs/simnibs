@@ -127,7 +127,7 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=True):
+               optimize=False):
     ''' Creates a mesh from a 3D image
 
     Parameters
@@ -347,43 +347,49 @@ def remesh(mesh, facet_size, cell_size,
 
 def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b, 
                    target_label, labels, nodes_label, adj_th, adj_threshold=2,
-                   log_level=logging.DEBUG, relabel_tol=1e-6, max_iter=20):
+                   log_level=logging.DEBUG, relabel_tol=1e-6, max_iter=20,
+                   nlist=None,maxn=None):
     ''' Relabels the spikes in a mesh volume, in-place
 
-    A spike is defined as a tetrahedron in "label_a" or "label_b"
-    which has at least one node in the other volume and
-    at least "adj_threshold" faces adjacent to tetrahedra in
-    "target_label".
+    A spike is defined as a tetrahedron in "label_a" or "label_b"
+    which has at least one node in the other volume and
+    at least "adj_threshold" faces adjacent to tetrahedra in
+    "target_label".
 
-    Parameters
-    -----------
-    elm: ndarray
-       simnibs.Msh.elm[:] mesh structure
-    tag: ndarray
-        labels for elements (simnibs.Msh.elm.tag1)
-    with_labels: ndarray (ntag x nelements) bool
-        indicates if element contains each of the labels
-    adj_labels:  ndarray int
+    Parameters
+    -----------
+    elm: ndarray
+       simnibs.Msh.elm[:] mesh structure
+    tag: ndarray
+        labels for elements (simnibs.Msh.elm.tag1)
+    with_labels: ndarray (ntag x nelements) bool
+        indicates if element contains each of the labels
+    adj_labels:  ndarray int
         labels for adjacent elements
-    label_a: int
-        index for volume label with spikes
-    label_b: int
-        index for second volume label with spikes
-    target_label: int
-        index for volume label to relabel spikes to
-    labels: ndarray int
-        list of labels
-    nodes_label: ndarray (ntag x nelements) int
-        count of how many nodes in each element have each label, used when updating
-    adj_th: list
-       value of m.elm.find_adjacent_tetrahedra()
-    adj_threshold: int (optional)
+    label_a: int
+        index for volume label with spikes
+    label_b: int
+        index for second volume label with spikes
+    target_label: int
+        index for volume label to relabel spikes to
+    labels: ndarray int
+        list of labels
+    nodes_label: ndarray (ntag x nelements) int
+        count of how many nodes in each element have each label, used when updating
+    adj_th: list
+       value of m.elm.find_adjacent_tetrahedra()
+    adj_threshold: int (optional)
         Threshhold of number of adjacent faces for being considered a spike
     relabel_tol: float (optional)
-        Fraction of the elements that indicates convergence
-    max_iter: int
-        Maximum number of relabeling iterations
-    '''
+        Fraction of the elements that indicates convergence
+    max_iter: int
+        Maximum number of relabeling iterations
+    nlist : ndarray int
+        list of which elements each nodes is connected to
+    maxn : ndarray int
+        number of elements that each nodes is connected to 
+        (needed for lookup in nlist)
+    '''
     logger.log(
         log_level,
         f'Relabeling spikes in {labels[label_a]} and {labels[label_b]} to {labels[target_label]}'
@@ -398,7 +404,7 @@ def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b,
                   with_labels, adj_labels, target_label, labels, adj_threshold)
         # Update tags and adjlabels, with_labels and nodes_label in place
         _update_tags(tag, elm, adj_th, with_labels, adj_labels, A_to_relabel,
-                     label_a, target_label, labels, nodes_label)
+                     label_a, target_label, labels, nodes_label,nlist,maxn)
 
         # Relabel tissue B
         # Find spikes
@@ -406,7 +412,7 @@ def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b,
                   with_labels, adj_labels, target_label, labels, adj_threshold)
         # Update tags and adjlabels, with_labels and nodes_label in place
         _update_tags(tag, elm, adj_th, with_labels, adj_labels, B_to_relabel,
-                     label_b, target_label, labels, nodes_label)
+                     label_b, target_label, labels, nodes_label,nlist,maxn)
         
         logger.log(log_level,
                    f'Relabeled {np.sum(A_to_relabel)} from {labels[label_a]} '
@@ -433,17 +439,17 @@ def _find_spikes(tag, label, label2, with_labels, adj_labels, target_label, labe
     tag : ndarray int
         labels for elements
     label : int
-            index for volume label with spikes
+            index for volume label with spikes
     label2 : int
-            index for second volume label with spikes
+            index for second volume label with spikes
     with_labels : ndarray (ntag x nelements) bool
-            indicates if element contains each of the labels
+            indicates if element contains each of the labels
     adj_labels : ndarray int
         labels for adjacent elements
     target_label : int
         target label index
     labels : ndarray int
-            list of labels.
+            list of labels.
     adj_threshold : list, optional
         Threshold of number of adjacent faces for being considered a spike. The default is 2.
     
@@ -484,9 +490,9 @@ def _find_spikes(tag, label, label2, with_labels, adj_labels, target_label, labe
     # return found spikes and ratio of spikes (to check convergence)
     return found_spikes, float(nspikes) / float(na)
 
-@numba.njit(parallel=True, fastmath=True)
+@numba.njit
 def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label, 
-                 target_label, labels, nodes_label):
+                 target_label, labels, nodes_label,nlist,maxn):
     '''
     Update attributes needed for identifying spikes in place
     Parameters
@@ -510,8 +516,12 @@ def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label,
     labels : ndarray int
         list of labels
     nodes_label : ndarray (ntag x nelements) int
-            count of how many nodes in each element have each label
-    
+        count of how many nodes in each element have each label
+    nlist : ndarray int
+            list of which elements each nodes is connected to
+    maxn : ndarray int
+        number of elements that each nodes is connected to 
+        (needed for lookup in nlist)
     Returns
     -------
     None.
@@ -524,9 +534,27 @@ def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label,
             tag[i] = labels[target_label]
             # update count of nodes with labels
             for j in range(elm.shape[1]):
-                if elm[i, j]>=0:
-                    nodes_label[label, elm[i, j]] -= 1  # decrease original label
-                    nodes_label[target_label, elm[i, j]] += 1  # increase intended label
+                nodes_label[label, elm[i, j]] -= 1  # decrease original label
+                nodes_label[target_label, elm[i, j]] += 1  # increase intended label
+                # loop over elements this node is connected to update with_labels
+                # avoids looping over the entire mesh
+                for m in range(maxn[elm[i,j]-1],maxn[elm[i,j]]):
+                    # Update only relevant if the element actually had the node
+                    if with_labels[label, nlist[m]]:
+                        with_labels[label, nlist[m]] = False
+                        for n in range(elm.shape[1]):
+                            if nodes_label[label, elm[nlist[m], n]] > 0:
+                                with_labels[label, nlist[m]] = True
+                                # no need to go on it is already True
+                                break
+                    # Update can also be relevant if element does not have target label
+                    if not with_labels[target_label, nlist[m]]:
+                        for n in range(elm.shape[1]):
+                            # Update target label if nodes has it
+                            if nodes_label[target_label, elm[nlist[m], n]] > 0:
+                                with_labels[target_label, nlist[m]] = True
+                                # no need to go on it is already True
+                                break
             # loop over neighboors (4)
             for k in range(adj_th.shape[1]):
                 adj_i = adj_th[i, k] - 1  # indexing is from 1, 0 indicate no neighbor
@@ -538,45 +566,19 @@ def _update_tags(tag, elm, adj_th, with_labels, adj_labels, to_relabel, label,
                             adj_labels[adj_i, j] = labels[target_label]
                             # no need to test more there is only one
                             break
-    # Parallel loop over elements (allowed as operation is per element
-    # this is a full loop over the element - this could be made more efficient
-    # by further book-keeing of nodes belonging to each element avoiding the loop
-    for i in numba.prange(elm.shape[0]):
-        # Loop over the nodes (4)
-        for j in range(elm.shape[1]):
-            # do not do this if node is -1 (unconnected)
-            if elm[i, j]>=0:
-                # Update only relevant if the element actually had the node
-                if with_labels[label, i]:
-                    # initially relabel to False
-                    with_labels[label, i] = False
-                    # loop over the nodes
-                    for j in range(elm.shape[1]):
-                        # set to True if any nodes has the original label
-                        if nodes_label[label, elm[i, j]] > 0:
-                            with_labels[label, i] = True
-                            # no need to go on it is already True
-                            break
-                # Update can also be relevant if element does not have target label
-                if not with_labels[target_label, i]:
-                    for j in range(elm.shape[1]):
-                        # Update target label if nodes has it
-                        if nodes_label[target_label, elm[i, j]] > 0:
-                            with_labels[target_label, i] = True
-                            # no need to go on it is already True
-                            break
 
 @numba.njit
 def _with_label_numba_all(elm, tag1, labels, N):
     ''' Returns a count of how many labels of each type belongs to each node
-        and all elements in the mesh which have a node that is in
-        a region with each label
-    '''
+        and all elements in the mesh which have a node that is in
+        a region with each label
+    '''
     # output for counting label types for each node indexing starts from 1
     # so first element is empty.
     nodes_label = np.zeros((len(labels), N+1), dtype='uint16')
     # output for boolean array indicating if element touches each node type
-    with_label = np.zeros((len(labels), elm.shape[0]), dtype='bool')
+    with_labels = np.zeros((len(labels), elm.shape[0]), dtype='bool')
+    maxn = np.zeros((N+1), dtype=elm.dtype)
     # loop over labels
     for k in range(len(labels)):
         # Loop over elements
@@ -584,9 +586,25 @@ def _with_label_numba_all(elm, tag1, labels, N):
             # increment count if elements has current label
             if tag1[i] == labels[k]:
                 for j in range(elm.shape[1]):
-                    #-1 indicates unconnected, therfore do not count these 
-                    if elm[i, j]>=0:
-                        nodes_label[k, elm[i, j]] += 1
+                    nodes_label[k, elm[i, j]] += 1
+                    maxn[elm[i,j]] += 1
+    # cummulative count of how many elements is connected nodes
+    # equivalent to np.cumsum(maxn) but in-place
+    for i in range(2,N+1):
+        maxn[i] += maxn[i-1]
+    # create an array containing the element number that each node is connected to
+    nlist = np.zeros((elm.shape[0]*elm.shape[1]),dtype=elm.dtype)
+    # list for counting how many elements a nodes has currently been asigned to
+    ncount = np.zeros((N+1,),dtype='uint16')
+    for i in range(elm.shape[0]):
+        for j in range(elm.shape[1]):
+            # element index (starting from 0 here)
+            n = elm[i,j]-1
+            # set the n'th element that the node is connected to 
+            # ncount[n] counts how many has already been set
+            nlist[maxn[n] + ncount[n]] = i
+            #increment the elements that the node is connected to
+            ncount[n] += 1
     # Loop over labels
     for k in range(len(labels)):
         # Loop over elements
@@ -594,30 +612,30 @@ def _with_label_numba_all(elm, tag1, labels, N):
         # Loop over nodes within label (4)
             for j in range(elm.shape[1]):
                 # Indicate if element contains label
-                if elm[i, j]>=0 and nodes_label[k, elm[i, j]] > 0:
-                    with_label[k, i] = True
+                if nodes_label[k, elm[i, j]] > 0:
+                    with_labels[k, i] = True
                     break
-    return nodes_label, with_label
+    return nodes_label, with_labels, nlist, maxn
 
 def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
             log_level=logging.DEBUG):
 
     ''' Goes through the mesh removing spiles
-    A spike is defined as a tetrahedron in a volume "a"
-    which has at least one node in the other volume "b" and
-    at least "adj_threshold" faces adjacent to tetrahedra in a volume "c"
+    A spike is defined as a tetrahedron in a volume "a"
+    which has at least one node in the other volume "b" and
+    at least "adj_threshold" faces adjacent to tetrahedra in a volume "c"
 
-    Parameters
-    -----------
-    m: simnibs.Msh
-       Mesh structure
-    adj_threshold: int (optional)
-        Threshhold of number of adjacent faces for being considered a spike
-    relabel_tol: float (optional)
-        Fraction of the elements that indicates convergence
-    max_iter: int
-        Maximum number of relabeling iterations
-    '''
+    Parameters
+    -----------
+    m: simnibs.Msh
+       Mesh structure
+    adj_threshold: int (optional)
+        Threshhold of number of adjacent faces for being considered a spike
+    relabel_tol: float (optional)
+        Fraction of the elements that indicates convergence
+    max_iter: int
+        Maximum number of relabeling iterations
+    '''
     
     if np.any(msh.elm.elm_type != 4):
         logger.log(log_level,
@@ -638,7 +656,8 @@ def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
     N = msh.nodes.nr
     # Count how many labels of each type belongs to each node - first output
     # and determine if elements touch each labels (has a node with that label) - second output
-    nodes_label, with_labels = _with_label_numba_all(elm, tag, tags, N)
+    # and determine which element each node is connected too - third output
+    nodes_label, with_labels, nlist, maxn = _with_label_numba_all(elm, tag, tags, N)
     # Loop over labels
     for i, t1 in enumerate(tags):
         for j, t2 in enumerate(tags[i + 1:]):
@@ -663,7 +682,7 @@ def despike(msh, adj_threshold=2, relabel_tol=1e-6, max_iter=20,
                                relabel_tol = relabel_tol, labels = tags,
                                adj_threshold = adj_threshold, adj_th = adj_th,
                                max_iter = max_iter, log_level = log_level, 
-                               nodes_label = nodes_label)
+                               nodes_label = nodes_label,nlist=nlist,maxn=maxn)
     #set tag1/tag2 in msh structure
     msh.elm.tag1 = tag
     msh.elm.tag2 = tag
@@ -707,7 +726,7 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                remove_twins=True, hierarchy=None, smooth_steps=5):
+                remove_twins=True, hierarchy=None, smooth_steps=5, sizing_field=None):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -773,6 +792,10 @@ def create_mesh(label_img, affine,
         i.e. Skin (1005) has highest priority, WM (1001) comes next, etc; 
     smooth_steps: int (optional)
         Number of smoothing steps to apply to the final mesh surfaces. Default: 5
+    sizing_field: 3D np.ndarray in float format (optional)
+        Sizing field to control the element sizes. Its shape has to be the same
+        as label_img.shape. Zeros will be replaced by values from the 
+        standard sizing field. Default: None
 
     Returns
     -------
@@ -840,6 +863,11 @@ def create_mesh(label_img, affine,
         'Time to prepare meshing: ' +
         format_time(time.time()-start)
     )
+    
+    # Replace values in size_field at positions where sizing_field > 0 
+    if sizing_field is not None:
+        assert sizing_field.shape == label_img.shape
+        size_field[sizing_field>0] = sizing_field[sizing_field>0]
     
     # Run meshing
     logger.info('Meshing')

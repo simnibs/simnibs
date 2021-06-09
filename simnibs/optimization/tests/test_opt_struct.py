@@ -999,7 +999,7 @@ class TestTDCSDistributedoptimize:
             np.arange(-100, 100, 2),
             np.arange(-100, 100, 2),
             indexing='ij'
-        )[0].astype(np.float)
+        )[0].astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
@@ -1035,7 +1035,7 @@ class TestTDCSDistributedoptimize:
             np.arange(-100, 100, 2),
             np.arange(-100, 100, 2),
             indexing='ij'
-        )[0].astype(np.float)
+        )[0].astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
@@ -1062,7 +1062,7 @@ class TestTDCSDistributedoptimize:
             np.arange(-100, 100, 2),
             np.arange(-100, 100, 2),
             indexing='ij'
-        )[0].astype(np.float)
+        )[0].astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
@@ -1083,7 +1083,7 @@ class TestTDCSDistributedoptimize:
             np.arange(-100, 100, 2),
             np.arange(-100, 100, 2),
             indexing='ij'
-        )[0].astype(np.float)
+        )[0].astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
@@ -1121,7 +1121,7 @@ class TestTDCSDistributedoptimize:
             np.arange(-100, 100, 2),
             np.arange(-100, 100, 2),
             indexing='ij'
-        )[0].astype(np.float)
+        )[0].astype(float)
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2

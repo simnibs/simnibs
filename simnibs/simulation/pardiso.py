@@ -55,7 +55,10 @@ def get_libmkl():
     if sys.platform == 'darwin':
         return ctypes.CDLL('libmkl_rt.dylib')
     elif sys.platform == 'win32':
-        return ctypes.CDLL('mkl_rt.dll')
+        try:
+            return ctypes.CDLL('mkl_rt.dll')
+        except:
+            return ctypes.CDLL('mkl_rt.1.dll')
     else:
         return ctypes.CDLL('libmkl_rt.so')
 

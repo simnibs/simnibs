@@ -1,0 +1,374 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>How to create and use a custom mesh &#8212; SimNIBS 4.0a0 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
+    <link rel="prev" title="Uncertainty Quantification" href="uq.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="uq.html" title="Previous document">Uncertainty Quantification</a>
+        </li>
+        <li>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="how-to-create-and-use-a-custom-mesh">
+<span id="meshing-tutorial"></span><h1>How to create and use a custom mesh<a class="headerlink" href="#how-to-create-and-use-a-custom-mesh" title="Permalink to this headline">¶</a></h1>
+<p>This example demonstrates how to create a mesh from a custom label image and how to set up simulations with the mesh.</p>
+<section id="creating-an-example-label-image">
+<h2>Creating an example label image<a class="headerlink" href="#creating-an-example-label-image" title="Permalink to this headline">¶</a></h2>
+<p>To get started, let’s create a nifti file that contains a two-layer sphere with tissue label 5 (corresponding to scalp) for the outer shell and tissue label 2 (gray matter) for the inner part. In addition, let’s add a smaller sphere with tissue type 17 somewhere in the center. Tissue label 17 is not a standard SimNIBS label. It is used here to define a new tissue type (could be a tumor or stroke lesion, for example).</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">nibabel</span> <span class="k">as</span> <span class="nn">nib</span>
+
+<span class="n">label_img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+<span class="n">xv</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">101</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">101</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">101</span><span class="p">))</span>
+
+<span class="c1"># make a two-layer sphere</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xv</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">yv</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">zv</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">label_img</span><span class="p">[</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span> <span class="c1"># 5 corresponds to scalp</span>
+<span class="n">label_img</span><span class="p">[</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">35</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># 2 corresponds to gray matter</span>
+
+<span class="c1"># add a smaller decentered sphere</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">xv</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">yv</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">zv</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">label_img</span><span class="p">[</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">15</span><span class="p">]</span> <span class="o">=</span> <span class="mi">17</span> <span class="c1"># 17 is an arbitrary custom tissue label</span>
+
+<span class="c1"># save</span>
+<span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span> <span class="n">affine</span><span class="p">)</span>
+<span class="n">nib</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="s1">&#39;myspheres.nii.gz&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">label_img</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">zeros</span><span class="p">([</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">,</span><span class="mi">101</span><span class="p">],</span><span class="s">&#39;uint16&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="p">[</span><span class="n">xv</span><span class="p">,</span><span class="w"> </span><span class="n">yv</span><span class="p">,</span><span class="w"> </span><span class="n">zv</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">meshgrid</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="mi">50</span><span class="p">,</span><span class="o">-</span><span class="mi">50</span><span class="p">:</span><span class="mi">50</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% make a two-layer sphere</span><span class="w"></span>
+<span class="n">r</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sqrt</span><span class="p">(</span><span class="n">xv</span><span class="o">.^</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">yv</span><span class="o">.^</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">zv</span><span class="o">.^</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="n">label_img</span><span class="p">(</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">40</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"> </span><span class="c">% 5 corresponds to scalp</span><span class="w"></span>
+<span class="n">label_img</span><span class="p">(</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">35</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="c">% 2 corresponds to gray matter</span><span class="w"></span>
+
+<span class="c">% add a smaller decentered sphere</span><span class="w"></span>
+<span class="n">r</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sqrt</span><span class="p">((</span><span class="n">xv</span><span class="o">-</span><span class="mi">15</span><span class="p">)</span><span class="o">.^</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">yv</span><span class="o">.^</span><span class="mi">2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">zv</span><span class="o">.^</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="n">label_img</span><span class="p">(</span><span class="n">r</span><span class="o">&lt;=</span><span class="mi">15</span><span class="p">)</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">17</span><span class="p">;</span><span class="w"> </span><span class="c">% 17 is an arbitrary custom tissue label</span><span class="w"></span>
+
+<span class="c">% save</span><span class="w"></span>
+<span class="n">niftiwrite</span><span class="p">(</span><span class="n">label_img</span><span class="p">,</span><span class="s">&#39;myspheres&#39;</span><span class="p">,</span><span class="s">&#39;Compressed&#39;</span><span class="p">,</span><span class="nb">true</span><span class="p">)</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="meshing-the-example-label-image">
+<h2>Meshing the example label image<a class="headerlink" href="#meshing-the-example-label-image" title="Permalink to this headline">¶</a></h2>
+<p>To create a tetrahedral mesh from “myspheres.nii.gz”, run on the command line</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">meshmesh</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">nii</span><span class="o">.</span><span class="n">gz</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">msh</span> <span class="o">--</span><span class="n">voxsize_meshing</span> <span class="mf">0.5</span>
+</pre></div>
+</div>
+<p></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The parameter –voxsize_meshing controls the internal voxel size to which the label image is upsampled before meshing. To better resolve thin structures in the mesh, a rule of thumb is to supply the label image at a resolution of 0.5 mm (preferred), or use the internal upsampling in case the image resolution is lower.</p>
+</div>
+</section>
+<section id="run-simulations-with-the-custom-mesh">
+<h2>Run simulations with the custom mesh<a class="headerlink" href="#run-simulations-with-the-custom-mesh" title="Permalink to this headline">¶</a></h2>
+<p>Running the simulations is very similar to the standard SimNIBS case. As difference, a m2m_{subID} folder is missing that contains information about the EEG positions, transformations to MNI and fsaverage space, etc. Therefore, the corresponding postprocessing options are not available. Electrode and TMS coil positions have to be supplied as coordinates, as EEG positions are not available. The coordinates can be determined by loading myspheres.nii.gz into a nifti viewer such as freeview.</p>
+<p>A further difference is that we decided to include a custom tissue type with label 17 into the mesh, for which we have to define the conductivity.</p>
+<ul class="simple">
+<li><p><em>Python</em></p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example on running SimNIBS simulations </span>
+<span class="sd">    with a custom mesh</span>
+
+<span class="sd">    Run with:</span>
+<span class="sd">    simnibs_python simulation_custom_mesh.py</span>
+
+<span class="sd">    NOTE: This example requires the mesh &quot;myspheres.msh&quot;</span>
+<span class="sd">    Please see &quot;How to create and use a custom mesh&quot;</span>
+<span class="sd">    in the SimNIBS tutorials for instructions to create</span>
+<span class="sd">    the mesh</span>
+<span class="sd">    </span>
+<span class="sd">    Copyright (C) 2021 Axel Thielscher</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="n">S</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="n">S</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;myspheres.msh&#39;</span> <span class="c1"># name of custom mesh</span>
+<span class="n">S</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;simu_custom_mesh&#39;</span>
+<span class="c1"># Note: As there is no m2m_{subID} folder, postprocessing</span>
+<span class="c1">#       options are not available.</span>
+
+
+<span class="c1"># add a TDCS simulation</span>
+<span class="n">tdcs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">currents</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">]</span>  <span class="c1"># Current flow though each channel (A)</span>
+
+<span class="c1"># &#39;myspheres.msh&#39; contains a custom tissue with label number 17.</span>
+<span class="c1"># We need to assign a conductivity to this tissue label.</span>
+<span class="c1"># Note: Python indexing starts with 0, thus the conductivity has</span>
+<span class="c1">#       to be assigned to index 16 of the conductivity list</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># [S/m]</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;custom_tissue&#39;</span>
+
+<span class="n">electrode1</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Connect the electrode to the first channel</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>  <span class="c1"># position determined from the nifti file</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;rect&#39;</span>  <span class="c1"># Rectangular shape</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>  <span class="c1"># 50x50 mm</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># 4 mm thickness</span>
+
+<span class="n">electrode2</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="mi">90</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>  
+<span class="n">electrode2</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;ellipse&#39;</span>  <span class="c1"># Circiular shape</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>  <span class="c1"># 50 mm diameter</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># 4 mm thickness</span>
+
+
+<span class="c1"># add a TMS simulation</span>
+<span class="n">tms</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">()</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>  <span class="c1"># Choose a coil model</span>
+
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># [S/m]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">16</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;custom_tissue&#39;</span>
+
+<span class="c1"># Define the coil position</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">90</span><span class="p">]</span>  
+<span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">90</span><span class="p">]</span> <span class="c1"># Polongation of coil handle (see documentation)</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1">#  4 mm distance from coil surface to head surface</span>
+
+
+<span class="c1"># Run simulation</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><em>MATLAB</em></p></li>
+</ul>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%   Example on running SimNIBS simulations with a custom mesh</span><span class="w"></span>
+<span class="c">% </span><span class="w"></span>
+<span class="c">%   NOTE: This example requires the mesh &quot;myspheres.msh&quot;</span><span class="w"></span>
+<span class="c">%   Please see &quot;How to create and use a custom mesh&quot;</span><span class="w"></span>
+<span class="c">%   in the SimNIBS tutorials for instructions to create the mesh</span><span class="w"></span>
+<span class="c">%     </span><span class="w"></span>
+<span class="c">%   Copyright (C) 2021 Axel Thielscher</span><span class="w"></span>
+
+
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;myspheres.msh&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% name of custom mesh</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;simu_custom_mesh&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% Folder for the simulation output</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">open_in_gmsh</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="c">% Note: As there is no m2m_{subID} folder, postprocessing</span><span class="w"></span>
+<span class="c">%       options are not available.</span><span class="w"></span>
+
+
+<span class="c">% add a TDCS simulation</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">];</span><span class="w"> </span><span class="c">% Current going through each channel, in Ampere</span><span class="w"></span>
+
+<span class="c">% &#39;myspheres.msh&#39; contains a custom tissue with label number 17.</span><span class="w"></span>
+<span class="c">% We need to assign a conductivity to this tissue label.</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">17</span><span class="p">).</span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="c">% in S/m</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">17</span><span class="p">).</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;custom_tissue&#39;</span><span class="p">;</span><span class="w"></span>
+
+<span class="c">% define first electrode</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">  </span><span class="c">% Connect the first electrode to the first channel</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w">  </span><span class="c">% position determined from the nifti file</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w">  </span><span class="c">% Rectangular shape</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w">  </span><span class="c">% 50x50 mm</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w">  </span><span class="c">% 4 mm thickness</span><span class="w"></span>
+
+<span class="c">% define second electrode</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">90</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span><span class="w">  </span><span class="c">% Circular shape</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w">  </span><span class="c">% 50 mm diameter</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"> </span><span class="c">% 4 mm thickness</span><span class="w"></span>
+
+
+<span class="c">% add a TMS simulation</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span><span class="w">  </span><span class="c">% Choose a coil model</span><span class="w"></span>
+
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">17</span><span class="p">).</span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"> </span><span class="c">% in S/m</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">17</span><span class="p">).</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;custom_tissue&#39;</span><span class="p">;</span><span class="w"></span>
+
+<span class="c">% Define the coil position</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">pos</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">90</span><span class="p">];</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">pos</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="mi">90</span><span class="p">];</span><span class="w"> </span><span class="c">% Polongation of coil handle (see documentation)</span><span class="w"></span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">2</span><span class="p">}.</span><span class="n">pos</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"> </span><span class="c">% 4 mm distance from coil surface to head surface</span><span class="w"></span>
+
+<span class="c">% Run simulation</span><span class="w"></span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="output">
+<h2>Output<a class="headerlink" href="#output" title="Permalink to this headline">¶</a></h2>
+<p>Windows showing the results, such as the following should appear:</p>
+<img alt="../../_images/custommesh1.png" class="align-center" src="../../_images/custommesh1.png" />
+<p>Making also the tetrahedra visible and cutting shows the field inside the volume, including the custom tissue type. As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength there is weaker in this case:</p>
+<img alt="../../_images/custommesh2.png" class="align-center" src="../../_images/custommesh2.png" />
+<p>The results can also be found in the output folder ‘simu_custom_mesh’</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="uq.html" title="Previous document">Uncertainty Quantification</a>
+        </li>
+        <li>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tms_optimization.html">TMS Optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../tutorial.html">Tutorial</a><ul>
+  <li><a href="advanced.html">Advanced Features</a><ul>
+      <li>Previous: <a href="uq.html" title="previous chapter">Uncertainty Quantification</a></li>
+      <li>Next: <a href="../win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/tutorial/advanced/custom_meshing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
