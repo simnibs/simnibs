@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
-    command line tool to convert NIfTI files to .msh to be read by gmsh
-    This program is part of the SimNIBS package.
+    command line tool to convert coil dipole definition ccd files to nifti1
+    format. This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
     Copyright (C) 2021  Kristoffer H. Madsen
