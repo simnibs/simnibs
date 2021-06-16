@@ -36,31 +36,31 @@ def one_sphere_image():
     radius_gm : radius of GM-CSF boundary
     radius_csf : radius of CSF-background boundary
 
-    """  
+    """
 
     imgsize=[161, 141, 141]
     voxsize=0.25
-    
+
     radius_wm=8
     radius_gm=12
     radius_csf=15
-    
+
     vox2mm=np.float32(([voxsize, 0, 0, -voxsize*(imgsize[0]-1)/2],
                        [0, voxsize, 0, -voxsize*(imgsize[1]-1)/2],
                        [0, 0, voxsize, -voxsize*(imgsize[2]-1)/2],
                        [0, 0, 0, 1]))
-    
-    G = np.meshgrid(np.arange(imgsize[0]), np.arange(imgsize[1]), 
+
+    G = np.meshgrid(np.arange(imgsize[0]), np.arange(imgsize[1]),
                     np.arange(imgsize[2]), indexing='ij')
-    
+
     xyz_mm=np.inner(vox2mm, np.vstack((G[0].flatten(),
                                        G[1].flatten(),
                                        G[2].flatten(),
                                        np.ones_like(G[0].flatten()))).T
                     )[0:3]
-    
+
     R_sp = np.linalg.norm(xyz_mm, axis=0)
-    
+
     img=np.zeros_like(R_sp)
     img[R_sp<radius_csf]=1
     img[R_sp<radius_gm]=2
@@ -293,11 +293,65 @@ class Test_cat_vol_pbt_AT:
         testdata=one_sphere_image()
         img=testdata[0]
         vox2mm=testdata[1]
-        
+
         Yth, Ypp = brain_surface.cat_vol_pbt_AT(img, 0.25, False)
-    
+
         # test for 2.5% accuracy in volume-average of GM thickness and percent position profile
         assert abs(1-Yth[img==2].mean()/4) < 0.025
-        assert abs(1-Ypp[img==2].mean()/0.4342) < 0.025 
-        # volume average of profile varying lineary from 1 to 0 
+        assert abs(1-Ypp[img==2].mean()/0.4342) < 0.025
+        # volume average of profile varying lineary from 1 to 0
         # should be 0.4342... for r_wm=12, r_gm=8
+
+class TestSurfaceSubsampling:
+    def test_fibonacci_sphere_points(self):
+        n = 10
+        x = brain_surface.fibonacci_sphere_points(n)
+        # Points obtained with the original implementation (epsilon = 0.36)
+        y = np.array([[ 0.37770515,  0.        ,  0.92592593],
+                      [-0.51158892, -0.46865735,  0.72016461],
+                      [ 0.07497179,  0.85426488,  0.51440329],
+                      [ 0.57873383, -0.7548558 ,  0.30864198],
+                      [-0.97948831,  0.17325769,  0.10288066],
+                      [ 0.83927808,  0.53388002, -0.10288066],
+                      [-0.24692998, -0.91856721, -0.30864198],
+                      [-0.39525008,  0.76102998, -0.51440329],
+                      [ 0.65170416, -0.23800131, -0.72016461],
+                      [-0.34913008, -0.14411582, -0.92592593]])
+        np.testing.assert_allclose(x, y)
+
+    def test_ensure_orientation_consistency(self, sphere_surf):
+        sphere_n = sphere_surf.triangle_normals().value
+
+        rr = sphere_surf.nodes.node_coord
+        tris = sphere_surf.elm.node_number_list[:, :3] - 1
+
+        # Swap the normals of the first n triangles
+        n = 10
+        rows = np.arange(n)
+        cols = (0, 1)
+        brain_surface.swap_select_columns(tris, rows, cols)
+
+        sphere2 = mesh_io.Msh(sphere_surf.nodes, mesh_io.Elements(tris + 1))
+        sphere2_n = sphere2.triangle_normals().value
+
+        assert not any(np.allclose(sphere_n[i], sphere2_n[i]) for i in rows)
+        np.testing.assert_allclose(sphere_n[n:], sphere2_n[n:])
+
+        # Recover orientations (tris may not be the same though!)
+        brain_surface.ensure_orientation_consistency(rr, tris)
+        sphere3 = mesh_io.Msh(sphere_surf.nodes, mesh_io.Elements(tris + 1))
+        sphere3_n = sphere3.triangle_normals().value
+
+        np.testing.assert_allclose(sphere_n, sphere3_n)
+
+    def test_swap_select_columns(self):
+        x = np.array([[1, 2, 3],
+                      [1, 2, 3],
+                      [1, 2, 3]])
+        y = np.array([[1, 3, 2],
+                      [1, 2, 3],
+                      [1, 3, 2]])
+        rows = [0, 2]
+        cols = [1, 2]
+        brain_surface.swap_select_columns(x, rows, cols)
+        np.testing.assert_allclose(x, y)
