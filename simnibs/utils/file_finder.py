@@ -246,9 +246,15 @@ class SubjectFiles:
         List of SurfaceFile objects which containts 2 fields:
             fn: name of surface file (.gii format)
             region: 'lh', 'rh', 'lc' or 'rc'
-
+            
+    central_surfaces: list
+        Same as above but for the pial surfaces
+            
     sphere_reg_surfaces: list
         Same as above but for the spherical registration files
+
+    thickness: list
+        Cortical thicknesses are stored also as SurfaceFile
 
     regions: list
         list of region names (e.g. 'lh', 'rh') where all surfaces above are present
@@ -373,13 +379,14 @@ class SubjectFiles:
             self.mni2conf_12dof += '.mat'
 
         # Stuff for surface transformations
-        # Look for all .gii files in surface_folder
-        surfaces = glob.glob(os.path.join(self.surface_folder, '*.gii'))
         # Organize the files in 3 separate lists
         SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
+        # Look for all .gii files in surface_folder
+        surfaces = glob.glob(os.path.join(self.surface_folder, '*.gii'))
         self.sphere_reg_surfaces = []
         #self.sphere_surfaces = []
         self.central_surfaces = []
+        self.pial_surfaces = []
         for fn in surfaces:
             s = os.path.basename(fn)
             region = s[:2]
@@ -387,18 +394,27 @@ class SubjectFiles:
                 self.sphere_reg_surfaces.append(
                     SurfaceFile(fn, region)
                 )
-            # elif '.sphere.' in s:
-            #     self.sphere_surfaces.append(
-            #         SurfaceFile(fn, region)
-            #     )
+            elif '.pial.' in s:
+                 self.pial_surfaces.append(
+                     SurfaceFile(fn, region)
+                 )
             elif '.central.' in s:
                 self.central_surfaces.append(
+                    SurfaceFile(fn, region)
+                )
+                
+        surfaces = glob.glob(os.path.join(self.surface_folder, '*.thickness'))
+        self.thickness = []
+        for fn in surfaces:
+            s = os.path.basename(fn)
+            region = s[:2]
+            self.thickness.append(
                     SurfaceFile(fn, region)
                 )
 
         self.regions = sorted(
             set([s.region for s in self.sphere_reg_surfaces]) &
-            #set([s.region for s in self.sphere_surfaces]) &
+            #set([s.region for s in self.pial_surfaces]) &
             set([s.region for s in self.central_surfaces])
         )
         
@@ -452,7 +468,7 @@ class SubjectFiles:
         -----------
         region: 'lh', 'rh', 'lc' or 'rc'
             Name of the region of interest
-        surf_type: 'central', 'sphere_reg' (optional)
+        surf_type: 'central', 'sphere_reg', 'pial', 'thickness' (optional)
             Surface type. Default: central
         
         Returns
@@ -468,8 +484,14 @@ class SubjectFiles:
         if surf_type == 'central':
             for s in self.central_surfaces:
                 if s.region == region: return s.fn
+        elif surf_type == 'pial':
+            for s in self.pial_surfaces:
+                if s.region == region: return s.fn
         elif surf_type == 'sphere_reg':
             for s in self.sphere_reg_surfaces:
+                if s.region == region: return s.fn
+        elif surf_type == 'thickness':
+            for s in self.thickness:
                 if s.region == region: return s.fn
         else:
             raise ValueError('invalid surf_type')

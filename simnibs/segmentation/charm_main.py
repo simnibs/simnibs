@@ -18,6 +18,7 @@ import numpy as np
 from scipy import ndimage
 import scipy.ndimage.morphology as mrph
 from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import affine_transform
 from functools import partial
 from scipy.ndimage.measurements import label
 from simnibs.segmentation._thickness import  _calc_thickness
@@ -26,13 +27,14 @@ from simnibs import SIMNIBSDIR
 from .. import __version__
 from . import samseg
 from ._cat_c_utils import sanlm
+from .brain_surface import mask_from_surface
 from .. import utils
 from ..utils.simnibs_logger import logger
 from ..utils import file_finder
 from ..utils import transformations
 from ..utils.transformations import resample_vol, crop_vol
 from ..mesh_tools.meshing import create_mesh
-from ..mesh_tools.mesh_io import write_msh, ElementData
+from ..mesh_tools.mesh_io import read_gifti_surface, write_msh, Msh, ElementData
 from ..simulation import cond
 
 def _register_atlas_to_input_affine(T1, template_file_name,
@@ -624,6 +626,7 @@ def _binarize(vols, return_empty=False):
     else:
         return vols_bin[1:]
 
+
 def _registerT1T2(fixed_image, moving_image, output_image):
     registerer = samseg.gems.KvlImageRegisterer()
     registerer.read_images(fixed_image, moving_image)
@@ -640,6 +643,37 @@ def _registerT1T2(fixed_image, moving_image, output_image):
         T2_data = T2_reg.get_data().astype(np.float32)
         T2_im = nib.Nifti1Image(T2_data,fixed_tmp.affine)
         nib.save(T2_im, output_image)
+
+
+def _fillin_gm_layer(label_img, label_affine, labelorg_img, labelorg_affine, m,
+                    exclusion_tissues = {"left_cerebral_wm": 2,
+                                         "right_cerebral_wm": 41,
+                                         "stuff_to_exclude": [4, 10, 14, 16, 24, 28, 43, 49, 60]},
+                    relabel_tissues = {"GM": 2, "stuff_to_relabel": [1, 3]}):
+    ''' relabels WM and CSF that intersect with the central GM surface to GM
+        an exclusion mask is used to prevent relabelign in central brain regions
+    '''
+    # generate exclusion mask: estimate corpus callossum 
+    exclude_img = mrph.binary_dilation(labelorg_img == exclusion_tissues['left_cerebral_wm'],iterations=2) 
+    exclude_img *= mrph.binary_dilation(labelorg_img == exclusion_tissues['right_cerebral_wm'],iterations=2)
+    # add other tissues 
+    for i in exclusion_tissues['stuff_to_exclude']:
+        exclude_img += labelorg_img == i
+    exclude_img = mrph.binary_dilation(exclude_img,iterations=8)
+    # upsample exclude_img
+    iM = np.linalg.inv(labelorg_affine).dot(label_affine)
+    exclude_img = affine_transform(exclude_img, iM[:3, :3], iM[:3, 3], label_img.shape, order=0)
+    
+    # generate voxel mask of middle GM
+    mask = mask_from_surface(m.nodes[:],m.elm[:,:3]-1,label_affine,label_img.shape)
+    mask = mrph.binary_dilation(mask,iterations=1) * ~mrph.binary_erosion(mask,iterations=1)
+    mask[exclude_img] = 0
+    
+    # relabel WM and CSF parts to GM
+    for i in relabel_tissues['stuff_to_relabel']:
+        label_img[ (label_img == i)*mask ] = relabel_tissues['GM']
+        
+    return label_img
 
 
 def view(subject_dir):
@@ -931,11 +965,15 @@ def run(subject_dir=None, T1=None, T2=None,
         surface_settings = settings['surfaces']
         nprocesses = surface_settings['processes']
         surf = surface_settings['surf']
+        pial = surface_settings['pial']
         vdist = surface_settings['vdist']
         voxsize_pbt = surface_settings['voxsize_pbt']
         voxsize_refineCS = surface_settings['voxsize_refinecs']
         th_initial = surface_settings['th_initial']
         no_selfintersections = surface_settings['no_selfintersections']
+        fillin_gm_from_surf = surface_settings['fillin_gm_from_surf']
+        exclusion_tissues = surface_settings['exclusion_tissues']
+        relabel_tissues = surface_settings['relabel_tissues']
         
         if sys.platform == 'win32':
             # A hack to get multithreading to work on Windows
@@ -945,7 +983,8 @@ def run(subject_dir=None, T1=None, T2=None,
                     '--Ymaskhemis_path', sub_files.cereb_mask,
                     '--surface_folder', sub_files.surface_folder,
                     '--fsavgdir', fsavgDir,
-                    '--surf'] + surf + [
+                    '--surf'] + surf + [ 
+                    '--pial'] + pial + [
                     '--vdist', str(vdist[0]), str(vdist[1]),
                     '--voxsize_pbt', str(voxsize_pbt[0]), str(voxsize_pbt[1]),
                     '--voxsizeCS', str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
@@ -971,12 +1010,44 @@ def run(subject_dir=None, T1=None, T2=None,
                                     Ymf.affine, sub_files.surface_folder,
                                     fsavgDir, vdist, voxsize_pbt, 
                                     voxsize_refineCS, th_initial,
-                                    no_selfintersections, surf, nprocesses)
+                                    no_selfintersections, surf, pial, nprocesses)
 
         # print time duration
         elapsed = time.time() - starttime
         logger.info('Total time cost surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+        
+        if fillin_gm_from_surf:
+            logger.info('Filling in GM from central GM sheet')
+            starttime = time.time()
+            # tissue mask used for mesh generation
+            label_nii = nib.load(sub_files.tissue_labeling_upsampled)
+            label_img = np.asanyarray(label_nii.dataobj)
+            label_affine = label_nii.affine
+            # orginal label mask
+            label_nii = nib.load(sub_files.labeling)
+            labelorg_img = np.asanyarray(label_nii.dataobj)
+            labelorg_affine = label_nii.affine
+            # GM central surfaces
+            m = Msh()
+            if 'lh' in surf:
+                m = m.join_mesh( read_gifti_surface(sub_files.get_surface('lh')) )
+            if 'rh' in surf:
+                m = m.join_mesh( read_gifti_surface(sub_files.get_surface('rh')) )    
+            # fill in GM and save updated mask
+            if m.nodes.nr > 0:
+                label_img = _fillin_gm_layer(label_img, label_affine, 
+                                             labelorg_img, labelorg_affine, m, 
+                                             exclusion_tissues, relabel_tissues)
+                label_nii = nib.Nifti1Image(label_img, label_affine)
+                nib.save(label_nii, sub_files.tissue_labeling_upsampled)
+            else:
+                logger.warning("Neither lh nor rh reconstructed. Filling in from GM surface skipped")
+                
+            # print time duration
+            elapsed = time.time() - starttime
+            logger.info('Total time cost for filling in (HH:MM:SS):')
+            logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
 
     if mesh_image:
         # create mesh from label image

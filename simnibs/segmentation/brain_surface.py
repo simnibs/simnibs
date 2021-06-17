@@ -39,8 +39,7 @@ from ..utils.transformations import resample_vol, crop_vol
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
              deform="expand", smooth_mesh=True, skip_lastsmooth=True,
              smooth_mm2move=True, despike_nonmove=True, fix_faceflips=True,
-             actualsurf='', ref_fs=None):
-             #log_level=logging.INFO, actualsurf='', ref_fs=None): # log_level unused
+             actualsurf=''):
     """Deform a mesh by either expanding it in the direction of node normals
     or shinking it in the opposite direction of the normals.
 
@@ -90,8 +89,6 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
     """
 
     DEBUG = False # controls writing of additional meshes for debugging
-    #  Note: ref_fs needed for debugging to have correct header information
-    #        when writing FreeSurfer surfaces
 
     # check inputs
     assert deform in ["expand", "shrink"]
@@ -231,7 +228,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
-            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh", ref_fs=ref_fs)
+            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh", ref_fs=True)
 
             tmpmsh.add_node_field(move, 'move')
 

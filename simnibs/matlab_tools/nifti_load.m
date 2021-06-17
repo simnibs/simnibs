@@ -171,8 +171,8 @@ end
 
 hdr.vol = reshape(hdr.vol, dim');
 if(hdr.scl_slope ~= 0)
-  %fprintf('Rescaling NIFTI: slope = %g, intercept = %g\n',...
-  %	  hdr.scl_slope,hdr.scl_inter);
+  fprintf('Rescaling NIFTI: slope = %g, intercept = %g\n',...
+  	  hdr.scl_slope,hdr.scl_inter);
   hdr.vol = hdr.vol * hdr.scl_slope  + hdr.scl_inter;
 end
 
