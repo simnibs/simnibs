@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pytest
 import tempfile
-import pathlib
+from pathlib import Path
 
 from .. import file_finder
 
@@ -92,27 +92,38 @@ class TestSubjectFiles:
 
         assert s.get_eeg_cap('test.csv') == os.path.join(
             'path', 'm2m_sub', 'eeg_positions', 'test.csv')
-    
+
     def test_surfaces(self):
         with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
-            surface_folder = file_finder.SubjectFiles(subpath=tmpdir).surface_folder
-            os.makedirs(surface_folder)
-            for region in ['lh', 'rh']:
-                for surf_type in ['central', 'sphere.reg']:
-                    pathlib.Path(
-                        os.path.join(surface_folder, f'{region}.{surf_type}.SOMETHING.gii')
-                    ).touch()
-            pathlib.Path(os.path.join(surface_folder, 'lc.sphere.reg.SOMETHING.gii')).touch()
-            pathlib.Path(os.path.join(surface_folder, 'rh.thickness.SOMETHING')).touch()
-            s = file_finder.SubjectFiles(subpath=tmpdir)
+            surface_folder = Path(file_finder.SubjectFiles(subpath=tmpdir).surface_folder)
+            surface_folder.mkdir(parents=True)
+            regions = ['lc', 'lh', 'rh']
+            surf_types = ('central', 'sphere_reg')
+            surf_to_name = dict(central='central', sphere_reg='sphere.reg')
+            subsamplings = (None, 10000)
+            fnames = {}
+            for region in regions:
+                for surf_type in surf_types:
+                    for subsampling in subsamplings:
+                        fileparts = [region, surf_to_name[surf_type]]
+                        if subsampling is not None:
+                            fileparts.append(str(subsampling))
+                        fileparts.append('gii')
+                        filename = '.'.join(fileparts)
+                        fn = surface_folder / filename
+                        fn.touch()
+                        fnames[(region, surf_type, subsampling)] = str(fn)
 
-            assert s.get_surface('lh', 'central') == \
-                    os.path.join(surface_folder, 'lh.central.SOMETHING.gii')
-            assert s.get_surface('rh', 'central') == \
-                    os.path.join(surface_folder, 'rh.central.SOMETHING.gii')
-            assert s.get_surface('lc', 'sphere_reg') == \
-                    os.path.join(surface_folder, 'lc.sphere.reg.SOMETHING.gii')
+            # Needs to be reinitialized
+            s = file_finder.SubjectFiles(subpath=tmpdir)
+            assert s.regions == regions
+            for region in regions:
+                for surf_type in surf_types:
+                    for subsampling in subsamplings:
+                        assert s.get_surface(region, surf_type, subsampling) \
+                               == fnames[region, surf_type, subsampling]
 
             with pytest.raises(FileNotFoundError):
-                s.get_surface('lc', 'central')
-            assert s.regions == ['lh', 'rh']
+                s.get_surface('rc', 'central')
+                s.get_surface('rc', 'sphere_reg')
+                s.get_surface('lh', 'central', 20000)
