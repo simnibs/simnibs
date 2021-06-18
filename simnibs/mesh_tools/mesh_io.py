@@ -815,6 +815,9 @@ class Msh:
         joined: simnibs.msh.Msh
             Mesh with joined nodes and elements
         """
+        if self.nodes.nr == 0:
+            return copy.deepcopy(other)
+        
         joined = copy.deepcopy(self)
         joined.elmdata = []
         joined.nodedata = []
