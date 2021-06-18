@@ -1655,22 +1655,30 @@ def subsample_surface(central_surf, sphere_surf, n_points=10000):
     assert isinstance(central_surf, dict)
     assert isinstance(sphere_surf, dict)
 
-    rr, tris = fibonacci_sphere(n_points)
-
     sphere_rr = sphere_surf['rr'] / np.linalg.norm(sphere_surf['rr'], axis=1,
                                                    keepdims=True)
     tree = cKDTree(sphere_rr)
+
+    rr, tris = fibonacci_sphere(n_points)
     _, idx = tree.query(rr)
 
     # If multiple points map to the same points on the original surface then
     # keep only the unique ones.
-    idx = np.unique(idx)
-    if len(idx) < n_points:
+    u, ui = np.unique(idx, return_inverse=True)
+    nu = len(u)
+    if nu < n_points:
         logger.warning(
             'Some subsampled points were mapped to the same point on the '
-            f'original surface. Keeping only the unique ones ({len(idx)} of '
+            f'original surface. Keeping only the unique ones ({nu} of '
             f'{n_points}).'
             )
+        # Remove degenerate triangles (those with duplicate vertices)
+        b = np.sort(idx[tris], axis=1)
+        c = np.flatnonzero(~np.any(b[:, :-1] == b[:, 1:], axis=1))
+        tris = tris[c]
+        # Keep unique vertices and reindex triangles to match
+        idx = u
+        tris = ui[tris]
 
     # Use the normals from the original (high resolution) surface as this
     # should be more accurate
@@ -1684,7 +1692,7 @@ def subsample_surface(central_surf, sphere_surf, n_points=10000):
         nn = nn[idx]
     )
     sphere_surf_sub = dict(
-        rr = sphere_rr[idx],
+        rr = sphere_surf['rr'][idx],
         tris = tris
     )
 
