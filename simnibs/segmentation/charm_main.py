@@ -230,6 +230,7 @@ def _post_process_segmentation_quick(bias_corrected_image_names,
 def _post_process_segmentation(bias_corrected_image_names,
                                upsampled_image_names,
                                tissue_settings,
+                               csf_factor,
                                parameters_and_inputs,
                                transformed_template_name,
                                label_prep_folder,
@@ -252,7 +253,8 @@ def _post_process_segmentation(bias_corrected_image_names,
                                     tissue_settings,
                                     parameters_and_inputs,
                                     transformed_template_name,
-                                    affine_atlas)
+                                    affine_atlas,
+                                    csf_factor)
 
     #Cast the upsampled image to int16  to save space
     for upsampled_image in upsampled_image_names:
@@ -875,10 +877,14 @@ def run(subject_dir=None, T1=None, T2=None,
                       sub_files.hemi_mask]
 
         cat_structs = atlas_settings['CAT_structures']
+        tissue_settings = atlas_settings['conductivity_mapping']
+        csf_factor = segment_settings['csf_factor']
         samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
                         bias_corrected_image_names,
                         sub_files.labeling,
                         segment_parameters_and_inputs,
+                        tissue_settings,
+                        csf_factor,
                         cat_structure_options=cat_structs,
                         cat_images=cat_images)
 
@@ -902,11 +908,11 @@ def run(subject_dir=None, T1=None, T2=None,
         if len(bias_corrected_image_names) > 1:
             upsampled_image_names.append(sub_files.T2_upsampled)
 
-        tissue_settings = atlas_settings['conductivity_mapping']
         cleaned_upsampled_tissues = _post_process_segmentation(
                                     bias_corrected_image_names,
                                     upsampled_image_names,
                                     tissue_settings,
+                                    csf_factor,
                                     segment_parameters_and_inputs,
                                     sub_files.template_coregistered,
                                     sub_files.label_prep_folder,
