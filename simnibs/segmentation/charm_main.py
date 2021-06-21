@@ -1037,9 +1037,9 @@ def run(subject_dir=None, T1=None, T2=None,
             # GM central surfaces
             m = Msh()
             if 'lh' in surf:
-                m = m.join_mesh( read_gifti_surface(sub_files.get_surface('lh')) )
+                m = m.join_mesh(read_gifti_surface(sub_files.get_surface('lh')))
             if 'rh' in surf:
-                m = m.join_mesh( read_gifti_surface(sub_files.get_surface('rh')) )    
+                m = m.join_mesh(read_gifti_surface(sub_files.get_surface('rh')))
             # fill in GM and save updated mask
             if m.nodes.nr > 0:
                 label_img = _fillin_gm_layer(label_img, label_affine, 
