@@ -47,33 +47,33 @@ class Templates:
     labeling_LUT: str
         Path to freeview color LUT for the labeling.nii.gz
     final_tissues_LUT: str
-        Path to freeview color LUT for the final_tissues.nii.gz and 
+        Path to freeview color LUT for the final_tissues.nii.gz and
         label_prep/tissue_labeling_upsampled.nii.gz
     '''
     def __init__(self):
         self._resources = os.path.join(SIMNIBSDIR, 'resources')
-        
+
         # atlases in fsaverage space
         self.atlases_surfaces = os.path.join(
             self._resources, 'templates', 'fsaverage_atlases')
-        
+
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
-        
+
         # path to fsaverage surfaces
         self.freesurfer_templates = os.path.join(
             self._resources, 'templates', 'fsaverage_surf')
-        
+
         # SimNIBS logo
         self.simnibs_logo = os.path.join(self._resources, 'simnibslogo.msh')
-        
+
         # labeling_LUT
         self.labeling_LUT = os.path.join(self._resources, 'labeling_FreeSurferColorLUT.txt')
-        
+
         # final_tissues_LUT
         self.final_tissues_LUT = os.path.join(self._resources, 'final_tissues_FreeSurferColorLUT.txt')
-    
+
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
@@ -120,7 +120,7 @@ def get_atlas(atlas_name, hemi='both'):
     if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
         raise ValueError('Invalid atlas name')
 
-        
+
     if hemi in ['lh', 'rh']:
         fn_atlas = os.path.join(
             templates.atlases_surfaces,
@@ -158,7 +158,7 @@ def get_reference_surf(region, surf_type='central'):
         Name of the region of interest
     surf_type: 'central', 'sphere', 'inflated' (optional)
         Surface type. Default: central
-    
+
     Returns
     --------
     fn_surf: str
@@ -237,7 +237,7 @@ class SubjectFiles:
 
     mni2conf_12dof: str
         MNI to conform 12 DOF transfomation (.txt or .mat)
-    
+
     final_labels_MNI: str
         Label image created from final mesh in MNI space
 
@@ -249,67 +249,73 @@ class SubjectFiles:
         List of SurfaceFile objects which containts 2 fields:
             fn: name of surface file (.gii format)
             region: 'lh', 'rh', 'lc' or 'rc'
-
+            
+    central_surfaces: list
+        Same as above but for the pial surfaces
+            
     sphere_reg_surfaces: list
         Same as above but for the spherical registration files
+
+    thickness: list
+        Cortical thicknesses are stored also as SurfaceFile
 
     regions: list
         list of region names (e.g. 'lh', 'rh') where all surfaces above are present
 
     T1: str
         T1 image after applying transformations
-        
+
     T2_reg: str
         T2 image after rigid co-registration to T1
-    
+
     T1_denoised: str
         T1 image after running filtering (optional)
-        
+
     T2_reg_denoised: str
         T2 image after co-registration and filtering (optional)
-    
+
     T1_bias_corrected: str
         T1 image after bias correction
-    
+
     T2_reg_bias_corrected: str
         T2 image after bias correction
-    
+
     labeling: str
         Output segmentation from samseg
-        
+
     final_labels: str
         Label image created from final mesh
-    
+
     template_coregistered: str
         Affine mapping from atlas voxel space to T1 voxel space
-    
+
     T1_upsampled: str
         Bias corrected T1 upsampled to 0.5mm^3 resolution
-        
+
     T2_upsampled: str
         Bias corrected T2 upsampled to 0.5mm^3 resolution
-        
+
     tissue_labeling_upsampled: str
         Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution
-    
+
     head_mesh: str
         Final head mesh
-        
+
     cerebrum_mask: str
         Mask indicating cerebrum and cerebellum. Needed for surfaces.
-    
+
     norm_image: str
         Normalized intensity image. Needed for surfaces.
-        
+
     subcortical_mask: str
         Mask of subcortical structures. Needed for surfaces
-        
+
     parahippo_mask: str
         Mask of parahippocampal area. Needed for surfaces.
-        
+
     hemi_mask: str
         Mask indicating left/right. Needed for surfaces.
-        
+
     Warning
     --------
     This class does not check for existance of the files
@@ -345,7 +351,7 @@ class SubjectFiles:
 
         if not self.subpath:
             self.subpath = '' # otherwise SESSION._prepare fails for meshes that do not have a m2m_folder
-        
+
         self.tensor_file = os.path.join(self.subpath, 'DTI_coregT1_tensor.nii.gz')
 
         self.eeg_cap_folder = os.path.join(self.subpath, 'eeg_positions')
@@ -377,35 +383,84 @@ class SubjectFiles:
             self.mni2conf_12dof += '.mat'
 
         # Stuff for surface transformations
+        # Organize the files in 3 separate lists
+        SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region',
+                                                             'subsampling'])
         # Look for all .gii files in surface_folder
         surfaces = glob.glob(os.path.join(self.surface_folder, '*.gii'))
-        # Organize the files in 3 separate lists
-        SurfaceFile = collections.namedtuple('SurfaceFile', ['fn', 'region'])
+
         self.sphere_reg_surfaces = []
         #self.sphere_surfaces = []
         self.central_surfaces = []
+        self.pial_surfaces = []
         for fn in surfaces:
             s = os.path.basename(fn)
             region = s[:2]
             if '.sphere.reg' in s:
+                # Assumes that the filename is
+                # hemi.sphere.reg[.subsampling].gii
+                parts = s.split('.')[3:]
+                if len(parts) == 1:
+                    subsampling = None
+                elif len(parts) == 2:
+                    subsampling = int(parts[0])
+                else:
+                    raise ValueError(
+                        f'Found {len(parts)} fileparts after '
+                        '"hemi.sphere.reg". Expected one (gii) or two '
+                        '(subsampling, gii).'
+                        )
                 self.sphere_reg_surfaces.append(
-                    SurfaceFile(fn, region)
+                    SurfaceFile(fn, region, subsampling)
                 )
-            # elif '.sphere.' in s:
-            #     self.sphere_surfaces.append(
-            #         SurfaceFile(fn, region)
-            #     )
+            elif '.pial.' in s:
+                # Assumes that the filename is hemi.pial[.subsampling].gii
+                parts = s.split('.')[2:]
+                if len(parts) == 1:
+                    subsampling = None
+                elif len(parts) == 2:
+                    subsampling = int(parts[0])
+                else:
+                    raise ValueError(
+                        f'Found {len(parts)} fileparts after '
+                        '"hemi.pial". Expected one (gii) or two '
+                        '(subsampling, gii).'
+                        )
+                self.pial_surfaces.append(
+                     SurfaceFile(fn, region, subsampling)
+                 )
             elif '.central.' in s:
+                # Assumes that the filename is hemi.central[.subsampling].gii
+                parts = s.split('.')[2:]
+                if len(parts) == 1:
+                    subsampling = None
+                elif len(parts) == 2:
+                    subsampling = int(parts[0])
+                else:
+                    raise ValueError(
+                        f'Found {len(parts)} fileparts after '
+                        '"hemi.central". Expected one (gii) or two '
+                        '(subsampling, gii).'
+                        )
                 self.central_surfaces.append(
-                    SurfaceFile(fn, region)
+                    SurfaceFile(fn, region, subsampling)
+                )
+                
+        surfaces = glob.glob(os.path.join(self.surface_folder, '*.thickness'))
+        self.thickness = []
+        for fn in surfaces:
+            s = os.path.basename(fn)
+            region = s[:2]
+            self.thickness.append(
+                    SurfaceFile(fn, region, None)
                 )
 
         self.regions = sorted(
             set([s.region for s in self.sphere_reg_surfaces]) &
-            #set([s.region for s in self.sphere_surfaces]) &
+            #set([s.region for s in self.pial_surfaces]) &
             set([s.region for s in self.central_surfaces])
         )
-        
+
         self.T2_reg = os.path.join(self.subpath, 'T2_reg.nii.gz')
         self.T1_denoised = os.path.join(self.segmentation_folder, 'T1_denoised.nii.gz')
         self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
@@ -423,16 +478,14 @@ class SubjectFiles:
         self.reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
         self.affine_reg_viewer = os.path.join(self.report_folder, 'affine_reg.html')
         self.final_viewer = os.path.join(self.report_folder, 'final_tissues.html')
-
-        
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
-        
+
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
-                
+
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject
@@ -454,16 +507,19 @@ class SubjectFiles:
         '''
         return os.path.join(self.eeg_cap_folder, cap_name)
 
-    def get_surface(self, region, surf_type='central'):
-        ''' Gets the file name of a subject CAT12 surface
+    def get_surface(self, region, surf_type='central', subsampling=None):
+        ''' Gets the filename of a subject CAT12 surface
 
         Parameters
         -----------
         region: 'lh', 'rh', 'lc' or 'rc'
             Name of the region of interest
-        surf_type: 'central', 'sphere_reg' (optional)
+        surf_type: 'central', 'sphere_reg', 'pial', 'thickness' (optional)
             Surface type. Default: central
-        
+        subsampling : int | None
+            The subsampling of the surface. None corresponds to the original
+            (full resolution) surface (default = None).
+
         Returns
         --------
         fn_surf: str
@@ -473,13 +529,23 @@ class SubjectFiles:
         -------
         FileNotFoundError if the specified reference surface is not found
 
-        '''
+        '''                
         if surf_type == 'central':
             for s in self.central_surfaces:
-                if s.region == region: return s.fn
+                if s.region == region and s.subsampling == subsampling:
+                    return s.fn
         elif surf_type == 'sphere_reg':
             for s in self.sphere_reg_surfaces:
-                if s.region == region: return s.fn
+                if s.region == region and s.subsampling == subsampling:
+                    return s.fn
+        elif surf_type == 'pial':
+            for s in self.pial_surfaces:
+                if s.region == region and s.subsampling == subsampling:
+                    return s.fn
+        elif surf_type == 'thickness':
+            for s in self.thickness:
+                if s.region == region and s.subsampling == subsampling:
+                    return s.fn
         else:
             raise ValueError('invalid surf_type')
         raise FileNotFoundError('Could not find surface')
