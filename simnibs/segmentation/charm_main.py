@@ -28,7 +28,7 @@ from simnibs import SIMNIBSDIR
 
 from .. import __version__
 from . import samseg
-from ._thickness import  _calc_thickness
+from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
 from .. import utils
@@ -682,8 +682,9 @@ def _fillin_gm_layer(label_img, label_affine, labelorg_img, labelorg_affine, m,
     return label_img
 
 
-def _open_sulci(label_img, label_affine, m, 
-                tissue_labels = {"CSF": 3, "GM": 2, "WM": 1}):
+def _open_sulci(label_img, label_affine, labelorg_img, labelorg_affine, m, 
+                tissue_labels = {"CSF": 3, "GM": 2, "WM": 1},
+                exclusion_tissues = [17, 18, 53, 54]):
     # get thin CSF structures
     mask = mask_from_surface(m.nodes[:],m.elm[:,:3]-1,label_affine,label_img.shape)
     # mask2 = mrph.binary_dilation(mask,iterations=4)
@@ -691,6 +692,14 @@ def _open_sulci(label_img, label_affine, m,
     mask2 = mrph.binary_dilation(mask,iterations=2)
     mask2 = mrph.binary_erosion(mask2,iterations=3)
     mask2[mask] = 0
+    
+    # protect hippocampi and amydalae
+    exclude_img = np.zeros_like(labelorg_img,dtype=bool)
+    for i in exclusion_tissues:
+        exclude_img += labelorg_img == i
+    iM = np.linalg.inv(labelorg_affine).dot(label_affine)
+    exclude_img = affine_transform(exclude_img, iM[:3, :3], iM[:3, 3], label_img.shape, order=0)
+    mask2[exclude_img] = 0
     
     # relabel GM overlapping thin CSF to CSF
     label_img[ (label_img == tissue_labels['GM'])*mask2 ] = tissue_labels['CSF']
@@ -1006,8 +1015,9 @@ def run(subject_dir=None, T1=None, T2=None,
         th_initial = surface_settings['th_initial']
         no_selfintersections = surface_settings['no_selfintersections']
         fillin_gm_from_surf = surface_settings['fillin_gm_from_surf']
-        exclusion_tissues = surface_settings['exclusion_tissues']
         open_sulci_from_surf = surface_settings['open_sulci_from_surf']
+        exclusion_tissues_fillinGM = surface_settings['exclusion_tissues_fillinGM']
+        exclusion_tissues_openCSF = surface_settings['exclusion_tissues_openCSF']
 
         if sys.platform == 'win32':
             # A hack to get multithreading to work on Windows
@@ -1061,11 +1071,13 @@ def run(subject_dir=None, T1=None, T2=None,
             label_img = np.asanyarray(label_nii.dataobj)
             label_affine = label_nii.affine
 
+            
+            # orginal label mask
+            label_nii = nib.load(sub_files.labeling)
+            labelorg_img = np.asanyarray(label_nii.dataobj)
+            labelorg_affine = label_nii.affine
+
             if fillin_gm_from_surf:
-                # orginal label mask
-                label_nii = nib.load(sub_files.labeling)
-                labelorg_img = np.asanyarray(label_nii.dataobj)
-                labelorg_affine = label_nii.affine
                 # GM central surfaces
                 m = Msh()
                 if 'lh' in surf:
@@ -1074,9 +1086,10 @@ def run(subject_dir=None, T1=None, T2=None,
                     m = m.join_mesh(read_gifti_surface(sub_files.get_surface('rh')))
                     # fill in GM and save updated mask
                 if m.nodes.nr > 0:
-                    label_img = _fillin_gm_layer(label_img, label_affine,
-                                                 labelorg_img, labelorg_affine, m,
-                                                 exclusion_tissues=exclusion_tissues)
+                    label_img = _fillin_gm_layer(label_img, label_affine, 
+                                                 labelorg_img, labelorg_affine, m, 
+                                                 exclusion_tissues = exclusion_tissues_fillinGM)
+
                     label_nii = nib.Nifti1Image(label_img, label_affine)
                     nib.save(label_nii, sub_files.tissue_labeling_upsampled)
                 else:
@@ -1106,7 +1119,9 @@ def run(subject_dir=None, T1=None, T2=None,
                     m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
                 if m.nodes.nr > 0:
-                    label_img = _open_sulci(label_img, label_affine, m)
+                    _open_sulci(label_img, label_affine,
+                                labelorg_img, labelorg_affine, m,
+                                exclusion_tissues = exclusion_tissues_openCSF)                    
                     label_nii = nib.Nifti1Image(label_img, label_affine)
                     nib.save(label_nii, sub_files.tissue_labeling_upsampled)
                 else:
