@@ -23,11 +23,12 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage import affine_transform
 from scipy.ndimage.measurements import label
 
-from simnibs.segmentation._thickness import  _calc_thickness
+
 from simnibs import SIMNIBSDIR
 
 from .. import __version__
 from . import samseg
+from ._thickness import  _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
 from .. import utils
@@ -685,8 +686,10 @@ def _open_sulci(label_img, label_affine, m,
                 tissue_labels = {"CSF": 3, "GM": 2, "WM": 1}):
     # get thin CSF structures
     mask = mask_from_surface(m.nodes[:],m.elm[:,:3]-1,label_affine,label_img.shape)
-    mask2 = mrph.binary_dilation(mask,iterations=4)
-    mask2 = mrph.binary_erosion(mask2,iterations=5)
+    # mask2 = mrph.binary_dilation(mask,iterations=4)
+    # mask2 = mrph.binary_erosion(mask2,iterations=5)
+    mask2 = mrph.binary_dilation(mask,iterations=2)
+    mask2 = mrph.binary_erosion(mask2,iterations=3)
     mask2[mask] = 0
     
     # relabel GM overlapping thin CSF to CSF
@@ -694,9 +697,11 @@ def _open_sulci(label_img, label_affine, m,
     
     # open up remaining thin GM bridges at brain surface
     mask2 = (label_img == tissue_labels['GM']) | (label_img == tissue_labels['WM']) 
-    mask2 = mrph.binary_erosion(mask2,iterations=2)
-    mask2 = mrph.binary_dilation(mask2,iterations=2)
-    label_img[ (label_img == tissue_labels['GM'])* ~mask2 ] = tissue_labels['CSF']
+    # mask2 = mrph.binary_erosion(mask2,iterations=2)
+    # mask2 = mrph.binary_dilation(mask2,iterations=2)
+    #label_img[ (label_img == tissue_labels['GM'])* ~mask2 ] = tissue_labels['CSF']
+    brainthickness = _calc_thickness(mask2)     
+    label_img[(brainthickness <= 2.0) * (label_img == tissue_labels['GM'])] = tissue_labels['CSF']
     
     return label_img
 
