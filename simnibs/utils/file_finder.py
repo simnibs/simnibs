@@ -77,6 +77,9 @@ class Templates:
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
+        #HTML template
+        self.viewer_template = os.path.join(self._resources, 'viewer_template.html')
+
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
 ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, 'resources', 'ElectrodeCaps_MNI')
@@ -357,6 +360,7 @@ class SubjectFiles:
         self.segmentation_folder = os.path.join(self.subpath, 'segmentation')
         self.surface_folder = os.path.join(self.subpath, 'surfaces')
         self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
+        self.report_folder = os.path.join(self.subpath, 'reports')
 
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1.nii.gz')
@@ -468,12 +472,15 @@ class SubjectFiles:
         self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
+        self.tissue_labeling_before_morpho = os.path.join(self.label_prep_folder, 'before_morpho.nii.gz')
+        self.upper_mask = os.path.join(self.label_prep_folder, 'upper_part.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
-
+        self.reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
+        self.affine_reg_viewer = os.path.join(self.report_folder, 'affine_reg.html')
+        self.final_viewer = os.path.join(self.report_folder, 'final_tissues.html')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
-        #self.parahippo_mask = os.path.join(self.surface_folder, 'parahippo_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
 
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
