@@ -1045,7 +1045,7 @@ def run(subject_dir=None, T1=None, T2=None,
         elapsed = time.time() - starttime
         logger.info('Total time cost surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
-
+        sub_files = file_finder.SubjectFiles(None, subject_dir)
         if fillin_gm_from_surf or open_sulci_from_surf:
             logger.info('Improving GM from surfaces')
             starttime = time.time()
