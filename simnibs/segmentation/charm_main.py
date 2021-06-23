@@ -1016,9 +1016,8 @@ def run(subject_dir=None, T1=None, T2=None,
         no_selfintersections = surface_settings['no_selfintersections']
         fillin_gm_from_surf = surface_settings['fillin_gm_from_surf']
         open_sulci_from_surf = surface_settings['open_sulci_from_surf']
-        exclusion_tissues_fillinGM = surface_settings['exclusion_tissues_fillinGM']
-        exclusion_tissues_openCSF = surface_settings['exclusion_tissues_openCSF']
-
+        exclusion_tissues_fillinGM = surface_settings['exclusion_tissues_fillin_gm']
+        exclusion_tissues_openCSF = surface_settings['exclusion_tissues_open_csf']
         if sys.platform == 'win32':
             # A hack to get multithreading to work on Windows
             multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
