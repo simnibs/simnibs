@@ -220,6 +220,7 @@ class AffineWholeHead(Affine):
         initial_node_positions = mesh.points
         mesh.points = initial_node_positions - res.x*deformation_field
 
+
         mesh_collection.transform(gems.KvlTransform(requireNumpyArray(
             np.linalg.inv(transformation_matrix))))
         mesh_collection.write(os.path.join(file_path[0], 'atlas_level1.txt'))

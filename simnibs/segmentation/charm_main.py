@@ -34,6 +34,7 @@ from ..utils.transformations import resample_vol, crop_vol
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import write_msh, ElementData
 from ..simulation import cond
+from ..utils import plotting
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -232,8 +233,9 @@ def _post_process_segmentation(bias_corrected_image_names,
                                tissue_settings,
                                parameters_and_inputs,
                                transformed_template_name,
-                               label_prep_folder,
-                               affine_atlas):
+                               affine_atlas,
+                               before_morpho_name,
+                               upper_mask):
 
     logger.info('Upsampling bias corrected images.')
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
@@ -264,11 +266,11 @@ def _post_process_segmentation(bias_corrected_image_names,
     upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues,
                                         affine_upsampled)
     upsampled_tissues_im.set_data_dtype(np.int16)
-    nib.save(upsampled_tissues_im, os.path.join(label_prep_folder,'before_morpho.nii.gz'))
+    nib.save(upsampled_tissues_im, before_morpho_name)
 
     upper_part_im = nib.Nifti1Image(upper_part.astype(np.int16),affine_upsampled)
     upper_part_im.set_data_dtype(np.int16)
-    nib.save(upper_part_im, os.path.join(label_prep_folder, 'upper_part.nii.gz'))
+    nib.save(upper_part_im, upper_mask)
     # Do morphological operations
     simnibs_tissues = tissue_settings['simnibs_tissues']
     _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
@@ -686,8 +688,11 @@ def run(subject_dir=None, T1=None, T2=None,
     if not os.path.exists(subject_dir):
         os.mkdir(subject_dir)
 
+    # initialize subject files
+    sub_files = file_finder.SubjectFiles(None, subject_dir)
     # start logging ...
-    logfile = os.path.join(subject_dir, "charm_log.html")
+    os.makedirs(sub_files.report_folder, exist_ok=True)
+    logfile = os.path.join(sub_files.report_folder, "charm_log.html")
     with open(logfile, 'a') as f:
         f.write('<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>')
         f.close()
@@ -704,9 +709,6 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.debug('options: '+options_str)
     else:
         logger.debug('options: none')
-    
-    # initialize subject files
-    sub_files = file_finder.SubjectFiles(None, subject_dir)
 
     # copy T1 (as nii.gz) if supplied
     if T1 is not None:
@@ -728,6 +730,13 @@ def run(subject_dir=None, T1=None, T2=None,
             T2_tmp = nib.load(T2)
             T2_tmp.set_data_dtype(np.float32)
             nib.save(T2_tmp, sub_files.T2_reg)
+
+    # Create visualization html
+    if T2 is not None:
+        logger.info('Creating registration visualization')
+        plotting.viewer_registration(sub_files.reference_volume,
+                                     sub_files.T2_reg,
+                                     sub_files.reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -829,6 +838,11 @@ def run(subject_dir=None, T1=None, T2=None,
                                         visualizer,
                                         noneck)
 
+        logger.info('Creating affine registration visualization')
+        plotting.viewer_affine(sub_files.reference_volume,
+                               sub_files.template_coregistered,
+                               sub_files.affine_reg_viewer)
+
     if segment:
         # This part runs the segmentation, upsamples bias corrected output,
         # writes mni transforms, creates upsampled segmentation, maps tissues
@@ -879,6 +893,7 @@ def run(subject_dir=None, T1=None, T2=None,
                         bias_corrected_image_names,
                         sub_files.labeling,
                         segment_parameters_and_inputs,
+                        tissue_settings,
                         cat_structure_options=cat_structs,
                         cat_images=cat_images)
 
@@ -909,8 +924,9 @@ def run(subject_dir=None, T1=None, T2=None,
                                     tissue_settings,
                                     segment_parameters_and_inputs,
                                     sub_files.template_coregistered,
-                                    sub_files.label_prep_folder,
-                                    atlas_affine_name)
+                                    atlas_affine_name,
+                                    sub_files.tissue_labeling_before_morpho,
+                                    sub_files.upper_mask)
 
         # Write to disk
         upsampled_image = nib.load(sub_files.T1_upsampled)
@@ -1057,7 +1073,12 @@ def run(subject_dir=None, T1=None, T2=None,
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
     # -------------------------TIDY UP-----------------------------------------
-
+    # Create final seg html viewer
+    # Create visualization htmls
+    logger.info('Creating registration visualization')
+    plotting.viewer_final(sub_files.reference_volume,
+                          sub_files.final_labels,
+                          sub_files.final_viewer)
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
@@ -1071,4 +1092,5 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
+
 
