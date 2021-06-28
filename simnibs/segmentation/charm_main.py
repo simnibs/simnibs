@@ -1244,4 +1244,3 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
-    shutil.move(logfile, sub_files.report_folder)

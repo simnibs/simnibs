@@ -71,7 +71,8 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
     # dimensions with one zero
     Y = np.pad(volume, 1, mode="constant")
     
-    # Extract the surface 
+    # Extract the surface
+    print('Calling marching cubes_lewiner')
     vertices, faces, _, _ = marching_cubes_lewiner(Y, level=level, step_size=step_size, 
                                                    allow_degenerate=False)
 
@@ -96,6 +97,7 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
         mesh_io.write_off(surface, mesh_fn)
         cmd=[file_finder.path2bin("meshfix"), mesh_fn, '-u', str(n_uniform), 
              '-a', '2.0', '-q', '-o', mesh_fn]
+        print('Spawning process')
         spawn_process(cmd)
         surface = mesh_io.read_off(mesh_fn)
         if os.path.isfile(mesh_fn):
