@@ -40,7 +40,7 @@ from ..utils.spawn_process import spawn_process
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import read_gifti_surface, write_msh, read_off, write_off, Msh, ElementData
 from ..simulation import cond
-from ..utils import plotting
+#from ..utils import plotting
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -807,9 +807,9 @@ def run(subject_dir=None, T1=None, T2=None,
     # Create visualization html
     if T2 is not None:
         logger.info('Creating registration visualization')
-        plotting.viewer_registration(sub_files.reference_volume,
-                                     sub_files.T2_reg,
-                                     sub_files.reg_viewer)
+        #plotting.viewer_registration(sub_files.reference_volume,
+        #                             sub_files.T2_reg,
+        #                             sub_files.reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -912,9 +912,9 @@ def run(subject_dir=None, T1=None, T2=None,
                                         noneck)
 
         logger.info('Creating affine registration visualization')
-        plotting.viewer_affine(sub_files.reference_volume,
-                               sub_files.template_coregistered,
-                               sub_files.affine_reg_viewer)
+        #plotting.viewer_affine(sub_files.reference_volume,
+        #                       sub_files.template_coregistered,
+        #                       sub_files.affine_reg_viewer)
 
     if segment:
         # This part runs the segmentation, upsamples bias corrected output,
@@ -1228,9 +1228,9 @@ def run(subject_dir=None, T1=None, T2=None,
     # Create final seg html viewer
     # Create visualization htmls
     logger.info('Creating registration visualization')
-    plotting.viewer_final(sub_files.reference_volume,
-                          sub_files.final_labels,
-                          sub_files.final_viewer)
+    #plotting.viewer_final(sub_files.reference_volume,
+    #                      sub_files.final_labels,
+    #                      sub_files.final_viewer)
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
