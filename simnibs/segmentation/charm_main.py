@@ -28,7 +28,7 @@ from simnibs import SIMNIBSDIR
 
 from .. import __version__
 from . import samseg
-from ._thickness import  _calc_thickness
+from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
 from .. import utils
@@ -40,7 +40,7 @@ from ..utils.spawn_process import spawn_process
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import read_gifti_surface, write_msh, read_off, write_off, Msh, ElementData
 from ..simulation import cond
-from ..utils import plotting
+#from ..utils import plotting
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -237,6 +237,7 @@ def _post_process_segmentation_quick(bias_corrected_image_names,
 def _post_process_segmentation(bias_corrected_image_names,
                                upsampled_image_names,
                                tissue_settings,
+                               csf_factor,
                                parameters_and_inputs,
                                transformed_template_name,
                                affine_atlas,
@@ -260,7 +261,8 @@ def _post_process_segmentation(bias_corrected_image_names,
                                     tissue_settings,
                                     parameters_and_inputs,
                                     transformed_template_name,
-                                    affine_atlas)
+                                    affine_atlas,
+                                    csf_factor)
 
     #Cast the upsampled image to int16  to save space
     for upsampled_image in upsampled_image_names:
@@ -805,9 +807,9 @@ def run(subject_dir=None, T1=None, T2=None,
     # Create visualization html
     if T2 is not None:
         logger.info('Creating registration visualization')
-        plotting.viewer_registration(sub_files.reference_volume,
-                                     sub_files.T2_reg,
-                                     sub_files.reg_viewer)
+        #plotting.viewer_registration(sub_files.reference_volume,
+        #                             sub_files.T2_reg,
+        #                             sub_files.reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -910,9 +912,9 @@ def run(subject_dir=None, T1=None, T2=None,
                                         noneck)
 
         logger.info('Creating affine registration visualization')
-        plotting.viewer_affine(sub_files.reference_volume,
-                               sub_files.template_coregistered,
-                               sub_files.affine_reg_viewer)
+        #plotting.viewer_affine(sub_files.reference_volume,
+        #                       sub_files.template_coregistered,
+        #                       sub_files.affine_reg_viewer)
 
     if segment:
         # This part runs the segmentation, upsamples bias corrected output,
@@ -960,11 +962,14 @@ def run(subject_dir=None, T1=None, T2=None,
                       sub_files.hemi_mask]
 
         cat_structs = atlas_settings['CAT_structures']
+        tissue_settings = atlas_settings['conductivity_mapping']
+        csf_factor = segment_settings['csf_factor']
         samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
                         bias_corrected_image_names,
                         sub_files.labeling,
                         segment_parameters_and_inputs,
                         tissue_settings,
+                        csf_factor,
                         cat_structure_options=cat_structs,
                         cat_images=cat_images)
 
@@ -988,11 +993,11 @@ def run(subject_dir=None, T1=None, T2=None,
         if len(bias_corrected_image_names) > 1:
             upsampled_image_names.append(sub_files.T2_upsampled)
 
-        tissue_settings = atlas_settings['conductivity_mapping']
         cleaned_upsampled_tissues = _post_process_segmentation(
                                     bias_corrected_image_names,
                                     upsampled_image_names,
                                     tissue_settings,
+                                    csf_factor,
                                     segment_parameters_and_inputs,
                                     sub_files.template_coregistered,
                                     atlas_affine_name,
@@ -1026,9 +1031,8 @@ def run(subject_dir=None, T1=None, T2=None,
         no_selfintersections = surface_settings['no_selfintersections']
         fillin_gm_from_surf = surface_settings['fillin_gm_from_surf']
         open_sulci_from_surf = surface_settings['open_sulci_from_surf']
-        exclusion_tissues_fillinGM = surface_settings['exclusion_tissues_fillinGM']
-        exclusion_tissues_openCSF = surface_settings['exclusion_tissues_openCSF']
-
+        exclusion_tissues_fillinGM = surface_settings['exclusion_tissues_fillin_gm']
+        exclusion_tissues_openCSF = surface_settings['exclusion_tissues_open_csf']
         if sys.platform == 'win32':
             # A hack to get multithreading to work on Windows
             multithreading_script = [os.path.join(SIMNIBSDIR, 'segmentation', 'run_cat_multiprocessing.py')]
@@ -1070,61 +1074,63 @@ def run(subject_dir=None, T1=None, T2=None,
         elapsed = time.time() - starttime
         logger.info('Total time cost surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
-        
+        sub_files = file_finder.SubjectFiles(None, subject_dir)
         if fillin_gm_from_surf or open_sulci_from_surf:
             logger.info('Improving GM from surfaces')
             starttime = time.time()
             # original tissue mask used for mesh generation
-            shutil.copyfile(sub_files.tissue_labeling_upsampled, 
-                            os.path.join(sub_files.label_prep_folder,'before_surfmorpho.nii.gz') )
+            shutil.copyfile(sub_files.tissue_labeling_upsampled,
+                            os.path.join(sub_files.label_prep_folder, 'before_surfmorpho.nii.gz'))
             label_nii = nib.load(sub_files.tissue_labeling_upsampled)
             label_img = np.asanyarray(label_nii.dataobj)
             label_affine = label_nii.affine
+
             
             # orginal label mask
             label_nii = nib.load(sub_files.labeling)
             labelorg_img = np.asanyarray(label_nii.dataobj)
             labelorg_affine = label_nii.affine
-            
+
             if fillin_gm_from_surf:
                 # GM central surfaces
                 m = Msh()
                 if 'lh' in surf:
-                    m = m.join_mesh( read_gifti_surface(sub_files.get_surface('lh')) )
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface('lh')))
                 if 'rh' in surf:
-                    m = m.join_mesh( read_gifti_surface(sub_files.get_surface('rh')) )    
-                # fill in GM and save updated mask
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface('rh')))
+                    # fill in GM and save updated mask
                 if m.nodes.nr > 0:
                     label_img = _fillin_gm_layer(label_img, label_affine, 
                                                  labelorg_img, labelorg_affine, m, 
                                                  exclusion_tissues = exclusion_tissues_fillinGM)
+
                     label_nii = nib.Nifti1Image(label_img, label_affine)
                     nib.save(label_nii, sub_files.tissue_labeling_upsampled)
                 else:
                     logger.warning("Neither lh nor rh reconstructed. Filling in from GM surface skipped")
-                    
+
             if open_sulci_from_surf:
                 # GM pial surfaces
                 m = Msh()
                 if 'lh' in pial:
-                    m2 = read_gifti_surface(sub_files.get_surface('lh',surf_type='pial'))
+                    m2 = read_gifti_surface(sub_files.get_surface('lh', surf_type='pial'))
                     # remove self-intersections using meshfix
                     with tempfile.NamedTemporaryFile(suffix='.off') as f:
                         mesh_fn = f.name
                     write_off(m2, mesh_fn)
-                    cmd=[file_finder.path2bin("meshfix"), mesh_fn, '-o', mesh_fn]
-                    spawn_process(cmd, lvl=logging.DEBUG)        
-                    m = m.join_mesh( read_off(mesh_fn) )
-                    if os.path.isfile(mesh_fn): os.remove(mesh_fn) 
-                if 'rh' in pial:
-                    m2 = read_gifti_surface(sub_files.get_surface('rh',surf_type='pial'))
-                    # remove self-intersections using meshfix
-                    with tempfile.NamedTemporaryFile(suffix='.off') as f:
-                        mesh_fn = f.name
-                    write_off(m2, mesh_fn)
-                    cmd=[file_finder.path2bin("meshfix"), mesh_fn, '-o', mesh_fn]
+                    cmd = [file_finder.path2bin("meshfix"), mesh_fn, '-o', mesh_fn]
                     spawn_process(cmd, lvl=logging.DEBUG)
-                    m = m.join_mesh( read_off(mesh_fn) )
+                    m = m.join_mesh(read_off(mesh_fn))
+                    if os.path.isfile(mesh_fn): os.remove(mesh_fn)
+                if 'rh' in pial:
+                    m2 = read_gifti_surface(sub_files.get_surface('rh', surf_type='pial'))
+                    # remove self-intersections using meshfix
+                    with tempfile.NamedTemporaryFile(suffix='.off') as f:
+                        mesh_fn = f.name
+                    write_off(m2, mesh_fn)
+                    cmd = [file_finder.path2bin("meshfix"), mesh_fn, '-o', mesh_fn]
+                    spawn_process(cmd, lvl=logging.DEBUG)
+                    m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
                 if m.nodes.nr > 0:
                     _open_sulci(label_img, label_affine,
@@ -1133,7 +1139,7 @@ def run(subject_dir=None, T1=None, T2=None,
                     label_nii = nib.Nifti1Image(label_img, label_affine)
                     nib.save(label_nii, sub_files.tissue_labeling_upsampled)
                 else:
-                    logger.warning("Neither lh nor rh pial reconstructed. Opening up of sulci skipped.")    
+                    logger.warning("Neither lh nor rh pial reconstructed. Opening up of sulci skipped.")
                 
             # print time duration
             elapsed = time.time() - starttime
@@ -1222,9 +1228,9 @@ def run(subject_dir=None, T1=None, T2=None,
     # Create final seg html viewer
     # Create visualization htmls
     logger.info('Creating registration visualization')
-    plotting.viewer_final(sub_files.reference_volume,
-                          sub_files.final_labels,
-                          sub_files.final_viewer)
+    #plotting.viewer_final(sub_files.reference_volume,
+    #                      sub_files.final_labels,
+    #                      sub_files.final_viewer)
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
@@ -1238,4 +1244,3 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
-    shutil.move(logfile, sub_files.report_folder)

@@ -834,6 +834,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
 
     # ---------- generation of initial central surface (using Yppi) -------
     stimet = time.time()
+    logger.info('Calling marching cubes')
     CS, EC = marching_cube(Yppi, affine=vox2mm_upsampled, level=th_initial,
                            step_size=round(vdist/voxsize_pbt), only_largest_component=True, n_uniform=2)
 
