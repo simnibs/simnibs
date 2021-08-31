@@ -23,6 +23,7 @@ import os
 import re
 import glob
 import collections
+from pathlib import Path
 import numpy as np
 import nibabel
 
@@ -647,4 +648,28 @@ def path2bin(program):
 
     return path_to_binary
 
+
+PATH_MONTAGES = Path(SIMNIBSDIR) / 'resources' / 'montages'
+PATH_LANDMARKS = Path(SIMNIBSDIR) / 'resources' / 'ElectrodeCaps_MNI'
+VALID_MONTAGES = set(("easycap_BC_TMS64_X21",))
+# Fiducials: LPA/RPA refer to ones recommended by BrainStorm
+# FiducialsJesper : LPA/RPA refer to the "actual" points
+# Nz/Iz are the same
+VALID_LANDMARKS = set(('Fiducials', 'FiducialsJesper'))
+
+def get_montage(name):
+    """Get the full path to one of the montages included in SimNIBS."""
+    if name in VALID_MONTAGES:
+        return PATH_MONTAGES / f"{name}.csv"
+    else:
+        return Path(name)
+
+def get_landmarks(name):
+    """Get the full path to one of the landmark definitions included in
+    SimNIBS.
+    """
+    if name in VALID_LANDMARKS:
+        return PATH_LANDMARKS / f"{name}.csv"
+    else:
+        return Path(name)
 
