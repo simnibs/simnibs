@@ -1,9 +1,12 @@
 import os
+
+import nibabel as nib
 import scipy.io
 import scipy.ndimage
 import numpy as np
 from scipy.optimize import minimize_scalar
 import logging
+
 
 import charm_gems as gems
 from .Affine import Affine
@@ -91,14 +94,21 @@ class AffineWholeHead(Affine):
         spineAlphas = alphas[:, 48]
         mask_spine = spineAlphas > 0.1
 
-        # Let's figure out where the z-direction is in the buffer
-        xyz_to_array_inds = [1, 0, 2] # Fortran ordering
-        image_tmp = gems.KvlImage( T1 )
-        mat_tmp = image_tmp.transform_matrix.as_numpy_array
-        z_row = np.argmax(np.abs(mat_tmp[0:3, 2]))
-        z_dim = xyz_to_array_inds[z_row]
+        # Let's figure out the voxel orienation
+        T1_nib = nib.load(T1)
+        ort = nib.aff2axcodes(T1_nib.affine)
+        del T1_nib
+        if 'S' in ort:
+            z_dim = ort.index('S')
+            up = True
+        elif 'I' in ort:
+            z_dim = ort.index('I')
+            up = False
+        else:
+            logger.info("Can't figure out orientation. Skipping neck adjustment.")
+            return -1
 
-        # Get z-coordinates
+        # Get z-coordinates in image voxel space
         z_positions = mesh.points[:, z_dim]
         spine_positions_z = z_positions[mask_spine]
         mask_neck = 0
@@ -106,17 +116,30 @@ class AffineWholeHead(Affine):
         # The values are stored from bottom of the head (0) to the top (-1)
         # Note, here the mesh nodes are already transformed to the voxels
         # of the image.
-        top_ind = np.argmax(spine_positions_z)
-        top_pos = spine_positions_z[top_ind]
-        mask_neck = z_positions < top_pos
-        neck_pos = z_positions[mask_neck]
-        z_dist = top_pos - neck_pos
+        if up:
+            top_ind = np.argmax(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
+            mask_neck = z_positions < top_pos
+            neck_pos = z_positions[mask_neck]
+            z_dist = top_pos - neck_pos
+        else:
+            top_ind = np.argmin(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
+            mask_neck = z_positions > top_pos
+            neck_pos = z_positions[mask_neck]
+            z_dist = neck_pos - top_pos
 
         # Okay the distance from the top of the spine defines the amount
         # of deformation in the A->P direction
-        # Let's first check where the A-P direction is
-        x_row = np.argmax(np.abs(mat_tmp[0:3, 0]))
-        x_dim = xyz_to_array_inds[x_row]
+        # Let's figure out where A->P is
+        if 'A' in ort:
+            x_dim = ort.index('A')
+        elif 'P' in ort:
+            x_dim = ort.index('P')
+        else:
+            logger.info("Can't figure out orientation. Skipping neck adjustment.")
+            return -1
+
         deformation_field = np.zeros_like(mesh.points)
         deformation_field[mask_neck, x_dim] = z_dist
         if 0:
@@ -204,16 +227,19 @@ class AffineWholeHead(Affine):
         mask_spine = spineAlphas > 0.1
         z_positions = mesh.points[:, z_dim]
         spine_positions_z = z_positions[mask_spine]
-        mask_neck = 0
-        neck_pos = 0
-        # The values are stored from bottom of the head (0) to the top (-1)
-        # Note, here the mesh nodes are already transformed to the voxels
-        # of the image.
-        top_ind = np.argmax(spine_positions_z)
-        top_pos = spine_positions_z[top_ind]
-        mask_neck = z_positions < top_pos
-        neck_pos = z_positions[mask_neck]
-        z_dist = top_pos - neck_pos
+
+        if up:
+            top_ind = np.argmax(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
+            mask_neck = z_positions < top_pos
+            neck_pos = z_positions[mask_neck]
+            z_dist = top_pos - neck_pos
+        else:
+            top_ind = np.argmin(spine_positions_z)
+            top_pos = spine_positions_z[top_ind]
+            mask_neck = z_positions > top_pos
+            neck_pos = z_positions[mask_neck]
+            z_dist = neck_pos - top_pos
 
         deformation_field = np.zeros_like(mesh.points)
         deformation_field[mask_neck, x_dim] = z_dist
@@ -224,6 +250,8 @@ class AffineWholeHead(Affine):
         mesh_collection.transform(gems.KvlTransform(requireNumpyArray(
             np.linalg.inv(transformation_matrix))))
         mesh_collection.write(os.path.join(file_path[0], 'atlas_level1.txt'))
+
+        return 0
 
     def _neck_cost(self, x, initial_node_positions, deformation_field,
                    calculator, mesh, image_buffer, visualizer):

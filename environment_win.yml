@@ -1,7 +1,7 @@
 name: simnibs_env
 channels:
   - defaults
-  #- conda-forge
+  - conda-forge
 dependencies:
   - python=3.8.8
   - numpy=1.20.1
@@ -21,7 +21,7 @@ dependencies:
   - numba=0.53.1
   - llvmlite=0.36.0
   - tbb=2020.3
-  #- nilearn=0.8.0
+  - nilearn=0.8.0
   - pip:
     - nibabel==3.2.1
     - pyqt5==5.15.4
