@@ -70,7 +70,9 @@ def read_csv_positions(fn):
             rows_filtered.append(r)
         elif t in ['Electrode', 'ReferenceElectrode']:
             try:
-                extra += [np.array([float(d) for d in r[4:7]])]
+                extra_ = np.array(r[4:7], float)
+                assert len(extra_) == 3
+                extra += [extra_]
                 name += [r[7] if len(r) >= 8 else None]
                 extra_cols += [r[8:] if len(r) > 8 else None]
             except:
