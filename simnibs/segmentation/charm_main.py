@@ -66,7 +66,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
 
     init_options = samseg.initializationOptions(pitchAngles=thetas_rad,
                                                 scales=scales,
-                                                scalingCenter=[0.0, -120.0, 0.0],
+                                                scalingCenter=[0.0, -100.0, 0.0],
                                                 horizontalTableShifts=horizontal_shifts,
                                                 verticalTableShifts=vertical_shifts)
 
