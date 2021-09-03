@@ -720,7 +720,7 @@ def _sizing_field_from_thickness(label, thickness, elem_sizes):
     return field
 
 
-def create_mesh(label_img, affine, 
+def create_mesh(label_img, affine,
                 elem_sizes={"standard": {"range": [1, 5], "slope": 1.0}},
                 smooth_size_field = 2,
                 skin_facet_size=2.0, 

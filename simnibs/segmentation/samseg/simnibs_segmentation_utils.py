@@ -4,9 +4,9 @@ from .SamsegUtility import undoLogTransformAndBiasField, writeImage, maskOutBack
 from .GMM import GMM
 import numpy as np
 import nibabel as nib
+import gc
 from simnibs.segmentation._cat_c_utils import cat_vbdist
 from simnibs.segmentation.samseg.utilities import requireNumpyArray
-
 # TODO! remove
 import os
 
@@ -133,7 +133,7 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
                 transformUpsampled,
                 initialDeformation=deformation,
                 initialDeformationMeshCollectionFileName=deformationAtlasFileName)
-
+    del deformation
     fractionsTable = parameters_and_inputs['fractionsTable']
     GMMparameters = parameters_and_inputs['GMMParameters']
     numberOfGaussiansPerClass = parameters_and_inputs['gaussiansPerClass']
@@ -154,6 +154,8 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
                 means, variances, mixtureWeights, FreeSurferLabels,
                 bg_label, csf_tissues, csf_factor)
 
+    del meshUpsampled
+    del imageBuffersUpsampled
 
     tissue_labeling = np.zeros_like(segmentation)
     for t, label in simnibs_tissues.items():
@@ -173,7 +175,10 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
     upper_part = np.zeros(example_image.getImageBuffer().shape, dtype=np.bool, order='F')
     upper_part_cropped = affine_upsampled.rasterize(maskUpsampled.shape, 1)
     upper_part[croppingUpsampled] = (65535 - upper_part_cropped) > 32768
-
+    del affine_upsampled
+    del maskUpsampled
+    del upper_part_cropped
+    gc.collect()
     return uncropped_tissue_labeling, upper_part
 
 
@@ -334,7 +339,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
         # and cast to float from uint16
-        nonNormalized = mesh.rasterize_1a(mask.shape, structureNumber)/65535.0
+        nonNormalized = mesh.rasterize(mask.shape, structureNumber)/65535.0
         prior = nonNormalized[mask]
 
         # Find which classes we need to look at

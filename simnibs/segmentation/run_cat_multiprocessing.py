@@ -61,16 +61,16 @@ def run_cat_multiprocessing(Ymf, Yleft, Ymaskhemis,
             Pthick_all.append(r[2])
             EC_all.append(r[3])
             defect_size_all.append(r[4])
-            
-    if len(pial) > 0:
-        assert all(elem in surf  for elem in pial)
-        with multiprocessing.Pool(processes=processes) as pool:
-            partial_expand_cs = functools.partial(
-                expandCS_wrapper, surffolder=surface_folder)
+
+        if len(pial) > 0:
+            assert all(elem in surf for elem in pial)
+            partial_expand_cs = functools.partial(expandCS_wrapper, surffolder=surface_folder)
+
             # call pool.map to run in parallel
-            results = pool.map(partial_expand_cs, pial)         
+            results = pool.map(partial_expand_cs, pial)
             for r in results:
                 Ppial_all.append(r[0])
+
 
 
 if __name__ == '__main__':
