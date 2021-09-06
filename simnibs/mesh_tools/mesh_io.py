@@ -440,6 +440,7 @@ class Elements:
         nodes = nodes[nodes > 0]
         return nodes
 
+
     def find_adjacent_tetrahedra(self):
         ''' Find the tetrahedra adjacent (sharing a face) to each element
 
@@ -483,6 +484,39 @@ class Elements:
         # tranform from th indexing to element indexing
         adj_th[adj_th > 0] = self.tetrahedra[adj_th[adj_th > 0]]
         return adj_th
+
+
+    def _get_tet_faces_and_adjacent_tets(self):
+        ''' reconstructs the triangle faces of the tetrahedra for further use
+            by Msh.reconstruct_unique_surface() and during mesh despiking
+        
+        Returns
+        ---------
+            faces: N_faces x 3 array
+                node indices of all tet faces
+            idx_tet_faces: N_tet x 4 array 
+                indices of the tet faces (indices into the faces array)
+            adj_th: N_tet x 4 array
+                indices of tet neighbors (-1 marks no adjacent; i.e, "air")
+        
+        Notes
+        ------
+            * All returned indices are 0-based !!
+            * The mesh must contain only tetrahedra
+        '''
+        assert np.all(self.elm_type==4)
+        
+        faces, th_faces, adjacency_list = self.get_faces()
+        faces = np.sort(faces,axis=1)-1
+
+        adj_th = -np.ones((self.nr, 4), dtype=int)
+        th_indexing = np.tile(np.arange(self.nr), (2, 1)).T
+        for i in range(4):
+            adj = adjacency_list[th_faces[:, i]]
+            adj_th[:, i] = adj[adj != th_indexing]
+    
+        return faces, th_faces.astype(int), adj_th
+    
 
     def connected_components(self, element_indexes=None):
         ''' Finds connected components
@@ -1743,7 +1777,9 @@ class Msh:
 
         if np.any(corresponding_th_indices==-1):
             # add triangles at the outer boundary, irrespective of tag
-            th = self.elm.node_number_list[self.elm.elm_type == 4]
+            # get all tet faces, except those of "air" tetrahedra (i.e., tag1 = -1)
+            idx_th_all = np.where((self.elm.elm_type == 4)*(self.elm.tag1 != -1))[0]
+            th = self.elm.node_number_list[idx_th_all]
             faces = th[:, [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]]
             faces = faces.reshape(-1, 3)
             faces_hash_array = _hash_rows(faces)
@@ -1761,7 +1797,7 @@ class Msh:
                                                return_indices = True)
             # recover indices
             idx_tr = tr_of_interest[idx_tr]
-            idx_th = self.elm.tetrahedra[ idx_fc[idx_th]//4 ]           
+            idx_th = idx_th_all[ idx_fc[idx_th]//4 ] + 1
             corresponding_th_indices[idx_tr] = idx_th
                 
         self._correspondance_node_nr_list_hash = node_nr_list_hash
@@ -2624,6 +2660,90 @@ class Msh:
         # delete overlapping triangles
         idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
         return self.crop_mesh(elements=idx_keep)
+
+
+    def reconstruct_unique_surface(self, hierarchy = None, add_outer_as = None, 
+                                   faces = None, idx_tet_faces = None, adj_tets = None): 
+        ''' Reconstructs the mesh surfaces from the tetrahedra.
+            
+            Triangles will be added between tetrahedra of different labels,
+            or at tetrahedra faces towards "air", whereby the triangle label is
+            determined according to the given hierarchy.
+        
+        Parameters
+        ------------
+        hierarchy: list of ints or None (optional)
+            Hierarchy of triangle labels that determines which label will 
+            be chosen
+            Default: (1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010, 1005)
+            WM (1001) has the highest priority, GM (1002) comes next, ...
+        add_outer_as: int (optional)
+            add outer boundary to mesh using given index. NOTE: This boundary
+            has highest priority, and will be placed "first" (Default: None)
+        faces (Default: None), idx_tet_faces (Default: None), adj_tets (Default: None):
+            Output of self.elm._get_tet_faces_and_adjacent_tets(). 
+            Can be passed here to speed up surface reco. 
+
+        Note
+        ------
+        * This function acts in-place
+        * Will not fix any element_data that might be associated with this mesh
+        '''
+        
+        
+        assert np.all(self.elm.elm_type==4)
+        
+        if hierarchy is None: hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
+        hierarchy = np.asarray(hierarchy)
+        if np.any(hierarchy>1000): hierarchy -= 1000
+         
+        if (add_outer_as is not None) and (add_outer_as > 1000): add_outer_as -= 1000
+                
+        if (faces is None) or (idx_tet_faces is None) or (adj_tets is None):
+            faces, idx_tet_faces, adj_tets = self.elm._get_tet_faces_and_adjacent_tets()
+    
+        tag = copy.copy(self.elm.tag1)
+    
+        # get matrix (n_tet x 4) that indicates neighbors with different labels
+        adj_labels = tag[adj_tets]
+        adj_labels[adj_tets == -1] = -1 # -1 indicates "air"
+        adj_diff = adj_labels - tag.reshape((len(tag),1)) != 0
+        adj_diff[tag == -1] = False # do not add triangles for "air" tetrahedra
+        
+        # temporarily renumber tags according to hierarchy
+        hierarchy = np.asarray(hierarchy)
+        if add_outer_as is not None:
+            hierarchy = np.append(-1, hierarchy)
+        hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag),hierarchy) )
+        
+        map_old_new = np.zeros(np.max(hierarchy)+2, dtype = int)
+        map_old_new[hierarchy] = np.arange(len(hierarchy))+1       
+        tag = map_old_new[tag]
+        
+        # get index and tag of surface faces (small tag wins)
+        idx_tri = idx_tet_faces[adj_diff]
+        tag_tri = np.tile(tag, (4,1)).T
+        if add_outer_as is not None:
+            tag_tri[adj_labels == -1] = 1 # because map_old_new[-1] == 1
+        tag_tri = tag_tri[adj_diff]    
+        
+        idx_tri = np.vstack((idx_tri, tag_tri))
+        idx_tri = np.lib.recfunctions.unstructured_to_structured(idx_tri.T,
+                                             dtype=np.dtype([('a', int), ('b', int)]))
+        idx_tri = np.sort(idx_tri, order=('a', 'b'))
+        idx_tri = np.lib.recfunctions.structured_to_unstructured(idx_tri)
+        idx = np.hstack((True, np.diff(idx_tri[:,0]) != 0))
+        idx_tri = idx_tri[idx,:]
+        
+        # undo renumbering
+        tag_tri = idx_tri[:,1]
+        tag_tri = hierarchy[tag_tri-1]
+        if add_outer_as is not None:
+            tag_tri[tag_tri == -1] = add_outer_as
+        idx_tri = idx_tri[:,0]
+        
+        self.elm.add_triangles(faces[idx_tri,:]+1, 1000+tag_tri)
+        self.fix_tr_node_ordering()
 
 
     def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
