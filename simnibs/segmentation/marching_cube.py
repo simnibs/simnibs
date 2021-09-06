@@ -71,23 +71,21 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
     # dimensions with one zero
     Y = np.pad(volume, 1, mode="constant")
     
-    # Extract the surface 
+    # Extract the surface
     vertices, faces, _, _ = marching_cubes_lewiner(Y, level=level, step_size=step_size, 
                                                    allow_degenerate=False)
 
-    # Undo the effect of zero padding on coordinates and transform  
+    # Undo the effect of zero padding on coordinates and transform
     vertices -= 1
     if affine is not None:
         vertices = apply_affine(vertices, affine)
-
     surface = mesh_io.Msh(mesh_io.Nodes(vertices), mesh_io.Elements(faces+1))
-    
     # extract largest component
     if only_largest_component:
         components = surface.elm.connected_components()
         components.sort(key=len,reverse=True)
         surface = surface.crop_mesh(elements=components[0])
-    
+
     # run uniform remeshing
     if n_uniform > 0:
         surface.fix_surface_orientation()

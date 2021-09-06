@@ -4,15 +4,17 @@ from .SamsegUtility import undoLogTransformAndBiasField, writeImage, maskOutBack
 from .GMM import GMM
 import numpy as np
 import nibabel as nib
+import gc
 from simnibs.segmentation._cat_c_utils import cat_vbdist
 from simnibs.segmentation.samseg.utilities import requireNumpyArray
-
 # TODO! remove
 import os
 
 def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             output_name_segmentation,
                                             parameters_and_inputs,
+                                            tissue_settings,
+                                            csf_factor,
                                             cat_structure_options=None,
                                             cat_images=None):
 
@@ -61,7 +63,8 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
     bg_label = names.index("Background")
     FreeSurferLabels = np.array(modelSpecifications.FreeSurferLabels,
                                 dtype=np.uint16)
-
+    segmentation_tissues = tissue_settings['segmentation_tissues']
+    csf_tissues = segmentation_tissues['CSF']
     if cat_structure_options is not None:
         segmentation, cat_norm_scan_masks = _calculateSegmentationLoop(
                                             imageBuffers - biasFields,
@@ -69,6 +72,7 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             numberOfGaussiansPerClass,
                                             means, variances, mixtureWeights,
                                             FreeSurferLabels, bg_label,
+                                            csf_tissues, csf_factor,
                                             cat_opts=cat_structure_options)
     else:
         segmentation = _calculateSegmentationLoop(
@@ -76,7 +80,8 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                         mask, fractionsTable, mesh,
                         numberOfGaussiansPerClass,
                         means, variances, mixtureWeights,
-                        FreeSurferLabels, bg_label)
+                        FreeSurferLabels, bg_label,
+                        csf_tissues, csf_factor)
         
     writeImage(output_name_segmentation,
                segmentation, cropping, exampleImage)
@@ -87,7 +92,8 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
 
 
 def segmentUpsampled(input_bias_corrected, tissue_settings,
-                     parameters_and_inputs, transformedTemplateFileName, affine_atlas):
+                     parameters_and_inputs, transformedTemplateFileName,
+                     affine_atlas, csf_factor):
 
     # We need an init of the probabilistic segmentation class
     # to call instance methods
@@ -127,7 +133,7 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
                 transformUpsampled,
                 initialDeformation=deformation,
                 initialDeformationMeshCollectionFileName=deformationAtlasFileName)
-
+    del deformation
     fractionsTable = parameters_and_inputs['fractionsTable']
     GMMparameters = parameters_and_inputs['GMMParameters']
     numberOfGaussiansPerClass = parameters_and_inputs['gaussiansPerClass']
@@ -138,14 +144,18 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
     bg_label = names.index("Background")
     FreeSurferLabels = np.array(modelSpecifications.FreeSurferLabels,
                                 dtype=np.uint16)
+    simnibs_tissues = tissue_settings['simnibs_tissues']
+    segmentation_tissues = tissue_settings['segmentation_tissues']
+    csf_tissues = segmentation_tissues['CSF']
     segmentation = _calculateSegmentationLoop(
                 imageBuffersUpsampled,
                 maskUpsampled, fractionsTable, meshUpsampled,
                 numberOfGaussiansPerClass,
-                means, variances, mixtureWeights, FreeSurferLabels, bg_label)
+                means, variances, mixtureWeights, FreeSurferLabels,
+                bg_label, csf_tissues, csf_factor)
 
-    simnibs_tissues = tissue_settings['simnibs_tissues']
-    segmentation_tissues = tissue_settings['segmentation_tissues']
+    del meshUpsampled
+    del imageBuffersUpsampled
 
     tissue_labeling = np.zeros_like(segmentation)
     for t, label in simnibs_tissues.items():
@@ -165,7 +175,10 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
     upper_part = np.zeros(example_image.getImageBuffer().shape, dtype=np.bool, order='F')
     upper_part_cropped = affine_upsampled.rasterize(maskUpsampled.shape, 1)
     upper_part[croppingUpsampled] = (65535 - upper_part_cropped) > 32768
-
+    del affine_upsampled
+    del maskUpsampled
+    del upper_part_cropped
+    gc.collect()
     return uncropped_tissue_labeling, upper_part
 
 
@@ -275,9 +288,12 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
                                means, variances,
                                mixtureWeights, FreeSurferLabels,
                                bg_label,
+                               csf_tissues,
+                               csf_factor,
                                cat_opts=None):
 
     data = biasCorrectedImageBuffers[mask, :]
+    channels = data.shape[1]
     numberOfVoxels = data.shape[0]
     numberOfStructures = fractionsTable.shape[1]
 
@@ -323,7 +339,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
         # and cast to float from uint16
-        nonNormalized = mesh.rasterize_1a(mask.shape, structureNumber)/65535.0
+        nonNormalized = mesh.rasterize(mask.shape, structureNumber)/65535.0
         prior = nonNormalized[mask]
 
         # Find which classes we need to look at
@@ -347,7 +363,11 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
                 likelihoods += gaussianLikelihood * mixtureWeight * fraction
 
         # Now compute the non-normalized posterior
-        nonNormalized[mask] = likelihoods*prior
+
+        if (channels > 1) and (structureNumber in csf_tissues):
+            nonNormalized[mask] = csf_factor * likelihoods * prior
+        else:
+            nonNormalized[mask] = likelihoods * prior
 
         if cat_opts is not None:
             normalizer += nonNormalized

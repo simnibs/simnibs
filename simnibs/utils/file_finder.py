@@ -399,49 +399,19 @@ class SubjectFiles:
             if '.sphere.reg' in s:
                 # Assumes that the filename is
                 # hemi.sphere.reg[.subsampling].gii
-                parts = s.split('.')[3:]
-                if len(parts) == 1:
-                    subsampling = None
-                elif len(parts) == 2:
-                    subsampling = int(parts[0])
-                else:
-                    raise ValueError(
-                        f'Found {len(parts)} fileparts after '
-                        '"hemi.sphere.reg". Expected one (gii) or two '
-                        '(subsampling, gii).'
-                        )
+                subsampling = _get_subsampling(s.split('.')[3:])
                 self.sphere_reg_surfaces.append(
                     SurfaceFile(fn, region, subsampling)
                 )
             elif '.pial.' in s:
                 # Assumes that the filename is hemi.pial[.subsampling].gii
-                parts = s.split('.')[2:]
-                if len(parts) == 1:
-                    subsampling = None
-                elif len(parts) == 2:
-                    subsampling = int(parts[0])
-                else:
-                    raise ValueError(
-                        f'Found {len(parts)} fileparts after '
-                        '"hemi.pial". Expected one (gii) or two '
-                        '(subsampling, gii).'
-                        )
+                subsampling = _get_subsampling(s.split('.')[2:])
                 self.pial_surfaces.append(
                      SurfaceFile(fn, region, subsampling)
                  )
             elif '.central.' in s:
                 # Assumes that the filename is hemi.central[.subsampling].gii
-                parts = s.split('.')[2:]
-                if len(parts) == 1:
-                    subsampling = None
-                elif len(parts) == 2:
-                    subsampling = int(parts[0])
-                else:
-                    raise ValueError(
-                        f'Found {len(parts)} fileparts after '
-                        '"hemi.central". Expected one (gii) or two '
-                        '(subsampling, gii).'
-                        )
+                subsampling = _get_subsampling(s.split('.')[2:])
                 self.central_surfaces.append(
                     SurfaceFile(fn, region, subsampling)
                 )
@@ -550,6 +520,19 @@ class SubjectFiles:
             raise ValueError('invalid surf_type')
         raise FileNotFoundError('Could not find surface')
 
+def _get_subsampling(parts):
+    """Get subsampling if `parts` is of the format (subsampling, gii).
+    """
+    if len(parts) == 2: 
+        # If parts[0] cannot be interpreted as an int we will get an error 
+        # here. In that case, assume no subsampling has been performed.
+        try:
+            subsampling = int(parts[0])
+        except ValueError:
+            subsampling = None
+    else:
+        subsampling = None
+    return subsampling
 
 def path2bin(program):
     """Return the full path to a specified program contained within the SIMNIBS

@@ -15,7 +15,7 @@ import scipy.ndimage
 class initializationOptions:
     def __init__( self,
                   pitchAngles=np.array( [ 0 ] ) / 180.0 * np.pi, # in radians
-                  scales=[ 1.0 ],
+                  scales=[[1.0, 1.0, 1.0]],
                   horizontalTableShifts= [ 20.0, 10.0, 0.0, -10.0, -20.0 ], # in mm, in template space
                   verticalTableShifts=[-10.0, 0.0, 10.0], # in mm, in template space
                   tryCenterOfGravity=True,
@@ -144,7 +144,7 @@ class Affine:
 
 
     #
-    def getTransformMatrix(self, pitchAngle=0.0, scale=1.0,
+    def getTransformMatrix(self, pitchAngle=0.0, scale = [1.0, 1.0, 1.0],
                            horizontalTableShift=0.0, verticalTableShift=0.0,
                            initialTableShift=None):
         
@@ -163,9 +163,9 @@ class Affine:
         
         # Scaling
         scalingMatrix = np.identity( 4, dtype=np.double )
-        scalingMatrix[ 0, 0 ] = scale * self.initialScale
-        scalingMatrix[ 1, 1 ] = scale * self.initialScale
-        scalingMatrix[ 2, 2 ] = scale * self.initialScale
+        scalingMatrix[ 0, 0 ] = scale[0] * self.initialScale
+        scalingMatrix[ 1, 1 ] = scale[1] * self.initialScale
+        scalingMatrix[ 2, 2 ] = scale[2] * self.initialScale
         scalingCenter = np.array( [ self.scalingCenter[0], self.scalingCenter[1], self.scalingCenter[2], 
                                     1 ] ).reshape( -1, 1 )
         scalingCenter = translationMatrix @ scalingCenter
@@ -194,7 +194,7 @@ class Affine:
     #
     def  gridSearch(self, mesh,
                     positionsInTemplateSpace,
-                    pitchAngles=[ 0 ], scales=[ 0.9 ],
+                    pitchAngles=[ 0 ], scales=[[0.9, 0.9, 0.9]],
                     horizontalTableShifts=[ 0.0 ],
                     verticalTableShifts=[ 0.0 ],
                     initialTableShifts=[ 0.0, 0.0, 0.0 ],
