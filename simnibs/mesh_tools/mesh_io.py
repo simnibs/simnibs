@@ -1449,8 +1449,10 @@ class Msh:
             triangle_nodes.reshape(-1),
             triangles_angles.reshape(-1), self.nodes.nr
         )
-        nodes_areas[nodes_areas == 0] = .1
+        idx = nodes_areas==0
+        nodes_areas[idx] = .1
         gaussian_curvature = (2*np.pi - node_angles)/nodes_areas
+        gaussian_curvature[idx] = 0
         return NodeData(gaussian_curvature, 'gaussian_curvature')
 
 
@@ -1739,6 +1741,29 @@ class Msh:
             corresponding_th_indices[position] = \
                 self.elm.elm_number[th_of_interest[index]]
 
+        if np.any(corresponding_th_indices==-1):
+            # add triangles at the outer boundary, irrespective of tag
+            th = self.elm.node_number_list[self.elm.elm_type == 4]
+            faces = th[:, [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]]
+            faces = faces.reshape(-1, 3)
+            faces_hash_array = _hash_rows(faces)
+            # keep only tet faces that occur once (i.e. at the outer boundary)
+            [faces_hash_array, idx_fc, counts] = np.unique(faces_hash_array, 
+                                                  return_index = True,
+                                                  return_counts = True)
+            faces_hash_array = faces_hash_array[counts == 1]
+            idx_fc = idx_fc[counts == 1]
+            
+            tr_of_interest = self.elm.triangles[corresponding_th_indices==-1]-1
+            tr = self.elm.node_number_list[tr_of_interest, :3]
+            tr_hash_array = _hash_rows(tr)
+            _, idx_tr, idx_th = np.intersect1d(tr_hash_array, faces_hash_array, 
+                                               return_indices = True)
+            # recover indices
+            idx_tr = tr_of_interest[idx_tr]
+            idx_th = self.elm.tetrahedra[ idx_fc[idx_th]//4 ]           
+            corresponding_th_indices[idx_tr] = idx_th
+                
         self._correspondance_node_nr_list_hash = node_nr_list_hash
         self._corresponding_tetrahedra = corresponding_th_indices
         gc.collect()
