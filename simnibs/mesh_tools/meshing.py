@@ -565,7 +565,8 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
     faces_elm = tet_faces[idx_elm]
     faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,3))
     idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1)[0]
-    idx_test_nodes[idx_node] = True
+    if len(idx_node) > 0:
+        idx_test_nodes[idx_node] = True
     
     # get nodes belonging to tets with 2 different neighbors
     idx_elm = _get_elm_and_new_tag(tag, adj_tets, 2)[0]
@@ -574,8 +575,9 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
     faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,2))
     idx_node = np.sort(faces[faces_elm].reshape((-1,6)))
     idx_node = idx_node[:,:5][np.diff(idx_node) == 0]
-    idx_test_nodes[idx_node] = True
-    
+    if len(idx_node) > 0:
+        idx_test_nodes[idx_node] = True
+        
     # a spike node needs at least 6 neighbor nodes
     idx_test_nodes *= nneighb > 5
     # exclude more complex surface geometries (e.g. T-junctions)
@@ -588,7 +590,7 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
     m_surf = mesh_io.Msh()
     m_surf.nodes.node_coord = node_coord
     m_surf.elm.add_triangles(faces[idx_surface_tri,:]+1, 
-                             np.ones(len(idx_surface_tri),dtype=int))
+                              np.ones(len(idx_surface_tri),dtype=int))
     nd = m_surf.gaussian_curvature()
     nd.value = np.abs(nd.value)
     idx_test_nodes *= nd.value > 0.1
