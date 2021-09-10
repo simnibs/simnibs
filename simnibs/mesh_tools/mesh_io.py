@@ -33,6 +33,7 @@ import threading
 from functools import partial
 
 import numpy as np
+from numpy.lib import recfunctions
 import scipy.spatial
 import scipy.ndimage
 import scipy.sparse
@@ -2555,7 +2556,7 @@ class Msh:
 
         return string
 
-    def reconstruct_surfaces(self, tags=None, add_outer_as=None):
+    def reconstruct_surfaces(self, tags=None):
         ''' Reconstruct the mesh surfaces for each label/connected component individually
         This function acts in-place, and will keep any surfaces already present in the
         mesh
@@ -2565,9 +2566,6 @@ class Msh:
         tags: list of ints or None (optional)
             List of tags where we should reconstruct the surface off. Defaut: all volume tags in the
             mesh
-        add_outer_as: int (optional)
-            add outer boundary to mesh using given index. NOTE: This boundary
-            will replace any other boundary with the same index (default: None)
 
         Note
         ------
@@ -2579,22 +2577,13 @@ class Msh:
             raise InvalidMeshError('Could not find any tetraheda in mesh')
         if tags is not None:
             unique_tags = unique_tags[np.in1d(unique_tags, tags)]
-            
-        if add_outer_as is not None:
-            if add_outer_as > 1000:
-                add_outer_as -= 1000
-            unique_tags = np.setdiff1d(unique_tags, add_outer_as)
-        elif len(unique_tags) == 0:
+        if len(unique_tags) == 0:
             raise ValueError('Could not find given tags in mesh')
             
         tr_to_add = []
         for t in unique_tags:
             elm_in_tag = (self.elm.tag1 == t) * (self.elm.elm_type == 4)
             tr_to_add.append(self.elm.get_outside_faces(elm_in_tag))
-    
-        if add_outer_as is not None:
-            tr_to_add.append(self.elm.get_outside_faces())
-            unique_tags = np.append(unique_tags, add_outer_as)
         
         for tr, tag in zip(tr_to_add, unique_tags):
             self.elm.add_triangles(tr, 1000+tag)
@@ -2602,64 +2591,64 @@ class Msh:
         self.fix_tr_node_ordering()
 
 
-    def remove_triangle_twins(self, hierarchy=None):
-        """
-        Fix triangle twins created by reconstruct_surfaces.
+    # def remove_triangle_twins(self, hierarchy=None):
+    #     """
+    #     Fix triangle twins created by reconstruct_surfaces.
         
-        The triangle that has the tag with the lower hierarchy level will
-        be deleted from each twin pair.
+    #     The triangle that has the tag with the lower hierarchy level will
+    #     be deleted from each twin pair.
 
-        Parameters
-        ----------
-        hierarchy: list of ints or None (optional)
-            List of triangle tags that determines which triangle will be kept
-            for twin pairs.
-            Default: (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
-            Skin (1005) has the highest priority, WM (1001) comes next, ...
+    #     Parameters
+    #     ----------
+    #     hierarchy: list of ints or None (optional)
+    #         List of triangle tags that determines which triangle will be kept
+    #         for twin pairs.
+    #         Default: (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+    #         Skin (1005) has the highest priority, WM (1001) comes next, ...
         
-        Returns
-        -------
-            simnibs.msh.Msh
-                Mesh without triangle twins
+    #     Returns
+    #     -------
+    #         simnibs.msh.Msh
+    #             Mesh without triangle twins
                 
-        Note
-        ----
-        Will not fix any element_data that might be associated with this mesh
-        """
-        if hierarchy is None:
-            hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
+    #     Note
+    #     ----
+    #     Will not fix any element_data that might be associated with this mesh
+    #     """
+    #     if hierarchy is None:
+    #         hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
             
-        # generate hash for all triangles, get their tags
-        idx_tr = np.where(self.elm.elm_type == 2)[0]
-        hash_tr = _hash_rows(self.elm.node_number_list[idx_tr,:3])
-        tag_tr = self.elm.tag1[idx_tr]
+    #     # generate hash for all triangles, get their tags
+    #     idx_tr = np.where(self.elm.elm_type == 2)[0]
+    #     hash_tr = _hash_rows(self.elm.node_number_list[idx_tr,:3])
+    #     tag_tr = self.elm.tag1[idx_tr]
         
-        # add any tags not listed in the hierarchy to its end
-        hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag_tr),hierarchy) )
+    #     # add any tags not listed in the hierarchy to its end
+    #     hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag_tr),hierarchy) )
 
-        # loop over hierarchy and mark overlapping triangles with lower hierarchy
-        idx_done = np.zeros(hash_tr.shape, dtype=bool)
-        idx_keep = np.zeros(hash_tr.shape, dtype=bool)
-        for i in hierarchy:
-            test_tri = np.where((tag_tr == i) & np.logical_not(idx_done))[0]
-            idx_done[test_tri] = True
+    #     # loop over hierarchy and mark overlapping triangles with lower hierarchy
+    #     idx_done = np.zeros(hash_tr.shape, dtype=bool)
+    #     idx_keep = np.zeros(hash_tr.shape, dtype=bool)
+    #     for i in hierarchy:
+    #         test_tri = np.where((tag_tr == i) & np.logical_not(idx_done))[0]
+    #         idx_done[test_tri] = True
             
-            _, idx_hlp = np.unique(hash_tr[test_tri], return_index=True)
-            test_tri = test_tri[idx_hlp]
-            idx_keep[test_tri] = True
+    #         _, idx_hlp = np.unique(hash_tr[test_tri], return_index=True)
+    #         test_tri = test_tri[idx_hlp]
+    #         idx_keep[test_tri] = True
     
-            other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
-            idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
-            idx_done[other_tri[idx_tricopies]] = True
+    #         other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
+    #         idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
+    #         idx_done[other_tri[idx_tricopies]] = True
     
-        if np.sum(idx_done) != idx_done.shape[0]:
-            warnings.warn('Final mesh might contain overlapping triangles')
-        if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
-            warnings.warn('Final mesh might contain overlapping triangles - 2')           
+    #     if np.sum(idx_done) != idx_done.shape[0]:
+    #         warnings.warn('Final mesh might contain overlapping triangles')
+    #     if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
+    #         warnings.warn('Final mesh might contain overlapping triangles - 2')           
             
-        # delete overlapping triangles
-        idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
-        return self.crop_mesh(elements=idx_keep)
+    #     # delete overlapping triangles
+    #     idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
+    #     return self.crop_mesh(elements=idx_keep)
 
 
     def reconstruct_unique_surface(self, hierarchy = None, add_outer_as = None, 
@@ -2681,11 +2670,12 @@ class Msh:
             add outer boundary to mesh using given index. NOTE: This boundary
             has highest priority, and will be placed "first" (Default: None)
         faces (Default: None), idx_tet_faces (Default: None), adj_tets (Default: None):
-            Output of self.elm._get_tet_faces_and_adjacent_tets(). 
+            Output of mesh_io.Elements._get_tet_faces_and_adjacent_tets(). 
             Can be passed here to speed up surface reco. 
 
         Note
         ------
+        * The mesh must contain only tetrahedra
         * This function acts in-place
         * Will not fix any element_data that might be associated with this mesh
         '''
@@ -2728,10 +2718,10 @@ class Msh:
         tag_tri = tag_tri[adj_diff]    
         
         idx_tri = np.vstack((idx_tri, tag_tri))
-        idx_tri = np.lib.recfunctions.unstructured_to_structured(idx_tri.T,
-                                             dtype=np.dtype([('a', int), ('b', int)]))
+        idx_tri = recfunctions.unstructured_to_structured(idx_tri.T,
+                                    dtype=np.dtype([('a', int), ('b', int)]))
         idx_tri = np.sort(idx_tri, order=('a', 'b'))
-        idx_tri = np.lib.recfunctions.structured_to_unstructured(idx_tri)
+        idx_tri = recfunctions.structured_to_unstructured(idx_tri)
         idx = np.hstack((True, np.diff(idx_tri[:,0]) != 0))
         idx_tri = idx_tri[idx,:]
         
@@ -2744,7 +2734,6 @@ class Msh:
         
         self.elm.add_triangles(faces[idx_tri,:]+1, 1000+tag_tri)
         self.fix_tr_node_ordering()
-
 
     def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
         ''' In-place Smoothes the mesh surfaces using Taubin smoothing
