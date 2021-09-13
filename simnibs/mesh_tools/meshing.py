@@ -622,34 +622,49 @@ def _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb):
     # restrict connectivty matrix to nodes on surfaces 
     # and being test nodes or neighbors of test nodes
     # to gain some speed up
-    idx_surface_nodes = nneighb != 0 
-    idx_surface_nodes *= conn_nodes.dot(idx_test_nodes)
-    idx_surface_nodes += idx_test_nodes
-    conn_nodes = conn_nodes[:,idx_surface_nodes][idx_surface_nodes]
     
-    map_nodes_new_old=np.where(idx_surface_nodes)[0]
-    map_nodes_old_new=-1*np.ones(len(nneighb), dtype=int)
-    map_nodes_old_new[idx_surface_nodes] = np.arange(np.sum(idx_surface_nodes))
-    
-    idx_test_nodes = map_nodes_old_new[idx_test_nodes]
-    idx_spike_nodes = np.zeros_like(idx_test_nodes,dtype=bool)
-    
-    logger.info('     Testing '+ str(len(idx_test_nodes)) + 
-                ' nodes (matrix: ' + str(conn_nodes.shape) 
-                + ', ' + str(conn_nodes.nnz) + ' entries)')
-    # loop over all test nodes and test whether their neighbors 
-    # are all connected to each other
-    for (node, k) in zip(idx_test_nodes, range(len(idx_test_nodes))):
-        idx = conn_nodes[:,node].nonzero()[0]
-        c=conn_nodes[:,idx][idx]
-        a=c.getcol(0)
-        nnodes = a.shape[0]
-        for i in range(int(nnodes/2)-1):
-            a += c.dot(a)
-        idx_spike_nodes[k] = nnodes != a.nnz
-    
-    return map_nodes_new_old[idx_test_nodes[idx_spike_nodes]]
+    def _get_spikes(conn_nodes, idx_test_nodes, nneighb):
+        idx_surface_nodes = nneighb != 0 
+        idx_surface_nodes *= conn_nodes.dot(idx_test_nodes)
+        idx_surface_nodes += idx_test_nodes
+        conn_nodes = conn_nodes[:,idx_surface_nodes][idx_surface_nodes]
+        
+        map_nodes_new_old=np.where(idx_surface_nodes)[0]
+        map_nodes_old_new=-1*np.ones(len(nneighb), dtype=int)
+        map_nodes_old_new[idx_surface_nodes] = np.arange(np.sum(idx_surface_nodes))
+        
+        idx_test_nodes = map_nodes_old_new[idx_test_nodes]
+        idx_spike_nodes = np.zeros_like(idx_test_nodes,dtype=bool)
+        
+        # loop over all test nodes and test whether their neighbors 
+        # are all connected to each other
+        for (node, k) in zip(idx_test_nodes, range(len(idx_test_nodes))):
+            idx = conn_nodes[:,node].nonzero()[0]
+            c=conn_nodes[:,idx][idx]
+            a=c.getcol(0)
+            nnodes = a.shape[0]
+            for i in range(int(nnodes/2)-1):
+                a += c.dot(a)
+            idx_spike_nodes[k] = nnodes != a.nnz
+        
+        return map_nodes_new_old[idx_test_nodes[idx_spike_nodes]]
 
+    # iterate over smaller smaller chunks
+    # to speeds up slicing of sparse matrix
+    idx_test_nodes = np.where(idx_test_nodes)[0]
+    start_idx = np.arange(0, len(idx_test_nodes), 2500)
+    stop_idx  = np.append(start_idx[1:]-1, len(idx_test_nodes)-1)
+    idx_spike_nodes = np.array(0,dtype=int)
+    idx_hlp = np.zeros(len(nneighb),dtype = bool)
+    
+    for i, j in zip(start_idx, stop_idx):
+        idx_hlp[:] = False
+        idx_hlp[idx_test_nodes[i:j+1]] = True
+        idx_spike_nodes = np.append(idx_spike_nodes, 
+                                    _get_spikes(conn_nodes, idx_hlp, nneighb))
+    
+    return idx_spike_nodes
+    
 
 def _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, elm, tag, node_nr):
     ''' resolve spike by relabeling some of the tetrahedra connected
@@ -928,6 +943,8 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets):
                                      idx_surface_tri, face_node_diff, nneighb, m.nodes[:], m.elm.tag1)
     
     # detect spikes by analysis of surface topology around each test node
+    logger.info('     Testing '+ str(np.sum(idx_test_nodes)) + ' nodes (matrix: '
+            + str(conn_nodes.shape) + ', ' + str(conn_nodes.nnz) + ' entries)')
     idx_spike_nodes = _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb)
     
     # set new tag for spike nodes
