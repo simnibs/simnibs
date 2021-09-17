@@ -1150,8 +1150,6 @@ def create_mesh(label_img, affine,
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
-    idx=m.elm.connected_components()
-    m = m.crop_mesh(elements=max(idx,key=np.size))
     m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag, 
                                   faces = faces, idx_tet_faces = tet_faces, 
                                   adj_tets = adj_tets)
@@ -1160,6 +1158,10 @@ def create_mesh(label_img, affine,
     idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
     m = m.crop_mesh(elements = idx_keep)
 
+    # keep only largest component
+    idx=m.elm.connected_components()
+    m = m.crop_mesh(elements=max(idx,key=np.size))
+    
     # Smooth mesh
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')
