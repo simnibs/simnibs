@@ -2678,6 +2678,7 @@ class Msh:
         * The mesh must contain only tetrahedra
         * This function acts in-place
         * Will not fix any element_data that might be associated with this mesh
+        * will not add triangles to "air" tetrahedra (having label -1)
         '''
         
         
