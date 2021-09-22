@@ -354,22 +354,45 @@ def test_remesh(sphere3):
     assert np.isclose(vols[2], 4/3*np.pi*(95**3 - 90**3), rtol=1e-1)
 
 class TestRelabelSpikes:
-    def test_despike(self, sphere3):
+    def update_tag_from_label_img(self, sphere3):
+        m = sphere3.crop_mesh(elm_type=4)
+        field = m.elm.tag1.astype(np.uint16)
+        ed = mesh_io.ElementData(field)
+        ed.mesh = m 
+        affine = 2*np.eye(4)
+        affine[:3,3] = -100
+        affine[3,3] = 1
+        img = ed.interpolate_to_grid([101, 101, 101], affine, method='assign')
+        tag_org = m.elm.tag1.copy()
+        m.elm.tag1[9033] = 3
+        m.elm.tag2[9033] = 3
+        m.elm.tag1[8343] = 2
+        m.elm.tag2[8343] = 2
+        faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets() 
+        m = meshing.update_tag_from_label_img(m, adj_tets, img, affine)
+        assert np.all(m.elm.tag1 == tag_org)
+        assert np.all(m.elm.tag2 == tag_org)
+        
+    def test_despike_steps_two_three(self, sphere3):
         sphere3_th = sphere3.crop_mesh(elm_type=4)
         mesh = copy.deepcopy(sphere3_th)
         mesh.elm.tag1[9033] = 3
         mesh.elm.tag2[9033] = 3
-        mesh.elm.tag1[8343] = 5
-        mesh.elm.tag2[8343] = 5
-        meshing.despike(mesh, adj_threshold=3)
+        mesh.elm.tag1[8343] = 2
+        mesh.elm.tag2[8343] = 2
+        faces, tet_faces, adj_tets = mesh.elm._get_tet_faces_and_adjacent_tets() 
+        mesh=meshing.update_tag_from_tet_neighbors(mesh, faces, tet_faces, adj_tets, nr_iter = 12)
+        mesh=meshing.update_tag_from_surface(mesh, faces, tet_faces, adj_tets)
         assert np.all(mesh.elm.tag1 == sphere3_th.elm.tag1)
         assert np.all(mesh.elm.tag2 == sphere3_th.elm.tag2)
-    
+
     def test_despikeblob(self, spikyblob):
         elmdata = spikyblob.elmdata[0]
         assert (elmdata.field_name == 'despiked')
         assert np.any(spikyblob.elm.tag1 != elmdata.value)
-        meshing.despike(spikyblob, relabel_tol=1e-5, adj_threshold=2)
+        faces, tet_faces, adj_tets = spikyblob.elm._get_tet_faces_and_adjacent_tets() 
+        spikyblob=meshing.update_tag_from_tet_neighbors(spikyblob, faces, tet_faces, adj_tets, nr_iter = 12)
+        spikyblob=meshing.update_tag_from_surface(spikyblob, faces, tet_faces, adj_tets)
         assert np.all(spikyblob.elm.tag1 == elmdata.value)
         assert np.all(spikyblob.elm.tag2 == elmdata.value)
 

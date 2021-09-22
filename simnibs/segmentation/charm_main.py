@@ -879,12 +879,10 @@ def run(subject_dir=None, T1=None, T2=None,
                                   stderr=subprocess.PIPE) # stderr: standard stream for simnibs logger
         logger.debug(proc.stderr.decode('ASCII', errors='ignore').replace('\r', ''))
         proc.check_returncode()
-
-
-        # print time duration
         elapsed = time.time() - starttime
         logger.info('Total time surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+        
         sub_files = file_finder.SubjectFiles(None, subject_dir)
         if fillin_gm_from_surf or open_sulci_from_surf:
             logger.info('Improving GM from surfaces')
@@ -896,7 +894,6 @@ def run(subject_dir=None, T1=None, T2=None,
             label_img = np.asanyarray(label_nii.dataobj)
             label_affine = label_nii.affine
 
-            
             # orginal label mask
             label_nii = nib.load(sub_files.labeling)
             labelorg_img = np.asanyarray(label_nii.dataobj)
@@ -978,7 +975,6 @@ def run(subject_dir=None, T1=None, T2=None,
         skin_tag = mesh_settings['skin_tag']
         if not skin_tag:
             skin_tag = None
-        remove_twins = mesh_settings['remove_twins']
         hierarchy = mesh_settings['hierarchy']
         if not hierarchy:
             hierarchy = None
@@ -993,7 +989,6 @@ def run(subject_dir=None, T1=None, T2=None,
                 optimize=optimize, 
                 remove_spikes=remove_spikes, 
                 skin_tag=skin_tag,
-                remove_twins=remove_twins, 
                 hierarchy=hierarchy,
                 smooth_steps=smooth_steps)
         
