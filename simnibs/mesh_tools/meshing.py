@@ -960,7 +960,7 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                hierarchy=None, smooth_steps=5, sizing_field=None):
+                hierarchy=None, smooth_steps=5, sizing_field=None, DEBUG_FN=None):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1127,6 +1127,9 @@ def create_mesh(label_img, affine,
         new_tags[m.elm.tag1 == i+1] = t
     m.elm.tag1 = new_tags
     m.elm.tag2 = new_tags.copy()
+    
+    if DEBUG_FN is not None:
+        mesh_io.write_msh(m, DEBUG_FN)
     
     # Preparation for despiking and surface reconstruction
     faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
