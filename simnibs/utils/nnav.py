@@ -10,7 +10,6 @@ import os
 import nibabel
 import numpy as np
 
-from ..simulation import optim_tms
 from simnibs.simulation import sim_struct
 from simnibs.utils.simnibs_logger import logger
 
