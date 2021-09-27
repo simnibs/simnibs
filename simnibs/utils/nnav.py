@@ -10,6 +10,7 @@ import os
 import nibabel
 import numpy as np
 
+from simnibs.optimization.opt_struct import TMSoptimize
 from simnibs.simulation import sim_struct
 from simnibs.utils.simnibs_logger import logger
 
@@ -79,7 +80,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     elif type(simnibs_obj) == sim_struct.POSITION:
         simnibs_obj_mat = get_matsimnibs_from_pos(simnibs_obj, msh=msh)
 
-    elif type(simnibs_obj) == optim_tms.TMSOPTIMIZATION:
+    elif type(simnibs_obj) == TMSoptimize:
         if msh is None:
             msh = simnibs_obj.fnamehead
         simnibs_obj_mat = get_matsimnibs_from_tmslist(simnibs_obj.optimlist, msh=msh)
