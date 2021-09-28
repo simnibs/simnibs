@@ -3,6 +3,7 @@
 ![SimNIBS Fronpage](docs/images/simnibs_frontpage.png)
 The main goal of SimNIBS is to calculate electric fields caused by Transcranial Electrical Stimulation (TES) and Transcranial Magnetic Stimulation (TMS).
 
+
 The pipeline is divided in three parts:
 1. Automatic segmentation of MRI images and meshing to create individualized head models
 2. Calculation of electric fields through the Finite Element Method (FEM)
