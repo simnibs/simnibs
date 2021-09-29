@@ -641,6 +641,35 @@ def _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb):
         for (node, k) in zip(idx_test_nodes, range(len(idx_test_nodes))):
             idx = conn_nodes[:,node].nonzero()[0]
             c=conn_nodes[:,idx][idx]
+            
+            # try to resolve topologies where some nodes have 
+            # more than 2 neighbors
+            nnz=c.getnnz(axis=0)
+            while np.any(nnz > 2):
+                idx_2 = nnz==2
+                # 1) select nodes with more than 2 neighbors and which have 
+                # at least two neighboring nodes with excatly 2 neighbors
+                idx_two2neighb = np.where( ( c.astype(int).dot(idx_2)>1 ) * ~idx_2 )[0]
+                idx_not2 = np.where(~idx_2)[0]
+                # 2) remove the connection(s) between these nodes and 
+                # other nodes with more than two neighboars
+                if len(idx_two2neighb)>0:
+                    ix, iy = np.meshgrid(idx_two2neighb, idx_not2)
+                    ix = ix.ravel()
+                    iy = iy.ravel()
+                    
+                    idx_set = np.ravel(c[ix,iy])
+                    c[ix[idx_set],iy[idx_set]]=False
+                    
+                    idx_set = np.ravel(c[iy,ix])
+                    c[iy[idx_set],ix[idx_set]]=False
+                    
+                    c.eliminate_zeros()
+                else:
+                    break
+                nnz=c.getnnz(axis=0)            
+            
+            # test whether all nodes are connected to the first node
             a=c.getcol(0)
             nnodes = a.shape[0]
             for i in range(int(nnodes/2)-1):
@@ -654,7 +683,7 @@ def _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb):
     idx_test_nodes = np.where(idx_test_nodes)[0]
     start_idx = np.arange(0, len(idx_test_nodes), 2500)
     stop_idx  = np.append(start_idx[1:]-1, len(idx_test_nodes)-1)
-    idx_spike_nodes = np.array(0,dtype=int)
+    idx_spike_nodes = np.array([],dtype=int)
     idx_hlp = np.zeros(len(nneighb),dtype = bool)
     
     for i, j in zip(start_idx, stop_idx):
