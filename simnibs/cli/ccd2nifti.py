@@ -70,6 +70,8 @@ def parseccd(ccd_file):
         This is currently only supported for one stimulator.
     stimulator=Model name 1,Model name 2
     brand=Brand name 1,Brand name 2
+    coilname=name of coil
+        Indicates the name of the coil for display purposes
     Some variables are used for expansion in to nifti1 format:
     x=-300,300
         Indicates that the ccd file should be expanded into a FOV from 
@@ -267,6 +269,10 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     #set dIdtmax if availible
     try:
         dstr = f"dIdtmax={info['dIdtmax']}"
+        try:
+            dstr += f";coilname={info['coilname']}"
+        except:
+            pass
         try:
             dstr += f";stimulator={info['stimulator']}"
         except:
