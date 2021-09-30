@@ -981,6 +981,7 @@ def run(subject_dir=None, T1=None, T2=None,
         smooth_steps = mesh_settings['smooth_steps']
         
         # Meshing
+        DEBUG_FN = os.path.join(sub_files.subpath, 'before_despike.msh') 
         final_mesh = create_mesh(label_buffer, label_affine,
                 elem_sizes=elem_sizes,
                 smooth_size_field=smooth_size_field,
@@ -990,7 +991,8 @@ def run(subject_dir=None, T1=None, T2=None,
                 remove_spikes=remove_spikes, 
                 skin_tag=skin_tag,
                 hierarchy=hierarchy,
-                smooth_steps=smooth_steps)
+                smooth_steps=smooth_steps,
+                DEBUG_FN=DEBUG_FN)
         
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.fnamehead)

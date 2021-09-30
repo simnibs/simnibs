@@ -641,6 +641,35 @@ def _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb):
         for (node, k) in zip(idx_test_nodes, range(len(idx_test_nodes))):
             idx = conn_nodes[:,node].nonzero()[0]
             c=conn_nodes[:,idx][idx]
+            
+            # try to resolve topologies where some nodes have 
+            # more than 2 neighbors
+            nnz=c.getnnz(axis=0)
+            while np.any(nnz > 2):
+                idx_2 = nnz==2
+                # 1) select nodes with more than 2 neighbors and which have 
+                # at least two neighboring nodes with excatly 2 neighbors
+                idx_two2neighb = np.where( ( c.astype(int).dot(idx_2)>1 ) * ~idx_2 )[0]
+                idx_not2 = np.where(~idx_2)[0]
+                # 2) remove the connection(s) between these nodes and 
+                # other nodes with more than two neighboars
+                if len(idx_two2neighb)>0:
+                    ix, iy = np.meshgrid(idx_two2neighb, idx_not2)
+                    ix = ix.ravel()
+                    iy = iy.ravel()
+                    
+                    idx_set = np.ravel(c[ix,iy])
+                    c[ix[idx_set],iy[idx_set]]=False
+                    
+                    idx_set = np.ravel(c[iy,ix])
+                    c[iy[idx_set],ix[idx_set]]=False
+                    
+                    c.eliminate_zeros()
+                else:
+                    break
+                nnz=c.getnnz(axis=0)            
+            
+            # test whether all nodes are connected to the first node
             a=c.getcol(0)
             nnodes = a.shape[0]
             for i in range(int(nnodes/2)-1):
@@ -654,7 +683,7 @@ def _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb):
     idx_test_nodes = np.where(idx_test_nodes)[0]
     start_idx = np.arange(0, len(idx_test_nodes), 2500)
     stop_idx  = np.append(start_idx[1:]-1, len(idx_test_nodes)-1)
-    idx_spike_nodes = np.array(0,dtype=int)
+    idx_spike_nodes = np.array([],dtype=int)
     idx_hlp = np.zeros(len(nneighb),dtype = bool)
     
     for i, j in zip(start_idx, stop_idx):
@@ -960,7 +989,7 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                hierarchy=None, smooth_steps=5, sizing_field=None):
+                hierarchy=None, smooth_steps=5, sizing_field=None, DEBUG_FN=None):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1127,6 +1156,9 @@ def create_mesh(label_img, affine,
         new_tags[m.elm.tag1 == i+1] = t
     m.elm.tag1 = new_tags
     m.elm.tag2 = new_tags.copy()
+    
+    if DEBUG_FN is not None:
+        mesh_io.write_msh(m, DEBUG_FN)
     
     # Preparation for despiking and surface reconstruction
     faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
