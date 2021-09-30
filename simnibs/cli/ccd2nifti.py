@@ -266,7 +266,16 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     nii = nib.Nifti1Image(A, M, hdr)
     #set dIdtmax if availible
     try:
-        nii.header['descrip'] = 'dIdtmax=%s' % info['dIdtmax']
+        dstr = f"dIdtmax={info['dIdtmax']}"
+        try:
+            dstr += f";stimulator={info['stimulator']}"
+        except:
+            pass
+        try:
+            dstr += f";brand={info['brand']}";
+        except:
+            pass
+        nii.header['descrip'] = dstr
     except:
         print('no information on dIdtmax found omitting from nii file.')
     return nii
@@ -281,8 +290,8 @@ def main():
     parser.add_argument('-o', '--outfile', dest='outfile', default=None,
                     help='output filename, will default to replacing extension with .nii.gz')
     parser.add_argument('-r', '--rescale', dest='rescale', action='store_true',
-                        help='Rescale CCD file according to stimulator reported\
-                            dI/dt (writes new ccd file - with suffix _rescaled)')
+                        help='Rescale CCD file according to stimulator reported'
+                           'dI/dt (writes new ccd file - with suffix _rescaled)')
     parser.add_argument('-f', '--force', dest='force', action='store_true',
                         help='Force rewrite')
     options = parser.parse_args(sys.argv[1:])
@@ -299,8 +308,10 @@ def main():
         if options.rescale:
             try:
                 rescale_ccd(ccdfile,options.outfile)
+                print(f'Successfully rescaled {ccdfile}')
             except:
-                print(f'Rescaling {ccdfile} failed')
+                print(f'Rescaling {ccdfile} failed, check if dIdtstim exists'
+                      'and that only one stimulator value is present')
         else:
             if len(glob.glob(os.path.splitext(ccdfile)[0]
                          + '.nii*')) == 0 or options.force:
