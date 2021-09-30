@@ -50,10 +50,14 @@ def parseccd(ccd_file):
     3) Third line contains a header text excaped by #, typically:
        # centers and weighted directions of the elements (magnetic dipoles)
     4-end) Remaining lines are space separated dipole positions and dipole
-       moments in a number format readable by numpy. E.g. each line must contain 
+       moments in a string number format readable by numpy. E.g. each line must contain 
        six values: x y z mx my mz, where the first three are x,y and positions
        in meters, and the remaining three are dipole moments in x,y and z direction
        in Coulumb * meter per 1 A/s input current.
+       an example could be:
+       0 0 0 0 0 1.0e-03
+       indicating a dipole at position 0,0,0 in z direction with strength
+       0.001 C*m*s/A
      
     The variables are used to encode additonal optional information in text, specifically:
     dIdtmax=147,100
@@ -78,7 +82,7 @@ def parseccd(ccd_file):
         Indicates that the resolution should be 3mm in x,y and z directions,
         this could also be given as resolution=3
     
-    That is an example header line could be:
+    The below is an example header line:
     #Test CCD file;dIdtmax=162;x=300;y=300;z=200;resolution=3;stimulator=MagProX100;brand=MagVenture;
         
         
