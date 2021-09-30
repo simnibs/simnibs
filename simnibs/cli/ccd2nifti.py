@@ -34,7 +34,7 @@ import time
 def parseccd(ccd_file):
     '''
     Parse ccd file, and return intended bounding box, resolution and dIdtmax
-        and other fields if availible
+        and other fields if available
     
     Parameters
     ----------
@@ -242,8 +242,6 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     #non-parallel version (note, fmm3d is already somewhat parallel)
     out = [_lfmm3d(charges=d_m, eps=eps, sources=d_position.T, targets=xyz)
         for d_m in d_moment.T]
-    
-    
 
     A[:, 0] = (out[1].gradtarg[2] - out[2].gradtarg[1])
     A[:, 1] = (out[2].gradtarg[0] - out[0].gradtarg[2])
@@ -268,29 +266,6 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     except:
         print('no information on dIdtmax found omitting from nii file.')
     return nii
-
-# def convert_recursive(indir, force=False):
-#     '''
-#     Converts all ccd files within input directory recursively
-
-#     Parameters
-#     ----------
-#     indir : string
-#         input directory.
-#     force : boolean, optional
-#         Force overwriting nifti1 files. The default is False.
-
-#     '''
-#     ccd_files = glob.iglob(os.path.join(indir, '**', '*.ccd'),
-#                           recursive=True)
-#     for ccd_file in ccd_files:
-#         if len(glob.glob(os.path.splitext(ccd_file)[0]
-#                          + '.nii*')) == 0 or force:
-#             print('Converting %s to nifti1 format' % ccd_file)
-#             nii = ccd2nifti(ccd_file)
-#             nii.to_filename(os.path.splitext(ccd_file)[0] + '.nii.gz')
-#         else:
-#             print('Nifti1 version of %s already exists' % ccd_file)
 
 def main():
     import argparse
