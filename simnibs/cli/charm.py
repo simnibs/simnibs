@@ -97,6 +97,12 @@ MANUAL EDITING:
                         simnibs folder)""")
     parser.add_argument('--noneck', action='store_true', default=False,
                         help="""Inform the segmentation that there's no neck in the scan.""")
+    parser.add_argument('--inittransform',  help="""Transformation matrix used
+                        to initialize the affine registration of the MNI
+                        template to the subject MRI, i.e., it takes the MNI
+                        template *to* subject space. Supplied as a path to a
+                        space delimited .txt file containing a 4x4
+                        transformation matrix (default = None).""")
 
     args=parser.parse_args(argv)
 
@@ -160,6 +166,7 @@ def main():
                 
         charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                        args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
+                       args.inittransform,
                        " ".join(sys.argv[1:]))
 
         

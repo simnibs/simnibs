@@ -70,7 +70,8 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                                 verticalTableShifts=vertical_shifts)
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
-    affine.registerAtlas(initializationOptions=init_options,
+    affine.registerAtlas(initTransform=init_transform,
+                         initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
                          visualizer=visualizer,
                          noneck=noneck)
@@ -548,7 +549,7 @@ def view(subject_dir):
 def run(subject_dir=None, T1=None, T2=None,
         registerT2=False, initatlas=False, segment=False,
         create_surfaces=False, mesh_image=False, usesettings=None,
-        noneck=False, options_str=None):
+        noneck=False, init_transform=None, options_str=None):
     """charm pipeline
 
     PARAMETERS
@@ -570,6 +571,12 @@ def run(subject_dir=None, T1=None, T2=None,
     mesh_image : bool
         run tetrahedral meshing (default = False)
     --> further parameters:
+    init_transform: path-like
+        Transformation matrix used to initialize the affine registration of the
+        MNI template to the subject MRI, i.e., it takes the MNI template *to*
+        subject space. Supplied as a path to a space delimited .txt file
+        containing a 4x4 transformation matrix (default = None, corresponding
+        to the identity matrix). 
     usesettings : str
         filename of alternative settings-file (default = None)
     options_str : str
@@ -599,6 +606,10 @@ def run(subject_dir=None, T1=None, T2=None,
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
+
+    if init_transform:
+        init_transform = np.loadtxt(init_transform)
+        assert init_transform.shape == (4, 4), f"`init_transform` should be a have shape (4, 4), got {init_transform.shape}"
 
     logger.info('simnibs version '+__version__)
     logger.info('charm run started: '+time.asctime())
@@ -733,7 +744,8 @@ def run(subject_dir=None, T1=None, T2=None,
                                         init_atlas_settings,
                                         neck_tissues,
                                         visualizer,
-                                        noneck)
+                                        noneck,
+                                        init_transform)
 
         logger.info('Creating affine registration visualization')
         plotting.viewer_affine(sub_files.reference_volume,
