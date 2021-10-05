@@ -1044,13 +1044,14 @@ def run(subject_dir=None, T1=None, T2=None,
         fn_LUT=sub_files.final_labels.rsplit('.',2)[0]+'_LUT.txt'
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
-    # -------------------------TIDY UP-----------------------------------------
-    # Create final seg html viewer
-    # Create visualization htmls
-    logger.info('Creating registration visualization')
-    plotting.viewer_final(sub_files.reference_volume,
-                          sub_files.final_labels,
-                          sub_files.final_viewer)
+        # -------------------------TIDY UP-------------------------------------
+        # Create final seg html viewer
+        # Create visualization htmls
+        logger.info('Creating registration visualization')
+        plotting.viewer_final(sub_files.reference_volume,
+                            sub_files.final_labels,
+                            sub_files.final_viewer)
+    
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
