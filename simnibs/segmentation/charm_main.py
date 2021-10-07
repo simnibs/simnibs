@@ -101,6 +101,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
         shutil.copy(mesh_level1, os.path.join(file_path[0], 'atlas_level1.txt.gz'))
         shutil.copy(mesh_level2, os.path.join(file_path[0], 'atlas_level2.txt.gz'))
 
+
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
     img = input_raw.get_data()
