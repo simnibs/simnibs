@@ -39,6 +39,7 @@ from simnibs.mesh_tools.mesh_io import write_msh
 from simnibs.mesh_tools.meshing import create_mesh
 from simnibs.utils.transformations import resample_vol, crop_vol
 from simnibs.utils.settings_reader import read_ini
+from simnibs.utils.simnibs_logger import logger
 
 
 def parseArguments(argv):
@@ -83,6 +84,7 @@ use custom .ini-file to control tetrahedra sizes:
 
 def main():
     args = parseArguments(sys.argv[1:])
+    order_upsampling = 1; # 0 [nearest neighbor] or 1 [linear]
     
     # load settings
     if args.usesettings is None:
@@ -111,15 +113,31 @@ def main():
         
     # upsample (optional)
     if args.voxsize_meshing is not None:
+        logger.info('upsampling label image ...')
         if type(args.voxsize_meshing) == list:
                 args.voxsize_meshing = args.voxsize_meshing[0]
         args.voxsize_meshing = float(args.voxsize_meshing)
         if sf_image is not None:
             sf_image, _, _ = resample_vol(sf_image, label_affine,
-                                          args.voxsize_meshing, order=0)
-        label_image, label_affine, _ = resample_vol(label_image, label_affine,
-                                                    args.voxsize_meshing, order=0)
-    
+                                          args.voxsize_meshing, order=order_upsampling)
+        if order_upsampling == 0:
+            label_image, label_affine, _ = resample_vol(label_image, label_affine,
+                                                        args.voxsize_meshing, order=0)
+        else:
+            labels = np.unique(label_image)
+            best_tag_p, new_affine, _ = resample_vol((label_image==labels[0]).astype(np.float32), 
+                                                     label_affine, args.voxsize_meshing, order=1)
+            best_tag = np.zeros_like(best_tag_p,dtype=np.uint16)
+            best_tag[:] = labels[0]
+            for i in labels[1:]:
+                tag_p = resample_vol((label_image==i).astype(np.float32), 
+                                     label_affine, args.voxsize_meshing, order=1)[0]
+                idx = tag_p > best_tag_p
+                best_tag[idx] = i
+                best_tag_p[idx] = tag_p[idx]
+            label_image = best_tag
+            label_affine = new_affine
+        
     # reduce memory consumption a bit
     if sf_image is not None:
             sf_image, _, _ = crop_vol(sf_image, label_affine,
@@ -136,11 +154,10 @@ def main():
                             optimize=settings['optimize'], 
                             remove_spikes=settings['remove_spikes'], 
                             skin_tag=settings['skin_tag'],
-                            remove_twins=settings['remove_twins'], 
                             hierarchy= settings['hierarchy'],
                             smooth_steps=settings['smooth_steps'],
                             sizing_field=sf_image)
-    
+
     # write out mesh, .opt-file with some visualization settings and .ini-file with settings
     if not args.mesh_name.lower().endswith('.msh'):
         args.mesh_name+='.msh'
