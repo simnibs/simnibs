@@ -428,7 +428,7 @@ def label_unassigned_elements(
 
     is_unassign = np.nonzero(labeling == mapped_ignore_labels[-1])
     while (n_unassign := is_unassign[0].size) > 0:
-        print("Number of unassigned voxels:", n_unassign)
+        # print("Number of unassigned voxels:", n_unassign)
         labeling_view = np.lib.stride_tricks.sliding_window_view(
             np.pad(labeling, pad_width, "symmetric"), window
         )
@@ -465,6 +465,8 @@ def label_unassigned_elements(
             logger.warning(
                 "Some elements could not be labeled (probably because they are surrounded by labels in `ignore_labels`)"
                 )
+            # perhaps we may want to issue the warning using the warnings
+            # module instead
             # warnings.warn(
             #     "Some elements could not be labeled, probably because they are surrounded by labels in `ignore_labels`",
             #     RuntimeWarning,
