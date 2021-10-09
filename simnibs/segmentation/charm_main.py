@@ -310,9 +310,11 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     # Filling missing parts
     # NOTE: the labeling is uint16, so I'll code the unassigned voxels with the max value
     # which is 65535
-    label_img[unass] = 65535
+    label_unassign = 65535
+    label_img[unass] = label_unassign
     #Add background to tissues
     simnibs_tissues["BG"] = 0
+    label_img = label_unassigned_elements(label_img, label_unassign, list(simnibs_tissues.values()))
     _smoothfill(label_img, unass, simnibs_tissues)
 
 
@@ -343,6 +345,139 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     label_img[SKULL_outer] = simnibs_tissues['Compact_bone']
     #Relabel air pockets to air
     label_img[label_img == simnibs_tissues['Air_pockets']] = 0
+
+
+def generate_gaussian_kernel(i, ndim, sigma=1, zero_center=False):
+    """Generate a gaussian kernel of size `i` in `ndim` dimensions.
+    """
+    assert i % 2 == 1, "Window size must be odd"
+    center = ndim * (np.floor(i / 2).astype(int),)
+    kernel = np.zeros(ndim * (i,), dtype=np.float32)
+    kernel[center] = 1
+    kernel = gaussian_filter(kernel, sigma)
+    kernel /= kernel[center]
+    if zero_center:
+        kernel[center] = 0
+    return kernel
+
+def label_unassigned_elements(
+    label_arr, label_unassign, labels=None, window_size=3, ignore_labels=None
+) -> np.ndarray:
+    """Label unassigned elements in `label_arr`. For each unassigned element,
+    find its neighbors within a certain `window_size`, weigh these according
+    to their euclidean distance (Gaussian kernel) and assign the label with the
+    highest weight.
+
+    PARAMETERS
+    ----------
+    label_arr : ndarray
+        The array
+    label_unassign : int
+        The label of the unassigned elements.
+    labels : array-like | None
+        The labels in `label_arr`. If None (default), will be inferred from the
+        array using `np.unique`.
+    window_size : int
+        The size of the neighborhood around each element to consider when
+        relabeling.
+    ignore_labels : array-like | None
+        Do not use these labels when labeling unassigned elements (default =
+        None).
+
+    RETURNS
+    -------
+    labeling : ndarray
+        The relabeled array.
+    """
+
+    # Finding the indices of the unassigned voxels is slow with fortran ordered
+    # arrays
+    labeling = label_arr.T if label_arr.flags["F_CONTIGUOUS"] else label_arr
+
+    # Weighting kernel and related
+    pad_width = np.floor(window_size / 2).astype(int)
+    kernel = generate_gaussian_kernel(window_size, labeling.ndim, zero_center=True)
+    window = kernel.shape
+    kernel = kernel.ravel()
+
+    # Find the list of label (if necessary) and ensure it is unique
+    labels = np.unique(labeling) if labels is None else np.array(labels)
+    n_labels = labels.size
+    assert np.unique(labels).size == n_labels
+
+    # Ignore desired labels and the unassigned label
+    if ignore_labels is None:
+        ignore_labels = [label_unassign]
+    else:
+        assert all(i in labels for i in ignore_labels)
+        ignore_labels = ignore_labels.copy()
+        ignore_labels = ignore_labels + [label_unassign]  # avoid inplace
+
+    # Ensure continuous labels (e.g.,, [0, 1, 2, 3], not [0, 1, 10, 15])
+    not_continuous_labels = labels.max() - 1 > n_labels
+    if not_continuous_labels:
+        continuous_labels = np.arange(n_labels)
+        mapper = np.zeros(labels[-1] + 1, dtype=labeling.dtype)
+        mapper[labels] = continuous_labels
+        labeling = mapper[labeling]
+        mapped_ignore_labels = mapper[ignore_labels]
+    else:
+        continuous_labels = labels
+        mapped_ignore_labels = np.array(ignore_labels)
+        labeling = labeling.copy()  # ensure that we do not modify the input
+
+    is_unassign = np.nonzero(labeling == mapped_ignore_labels[-1])
+    while (n_unassign := is_unassign[0].size) > 0:
+        print("Number of unassigned voxels:", n_unassign)
+        labeling_view = np.lib.stride_tricks.sliding_window_view(
+            np.pad(labeling, pad_width, "symmetric"), window
+        )
+        unassign_window = labeling_view[is_unassign].reshape(-1, kernel.size)
+
+        # Compute weights in a loop to save memory
+        weights = np.array(
+            [
+                np.zeros(n_unassign)
+                if i in mapped_ignore_labels
+                else (unassign_window == i) @ kernel
+                for i in continuous_labels
+            ]
+        )
+        # The slightly faster but less memory-friendly solution
+        # n_total = unassign_window.size
+        # oh_enc = np.zeros((n_labels, n_total), dtype=np.uint8)
+        # oh_enc[unassign_window.ravel(), np.arange(n_total)] = 1
+        # oh_enc = oh_enc.reshape(n_labels, *unassign_window.shape)
+        # weights = oh_enc @ kernel
+        # if mapped_ignore_labels.size > 0:
+        #     weights[mapped_ignore_labels] = 0
+
+        # In the case of ties, the lowest index is returned. This is arbitrary
+        # but the default behavior of argmax
+        new_label = weights.argmax(0)
+        valid = weights.sum(0) > 0
+        invalid = ~valid
+
+        labeling[tuple(i[valid] for i in is_unassign)] = new_label[valid]
+        is_unassign = tuple(i[invalid] for i in is_unassign)
+
+        if is_unassign[0].size == n_unassign:            
+            logger.warning(
+                "Some elements could not be labeled (probably because they are surrounded by labels in `ignore_labels`)"
+                )
+            # warnings.warn(
+            #     "Some elements could not be labeled, probably because they are surrounded by labels in `ignore_labels`",
+            #     RuntimeWarning,
+            # )
+            break
+        # break
+
+    # Revert array
+    if not_continuous_labels:
+        labeling = labels[labeling]
+    labeling = labeling.T if label_arr.flags["F_CONTIGUOUS"] else labeling
+
+    return labeling
 
 def _smoothfill(label_img, unassign, simnibs_tissues):
     """Hackish way to fill unassigned voxels,
