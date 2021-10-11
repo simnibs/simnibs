@@ -17,7 +17,7 @@ done
   e2 cd $DTICONF_DIR
 
 # create T1 brain mask
-  if [ ! -f $M2M_DIR'/charm_log.html' ]; then e echo "ERROR: This version of dwi2cond requires a charm segmentation"; exit; fi
+  if [ ! -f $M2M_DIR'/final_tissues.nii.gz' ]; then e echo "ERROR: This version of dwi2cond requires a charm segmentation"; exit; fi
   e fslmaths $M2M_DIR/labeling.nii.gz -thr 1 -uthr 499 -bin T1_brainmask
   e fslmaths $M2M_DIR/segmentation/T1_bias_corrected -mas T1_brainmask T1_brain
   e fslmaths T1_brainmask -edge -thr 0.3 -bin T1_brainrim_QA # for QA
