@@ -39,7 +39,7 @@ from ..utils.spawn_process import spawn_process
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import read_gifti_surface, write_msh, read_off, write_off, Msh, ElementData
 from ..simulation import cond
-from ..utils import plotting
+from ..utils import plotting, html_writer
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -645,7 +645,7 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.info('Creating registration visualization')
         plotting.viewer_registration(sub_files.reference_volume,
                                      sub_files.T2_reg,
-                                     sub_files.reg_viewer)
+                                     sub_files.t1_t2_reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -1051,7 +1051,7 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.info('Creating registration visualization')
         plotting.viewer_final(sub_files.reference_volume,
                               sub_files.final_labels,
-                              sub_files.final_viewer)
+                              sub_files.final_seg_viewer)
 
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
@@ -1066,3 +1066,5 @@ def run(subject_dir=None, T1=None, T2=None,
     with open(logfile, 'a') as f:
         f.write('</pre></BODY></HTML>')
         f.close()
+
+    html_writer(sub_files)
