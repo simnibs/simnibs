@@ -34,6 +34,7 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                         imageBuffers,
                                         biasFields,
                                         mask)
+    expImageBuffers[~mask] = 0
     for contrastNumber, out_name in enumerate(output_names_bias):
         # Bias field correct and write
         writeImage(out_name,  expImageBuffers[..., contrastNumber],
