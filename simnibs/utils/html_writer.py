@@ -4,17 +4,16 @@ import json
 from simnibs.utils.settings_reader import read_ini
 
 
-'''
+"""
 This module writes the final html after a charm run is done.
 The basic .html template is defined below, which is
 pieced together from different text snippets and links
 depending on what charm was run on.
-'''
+"""
 
-simnibs_logo = os.path.join(SIMNIBSDIR,
-                            '_internal_resources',
-                            'icons', 'simnibs',
-                            'gui_icon.png')
+simnibs_logo = os.path.join(
+    SIMNIBSDIR, "_internal_resources", "icons", "simnibs", "gui_icon.png"
+)
 
 html_source = """
 <!DOCTYPE html>
@@ -149,14 +148,13 @@ def _walk_through_dict_recursively(dict1, dict2, diff_dict=None):
 
             else:
                 diff_dict[key1] = {}
-                _walk_through_dict_recursively(dict1[key1],
-                                               dict2[key2],
-                                               diff_dict[key1])
+                _walk_through_dict_recursively(
+                    dict1[key1], dict2[key2], diff_dict[key1]
+                )
 
-        elif ((not isinstance(dict1[key1], dict) and
-               isinstance(dict2[key2], dict)) or
-              (isinstance(dict1[key1], dict) and
-               not isinstance(dict2[key2], dict))):
+        elif (not isinstance(dict1[key1], dict) and isinstance(dict2[key2], dict)) or (
+            isinstance(dict1[key1], dict) and not isinstance(dict2[key2], dict)
+        ):
             diff_dict[key1] = dict1[key1]
             continue
 
@@ -170,10 +168,9 @@ def _walk_through_dict_recursively(dict1, dict2, diff_dict=None):
             else:
                 diff_dict[key1] = dict1[key1]
 
-        elif ((isinstance(dict1[key1], list) and
-               not isinstance(dict2[key2], list)) or
-              (not isinstance(dict1[key1], list) and
-               isinstance(dict2[key2], list))):
+        elif (isinstance(dict1[key1], list) and not isinstance(dict2[key2], list)) or (
+            not isinstance(dict1[key1], list) and isinstance(dict2[key2], list)
+        ):
 
             diff_dict[key1] = dict1[key1]
 
@@ -211,14 +208,15 @@ def _get_settings_string(sub_ini, charm_ini):
     diff_dict = _walk_through_dict_recursively(sub_settings, charm_settings)
 
     if not bool(diff_dict):
-        settings_text = 'using the standard settings listed in the charm.ini file.<br><br>'
+        settings_text = (
+            "using the standard settings listed in the charm.ini file.<br><br>"
+        )
     else:
-        settings_text = 'using custom settings for the following fields <br><br>'
-        settings_text += json.dumps(diff_dict,
-                                    indent=4)
+        settings_text = "using custom settings for the following fields <br><br>"
+        settings_text += json.dumps(diff_dict, indent=4)
+        settings_text += " <br><br>"
+        settings_text = settings_text.replace("\n", "\n<br>")
 
-        settings_text += ' <br><br>'
-        settings_text = settings_text.replace('\n', '\n<br>')
     return settings_text
 
 
@@ -233,40 +231,47 @@ def write_template(sub_files):
     Instantiation of the SubjectFiles class
     for the given subject folder.
     """
-    t1_t2_reg_viewer = '<a href="' + sub_files.t1_t2_reg_viewer + '">T1-T2 registration viewer</a>'
+    t1_t2_reg_viewer = (
+        '<a href="' + sub_files.t1_t2_reg_viewer + '">T1-T2 registration viewer</a>'
+    )
 
-    aff_reg_viewer = '<a href="' + sub_files.affine_reg_viewer + '">Affine registration viewer</a>'
+    aff_reg_viewer = (
+        '<a href="' + sub_files.affine_reg_viewer + '">Affine registration viewer</a>'
+    )
 
-    final_seg_viewer = '<a href="' + sub_files.final_seg_viewer + '">Final segmentation viewer</a>'
+    final_seg_viewer = (
+        '<a href="' + sub_files.final_seg_viewer + '">Final segmentation viewer</a>'
+    )
 
-    t1_text = 'Charm was run on a T1-weighted scan'
-    t1_t2_text = 'Charm was run on a combination of T1- and T2-weighted scans'
+    t1_text = "Charm was run on a T1-weighted scan"
+    t1_t2_text = "Charm was run on a combination of T1- and T2-weighted scans"
 
     parse_dict = {}
     if not os.path.exists(sub_files.T2_reg):
-        parse_dict['scan_text'] = t1_text
+        parse_dict["scan_text"] = t1_text
     else:
-        parse_dict['scan_text'] = t1_t2_text
+        parse_dict["scan_text"] = t1_t2_text
 
-    parse_dict['simnibs_fig'] = simnibs_logo
+    parse_dict["simnibs_fig"] = simnibs_logo
 
     if not os.path.exists(sub_files.t1_t2_reg_viewer):
-        parse_dict["t1_t2_reg"] = ''
+        parse_dict["t1_t2_reg"] = ""
     else:
         parse_dict["t1_t2_reg"] = t1_t2_reg_viewer
 
     if not os.path.exists(sub_files.affine_reg_viewer):
-        parse_dict["affine_reg"] = ''
+        parse_dict["affine_reg"] = ""
     else:
         parse_dict["affine_reg"] = aff_reg_viewer
 
     if not os.path.exists(sub_files.final_seg_viewer):
-        parse_dict["final_seg"] = ''
+        parse_dict["final_seg"] = ""
     else:
         parse_dict["final_seg"] = final_seg_viewer
 
-    settings_dif = _get_settings_string(sub_files.settings,
-                                        os.path.join(SIMNIBSDIR, 'charm.ini'))
+    settings_dif = _get_settings_string(
+        sub_files.settings, os.path.join(SIMNIBSDIR, "charm.ini")
+    )
     parse_dict["settings_text"] = settings_dif
 
     html_parsed = html_source.format(**parse_dict)
