@@ -10,7 +10,7 @@ import os
 import nibabel
 import numpy as np
 
-from ..simulation import optim_tms
+from simnibs.optimization.opt_struct import TMSoptimize
 from simnibs.simulation import sim_struct
 from simnibs.utils.simnibs_logger import logger
 
@@ -80,7 +80,7 @@ def simnibs2nnav(fn_exp_nii, fn_conform_nii, simnibs_obj,
     elif type(simnibs_obj) == sim_struct.POSITION:
         simnibs_obj_mat = get_matsimnibs_from_pos(simnibs_obj, msh=msh)
 
-    elif type(simnibs_obj) == optim_tms.TMSOPTIMIZATION:
+    elif type(simnibs_obj) == TMSoptimize:
         if msh is None:
             msh = simnibs_obj.fnamehead
         simnibs_obj_mat = get_matsimnibs_from_tmslist(simnibs_obj.optimlist, msh=msh)
@@ -440,7 +440,7 @@ def splitext_niigz(fn):
         raise ValueError('File extension is neither .nii or .nii.gz!')
 
 
-def write_tms_navigator_im(ims, xml_fn, overwrite=False):
+def write_tms_navigator_im(ims, xml_fn, names=None, overwrite=False):
     """
     Writes a instrument marker .xml file in the fashion of Localite TMS Navigator.
 
@@ -448,6 +448,8 @@ def write_tms_navigator_im(ims, xml_fn, overwrite=False):
     ----------
     ims: np.ndarray
         Instrument markers with shape (4, 4, n_im).
+    names : str or list of str
+        Optional, names of instrument markers
     xml_fn: str
         Filename.
     overwrite: bool (Default: True)
@@ -459,7 +461,8 @@ def write_tms_navigator_im(ims, xml_fn, overwrite=False):
     """
 
     ims = np.atleast_3d(ims)
-
+    if isinstance(names, str):
+        names = [names]
     assert ims.shape[:2] == (4, 4), 'Expecting array with shape (4, 4, N instrument marker).'
 
     if not xml_fn.lower().endswith('.xml'):
@@ -473,10 +476,15 @@ def write_tms_navigator_im(ims, xml_fn, overwrite=False):
         f.write('    <!--This InstrumentMarkerList was written by SimNIBS-->\n')
 
         for idx in range(ims.shape[-1]):
+            if names is None:
+                name = f"opt_{idx}"
+            else:
+                name = names[idx]
+
             im = ims[:, :, idx]
             f.write('    ' + f'<InstrumentMarker alwaysVisible="false" index="{idx}" selected="false">\n')
             f.write('    ' * 2 + f'<Marker additionalInformation="" '
-            f'color="#ff0000" description="opt_{idx}" set="true">\n')
+            f'color="#ff0000" description="{name}" set="true">\n')
             f.write('    ' * 3 + '<Matrix4D \n')
             f.write('    ' * 4 + 'data00="{:+1.17f}" data01="{:+1.17f}" '
                                  'data02="{:+1.17f}" data03="{:+1.17f}"\n'.format(im[0, 0], im[0, 1], im[0, 2],
