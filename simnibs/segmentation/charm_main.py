@@ -216,7 +216,6 @@ def _post_process_segmentation(bias_corrected_image_names,
     affine_upsampled = upsampled.affine
     upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues,
                                         affine_upsampled)
-    upsampled_tissues_im.set_data_dtype(np.int16)
     nib.save(upsampled_tissues_im, before_morpho_name)
 
     upper_part_im = nib.Nifti1Image(upper_part.astype(np.int16),affine_upsampled)
@@ -225,7 +224,7 @@ def _post_process_segmentation(bias_corrected_image_names,
     del upper_part_im
     # Do morphological operations
     simnibs_tissues = tissue_settings['simnibs_tissues']
-    _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
+    upsampled_tissues = _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
 
     return upsampled_tissues
 
@@ -345,6 +344,8 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     label_img[SKULL_outer] = simnibs_tissues['Compact_bone']
     #Relabel air pockets to air
     label_img[label_img == simnibs_tissues['Air_pockets']] = 0
+
+    return label_img
 
 
 def generate_gaussian_kernel(i, ndim, sigma=1, zero_center=False):
