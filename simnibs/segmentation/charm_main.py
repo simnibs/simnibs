@@ -1205,4 +1205,4 @@ def run(subject_dir=None, T1=None, T2=None,
         f.write('</pre></BODY></HTML>')
         f.close()
 
-    html_writer(sub_files)
+    html_writer.write_template(sub_files)
