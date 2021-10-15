@@ -134,13 +134,15 @@ def parseccd(ccd_file):
     
     return d_position, d_moment, bb, res, info
 
-def writeccd(fn, mpos, m, info=None):
+def writeccd(fn, mpos, m, info=None, extra=None):
     N=m.shape[0]
     f=open(fn,'w')
-    f.write('# %s version 1.0 number of elements;'%os.path.split(fn)[1])
+    f.write('# %s version 1.0;'%os.path.split(fn)[1])
     if not info is None:
         for i,key in enumerate(info.keys()):
-            f.write('%s=%s;'%(key,info[key]))
+            f.write(f'{key}={info[key]};')
+    if not extra is None:
+	    f.write(f'{extra};')
     f.write('\n')
     f.write('%i\n'%N)
     f.write('# centers and weighted directions of the elements (magnetic dipoles)\n')
@@ -217,15 +219,14 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     '''
     #read and parse ccd file
     d_position, d_moment, boundingbox, resolution, info = parseccd(ccdfn)
-    
-    if not boundingbox is None:
+    if not boundingbox[0] is None:
         bb = boundingbox
-    if not resolution is None:
+    else:
+	    bb = np.array(((-300, 300), (-200, 200), (0, 300)))
+    if not resolution[0] is None:
         res = resolution
-    if resolution is None:
+    else:
         res = np.array((3., 3., 3.))
-    if boundingbox is None:
-        bb = np.array(((-300, 300), (-200, 200), (0, 300)))
 
     #create grid
     eps = np.spacing(1e4)
