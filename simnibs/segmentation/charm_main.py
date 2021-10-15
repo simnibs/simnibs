@@ -15,6 +15,7 @@ import nibabel as nib
 import glob
 import sys
 import tempfile
+import re
 import numpy as np
 from functools import partial
 from scipy import ndimage
@@ -1201,8 +1202,18 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.removeHandler(logger.handlers[0])
     utils.simnibs_logger.unregister_excepthook()
     logging.shutdown()
-    with open(logfile, 'a') as f:
+    with open(logfile, 'r') as f:
+        logtext = f.read()
+
+    # Explicitly remove this really annoying stuff from the log
+    removetext = (re.escape('-\|/'), 
+                re.escape('Selecting intersections ... ') + '.*' + 
+                re.escape(' %Selecting intersections ... '))
+    with open(logfile, 'w') as f:
+        for text in removetext:
+            logtext = re.sub(text, '', logtext)
+        f.write(logtext)
         f.write('</pre></BODY></HTML>')
         f.close()
-
+    
     html_writer.write_template(sub_files)
