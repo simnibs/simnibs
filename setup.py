@@ -83,6 +83,7 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 # Information for CGAL download
 #CGAL_version = '5.0.2'
 CGAL_version = '5.2'
+CGAL_version = '5.3'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 CGAL_url = (
     f'https://github.com/CGAL/cgal/releases/download/'

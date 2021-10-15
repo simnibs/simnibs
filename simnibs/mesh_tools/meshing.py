@@ -5,7 +5,6 @@ import numpy as np
 import scipy.sparse
 import scipy.ndimage
 import time
-import numba
 
 from . import mesh_io
 from . import cgal
