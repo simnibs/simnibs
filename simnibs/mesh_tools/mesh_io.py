@@ -1064,6 +1064,7 @@ class Msh:
         else:
             elements_of_interest = baricenters.elm_number
             bar = baricenters.value
+
         kd_tree = scipy.spatial.cKDTree(bar)
         d, indexes = kd_tree.query(querry_points, k=k)
         indexes = elements_of_interest[indexes]

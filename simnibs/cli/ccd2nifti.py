@@ -41,7 +41,7 @@ def parseccd(ccd_file):
     ccd_file : string
         ccd file to parse
     
-    On ccd file format:
+    On ccd file format version 1.1:
     1) First line is a header line escaped with # which can contain any number
        of variables in the form variable=value, a few of these variables are 
        reserved as can be seen below, they are separated by semicolons (;).
@@ -137,7 +137,11 @@ def parseccd(ccd_file):
 def writeccd(fn, mpos, m, info=None, extra=None):
     N=m.shape[0]
     f=open(fn,'w')
+<<<<<<< HEAD
     f.write('# %s version 1.0;'%os.path.split(fn)[1])
+=======
+    f.write('# %s version 1.1;'%os.path.split(fn)[1])
+>>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     if not info is None:
         for i,key in enumerate(info.keys()):
             f.write(f'{key}={info[key]};')
@@ -222,12 +226,20 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     if not boundingbox[0] is None:
         bb = boundingbox
     else:
+<<<<<<< HEAD
 	    bb = np.array(((-300, 300), (-200, 200), (0, 300)))
+=======
+        bb = np.array(((-300, 300), (-200, 200), (0, 300)))
+>>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     if not resolution[0] is None:
         res = resolution
     else:
         res = np.array((3., 3., 3.))
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     #create grid
     eps = np.spacing(1e4)
     x = np.arange(bb[0][0], bb[0][1] + eps, res[0]) #xgrid
@@ -320,15 +332,15 @@ def main():
                 print(f'Rescaling {ccdfile} failed, check if dIdtstim exists'
                       'and that only one stimulator value is present')
         else:
-            if len(glob.glob(os.path.splitext(ccdfile)[0]
+            if options.outfile is None:
+                outfile = os.path.splitext(ccdfile)[0] + '.nii.gz'
+            else:
+                outfile=options.outfile
+            if len(glob.glob(os.path.splitext(outfile)[0]
                          + '.nii*')) == 0 or options.force:
                 t0 = time.perf_counter()
                 print(f'expanding CCD file {ccdfile}')
                 nii = ccd2nifti(ccdfile)
-                if options.outfile is None:
-                    outfile = os.path.splitext(ccdfile)[0] + '.nii.gz'
-                else:
-                    outfile=options.outfile
                 nii.to_filename(outfile)
                 print(f'Time spend: {time.perf_counter()-t0:.0f}s')
             else:
