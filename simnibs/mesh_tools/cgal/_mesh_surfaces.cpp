@@ -80,6 +80,7 @@ int _mesh_surfaces(
   Mesh_criteria_surf criteria(facet_criteria, cell_criteria);
 
   // Mesh generation
+  CGAL::get_default_random() = CGAL::Random(0);
   C3t3_surf c3t3 = CGAL::make_mesh_3<C3t3_surf>(domain, criteria, no_perturb(), no_exude());
   #ifdef CGAL_CONCURRENT_MESH_3
     tbb::task_arena limited(1);        // No more than 2 threads in this arena.

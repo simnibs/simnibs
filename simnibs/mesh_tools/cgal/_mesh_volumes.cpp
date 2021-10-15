@@ -59,6 +59,7 @@ int _mesh_image(
   
   // Mesh generation
   std::cout << "Began meshing \n";
+  CGAL::get_default_random() = CGAL::Random(0);
   C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
 
   std::cout << "Lloyd \n";
