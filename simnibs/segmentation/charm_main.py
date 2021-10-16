@@ -1207,8 +1207,9 @@ def run(subject_dir=None, T1=None, T2=None,
 
     # Explicitly remove this really annoying stuff from the log
     removetext = (re.escape('-\|/'), 
-                re.escape('Selecting intersections ... ') + '.*' + 
-                re.escape(' %Selecting intersections ... '))
+                re.escape('Selecting intersections ... ') + '\d{1,2}' + 
+                re.escape(' %Selecting intersections ... ') + '\d{1,2}'+
+                re.escape(' %'))
     with open(logfile, 'w') as f:
         for text in removetext:
             logtext = re.sub(text, '', logtext)
