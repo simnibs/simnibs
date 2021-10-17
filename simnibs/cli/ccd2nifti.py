@@ -137,11 +137,8 @@ def parseccd(ccd_file):
 def writeccd(fn, mpos, m, info=None, extra=None):
     N=m.shape[0]
     f=open(fn,'w')
-<<<<<<< HEAD
     f.write('# %s version 1.0;'%os.path.split(fn)[1])
-=======
     f.write('# %s version 1.1;'%os.path.split(fn)[1])
->>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     if not info is None:
         for i,key in enumerate(info.keys()):
             f.write(f'{key}={info[key]};')
@@ -226,20 +223,11 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     if not boundingbox[0] is None:
         bb = boundingbox
     else:
-<<<<<<< HEAD
 	    bb = np.array(((-300, 300), (-200, 200), (0, 300)))
-=======
-        bb = np.array(((-300, 300), (-200, 200), (0, 300)))
->>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     if not resolution[0] is None:
         res = resolution
     else:
         res = np.array((3., 3., 3.))
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 7d1d615cac139da8265fb72baaf78dffe935ab58
     #create grid
     eps = np.spacing(1e4)
     x = np.arange(bb[0][0], bb[0][1] + eps, res[0]) #xgrid
