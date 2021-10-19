@@ -1581,7 +1581,7 @@ def tms_many_simulations(
                 out_field = out_field[0]
             if post_pro is not None:
                 out_field = post_pro(out_field)
-            with h5py.File(fn_hdf5) as f:
+            with h5py.File(fn_hdf5,'a') as f:
                 f[dataset][i] = out_field
 
     # Run in parallel
