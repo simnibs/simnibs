@@ -100,25 +100,23 @@ def _calculate_dadt_ccd(msh, ccd_file, coil_matrix, didt, geo_fn):
 
 def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
     """ auxiliary function to calculate the dA/dt field from a ccd file using FMM """
-    import fmm3dpy
     d_position, d_moment = _rotate_coil(ccd_file, coil_matrix)
     # bring everything to SI
     d_position *= 1e-3
     pos = msh.nodes[:] * 1e-3
     A = np.zeros((len(pos), 3), dtype=float)
-    out = [
-        fmm3dpy.lfmm3d(
+    out = fmm3dpy.lfmm3d(
             eps=eps,
             sources=d_position.T,
-            charges=d_m,
+            charges=d_moment.T,
             targets=pos.T,
-            pgt=2
+            pgt=2,
+            nd=3
         )
-        for d_m in d_moment.T
-    ]
-    A[:, 0] = (out[1].gradtarg[2] - out[2].gradtarg[1])
-    A[:, 1] = (out[2].gradtarg[0] - out[0].gradtarg[2])
-    A[:, 2] = (out[0].gradtarg[1] - out[1].gradtarg[0])
+       
+    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
+    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
+    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
 
     A *= -1e-7 * didt
     if geo_fn is not None:

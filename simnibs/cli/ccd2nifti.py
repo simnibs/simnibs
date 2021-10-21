@@ -172,7 +172,7 @@ def rescale_ccd(ccd_file, outname=None):
                                '_rescaled' + '.ccd')
     writeccd(outname, d_position, d_moment, info)
     
-def _lfmm3d(charges, eps, sources, targets):
+def _lfmm3d(charges, eps, sources, targets, nd=1):
     '''
     Wrapper function for fmm3dpy.lfmm3d
     Parameters
@@ -192,7 +192,7 @@ def _lfmm3d(charges, eps, sources, targets):
 
     '''
     return fmm3dpy.lfmm3d(eps=eps, sources=sources, charges=charges,
-                          targets=targets, pgt=2)
+                          targets=targets, pgt=2, nd=nd)
 
 def ccd2nifti(ccdfn, info={}, eps=1e-3):
     '''
@@ -247,12 +247,12 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     #out = pool.map(f, d_moment.T)
     
     #non-parallel version (note, fmm3d is already somewhat parallel)
-    out = [_lfmm3d(charges=d_m, eps=eps, sources=d_position.T, targets=xyz)
-        for d_m in d_moment.T]
+    out = _lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
+                  targets=xyz, nd=3)
 
-    A[:, 0] = (out[1].gradtarg[2] - out[2].gradtarg[1])
-    A[:, 1] = (out[2].gradtarg[0] - out[0].gradtarg[2])
-    A[:, 2] = (out[0].gradtarg[1] - out[1].gradtarg[0])
+    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
+    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
+    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
     A *= -1e-7
  
     A = A.reshape((len(x), len(y), len(z), 3))
