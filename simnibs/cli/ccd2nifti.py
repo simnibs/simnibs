@@ -194,7 +194,7 @@ def _lfmm3d(charges, eps, sources, targets, nd=1):
     return fmm3dpy.lfmm3d(eps=eps, sources=sources, charges=charges,
                           targets=targets, pgt=2, nd=nd)
 
-def ccd2nifti(ccdfn, info={}, eps=1e-3):
+def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     '''
     Convert CCD coil dipole files to nifti1 format
 
@@ -229,32 +229,18 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     else:
         res = np.array((3., 3., 3.))
     #create grid
-    eps = np.spacing(1e4)
-    x = np.arange(bb[0][0], bb[0][1] + eps, res[0]) #xgrid
-    y = np.arange(bb[1][0], bb[1][1] + eps, res[1]) #ygrid
-    z = np.arange(bb[2][0], bb[2][1] + eps, res[2]) #zgrid
+    dx = np.spacing(1e4)
+    x = np.arange(bb[0][0], bb[0][1] + dx, res[0]) #xgrid
+    y = np.arange(bb[1][0], bb[1][1] + dx, res[1]) #ygrid
+    z = np.arange(bb[2][0], bb[2][1] + dx, res[2]) #zgrid
     xyz = np.meshgrid(x, y, z, indexing='ij') #grid
     #reshape to 2D
     xyz = np.array(xyz).reshape((3, len(x) * len(y) * len(z)))
     xyz *= 1.0e-3 #from mm to SI (meters)
-    A = np.empty((xyz.shape[1], 3), dtype=float)
-    
-    #use fmm3dpy to calculate expansion fast
-    #create a pool of workers to process each dimension separately
-    #to accomplish the same but using multiprocessing:
-    #pool = multiprocessing.Pool()
-    #f = functools.partial(_lfmm3d, eps=eps, sources=d_position.T, targets=xyz)
-    #out = pool.map(f, d_moment.T)
-    
-    #non-parallel version (note, fmm3d is already somewhat parallel)
-    out = _lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
-                  targets=xyz, nd=3)
-
-    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
-    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
-    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
-    A *= -1e-7
- 
+    if Bfield:
+        A = B_from_dipoles(d_moment, d_position, xyz.T)     
+    else:
+        A = A_from_dipoles(d_moment, d_position, xyz.T)
     A = A.reshape((len(x), len(y), len(z), 3))
     #header info
     hdr = nib.Nifti1Header()
@@ -286,6 +272,26 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3):
     except:
         print('no information on dIdtmax found omitting from nii file.')
     return nii
+
+def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3):
+    #use fmm3dpy to calculate expansion fast
+    out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
+                  targets=target_positions.T, nd=3, pgt=2)
+    A = np.empty((target_positions.shape[0], 3), dtype=float)
+    #calculate curl
+    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
+    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
+    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
+    #scale
+    A *= -1e-7
+    return A
+
+def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3):
+    out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T, 
+                  targets=target_positions.T, nd=1, pgt=2)
+    B = out.gradtarg.T
+    B *= -1e-7
+    return B
 
 def main():
     import argparse
@@ -324,8 +330,7 @@ def main():
                 outfile = os.path.splitext(ccdfile)[0] + '.nii.gz'
             else:
                 outfile=options.outfile
-            if len(glob.glob(os.path.splitext(outfile)[0]
-                         + '.nii*')) == 0 or options.force:
+            if len(glob.glob(os.path.splitext(outfile)[0] + '*')) == 0 or options.force:
                 t0 = time.perf_counter()
                 print(f'expanding CCD file {ccdfile}')
                 nii = ccd2nifti(ccdfile)
