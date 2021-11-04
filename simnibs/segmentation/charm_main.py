@@ -315,7 +315,9 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     label_img[unass] = label_unassign
     #Add background to tissues
     simnibs_tissues["BG"] = 0
-    label_img = label_unassigned_elements(label_img, label_unassign, list(simnibs_tissues.values()))
+    label_img = label_unassigned_elements(
+        label_img, label_unassign, list(simnibs_tissues.values()) + [label_unassign]
+    )
     _smoothfill(label_img, unass, simnibs_tissues)
 
 
@@ -326,10 +328,13 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     brain_gm = (label_img == simnibs_tissues['GM'])
     C_BONE = (label_img == simnibs_tissues['Compact_bone'])
     S_BONE = (label_img == simnibs_tissues['Spongy_bone'])
+    U_SKIN = (label_img == simnibs_tissues["Scalp"]) & upper_part
 
     brain_dilated = mrph.binary_dilation(brain_gm, se, 1)
-    overlap = brain_dilated & (C_BONE | S_BONE)
+    overlap = brain_dilated & (C_BONE | S_BONE | U_SKIN)
     label_img[overlap] = simnibs_tissues['CSF']
+
+    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
 
     CSF_brain = brain_gm | (label_img == simnibs_tissues['CSF'])
     CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, 1)
@@ -404,9 +409,10 @@ def label_unassigned_elements(
     kernel = kernel.ravel()
 
     # Find the list of label (if necessary) and ensure it is unique
-    labels = np.unique(labeling) if labels is None else np.array(labels)
+    labels = np.unique(labeling) if labels is None else np.unique(labels)
+    labels = labels.astype(labeling.dtype)
     n_labels = labels.size
-    assert np.unique(labels).size == n_labels
+    assert label_unassign in labels, "`label_unassign` is not in the provided `labels`!"
 
     # Ignore desired labels and the unassigned label
     if ignore_labels is None:
@@ -417,17 +423,17 @@ def label_unassigned_elements(
         ignore_labels = ignore_labels + [label_unassign]  # avoid inplace
 
     # Ensure continuous labels (e.g.,, [0, 1, 2, 3], not [0, 1, 10, 15])
-    not_continuous_labels = labels.max() - 1 > n_labels
-    if not_continuous_labels:
+    is_continuous_labels = labels[-1] - labels[0] + 1 == n_labels
+    if is_continuous_labels:
+        continuous_labels = labels
+        mapped_ignore_labels = np.array(ignore_labels)
+        labeling = labeling.copy()  # ensure that we do not modify the input
+    else:
         continuous_labels = np.arange(n_labels)
         mapper = np.zeros(labels[-1] + 1, dtype=labeling.dtype)
         mapper[labels] = continuous_labels
         labeling = mapper[labeling]
         mapped_ignore_labels = mapper[ignore_labels]
-    else:
-        continuous_labels = labels
-        mapped_ignore_labels = np.array(ignore_labels)
-        labeling = labeling.copy()  # ensure that we do not modify the input
 
     is_unassign = np.nonzero(labeling == mapped_ignore_labels[-1])
     while (n_unassign := is_unassign[0].size) > 0:
@@ -464,10 +470,10 @@ def label_unassigned_elements(
         labeling[tuple(i[valid] for i in is_unassign)] = new_label[valid]
         is_unassign = tuple(i[invalid] for i in is_unassign)
 
-        if is_unassign[0].size == n_unassign:            
+        if is_unassign[0].size == n_unassign:
             logger.warning(
                 "Some elements could not be labeled (probably because they are surrounded by labels in `ignore_labels`)"
-                )
+            )
             # perhaps we may want to issue the warning using the warnings
             # module instead
             # warnings.warn(
@@ -475,10 +481,9 @@ def label_unassigned_elements(
             #     RuntimeWarning,
             # )
             break
-        # break
 
     # Revert array
-    if not_continuous_labels:
+    if not is_continuous_labels:
         labeling = labels[labeling]
     labeling = labeling.T if label_arr.flags["F_CONTIGUOUS"] else labeling
 
