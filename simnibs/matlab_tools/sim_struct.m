@@ -28,7 +28,7 @@ function S = sim_struct(type)
 
 
 
-validtypes={'SESSION', 'VOLUME', 'TMSLIST', 'TDCSLIST', 'POSITION', ...
+validtypes={'SESSION', 'TMSLIST', 'TDCSLIST', 'POSITION', ...
     'ELECTRODE', 'COND', 'LIST','FIDUCIALS', 'LEADFIELD', 'TDCSLEADFIELD'};
 
 if ~any(strcmp(type,validtypes))
@@ -44,7 +44,6 @@ switch S.type
        S.org=[];  % used for parsing neuronavigation data; not stored permanently; optional
        S.fname=''; % string; points towards file containing neuronavigation data; optional
        S.date=''; % string; optional
-       S.vol=[]; % structure containing structural MRI used by neuronavigation system; optional
        S.poslist={}; % can be 'TMSLIST' or 'TDCSLIST'
        S.fnamehead=''; % same as ${subID}.msh created by mri2mesh or headreco
        S.subpath = ''; % path to the 'm2m_{subID}' folder created by mri2mesh or headreco (OPTIONAL, filled from fnamehead)
@@ -69,19 +68,6 @@ switch S.type
         S.Iz = [];
         S.LPA = [];
         S.RPA = [];
-
-    case 'VOLUME'
-        S.org=[];  % used for parsing neuronavigation data; not stored permanently; optional
-        S.fname=''; % string; points towards neuronavigation file specifying details of structural MRI; optional
-        S.ftype=''; % string; file-type of the T1 used by the nnav-system ('NIFTI' or 'DICOM')
-        S.manufacturer='unknown'; % string; currently, only 'LOCALITE' is supported
-        S.volfiles={}; % list of files of the T1 (one file for NIFTI; many for DICOM)
-        S.img=[]; % used to temporarily store the T1; can be deleted after coregistration to simnibs T1
-        S.voxsize=[]; % voxel size of the T1
-        S.dim=[]; % dimensions of the T1
-        S.m_qform=[]; % qform of the T1
-        S.fname_conf=''; % path and filename of the simnibs T1 of the subject
-        S.m_toconform=[]; % 4x4 transformation matrix from nnav T1 to simnibs T1 (for mm-to-mm mapping of real world coordinates)
             
     case 'LIST'
         S.org=[];  % used for parsing neuronavigation data; not stored permanently; optional
