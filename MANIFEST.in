@@ -2,8 +2,10 @@ global-include *.md *.txt *.ini
 include simnibs/external/*
 include simnibs/matlab_tools/*
 include simnibs/*/tests/*.py
+include simnibs/segmentation/atlases/charm_atlas_mni
 # We add all binaries here and remove the ones we don't need in the setup.py script
 graft simnibs/external
 graft simnibs/resources
 graft simnibs/examples
 graft simnibs/_internal_resources
+graft simnibs/segmentation/atlases/charm_atlas_mni

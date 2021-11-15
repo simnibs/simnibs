@@ -15,6 +15,7 @@ import nibabel as nib
 import glob
 import sys
 import tempfile
+import re
 import numpy as np
 from functools import partial
 from scipy import ndimage
@@ -39,7 +40,7 @@ from ..utils.spawn_process import spawn_process
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import read_gifti_surface, write_msh, read_off, write_off, Msh, ElementData
 from ..simulation import cond
-from ..utils import plotting
+from ..utils import plotting, html_writer
 
 def _register_atlas_to_input_affine(T1, template_file_name,
                                     affine_mesh_collection_name, mesh_level1,
@@ -70,7 +71,8 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                                 verticalTableShifts=vertical_shifts)
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
-    affine.registerAtlas(initializationOptions=init_options,
+    affine.registerAtlas(initTransform=init_transform,
+                         initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
                          visualizer=visualizer,
                          noneck=noneck)
@@ -100,6 +102,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
         file_path = os.path.split(template_coregistered_name)
         shutil.copy(mesh_level1, os.path.join(file_path[0], 'atlas_level1.txt.gz'))
         shutil.copy(mesh_level2, os.path.join(file_path[0], 'atlas_level2.txt.gz'))
+
 
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
@@ -215,7 +218,6 @@ def _post_process_segmentation(bias_corrected_image_names,
     affine_upsampled = upsampled.affine
     upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues,
                                         affine_upsampled)
-    upsampled_tissues_im.set_data_dtype(np.int16)
     nib.save(upsampled_tissues_im, before_morpho_name)
 
     upper_part_im = nib.Nifti1Image(upper_part.astype(np.int16),affine_upsampled)
@@ -224,7 +226,7 @@ def _post_process_segmentation(bias_corrected_image_names,
     del upper_part_im
     # Do morphological operations
     simnibs_tissues = tissue_settings['simnibs_tissues']
-    _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
+    upsampled_tissues = _morphological_operations(upsampled_tissues, upper_part, simnibs_tissues)
 
     return upsampled_tissues
 
@@ -309,9 +311,13 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     # Filling missing parts
     # NOTE: the labeling is uint16, so I'll code the unassigned voxels with the max value
     # which is 65535
-    label_img[unass] = 65535
+    label_unassign = 65535
+    label_img[unass] = label_unassign
     #Add background to tissues
     simnibs_tissues["BG"] = 0
+    label_img = label_unassigned_elements(
+        label_img, label_unassign, list(simnibs_tissues.values()) + [label_unassign]
+    )
     _smoothfill(label_img, unass, simnibs_tissues)
 
 
@@ -322,10 +328,13 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     brain_gm = (label_img == simnibs_tissues['GM'])
     C_BONE = (label_img == simnibs_tissues['Compact_bone'])
     S_BONE = (label_img == simnibs_tissues['Spongy_bone'])
+    U_SKIN = (label_img == simnibs_tissues["Scalp"]) & upper_part
 
     brain_dilated = mrph.binary_dilation(brain_gm, se, 1)
-    overlap = brain_dilated & (C_BONE | S_BONE)
+    overlap = brain_dilated & (C_BONE | S_BONE | U_SKIN)
     label_img[overlap] = simnibs_tissues['CSF']
+
+    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
 
     CSF_brain = brain_gm | (label_img == simnibs_tissues['CSF'])
     CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, 1)
@@ -342,6 +351,143 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     label_img[SKULL_outer] = simnibs_tissues['Compact_bone']
     #Relabel air pockets to air
     label_img[label_img == simnibs_tissues['Air_pockets']] = 0
+
+    return label_img
+
+
+def generate_gaussian_kernel(i, ndim, sigma=1, zero_center=False):
+    """Generate a gaussian kernel of size `i` in `ndim` dimensions.
+    """
+    assert i % 2 == 1, "Window size must be odd"
+    center = ndim * (np.floor(i / 2).astype(int),)
+    kernel = np.zeros(ndim * (i,), dtype=np.float32)
+    kernel[center] = 1
+    kernel = gaussian_filter(kernel, sigma)
+    kernel /= kernel[center]
+    if zero_center:
+        kernel[center] = 0
+    return kernel
+
+def label_unassigned_elements(
+    label_arr, label_unassign, labels=None, window_size=3, ignore_labels=None
+) -> np.ndarray:
+    """Label unassigned elements in `label_arr`. For each unassigned element,
+    find its neighbors within a certain `window_size`, weigh these according
+    to their euclidean distance (Gaussian kernel) and assign the label with the
+    highest weight.
+
+    PARAMETERS
+    ----------
+    label_arr : ndarray
+        The array
+    label_unassign : int
+        The label of the unassigned elements.
+    labels : array-like | None
+        The labels in `label_arr`. If None (default), will be inferred from the
+        array using `np.unique`.
+    window_size : int
+        The size of the neighborhood around each element to consider when
+        relabeling.
+    ignore_labels : array-like | None
+        Do not use these labels when labeling unassigned elements (default =
+        None).
+
+    RETURNS
+    -------
+    labeling : ndarray
+        The relabeled array.
+    """
+
+    # Finding the indices of the unassigned voxels is slow with fortran ordered
+    # arrays
+    labeling = label_arr.T if label_arr.flags["F_CONTIGUOUS"] else label_arr
+
+    # Weighting kernel and related
+    pad_width = np.floor(window_size / 2).astype(int)
+    kernel = generate_gaussian_kernel(window_size, labeling.ndim, zero_center=True)
+    window = kernel.shape
+    kernel = kernel.ravel()
+
+    # Find the list of label (if necessary) and ensure it is unique
+    labels = np.unique(labeling) if labels is None else np.unique(labels)
+    labels = labels.astype(labeling.dtype)
+    n_labels = labels.size
+    assert label_unassign in labels, "`label_unassign` is not in the provided `labels`!"
+
+    # Ignore desired labels and the unassigned label
+    if ignore_labels is None:
+        ignore_labels = [label_unassign]
+    else:
+        assert all(i in labels for i in ignore_labels)
+        ignore_labels = ignore_labels.copy()
+        ignore_labels = ignore_labels + [label_unassign]  # avoid inplace
+
+    # Ensure continuous labels (e.g.,, [0, 1, 2, 3], not [0, 1, 10, 15])
+    is_continuous_labels = labels[-1] - labels[0] + 1 == n_labels
+    if is_continuous_labels:
+        continuous_labels = labels
+        mapped_ignore_labels = np.array(ignore_labels)
+        labeling = labeling.copy()  # ensure that we do not modify the input
+    else:
+        continuous_labels = np.arange(n_labels)
+        mapper = np.zeros(labels[-1] + 1, dtype=labeling.dtype)
+        mapper[labels] = continuous_labels
+        labeling = mapper[labeling]
+        mapped_ignore_labels = mapper[ignore_labels]
+
+    is_unassign = np.nonzero(labeling == mapped_ignore_labels[-1])
+    while (n_unassign := is_unassign[0].size) > 0:
+        # print("Number of unassigned voxels:", n_unassign)
+        labeling_view = np.lib.stride_tricks.sliding_window_view(
+            np.pad(labeling, pad_width, "symmetric"), window
+        )
+        unassign_window = labeling_view[is_unassign].reshape(-1, kernel.size)
+
+        # Compute weights in a loop to save memory
+        weights = np.array(
+            [
+                np.zeros(n_unassign)
+                if i in mapped_ignore_labels
+                else (unassign_window == i) @ kernel
+                for i in continuous_labels
+            ]
+        )
+        # The slightly faster but less memory-friendly solution
+        # n_total = unassign_window.size
+        # oh_enc = np.zeros((n_labels, n_total), dtype=np.uint8)
+        # oh_enc[unassign_window.ravel(), np.arange(n_total)] = 1
+        # oh_enc = oh_enc.reshape(n_labels, *unassign_window.shape)
+        # weights = oh_enc @ kernel
+        # if mapped_ignore_labels.size > 0:
+        #     weights[mapped_ignore_labels] = 0
+
+        # In the case of ties, the lowest index is returned. This is arbitrary
+        # but the default behavior of argmax
+        new_label = weights.argmax(0)
+        valid = weights.sum(0) > 0
+        invalid = ~valid
+
+        labeling[tuple(i[valid] for i in is_unassign)] = new_label[valid]
+        is_unassign = tuple(i[invalid] for i in is_unassign)
+
+        if is_unassign[0].size == n_unassign:
+            logger.warning(
+                "Some elements could not be labeled (probably because they are surrounded by labels in `ignore_labels`)"
+            )
+            # perhaps we may want to issue the warning using the warnings
+            # module instead
+            # warnings.warn(
+            #     "Some elements could not be labeled, probably because they are surrounded by labels in `ignore_labels`",
+            #     RuntimeWarning,
+            # )
+            break
+
+    # Revert array
+    if not is_continuous_labels:
+        labeling = labels[labeling]
+    labeling = labeling.T if label_arr.flags["F_CONTIGUOUS"] else labeling
+
+    return labeling
 
 def _smoothfill(label_img, unassign, simnibs_tissues):
     """Hackish way to fill unassigned voxels,
@@ -548,7 +694,7 @@ def view(subject_dir):
 def run(subject_dir=None, T1=None, T2=None,
         registerT2=False, initatlas=False, segment=False,
         create_surfaces=False, mesh_image=False, usesettings=None,
-        noneck=False, options_str=None):
+        noneck=False, init_transform=None, options_str=None):
     """charm pipeline
 
     PARAMETERS
@@ -570,6 +716,12 @@ def run(subject_dir=None, T1=None, T2=None,
     mesh_image : bool
         run tetrahedral meshing (default = False)
     --> further parameters:
+    init_transform: path-like
+        Transformation matrix used to initialize the affine registration of the
+        MNI template to the subject MRI, i.e., it takes the MNI template *to*
+        subject space. Supplied as a path to a space delimited .txt file
+        containing a 4x4 transformation matrix (default = None, corresponding
+        to the identity matrix). 
     usesettings : str
         filename of alternative settings-file (default = None)
     options_str : str
@@ -599,6 +751,10 @@ def run(subject_dir=None, T1=None, T2=None,
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
+
+    if init_transform:
+        init_transform = np.loadtxt(init_transform)
+        assert init_transform.shape == (4, 4), f"`init_transform` should be a have shape (4, 4), got {init_transform.shape}"
 
     logger.info('simnibs version '+__version__)
     logger.info('charm run started: '+time.asctime())
@@ -633,7 +789,7 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.info('Creating registration visualization')
         plotting.viewer_registration(sub_files.reference_volume,
                                      sub_files.T2_reg,
-                                     sub_files.reg_viewer)
+                                     sub_files.t1_t2_reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -733,7 +889,8 @@ def run(subject_dir=None, T1=None, T2=None,
                                         init_atlas_settings,
                                         neck_tissues,
                                         visualizer,
-                                        noneck)
+                                        noneck,
+                                        init_transform)
 
         logger.info('Creating affine registration visualization')
         plotting.viewer_affine(sub_files.reference_volume,
@@ -879,12 +1036,10 @@ def run(subject_dir=None, T1=None, T2=None,
                                   stderr=subprocess.PIPE) # stderr: standard stream for simnibs logger
         logger.debug(proc.stderr.decode('ASCII', errors='ignore').replace('\r', ''))
         proc.check_returncode()
-
-
-        # print time duration
         elapsed = time.time() - starttime
         logger.info('Total time surface creation (HH:MM:SS):')
         logger.info(time.strftime('%H:%M:%S', time.gmtime(elapsed)))
+        
         sub_files = file_finder.SubjectFiles(None, subject_dir)
         if fillin_gm_from_surf or open_sulci_from_surf:
             logger.info('Improving GM from surfaces')
@@ -896,7 +1051,6 @@ def run(subject_dir=None, T1=None, T2=None,
             label_img = np.asanyarray(label_nii.dataobj)
             label_affine = label_nii.affine
 
-            
             # orginal label mask
             label_nii = nib.load(sub_files.labeling)
             labelorg_img = np.asanyarray(label_nii.dataobj)
@@ -961,7 +1115,7 @@ def run(subject_dir=None, T1=None, T2=None,
         # create mesh from label image
         logger.info('Starting mesh')
         label_image = nib.load(sub_files.tissue_labeling_upsampled)
-        label_buffer = label_image.get_fdata().astype(np.uint16) # Cast to uint16, otherwise meshing complains
+        label_buffer = np.round(label_image.get_fdata()).astype(np.uint16) # Cast to uint16, otherwise meshing complains
         label_affine = label_image.affine
         label_buffer, label_affine, _ = crop_vol(label_buffer, label_affine, 
                                                  label_buffer>0, thickness_boundary=5) 
@@ -978,13 +1132,13 @@ def run(subject_dir=None, T1=None, T2=None,
         skin_tag = mesh_settings['skin_tag']
         if not skin_tag:
             skin_tag = None
-        remove_twins = mesh_settings['remove_twins']
         hierarchy = mesh_settings['hierarchy']
         if not hierarchy:
             hierarchy = None
         smooth_steps = mesh_settings['smooth_steps']
         
         # Meshing
+        DEBUG_FN = os.path.join(sub_files.subpath, 'before_despike.msh') 
         final_mesh = create_mesh(label_buffer, label_affine,
                 elem_sizes=elem_sizes,
                 smooth_size_field=smooth_size_field,
@@ -993,9 +1147,9 @@ def run(subject_dir=None, T1=None, T2=None,
                 optimize=optimize, 
                 remove_spikes=remove_spikes, 
                 skin_tag=skin_tag,
-                remove_twins=remove_twins, 
                 hierarchy=hierarchy,
-                smooth_steps=smooth_steps)
+                smooth_steps=smooth_steps,
+                DEBUG_FN=DEBUG_FN)
         
         logger.info('Writing mesh')
         write_msh(final_mesh, sub_files.fnamehead)
@@ -1035,13 +1189,14 @@ def run(subject_dir=None, T1=None, T2=None,
         fn_LUT=sub_files.final_labels.rsplit('.',2)[0]+'_LUT.txt'
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
-    # -------------------------TIDY UP-----------------------------------------
-    # Create final seg html viewer
-    # Create visualization htmls
-    logger.info('Creating registration visualization')
-    plotting.viewer_final(sub_files.reference_volume,
-                          sub_files.final_labels,
-                          sub_files.final_viewer)
+        # -------------------------TIDY UP-------------------------------------
+        # Create final seg html viewer
+        # Create visualization htmls
+        logger.info('Creating registration visualization')
+        plotting.viewer_final(sub_files.reference_volume,
+                              sub_files.final_labels,
+                              sub_files.final_seg_viewer)
+
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
@@ -1052,6 +1207,19 @@ def run(subject_dir=None, T1=None, T2=None,
         logger.removeHandler(logger.handlers[0])
     utils.simnibs_logger.unregister_excepthook()
     logging.shutdown()
-    with open(logfile, 'a') as f:
+    with open(logfile, 'r') as f:
+        logtext = f.read()
+
+    # Explicitly remove this really annoying stuff from the log
+    removetext = (re.escape('-\|/'), 
+                re.escape('Selecting intersections ... ') + '\d{1,2}' + 
+                re.escape(' %Selecting intersections ... ') + '\d{1,2}'+
+                re.escape(' %'))
+    with open(logfile, 'w') as f:
+        for text in removetext:
+            logtext = re.sub(text, '', logtext)
+        f.write(logtext)
         f.write('</pre></BODY></HTML>')
         f.close()
+    
+    html_writer.write_template(sub_files)

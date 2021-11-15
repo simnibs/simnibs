@@ -77,8 +77,6 @@ class Templates:
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
-        #HTML template
-        self.viewer_template = os.path.join(self._resources, 'viewer_template.html')
 
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
@@ -316,6 +314,22 @@ class SubjectFiles:
     hemi_mask: str
         Mask indicating left/right. Needed for surfaces.
 
+    report_folder: str
+        Folder for storing charm_log and the viewers.
+
+    charm_log: str
+        The charm run log (.html)
+
+    t1_t2_reg_viewer: str
+        Viewer for the t1-t2 registration (.html)
+
+    affine_reg_viewer: str
+        Viewer for the affine registration (.html)
+
+    final_seg_viewer: str
+        Viewer for the final segmentation (.html)
+    summary_report: str
+        html summarizing the run and linking to the reports (.html)
     Warning
     --------
     This class does not check for existance of the files
@@ -349,8 +363,10 @@ class SubjectFiles:
             if not fnamehead:
                 self.fnamehead = os.path.join(self.subpath, self.subid + '.msh')
 
+        # otherwise SESSION._prepare fails for meshes
+        # that do not have a m2m_folder
         if not self.subpath:
-            self.subpath = '' # otherwise SESSION._prepare fails for meshes that do not have a m2m_folder
+            self.subpath = ''
 
         self.tensor_file = os.path.join(self.subpath, 'DTI_coregT1_tensor.nii.gz')
 
@@ -445,14 +461,15 @@ class SubjectFiles:
         self.tissue_labeling_before_morpho = os.path.join(self.label_prep_folder, 'before_morpho.nii.gz')
         self.upper_mask = os.path.join(self.label_prep_folder, 'upper_part.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
-        self.reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
+        self.t1_t2_reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
         self.affine_reg_viewer = os.path.join(self.report_folder, 'affine_reg.html')
-        self.final_viewer = os.path.join(self.report_folder, 'final_tissues.html')
+        self.final_seg_viewer = os.path.join(self.report_folder, 'final_tissues.html')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
-
+        self.charm_log = os.path.join(self.report_folder, 'charm_log.html')
+        self.summary_report = os.path.join(self.subpath, 'results.html')
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
 
