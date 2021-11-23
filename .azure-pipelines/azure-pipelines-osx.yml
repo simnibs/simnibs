@@ -14,13 +14,13 @@ jobs:
   # Install certificates for signing the package
   - task: InstallAppleCertificate@2
     inputs:
-      certSecureFile: 'certificate_installer.p12'
+      certSecureFile: 'certificate_installer_new.p12'
       certPwd: '$(P12password)'
       keychain: 'temp'
     displayName: Install Installer Certificate
   - task: InstallAppleCertificate@2
     inputs:
-      certSecureFile: 'certificate_application.p12'
+      certSecureFile: 'certificate_application_new.p12'
       certPwd: '$(P12password)'
       keychain: 'temp'
     displayName: Install Application Certificate
