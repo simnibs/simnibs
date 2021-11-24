@@ -111,6 +111,7 @@ jobs:
   - bash: |
       brew update
       brew install octave
+      brew upgrade
       octave -v
     displayName: Install Octave
 
