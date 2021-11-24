@@ -94,7 +94,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
     maxParallel: 4
 
   steps:
@@ -111,7 +111,6 @@ jobs:
   - bash: |
       brew update
       brew install octave
-      brew upgrade
       octave -v
     displayName: Install Octave
 
