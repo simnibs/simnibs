@@ -22,7 +22,7 @@ jobs:
 
   - bash: |
       source activate simnibs_env
-      pip install pytest-cov==2.12.1
+      pip install pytest-cov
       conda list
       pip list
       pytest simnibs/tests \
