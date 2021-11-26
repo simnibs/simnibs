@@ -66,11 +66,11 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
  News
 ======
 
-  * **Version 3.2.4 is now avaliable**.  This version includes a number of bug fixes and small improvements. Please see details in  `changelog`_. 
+  * **Version 3.2.5 is now avaliable**.  This version includes small fixes and improved control of scalp smoothing for TMS. Please see details in  `changelog`_. 
 
 .. _changelog: https://simnibs.github.io/simnibs/build/html/changelog.html
 
-  
+  * **Version 3.2.4 is now avaliable**.  This version includes a number of bug fixes and small improvements.
   * **Version 3.2 is now avaliable**  featuring :ref:`TMS optimization  using the ADM method <tms_optimize>` (contributed by Luis Gomez), TES :ref:`field strength <tdcs_opt>` and :ref:`brain network <tdcs_distributed_opt>` optimization and magnetic field calculations for MRCDI and MREIT 
   * **Version 3.1 is now avaliable**. This version features :ref:`TDCS electrode optimization <tdcs_opt>`, :ref:`TMS coil position optimization <tms_optimize>` (contributed by Konstantin Weise and Ole Numssen) and even faster FEM solvers for leadfield calculations
   * **Version 3.0 is now available**. It is a major update of SimNIBS. Expect much faster simulations and easier visualizations!
