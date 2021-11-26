@@ -1,5 +1,10 @@
 Changelog
 ===========
+3.2.5
+------
+* added skin smoothing options for TMS optimization
+* more informative matlab error messages
+* small bug fixes
 
 3.2.4
 ------
