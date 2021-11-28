@@ -218,6 +218,8 @@ class Montage:
         self.ch_types = [] if ch_types is None else ch_types
 
         self.landmarks = landmarks or {}
+        if self.landmarks:
+            self.landmarks = {k: np.asarray(v) for k, v in self.landmarks.items()}
         self.headpoints = (
             np.array([]).reshape(0, 3) if headpoints is None else np.array(headpoints)
         )
@@ -230,7 +232,7 @@ class Montage:
     def get_landmark_names(self):
         return list(self.landmarks.keys())
 
-    def get_landmark_pos(self, names: Union[Iterable] = None):
+    def get_landmark_pos(self, names: Iterable = None):
         names = names or self.get_landmark_names()
         return np.array([self.landmarks[n] for n in names]).reshape(-1, 3)
 
@@ -290,7 +292,7 @@ class Montage:
         sense, i.e., the transformation matrix moves points from `self` to
         `other`.
 
-        kwargs to pass to `fit_matched_points`
+        kwargs to pass to `fit_matched_points_analytical`
 
         """
         assert isinstance(other, Montage)
@@ -298,7 +300,7 @@ class Montage:
         names = set(self.get_landmark_names()).intersection(
             set(other.get_landmark_names())
         )
-        return fit_matched_points(
+        return fit_matched_points_analytical(
             self.get_landmark_pos(names), other.get_landmark_pos(names), **kwargs
         )
 
@@ -383,12 +385,133 @@ def affine_transformation(
     return t @ r @ s
 
 
-def fit_matched_points(
+def fit_matched_points_analytical(
+    src_pts, tgt_pts, scale: bool = False, out: str = "trans"
+):
+    """
+    Rigid body transformation with optional scaling.
+
+    PARAMETERS
+    ----------
+    scale : bool
+        If True, estimate a uniform scaling parameter for all axes (default = False).
+
+
+    REFERENCES
+    ----------
+    * P.J. Besl and N.D. McKay, A Method for  Registration of 3-D Shapes, IEEE
+        Trans. Patt. Anal. Machine Intell., 14, 239 - 255, 1992.
+    * Horn, Closed-form solution of absolute orientation using unit
+        quaternions, J Opt. Soc. Amer. A vol 4 no 4 pp 629-642, Apr. 1987.
+    * Implementation in mne.transforms._fit_matched_points
+
+    """
+    assert out in {"params", "trans"}
+
+    # To be consistent with the notation in the references
+    p = src_pts
+    x = tgt_pts
+
+    n_p = p.shape[0]
+
+    mu_p = p.mean(0)
+    mu_x = x.mean(0)
+    p_ = p - mu_p
+    x_ = x - mu_x
+
+    # Get the optimal rotation
+    sigma_px = p_.T @ x_ / n_p  # cross covariance
+    Aij = sigma_px - sigma_px.T
+    delta = Aij[(1, 2, 0), (2, 0, 1)]
+
+    trace_sigma_px = np.trace(sigma_px)
+    Q = np.empty((4, 4))
+    Q[0, 0] = trace_sigma_px
+    Q[0, 1:] = delta
+    Q[1:, 0] = delta
+    Q[1:, 1:] = sigma_px + sigma_px.T
+    idx = np.arange(1, 4)
+    Q[idx, idx] -= trace_sigma_px
+
+    _, v = np.linalg.eigh(Q)
+
+    # q0 of the unit quaternion should be >= 0
+    qr = v[1:, -1]  # eigh sorts eigenvalues in ascending order
+    if (q0_sign := np.sign(v[0, -1])) != 0:
+        qr *= q0_sign
+
+    # Get the scaling
+    qs = x_.std() / p_.std() if scale else 1
+
+    # Get the transformation
+    qt = mu_x - qs * quaternion_to_rotation(qr) @ mu_p
+
+    params = np.array([*quaternion_to_euler_angles(qr), *qt, qs, qs, qs])
+    if out == "params":
+        return params
+    elif out == "trans":
+        return affine_transformation(*params)
+
+
+def quaternion_real_part(q):
+    """Get q0 of q = [q0, q1, q2, q3] where `q` is a unit quaternion."""
+    return np.sqrt(np.maximum(0, 1 - np.sum(q ** 2)))
+
+
+def quaternion_to_rotation(q):
+    """Rotation matrix corresponding to the rotation around the axis defined by
+    `q`.
+
+    PARAMETERS
+    ----------
+    q :
+        Unit quaternion.
+
+    RETURNS
+    -------
+    The rotation matrix associated with q.
+    """
+    q1, q2, q3 = q
+    q0 = quaternion_real_part(q)
+    qq0 = q0 ** 2
+    qq1, qq2, qq3 = q ** 2
+
+    q0q1_2 = 2 * q0 * q1
+    q0q2_2 = 2 * q0 * q2
+    q0q3_2 = 2 * q0 * q3
+    q1q2_2 = 2 * q1 * q2
+    q1q3_2 = 2 * q1 * q3
+    q2q3_2 = 2 * q2 * q3
+
+    # homogeneous expression
+    return np.array(
+        [
+            [qq0 + qq1 - qq2 - qq3, q1q2_2 - q0q3_2, q1q3_2 + q0q2_2],
+            [q1q2_2 + q0q3_2, qq0 - qq1 + qq2 - qq3, q2q3_2 - q0q1_2],
+            [q1q3_2 - q0q2_2, q2q3_2 + q0q1_2, qq0 - qq1 - qq2 + qq3],
+        ]
+    )
+
+
+def quaternion_to_euler_angles(q):
+    """Rotation angles around each (x,y,z) axis."""
+    q0 = quaternion_real_part(q)
+    q1, q2, q3 = q
+    return np.array(
+        [
+            np.arctan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1 * q1 + q2 * q2)),
+            np.arcsin(2 * (q0 * q2 - q1 * q3)),
+            np.arctan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3)),
+        ]
+    )
+
+
+def fit_matched_points_generic(
     src_pts,
     tgt_pts,
-    allow_rotation: bool = True,
-    allow_translation: bool = True,
-    allow_scaling: bool = False,
+    rotate: bool = True,
+    translate: bool = True,
+    scale: bool = False,
     init_params=None,
     return_trans: bool = True,
 ):
@@ -406,9 +529,9 @@ def fit_matched_points(
     matrix.
     """
     assert src_pts.shape == tgt_pts.shape
-    assert any((allow_rotation, allow_translation, allow_scaling))
+    assert any((rotate, translate, scale))
 
-    if not allow_rotation and allow_translation:
+    if not rotate and translate:
         raise NotImplementedError(
             "Only implemented with rotation/translation or scaling/rotation/translation"
         )
@@ -419,17 +542,14 @@ def fit_matched_points(
     if init_params is None:
         # Identity
         init_params = []
-        if allow_rotation:
+        if rotate:
             init_params += [0, 0, 0]
-        if allow_translation:
+        if translate:
             init_params += [0, 0, 0]
-        if allow_scaling:
+        if scale:
             init_params += [1, 1, 1]
     else:
-        assert (
-            len(init_params)
-            == 3 * allow_rotation + 3 * allow_translation + 3 * allow_scaling
-        )
+        assert len(init_params) == 3 * rotate + 3 * translate + 3 * scale
 
     p = least_squares(error_func, init_params, method="lm").x
 
