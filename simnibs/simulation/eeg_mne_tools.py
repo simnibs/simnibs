@@ -375,7 +375,7 @@ def make_forward(
     info.pick_channels(picks)
     assert (
         info["ch_names"] == forward["ch_names"]
-    ), "Inconsistencies between channels in Info and leadfield"
+    ), f"Inconsistencies between channels in Info and leadfield {info['ch_names']} and {forward['ch_names']}"
     bads_in_forward = tuple(filter(lambda x: x in info["bads"], forward["ch_names"]))
     if any(bads_in_forward):
         logger.warning(

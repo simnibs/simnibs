@@ -1092,11 +1092,13 @@ def prepare_forward(fwd_name: Union[Path, str], contains_ref: bool = False):
 
     # Forward solution
     # Insert the reference channel and rereference to an average reference
-    nchan, nsrc, nori = lf.shape  # leadfield is always calculated in x, y, z
     if not contains_ref:
         lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
-        nchan += 1
+    else:
+        ch_names.remove(ch_ref)
     lf -= lf.mean(0)
+    nchan, nsrc, nori = lf.shape  # leadfield is always calculated in x, y, z
+    assert len(ch_names) == nchan
 
     return dict(
         data=lf,
@@ -1134,6 +1136,7 @@ def prepare_for_inverse(
     info: Union[Path, str] = None,
     trans: Union[Path, str] = None,
     morph_to_fsaverage: int = 5,
+    contains_ref=False,
     write: bool = False,
 ):
     """Create a source space object, a source morph object (to the fsaverage
@@ -1188,7 +1191,7 @@ def prepare_for_inverse(
     ALLOWED_EEG_FORMATS = ("mne", "fieldtrip")
     assert out_format in ALLOWED_EEG_FORMATS
 
-    forward = prepare_forward(fname_leadfield)
+    forward = prepare_forward(fname_leadfield, contains_ref)
     subsampling = forward["subsampling"]
 
     if out_format == "mne":
