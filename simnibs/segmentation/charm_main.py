@@ -116,7 +116,7 @@ def _denoise_input_and_save(input_name, output_name):
 
 def _init_atlas_affine(t1_scan, mni_template):
     registerer = samseg.gems.KvlAffineRegistration()
-    registerer.read_images(t1, mni_template)
+    registerer.read_images(t1_scan, mni_template)
     registerer.initialize_transform()
     registerer.register()
     trans_mat = registerer.get_transformation_matrix()
