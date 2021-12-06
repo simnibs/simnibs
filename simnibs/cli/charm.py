@@ -40,7 +40,7 @@ CREATE HEAD MESH:
     charm subID T1 {T2}
             
 VISUAL CHECK OF RESULTS:       
-    charm subID --check 
+    open the m2m_{subID}\results.html
             
 RUN ONLY PARTS OF CHARM:
     charm subID T1 T2 --registerT2  (registration of T2 to T1)

@@ -1128,7 +1128,7 @@ def run(subject_dir=None, T1=None, T2=None,
         # create mesh from label image
         logger.info('Starting mesh')
         label_image = nib.load(sub_files.tissue_labeling_upsampled)
-        label_buffer = label_image.get_fdata().astype(np.uint16) # Cast to uint16, otherwise meshing complains
+        label_buffer = np.round(label_image.get_fdata()).astype(np.uint16) # Cast to uint16, otherwise meshing complains
         label_affine = label_image.affine
         label_buffer, label_affine, _ = crop_vol(label_buffer, label_affine, 
                                                  label_buffer>0, thickness_boundary=5) 

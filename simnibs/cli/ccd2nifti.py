@@ -273,10 +273,22 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
         print('no information on dIdtmax found omitting from nii file.')
     return nii
 
-def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3):
-    #use fmm3dpy to calculate expansion fast
-    out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
+def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T, 
+                  targets=target_positions.T, nd=3, pgt=2)    
+    elif direct is False:
+        #use fmm3dpy to calculate expansion fast
+        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
                   targets=target_positions.T, nd=3, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
     A = np.empty((target_positions.shape[0], 3), dtype=float)
     #calculate curl
     A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
@@ -286,9 +298,21 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3):
     A *= -1e-7
     return A
 
-def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3):
-    out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T, 
+def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T, 
                   targets=target_positions.T, nd=1, pgt=2)
+    elif direct is False:
+        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T, 
+                  targets=target_positions.T, nd=1, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
     B = out.gradtarg.T
     B *= -1e-7
     return B

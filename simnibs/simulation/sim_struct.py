@@ -55,10 +55,6 @@ class SESSION(object):
     ------------------------------
     date: str
         Date and time when the session struct was initiated
-    volfn: str
-        file name of volume file
-    vol: simnibs.simulation.sim_struct.VOLUME()
-        Vol structure for subject
     poslist: list of sim_struct.SimuList()
         simulation set-up
     subpath: str
@@ -101,8 +97,8 @@ class SESSION(object):
         # : Date when the session was initiated
         self.date = time.strftime("%Y-%m-%d %H:%M:%S")
         self.time_str = time.strftime("%Y%m%d-%H%M%S")
-        self.volfn = ''
-        self.vol = VOLUME()
+        # self.volfn = ''
+        # self.vol = VOLUME()
         self.poslists = []
         self.fnamehead = None
         self.subpath = None
@@ -363,8 +359,8 @@ class SESSION(object):
             mat = scipy.io.loadmat(mat)
 
         self.date = try_to_read_matlab_field(mat, 'date', str, self.date)
-        self.volfn = try_to_read_matlab_field(mat, 'volfn', str, self.volfn)
-        self.vol = try_to_read_matlab_field(mat, 'volfn', VOLUME, VOLUME())
+        # self.volfn = try_to_read_matlab_field(mat, 'volfn', str, self.volfn)
+        # self.vol = try_to_read_matlab_field(mat, 'volfn', VOLUME, VOLUME())
         self.subpath = try_to_read_matlab_field(mat, 'subpath', str,
                                                 self.subpath)
         self.fnamehead = try_to_read_matlab_field(
@@ -418,13 +414,13 @@ class SESSION(object):
         mat = {}
         mat['type'] = 'SESSION'
         mat['date'] = remove_None(self.date)
-        mat['volfn'] = remove_None(self.volfn)
+        # mat['volfn'] = remove_None(self.volfn)
         mat['subpath'] = remove_None(self.subpath)
         mat['eeg_cap'] = remove_None(self.eeg_cap)
         mat['fnamehead'] = remove_None(self.fnamehead)
         mat['pathfem'] = remove_None(self.pathfem)
         mat['fname_tensor'] = remove_None(self.fname_tensor)
-        mat['vol'] = self.vol.sim_struct2mat()
+        # mat['vol'] = self.vol.sim_struct2mat()
         mat['map_to_vol'] = remove_None(self.map_to_vol)
         mat['map_to_MNI'] = remove_None(self.map_to_MNI)
         mat['map_to_fsavg'] = remove_None(self.map_to_fsavg)
@@ -1637,7 +1633,7 @@ class TDCSLIST(SimuList):
 
     def expand_to_center_surround(self, subpath, radius_surround=50, N=4,
                                   pos_dir_1stsurround=None, multichannel=False,
-                                  phis_surround=None):
+                                  phis_surround=None, el_surround=None):
         """
         Generate a center-surround montage (standard: 4x1) from a TDCSLIST.
 
@@ -1668,6 +1664,9 @@ class TDCSLIST(SimuList):
             direction defined by pos_dir_1stsurround. The default is None, in which
             case the electrodes will be placed at [0, 1/N*360, ..., (N-1)/N*360]
             degrees.
+        el_surround : sim_struct.ELECTRODE, optional
+            when supplied, this electrode definition is used for the surround
+            electrodes instead of replicating the centre electrode
 
         """
         if len(self.electrode) != 1:
@@ -1702,6 +1701,9 @@ class TDCSLIST(SimuList):
                                       pos_dir_1stsurround=pos_dir_1stsurround,
                                       phis_surround=phis_surround)
 
+        if el_surround is not None:
+            C = el_surround
+        
         # get direction vector
         ydir = []
         if len(C.pos_ydir):
@@ -2104,65 +2106,65 @@ class ELECTRODE(object):
             return False
 
 
-class VOLUME:
-    ''' This is Axel's stuff, it doesn't do anything '''
+# class VOLUME:
+#     ''' This is Axel's stuff, it doesn't do anything '''
 
-    def __init__(self, matlab_struct=None):
-        self.org = []  # used for parsing neuronavigation data; not stored permanently; optional
-        self.fname = ''  # string; points towards neuronavigation file specifying details of structural MRI; optional
-        # string; file-type of the T1 used by the sim_struct-system ('NIFTI' or 'DICOM')
-        self.ftype = ''
-        self.manufacturer = 'unknown'  # string; currently, only 'LOCALITE' is supported
-        # list of files of the T1 (one file for NIFTI; many for DICOM)
-        self.volfiles = []
-        self.img = []  # used to temporarily store the T1; can be deleted after coregistration to simnibs T1
-        self.voxsize = []  # voxel size of the T1
-        self.dim = []  # dimensions of the T1
-        self.m_qform = []  # qform of the T1
-        self.fname_conf = ''  # path and filename of the simnibs T1 of the subject
-        # 4x4 transformation matrix from sim_struct T1 to simnibs T1 (for mm-to-mm mapping of real world coordinates)
-        self.m_toconform = []
+#     def __init__(self, matlab_struct=None):
+#         self.org = []  # used for parsing neuronavigation data; not stored permanently; optional
+#         self.fname = ''  # string; points towards neuronavigation file specifying details of structural MRI; optional
+#         # string; file-type of the T1 used by the sim_struct-system ('NIFTI' or 'DICOM')
+#         self.ftype = ''
+#         self.manufacturer = 'unknown'  # string; currently, only 'LOCALITE' is supported
+#         # list of files of the T1 (one file for NIFTI; many for DICOM)
+#         self.volfiles = []
+#         self.img = []  # used to temporarily store the T1; can be deleted after coregistration to simnibs T1
+#         self.voxsize = []  # voxel size of the T1
+#         self.dim = []  # dimensions of the T1
+#         self.m_qform = []  # qform of the T1
+#         self.fname_conf = ''  # path and filename of the simnibs T1 of the subject
+#         # 4x4 transformation matrix from sim_struct T1 to simnibs T1 (for mm-to-mm mapping of real world coordinates)
+#         self.m_toconform = []
 
-        if matlab_struct:
-            self.read_mat_struct(matlab_struct)
+#         if matlab_struct:
+#             self.read_mat_struct(matlab_struct)
 
-    def read_mat_struct(self, v):
-        self.org = try_to_read_matlab_field(v, 'org', list, self.org)
-        self.fname = try_to_read_matlab_field(v, 'fname', str, self.fname)
-        self.ftype = try_to_read_matlab_field(v, 'ftype', str, self.ftype)
-        self.manufacturer = try_to_read_matlab_field(v, 'manufacturer', str,
-                                                     self.manufacturer)
-        self.volfiles = try_to_read_matlab_field(
-            v, 'volfiles', list, self.volfiles)
-        self.img = try_to_read_matlab_field(v, 'img', list, self.img)
-        self.voxsize = try_to_read_matlab_field(
-            v, 'voxsize', list, self.voxsize)
-        self.dim = try_to_read_matlab_field(v, 'dim', list, self.dim)
-        self.fname_conf = try_to_read_matlab_field(
-            v, 'fname_conf', str, self.fname_conf)
-        try:
-            self.m_qform = v['m_qform'].tolist()
-        except:
-            pass
-        try:
-            self.m_toconform = v['m_toconform'].tolist()
-        except:
-            pass
+#     def read_mat_struct(self, v):
+#         self.org = try_to_read_matlab_field(v, 'org', list, self.org)
+#         self.fname = try_to_read_matlab_field(v, 'fname', str, self.fname)
+#         self.ftype = try_to_read_matlab_field(v, 'ftype', str, self.ftype)
+#         self.manufacturer = try_to_read_matlab_field(v, 'manufacturer', str,
+#                                                      self.manufacturer)
+#         self.volfiles = try_to_read_matlab_field(
+#             v, 'volfiles', list, self.volfiles)
+#         self.img = try_to_read_matlab_field(v, 'img', list, self.img)
+#         self.voxsize = try_to_read_matlab_field(
+#             v, 'voxsize', list, self.voxsize)
+#         self.dim = try_to_read_matlab_field(v, 'dim', list, self.dim)
+#         self.fname_conf = try_to_read_matlab_field(
+#             v, 'fname_conf', str, self.fname_conf)
+#         try:
+#             self.m_qform = v['m_qform'].tolist()
+#         except:
+#             pass
+#         try:
+#             self.m_toconform = v['m_toconform'].tolist()
+#         except:
+#             pass
 
-    def sim_struct2mat(self):
-        mat_vol = {}
-        mat_vol['org'] = remove_None(self.org)
-        mat_vol['fname'] = remove_None(self.fname)
-        mat_vol['ftype'] = remove_None(self.ftype)
-        mat_vol['manufacturer'] = remove_None(self.manufacturer)
-        mat_vol['volfiles'] = remove_None(self.volfiles)
-        mat_vol['img'] = remove_None(self.img)
-        mat_vol['voxsize'] = remove_None(self.voxsize)
-        mat_vol['dim'] = remove_None(self.dim)
-        mat_vol['m_qform'] = remove_None(self.m_qform)
-        mat_vol['m_toconform'] = remove_None(self.m_toconform)
-        mat_vol['fname_conf'] = remove_None(self.fname_conf)
-        return mat_vol
+#     def sim_struct2mat(self):
+#         mat_vol = {}
+#         mat_vol['org'] = remove_None(self.org)
+#         mat_vol['fname'] = remove_None(self.fname)
+#         mat_vol['ftype'] = remove_None(self.ftype)
+#         mat_vol['manufacturer'] = remove_None(self.manufacturer)
+#         mat_vol['volfiles'] = remove_None(self.volfiles)
+#         mat_vol['img'] = remove_None(self.img)
+#         mat_vol['voxsize'] = remove_None(self.voxsize)
+#         mat_vol['dim'] = remove_None(self.dim)
+#         mat_vol['m_qform'] = remove_None(self.m_qform)
+#         mat_vol['m_toconform'] = remove_None(self.m_toconform)
+#         mat_vol['fname_conf'] = remove_None(self.fname_conf)
+#         return mat_vol
 
 
 class LEADFIELD():
@@ -3106,7 +3108,7 @@ def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
     tmp = P_centre - sph_centre
     M_sph[:3, 2] = tmp/np.linalg.norm(tmp)
     # direction of first surround
-    if pos_dir_1stsurround:
+    if pos_dir_1stsurround is not None:
         # replace electrode name with position if needed
         tmp = ELECTRODE()
         tmp.centre = pos_dir_1stsurround

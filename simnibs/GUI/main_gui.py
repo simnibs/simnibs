@@ -838,13 +838,13 @@ class ElcTable(QtWidgets.QWidget):
 
     def add_conductivity_to_list(self):
         for i in range(len(self.table_rows)):
-            self.tdcslist.cond[99+i].name = 'Electrode_%d_rubber'%(i+1)
-            if not self.tdcslist.cond[99+i].value:
-                self.tdcslist.cond[99+i].value = self.tdcslist.cond[99].value
+            if not self.tdcslist.cond[99+i+1].value:
+                self.tdcslist.cond[99+i+1].name = 'Electrode_%d_rubber'%(i+1)
+                self.tdcslist.cond[99+i+1].value = self.tdcslist.cond[99].value
 
-            self.tdcslist.cond[499+i].name = 'Electrode_%d_saline_or_gel'%(i+1)
-            if not self.tdcslist.cond[499+i].value:
-                self.tdcslist.cond[499+i].value = self.tdcslist.cond[499].value
+            if not self.tdcslist.cond[499+i+1].value:
+                self.tdcslist.cond[499+i+1].name = 'Electrode_%d_saline_or_gel'%(i+1)
+                self.tdcslist.cond[499+i+1].value = self.tdcslist.cond[499].value
 
     #Calls the conduvtivitiesGui
     def setConductivities(self):
