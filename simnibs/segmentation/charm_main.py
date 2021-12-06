@@ -71,7 +71,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
                                                 verticalTableShifts=vertical_shifts)
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
-    affine.registerAtlas(initTransform=init_transform,
+    affine.registerAtlas(worldToWorldTransformMatrix=world_to_world_transform_matrix,
                          initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
                          visualizer=visualizer,
@@ -80,11 +80,11 @@ def _register_atlas_to_input_affine(T1, template_file_name,
     affine.saveResults(T1, template_file_name, save_path,
                        template_coregistered_name, image_to_image_transform,
                        world_to_world_transform)
-    
-    logger.info('Template registration summary.')
-    logger.info('Number of Iterations: %d, Cost: %f\n' %
-                (optimization_summary['numberOfIterations'],
-                 optimization_summary['cost']))
+    if world_to_world_transform_matrix is None:
+        logger.info('Template registration summary.')
+        logger.info('Number of Iterations: %d, Cost: %f\n' %
+                    (optimization_summary['numberOfIterations'],
+                     optimization_summary['cost']))
 
     if not noneck:
         logger.info('Adjusting neck.')
@@ -114,6 +114,15 @@ def _denoise_input_and_save(input_name, output_name):
     output_smoothed = nib.Nifti1Image(img_smoothed, input_raw.affine)
     nib.save(output_smoothed, output_name)
 
+def _init_atlas_affine(t1_scan, mni_template):
+    registerer = samseg.gems.KvlAffineRegistration()
+    registerer.read_images(t1, mni_template)
+    registerer.initialize_transform()
+    registerer.register()
+    trans_mat = registerer.get_transformation_matrix()
+    # ITK returns the matrix mapping the fixed image to the
+    # moving image so let's invert it.
+    return np.linalg.inv(trans_mat)
 
 def _estimate_parameters(path_to_segment_folder,
                          template_coregistered_name,
@@ -606,7 +615,7 @@ def _get_largest_components(vol, se, vol_limit=0, num_limit=-1, return_sizes=Fal
 
 
 def _registerT1T2(fixed_image, moving_image, output_image):
-    registerer = samseg.gems.KvlImageRegisterer()
+    registerer = samseg.gems.KvlRigidRegistration()
     registerer.read_images(fixed_image, moving_image)
     registerer.initialize_transform()
     registerer.register()
@@ -880,6 +889,9 @@ def run(subject_dir=None, T1=None, T2=None,
         else:
             inputT1 = T1
 
+        mni_template = file_finder.Templates().mni_volume
+        trans_mat = _init_atlas_affine(inputT1, mni_template)
+
         _register_atlas_to_input_affine(inputT1, template_name,
                                         atlas_affine_name,
                                         atlas_level1,
@@ -890,7 +902,8 @@ def run(subject_dir=None, T1=None, T2=None,
                                         neck_tissues,
                                         visualizer,
                                         noneck,
-                                        init_transform)
+                                        world_to_world_transform_matrix=trans_mat,
+                                        init_transform=init_transform)
 
         logger.info('Creating affine registration visualization')
         plotting.viewer_affine(sub_files.reference_volume,
