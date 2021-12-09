@@ -115,7 +115,15 @@ def _denoise_input_and_save(input_name, output_name):
     nib.save(output_smoothed, output_name)
 
 def _init_atlas_affine(t1_scan, mni_template, seg_path):
-    registerer = samseg.gems.KvlAffineRegistration()
+    registerer = samseg.gems.KvlAffineRegistrationCC(0.0001,
+                                                   300,
+                                                   7,
+                                                   [3,2],
+                                                   0,
+                                                   1.0,
+                                                   True,
+                                                   0.5,
+                                                   'b')
     registerer.read_images(t1_scan, mni_template)
     registerer.initialize_transform()
     registerer.register()
