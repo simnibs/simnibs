@@ -114,8 +114,9 @@ def _denoise_input_and_save(input_name, output_name):
     output_smoothed = nib.Nifti1Image(img_smoothed, input_raw.affine)
     nib.save(output_smoothed, output_name)
 
-def _init_atlas_affine(t1_scan, mni_template, seg_path):
-    registerer = samseg.gems.KvlAffineRegistrationCC(0.0001,
+
+def _init_atlas_affine(t1_scan, mni_template, affine_settings):
+    registerer = samseg.gems.KvlAffineRegistration(0.0001,
                                                    300,
                                                    7,
                                                    [3,2],
@@ -128,7 +129,6 @@ def _init_atlas_affine(t1_scan, mni_template, seg_path):
     registerer.initialize_transform()
     registerer.register()
     trans_mat = registerer.get_transformation_matrix()
-    registerer.write_out_result(os.path.join(seg_path,'mni_registered.nii.gz'))
     # ITK returns the matrix mapping the fixed image to the
     # moving image so let's invert it.
     return np.linalg.inv(trans_mat)
@@ -898,8 +898,17 @@ def run(subject_dir=None, T1=None, T2=None,
         else:
             inputT1 = T1
 
-        mni_template = file_finder.Templates().mni_volume
-        trans_mat = _init_atlas_affine(inputT1, mni_template, sub_files.segmentation_folder)
+        if samseg_settings['init_type'] == "atlas":
+            trans_mat = None
+        elif samseg_settings['init_type'] == "mni":
+            mni_template = file_finder.Templates().mni_volume
+            mni_settings = settings["initmni"]
+            trans_mat = _init_atlas_affine(inputT1,
+                                           mni_template,
+                                           mni_settings)
+        else:
+            logger.info("Affine initialization type unknown. Defaulting to 'atlas'")
+            trans_mat = None
 
         _register_atlas_to_input_affine(inputT1, template_name,
                                         atlas_affine_name,
