@@ -387,7 +387,7 @@ def make_forward(
         = mne.forward._make_forward._prepare_for_forward(**kwargs)
     # fmt: on
 
-    update_kwargs["info"]["command_line"] = ""
+    # update_kwargs["info"]["command_line"] = ""
 
     # A note on forward solutions and coordinate systems. Below we use
     #
