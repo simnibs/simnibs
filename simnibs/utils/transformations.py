@@ -29,13 +29,10 @@ import copy
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
-import shutil
 import nibabel as nib
 from ..utils.simnibs_logger import logger
-from .. import SIMNIBSDIR
-from ..utils.file_finder import templates, SubjectFiles, get_atlas, get_reference_surf
+from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
-from ..mesh_tools import gmsh_view
 __all__ = [
     'warp_volume',
     'warp_coordinates',

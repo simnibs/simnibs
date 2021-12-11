@@ -1,6 +1,5 @@
 import os
 import tempfile
-import logging
 import numpy as np
 import scipy.sparse
 import scipy.ndimage

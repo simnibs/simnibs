@@ -5,7 +5,6 @@ from .Samseg import Samseg
 from .SamsegUtility import writeImage
 import charm_gems as gems
 eps = np.finfo(float).eps
-from .simnibs_segmentation_utils import _calculateSegmentationLoop
 
 class SamsegWholeHead(Samseg):
 

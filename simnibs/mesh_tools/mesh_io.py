@@ -44,7 +44,7 @@ import h5py
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import path2bin, templates
+from ..utils.file_finder import path2bin
 from . import cython_msh
 from . import cgal
 

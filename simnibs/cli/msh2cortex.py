@@ -22,7 +22,6 @@
 '''
 import argparse
 import sys
-import os
 
 from simnibs import transformations
 from simnibs import __version__

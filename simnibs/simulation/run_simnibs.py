@@ -1,7 +1,5 @@
-import sys
 import logging
 import warnings
-import argparse
 import numpy as np
 from ..utils.matlab_read import read_mat
 from .. import __version__

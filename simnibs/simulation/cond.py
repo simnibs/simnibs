@@ -23,7 +23,6 @@
 
 
 from __future__ import division
-import warnings
 import numpy as np
 from . import sim_struct
 from ..mesh_tools import mesh_io

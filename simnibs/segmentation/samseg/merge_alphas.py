@@ -1,7 +1,4 @@
-import logging
-import math
 import numpy as np
-import colorsys
 
 
 def meshValidityTest(alphas, name):

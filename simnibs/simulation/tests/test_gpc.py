@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 import os
 import tempfile
-from mock import Mock, patch, call
+from mock import Mock, patch
 
 import pytest
 

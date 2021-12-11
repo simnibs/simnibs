@@ -20,7 +20,6 @@
 
 '''
 import os
-from collections import OrderedDict
 import time
 import copy
 import glob
@@ -45,7 +44,7 @@ from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from ..utils.csv_reader import read_csv_positions, _get_eeg_positions
 from . import fem
 from . import electrode_placement
-from .. import SIMNIBSDIR, __version__
+from .. import  __version__
 
 
 class SESSION(object):

@@ -24,7 +24,6 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
-import sys
 from .. import SIMNIBSDIR
 
 

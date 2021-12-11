@@ -2,7 +2,6 @@ import os
 import numpy as np
 import nibabel as nib
 import pytest
-from mock import Mock, patch, call
 
 from ... import SIMNIBSDIR
 from ...mesh_tools import mesh_io

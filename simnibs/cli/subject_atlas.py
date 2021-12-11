@@ -27,7 +27,7 @@ import nibabel
 from simnibs import transformations
 import simnibs.utils.file_finder as file_finder
 from simnibs.utils.simnibs_logger import logger
-from simnibs.mesh_tools.mesh_io import read_freesurfer_surface, read_gifti_surface
+from simnibs.mesh_tools.mesh_io import read_gifti_surface
 from simnibs import __version__
 import textwrap
 

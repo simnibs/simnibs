@@ -3,7 +3,6 @@
     Functions for assembling and solving FEM systems
 '''
 
-import os
 import multiprocessing
 import time
 import copy
