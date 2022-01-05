@@ -673,3 +673,9 @@ def get_landmarks(name):
     else:
         return Path(name)
 
+
+def get_montage_neighbors(name):
+    if name in VALID_MONTAGES:
+        return PATH_MONTAGES / f"{name}_neighbors.json"
+    else:
+        return Path(name)
