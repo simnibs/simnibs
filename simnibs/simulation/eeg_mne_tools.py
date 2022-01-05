@@ -17,6 +17,65 @@ from simnibs.simulation import eeg
 # SOURCE SPACE
 
 
+def _get_src_sphere(src, subsampling=None):
+    if isinstance(src, (Path, str)):
+        sf = SubjectFiles(subpath=str(src))
+        src = eeg.load_surface(sf, "sphere_reg", subsampling)
+    assert isinstance(src, dict)
+    return src
+
+
+# def _harmonize_source_spaces(src, src_ref):
+#     for s, sr in zip(src, src_ref):
+#         # assert s['subject_his_id'] == sr['subject_his_id']
+#         assert s["id"] == sr["id"]
+#         assert s["np"] == sr["np"]
+#         assert s["ntri"] == s["ntri"]
+#         s["vertno"] = sr["vertno"]
+#         s["inuse"] = sr["inuse"]
+#         s["nuse"] = sr["nuse"]
+#         s["use_tris"] = sr["use_tris"]
+#         s["nuse_tri"] = sr["nuse_tri"]
+
+
+def make_source_morph(
+    src_from, src_to, src_from_sphere, src_to_sphere, subsampling=None
+):
+    """
+    The spherical registrations are used to create the morphing matrices for
+    each hemisphere.
+    The source spaces are used to determine which sources are valid (in use).
+    The morphing matrices will be smoothed so as to compensate for any unused
+    source positions such that all valid sources in `src_to` will be covered.
+
+    PARAMETERS
+    ----------
+    src_from : mne.SourceSpaces
+        Contains information about which positions are used.
+    src_to : mne.SourceSpaces
+        Contains information about which positions are used.
+    src_from_sphere : Path | str | dict
+        Path to m2m directory or a dict with `points` and `tris` describing
+        the spherical registration surface.
+    src_to_sphere : Path | str | dict
+        See `src_from_sphere`.
+
+    RETURNS
+    -------
+    SourceMorph object.
+    """
+    src_from_sphere = _get_src_sphere(src_from_sphere, subsampling)
+    src_to_sphere = _get_src_sphere(src_to_sphere, subsampling)
+    mmaps = eeg.make_morph_maps(src_from_sphere, src_to_sphere)
+
+    # src_from_sphere = make_source_spaces(src_from_sphere)
+    # src_to_sphere = make_source_spaces(src_to_sphere)
+    # _harmonize_source_spaces(src_from_sphere, src_from)
+    # _harmonize_source_spaces(src_to_sphere, src_to)
+
+    return _make_source_morph(src_from, src_to, mmaps)
+
+
 def setup_source_space(
     m2m_dir: Union[Path, str], subsampling: int = None, morph_to_fsaverage: int = 5
 ):
@@ -25,7 +84,7 @@ def setup_source_space(
     PARAMETERS
     ----------
     m2m_dir : Path-like
-        The directory containing the segmentation and head model results.
+        The `m2m` directory containing the segmentation and head model results.
     subsampling : int
         The subsampling to use (default = None).
     morph_to_fsaverage : bool | int
@@ -40,18 +99,24 @@ def setup_source_space(
         The source morph object.
     """
     subjectfiles = SubjectFiles(subpath=str(m2m_dir))
-    src_from, src_from_sphere = eeg.load_subject_surfaces(subjectfiles, subsampling)
+    # src_from, src_from_sphere = eeg.load_subject_surfaces(subjectfiles, subsampling)
+    src_from = eeg.load_surface(subjectfiles, "central", subsampling)
     src_from = make_source_spaces(src_from, subjectfiles.subid)
 
     # Make source morph
     if morph_to_fsaverage:
         fsavg = eeg.FsAverage(morph_to_fsaverage)
         fsavg_sphere = fsavg.get_surface("sphere")
+        src_fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
 
-        mmaps = eeg.make_morph_maps(src_from_sphere, fsavg_sphere)
-        src_from_sphere = make_source_spaces(src_from_sphere, subjectfiles.subid)
-        fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
-        morph = make_source_morph(src_from_sphere, fsavg_sphere, mmaps)
+        morph = make_source_morph(
+            src_from, src_fsavg_sphere, m2m_dir, fsavg_sphere, subsampling
+        )
+
+        # mmaps = eeg.make_morph_maps(src_from_sphere, fsavg_sphere)
+        # src_from_sphere = make_source_spaces(src_from_sphere, subjectfiles.subid)
+        # fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
+        # morph = _make_source_morph(src_from_sphere, fsavg_sphere, mmaps)
     else:
         morph = None
     return src_from, morph
@@ -196,7 +261,7 @@ def _add_surface_info(src, tris, nn):
 # SOURCE SPACE MORPHING
 
 
-def make_source_morph(
+def _make_source_morph(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
     mmaps: List,
@@ -434,7 +499,7 @@ def make_forward(
 
 
 def prepare_montage(
-    fname: str,
+    fname: Union[Path, str],
     info: Union[Path, str, mne.Info],
     trans: Union[Path, str, mne.Transform],
 ):
