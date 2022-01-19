@@ -950,6 +950,7 @@ def compute_leadfield(
     fem_dir: Union[Path, str],
     fname_montage: Union[Path, str],
     subsampling: int = None,
+    init_kwargs: Dict = None,
     run_kwargs: Dict = None,
 ):
     """Convenience function for running a TDCS simulation. The result can be
@@ -964,6 +965,12 @@ def compute_leadfield(
     subsampling : int | None
         The subsampling to use. The subsampled files must already exist
         (default = None).
+    init_kwargs : dict
+        Kwargs used to update the initialization of `TDCSLEADFIELD`. Can be
+        used to override default settings, e.g., by passing another list of
+        conductivities which can be achieve by doing
+        `init_kwargs=dict(cond=my_conds)` where my_conds has the same format
+        as `simnibs.simulation.cond.standard_cond` (default = None).
     run_kwargs : dict
         Kwargs to pass to the run method of `TDCSLEADFIELD`. If None, will use
         dict(save_mat=False, cpus=1) (default = None).
@@ -996,6 +1003,10 @@ def compute_leadfield(
     # Which tissues to interpolate from (default = 2, i.e., gray matter)
     # lf.interpolation_tissue = [2]
     lf.interpolation_subsampling = subsampling
+
+    if init_kwargs:
+        for k, v in init_kwargs.items():
+            setattr(lf, k, v)
 
     # To use custom conductivities, do something like
     # s = cond.standard_cond()
