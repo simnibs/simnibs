@@ -1005,18 +1005,15 @@ class Msh:
         """
         vol = ElementData(np.zeros(self.elm.nr, dtype=float),
                           'volumes_and_areas')
-        th_indexes = self.elm.tetrahedra
-        tr_indexes = self.elm.triangles
 
+        tr_indexes = self.elm.triangles
         node_tr = self.nodes[self.elm[tr_indexes, :3]]
         sideA = node_tr[:, 1] - node_tr[:, 0]
-
         sideB = node_tr[:, 2] - node_tr[:, 0]
-
         n = np.cross(sideA, sideB)
-
         vol[tr_indexes] = np.linalg.norm(n, axis=1) * 0.5
 
+        th_indexes = self.elm.tetrahedra
         node_th = self.nodes[self.elm[th_indexes]]
         M = node_th[:, 1:] - node_th[:, 0, None]
         vol[th_indexes] = np.abs(np.linalg.det(M)) / 6.
@@ -2737,10 +2734,11 @@ class Msh:
         self.elm.add_triangles(faces[idx_tri,:]+1, 1000+tag_tri)
         self.fix_tr_node_ordering()
 
-    def smooth_surfaces(self, n_steps, step_size=.3, nodes_mask=None, max_gamma=3):
-        ''' In-place Smoothes the mesh surfaces using Taubin smoothing
         
-        Can decrease tetrahedra quality
+    def smooth_surfaces(self, n_steps, step_size=.3, tags=None, max_gamma=5):
+        ''' In-place smoothing of the mesh surfaces using Taubin smoothing,
+            ensures that the tetrahedra quality does not fall below
+            a minimal level. Can still decrease overall tetrahedra quality, though.
 
         Parameters
         ------------
@@ -2750,20 +2748,24 @@ class Msh:
             number of smoothing steps to perform
         step_size (optional): float 0<step_size<1
             Size of each smoothing step. Default: 0.3
-        nodes_mask: ndarray of bool
-            Mask of nodes to be moved. Default: all surface nodes
-        max_gamma: float
-            Maximum gamma tetrahedron quality metric (see Parthasarathy et al., Finite
-            Elements ins Analysis and Design, 1994) for
-            a move to be accepted
+        tags: (optional) int or list
+            list of tags to be smoothed. Default: all
+        max_gamma: (optional) float
+            Maximum gamma tetrahedron quality metric. Surface nodes are
+            excluded from smoothing when gamma of neighboring tetrahedra 
+            would exceed max_gamma otherwise. Default: 5
+            (for gamma metric see Parthasarathy et al., Finite Elements in 
+             Analysis and Design, 1994) 
         '''
         assert step_size > 0 and step_size < 1
-        if nodes_mask is None:
-            nodes_mask = np.ones(self.nodes.nr, dtype=bool)
+        # Surface nodes and surface node mask
+        idx = self.elm.elm_type == 2
+        if tags is not None:
+            idx *= np.in1d(self.elm.tag1, tags)
+        surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
+        nodes_mask = np.zeros(self.nodes.nr, dtype=bool)
+        nodes_mask[surf_nodes] = True
 
-        if len(nodes_mask) != self.nodes.nr:
-            raise ValueError(
-                'nodes_mask should have the same number of elements as mesh nodes')
         # Triangle neighbourhood information
         adj_tr = scipy.sparse.csr_matrix((self.nodes.nr, self.nodes.nr), dtype=bool)
         tr = self.elm[self.elm.triangles, :3] - 1
@@ -2775,7 +2777,7 @@ class Msh:
                     shape=adj_tr.shape
                 )
         adj_tr -= scipy.sparse.dia_matrix((np.ones(adj_tr.shape[0]), 0), shape=adj_tr.shape)
-
+        
         # Tetrahedron neighbourhood information
         th = self.elm[self.elm.tetrahedra] - 1
         adj_th = scipy.sparse.csr_matrix((self.nodes.nr, len(th)), dtype=bool)
@@ -2786,37 +2788,126 @@ class Msh:
                 (ones, (th[:, i], th_indices)),
                 shape=adj_th.shape
             )
-
-        surf_nodes = np.unique(tr)
+        # keep only tets connected to surface nodes
+        idx = np.sum(adj_th[nodes_mask], axis=0) > 0
+        idx = np.asarray(idx).reshape(-1)
+        th = th[idx,:]
+        adj_th = adj_th[:,idx]
+        adj_th = adj_th.tocsc()
+        
+        def calc_gamma(nodes_coords,th):
+            ''' gamma of tetrahedra '''
+            node_th = nodes_coords[th]
+            # tet volumes
+            M = node_th[:, 1:] - node_th[:, 0, None]
+            vol = np.linalg.det(M) / 6.
+            # edge lengths
+            edge_rms = np.zeros(len(th))
+            for i in range(4):
+                for j in range(i+1, 4):
+                    edge_rms += np.sum(
+                        (node_th[:,i,:] - node_th[:,j,:])**2, 
+                        axis=1
+                    )
+            edge_rms = edge_rms/6.
+            # gamma
+            gamma = edge_rms**1.5/vol
+            gamma /= 8.479670
+            gamma[vol<0] = -1
+            return gamma
+    
         nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
+        gamma = calc_gamma(nodes_coords,th)
+        n_badgamma = np.sum((gamma < 0) + (gamma > max_gamma))
         for i in range(n_steps):
-            cf = cython_msh.gauss_smooth(
+            nc_before = nodes_coords.copy()
+            cython_msh.gauss_smooth_simple(
                 surf_nodes.astype(np.uint),
                 nodes_coords,
-                np.ascontiguousarray(th, np.uint),
                 np.ascontiguousarray(adj_tr.indices, np.uint),
                 np.ascontiguousarray(adj_tr.indptr, np.uint),
-                np.ascontiguousarray(adj_th.indices, np.uint),
-                np.ascontiguousarray(adj_th.indptr, np.uint),
-                float(step_size),
-                np.ascontiguousarray(nodes_mask, np.uint),
-                float(max_gamma)
+                float(step_size)
             )
             # Taubin step
-            cb = cython_msh.gauss_smooth(
+            cython_msh.gauss_smooth_simple(
                 surf_nodes.astype(np.uint),
                 nodes_coords,
-                np.ascontiguousarray(th, np.uint),
                 np.ascontiguousarray(adj_tr.indices, np.uint),
                 np.ascontiguousarray(adj_tr.indptr, np.uint),
-                np.ascontiguousarray(adj_th.indices, np.uint),
-                np.ascontiguousarray(adj_th.indptr, np.uint),
-                -1.05 * float(step_size),
-                np.ascontiguousarray(nodes_mask, np.uint),
-                float(max_gamma)
+                -1.05 * float(step_size)
+            )
+            # revert where gamma exceeded max_gamma
+            gamma = calc_gamma(nodes_coords,th)
+            idx_badtet = (gamma < 0) + (gamma > max_gamma)
+            for k in range(4): # mostly < 4 iterations required, limit to ensure stability
+                if np.sum(idx_badtet) <= n_badgamma: break
+
+                idx_badnodes = np.sum(adj_th[:,idx_badtet], axis=1) > 0
+                idx_badnodes = np.asarray(idx_badnodes).reshape(-1)
+                nodes_coords[idx_badnodes] = nc_before[idx_badnodes]
+                
+                gamma = calc_gamma(nodes_coords,th)
+                idx_badtet = (gamma < 0) + (gamma > max_gamma)
+                
+            n_badgamma = np.sum(idx_badtet)
+            
+        self.nodes.node_coord = nodes_coords
+
+
+    def smooth_surfaces_simple(self, n_steps, step_size=.3, tags=None):
+        ''' In-place smoothing of the mesh surfaces using Taubin smoothing,
+            no control of tetrahedral quality
+
+        Parameters
+        ------------
+        msh: simnibs.msh.Msh
+            Mesh structure, must have inner triangles
+        n_steps: int
+            number of smoothing steps to perform
+        step_size (optional): float 0<step_size<1
+            Size of each smoothing step. Default: 0.3
+        tags: (optional) int or list
+            list of tags to be smoothed. Default: all
+        '''
+        assert step_size > 0 and step_size < 1
+        # Surface nodes and surface node mask
+        idx = self.elm.elm_type == 2
+        if tags is not None:
+            idx *= np.in1d(self.elm.tag1, tags)
+        surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
+
+        # Triangle neighbourhood information
+        adj_tr = scipy.sparse.csr_matrix((self.nodes.nr, self.nodes.nr), dtype=bool)
+        tr = self.elm[self.elm.triangles, :3] - 1
+        ones = np.ones(len(tr), dtype=bool)
+        for i in range(3):
+            for j in range(3):
+                adj_tr += scipy.sparse.csr_matrix(
+                    (ones, (tr[:, i], tr[:, j])),
+                    shape=adj_tr.shape
+                )
+        adj_tr -= scipy.sparse.dia_matrix((np.ones(adj_tr.shape[0]), 0), shape=adj_tr.shape)
+                
+        nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
+        for i in range(n_steps):
+            cython_msh.gauss_smooth_simple(
+                surf_nodes.astype(np.uint),
+                nodes_coords,
+                np.ascontiguousarray(adj_tr.indices, np.uint),
+                np.ascontiguousarray(adj_tr.indptr, np.uint),
+                float(step_size)
+            )
+            # Taubin step
+            cython_msh.gauss_smooth_simple(
+                surf_nodes.astype(np.uint),
+                nodes_coords,
+                np.ascontiguousarray(adj_tr.indices, np.uint),
+                np.ascontiguousarray(adj_tr.indptr, np.uint),
+                -1.05 * float(step_size)
             )
 
         self.nodes.node_coord = nodes_coords
+        
 
     def gamma_metric(self):
         """ calculates the (normalized) Gamma quality metric for tetrahedra

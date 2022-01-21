@@ -1122,7 +1122,7 @@ class TestMsh:
         curvature_after = mesh.gaussian_curvature()[tr_nodes]
         assert np.std(curvature_after) < np.std(curvature_before)
 
-    def test_smooth_with_mask(self, sphere3_msh):
+    def test_smooth_with_tag(self, sphere3_msh):
         mesh = sphere3_msh.crop_mesh(elm_type=2)
         tr_nodes = np.unique(mesh.elm[mesh.elm.tag1 == 1003, :3])
         mesh.nodes.node_coord[tr_nodes - 1] += \
@@ -1130,7 +1130,7 @@ class TestMsh:
         curvature_before = mesh.gaussian_curvature()
         mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
         mask_nodes[tr_nodes - 1] = True
-        mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=100)
+        mesh.smooth_surfaces(10, tags=1003, max_gamma=100)
         curvature_after = mesh.gaussian_curvature()
         assert np.std(curvature_after[mask_nodes]) < np.std(curvature_before[mask_nodes])
         assert np.allclose(curvature_after[~mask_nodes], curvature_before[~mask_nodes])
@@ -1141,9 +1141,7 @@ class TestMsh:
         mesh.nodes.node_coord[tr_nodes - 1] += \
             np.random.standard_normal((len(tr_nodes), 3)) * 0.1
         mesh_before = copy.deepcopy(mesh)
-        mask_nodes = np.zeros(mesh.nodes.nr, dtype=bool)
-        mask_nodes[tr_nodes - 1] = True
-        mesh.smooth_surfaces(10, nodes_mask=mask_nodes, max_gamma=3)
+        mesh.smooth_surfaces(10, max_gamma=3)
         curvature_after = mesh.gaussian_curvature()
         low_q = mesh_before.gamma_metric()[:] >= 3
         assert np.all(mesh_before.gamma_metric()[~low_q] < 3)
