@@ -2854,7 +2854,7 @@ class Msh:
         self.nodes.node_coord = nodes_coords
 
 
-    def smooth_surfaces_simple(self, n_steps, step_size=.3, tags=None):
+    def smooth_surfaces_simple(self, n_steps, step_size=.3, tags=None, nodes_mask=None):
         ''' In-place smoothing of the mesh surfaces using Taubin smoothing,
             no control of tetrahedral quality
 
@@ -2868,6 +2868,8 @@ class Msh:
             Size of each smoothing step. Default: 0.3
         tags: (optional) int or list
             list of tags to be smoothed. Default: all
+        nodes_mask: (optional) bool
+            mask of nodes to be smoothed. Default: all
         '''
         assert step_size > 0 and step_size < 1
         # Surface nodes and surface node mask
@@ -2875,7 +2877,14 @@ class Msh:
         if tags is not None:
             idx *= np.in1d(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
-
+        
+        if nodes_mask is not None:
+            assert len(nodes_mask) == self.nodes.nr
+            mask = np.zeros(self.nodes.nr, dtype=bool)
+            mask[surf_nodes] = True
+            mask *= nodes_mask
+            surf_nodes = np.where(mask)[0]
+            
         # Triangle neighbourhood information
         adj_tr = scipy.sparse.csr_matrix((self.nodes.nr, self.nodes.nr), dtype=bool)
         tr = self.elm[self.elm.triangles, :3] - 1
