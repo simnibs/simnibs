@@ -1,6 +1,5 @@
 import os
 import tempfile
-import logging
 import numpy as np
 import scipy.sparse
 import scipy.ndimage
@@ -988,7 +987,8 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                hierarchy=None, smooth_steps=5, sizing_field=None, DEBUG_FN=None):
+                hierarchy=None, smooth_steps=5, skin_care=20, 
+                sizing_field=None, DEBUG_FN=None):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1050,7 +1050,9 @@ def create_mesh(label_img, affine,
         (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
         i.e. WM (1) has highest priority, GM (2) comes next, etc; 
     smooth_steps: int (optional)
-        Number of smoothing steps to apply to the final mesh surfaces. Default: 5
+        Number of smoothing steps applied to the final mesh surfaces. Default: 5
+    skin_care: int (optional)
+        Number of addtional smoothing steps applied to the skin. Default: 20
     sizing_field: 3D np.ndarray in float format (optional)
         Sizing field to control the element sizes. Its shape has to be the same
         as label_img.shape. Zeros will be replaced by values from the 
@@ -1197,6 +1199,10 @@ def create_mesh(label_img, affine,
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')
         m.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
+
+    if skin_care > 0:
+        logger.info('Extra Skin Care')
+        m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
 
     logger.info(
         'Time to post-process mesh: ' +

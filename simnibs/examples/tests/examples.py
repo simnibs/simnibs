@@ -4,14 +4,10 @@ import sys
 import os
 import stat
 import subprocess
-import zipfile
-import tempfile
 import shutil
 import glob
-import functools
 
 import pytest
-import requests
 from simnibs.utils.file_finder import path2bin
 import simnibs
 

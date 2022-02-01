@@ -1,6 +1,6 @@
 import os
 import sys
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 import tempfile
 import pytest
 import h5py

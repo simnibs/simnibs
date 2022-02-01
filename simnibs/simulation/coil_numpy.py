@@ -8,7 +8,6 @@ import nibabel as nib
 import os
 from .. import __version__
 from ..mesh_tools import mesh_io
-from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates
 
 

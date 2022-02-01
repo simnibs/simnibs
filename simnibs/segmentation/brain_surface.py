@@ -301,7 +301,7 @@ def smooth_vertices(vertices, faces, verts2consider=None,
                         elements=mesh_io.Elements(faces + 1))
         vert_mask = np.zeros(len(vertices), dtype=bool)
         vert_mask[verts2consider] = True
-        m.smooth_surfaces(Niterations, nodes_mask=vert_mask)
+        m.smooth_surfaces_simple(Niterations, nodes_mask=vert_mask)
         smoo = m.nodes[:]
     else:
         for n in verts2consider:

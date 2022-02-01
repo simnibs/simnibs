@@ -5,7 +5,6 @@ Created on Mon Mar 23 20:28:04 2020
 @author: axthi
 """
 
-import pytest
 import numpy as np
 
 from ..marching_cube import marching_cube

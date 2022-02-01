@@ -28,7 +28,7 @@ import sys
 import numpy
 
 from ..simulation import coil_numpy as coil
-from ..mesh_tools import eeg_positions, surface, mesh_io
+from ..mesh_tools import surface, mesh_io
 from ..utils.csv_reader import read_csv_positions
 
 global YELLOW

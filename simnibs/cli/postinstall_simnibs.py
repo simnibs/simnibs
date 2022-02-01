@@ -27,10 +27,8 @@ import stat
 import re
 import subprocess
 import tempfile
-import time
 import functools
 import zipfile
-import warnings
 
 import requests
 
@@ -42,7 +40,7 @@ try:
     GUI = True
 except ImportError:
     GUI = False
-    
+
 if sys.platform == 'win32':
     import winreg
 
@@ -83,13 +81,13 @@ def create_scripts(dest_dir):
             gui = True
         else:
             gui = False
-            
-        bash_name = os.path.join(dest_dir, basename)        
+
+        bash_name = os.path.join(dest_dir, basename)
         if sys.platform == 'win32':
             _write_windows_cmd(s, bash_name, gui)
         else:
             _write_unix_sh(s, bash_name)
-        
+
     # meshfix and gmsh binaries
     for basename in ['meshfix', 'gmsh']:
         bash_name = os.path.join(dest_dir, basename)
@@ -310,7 +308,7 @@ def path_cleanup(scripts_dir, shell_type='bash'):
             # These are leftovers from previous (3.0, 3.1) installs
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment', access=winreg.KEY_WRITE) as reg:
                 winreg.DeleteValue(reg, key)
-                
+
         from simnibs.utils import _system_path
         _system_path.remove_from_system_path(scripts_dir, allusers=False)
         _system_path.broadcast_environment_settings_change()
@@ -386,7 +384,7 @@ def setup_shortcut_icons(scripts_dir, force=False, silent=False):
         if not overwrite:
             print('Not adding shortucts to the current SimNIBS install')
             return
-        
+
         else:
             shortcut_icons_clenup()
 
@@ -474,7 +472,7 @@ def _create_apps(install_dir):
         CFBundleIconFile="gui_icon.icns",
         CFBundleExecutable="simnibs_gui",
         CFBundleInfoDictionaryVersion='6.0'
-    ) 
+    )
     _create_app(
         os.path.join(install_dir, 'SimNIBS GUI.app'),
         os.path.join(SIMNIBSDIR, 'cli', 'simnibs_gui.py'),
@@ -511,7 +509,7 @@ def _create_app(app_name, executable, icon, plist):
     https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW16
     Only works if app_name finishes in ".app"
     '''
-    import plistlib 
+    import plistlib
     # SimNIBS app setup
     if os.path.isdir(app_name):
         shutil.rmtree(app_name)
@@ -612,7 +610,7 @@ def file_associations_cleanup():
     # MacOS file associations are set using the .app files
     if sys.platform in ['linux', 'darwin']:
         return
-    
+
     if sys.platform == 'win32':
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Classes', access=winreg.KEY_WRITE) as reg:
             # Remove SimNIBS Gmsh call from the registry
