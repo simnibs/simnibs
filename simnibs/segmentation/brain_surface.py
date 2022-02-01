@@ -1335,8 +1335,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         # region 1: initial surface with defects (as node data)
         # region 2: spherical version of initial surface with defects (as node data)
         # region 3: surface after topology correction
-        # region 4: pre-final surface with thickness and perc. positions (as node data)
-        # region 5: final surface
+        # region 4: final surface with thickness and perc. positions (as node data)
 
 
     # ------- mark topological defects --------
@@ -1416,6 +1415,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
         mesh_io.write_gifti_surface(CS,Pcentral)
         if os.path.isfile(Pcentral+'.off'):
             os.remove(Pcentral+'.off')
+        if os.path.isfile('meshfix_log.txt'):
+            os.remove('meshfix_log.txt')
         del CS
         gc.collect()
 
@@ -1424,9 +1425,9 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     spawn_process(cmd)
 
     cmd=[file_finder.path2bin("CAT_DeformSurf"), fname_ppimg, 'none', '0', '0', '0',
-         Pcentral, Pcentral, 'none', '0', '1', '-1', '.2',
-         'avg', '-0.05', '0.05', '.1', '.1', '5', '0', '0.5', '0.5',
-         'n', '0', '0', '0', '50', '0.01', '0.0', force_no_selfintersections]
+          Pcentral, Pcentral, 'none', '0', '1', '-1', '.2',
+          'avg', '-0.05', '0.05', '.1', '.1', '5', '0', '0.5', '0.5',
+          'n', '0', '0', '0', '50', '0.01', '0.0', force_no_selfintersections]
     spawn_process(cmd)
 
     # map thickness data on final surface
@@ -1454,24 +1455,26 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
     logger.info(f'Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
-    # ---- final correction of central surface in highly folded areas --------
-    # ----------------  with high mean curvature --------------
-    stimet = time.time()
+    # AT: this part can create self intersections when neighboring surfaces are close to each other
+    # which lead to artifacts during expansion to pial surfaces. 
+    # # ---- final correction of central surface in highly folded areas --------
+    # # ----------------  with high mean curvature --------------
+    # stimet = time.time()
 
-    cmd = [file_finder.path2bin("CAT_Central2Pial"), '-equivolume',
-           '-weight', '0.3', Pcentral, Pthick, Pcentral, '0']
-    spawn_process(cmd)
+    # cmd = [file_finder.path2bin("CAT_Central2Pial"), '-equivolume',
+    #         '-weight', '0.3', Pcentral, Pthick, Pcentral, '0']
+    # spawn_process(cmd)
 
-    if debug:
-        # add final central surface to .msh and save .msh
-        CS = mesh_io.read_gifti_surface(Pcentral)
-        CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,5)
-        CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
-        mesh_io.write_msh(CS_dbg,Pdebug)
-        del CS
-        gc.collect()
+    # if debug:
+    #     # add final central surface to .msh and save .msh
+    #     CS = mesh_io.read_gifti_surface(Pcentral)
+    #     CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,5)
+    #     CS_dbg.nodes.node_coord = np.concatenate((CS_dbg.nodes.node_coord, CS.nodes.node_coord))
+    #     mesh_io.write_msh(CS_dbg,Pdebug)
+    #     del CS
+    #     gc.collect()
 
-    logger.info(f'Correction of central surface in highly folded areas 2: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    # logger.info(f'Correction of central surface in highly folded areas 2: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # -------- registration to FSAVERAGE template --------

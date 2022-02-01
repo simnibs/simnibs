@@ -33,28 +33,15 @@ Usage example
   
   \
 
-
-REST NEEDS UPDATING
-3. Check the results:
-
-  .. code-block:: text
-  
-     headreco check ernie
-  
-  \
-   This will show the reconstructed surfaces overlaid over the MR images using freeview. A second freeview will show the subject T1 registered to the  MNI template for visual inspection of the accuracy of the registration. In addition, you should have a look at the tetrahedral head mesh by loading it into Gmsh. In case freeview is not available, the spm viewer will be opened to allow for a basic check of the results.
+3. Check the segmentation. Click on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject). The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
 
 Further notes
 --------------
 
-* Mesh resolution can be controlled using the -v option, which allows setting the vertex density (nodes per mm²) of the surface meshes. As a standard, :code:`headreco` uses 0.5 nodes per mm², resulting in head meshes with around 4 million tetrahedra.
-* After the head mesh creation, temporary files are deleted to save disk space. Adding :code:`--noclean` prevents this.
-* Manual editing: Edit one or more of the binary masks stored in :file:`m2m_{subID}/mask_prep/`. Then run :code:`headreco surfacemesh subID` and :code:`headreco volumemesh subID` to re-create the head mesh based on the edited masks. Add :code:`--no-cat` to the surfacemesh step in case you did nott use CAT12. Note: When using CAT12, surfaces instead of voxel masks will be stored for GM and WM in the :file:`mask_prep/` folder. For now, these surfaces cannot be manually improved.
-* Transformation from and to MNI space: Both positions and results such as the electric field can be transformed between MNI and subject space. Please see below for a description of the corresponding command line programs. The transformation is based on a non-linear whole-head registration of the T1 of the subject to the MNI template that is determined during the SPM12 segmentation procedure. The transformations are stored in the :file:`m2m_{subID}/toMNI/` directory. Subject space is defined by the qform set in the :file:`m2m_{subID}/{subID}_T1fs_conform.nii.gz`, which can be found in the same folder as the head mesh. 
-* When something goes wrong, you can check the :file:`m2m_{subID}/headreco_log.html` file.
+* Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
+
 
 References
 -----------
 
-`Nielsen, J. D., Madsen, K. H., Puonti, O., Siebner, H. R., Bauer, C., Madsen, C. G., ..., and Thielscher, A. (2018). Automatic skull segmentation from MR images for realistic volume conductor models of the head: Assessment of the state-of-the-art. NeuroImage, 174, 587-598. <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_
-
+`Puonti O, Van Leemput K, Saturnino GB, Siebner HR, Madsen KH, Thielscher A. (2020). Accurate and robust whole-head segmentation from magnetic resonance images for individualized head modeling. Neuroimage, 219:117044. <https://doi.org/10.1016/j.neuroimage.2020.117044>`_

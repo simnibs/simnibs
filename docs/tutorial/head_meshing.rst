@@ -68,17 +68,18 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
   
 Please see :ref:`charm_docs` for details and available options.
 
-4. Check the segmentation. **We will let you know how to do this once we figured something out**.
+4. Check the segmentation. Click on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject). The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
 
 Troubleshooting
 ----------------
 
-* ** To come... **
+* Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
 
 
 Further Reading
 ---------------
 
-For more information on head meshing, please see our `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_, **CITE OULAS PAPER**.
+For more information on head meshing, please see:
 
 
+`Puonti O, Van Leemput K, Saturnino GB, Siebner HR, Madsen KH, Thielscher A. (2020). Accurate and robust whole-head segmentation from magnetic resonance images for individualized head modeling. Neuroimage, 219:117044. <https://doi.org/10.1016/j.neuroimage.2020.117044>`_

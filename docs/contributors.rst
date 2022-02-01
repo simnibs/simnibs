@@ -10,6 +10,7 @@ Current Contributors
    * Debugging and maintenance across the complete code.
    * :ref:`dwi2cond_docs` (2.1)
    * Example dataset *ernie* (2.1)
+   * Meshing part of :ref:`charm_docs` (4.0)
 
 * Oula Puonti
    * Main author of :ref:`charm_docs` (4.0)
@@ -64,6 +65,7 @@ Former Contributors
 	   * GUI (2.0)
 	   * Electrode modeling for TES (2.0)
 	   * Bug-fixing
+	   * Meshing part of :ref:`charm_docs` (4.0)
    
 * Mirko Windhoff
    * Main contributor to SimNIBS 1.0
@@ -73,14 +75,10 @@ Acknowledgements
 SimNIBS integrates free software for Neuroimaging, computer graphics
 and FEM calculations into one coherent pipeline:
 
-* :ref:`mri2mesh_docs` uses `FreeSurfer <http://surfer.nmr.mgh.harvard.edu/>`_ from the
-  `Athinoula A. Martinos Center for Biomedical Imaging <http://www.nmr.mgh.harvard.edu/martinos/flashHome.php>`_ and `FSL
-  <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.
-* :ref:`headreco_docs` uses `SPM12 <https://www.fil.ion.ucl.ac.uk/spm/software/spm12/>`_ from the
-  Wellcome Trust Centre for Neuroimaging (UCL) and `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_
-* Both use a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <http://pers.ge.imati.cnr.it/attene/PersonalPage/attene.html>`_. Many thanks go to Marco for releasing MeshFix as open source and for his support when extending it!
-* We heavily use `Gmsh <http://geuz.org/gmsh/>`_ by `Christophe Geuzaine
-  <http://www.montefiore.ulg.ac.be/~geuzaine/>`_ and `Jean-François Remacle <http://perso.uclouvain.be/jean-francois.remacle/>`_
+* :ref:`charm_docs` uses `Samseg from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, and also a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_, functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_
+* We use `Gmsh <http://geuz.org/gmsh/>`_ by `Christophe Geuzaine 
+  <http://www.montefiore.ulg.ac.be/~geuzaine/>`_ and `Jean-François Remacle <http://perso.uclouvain.be/jean-francois.remacle/>`_ for visualization.
+* :ref:`dwi2cond_docs` uses `FSL <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.
 * FEM code introduced in version 3.0 relies on `PETSc <https://www.mcs.anl.gov/petsc/>`_ and `Hypre
   <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software>`_.
 * Thanks for **Konstantin Weise** for giving us access to an early version of his software, `pygpc <https://github.com/konstantinweise/pygpc>`_.
@@ -90,7 +88,7 @@ and FEM calculations into one coherent pipeline:
 Institutions
 ---------------
 
-* Versions 2.1 and 3 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark), in collaboration with external partners.
+* Versions 2.1, 3 and 4 have been developed at the `Danish Research Center for Magnetic Resonance <http://www.drcmr.dk>`_ (Copenhagen, Denmark) and the `Technical University of Denmark <http://www.dtu.dk/english>`_ (Kgs Lyngby, Denmark), in collaboration with external partners.
 * Version 1.0 was created at the `Max-Planck Institute for Biological Cybernetics <http://www.kyb.tuebingen.mpg.de>`_ (Tübingen, Germany).
 * Version 2.0 was developed in all three institutions
 

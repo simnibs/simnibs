@@ -1118,6 +1118,7 @@ def run(subject_dir=None, T1=None, T2=None,
                     spawn_process(cmd, lvl=logging.DEBUG)
                     m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
+                    if os.path.isfile('meshfix_log.txt'): os.remove('meshfix_log.txt')
                 if 'rh' in pial:
                     m2 = read_gifti_surface(sub_files.get_surface('rh', surf_type='pial'))
                     # remove self-intersections using meshfix
@@ -1128,6 +1129,7 @@ def run(subject_dir=None, T1=None, T2=None,
                     spawn_process(cmd, lvl=logging.DEBUG)
                     m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
+                    if os.path.isfile('meshfix_log.txt'): os.remove('meshfix_log.txt')
                 if m.nodes.nr > 0:
                     _open_sulci(label_img, label_affine,
                                 labelorg_img, labelorg_affine, m,

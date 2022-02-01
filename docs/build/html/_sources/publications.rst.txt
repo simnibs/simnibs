@@ -4,6 +4,15 @@ Publications
 =============
 The main publications documenting SimNIBS development are
 
+
+Version 4.0
+-----------
+
+:ref:`charm_docs` segmentation pipeline
+''''''''''''''''''''''''''
+* `Puonti O, Van Leemput K, Saturnino GB, Siebner HR, Madsen KH, Thielscher A. (2020). Accurate and robust whole-head segmentation from magnetic resonance images for individualized head modeling. Neuroimage, 219:117044. <https://doi.org/10.1016/j.neuroimage.2020.117044>`_
+
+
 Version 3.2
 -----------
 
