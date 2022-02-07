@@ -62,13 +62,11 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         will pull the nodes inwards (in the direction of minus the normals)
         (default = "expand").
     smooth_mesh : bool
-        Smoothing of the mesh by local averaging, for each vertex which has
-        been moved, the coordinates of itself and all other vertices to which
-        it is connected weighting the vertex itself higher than the surrounding
-        vertices (default = True).
+        Smoothing of the mesh by Gaussian smoothing, for each vertex which has
+        been moved (default = True).
     skip_lastsmooth : bool
-        No smoothing is applied during last step to ensure that mm2move is exactly
-        reached (default = True).
+        Taubin smoothing instead of Gaussian smoothing is applied during last step
+        to ensure that mm2move is exactly reached (default = True).
     smooth_mm2move : bool
         Smoothing of mm2move. Prevents jigjag-like structures around sulci where
         some of the vertices are not moved anymore to keep ensure_distance (default = True).
@@ -218,9 +216,11 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         if smooth_mesh:
             if skip_lastsmooth & (i == nsteps-1):
                 logger.debug(f'{actualsurf}: Last iteration: skipping vertex smoothing')
+                vertices = smooth_vertices(
+                    vertices, faces, v2f_map=v2f, Niterations=10, mask_move=move, taubin=True)
             else:
                 vertices = smooth_vertices(
-                    vertices, faces, v2f_map=v2f, mask_move=move, taubin=True)
+                    vertices, faces, v2f_map=v2f, mask_move=move)
 
         logger.info(f'{actualsurf}: Moved {np.sum(move)} of {len(vertices)} vertices.')
 
