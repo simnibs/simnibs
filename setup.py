@@ -81,7 +81,7 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 '''
 
 # Information for CGAL download
-CGAL_version = '5.3'
+CGAL_version = '5.4'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
 CGAL_url = (
     f'https://github.com/CGAL/cgal/releases/download/'
@@ -104,43 +104,49 @@ eigen_version = '3.3.7'
 eigen_headers = os.path.abspath(f'simnibs/external/include/eigen-{eigen_version}')
 
 # Information for Intel TBB download
-tbb_version = '2020.1'
-tbb_path = os.path.abspath('tbb')
-tbb_headers = os.path.join(tbb_path, 'tbb', 'include')
+#https://github.com/oneapi-src/oneTBB/releases/download/v2021.5.0/oneapi-tbb-2021.5.0-win.zip
+#https://github.com/oneapi-src/oneTBB/releases/download/v2021.5.0/oneapi-tbb-2021.5.0-lin.tgz
+#https://github.com/oneapi-src/oneTBB/releases/download/v2021.5.0/oneapi-tbb-2021.5.0-mac.tgz
+tbb_version = '2021.5.0'
+tbb_path = os.path.abspath(f'tbb')
+tbb_headers = os.path.join(tbb_path, f'oneapi-tbb-{tbb_version}', 'include')
 if sys.platform == 'win32':
     tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-win.zip'
+        f'https://github.com/oneapi-src/oneTBB/releases/download/'
+        f'v{tbb_version}/oneapi-tbb-{tbb_version}-win.zip'
     )
+    tbb_path1 = os.path.join(tbb_path, f'oneapi-tbb-{tbb_version}')
     tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbb.dll'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbb.lib'),
-        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbbmalloc.dll'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbbmalloc.lib'),
+        os.path.join(tbb_path1, 'tbb', 'bin', 'intel64', 'vc14', 'tbb.dll'),
+        os.path.join(tbb_path1, 'tbb', 'lib', 'intel64', 'vc14', 'tbb.lib'),
+        os.path.join(tbb_path1, 'tbb', 'bin', 'intel64', 'vc14', 'tbbmalloc.dll'),
+        os.path.join(tbb_path1, 'tbb', 'lib', 'intel64', 'vc14', 'tbbmalloc.lib'),
     ]
 elif sys.platform == 'linux':
     tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-lin.tgz'
+        f'https://github.com/oneapi-src/oneTBB/releases/download/'
+        f'v{tbb_version}/oneapi-tbb-{tbb_version}-lin.tgz'
     )
+    tbb_libdir = os.path.join(tbb_path, f'oneapi-tbb-{tbb_version}', 'lib', 'intel64', 'gcc4.8')
     tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so.2'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so.2'),
+        os.path.join(tbb_libdir, 'libtbb.so'),
+        os.path.join(tbb_libdir, 'libtbb.so.12'),
+        os.path.join(tbb_libdir, 'libtbb.so.12.5'),
+        os.path.join(tbb_libdir, 'libtbbmalloc.so'),
+        os.path.join(tbb_libdir, 'libtbbmalloc.so.2'),
+        os.path.join(tbb_libdir, 'libtbbmalloc.so.2.5')
     ]
 elif sys.platform == 'darwin':
     tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-mac.tgz'
+        f'https://github.com/oneapi-src/oneTBB/releases/download/'
+        f'v{tbb_version}/oneapi-tbb-{tbb_version}-mac.tgz'
     )
     tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'lib', 'libtbb.dylib'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'libtbbmalloc.dylib'),
+        os.path.join(tbb_path, f'oneapi-tbb-{tbb_version}', 'tbb', 'lib', 'libtbb.dylib'),
+        os.path.join(tbb_path, f'oneapi-tbb-{tbb_version}', 'tbb', 'lib', 'libtbbmalloc.dylib'),
     ]
 else:
     raise OSError('OS not supported!')
-
 
 #### Setup compilation arguments
 is_conda = 'CONDA_PREFIX' in os.environ
