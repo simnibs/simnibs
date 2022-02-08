@@ -26,17 +26,17 @@ Good and Bad T1w and T2w images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. figure:: ../images/t1_t2.jpg
 
-  **Good** T1w and T2w images  
+  **Good** T1w and T2w images
 
 \
 
- 
+
 .. figure:: ../images/bad_t1.png
    :scale: 50 %
-                        
+
    **Bad** T1w image. The spongy bone is in part very bright (indicated by the red arrows) and a dark CSF region to separate GM and skull is missing at several positions (purple arrows indicate example positions).
 
-\ 
+\
 
 Segmentation and Meshing
 -------------------------
@@ -50,9 +50,9 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
 3. Run the segmentation and meshing pipeline *charm*. For example, for the *ernie* dataset, run
 
   .. code-block:: bash
-  
+
      charm ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
-  
+
   \
   The subject ID (subID) :code:`ernie` is given as first argument. Charm will create named a folder :file:`m2m_ernie` that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).
 
@@ -61,11 +61,11 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
   Alternatively, the reconstruction can be run with only the T1w image as input, but this can result in a less accurate skull region:
 
   .. code-block:: bash
-  
+
      charm ernie org/ernie_T1.nii.gz
-  
+
   \
-  
+
 Please see :ref:`charm_docs` for details and available options.
 
 4. Check the segmentation. Click on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject). The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
@@ -73,6 +73,7 @@ Please see :ref:`charm_docs` for details and available options.
 Troubleshooting
 ----------------
 
+* If you encounter spurious segmentation results this *could* be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial :ref:`fix_affine_registration_tutorial`.
 * Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
 
 
