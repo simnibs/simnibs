@@ -8,8 +8,9 @@ Fixing the Affine Registration
 
 .. note:: This tutorial applies only when setting :python:`init_type = "atlas"` in the :ref:`charm_docs` configuration file.
 
-When encountering spurious segmentation results, we have found that this can often be traced back to a suboptimal affine registration between the structural scan(s) and the atlas. Identifying what exactly is causing the segmentation to fail can be a bit tricky (at least initially) so here we provide a few examples showing the type of errors that one might encounter and how they can be alleviated by modifying the settings of :ref:`charm_docs`. We use the visualizations provided by :ref:`charm_docs` in the `reports` directory, specifically, `affine_reg.html` and `final_tissues.html`.
+When encountering spurious segmentation results, we have found that this can often be traced back to a suboptimal affine registration between the structural scan(s) and the atlas. Identifying what exactly is causing the segmentation to fail can be a bit tricky (at least initially) so here we provide a few examples showing the type of errors that one might encounter and how they can be alleviated by modifying the settings of :ref:`charm_docs`. Instead of modifying the default settings file (`charm.ini`, located in the simnibs directory), we suggest to make a copy of this and then modify that instead. This way, different changes can be made for individual subjects. To use the modified settings file, pass it using the `--usesettings` argument when running :ref:`charm_docs`.
 
+Here we use the visualizations provided by :ref:`charm_docs` in the `reports` directory, specifically, `affine_reg.html` and `final_tissues.html`.
 
 1. Bad Rotation
 ---------------
