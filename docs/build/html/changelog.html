@@ -55,7 +55,14 @@
 <h2>4.0.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li><p>New head segmentation and meshing pipeline <em>charm</em>.</p></li>
+<li><p>New head segmentation and meshing pipeline <em>charm</em> with improved accuracy and robustness</p></li>
+<li><p>New head models with additional tissue types, in particular spongy bone and large blood vessels</p></li>
+<li><p>New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh</p></li>
+<li><p>New command line tool <em>meshmesh</em> to support meshing of custom geometries</p></li>
+<li><p>Support of Nx1 center-surround montages in python and Matlab</p></li>
+<li><p>Update to python 3.9</p></li>
+<li><p>Major code cleanup and restructuring under the hood</p></li>
+<li><p>Tested on Windows 10, Linux and Macs with Intel and Apple Silicon</p></li>
 <li><p>Headreco and mri2mesh are deprecated.</p></li>
 <li><p>NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).</p></li>
 </ul>
@@ -371,7 +378,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
