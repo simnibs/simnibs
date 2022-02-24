@@ -29,4 +29,3 @@ print("Standard Deviation: ", regression.std(gpc_coeffs))
 
 # Draw 1000 samples for the 99th percentile
 samples = regression.MC_sampling(gpc_coeffs, 1000)[1]
-breakpoint()
