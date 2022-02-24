@@ -6,6 +6,10 @@ import stat
 import subprocess
 import shutil
 import glob
+import tempfile
+import requests
+import functools
+import zipfile
 
 import pytest
 from simnibs.utils.file_finder import path2bin
@@ -17,24 +21,22 @@ EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 def example_dataset():
     url = (
         f'https://github.com/simnibs/example-dataset/releases/'
-        'download/v3.0-lowres/ernie_lowres.zip'
+        'download/v4.0-lowres/ernie_lowres_V2.zip'
     )
-    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ernie_lowres'))
-    # Commented by Fang 20210531. Change it back in the future.
-    # tmpname = tempfile.mktemp(".zip")
-    # # Download the dataset
-    # with requests.get(url, stream=True) as r:
-    #     r.raw.read = functools.partial(r.raw.read, decode_content=True)
-    #     with open(tmpname, 'wb') as f:
-    #         shutil.copyfileobj(r.raw, f)
-    # # Unzip the dataset
-    # with zipfile.ZipFile(tmpname) as z:
-    #     z.extractall(os.path.dirname(__file__), )
-    # os.remove(tmpname)
+    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),'test_data'))
+    tmpname = tempfile.mktemp(".zip")
+    # Download the dataset
+    with requests.get(url, stream=True) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(tmpname, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    # Unzip the dataset
+    with zipfile.ZipFile(tmpname) as z:
+        z.extractall(fn_folder, )
+    os.remove(tmpname)
     yield fn_folder
     try:
-        # Commented by Fang 20210531. Change it back in the future.
-        # shutil.rmtree(fn_folder)
+        shutil.rmtree(fn_folder)
         pass
     except:
         print('Could not remove example dataset folder')
