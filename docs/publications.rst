@@ -74,7 +74,7 @@ Validation
 
 Tutorial paper
 ''''''''''''''
-* `Saturnino, G. B., Puonti, O., Nielsen, J. D., Antonenko, D., Madsen, K. H., & Thielscher, A. (2019). Simnibs 2.1: A comprehensive pipeline for individualized electric field modelling for transcranial brain stimulation. In Brain and Human Body Modeling (pp. 3-25). Springer, Cham. <https://doi.org/10.1016/j.neuroimage.2019.116431>`_
+* `Saturnino, G. B., Puonti, O., Nielsen, J. D., Antonenko, D., Madsen, K. H., & Thielscher, A. (2019). Simnibs 2.1: A comprehensive pipeline for individualized electric field modelling for transcranial brain stimulation. In Brain and Human Body Modeling (pp. 3-25). Springer, Cham. <https://link.springer.com/chapter/10.1007/978-3-030-21293-3_1>`_
 
 :ref:`headreco_docs` pipeline and assessement of skull segmentation accuracy
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
