@@ -107,7 +107,6 @@ def replace_show_surface():
     yield
     shutil.move(fn_tmp, fn_orig)
 
-
 class TestPythonErnie:
     def run_script(self, script_folder, script_name, clean=None):
         if clean is not None and os.path.exists(clean):
@@ -123,7 +122,7 @@ class TestPythonErnie:
 
     def test_tDCS(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'tDCS.py', 'tdcs')
+        ret = self.run_script('simulations', 'tDCS.py', 'tdcs_simu')
         assert ret.returncode == 0
 
     def test_roi_analysis_surf(self, example_dataset, replace_gmsh):
@@ -143,7 +142,7 @@ class TestPythonErnie:
 
     def test_TMS(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'TMS.py', 'tms')
+        ret = self.run_script('simulations', 'TMS.py', 'tms_simu')
         assert ret.returncode == 0
 
     def test_tDCS_ring(self, example_dataset, replace_gmsh):
@@ -199,7 +198,7 @@ class TestPythonErnie:
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization')
+        ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization_adm')
         assert ret.returncode == 0
 
 
@@ -220,7 +219,7 @@ class TestMatlabErnie:
 
     def test_tDCS(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'tDCS.m', 'tdcs')
+        ret = self.run_script('simulations', 'tDCS.m', 'tdcs_simu')
         assert ret.returncode == 0
 
     def test_roi_analysis_surf(self, example_dataset, replace_show_surface):
@@ -240,7 +239,7 @@ class TestMatlabErnie:
 
     def test_TMS(self, example_dataset, replace_show_surface):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'TMS.m', 'tms')
+        ret = self.run_script('simulations', 'TMS.m', 'tms_simu')
         assert ret.returncode == 0
 
     def test_tDCS_ring(self, example_dataset, replace_show_surface):
@@ -296,5 +295,5 @@ class TestMatlabErnie:
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization')
+        ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization_adm')
         assert ret.returncode == 0
