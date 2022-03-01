@@ -316,7 +316,7 @@ class TMSoptimize():
         )
         return self
 
-    def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
+    def run(self, cpus=1, allow_multiple_runs=False, save_mat=True, return_n_max=1):
         ''' Runs the tms optimization
 
         Parameters
@@ -327,11 +327,13 @@ class TMSoptimize():
             Wether to allow multiple runs in one folder. Default: False
         save_mat: bool (optional)
             Whether to save the ".mat" file of this structure
-        
+        return_n_max: int (optional)
+            Return n-th best solutions. Default: 1
+
         Returns
         --------
-        matsimnibs: array_like
-            optimal coil position/orientation
+        best_results: array_like
+            optimal coil positions/orientations. shape  = (return_n_max, 4, 4)
         '''
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
@@ -347,6 +349,7 @@ class TMSoptimize():
         else:
             logger.info('Running simulations on new directory: {0}'.dir_name)
             os.makedirs(dir_name)
+        assert return_n_max >= 1
 
         self._prepare()
         if save_mat:
@@ -443,9 +446,11 @@ class TMSoptimize():
             mesh_io.open_in_gmsh(fn_out, True)
         
         logger.info('\n' + self.summary(pos_matrices[np.argmax(E_roi)]))
-        
-        # return optimum coil position
-        return pos_matrices[np.argmax(E_roi)]
+
+        # return optimum coil position(s)
+        return_n_max = np.min((return_n_max,E_roi.shape[0]))
+        best_results = np.array(pos_matrices)[E_roi.argsort()[-return_n_max:][::-1]]
+        return best_results
 
     def _name_hdf5(self):
         try:
