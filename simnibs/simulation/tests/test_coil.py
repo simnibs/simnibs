@@ -13,6 +13,11 @@ def sphere3_msh():
         SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
     return mesh_io.read_msh(fn)
 
+@pytest.fixture(scope='module')
+def testcoil_ccd():
+    fn = os.path.join(
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'testcoil.ccd')
+    return fn
 
 class TestReadCCD:
     def test_read_ccd(self):
@@ -30,6 +35,28 @@ class TestReadCCD:
                                              [1, 0, 0],
                                              [0, 1, 0]], dtype=float))
         os.remove('test.ccd')
+
+    def test_parseccd(self, testcoil_ccd):
+        d_position, d_moment, bb, res, info = coil.parseccd(testcoil_ccd)
+        print(d_position)
+        print(d_moment)
+        print(bb)
+        print(res)
+        assert np.allclose(bb,((-100,100),(-100,100),(-100,100)))
+        assert np.allclose(res,(10,10,10))
+        assert info['coilname']=='Test coil'
+        assert float(info['dIdtmax'])==100.0
+        assert float(info['dIdtstim'])==100.0
+        assert info['brand']=='None'
+        assert info['stimulator']=='None'
+        assert np.allclose(d_position, ((-1e-2,0,-1e-3),
+                                        (1e-2,0,-1e-3),
+                                        (-2e-2,2e-2,-2e-3),
+                                        (2e-2,-2e-2,-2e-3)))
+        assert np.allclose(d_moment, ((1e-6,0,2e-6),
+                                      (-1e-6,0,-2e-6),
+                                      (0,1e-6,0),
+                                      (0,-1e-6,0)))
 
 class TestCalcdAdt:
     def test_calc_dAdt_ccd(self):
@@ -99,4 +126,3 @@ class TestCalcdAdt:
             ])
         )
         os.remove('test.ccd')
-

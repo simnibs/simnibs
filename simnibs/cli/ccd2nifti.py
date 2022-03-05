@@ -28,111 +28,7 @@ import simnibs.simulation.coil_numpy as coil_numpy
 import nibabel as nib
 import re
 import time
-# import multiprocessing
-# import functools
-
-def parseccd(ccd_file):
-    '''
-    Parse ccd file, and return intended bounding box, resolution and dIdtmax
-        and other fields if available
-    
-    Parameters
-    ----------
-    ccd_file : string
-        ccd file to parse
-    
-    On ccd file format version 1.1:
-    1) First line is a header line escaped with # which can contain any number
-       of variables in the form variable=value, a few of these variables are 
-       reserved as can be seen below, they are separated by semicolons (;).
-    2) The second line is the contains the number of dipoles expected
-       (this is actually not used in practice).
-    3) Third line contains a header text excaped by #, typically:
-       # centers and weighted directions of the elements (magnetic dipoles)
-    4-end) Remaining lines are space separated dipole positions and dipole
-       moments in a string number format readable by numpy. E.g. each line must contain 
-       six values: x y z mx my mz, where the first three are x,y and positions
-       in meters, and the remaining three are dipole moments in x,y and z direction
-       in Coulumb * meter per 1 A/s input current.
-       an example could be:
-       0 0 0 0 0 1.0e-03
-       indicating a dipole at position 0,0,0 in z direction with strength
-       0.001 C*m*s/A
-     
-    The variables are used to encode additonal optional information in text, specifically:
-    dIdtmax=147,100
-        which would indicate a max dI/dt (at 100% MSO) of 146.9 A/microsecond
-        for first stimulator and 100 A/microsecond for the second stimulator. 
-    dIdtstim=162
-        Indicating the max dI/dt reported on the stimulation display of 162, 
-        typically this is used to create a rescaled version of the ccd file 
-        such that the stimulator reported dI/dt max can be used directly.
-        This is currently only supported for one stimulator.
-    stimulator=Model name 1,Model name 2
-    brand=Brand name 1,Brand name 2
-    coilname=name of coil
-        Indicates the name of the coil for display purposes
-    Some variables are used for expansion in to nifti1 format:
-    x=-300,300
-        Indicates that the ccd file should be expanded into a FOV from 
-        x=-300mm to x=300mm, this could also be indicated as x=300
-    y=-300,300
-        The same for y
-    z=-200,200
-        The same for z
-    resolution=3,3,3
-        Indicates that the resolution should be 3mm in x,y and z directions,
-        this could also be given as resolution=3
-    
-    The below is an example header line:
-    #Test CCD file;dIdtmax=162;x=300;y=300;z=200;resolution=3;stimulator=MagProX100;brand=MagVenture;
-        
-        
-    '''
-    def parseField(info, field):
-        try:
-            a = np.fromstring(info[field],sep=',')
-        except:
-            a = None
-        return a
-    
-    d_position, d_moment = coil_numpy.read_ccd(ccd_file)
-    
-    #reopen to read header
-    f = open(ccd_file,'r')
-    data = f.readline()
-    fields = re.findall('(\w*=[^;]*)', data + ';')
-    labels = [f.split('=')[0] for f in fields]
-    values = [f.split('=')[1] for f in fields]
-    info = {}
-    for i,label in enumerate(labels):
-        info[label]=values[i]
-    
-    #parse bounding box for nii
-    bb = []
-    for dim in ('x','y','z'):
-        a = parseField(info, dim)
-        if a is None:
-            bb.append(None)
-        else:
-            if len(a)<2:
-                bb.append((-np.abs(a),np.abs(a)))
-            else:
-                bb.append(a)
-    
-    #parse resolution
-    res = []
-    a = parseField(info, 'resolution')
-    if a is None:
-        res.append(None)
-    else:
-        if len(a)<3:
-            for i in range(len(a),3):
-                a = np.concatenate((a, (a[i-1],)))
-        res = a
-        
-    
-    return d_position, d_moment, bb, res, info
+from simnibs.simulation.coil_numpy import parseccd
 
 def writeccd(fn, mpos, m, info=None, extra=None):
     N=m.shape[0]
@@ -164,20 +60,20 @@ def rescale_ccd(ccd_file, outname=None):
     #set maxdIdt and remove dIdtstim
     info['dIdtmax'] = info['dIdtstim']
     info.pop('dIdtstim')
-    
+
     if outname is None:
         inname = os.path.split(ccd_file)
-        outname = os.path.join(inname[0], 
+        outname = os.path.join(inname[0],
                                os.path.splitext(inname[1])[0] +
                                '_rescaled' + '.ccd')
     writeccd(outname, d_position, d_moment, info)
-    
+
 def _lfmm3d(charges, eps, sources, targets, nd=1):
     '''
     Wrapper function for fmm3dpy.lfmm3d
     Parameters
     ----------
-    charges : ndarray 
+    charges : ndarray
         Charges
     eps : float
         precision
@@ -205,7 +101,7 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     resolution : ndarray, optional
         Resolution (dx,dy,dz). The default is (3,3,3).
     boundingbox : ndarray, optional
-        Bounding box ((xmin,xmax),(ymin,ymax),(zmin,zmax)). 
+        Bounding box ((xmin,xmax),(ymin,ymax),(zmin,zmax)).
         The default is ((-300, 300), (-200, 200), (0, 300)).
     dIdt : float, optional
         Maximum dIdt. The default is None.
@@ -238,7 +134,7 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     xyz = np.array(xyz).reshape((3, len(x) * len(y) * len(z)))
     xyz *= 1.0e-3 #from mm to SI (meters)
     if Bfield:
-        A = B_from_dipoles(d_moment, d_position, xyz.T)     
+        A = B_from_dipoles(d_moment, d_position, xyz.T)
     else:
         A = A_from_dipoles(d_moment, d_position, xyz.T)
     A = A.reshape((len(x), len(y), len(z), 3))
@@ -281,11 +177,11 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
         else:
             direct = False
     if direct is True:
-        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T, 
-                  targets=target_positions.T, nd=3, pgt=2)    
+        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T,
+                  targets=target_positions.T, nd=3, pgt=2)
     elif direct is False:
         #use fmm3dpy to calculate expansion fast
-        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T, 
+        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T,
                   targets=target_positions.T, nd=3, pgt=2)
     else:
         print('Error: direct flag needs to be either "auto", True or False')
@@ -306,10 +202,10 @@ def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
         else:
             direct = False
     if direct is True:
-        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T, 
+        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T,
                   targets=target_positions.T, nd=1, pgt=2)
     elif direct is False:
-        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T, 
+        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T,
                   targets=target_positions.T, nd=1, pgt=2)
     else:
         print('Error: direct flag needs to be either "auto", True or False')
@@ -331,6 +227,9 @@ def main():
                            'dI/dt (writes new ccd file - with suffix _rescaled)')
     parser.add_argument('-f', '--force', dest='force', action='store_true',
                         help='Force rewrite')
+    parser.add_argument('-b', '--bfield', dest='Bfield', action='store_true',
+                        help='Write B field instead of A field')
+
     options = parser.parse_args(sys.argv[1:])
     if os.path.isdir(options.infile):
         print(f'recursively processing CCD files in {options.infile}')
@@ -357,11 +256,11 @@ def main():
             if len(glob.glob(os.path.splitext(outfile)[0] + '*')) == 0 or options.force:
                 t0 = time.perf_counter()
                 print(f'expanding CCD file {ccdfile}')
-                nii = ccd2nifti(ccdfile)
+                nii = ccd2nifti(ccdfile, Bfield=options.Bfield)
                 nii.to_filename(outfile)
                 print(f'Time spend: {time.perf_counter()-t0:.0f}s')
             else:
-                print(f'Nifti1 version of {ccdfile} already exists')        
+                print(f'Nifti1 version of {ccdfile} already exists')
 
 if __name__ == '__main__':
     main()
