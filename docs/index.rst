@@ -18,24 +18,73 @@ A SimNIBS workflow consists of three main parts:
 
 SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <tms_optimize>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <tdcs_distributed_opt>`.
 
-|
-
 .. raw:: html
 
   <embed>
-  <iframe id="vizframe" width="100%" height="100%" data-src="" frameBorder="0"> </iframe>
+  <style>
+  .slideshow {
+    position: relative;
+    width: 100%;
+    height: 30vh;
+    background-color: #fff;
+    }
+  .slideshow > div {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: url();
+    position: absolute;
+    opacity: 0;
+    animation-name: fading-slideshow;
+    animation-iteration-count: infinite;
+    animation-duration: 18s;
+    animation-delay: 0s;
+    }
+  .slideshow > div:nth-of-type(2) {
+    animation-delay: 9s;
+    }
+  @keyframes fading-slideshow {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    50% { opacity: 1; }
+    60% { opacity: 0; }
+    }
+  }
+  </style>
+  <div class="slideshow">
+    <div id="bgimg1";></div>
+    <div id="bgimg2";></div>
+  </div>
   <script type="text/javascript" src=_static/gallery/list.js></script>
   <script type="text/javascript">
-  i=Math.floor(Math.random()*(filelist.length));
-  document.getElementById("vizframe").src="_static/gallery/"+filelist[i];
-  setInterval(function myRefresh(){
-  i=Math.floor(Math.random()*(filelist.length));
-  document.getElementById("vizframe").src="_static/gallery/"+filelist[i];}
-  , 10000);
+    let shuffled = filelist
+		.map(value => ({ value, sort: Math.random() }))
+		.sort((a, b) => a.sort - b.sort)
+		.map(({ value }) => value)	
+	document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+filelist[0]+")";  
+	document.getElementById("bgimg2").style="background-image:url(_static/gallery/"+shuffled[0]+")"
+	i=0
+	setTimeout( function myRefresh2(){
+		i=i+1;
+		if (i >= shuffled.length) { i=0; }
+		document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+		, 12000); /* time point for changing bgimg1 */
+	setInterval( function myRefresh(){
+		setTimeout( function myRefresh1(){
+			i=i+1;
+			if (i >= shuffled.length) { i=0; }
+			document.getElementById("bgimg2").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+		, 3000); /* time point for changing bgimg2 */
+		setTimeout( function myRefresh2(){
+		i=i+1;
+		if (i >= shuffled.length) { i=0; }
+		document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+		, 12000);} /* time point for changing bgimg1 */
+	, 18000);
   </script>
   </embed>
-
-|
 
 .. raw:: html
 
