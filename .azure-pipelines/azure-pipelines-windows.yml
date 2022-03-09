@@ -7,7 +7,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
@@ -39,10 +39,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      Windows-2016:
-        vmImage: 'vs2017-win2016'
       Windows-2019:
-         vmImage: 'windows-2019'
+        vmImage: 'windows-2019'
+      Windows-2022:
+         vmImage: 'windows-2022'
 
   pool:
     vmImage: $(vmImage)
@@ -73,7 +73,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - checkout: none
@@ -106,7 +106,7 @@ jobs:
    - Test
    - Examples
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - checkout: none
