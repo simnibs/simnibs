@@ -7,7 +7,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
     maxParallel: 4
 
   steps:
@@ -58,10 +58,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-10.14:
-        vmImage: 'macOS-10.14'
       MacOSX-10.15:
         vmImage: 'macOS-10.15'
+      MacOSX-11:
+        vmImage: 'macOS-11'
 
   pool:
     vmImage: $(vmImage)
