@@ -2623,4 +2623,3 @@ def remove_files(files):
 # use log_excep as exception handler instead of python standard
 sys.excepthook = log_excep
 
-
