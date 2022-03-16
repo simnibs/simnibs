@@ -454,7 +454,7 @@ class SubjectFiles:
         self.T2_bias_corrected = os.path.join(self.segmentation_folder, 'T2_bias_corrected.nii.gz')
         self.labeling = os.path.join(self.subpath, 'labeling.nii.gz')
         self.final_labels = os.path.join(self.subpath, 'final_tissues.nii.gz')
-        self.template_coregistered =  os.path.join(self.segmentation_folder, 'template_coregistered.nii.gz')
+        self.template_coregistered = os.path.join(self.segmentation_folder, 'template_coregistered.mgz')
         self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')

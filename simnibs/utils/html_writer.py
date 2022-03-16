@@ -1,6 +1,7 @@
 from simnibs import SIMNIBSDIR
 import os
 import json
+import shutil
 from simnibs.utils.settings_reader import read_ini
 
 
@@ -231,6 +232,10 @@ def write_template(sub_files):
     Instantiation of the SubjectFiles class
     for the given subject folder.
     """
+
+    #Copy simnibs logo to reports folder
+    simnibs_icon = os.path.join(sub_files.report_folder, 'simnibs_icon.png')
+    shutil.copy(simnibs_logo, simnibs_icon)
     t1_t2_reg_viewer = (
         '<a href="' + sub_files.t1_t2_reg_viewer + '">T1-T2 registration viewer</a>'
     )
@@ -252,7 +257,7 @@ def write_template(sub_files):
     else:
         parse_dict["scan_text"] = t1_t2_text
 
-    parse_dict["simnibs_fig"] = simnibs_logo
+    parse_dict["simnibs_fig"] = 'reports/simnibs_icon.png'
 
     if not os.path.exists(sub_files.t1_t2_reg_viewer):
         parse_dict["t1_t2_reg"] = ""

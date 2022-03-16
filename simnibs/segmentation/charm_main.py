@@ -72,6 +72,7 @@ def _register_atlas_to_input_affine(T1, template_file_name,
 
     image_to_image_transform, world_to_world_transform, optimization_summary =\
     affine.registerAtlas(worldToWorldTransformMatrix=world_to_world_transform_matrix,
+                         initTransform=init_transform,
                          initializationOptions=init_options,
                          targetDownsampledVoxelSpacing=ds_factor,
                          visualizer=visualizer,
@@ -119,10 +120,10 @@ def _init_atlas_affine(t1_scan, mni_template, affine_settings):
 
     registerer = samseg.gems.KvlAffineRegistration(affine_settings['translation_scale'],
                                                    affine_settings['max_iter'],
-                                                   affine_settings['radius'],
+                                                   0,
                                                    affine_settings['shrink_factors'],
                                                    affine_settings['bg_value'],
-                                                   affine_settings['smoothing_factor'],
+                                                   affine_settings['smoothing_factors'],
                                                    affine_settings['center_of_mass'],
                                                    affine_settings['samp_factor'],
                                                    'b')
@@ -130,6 +131,8 @@ def _init_atlas_affine(t1_scan, mni_template, affine_settings):
     registerer.initialize_transform()
     registerer.register()
     trans_mat = registerer.get_transformation_matrix()
+    #registerer.write_out_result(os.path.join(path_to_segment_folder, 'mni_transformed.nii.gz'))
+    print(trans_mat)
     # ITK returns the matrix mapping the fixed image to the
     # moving image so let's invert it.
     return np.linalg.inv(trans_mat)
