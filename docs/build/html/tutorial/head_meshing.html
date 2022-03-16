@@ -4,12 +4,12 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>Creating Head Models &#8212; SimNIBS 4.0a0 documentation</title>
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -108,18 +108,20 @@
 </div></blockquote>
 <p>Please see <a class="reference internal" href="../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> for details and available options.</p>
 <ol class="arabic simple" start="4">
-<li><p>Check the segmentation. <strong>We will let you know how to do this once we figured something out</strong>.</p></li>
+<li><p>Check the segmentation. Click on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject). The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.</p></li>
 </ol>
 </section>
 <section id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>** To come… **</p></li>
+<li><p>If you encounter spurious segmentation results this <em>could</em> be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial <a class="reference internal" href="advanced/fix_affine_registration.html#fix-affine-registration-tutorial"><span class="std std-ref">Fixing the Affine Registration</span></a>.</p></li>
+<li><p>Please see the tutorial <a class="reference internal" href="advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">How to manually edit a head model</span></a> in case manually fixes to the segmentation are needed.</p></li>
 </ul>
 </section>
 <section id="further-reading">
 <h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
-<p>For more information on head meshing, please see our <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>, <strong>CITE OULAS PAPER</strong>.</p>
+<p>For more information on head meshing, please see:</p>
+<p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2020.117044">Puonti O, Van Leemput K, Saturnino GB, Siebner HR, Madsen KH, Thielscher A. (2020). Accurate and robust whole-head segmentation from magnetic resonance images for individualized head modeling. Neuroimage, 219:117044.</a></p>
 </section>
 </section>
 
@@ -199,7 +201,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -221,7 +223,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.2.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

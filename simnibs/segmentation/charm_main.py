@@ -1122,6 +1122,7 @@ def run(subject_dir=None, T1=None, T2=None,
                     spawn_process(cmd, lvl=logging.DEBUG)
                     m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
+                    if os.path.isfile('meshfix_log.txt'): os.remove('meshfix_log.txt')
                 if 'rh' in pial:
                     m2 = read_gifti_surface(sub_files.get_surface('rh', surf_type='pial'))
                     # remove self-intersections using meshfix
@@ -1132,6 +1133,7 @@ def run(subject_dir=None, T1=None, T2=None,
                     spawn_process(cmd, lvl=logging.DEBUG)
                     m = m.join_mesh(read_off(mesh_fn))
                     if os.path.isfile(mesh_fn): os.remove(mesh_fn)
+                    if os.path.isfile('meshfix_log.txt'): os.remove('meshfix_log.txt')
                 if m.nodes.nr > 0:
                     _open_sulci(label_img, label_affine,
                                 labelorg_img, labelorg_affine, m,
@@ -1171,6 +1173,7 @@ def run(subject_dir=None, T1=None, T2=None,
         if not hierarchy:
             hierarchy = None
         smooth_steps = mesh_settings['smooth_steps']
+        skin_care = mesh_settings['skin_care']
         
         # Meshing
         DEBUG_FN = os.path.join(sub_files.subpath, 'before_despike.msh') 
@@ -1184,6 +1187,7 @@ def run(subject_dir=None, T1=None, T2=None,
                 skin_tag=skin_tag,
                 hierarchy=hierarchy,
                 smooth_steps=smooth_steps,
+                skin_care=skin_care, 
                 DEBUG_FN=DEBUG_FN)
         
         logger.info('Writing mesh')

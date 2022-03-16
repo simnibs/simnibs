@@ -7,8 +7,6 @@ import nibabel as nib
 import gc
 from simnibs.segmentation._cat_c_utils import cat_vbdist
 from simnibs.segmentation.samseg.utilities import requireNumpyArray
-# TODO! remove
-import os
 
 def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             output_name_segmentation,

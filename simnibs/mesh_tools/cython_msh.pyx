@@ -272,7 +272,6 @@ def gauss_smooth(
     np.uint_t[::1] adj_th_indices,
     np.uint_t[::1] adj_th_indptr,
     float factor,
-    np.uint_t[::1] nodes_mask,
     float max_gamma
     ):
     ''' Gaussian smoothing in-place
@@ -287,9 +286,6 @@ def gauss_smooth(
 
     # for speed, I dont use numpy functions
     for i in range(len(surf_nodes)):
-        if not nodes_mask[i]:
-            # do not smooth
-            continue 
         n = surf_nodes[i]
         for k in range(3):
             bar[k] = 0.
@@ -316,6 +312,44 @@ def gauss_smooth(
                 break
 
     return count_cancelled
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+def gauss_smooth_simple(
+    np.uint_t[::1] surf_nodes,
+    double[:, ::1] nodes_pos,
+    np.uint_t[::1] adj_indices,
+    np.uint_t[::1] adj_indptr,
+    float factor
+    ):
+    ''' Gaussian smoothing in-place
+    '''
+    cdef np.uint_t n
+    cdef double[3] bar
+    cdef double[:, ::1] pos_before
+    cdef Py_ssize_t i, j, k
+
+    # for speed, I dont use numpy functions
+    pos_before = nodes_pos.copy()
+    for i in range(len(surf_nodes)):
+        n = surf_nodes[i]
+        for k in range(3):
+            bar[k] = 0.
+
+        # move
+        for j in range(adj_indptr[n], adj_indptr[n+1]):
+            for k in range(3):
+                bar[k] = bar[k] + pos_before[adj_indices[j], k]
+
+        for k in range(3):
+            bar[k] = bar[k]/float(adj_indptr[n+1] - adj_indptr[n])
+
+        for k in range(3):
+            nodes_pos[n, k] += factor * (bar[k] - pos_before[n, k])
+
+    return
 
 
 @cython.boundscheck(False)

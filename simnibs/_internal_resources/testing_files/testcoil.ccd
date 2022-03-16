@@ -1,0 +1,7 @@
+# Test Coil version 1.1;dIdtmax=100.0;x=-100,100;y=-100,100;z=-100,100;resolution=10;stimulator=None;brand=None;dIdtstim=100;coilname=Test coil
+4
+# centers and weighted directions of the elements (magnetic dipoles)
+-0.01 0 -0.001 1e-6 0 2e-6
+0.01 0 -0.001 -1e-6 0 -2e-6
+-0.02 0.02 -0.002 0 1e-6 0
+0.02 -0.02 -0.002 0 -1e-6 0

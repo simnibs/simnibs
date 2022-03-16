@@ -5,7 +5,6 @@ import tempfile
 
 import pytest
 import h5py
-from mock import Mock, patch, call
 import scipy.io
 import numpy as np
 import nibabel

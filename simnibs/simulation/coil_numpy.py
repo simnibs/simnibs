@@ -6,9 +6,9 @@
 import numpy as np
 import nibabel as nib
 import os
+import re
 from .. import __version__
 from ..mesh_tools import mesh_io
-from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates
 
 
@@ -41,6 +41,106 @@ else:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+def parseccd(ccd_file):
+    '''
+    Parse ccd file, and return intended bounding box, resolution and dIdtmax
+        and other fields if available
+
+    Parameters
+    ----------
+    ccd_file : string
+        ccd file to parse
+
+    On ccd file format version 1.1:
+    1) First line is a header line escaped with # which can contain any number
+       of variables in the form variable=value, a few of these variables are
+       reserved as can be seen below, they are separated by semicolons (;).
+    2) The second line is the contains the number of dipoles expected
+       (this is actually not used in practice).
+    3) Third line contains a header text excaped by #, typically:
+       # centers and weighted directions of the elements (magnetic dipoles)
+    4-end) Remaining lines are space separated dipole positions and dipole
+       moments in a string number format readable by numpy. E.g. each line must contain
+       six values: x y z mx my mz, where the first three are x,y and positions
+       in meters, and the remaining three are dipole moments in x,y and z direction
+       in Coulumb * meter per 1 A/s input current.
+       an example could be:
+       0 0 0 0 0 1.0e-03
+       indicating a dipole at position 0,0,0 in z direction with strength
+       0.001 C*m*s/A
+
+    The variables are used to encode additonal optional information in text, specifically:
+    dIdtmax=147,100
+        which would indicate a max dI/dt (at 100% MSO) of 146.9 A/microsecond
+        for first stimulator and 100 A/microsecond for the second stimulator.
+    dIdtstim=162
+        Indicating the max dI/dt reported on the stimulation display of 162,
+        typically this is used to create a rescaled version of the ccd file
+        such that the stimulator reported dI/dt max can be used directly.
+        This is currently only supported for one stimulator.
+    stimulator=Model name 1,Model name 2
+    brand=Brand name 1,Brand name 2
+    coilname=name of coil
+        Indicates the name of the coil for display purposes
+    Some variables are used for expansion in to nifti1 format:
+    x=-300,300
+        Indicates that the ccd file should be expanded into a FOV from
+        x=-300mm to x=300mm, this could also be indicated as x=300
+    y=-300,300
+        The same for y
+    z=-200,200
+        The same for z
+    resolution=3,3,3
+        Indicates that the resolution should be 3mm in x,y and z directions,
+        this could also be given as resolution=3
+
+    The below is an example header line:
+    #Test CCD file;dIdtmax=162;x=300;y=300;z=200;resolution=3;stimulator=MagProX100;brand=MagVenture;
+
+
+    '''
+    def parseField(info, field):
+        try:
+            a = np.fromstring(info[field],sep=',')
+        except:
+            a = None
+        return a
+
+    d_position, d_moment = read_ccd(ccd_file)
+
+    #reopen to read header
+    f = open(ccd_file,'r')
+    data = f.readline()
+    fields = re.findall(r'(\w*=[^;]*)', data + ';')
+    labels = [f.split('=')[0] for f in fields]
+    values = [f.split('=')[1].rstrip('\n') for f in fields]
+    info = {}
+    for i,label in enumerate(labels):
+        info[label]=values[i]
+
+    #parse bounding box for nii
+    bb = []
+    for dim in ('x','y','z'):
+        a = parseField(info, dim)
+        if a is None:
+            bb.append(None)
+        else:
+            if len(a)<2:
+                bb.append((-np.abs(a),np.abs(a)))
+            else:
+                bb.append(a)
+
+    #parse resolution
+    res = []
+    a = parseField(info, 'resolution')
+    if a is None:
+        res.append(None)
+    else:
+        if len(a)<3:
+            for i in range(len(a),3):
+                a = np.concatenate((a, (a[i-1],)))
+        res = a
+    return d_position, d_moment, bb, res, info
 
 def read_ccd(fn):
     """ reads a ccd file
@@ -113,7 +213,7 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
             pgt=2,
             nd=3
         )
-       
+
     A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
     A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
     A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
@@ -188,22 +288,22 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
 
 def _add_logo(msh_stl):
     ''' adds the simnibs logo to the coil surface '''
-    
+
     msh_logo=mesh_io.read_msh(Templates().simnibs_logo)
-    
+
     # 'simnibs' has tag 1, '3' has tag 2, '4' has tag 3
-    # renumber tags, because they will be converted to color: 
+    # renumber tags, because they will be converted to color:
     # 0 gray, 1 red, 2 lightblue, 3 blue
     major_version = __version__.split('.')[0]
     if  major_version == '3':
-        msh_logo=msh_logo.crop_mesh(tags = [1,2]) 
+        msh_logo=msh_logo.crop_mesh(tags = [1,2])
         msh_logo.elm.tag1[msh_logo.elm.tag1==2] = 3 # version in blue
     elif major_version == '4':
         msh_logo=msh_logo.crop_mesh(tags=[1,3])
     else:
-        msh_logo=msh_logo.crop_mesh(tags=1)   
+        msh_logo=msh_logo.crop_mesh(tags=1)
     msh_logo.elm.tag1[msh_logo.elm.tag1==1] = 2 # 'simnibs' in light blue
-    
+
     # center logo in xy-plane, mirror at yz-plane and scale
     bbox_coil=np.vstack([np.min(msh_stl.nodes[:],0),
                          np.max(msh_stl.nodes[:],0)])
@@ -212,21 +312,21 @@ def _add_logo(msh_stl):
     bbox_ratio=np.squeeze(np.diff(bbox_logo,axis=0)/
                           np.diff(bbox_coil,axis=0))
     bbox_ratio=max(bbox_ratio[0:2]) # maximal size ratio in xy plane
-    
+
     msh_logo.nodes.node_coord[:,0:2] -= np.mean(bbox_logo[:,0:2],axis=0)
     msh_logo.nodes.node_coord[:,0] = -msh_logo.nodes.node_coord[:,0]
     msh_logo.nodes.node_coord[:,0:2] *= 1/(4*bbox_ratio)
-    
+
     # shift logo along negative z to the top side of coil
     msh_logo.nodes.node_coord[:,2] += bbox_coil[0,2] - bbox_logo[0,2] - 5
-    
+
     msh_stl = msh_stl.join_mesh(msh_logo)
     return msh_stl
 
 
 def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False):
     """ Applies a 4x4 transformation matrix to mesh nodes.
-                
+
         Parameters
         -----------
         msh_stl: simnibs.mesh_io.Msh
@@ -240,7 +340,7 @@ def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False)
         add_logo:
             if set to True, a SimNIBS logo will be added to the coil surface.
             The tags will be marked as 2 and 3.
-  
+
         Returns
         -------
         msh_stl: simnibs.mesh_io.Msh
@@ -251,23 +351,28 @@ def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False)
         msh_stl = _add_logo(msh_stl)
     d_position = np.hstack([msh_stl.nodes[:], np.ones((msh_stl.nodes.nr, 1))])
     msh_stl.nodes.node_coord = coil_matrix.dot(d_position.T).T[:, :3]
-    
+
     if msh_skin is not None:
         idx_inside = msh_skin.pts_inside_surface(msh_stl.nodes[:])
         if len(idx_inside):
             idx_hlp = np.zeros((msh_stl.nodes.nr, 1),dtype=bool)
             idx_hlp[idx_inside] = True
             idx_hlp = np.any(np.squeeze(idx_hlp[msh_stl.elm[:,:3]-1]), axis=1)
-            msh_stl.elm.tag1[idx_hlp & (msh_stl.elm.tag1 == 0)] = 1      
+            msh_stl.elm.tag1[idx_hlp & (msh_stl.elm.tag1 == 0)] = 1
     return msh_stl
 
 
 def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
-    
+
     add_logo = True # add simnibs logo to coil surface visulization
-    
+
     coil_matrix = np.array(coil_matrix)
-    if coil_file.endswith('.ccd'):
+    if isinstance(coil_file, nib.nifti1.Nifti1Image) or\
+        coil_file.endswith('.nii.gz') or\
+        coil_file.endswith('.nii'):
+        dadt = _calculate_dadt_nifti(msh, coil_file,
+                                     coil_matrix, didt, fn_geo)
+    elif coil_file.endswith('.ccd'):
         if FMM3D:
             dadt = _calculate_dadt_ccd_FMM(
                 msh, coil_file,
@@ -278,15 +383,12 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
                 msh, coil_file,
                 coil_matrix, didt, fn_geo
             )
-    elif coil_file.endswith('.nii.gz') or coil_file.endswith('.nii'):
-        dadt = _calculate_dadt_nifti(msh, coil_file,
-                                     coil_matrix, didt, fn_geo)
     else:
         raise ValueError('coil file must be either a .ccd file or a nifti file')
-    
+
     if (fn_geo is not None) and (fn_stl is not None):
         idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) |
-                                        (msh.elm.tag1 == 5) ) 
+                                        (msh.elm.tag1 == 5) )
         msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
         if not os.path.isfile(fn_stl):
             raise IOError('Could not find stl file: {0}'.format(fn_stl))

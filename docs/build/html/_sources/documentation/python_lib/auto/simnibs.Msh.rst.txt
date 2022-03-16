@@ -47,9 +47,10 @@
       ~Msh.pts_inside_surface
       ~Msh.read_hdf5
       ~Msh.reconstruct_surfaces
+      ~Msh.reconstruct_unique_surface
       ~Msh.remove_from_mesh
-      ~Msh.remove_triangle_twins
       ~Msh.smooth_surfaces
+      ~Msh.smooth_surfaces_simple
       ~Msh.surface_EC
       ~Msh.test_inside_volume
       ~Msh.tetrahedra_quality
