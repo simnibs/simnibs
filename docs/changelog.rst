@@ -1,5 +1,10 @@
 Changelog
 ===========
+3.2.6
+------
+* fixed a bug causing headreco to fail on MacOS
+* Note: On Apple M1s using .ccd coil files does not yet work, please use niftis instead.
+
 3.2.5
 ------
 * added skin smoothing options for TMS optimization
