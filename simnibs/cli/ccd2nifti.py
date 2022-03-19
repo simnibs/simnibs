@@ -26,7 +26,6 @@ import numpy as np
 import fmm3dpy
 import simnibs.simulation.coil_numpy as coil_numpy
 import nibabel as nib
-import re
 import time
 from simnibs.simulation.coil_numpy import parseccd
 
@@ -67,28 +66,6 @@ def rescale_ccd(ccd_file, outname=None):
                                os.path.splitext(inname[1])[0] +
                                '_rescaled' + '.ccd')
     writeccd(outname, d_position, d_moment, info)
-
-def _lfmm3d(charges, eps, sources, targets, nd=1):
-    '''
-    Wrapper function for fmm3dpy.lfmm3d
-    Parameters
-    ----------
-    charges : ndarray
-        Charges
-    eps : float
-        precision
-    sources : ndarray
-        Sources.
-    targets : ndarray
-        Targets
-
-    Returns
-    -------
-    fmm3dpy output object
-
-    '''
-    return fmm3dpy.lfmm3d(eps=eps, sources=sources, charges=charges,
-                          targets=targets, pgt=2, nd=nd)
 
 def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     '''
@@ -134,9 +111,9 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     xyz = np.array(xyz).reshape((3, len(x) * len(y) * len(z)))
     xyz *= 1.0e-3 #from mm to SI (meters)
     if Bfield:
-        A = B_from_dipoles(d_moment, d_position, xyz.T)
+        A = coil_numpy.B_from_dipoles(d_moment, d_position, xyz.T)
     else:
-        A = A_from_dipoles(d_moment, d_position, xyz.T)
+        A = coil_numpy.A_from_dipoles(d_moment, d_position, xyz.T)
     A = A.reshape((len(x), len(y), len(z), 3))
     #header info
     hdr = nib.Nifti1Header()
@@ -169,49 +146,6 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
         print('no information on dIdtmax found omitting from nii file.')
     return nii
 
-def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
-    #if set to auto use direct methods if # dipoles less than 300
-    if direct=='auto':
-        if d_moment.shape[0]<300:
-            direct = True
-        else:
-            direct = False
-    if direct is True:
-        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T,
-                  targets=target_positions.T, nd=3, pgt=2)
-    elif direct is False:
-        #use fmm3dpy to calculate expansion fast
-        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T,
-                  targets=target_positions.T, nd=3, pgt=2)
-    else:
-        print('Error: direct flag needs to be either "auto", True or False')
-    A = np.empty((target_positions.shape[0], 3), dtype=float)
-    #calculate curl
-    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
-    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
-    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
-    #scale
-    A *= -1e-7
-    return A
-
-def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
-    #if set to auto use direct methods if # dipoles less than 300
-    if direct=='auto':
-        if d_moment.shape[0]<300:
-            direct = True
-        else:
-            direct = False
-    if direct is True:
-        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T,
-                  targets=target_positions.T, nd=1, pgt=2)
-    elif direct is False:
-        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T,
-                  targets=target_positions.T, nd=1, pgt=2)
-    else:
-        print('Error: direct flag needs to be either "auto", True or False')
-    B = out.gradtarg.T
-    B *= -1e-7
-    return B
 
 def main():
     import argparse
