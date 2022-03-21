@@ -42,6 +42,8 @@ def _create_grid(mesh, pos, distance, radius, resolution_pos, scalp_normals_smoo
 
     q1 = coords_plane + 1e2 * resolution_pos * vh[:, 2]
     q2 = coords_plane - 1e2 * resolution_pos * vh[:, 2]
+    if not q1.size and not q2.size:
+        raise ValueError(f"Couldn't determine valid coil positions within search radius. Search radius too small?")
     idx, pos = msh_roi.intersect_segment(q1, q2)
     for i, c in enumerate(coords_plane):
         intersections = idx[:, 0] == i
