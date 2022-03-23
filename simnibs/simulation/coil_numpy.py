@@ -105,8 +105,10 @@ def parseccd(ccd_file):
         except:
             a = None
         return a
-
-    d_position, d_moment = read_ccd(ccd_file)
+    if os.path.splitext(ccd_file)[1]=='.ccl':
+        d_position, d_moment = read_ccl(ccd_file)
+    else:
+        d_position, d_moment = read_ccd(ccd_file)
 
     #reopen to read header
     f = open(ccd_file,'r')
@@ -143,6 +145,32 @@ def parseccd(ccd_file):
     return d_position, d_moment, bb, res, info
 
 def read_ccd(fn):
+    """ reads a ccl file, this format is similar to the ccd format. However,
+    only line segments positions are included (first 3 columns) and an optional
+    weighting in the forth column
+
+    Parameters
+    -----------
+    fn: str
+        name of ccl file
+
+    Returns
+    ----------
+    [pos, m]: list
+        positions of line segments
+    """
+    ccl_file = np.loadtxt(fn, skiprows=2)
+
+    # if there is only 1 dipole, loadtxt return as array of the wrong shape
+    if (len(np.shape(ccl_file)) == 1):
+        a = np.zeros([1, 4])
+        a[0, 0:3] = ccd_file[0:3]
+        a[0, 3:] = ccd_file[3:]
+        ccd_file = a
+
+    return ccd_file[:, 0:3], ccd_file[:, 3:]
+
+def read_ccd(fn):
     """ reads a ccd file
 
     Parameters
@@ -165,6 +193,195 @@ def read_ccd(fn):
         ccd_file = a
 
     return ccd_file[:, 0:3], ccd_file[:, 3:]
+
+
+def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    '''
+    Get A field from dipoles using FMM3D
+
+    Parameters
+    ----------
+    d_moment : ndarray
+        dipole moments (Nx3).
+    d_position : ndarray
+        dipole positions (Nx3).
+    target_positions : ndarray
+        position for which to calculate the A field.
+    eps : float
+        Precision. The default is 1e-3
+    direct : bool
+        Set to true to force using direct (naive) approach or False to force use of FMM.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster i these cases.
+        The default is 'auto'
+
+    Returns
+    -------
+    A : ndarray
+        A field at points (M x 3) in Tesla*meter.
+
+    '''
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T,
+                  targets=target_positions.T, nd=3, pgt=2)
+    elif direct is False:
+        #use fmm3dpy to calculate expansion fast
+        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T,
+                  targets=target_positions.T, nd=3, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
+    A = np.empty((target_positions.shape[0], 3), dtype=float)
+    #calculate curl
+    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
+    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
+    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
+    #scale
+    A *= -1e-7
+    return A
+
+def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    '''
+    Get B field from dipoles using FMM3D
+
+    Parameters
+    ----------
+    d_moment : ndarray
+        dipole moments (Nx3).
+    d_position : ndarray
+        dipole positions (Nx3).
+    target_positions : ndarray
+        position for which to calculate the B field.
+    eps : float
+        Precision. The default is 1e-3
+    direct : bool
+        Set to true to force using direct (naive) approach or False to force use of FMM.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster i these cases.
+        The default is 'auto'
+
+    Returns
+    -------
+    B : ndarray
+        B field at points (M x 3) in Tesla.
+
+    '''
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T,
+                  targets=target_positions.T, nd=1, pgt=2)
+    elif direct is False:
+        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T,
+                  targets=target_positions.T, nd=1, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
+    B = out.gradtarg.T
+    B *= -1e-7
+    return B
+
+def A_biot_savart_path(lsegments, points, I=1.):
+    '''
+    Calculate A field naively (without FMM) from current path
+
+    Parameters
+    ----------
+    lsegments : ndarray
+        line segments, definition of M wire path as 3D points (3 x M).
+    points : ndarray
+        3D points where field is calculated (3 x N).
+    I : float, optional
+        Current strenth in A. The default is 1..
+
+    Returns
+    -------
+    A : ndarray
+        A field at points (3 x N) in Tesla*meter..
+
+    '''
+    r1 = np.sqrt(np.sum((points[:,:,None]-lsegments[:,None,:])**2,axis=0))
+    dl = np.zeros(lsegments.shape)
+    dl[:,:-1] = np.diff(lsegments,axis=1)
+    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+    A = np.sum(dl[:,None,:]/r1[None],axis=2)
+    A *= I*1e-7
+    return A
+
+def A_biot_savart_path_fmm(lsegments, points, I=1., eps=1e-3, direct='auto'):
+    '''
+    Calculate A field using FMM3D from current path
+
+    Parameters
+    ----------
+    lsegments : ndarray
+        line segments, definition of M wire path as 3D points (3 x M).
+    points : ndarray
+        3D points where field is calculated (3 x N).
+    I : float, optional
+        Current strenth in A. The default is 1..
+    eps : float
+        Precision. The default is 1e-3
+    direct : bool
+        Set to true to force using direct (naive) approach or False to force use of FMM.
+        If set to auto direct method is used for less than 300 line segments which appears to be faster i these cases.
+        The default is 'auto'
+
+    Returns
+    -------
+    A : ndarray
+        A field at points (3 x N) in Tesla*meter.
+
+    '''
+    dl = np.zeros(lsegments.shape)
+    dl[:,:-1] = np.diff(lsegments,axis=1)
+    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+    if direct == 'auto':
+        if dl.shape[1] >= 300:
+            direct = False
+        else:
+            direct = True
+    if direct:
+        A = fmm3dpy.l3ddir(sources=lsegments, charges=dl, targets=points, nd=3, pgt=1)
+    else:
+        A = fmm3dpy.lfmm3d(sources=lsegments, charges=dl, targets=points, nd=3, eps=eps, pgt=1)
+    A = I*1e-7*A.pottarg
+    return A
+
+def B_biot_savart_path(lsegments, points, I=1.):
+    '''
+    Calculate B field naively (without FMM) from current path
+
+    Parameters
+    ----------
+    lsegments : ndarray
+        line segments, definition of M wire path as 3D points (3 x M).
+    points : ndarray
+        3D points where field is calculated (3 x N).
+    I : float, optional
+        Current strenth in Ampere. The default is 1..
+
+    Returns
+    -------
+    B : ndarray
+        B field at points (3 x N) in Tesla.
+
+    '''
+    r = points[:,:,None]-lsegments[:,None,:]
+    r3 = np.sum(r**2,axis=0)**1.5
+    dl = np.zeros(lsegments.shape)
+    dl[:,:-1] = np.diff(lsegments,axis=1)
+    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+    dl = dl[:,None,:]
+    B = np.sum(np.cross(dl, r, axis=0)/r3[None],axis=2)
+    B *= I*1e-7
+    return B
 
 def _rotate_coil(ccd_file, coil_matrix):
     # read ccd file
