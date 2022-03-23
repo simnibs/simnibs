@@ -77,6 +77,11 @@ class Templates:
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
+        #Viewer templates
+        self.html_template = os.path.join(SIMNIBSDIR, 'resources', 'html', 'template.html')
+        self.jquery = os.path.join(SIMNIBSDIR, 'resources', 'html', 'jquery.min.js')
+        self.brainsprite = os.path.join(SIMNIBSDIR, 'resources', 'html', 'brainsprite.min.js')
+
 
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
@@ -461,9 +466,7 @@ class SubjectFiles:
         self.tissue_labeling_before_morpho = os.path.join(self.label_prep_folder, 'before_morpho.nii.gz')
         self.upper_mask = os.path.join(self.label_prep_folder, 'upper_part.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
-        self.t1_t2_reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
-        self.affine_reg_viewer = os.path.join(self.report_folder, 'affine_reg.html')
-        self.final_seg_viewer = os.path.join(self.report_folder, 'final_tissues.html')
+        self.viewer = os.path.join(self.report_folder, 'image_viewer.html')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')

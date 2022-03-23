@@ -18,7 +18,6 @@ dependencies:
   - matplotlib=3.3.4
   - boost=1.73.0
   - tbb=2020.3
-  - nilearn=0.8.0
   - pip:
     - nibabel==3.2.1
     - pyqt5==5.15.4

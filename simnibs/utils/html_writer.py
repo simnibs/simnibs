@@ -57,13 +57,9 @@ SimNIBS in your study, please include citations to the papers
 listed under the "References"-section
 </div>
 
-<h2> Viewer links for quality checking </h2>
+<h2> Link to a viewer for quality checking </h2>
 <div>
-{t1_t2_reg}
-<br>
-<br>{affine_reg}
-<br>
-<br>{final_seg}
+{viewer}
 </div>
 
 <h2> References </h2>
@@ -236,16 +232,8 @@ def write_template(sub_files):
     #Copy simnibs logo to reports folder
     simnibs_icon = os.path.join(sub_files.report_folder, 'simnibs_icon.png')
     shutil.copy(simnibs_logo, simnibs_icon)
-    t1_t2_reg_viewer = (
-        '<a href="' + sub_files.t1_t2_reg_viewer + '">T1-T2 registration viewer</a>'
-    )
-
-    aff_reg_viewer = (
-        '<a href="' + sub_files.affine_reg_viewer + '">Affine registration viewer</a>'
-    )
-
-    final_seg_viewer = (
-        '<a href="' + sub_files.final_seg_viewer + '">Final segmentation viewer</a>'
+    viewer = (
+        '<a href="' + sub_files.viewer + '">Scan viewer</a>'
     )
 
     t1_text = "Charm was run on a T1-weighted scan"
@@ -259,20 +247,7 @@ def write_template(sub_files):
 
     parse_dict["simnibs_fig"] = 'reports/simnibs_icon.png'
 
-    if not os.path.exists(sub_files.t1_t2_reg_viewer):
-        parse_dict["t1_t2_reg"] = ""
-    else:
-        parse_dict["t1_t2_reg"] = t1_t2_reg_viewer
-
-    if not os.path.exists(sub_files.affine_reg_viewer):
-        parse_dict["affine_reg"] = ""
-    else:
-        parse_dict["affine_reg"] = aff_reg_viewer
-
-    if not os.path.exists(sub_files.final_seg_viewer):
-        parse_dict["final_seg"] = ""
-    else:
-        parse_dict["final_seg"] = final_seg_viewer
+    parse_dict["viewer"] = viewer
 
     settings_dif = _get_settings_string(
         sub_files.settings, os.path.join(SIMNIBSDIR, "charm.ini")

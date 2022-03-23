@@ -806,12 +806,6 @@ def run(subject_dir=None, T1=None, T2=None,
             T2_tmp.set_data_dtype(np.float32)
             nib.save(T2_tmp, sub_files.T2_reg)
 
-    # Create visualization html
-    if T2 is not None:
-        logger.info('Creating registration visualization')
-        plotting.viewer_registration(sub_files.reference_volume,
-                                     sub_files.T2_reg,
-                                     sub_files.t1_t2_reg_viewer)
 
     # read settings and copy settings file
     if usesettings is None:
@@ -927,10 +921,6 @@ def run(subject_dir=None, T1=None, T2=None,
                                         world_to_world_transform_matrix=trans_mat,
                                         init_transform=init_transform)
 
-        logger.info('Creating affine registration visualization')
-        plotting.viewer_affine(sub_files.reference_volume,
-                               sub_files.template_coregistered,
-                               sub_files.affine_reg_viewer)
 
     if segment:
         # This part runs the segmentation, upsamples bias corrected output,
@@ -1228,14 +1218,11 @@ def run(subject_dir=None, T1=None, T2=None,
         fn_LUT=sub_files.final_labels.rsplit('.',2)[0]+'_LUT.txt'
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
-        # -------------------------TIDY UP-------------------------------------
-        # Create final seg html viewer
-        # Create visualization htmls
-        logger.info('Creating registration visualization')
-        plotting.viewer_final(sub_files.reference_volume,
-                              sub_files.final_labels,
-                              sub_files.final_seg_viewer)
-
+    # -------------------------TIDY UP-------------------------------------
+    # Create final seg html viewer
+    # Create visualization htmls
+    logger.info('Creating html viewer')
+    plotting.write(sub_files, file_finder.templates)
     # log stopping time and total duration ...
     logger.info('charm run finished: '+time.asctime())
     logger.info('Total running time: '+utils.simnibs_logger.format_time(
