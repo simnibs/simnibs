@@ -207,15 +207,18 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
     imgs = [mosaic(d) for d in data]
     return (imgs, data[0].shape, affine)
 
-def _get_im_data(im):
-    sprite = BytesIO()
-    im.save(sprite,format='WebP', lossless=True, method=6)
-    sprite.seek(0)
-    data = b64encode(sprite.read()).decode('utf-8')
-    sprite.close()
-    return data
+def _get_im_data(im, filename=None):
+    if filename is None:
+        sprite = BytesIO()
+        im.save(sprite,format='WebP', lossless=True, method=6)
+        sprite.seek(0)
+        data = b64encode(sprite.read()).decode('utf-8')
+        sprite.close()
+        return data
+    else:
+        im.save(filename, format='WebP', lossless=True, method=6)
 
-def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_path, names=None):
+def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_path, names=None, embed=True):
 
     cfont = '#FFFFFF'
     cbg = '#000000'
@@ -249,9 +252,15 @@ def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_
     radiobuttons = []
     print()
     for i,name in enumerate(names):
-        data.append(''.join(
-            (f'<img id="{name}" class="hidden" src="data:image/webp;base64,',
-            _get_im_data(imgs[i]), f'" alt="{name}" />\n')))
+        if embed:
+            data.append(''.join(
+                (f'<img id="{name}" class="hidden" src="data:image/webp;base64,',
+                _get_im_data(imgs[i]), f'" alt="{name}" />\n')))
+        else:
+            fn = f'{name}.webp'
+            _get_im_data(imgs[i],fn)
+            data.append(''.join(
+                (f'<img id="{name}" class="hidden" src="{fn}" alt="{name}" />\n')))
         if i==0:
             radiobuttons.append(f'<input type="radio" name="radio1" class="radio1" value="{name}" checked="checked">\n')
         else:
