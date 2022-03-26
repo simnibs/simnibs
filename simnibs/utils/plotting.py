@@ -89,6 +89,7 @@ def _cap_intensities(im):
     return nib.Nifti1Image(np.squeeze(capped_buffer), im_data.affine)
 
 def write(sub_files, templates):
+    names = []
     imgs = []
     cmaps = []
     interpolation_order = []
@@ -96,24 +97,29 @@ def write(sub_files, templates):
         imgs.append(_cap_intensities(sub_files.reference_volume))
         cmaps.append(matplotlib.cm.gray)
         interpolation_order.append(1)
+        names.append('Reference volume (T1)')
 
     if os.path.exists(sub_files.T2_reg):
         imgs.append(_registration_overlay(sub_files.T2_reg))
         cmaps.append(matplotlib.cm.inferno)
         interpolation_order.append(1)
+        names.append('Registration overlay')
 
     if 0:#os.path.exists(sub_files.template_coregistered):
         imgs.append(nib.load(sub_files.template_coregistered))
         cmaps.append(cmap_affine)
         interpolation_order.append(0)
+        names.append('Coregistered template')
 
     if os.path.exists(sub_files.final_labels):
         imgs.append(_final_overlay(sub_files.final_labels))
         cmaps.append(cmap_final)
         interpolation_order.append(0)
+        names.append('Tissue labels')
 
     brainsprite_helper.write_viewer(imgs, cmaps, interpolation_order,
                                     sub_files.viewer, templates.html_template,
-                                    templates.jquery, templates.brainsprite)
+                                    templates.jquery, templates.brainsprite,
+                                    names=names)
 
 

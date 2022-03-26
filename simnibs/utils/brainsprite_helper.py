@@ -14,7 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>
-    
+
     The included brainsprite.js uses the MIT License (MIT):
 
     Copyright (c) 2016-2020 Pierre Bellec and the Brainsprite contributors
@@ -25,10 +25,10 @@
     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
     copies of the Software, and to permit persons to whom the Software is
     furnished to do so, subject to the following conditions:
-    
+
     The above copyright notice and this permission notice shall be included in all
     copies or substantial portions of the Software.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -51,7 +51,7 @@ from string import Template
 def mosaic(data):
     '''
     Make 2D mosaic of 3D input data
-    
+
     Parameters
     ----------
     data : Numpy array
@@ -64,6 +64,7 @@ def mosaic(data):
         equal. All slices are pasted together row by row, from top left to
         bottom right. The last row is completed with empty slices.
     '''
+    data = np.ascontiguousarray(data)
     nx, ny, nz = data.shape
     nrows = int(np.ceil(np.sqrt(nx)))
     ncolumns = int(np.ceil(nx / float(nrows)))
@@ -81,23 +82,24 @@ def mosaic(data):
 def getRASdata(nii, returncoords=False):
     '''
     Return near RAS orientation data without reslicing
-    
+
     Parameters
     ----------
     nii : nibabel image instance
         input volume.
     returncoords : boolean
-        return meshgrid with sampled coordinates in world space. 
+        return meshgrid with sampled coordinates in world space.
     Returns
     -------
     data : ndarray
         data in near RAS space.
     aff : corresponding affine transformation matrix to world space
-    coord : ndarray (only if returncoords=True) 
-    world space coordinates sampled if requested. 
+    coord : ndarray (only if returncoords=True)
+    world space coordinates sampled if requested.
     '''
+
     orient = (('R','A','S'),('L','P','I'))
-  
+
     axcodes = nib.aff2axcodes(nii.affine)
     #-1 will indicate axis flip
     flip = [1, 1, 1]
@@ -115,7 +117,7 @@ def getRASdata(nii, returncoords=False):
         aff[order[i],i]=flip[i]
     aff[3,3]=1
     aff=aff@nii.affine
-    if returncoords:    
+    if returncoords:
         voxcoords = np.meshgrid(*[np.arange(s) for s in nii.shape[:3]],
                              indexing='ij')
         worldcoords = aff[:3,:3]@np.array(voxcoords).reshape(3,-1)+aff[:3,3,None]
@@ -130,7 +132,7 @@ def resample_world_iso(nii, maxsize=256, order=1):
     corners = (nii.affine@corners)[:3]
     bb = (np.min(corners, axis=1), np.max(corners, axis=1))
     res = np.max(np.diff(bb, axis=0) / maxsize)
-    coord = np.meshgrid(*[np.arange(bb[0][i], bb[1][i], res) 
+    coord = np.meshgrid(*[np.arange(bb[0][i], bb[1][i], res)
                           for i in range(3)], indexing='ij')
     data = resample_at_coords(nii, coord)
     M = np.diag(res*np.ones(4))
@@ -181,13 +183,13 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
         mosaic'ed data.
 
     '''
-    if np.max(niis[0].shape)>256:
+    if np.max(niis[0].shape) > maxsize:
         data0, affine, coord = resample_world_iso(niis[0], order=interpolation_order[0], maxsize=maxsize)
         data = np.zeros((len(niis),) + data0.shape)
         data[0] = data0
         for i in range(1,len(niis)):
             data[i] = resample_at_coords(niis[i], coord, order=interpolation_order[i])
-    else:                
+    else:
         all_equal = True
         for i in range(1,len(niis)):
             if not np.allclose(niis[i-1].affine, niis[i].affine):
@@ -203,7 +205,6 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
             data[0] = data0
             for i in range(1,len(niis)):
                 data[i] = resample_at_coords(niis[i], coord, data0.shape, order=interpolation_order[i])
-
     imgs = [mosaic(d) for d in data]
     return (imgs, data[0].shape, affine)
 
@@ -218,7 +219,13 @@ def _get_im_data(im, filename=None):
     else:
         im.save(filename, format='WebP', lossless=True, method=6)
 
-def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_path, names=None, embed=True):
+def form_brainsprite(imgs, shape, affine, template, js_query_path,
+                     brain_sprite_path, names=None, imgPath=None,
+                     select=(0,1)):
+    if imgPath is None:
+        embed = True
+    else:
+        embed = False
 
     cfont = '#FFFFFF'
     cbg = '#000000'
@@ -249,28 +256,33 @@ def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_
     jsonv = dict.fromkeys(['params', 'js_jquery', 'js_brainsprite'])
     #convert to b64 encoded image data
     data = []
-    radiobuttons = []
-    print()
+    dropd1 = []
+    dropd2 = []
     for i,name in enumerate(names):
         if embed:
             data.append(''.join(
                 (f'<img id="{name}" class="hidden" src="data:image/webp;base64,',
                 _get_im_data(imgs[i]), f'" alt="{name}" />\n')))
         else:
-            fn = f'{name}.webp'
+            fn = os.path.join(imgPath,f'{name}.webp')
             _get_im_data(imgs[i],fn)
             data.append(''.join(
                 (f'<img id="{name}" class="hidden" src="{fn}" alt="{name}" />\n')))
-        if i==0:
-            radiobuttons.append(f'<input type="radio" name="radio1" class="radio1" value="{name}" checked="checked">\n')
+        if i==select[0]:
+            dropd1.append(f'<option selected value="img{i}">{name}</option>\n')
         else:
-            radiobuttons.append(f'<input type="radio" name="radio1" class="radio1" value="{name}">\n')
-        radiobuttons.append(f'<label for="{name}">{name}</label>\n')
-    jsonv['data_base64']=''.join(data)
-    jsonv['radiobuttons']=''.join(radiobuttons)
+            dropd1.append(f'<option value="img{i}">{name}</option>\n')
+        if i==select[1]:
+            dropd2.append(f'<option selected value="img{i}">{name}</option>\n')
+        else:
+            dropd2.append(f'<option value="img{i}">{name}</option>\n')
+
+    jsonv['data_base64'] = ''.join(data)
+    jsonv['dropdown1'] = ''.join(dropd1)
+    jsonv['dropdown2'] = ''.join(dropd2)
     jsonv['params'] = params
     jsonv['params'] = json.dumps(jsonv['params'])
-    
+
     with open(js_query_path) as f:
        jsonv['js_jquery'] = f.read()
     with open(brain_sprite_path) as f:
@@ -281,17 +293,21 @@ def form_brainsprite(imgs, shape, affine, template, js_query_path, brain_sprite_
     template=template.safe_substitute(jsonv)
     return template
 
-def write_viewer(images, color_maps, interpolation_order, viewer, template, jquery, brainsprite):
-
+def write_viewer(images, color_maps, interpolation_order, viewer,
+                 template, jquery, brainsprite, names=None, imgPath=None,
+                 select=(0,1)):
+    import time
+    t0=time.time()
     imgs,shape,affine=niis_to_mosaic(images, interpolation_order, maxsize=256)
-    
+    print(f'time to form overlays: {time.time()-t0:.1f}s')
     im=[]
     for img, cmap, order in zip(imgs, color_maps, interpolation_order):
         if order == 0:
             img = np.uint8(img)
         im.append(Image.fromarray(np.uint8(cmap(img)*255)))
-    
-    doc = form_brainsprite(im, shape, affine, template, jquery, brainsprite)
+    t0=time.time()
+    doc = form_brainsprite(im, shape, affine, template, jquery, brainsprite,
+                           names=names, imgPath = imgPath)
+    print(f'time to compress images and create brainsprite: {time.time()-t0:.1f}s')
     with open(viewer,'wb') as f:
         f.write(doc.encode('utf-8'))
-

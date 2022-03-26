@@ -17,33 +17,38 @@
   <script>
     $js_brainsprite
   </script>
-<div class="slidecontainer">
-$radiobuttons
-  <input type="range" min="0.0" max="1.0" value="0.0" class="opacity" id="opacity_slider" step="0.01" width="100%">
+<div class="guicontrols">
+    <form>
+        Background volume:<br><select id = "backimg">
+            $dropdown1
+        </select><br>
+        Overlay volume:<br><select id = "overlayimg">
+            $dropdown2
+        </select>
+    </form>
+    <br>Overlay opacity<br><input type="range" min="0.0" max="1.0" value="1.0" class="opacity" id="opacity_slider" step="0.01" width="100%">
 </div>
-   <script>  
+   <script>
     $( window ).on('load',function() {
       let params = $params;
-      params.sprite = $(".radio1:checked").val();
-      params.overlay.sprite = "2";
-      params.overlay.opacity = "0.0";
+      var backList = document.getElementById("backimg");
+      params.sprite = backList.options[backList.selectedIndex].text;
+      var overlList = document.getElementById("overlayimg");
+      params.overlay.sprite = overlList.options[overlList.selectedIndex].text;
+      params.overlay.opacity = "1.0";
       var brain = brainsprite(params);
-        function update(event){
-    		brain.sprite = document.getElementById($(".radio1:checked").val());
-            brain.init();
-            brain.drawAll();
-        }
-	  $(".radio1").click({brain: brain}, update);
-	    function updateOverlay(event){
-    	    brain.overlay.opacity = $(".opacity").val();
-    	    brain.init();
-            brain.drawAll();
-	  }
-	  opacity_slider.oninput = function() {
-    	   console.log(this.value);
-           brain.overlay.opacity = this.value;
-           brain.init();
-           brain.drawAll();
+      function update() {
+        brain.sprite = document.getElementById(backList.options[backList.selectedIndex].text);
+        brain.overlay.sprite = document.getElementById(overlList.options[overlList.selectedIndex].text);
+        brain.init();
+        brain.drawAll();
+      }
+      $( backimg ).on("change",update);
+      $( overlayimg ).on("change",update);
+      opacity_slider.oninput = function() {
+        brain.overlay.opacity = this.value;
+        brain.init();
+        brain.drawAll();
       }
     });
     </script>
