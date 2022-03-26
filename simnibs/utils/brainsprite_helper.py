@@ -196,7 +196,6 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
         for i in range(1,len(niis)):
             if not np.allclose(niis[0].affine, niis[i].affine):
                 is_equal[i] = False
-        is_equal[-1]=False
         if np.all(is_equal):
             data0, affine = getRASdata(niis[0], returncoords=False)
         else:
