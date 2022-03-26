@@ -310,7 +310,7 @@ def write_viewer(images, color_maps, interpolation_order, viewer,
         im.append(Image.fromarray(np.uint8(cmap(img)*255)))
     t0=time.time()
     doc = form_brainsprite(im, shape, affine, template, jquery, brainsprite,
-                           names=names, imgPath = imgPath)
+                           names=names, imgPath = imgPath, select=select)
     print(f'time to compress images and create brainsprite: {time.time()-t0:.1f}s')
     with open(viewer,'wb') as f:
         f.write(doc.encode('utf-8'))

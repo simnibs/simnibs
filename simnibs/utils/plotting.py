@@ -93,6 +93,7 @@ def write(sub_files, templates):
     imgs = []
     cmaps = []
     interpolation_order = []
+    select = [0,0]
     if os.path.exists(sub_files.reference_volume):
         imgs.append(_cap_intensities(sub_files.reference_volume))
         cmaps.append(matplotlib.cm.gray)
@@ -100,24 +101,30 @@ def write(sub_files, templates):
         names.append('Reference volume (T1)')
 
     if os.path.exists(sub_files.T2_reg):
+        imgs.append(_cap_intensities(sub_files.T2_reg))
+        cmaps.append(matplotlib.cm.gray)
+        interpolation_order.append(1)
+        names.append('T2 volume')
         imgs.append(_registration_overlay(sub_files.T2_reg))
         cmaps.append(matplotlib.cm.inferno)
         interpolation_order.append(1)
-        names.append('Registration overlay')
+        names.append('T2 registration overlay')
+        select[1]=len(imgs)-1
 
     if os.path.exists(sub_files.template_coregistered):
         imgs.append(nib.load(sub_files.template_coregistered))
         cmaps.append(cmap_affine)
         interpolation_order.append(0)
         names.append('Coregistered template')
+        select[1]=len(imgs)-1
 
     if os.path.exists(sub_files.final_labels):
         imgs.append(_final_overlay(sub_files.final_labels))
         cmaps.append(cmap_final)
         interpolation_order.append(0)
         names.append('Tissue labels')
-
+        select[1]=len(imgs)-1
     brainsprite_helper.write_viewer(imgs, cmaps, interpolation_order,
                                     sub_files.viewer, templates.html_template,
                                     templates.jquery, templates.brainsprite,
-                                    names=names)
+                                    names=names, select=select)
