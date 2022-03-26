@@ -299,18 +299,16 @@ def form_brainsprite(imgs, shape, affine, template, js_query_path,
 def write_viewer(images, color_maps, interpolation_order, viewer,
                  template, jquery, brainsprite, names=None, imgPath=None,
                  select=(0,1)):
-    import time
-    t0=time.time()
     imgs,shape,affine=niis_to_mosaic(images, interpolation_order, maxsize=256)
-    print(f'time to form overlays: {time.time()-t0:.1f}s')
+
     im=[]
     for img, cmap, order in zip(imgs, color_maps, interpolation_order):
         if order == 0:
             img = np.uint8(img)
         im.append(Image.fromarray(np.uint8(cmap(img)*255)))
-    t0=time.time()
+
     doc = form_brainsprite(im, shape, affine, template, jquery, brainsprite,
                            names=names, imgPath = imgPath, select=select)
-    print(f'time to compress images and create brainsprite: {time.time()-t0:.1f}s')
+
     with open(viewer,'wb') as f:
         f.write(doc.encode('utf-8'))
