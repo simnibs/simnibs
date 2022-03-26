@@ -102,7 +102,7 @@ def getRASdata(nii, returncoords=False):
 
     axcodes = nib.aff2axcodes(nii.affine)
     #-1 will indicate axis flip
-    flip = [1, 1, 1]
+    flip = np.array([1, 1, 1])
     order = [0,1,2]
     for i in range(3):
         order[i] = np.nonzero([ax==orient[0][i] for ax in axcodes])[0]
@@ -112,18 +112,23 @@ def getRASdata(nii, returncoords=False):
         else:
             order[i]=order[i][0]
     data = np.transpose(nii.dataobj,order)[::flip[0],::flip[1],::flip[2]]
-    aff = np.zeros((4,4))
+    aff = np.zeros((3,3))
     for i in range(3):
-        aff[order[i],i]=flip[i]
-    aff[3,3]=1
-    aff=aff@nii.affine
+        aff[order[i],i] = flip[i]
+    affine = nii.affine
+    affine[:3,:3] = aff[:3,:3] @ affine[:3,:3]
+    for i in range(3):
+        if flip[i] == -1:
+            affine[i,3] -= data.shape[i]
+
     if returncoords:
-        voxcoords = np.meshgrid(*[np.arange(s) for s in nii.shape[:3]],
+        voxcoords = np.meshgrid(*[np.arange(s) for s in data.shape[:3]],
                              indexing='ij')
-        worldcoords = aff[:3,:3]@np.array(voxcoords).reshape(3,-1)+aff[:3,3,None]
-        return (data, aff, worldcoords)
+        worldcoords = affine[:3,:3] @ np.array(voxcoords).reshape(3, -1) +\
+                      affine[:3,3,None]
+        return (data, affine, worldcoords)
     else:
-        return (data, aff)
+        return (data, affine)
 
 def resample_world_iso(nii, maxsize=256, order=1):
     corners = np.array(np.meshgrid(
@@ -160,10 +165,7 @@ def resample_at_coords(nii, coord, output_shape, order=1):
     '''
     iM = np.linalg.inv(nii.affine)
     vox_coord = iM[:3, :3] @ np.array(coord).reshape(3, -1) + iM[:3, 3][:, None]
-    data = ndi.map_coordinates(nii.dataobj, vox_coord,
-                                   order=order).reshape(
-                                       coord[0].shape)
-    print(coord.shape)
+    data = ndi.map_coordinates(nii.dataobj, vox_coord, order=order)
     return data.reshape(output_shape)
 
 def niis_to_mosaic(niis, interpolation_order, maxsize=256):
@@ -190,21 +192,23 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
         for i in range(1,len(niis)):
             data[i] = resample_at_coords(niis[i], coord, order=interpolation_order[i])
     else:
-        all_equal = True
+        is_equal = [True for i in range(len(niis))]
         for i in range(1,len(niis)):
-            if not np.allclose(niis[i-1].affine, niis[i].affine):
-                all_equal = False
-                break
-        if all_equal:
-            data = [getRASdata(nii) for nii in niis]
-            affine = data[0][1]
-            data = [d[0] for d in data]
+            if not np.allclose(niis[0].affine, niis[i].affine):
+                is_equal[i] = False
+        is_equal[-1]=False
+        if np.all(is_equal):
+            data0, affine = getRASdata(niis[0], returncoords=False)
         else:
             data0, affine, coord = getRASdata(niis[0], returncoords=True)
-            data = np.zeros((len(niis),)+(data0.shape))
-            data[0] = data0
-            for i in range(1,len(niis)):
-                data[i] = resample_at_coords(niis[i], coord, data0.shape, order=interpolation_order[i])
+        data = np.zeros((len(niis),)+(data0.shape))
+        data[0] = data0
+        for i in range(1,len(niis)):
+            if is_equal[i]:
+                d, _ = getRASdata(niis[i])
+                data[i] = d
+            else:
+                data[i] = resample_at_coords(niis[i], coord, data.shape[1:], order=interpolation_order[i])
     imgs = [mosaic(d) for d in data]
     return (imgs, data[0].shape, affine)
 

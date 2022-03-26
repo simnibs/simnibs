@@ -105,7 +105,7 @@ def write(sub_files, templates):
         interpolation_order.append(1)
         names.append('Registration overlay')
 
-    if 0:#os.path.exists(sub_files.template_coregistered):
+    if os.path.exists(sub_files.template_coregistered):
         imgs.append(nib.load(sub_files.template_coregistered))
         cmaps.append(cmap_affine)
         interpolation_order.append(0)
@@ -121,5 +121,3 @@ def write(sub_files, templates):
                                     sub_files.viewer, templates.html_template,
                                     templates.jquery, templates.brainsprite,
                                     names=names)
-
-
