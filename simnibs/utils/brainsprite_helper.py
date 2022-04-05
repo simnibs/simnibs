@@ -139,7 +139,7 @@ def resample_world_iso(nii, maxsize=256, order=1):
     res = np.max(np.diff(bb, axis=0) / maxsize)
     coord = np.meshgrid(*[np.arange(bb[0][i], bb[1][i], res)
                           for i in range(3)], indexing='ij')
-    data = resample_at_coords(nii, coord)
+    data = resample_at_coords(nii, coord, coord[0].shape, order)
     M = np.diag(res*np.ones(4))
     M[3, 3] = 1
     M[:3, 3] = bb[0]
@@ -190,7 +190,7 @@ def niis_to_mosaic(niis, interpolation_order, maxsize=256):
         data = np.zeros((len(niis),) + data0.shape)
         data[0] = data0
         for i in range(1,len(niis)):
-            data[i] = resample_at_coords(niis[i], coord, order=interpolation_order[i])
+            data[i] = resample_at_coords(niis[i], coord, data[0].shape, order=interpolation_order[i])
     else:
         is_equal = [True for i in range(len(niis))]
         for i in range(1,len(niis)):
