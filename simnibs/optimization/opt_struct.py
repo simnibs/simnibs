@@ -1304,7 +1304,7 @@ class TDCSoptimize():
             if self.leadfield_hdf is not None:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
                     electrode_names = f[self.leadfield_path].attrs['electrode_names']
-                    electrode_names = [n.decode() for n in electrode_names]
+                    electrode_names = [n.decode() if isinstance(n,bytes) else n for n in electrode_names]
             else:
                 raise ValueError('Please define the electrode names')
 
