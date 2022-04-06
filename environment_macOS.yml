@@ -22,5 +22,5 @@ dependencies:
   - pyqt=5.9.2
   - mkl=2021.4.0
   - pip:
-    - fmm3dpy==1.0
+    - simnibs/external/bin/osx/fmm3dpy-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl #because M1 does not like AVX
     - charm_gems==1.3
