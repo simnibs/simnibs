@@ -87,75 +87,35 @@ def run(
     # ------------------------START UP-----------------------------------------
     start = time.time()
 
-    # make subject_dir if not existent
+    # Initialize subject directory
     if not os.path.exists(subject_dir):
         os.mkdir(subject_dir)
+    sub_files = file_finder.SubjectFiles(subpath=subject_dir)
 
-    # initialize subject files
-    sub_files = file_finder.SubjectFiles(None, subject_dir)
-    # start logging ...
-    logfile = os.path.join(subject_dir, "charm_log.html")
-    with open(logfile, 'a') as f:
-        f.write('<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>')
-        f.close()
-    fh = logging.FileHandler(logfile, mode="a")
-    formatter = logging.Formatter("%(levelname)s: %(message)s")
-    fh.setFormatter(formatter)
-    fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
-    utils.simnibs_logger.register_excepthook(logger)
+    logfile = _setup_logger(sub_files)
+
+    logger.info(f"simnibs version {__version__}")
+    logger.info(f"charm run started: {time.asctime()}")
+    logger.debug(f"options: {options_str}")
+
+    settings = _read_settings_and_copy(usesettings, sub_files)
+    denoise_settings = settings["preprocess"]
+    do_denoise = denoise_settings["denoise"]
+    samseg_settings = settings["samseg"]
+    logger.debug(settings)
 
     if init_transform:
         init_transform = np.loadtxt(init_transform)
         assert init_transform.shape == (
             4,
             4,
-        ), f"`init_transform` should be a have shape (4, 4), got {init_transform.shape}"
+        ), f"`init_transform` should have shape (4, 4), got {init_transform.shape}"
         # Change from RAS to LPS. ITK uses LPS internally
         RAS2LPS = np.diag([-1, -1, 1, 1])
         init_transform = RAS2LPS @ init_transform @ RAS2LPS
 
-    logger.info("simnibs version " + __version__)
-    logger.info("charm run started: " + time.asctime())
-    if options_str is not None:
-        logger.debug("options: " + options_str)
-    else:
-        logger.debug("options: none")
-
-    # copy T1 (as nii.gz) if supplied
-    if T1 is not None:
-        if not os.path.exists(T1):
-            raise FileNotFoundError(f"Could not find input T1 file: {T1}")
-        else:
-            # Cast to float32 and save
-            T1_tmp = nib.load(T1)
-            T1_tmp.set_data_dtype(np.float32)
-            nib.save(T1_tmp, sub_files.reference_volume)
-
-    if registerT2 and T2 is not None:
-        if not os.path.exists(T2):
-            raise FileNotFoundError(f"Could not find input T2 file: {T2}")
-        else:
-            charm_utils._registerT1T2(T1, T2, sub_files.T2_reg)
-    elif T2 is not None:
-        if os.path.exists(T2):
-            T2_tmp = nib.load(T2)
-            T2_tmp.set_data_dtype(np.float32)
-            nib.save(T2_tmp, sub_files.T2_reg)
-
-    # read settings and copy settings file
-    if usesettings is None:
-        fn_settings = os.path.join(SIMNIBSDIR, "charm.ini")
-    else:
-        if type(usesettings) == list:
-            usesettings = usesettings[0]
-        fn_settings = usesettings
-    settings = utils.settings_reader.read_ini(fn_settings)
-    try:
-        shutil.copyfile(fn_settings, sub_files.settings)
-    except shutil.SameFileError:
-        pass
-    logger.debug(settings)
+    _prepare_t1(T1, sub_files)
+    _prepare_t2(T1, T2, registerT2, sub_files)
 
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
@@ -166,23 +126,11 @@ def run(
     # Make the output path for segmentations
     os.makedirs(sub_files.segmentation_folder, exist_ok=True)
 
-    denoise_settings = settings["preprocess"]
-    if denoise_settings["denoise"] and T1 is not None:
-        logger.info("Denoising the T1 input and saving.")
-        charm_utils._denoise_input_and_save(T1, sub_files.T1_denoised)
-
-    # denoise if needed
-    if (
-        denoise_settings["denoise"]
-        and os.path.exists(sub_files.T2_reg)
-        and T2 is not None
-    ):
-        logger.info("Denoising the registered T2 and saving.")
-        charm_utils._denoise_input_and_save(sub_files.T2_reg, sub_files.T2_reg_denoised)
+    if do_denoise:
+        _denoise_inputs(T1, T2, sub_files)
 
     # Set-up samseg related things before calling the affine registration
     # and/or segmentation
-    samseg_settings = settings["samseg"]
 
     # Specify the maximum number of threads the GEMS code will use
     # by default this is all, but can be changed in the .ini
@@ -197,40 +145,21 @@ def run(
     showMovies = False
     visualizer = samseg.initVisualizer(showFigs, showMovies)
 
-    # Set-up atlas paths
-    atlas_name = samseg_settings["atlas_name"]
-    logger.info("Using " + atlas_name + " as charm atlas.")
-    atlas_path = os.path.join(file_finder.templates.charm_atlas_path, atlas_name)
-    atlas_settings = utils.settings_reader.read_ini(
-        os.path.join(atlas_path, atlas_name + ".ini")
-    )
-    atlas_settings_names = atlas_settings["names"]
-    template_name = os.path.join(atlas_path, atlas_settings_names["template_name"])
-    atlas_affine_name = os.path.join(atlas_path, atlas_settings_names["affine_atlas"])
-    atlas_level1 = os.path.join(atlas_path, atlas_settings_names["atlas_level1"])
-
-    atlas_level2 = os.path.join(atlas_path, atlas_settings_names["atlas_level2"])
-    if os.path.exists(sub_files.T2_reg):
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t2"]
-        )
-    else:
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t1"]
-        )
-
-    neck_tissues = atlas_settings["neck_optimization"]
-    neck_tissues = neck_tissues["neck_tissues"]
+    (
+        template_name,
+        atlas_settings,
+        atlas_path,
+        atlas_level1,
+        atlas_level2,
+        atlas_affine_name,
+        gmm_parameters,
+    ) = _setup_atlas(samseg_settings, sub_files)
 
     if initatlas:
         # initial affine registration of atlas to input images,
         # including break neck
         logger.info("Starting affine registration and neck correction.")
-        init_atlas_settings = settings["initatlas"]
-        if denoise_settings["denoise"]:
-            inputT1 = sub_files.T1_denoised
-        else:
-            inputT1 = T1
+        inputT1 = sub_files.T1_denoised if do_denoise else T1
 
         if samseg_settings["init_type"] == "atlas":
             trans_mat = None
@@ -252,8 +181,8 @@ def run(
             atlas_level2,
             sub_files.segmentation_folder,
             sub_files.template_coregistered,
-            init_atlas_settings,
-            neck_tissues,
+            settings["initatlas"],
+            atlas_settings["neck_optimization"]["neck_tissues"],
             visualizer,
             noneck,
             world_to_world_transform_matrix=trans_mat,
@@ -269,16 +198,11 @@ def run(
         # for further post-processing
         # The bias field kernel size has to be changed based on input
         input_images = []
-        if denoise_settings["denoise"]:
-            input_images.append(sub_files.T1_denoised)
-        else:
-            input_images.append(T1)
-
+        input_images.append(sub_files.T1_denoised if do_denoise else T1)
         if os.path.exists(sub_files.T2_reg):
-            if denoise_settings["denoise"]:
-                input_images.append(sub_files.T2_reg_denoised)
-            else:
-                input_images.append(sub_files.T2_reg)
+            input_images.append(
+                sub_files.T2_reg_denoised if do_denoise else sub_files.T2_reg
+            )
 
         segment_settings = settings["segment"]
         logger.info("Estimating parameters.")
@@ -421,7 +345,7 @@ def run(
         logger.info("Total time surface creation (HH:MM:SS):")
         logger.info(time.strftime("%H:%M:%S", time.gmtime(elapsed)))
 
-        sub_files = file_finder.SubjectFiles(None, subject_dir)
+        sub_files = file_finder.SubjectFiles(subpath=subject_dir)
         if fillin_gm_from_surf or open_sulci_from_surf:
             logger.info("Improving GM from surfaces")
             starttime = time.time()
@@ -645,3 +569,102 @@ def run(
         f.close()
 
     html_writer.write_template(sub_files)
+
+
+def _setup_logger(sub_files):
+    """Add FileHandler etc."""
+    logfile = os.path.join(sub_files.subpath, "charm_log.html")
+    with open(logfile, "a") as f:
+        f.write("<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>")
+        f.close()
+    fh = logging.FileHandler(logfile, mode="a")
+    formatter = logging.Formatter("%(levelname)s: %(message)s")
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    utils.simnibs_logger.register_excepthook(logger)
+    return logfile
+
+
+def _read_settings_and_copy(usesettings, sub_files):
+    # read settings and copy settings file
+    if usesettings is None:
+        fn_settings = os.path.join(SIMNIBSDIR, "charm.ini")
+    else:
+        if type(usesettings) == list:
+            usesettings = usesettings[0]
+        fn_settings = usesettings
+    settings = utils.settings_reader.read_ini(fn_settings)
+    try:
+        shutil.copyfile(fn_settings, sub_files.settings)
+    except shutil.SameFileError:
+        pass
+    return settings
+
+
+def _prepare_t1(T1, sub_files):
+    # copy T1 (as nii.gz) if supplied
+    if T1:
+        if os.path.exists(T1):
+            # Cast to float32 and save
+            T1_tmp = nib.load(T1)
+            T1_tmp.set_data_dtype(np.float32)
+            nib.save(T1_tmp, sub_files.reference_volume)
+        else:
+            raise FileNotFoundError(f"Could not find input T1 file: {T1}")
+
+
+def _prepare_t2(T1, T2, registerT2, sub_files):
+    if T2:
+        T2_exists = os.path.exists(T2)
+        if registerT2:
+            if T2_exists:
+                charm_utils._registerT1T2(T1, T2, sub_files.T2_reg)
+            else:
+                raise FileNotFoundError(f"Could not find input T2 file: {T2}")
+        else:
+            if T2_exists:
+                T2_tmp = nib.load(T2)
+                T2_tmp.set_data_dtype(np.float32)
+                nib.save(T2_tmp, sub_files.T2_reg)
+
+
+def _setup_atlas(samseg_settings, sub_files):
+    # Set-up atlas paths
+    atlas_name = samseg_settings["atlas_name"]
+    logger.info("Using " + atlas_name + " as charm atlas.")
+    atlas_path = os.path.join(file_finder.templates.charm_atlas_path, atlas_name)
+    atlas_settings = utils.settings_reader.read_ini(
+        os.path.join(atlas_path, atlas_name + ".ini")
+    )
+    atlas_settings_names = atlas_settings["names"]
+    template_name = os.path.join(atlas_path, atlas_settings_names["template_name"])
+    atlas_affine_name = os.path.join(atlas_path, atlas_settings_names["affine_atlas"])
+    atlas_level1 = os.path.join(atlas_path, atlas_settings_names["atlas_level1"])
+    atlas_level2 = os.path.join(atlas_path, atlas_settings_names["atlas_level2"])
+    if os.path.exists(sub_files.T2_reg):
+        gmm_parameters = os.path.join(
+            atlas_path, atlas_settings_names["gaussian_parameters_t2"]
+        )
+    else:
+        gmm_parameters = os.path.join(
+            atlas_path, atlas_settings_names["gaussian_parameters_t1"]
+        )
+    return (
+        template_name,
+        atlas_settings,
+        atlas_path,
+        atlas_level1,
+        atlas_level2,
+        atlas_affine_name,
+        gmm_parameters,
+    )
+
+
+def _denoise_inputs(T1, T2, sub_files):
+    if T1:
+        logger.info("Denoising the T1 input and saving.")
+        charm_utils._denoise_input_and_save(T1, sub_files.T1_denoised)
+    if T2 and os.path.exists(sub_files.T2_reg):
+        logger.info("Denoising the registered T2 and saving.")
+        charm_utils._denoise_input_and_save(sub_files.T2_reg, sub_files.T2_reg_denoised)
