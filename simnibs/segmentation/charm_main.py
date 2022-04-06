@@ -12,8 +12,9 @@ import numpy as np
 
 from simnibs import SIMNIBSDIR
 
-from .. import __version__
 from . import samseg
+from . import charm_utils
+from .. import __version__
 from .. import utils
 from ..utils.simnibs_logger import logger
 from ..utils import file_finder
@@ -30,9 +31,7 @@ from ..mesh_tools.mesh_io import (
     ElementData,
 )
 from ..simulation import cond
-from ..utils import plotting, html_writer
-
-from . import charm_utils
+from ..utils import html_writer
 
 
 def run(
@@ -94,11 +93,10 @@ def run(
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
     # start logging ...
-    logfile = os.path.join(subject_dir, "charm_log.html")
-    with open(logfile, 'a') as f:
+    with open(sub_files.charm_log, 'a') as f:
         f.write('<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>')
         f.close()
-    fh = logging.FileHandler(logfile, mode="a")
+    fh = logging.FileHandler(sub_files.charm_log, mode="a")
     formatter = logging.Formatter("%(levelname)s: %(message)s")
     fh.setFormatter(formatter)
     fh.setLevel(logging.DEBUG)
@@ -610,10 +608,10 @@ def run(
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
     # -------------------------TIDY UP-------------------------------------
-    # Create final seg html viewer
-    # Create visualization htmls
-    logger.info("Creating html viewer")
-    plotting.write(sub_files, file_finder.templates)
+    # Create charm_report.html
+    logger.info("Creating report")
+    html_writer.write_report(sub_files)
+    
     # log stopping time and total duration ...
     logger.info("charm run finished: " + time.asctime())
     logger.info(
@@ -625,7 +623,7 @@ def run(
         logger.removeHandler(logger.handlers[0])
     utils.simnibs_logger.unregister_excepthook()
     logging.shutdown()
-    with open(logfile, "r") as f:
+    with open(sub_files.charm_log, "r") as f:
         logtext = f.read()
 
     # Explicitly remove this really annoying stuff from the log
@@ -637,11 +635,9 @@ def run(
         + "\d{1,2}"
         + re.escape(" %"),
     )
-    with open(logfile, "w") as f:
+    with open(sub_files.charm_log, "w") as f:
         for text in removetext:
             logtext = re.sub(text, "", logtext)
         f.write(logtext)
         f.write("</pre></BODY></HTML>")
         f.close()
-
-    html_writer.write_template(sub_files)
