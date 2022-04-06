@@ -777,6 +777,9 @@ def run(subject_dir=None, T1=None, T2=None,
     if init_transform:
         init_transform = np.loadtxt(init_transform)
         assert init_transform.shape == (4, 4), f"`init_transform` should be a have shape (4, 4), got {init_transform.shape}"
+        #Change from RAS to LPS. ITK uses LPS internally
+        RAS2LPS = np.diag([-1, -1, 1, 1])
+        init_transform = RAS2LPS @ init_transform @ RAS2LPS
 
     logger.info('simnibs version '+__version__)
     logger.info('charm run started: '+time.asctime())

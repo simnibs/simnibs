@@ -7,7 +7,8 @@ from scipy import ndimage
 from . import brainsprite_helper
 import scipy.ndimage.morphology as mrph
 
-se = ndimage.generate_binary_structure(3,3)
+se = ndimage.generate_binary_structure(3,1)
+
 
 cmaplist_final = [(0, 0, 0, 0),
                  (230/255, 230/255, 230/255, 1.0),
@@ -19,6 +20,7 @@ cmaplist_final = [(0, 0, 0, 0),
                  (255/255, 239/255, 179/255, 1.0),
                  (255/255, 138/255, 57/255, 1.0),
                  (0, 65/255, 142/255, 1.0)]
+
 
 cmaplist_affine = [(0, 0, 0, 0),
                    (0, 0, 0, 0),
@@ -72,19 +74,25 @@ def _registration_overlay(T2):
 
 def _final_overlay(labeling):
     tissues_data = nib.load(labeling)
-    tissues_buffer = tissues_data.get_fdata()
-    labels = np.unique(tissues_buffer)
-    labels = labels[1:]
+    tissues_buffer = np.squeeze(tissues_data.get_fdata())
+    labels = [1, 2, 3, 6, 9, 8, 7, 5]
+    #Create boolean buffer full of Falses
+    tissue_mask = tissues_buffer == -1000
+    label_buffer = np.zeros_like(tissues_buffer)
     for l in labels:
-        tissue_mask = (tissues_buffer == l)
+        tissue_mask = tissue_mask | (tissues_buffer == l)
         ero = mrph.binary_erosion(np.squeeze(tissue_mask), se, 1)
-        tissues_buffer[ero] = 0
+        label_buffer[(tissue_mask & ~ero & ~(label_buffer > 0))] = l
 
-    return nib.Nifti1Image(np.uint16(np.squeeze(tissues_buffer)), tissues_data.affine)
+    return nib.Nifti1Image(np.uint16(np.squeeze(label_buffer)), tissues_data.affine)
 
 def _cap_intensities(im):
     im_data = nib.load(im)
     im_buffer = im_data.get_fdata()
+    p_up = np.percentile(im_buffer, 99)
+    im_buffer[im_buffer > p_up] = p_up
+    p_down = np.percentile(im_buffer, 1)
+    im_buffer[im_buffer < p_down] = p_down
     capped_buffer = (im_buffer - im_buffer.min()) / (im_buffer.max() - im_buffer.min())
     return nib.Nifti1Image(np.squeeze(capped_buffer), im_data.affine)
 
