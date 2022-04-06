@@ -94,10 +94,9 @@ def run(
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
     # start logging ...
-    os.makedirs(sub_files.report_folder, exist_ok=True)
-    logfile = os.path.join(sub_files.report_folder, "charm_log.html")
-    with open(logfile, "a") as f:
-        f.write("<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>")
+    logfile = os.path.join(subject_dir, "charm_log.html")
+    with open(logfile, 'a') as f:
+        f.write('<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>')
         f.close()
     fh = logging.FileHandler(logfile, mode="a")
     formatter = logging.Formatter("%(levelname)s: %(message)s")
