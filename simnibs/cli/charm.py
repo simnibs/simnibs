@@ -64,9 +64,7 @@ MANUAL EDITING:
                store the result files.""")
     parser.add_argument('T1',nargs='?',help="T1-weighted image")
     parser.add_argument('T2',nargs='?',help="T2-weighted image (optional)")
-    
-    parser.add_argument('-c','--check',action='store_true',default=False,
-                        help="Visual check of results")
+
     parser.add_argument('-v','--version', action='version', version=__version__)
         
     parser.add_argument('--registerT2',action='store_true',default=False,
@@ -119,55 +117,43 @@ def main():
     args = parseArguments(sys.argv[1:])
     subject_dir = os.path.join(os.getcwd(), "m2m_"+args.subID)
         
-    if args.check:
-        # visual check of results
-        if any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]): # --check can only be called alone
-            raise RuntimeError("""ERROR: --check cannot be used together with 
-                               --registerT2, --initatlas, --segment or --mesh""")
-                               
-        if not os.path.exists(subject_dir):
-            raise RuntimeError("ERROR: "+subject_dir+" not found")
-        
-        charm_main.view(subject_dir)
-        
-    else:
-        # run segmentation and meshing
-        
-        # check whether it's a fresh run
-        fresh_run = args.registerT2
-        fresh_run |= args.initatlas and not args.registerT2 and args.T1 is not None # initatlas is the first step in the pipeline when a T1 is explicitly supplied
-        
-        if not any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]):
-            # if charm part is not explicitly stated, run all
-            fresh_run=True
-            args.initatlas=True
-            args.segment=True
-            args.mesh=True
-            args.surfaces = True
-            if args.T2 is not None:
-                args.registerT2=True
-        
-        # T1 name has to be supplied when it's a fresh run
-        if fresh_run and args.T1 is None:
-            raise RuntimeError("ERROR: Filename of T1-weighted image has to be supplied")
-    
-        # T2 name has to be supplied when registerT2==True
-        if args.registerT2 and args.T2 is None:
-            raise RuntimeError("ERROR: Filename of T2-weighted image has to be supplied")
-        
-        if fresh_run and os.path.exists(subject_dir):
-            # stop when subject_dir folder exists and it's a fresh run (unless --forcerun is set)
-            if not args.forcerun:
-                raise RuntimeError("ERROR: --forcerun has to be set to overwrite existing m2m_{subID} folder")
-            else:
-                shutil.rmtree(subject_dir)
-                time.sleep(2)
-                
-                
-        charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
-                       args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
-                       args.inittransform,
-                       " ".join(sys.argv[1:]))
+    # run segmentation and meshing
+
+    # check whether it's a fresh run
+    fresh_run = args.registerT2
+    fresh_run |= args.initatlas and not args.registerT2 and args.T1 is not None # initatlas is the first step in the pipeline when a T1 is explicitly supplied
+
+    if not any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]):
+        # if charm part is not explicitly stated, run all
+        fresh_run=True
+        args.initatlas=True
+        args.segment=True
+        args.mesh=True
+        args.surfaces = True
+        if args.T2 is not None:
+            args.registerT2=True
+
+    # T1 name has to be supplied when it's a fresh run
+    if fresh_run and args.T1 is None:
+        raise RuntimeError("ERROR: Filename of T1-weighted image has to be supplied")
+
+    # T2 name has to be supplied when registerT2==True
+    if args.registerT2 and args.T2 is None:
+        raise RuntimeError("ERROR: Filename of T2-weighted image has to be supplied")
+
+    if fresh_run and os.path.exists(subject_dir):
+        # stop when subject_dir folder exists and it's a fresh run (unless --forcerun is set)
+        if not args.forcerun:
+            raise RuntimeError("ERROR: --forcerun has to be set to overwrite existing m2m_{subID} folder")
+        else:
+            shutil.rmtree(subject_dir)
+            time.sleep(2)
+
+
+    charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
+                   args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
+                   args.inittransform,
+                   " ".join(sys.argv[1:]))
 
         
         
