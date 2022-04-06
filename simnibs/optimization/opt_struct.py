@@ -50,7 +50,7 @@ from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 
 
 class TMSoptimize():
-    '''
+    """
     Attributes:
     ------------------------------
     fnamehead: str
@@ -99,7 +99,9 @@ class TMSoptimize():
         coil format
     scalp_normals_smoothing_steps (optional): float
         Number of iterations for smoothing the scalp normals to control tangential scalp placement of TMS coil
-    '''
+    keep_hdf5: bool
+        Keep intermediate _direct_optimization() ouput. Default: False.
+    """
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
         self.date = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -138,6 +140,7 @@ class TMSoptimize():
         self.open_in_gmsh = True
         self.solver_options = ''
         self.method = 'direct'
+        self.keep_hdf5 = False
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
@@ -533,7 +536,9 @@ class TMSoptimize():
         # Read the fields
         with h5py.File(fn_hdf5, 'a') as f:
             E_roi = f[dataset][:]
-        os.remove(fn_hdf5)
+
+        if not hasattr(self, 'keep_hdf5') or not self.keep_hdf5:
+            os.remove(fn_hdf5)
             
         return E_roi
 
@@ -1299,7 +1304,7 @@ class TDCSoptimize():
             if self.leadfield_hdf is not None:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
                     electrode_names = f[self.leadfield_path].attrs['electrode_names']
-                    electrode_names = [n.decode() for n in electrode_names]
+                    electrode_names = [n.decode() if isinstance(n,bytes) else n for n in electrode_names]
             else:
                 raise ValueError('Please define the electrode names')
 
