@@ -3,22 +3,24 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.8.8
-  - numpy=1.20.1
-  - scipy=1.6.2
-  - h5py=2.10.0
+  - python=3.9.12
+  - numpy=1.21.2 #1.21.5 failed due to mkl_pardiso error
+  - scipy=1.7.3
+  - h5py=3.6.0
   - pyopengl=3.1.1a1
-  - pytest=6.2.3
-  - cython=0.29.23
+  - pytest=7.1.1
+  - cython=0.29.28
   - mock=4.0.3
-  - packaging=20.9
-  - requests=2.25.1
-  - pip=21.0.1
-  - matplotlib=3.3.4
+  - packaging=21.3
+  - requests=2.27.1
+  - pip=21.2.4
+  - matplotlib=3.5.1
   - boost=1.73.0
-  - tbb=2020.3
+  - tbb=2021.5.0
+  - pillow=9.0.1
+  - nibabel=3.2.2
+  - pyqt=5.9.2
+  - mkl=2021.4.0
   - pip:
-    - nibabel==3.2.1
-    - pyqt5==5.15.4
-    - fmm3dpy==1.0
+    - simnibs/external/bin/osx/fmm3dpy-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl #because M1 does not like AVX
     - charm_gems==1.3

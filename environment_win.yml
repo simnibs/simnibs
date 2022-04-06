@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.9.12
   - numpy=1.21.5
   - scipy=1.7.3
   - h5py=3.6.0
@@ -23,6 +23,7 @@ dependencies:
   - pillow=9.0.1
   - nibabel=3.2.2
   - pyqt=5.9.2
+  - mkl=2021.4.0
   - pip:  
     - fmm3dpy==1.0.0
     - charm_gems==1.3
