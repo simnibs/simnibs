@@ -129,10 +129,10 @@ def _init_atlas_affine(t1_scan, mni_template, affine_settings,path_to_segment_fo
     registerer.initialize_transform()
     registerer.register()
     trans_mat = registerer.get_transformation_matrix()
-    print(trans_mat)
+    RAS2LPS = np.diag([-1, -1, 1, 1])
     registerer.write_out_result(os.path.join(path_to_segment_folder,'mni_registered.nii.gz'))
     # ITK returns the matrix mapping the fixed image to the
-    # moving image so let's invert it.
+    # moving image so let' s invert it.
     return np.linalg.inv(trans_mat)
 
 def _estimate_parameters(path_to_segment_folder,
