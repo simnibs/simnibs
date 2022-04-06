@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from .. import charm_main
+from .. import charm_utils
 
 
 def generate_label_arr(ndim=2):
@@ -31,14 +31,18 @@ test_label_unassigned_elements_inputs = (
     test_label_unassigned_elements_inputs,
 )
 def test_label_unassigned_elements(
-    label_unassign, labels, window_size, ignore_labels, expected_label,
+    label_unassign,
+    labels,
+    window_size,
+    ignore_labels,
+    expected_label,
 ):
     label_arr = generate_label_arr(3)
     expected_arr = label_arr.copy()
     expected_arr[label_arr == label_unassign] = expected_label
     np.testing.assert_allclose(
         expected_arr,
-        charm_main.label_unassigned_elements(
+        charm_utils.label_unassigned_elements(
             label_arr, label_unassign, labels, window_size, ignore_labels
         ),
     )
