@@ -50,7 +50,7 @@ from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 
 
 class TMSoptimize():
-    '''
+    """
     Attributes:
     ------------------------------
     fnamehead: str
@@ -99,7 +99,9 @@ class TMSoptimize():
         coil format
     scalp_normals_smoothing_steps (optional): float
         Number of iterations for smoothing the scalp normals to control tangential scalp placement of TMS coil
-    '''
+    keep_hdf5: bool
+        Keep intermediate _direct_optimization() ouput. Default: False.
+    """
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
         self.date = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -138,6 +140,7 @@ class TMSoptimize():
         self.open_in_gmsh = True
         self.solver_options = ''
         self.method = 'direct'
+        self.keep_hdf5 = False
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
@@ -316,7 +319,7 @@ class TMSoptimize():
         )
         return self
 
-    def run(self, cpus=1, allow_multiple_runs=False, save_mat=True):
+    def run(self, cpus=1, allow_multiple_runs=False, save_mat=True, return_n_max=1):
         ''' Runs the tms optimization
 
         Parameters
@@ -327,11 +330,13 @@ class TMSoptimize():
             Wether to allow multiple runs in one folder. Default: False
         save_mat: bool (optional)
             Whether to save the ".mat" file of this structure
-        
+        return_n_max: int (optional)
+            Return n-th best solutions. Default: 1
+
         Returns
         --------
-        matsimnibs: array_like
-            optimal coil position/orientation
+        best_results: array_like
+            optimal coil positions/orientations. shape  = (return_n_max, 4, 4)
         '''
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.pathfem))
@@ -347,6 +352,7 @@ class TMSoptimize():
         else:
             logger.info('Running simulations on new directory: {0}'.dir_name)
             os.makedirs(dir_name)
+        assert return_n_max >= 1
 
         self._prepare()
         if save_mat:
@@ -443,9 +449,11 @@ class TMSoptimize():
             mesh_io.open_in_gmsh(fn_out, True)
         
         logger.info('\n' + self.summary(pos_matrices[np.argmax(E_roi)]))
-        
-        # return optimum coil position
-        return pos_matrices[np.argmax(E_roi)]
+
+        # return optimum coil position(s)
+        return_n_max = np.min((return_n_max,E_roi.shape[0]))
+        best_results = np.array(pos_matrices)[E_roi.argsort()[-return_n_max:][::-1]]
+        return best_results
 
     def _name_hdf5(self):
         try:
@@ -528,7 +536,9 @@ class TMSoptimize():
         # Read the fields
         with h5py.File(fn_hdf5, 'a') as f:
             E_roi = f[dataset][:]
-        os.remove(fn_hdf5)
+
+        if not hasattr(self, 'keep_hdf5') or not self.keep_hdf5:
+            os.remove(fn_hdf5)
             
         return E_roi
 
@@ -1294,7 +1304,7 @@ class TDCSoptimize():
             if self.leadfield_hdf is not None:
                 with h5py.File(self.leadfield_hdf, 'r') as f:
                     electrode_names = f[self.leadfield_path].attrs['electrode_names']
-                    electrode_names = [n.decode() for n in electrode_names]
+                    electrode_names = [n.decode() if isinstance(n,bytes) else n for n in electrode_names]
             else:
                 raise ValueError('Please define the electrode names')
 

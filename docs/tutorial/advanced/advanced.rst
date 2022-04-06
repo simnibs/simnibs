@@ -9,3 +9,4 @@ Advanced Features
    tdcs_distributed_opt
    uq
    custom_meshing
+   fix_headmodel

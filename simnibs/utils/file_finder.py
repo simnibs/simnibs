@@ -77,6 +77,11 @@ class Templates:
         #CHARM atlas path
         self.charm_atlas_path = os.path.join(SIMNIBSDIR, 'segmentation','atlases')
 
+        #Viewer templates
+        self.html_template = os.path.join(SIMNIBSDIR, '_internal_resources', 'html', 'template.html')
+        self.jquery = os.path.join(SIMNIBSDIR, '_internal_resources', 'html', 'jquery.min.js')
+        self.brainsprite = os.path.join(SIMNIBSDIR, '_internal_resources', 'html', 'brainsprite.min.js')
+
 
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
@@ -314,22 +319,12 @@ class SubjectFiles:
     hemi_mask: str
         Mask indicating left/right. Needed for surfaces.
 
-    report_folder: str
-        Folder for storing charm_log and the viewers.
-
     charm_log: str
         The charm run log (.html)
-
-    t1_t2_reg_viewer: str
-        Viewer for the t1-t2 registration (.html)
-
-    affine_reg_viewer: str
-        Viewer for the affine registration (.html)
-
-    final_seg_viewer: str
-        Viewer for the final segmentation (.html)
+        
     summary_report: str
         html summarizing the run and linking to the reports (.html)
+        
     Warning
     --------
     This class does not check for existance of the files
@@ -376,7 +371,6 @@ class SubjectFiles:
         self.segmentation_folder = os.path.join(self.subpath, 'segmentation')
         self.surface_folder = os.path.join(self.subpath, 'surfaces')
         self.label_prep_folder = os.path.join(self.subpath, 'label_prep')
-        self.report_folder = os.path.join(self.subpath, 'reports')
 
         # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, 'T1.nii.gz')
@@ -452,24 +446,21 @@ class SubjectFiles:
         self.T2_reg_denoised = os.path.join(self.segmentation_folder, 'T2_reg_denoised.nii.gz')
         self.T1_bias_corrected = os.path.join(self.segmentation_folder, 'T1_bias_corrected.nii.gz')
         self.T2_bias_corrected = os.path.join(self.segmentation_folder, 'T2_bias_corrected.nii.gz')
-        self.labeling = os.path.join(self.subpath, 'labeling.nii.gz')
+        self.labeling = os.path.join(self.segmentation_folder, 'labeling.nii.gz')
         self.final_labels = os.path.join(self.subpath, 'final_tissues.nii.gz')
-        self.template_coregistered =  os.path.join(self.segmentation_folder, 'template_coregistered.nii.gz')
+        self.template_coregistered = os.path.join(self.segmentation_folder, 'template_coregistered.mgz')
         self.T1_upsampled = os.path.join(self.label_prep_folder,'T1_upsampled.nii.gz')
         self.T2_upsampled = os.path.join(self.label_prep_folder,'T2_upsampled.nii.gz')
         self.tissue_labeling_upsampled = os.path.join(self.label_prep_folder,'tissue_labeling_upsampled.nii.gz')
         self.tissue_labeling_before_morpho = os.path.join(self.label_prep_folder, 'before_morpho.nii.gz')
         self.upper_mask = os.path.join(self.label_prep_folder, 'upper_part.nii.gz')
         self.settings = os.path.join(self.subpath, 'settings.ini')
-        self.t1_t2_reg_viewer = os.path.join(self.report_folder, 'input_scan_reg.html')
-        self.affine_reg_viewer = os.path.join(self.report_folder, 'affine_reg.html')
-        self.final_seg_viewer = os.path.join(self.report_folder, 'final_tissues.html')
         self.cereb_mask = os.path.join(self.surface_folder, 'cereb_mask.nii.gz')
         self.norm_image = os.path.join(self.surface_folder, 'norm_image.nii.gz')
         self.subcortical_mask = os.path.join(self.surface_folder, 'subcortical_mask.nii.gz')
         self.hemi_mask = os.path.join(self.surface_folder, 'hemi_mask.nii.gz')
-        self.charm_log = os.path.join(self.report_folder, 'charm_log.html')
-        self.summary_report = os.path.join(self.subpath, 'results.html')
+        self.charm_log = os.path.join(self.subpath, 'charm_log.html')
+        self.summary_report = os.path.join(self.subpath, 'charm_report.html')
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
 

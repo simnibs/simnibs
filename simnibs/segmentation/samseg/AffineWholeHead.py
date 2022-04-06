@@ -26,9 +26,12 @@ class AffineWholeHead(Affine):
         template = gems.KvlImage(template_name)
         image = gems.KvlImage(image_name)
         image_to_world_transform = image.transform_matrix.as_numpy_array
+        #Save the world-to-world transformation matrix in RAS
+        RAS2LPS = np.diag([-1, -1, 1, 1])
+        world_to_world_transform_ras = RAS2LPS @ world_to_world_transform @ RAS2LPS
         scipy.io.savemat(os.path.join(save_path, 'coregistrationMatrices.mat'),
                          {'imageToImageTransformMatrix': image_to_image_transform,
-                          'worldToWorldTransformMatrix': world_to_world_transform})
+                          'worldToWorldTransformMatrix': world_to_world_transform_ras})
 
         # Save the coregistered template. For historical reasons,
         # we applied the estimated transformation to the template...

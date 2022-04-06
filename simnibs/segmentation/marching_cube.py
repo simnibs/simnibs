@@ -98,6 +98,8 @@ def marching_cube(volume, affine=None, level=None, step_size=1, only_largest_com
         surface = mesh_io.read_off(mesh_fn)
         if os.path.isfile(mesh_fn):
             os.remove(mesh_fn)
+        if os.path.isfile('meshfix_log.txt'):
+            os.remove('meshfix_log.txt')
             
     # ensure outwards pointing triangles
     surface.fix_surface_orientation()    

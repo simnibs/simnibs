@@ -334,7 +334,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
     # need to normalize to find the label with highest probability.
     # But we're not going to compute the posteriors here.
     # We're also filling zero values (outside the mask) from the prior
-    print('Into the loop')
+    print('Segmenting, can take a while...')
     for structureNumber in range(numberOfStructures):
         # Rasterize the current structure from the atlas
         # and cast to float from uint16
@@ -343,7 +343,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
 
         # Find which classes we need to look at
         # to get the fractions correct
-        print(structureNumber)
+        print('Segmented ' + str(structureNumber +1 ) +' out of ' + str(numberOfStructures) + ' structures.')
         classesToLoop = [i for i, val in enumerate(fractionsTable[:, structureNumber] > 1e-10) if val]
         likelihoods = np.zeros(numberOfVoxels, dtype=np.float32)
         for classNumber in classesToLoop:
