@@ -762,8 +762,7 @@ def run(subject_dir=None, T1=None, T2=None,
     # initialize subject files
     sub_files = file_finder.SubjectFiles(None, subject_dir)
     # start logging ...
-    os.makedirs(sub_files.report_folder, exist_ok=True)
-    logfile = os.path.join(sub_files.report_folder, "charm_log.html")
+    logfile = os.path.join(subject_dir, "charm_log.html")
     with open(logfile, 'a') as f:
         f.write('<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>')
         f.close()
