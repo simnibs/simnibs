@@ -901,7 +901,9 @@ def fix_qtconf(install_dir):
                     paths[key] = newpath
                 else:
                     print(f'Warning dir {newpath} does not exist')
-        with open(fn+'test', 'w') as configfile:
+            else:
+                paths[key]=os.path.abspath(paths[key])
+        with open(fn, 'w') as configfile:
             config.write(configfile)
 
 def install(install_dir,
