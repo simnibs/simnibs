@@ -222,7 +222,7 @@ def _get_bashrc():
     return bashrc, backup_file
 
 def _get_win_simnibs_env_vars():
-    ''' 'Creates a disctionary with environment names and values '''
+    ''' 'Creates a dictionary with environment names and values '''
     simnibs_env_vars = {}
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Environment') as reg:
         _, num_values, _ = winreg.QueryInfoKey(reg)
@@ -879,6 +879,31 @@ if GUI:
         else:
             raise Exception('uninstall cancelled by user')
 
+def fix_qtconf(install_dir):
+    import glob
+    import re
+    fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
+    if len(fns)<1:
+        print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
+        return
+    import configparser
+    for fn in fns:
+        config = configparser.ConfigParser()
+        config.read(fn)
+        paths = config['Paths']
+        keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
+        for key in keys:
+            if not os.path.isdir(paths[key]):
+                dirs = os.path.normpath(paths[key]).split(os.sep)
+                idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
+                newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
+                if os.path.isdir(newpath):
+                    paths[key] = newpath
+                else:
+                    print(f'Warning dir {newpath} does not exist')
+        with open(fn+'test', 'w') as configfile:
+            config.write(configfile)
+
 def install(install_dir,
             force,
             silent,
@@ -1023,6 +1048,7 @@ def main():
         else:
             start_uninstall_gui(install_dir)
         return
+    fix_qtconf(install_dir)
     if not args.silent:
         if not GUI:
             raise ImportError(
@@ -1054,4 +1080,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
