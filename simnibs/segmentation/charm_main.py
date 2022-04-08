@@ -48,6 +48,7 @@ def run(
     noneck=False,
     init_transform=None,
     options_str=None,
+    debug=False,
 ):
     """charm pipeline
 
@@ -277,6 +278,7 @@ def run(
             atlas_affine_name,
             sub_files.tissue_labeling_before_morpho,
             sub_files.upper_mask,
+            debug=debug,
         )
 
         # Write to disk
@@ -350,10 +352,12 @@ def run(
             logger.info("Improving GM from surfaces")
             starttime = time.time()
             # original tissue mask used for mesh generation
-            shutil.copyfile(
-                sub_files.tissue_labeling_upsampled,
-                os.path.join(sub_files.label_prep_folder, "before_surfmorpho.nii.gz"),
-            )
+            if debug:
+                shutil.copyfile(
+                    sub_files.tissue_labeling_upsampled,
+                    os.path.join(sub_files.label_prep_folder, "before_surfmorpho.nii.gz"),
+                )
+
             label_nii = nib.load(sub_files.tissue_labeling_upsampled)
             label_img = np.asanyarray(label_nii.dataobj)
             label_affine = label_nii.affine
@@ -473,7 +477,10 @@ def run(
         skin_care = mesh_settings["skin_care"]
 
         # Meshing
-        DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
+        DEBUG_FN = None
+        if debug:
+            DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
+
         final_mesh = create_mesh(
             label_buffer,
             label_affine,

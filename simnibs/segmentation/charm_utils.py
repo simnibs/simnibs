@@ -229,6 +229,7 @@ def _post_process_segmentation(
     affine_atlas,
     before_morpho_name,
     upper_mask,
+    debug=False,
 ):
 
     logger.info("Upsampling bias corrected images.")
@@ -259,8 +260,9 @@ def _post_process_segmentation(
         nib.save(upsampled, upsampled_image)
 
     affine_upsampled = upsampled.affine
-    upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues, affine_upsampled)
-    nib.save(upsampled_tissues_im, before_morpho_name)
+    if debug:
+        upsampled_tissues_im = nib.Nifti1Image(upsampled_tissues, affine_upsampled)
+        nib.save(upsampled_tissues_im, before_morpho_name)
 
     upper_part_im = nib.Nifti1Image(upper_part.astype(np.int16), affine_upsampled)
     upper_part_im.set_data_dtype(np.int16)
