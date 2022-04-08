@@ -12,8 +12,9 @@ import numpy as np
 
 from simnibs import SIMNIBSDIR
 
-from .. import __version__
 from . import samseg
+from . import charm_utils
+from .. import __version__
 from .. import utils
 from ..utils.simnibs_logger import logger
 from ..utils import file_finder
@@ -91,17 +92,17 @@ def run(
         os.mkdir(subject_dir)
     sub_files = file_finder.SubjectFiles(subpath=subject_dir)
 
-    logfile = _setup_logger(sub_files)
-
+    _setup_logger(sub_files.charm_log)
     logger.info(f"simnibs version {__version__}")
     logger.info(f"charm run started: {time.asctime()}")
     logger.debug(f"options: {options_str}")
 
-    settings = _read_settings_and_copy(usesettings, sub_files)
+    settings = _read_settings_and_copy(usesettings, sub_files.settings)
     denoise_settings = settings["preprocess"]
     do_denoise = denoise_settings["denoise"]
     samseg_settings = settings["samseg"]
     logger.debug(settings)
+
 
     if init_transform:
         init_transform = np.loadtxt(init_transform)
@@ -113,8 +114,8 @@ def run(
         RAS2LPS = np.diag([-1, -1, 1, 1])
         init_transform = RAS2LPS @ init_transform @ RAS2LPS
 
-    _prepare_t1(T1, sub_files)
-    _prepare_t2(T1, T2, registerT2, sub_files)
+    _prepare_t1(T1, sub_files.reference_volume)
+    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg)
 
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
@@ -152,7 +153,7 @@ def run(
         atlas_level2,
         atlas_affine_name,
         gmm_parameters,
-    ) = _setup_atlas(samseg_settings, sub_files)
+    ) = _setup_atlas(samseg_settings, sub_files.T2_reg)
 
     if initatlas:
         # initial affine registration of atlas to input images,
@@ -533,10 +534,10 @@ def run(
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
     # -------------------------TIDY UP-------------------------------------
-    # Create final seg html viewer
-    # Create visualization htmls
-    logger.info("Creating html viewer")
-    plotting.write(sub_files, file_finder.templates)
+    # Create charm_report.html
+    logger.info("Creating report")
+    html_writer.write_report(sub_files)
+    
     # log stopping time and total duration ...
     logger.info("charm run finished: " + time.asctime())
     logger.info(
@@ -548,7 +549,7 @@ def run(
         logger.removeHandler(logger.handlers[0])
     utils.simnibs_logger.unregister_excepthook()
     logging.shutdown()
-    with open(logfile, "r") as f:
+    with open(sub_files.charm_log, "r") as f:
         logtext = f.read()
 
     # Explicitly remove this really annoying stuff from the log
@@ -560,19 +561,16 @@ def run(
         + "\d{1,2}"
         + re.escape(" %"),
     )
-    with open(logfile, "w") as f:
+    with open(sub_files.charm_log, "w") as f:
         for text in removetext:
             logtext = re.sub(text, "", logtext)
         f.write(logtext)
         f.write("</pre></BODY></HTML>")
         f.close()
 
-    html_writer.write_template(sub_files)
 
-
-def _setup_logger(sub_files):
+def _setup_logger(logfile):
     """Add FileHandler etc."""
-    logfile = os.path.join(sub_files.subpath, "charm_log.html")
     with open(logfile, "a") as f:
         f.write("<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>")
         f.close()
@@ -582,10 +580,9 @@ def _setup_logger(sub_files):
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
-    return logfile
 
 
-def _read_settings_and_copy(usesettings, sub_files):
+def _read_settings_and_copy(usesettings, fn_settingslog):
     # read settings and copy settings file
     if usesettings is None:
         fn_settings = os.path.join(SIMNIBSDIR, "charm.ini")
@@ -595,40 +592,40 @@ def _read_settings_and_copy(usesettings, sub_files):
         fn_settings = usesettings
     settings = utils.settings_reader.read_ini(fn_settings)
     try:
-        shutil.copyfile(fn_settings, sub_files.settings)
+        shutil.copyfile(fn_settings, fn_settingslog)
     except shutil.SameFileError:
         pass
     return settings
 
 
-def _prepare_t1(T1, sub_files):
+def _prepare_t1(T1, reference_volume):
     # copy T1 (as nii.gz) if supplied
     if T1:
         if os.path.exists(T1):
             # Cast to float32 and save
             T1_tmp = nib.load(T1)
             T1_tmp.set_data_dtype(np.float32)
-            nib.save(T1_tmp, sub_files.reference_volume)
+            nib.save(T1_tmp, reference_volume)
         else:
             raise FileNotFoundError(f"Could not find input T1 file: {T1}")
 
 
-def _prepare_t2(T1, T2, registerT2, sub_files):
+def _prepare_t2(T1, T2, registerT2, T2_reg):
     if T2:
         T2_exists = os.path.exists(T2)
         if registerT2:
             if T2_exists:
-                charm_utils._registerT1T2(T1, T2, sub_files.T2_reg)
+                charm_utils._registerT1T2(T1, T2, T2_reg)
             else:
                 raise FileNotFoundError(f"Could not find input T2 file: {T2}")
         else:
             if T2_exists:
                 T2_tmp = nib.load(T2)
                 T2_tmp.set_data_dtype(np.float32)
-                nib.save(T2_tmp, sub_files.T2_reg)
+                nib.save(T2_tmp, T2_reg)
 
 
-def _setup_atlas(samseg_settings, sub_files):
+def _setup_atlas(samseg_settings, T2_reg):
     # Set-up atlas paths
     atlas_name = samseg_settings["atlas_name"]
     logger.info("Using " + atlas_name + " as charm atlas.")
@@ -641,7 +638,7 @@ def _setup_atlas(samseg_settings, sub_files):
     atlas_affine_name = os.path.join(atlas_path, atlas_settings_names["affine_atlas"])
     atlas_level1 = os.path.join(atlas_path, atlas_settings_names["atlas_level1"])
     atlas_level2 = os.path.join(atlas_path, atlas_settings_names["atlas_level2"])
-    if os.path.exists(sub_files.T2_reg):
+    if os.path.exists(T2_reg):
         gmm_parameters = os.path.join(
             atlas_path, atlas_settings_names["gaussian_parameters_t2"]
         )
@@ -667,3 +664,4 @@ def _denoise_inputs(T1, T2, sub_files):
     if T2 and os.path.exists(sub_files.T2_reg):
         logger.info("Denoising the registered T2 and saving.")
         charm_utils._denoise_input_and_save(sub_files.T2_reg, sub_files.T2_reg_denoised)
+

@@ -11,8 +11,8 @@ se = ndimage.generate_binary_structure(3,1)
 
 
 cmaplist_final = [(0, 0, 0, 0),
-                 (230/255, 230/255, 230/255, 1.0),
-                 (129/255, 129/255, 129/255, 1.0),
+                 (30/255, 30/255, 30/255, 1.0),
+                 (255/255, 255/255, 255/255, 1.0),
                  (104/255, 163/255, 255/255, 1.0),
                  (255/255, 239/255, 179/255, 1.0),
                  (255/255, 166/255, 133/255, 1.0),
@@ -27,7 +27,7 @@ cmaplist_affine = [(0, 0, 0, 0),
                    (0, 0, 0, 0),
                    (0, 0, 0, 0),
                    (0, 0, 0, 0),
-                   (255/255, 166/255, 133/255, 0.3),
+                   (255/255, 166/255, 133/255, 1.0),
                    (255/255, 239/255, 179/255, 1.0)]
 
 cmap_final = mpl.colors.LinearSegmentedColormap.from_list(
@@ -72,10 +72,12 @@ def _registration_overlay(T2):
     return nib.Nifti1Image(np.squeeze(d), T2_data.affine)
 
 
-def _final_overlay(labeling):
+def _final_overlay(labeling, labels = [1, 2, 3, 6, 9, 8, 7, 5], 
+                   medfilter_size = None):
     tissues_data = nib.load(labeling)
-    tissues_buffer = np.squeeze(tissues_data.get_fdata())
-    labels = [1, 2, 3, 6, 9, 8, 7, 5]
+    tissues_buffer = np.round(np.squeeze(tissues_data.get_fdata()))
+    if medfilter_size is not None:
+        tissues_buffer = ndimage.median_filter(tissues_buffer,size = medfilter_size)
     #Create boolean buffer full of Falses
     tissue_mask = tissues_buffer == -1000
     label_buffer = np.zeros_like(tissues_buffer)
@@ -120,7 +122,8 @@ def write(sub_files, templates):
         select[1]=len(imgs)-1
 
     if os.path.exists(sub_files.template_coregistered):
-        imgs.append(nib.load(sub_files.template_coregistered))
+        imgs.append(_final_overlay(sub_files.template_coregistered, 
+                                   labels = [6, 5], medfilter_size=5))
         cmaps.append(cmap_affine)
         interpolation_order.append(0)
         names.append('Coregistered template')
@@ -133,6 +136,6 @@ def write(sub_files, templates):
         names.append('Tissue labels')
         select[1]=len(imgs)-1
     brainsprite_helper.write_viewer(imgs, cmaps, interpolation_order,
-                                    sub_files.viewer, templates.html_template,
+                                    sub_files.summary_report, sub_files.summary_report,
                                     templates.jquery, templates.brainsprite,
                                     names=names, select=select)

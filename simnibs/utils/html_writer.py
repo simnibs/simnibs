@@ -1,9 +1,12 @@
 from simnibs import SIMNIBSDIR
 import os
 import json
-import shutil
-from simnibs.utils.settings_reader import read_ini
+from PIL import Image
 
+from . import plotting
+from .file_finder import templates
+from .settings_reader import read_ini
+from .brainsprite_helper import _get_im_data
 
 """
 This module writes the final html after a charm run is done.
@@ -21,6 +24,7 @@ html_source = """
 
 <html lang="en">
 <head>
+  <title>CHARM report</title>
   <meta charset="utf-8">
   <title>Charm summary</title>
   <style>
@@ -35,32 +39,70 @@ html_source = """
 
 <div id="content">
     <a href="https://simnibs.github.io/simnibs/build/html/index.html">
-    <img src="{simnibs_fig}" width="128" height="128" class="ribbon"/> </a>
+    <img id="simnibs_logo" class="hidden" src="{simnibs_fig}" width="128" height="128" class="ribbon" alt="simnibs_logo"> </a>
 </div>
-
 
 <body>
 <h2> Charm run summary: </h2>
 <div>
 {scan_text} {settings_text}
-Please check the quality of the inital registration
-between the input scan and the atlas by clicking the
-affine viewer link below,
-and the quality of the final
-segmentation by clicking the final segmentation viewer
-link below.
-The registration between the T1- and
-T2-weighted scans can be inspected by clicking the
-registration viewer link.
-Finally, if you use charm and/or
-SimNIBS in your study, please include citations to the papers
-listed under the "References"-section
+Please check the quality of the final segmentation in the viewer below. In case
+of doubt, also check the quality of the inital registration between the input scan 
+and the atlas to see whether this step needs improvement. The SimNIBS tutorial
+gives examples on how to fix the initial registration if needed. 
+The viewer also allows checking the registration between the T1- and T2-weighted scans. 
+Finally, if you use charm and/or SimNIBS in your study, please include citations
+to the papers listed under the "References"-section.
 </div>
 
-<h2> Link to a viewer for quality checking </h2>
-<div>
-{viewer}
+<h2> Viewer for quality checking </h2>
+  <div id="div_viewer">
+  <canvas id="3Dviewer">
+  $data_base64
+  </canvas>
+  </div>
+
+  <script>
+      $js_jquery
+  </script>
+  <script>
+      $js_brainsprite
+  </script>
+<div class="guicontrols">
+    <form>
+        Background volume:<br><select id = "backimg">
+            $dropdown1
+        </select><br><br>
+        Overlay volume:<br><select id = "overlayimg">
+            $dropdown2
+        </select>
+    </form>
+    <br>Overlay opacity<br><input type="range" min="0.0" max="1.0" value="1.0" class="opacity" id="opacity_slider" step="0.01" width="100%">
 </div>
+   <script>
+    $( window ).on('load',function() {{
+      let params = $params;
+      var backList = document.getElementById("backimg");
+      params.sprite = backList.options[backList.selectedIndex].text;
+      var overlList = document.getElementById("overlayimg");
+      params.overlay.sprite = overlList.options[overlList.selectedIndex].text;
+      params.overlay.opacity = "1.0";
+      var brain = brainsprite(params);
+      function update() {{
+        brain.sprite = document.getElementById(backList.options[backList.selectedIndex].text);
+        brain.overlay.sprite = document.getElementById(overlList.options[overlList.selectedIndex].text);
+        brain.init();
+        brain.drawAll();
+      }}
+      $( backimg ).on("change",update);
+      $( overlayimg ).on("change",update);
+      opacity_slider.oninput = function() {{
+        brain.overlay.opacity = this.value;
+        brain.init();
+        brain.drawAll();
+      }}
+    }});
+</script>
 
 <h2> References </h2>
 <div>
@@ -217,9 +259,9 @@ def _get_settings_string(sub_ini, charm_ini):
     return settings_text
 
 
-def write_template(sub_files):
+def write_report(sub_files):
     """
-    Parse and write the .html template to disk.
+    Parse and write the .html report to disk.
 
     Parameters
     -----------------------
@@ -229,12 +271,9 @@ def write_template(sub_files):
     for the given subject folder.
     """
 
-    #Copy simnibs logo to reports folder
-    simnibs_icon = os.path.join(sub_files.report_folder, 'simnibs_icon.png')
-    shutil.copy(simnibs_logo, simnibs_icon)
-    viewer = (
-        '<a href="' + sub_files.viewer + '">Scan viewer</a>'
-    )
+    # get simnibs logo
+    im = Image.open(simnibs_logo)
+    imdata = 'data:image/webp;base64,' + _get_im_data(im)
 
     t1_text = "Charm was run on a T1-weighted scan"
     t1_t2_text = "Charm was run on a combination of T1- and T2-weighted scans"
@@ -245,9 +284,7 @@ def write_template(sub_files):
     else:
         parse_dict["scan_text"] = t1_t2_text
 
-    parse_dict["simnibs_fig"] = 'reports/simnibs_icon.png'
-
-    parse_dict["viewer"] = viewer
+    parse_dict["simnibs_fig"] = imdata
 
     settings_dif = _get_settings_string(
         sub_files.settings, os.path.join(SIMNIBSDIR, "charm.ini")
@@ -257,3 +294,6 @@ def write_template(sub_files):
     html_parsed = html_source.format(**parse_dict)
     with open(sub_files.summary_report, "w") as f:
         f.write(html_parsed)
+
+    # add viewer
+    plotting.write(sub_files, templates)

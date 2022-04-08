@@ -8,21 +8,30 @@ Current Contributors
 * Axel Thielscher
    * Project coordination
    * Debugging and maintenance across the complete code.
+   * Meshing part of :ref:`charm_docs` (4.0)
    * :ref:`dwi2cond_docs` (2.1)
    * Example dataset *ernie* (2.1)
-   * Meshing part of :ref:`charm_docs` (4.0)
 
 * Oula Puonti
-   * Main author of :ref:`charm_docs` (4.0)
+   * Main author of :ref:`charm_docs` and of simnibs 4.0 in general (4.0)
+   * Debugging and maintenance across the complete code.
    * New MNI head mesh (2.1)
 
 * Kristoffer H. Madsen
+   * Debugging and maintenance across the complete code.
+   * Cross-platform building (4.0)
+   * new html-based viewer (4.0)
+   * ccd to nifti conversion (4.0)
    * MNI transformation (2.1)
    * Fast I/O for gmsh-meshes in python (2.0)
    * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
 
-* Hassan Yazdanian and Kim Knudsen
-   * Magnetic Field Calculations (3.2)
+* Jesper D. Nielsen
+   * Contributions to the segmentation functions in :ref:`charm_docs` (4.0)
+   * Main author of the *headreco* pipeline, now discontinued (2.1)
+
+* Fang Cao
+   * Code testing and updating to python 3.9 (4.0)
 
 * Konstantin Weise
    * First version of the TMS optimization (3.1)
@@ -34,25 +43,8 @@ Current Contributors
 * Ole Numssen
    * First version of the TMS optimization (3.1)
 
-* Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
-   * Auxiliary Dipole Method (ADM) TMS optimization (3.2)
-
 Former Contributors
 ---------------------
-* Andre Antunes
-   * Main contributor to the FEM pipeline in SimNIBS 2.0
-   * Implementation of a range of post-processing programs in SimNIBS 2.0
-   
-* Andreas Bungert
-   * Testing of the new FEM pipeline in SimNIBS 2.0
-
-* Jesper D. Nielsen
-   * Main author of the *headreco* pipeline, now discontinued (2.1)
-   
-* Alex Opitz
-   * Implementation of first diffusion-to-conductivity mapping approach
-   * Co-contributor to many other parts in SimNIBS 1.0
-   * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
 
 * Guilherme B. Saturnino
    * Main contributor to many SimNIBS features: 
@@ -66,7 +58,25 @@ Former Contributors
 	   * Electrode modeling for TES (2.0)
 	   * Bug-fixing
 	   * Meshing part of :ref:`charm_docs` (4.0)
+
+* Hassan Yazdanian and Kim Knudsen
+   * Magnetic Field Calculations (3.2)
+
+* Luis J. Gomez, Moritz Dannhauer, and Angel V. Peterchev; Duke University, Durham, North Carolina, U.S.A.
+   * Auxiliary Dipole Method (ADM) TMS optimization (3.2)
+
+* Andre Antunes
+   * Main contributor to the FEM pipeline in SimNIBS 2.0
+   * Implementation of a range of post-processing programs in SimNIBS 2.0
    
+* Andreas Bungert
+   * Testing of the new FEM pipeline in SimNIBS 2.0
+
+* Alex Opitz
+   * Implementation of first diffusion-to-conductivity mapping approach
+   * Co-contributor to many other parts in SimNIBS 1.0
+   * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
+
 * Mirko Windhoff
    * Main contributor to SimNIBS 1.0
    
@@ -75,7 +85,7 @@ Acknowledgements
 SimNIBS integrates free software for Neuroimaging, computer graphics
 and FEM calculations into one coherent pipeline:
 
-* :ref:`charm_docs` uses `Samseg from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, and also a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_, functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_
+* :ref:`charm_docs` uses `Samseg (Oula Puonti, Koen Van Leemput) from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, and also a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_, functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_
 * We use `Gmsh <http://geuz.org/gmsh/>`_ by `Christophe Geuzaine 
   <http://www.montefiore.ulg.ac.be/~geuzaine/>`_ and `Jean-François Remacle <http://perso.uclouvain.be/jean-francois.remacle/>`_ for visualization.
 * :ref:`dwi2cond_docs` uses `FSL <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.

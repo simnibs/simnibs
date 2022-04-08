@@ -3,3 +3,7 @@ var filelist = ["simnibs_frontpage.png",
 				"coil1.gif",
                 "dadt.png",
                 ];
+				
+var links = ["",
+			 "",
+			 ""];
