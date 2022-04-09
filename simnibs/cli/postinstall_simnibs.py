@@ -905,6 +905,7 @@ def fix_qtconf(install_dir):
                 paths[key]=os.path.abspath(paths[key])
         with open(fn, 'w') as configfile:
             config.write(configfile)
+        os.environ['QT_PLUGIN_PATH']=os.path.join(paths[key],'plugins')
 
 def install(install_dir,
             force,
