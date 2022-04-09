@@ -716,6 +716,7 @@ def fix_qtconf(install_dir):
     import configparser
     for fn in fns:
         config = configparser.ConfigParser()
+        #because PyQt is case-sensitive for the variable in the qt.conf file
         config.optionxform = str
         config.read(fn)
         paths = config['Paths']
@@ -727,6 +728,7 @@ def fix_qtconf(install_dir):
             if len(idx)>0:
                 newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
                 if os.path.isdir(newpath):
+                    #separators needs to be / even in windows otherwise this does not work
                     paths[key] = newpath.replace(os.sep, '/')
                     changed = True
                 else:
@@ -737,18 +739,16 @@ def fix_qtconf(install_dir):
 try:
     import PyQt5
     dirname = os.path.normpath(os.path.dirname(PyQt5.__file__))
+    #these weird workarounds are needed to form the path are needed to make it work on both windows and posix
     prepath = dirname[:dirname.rindex('simnibs_env')]
-    print(prepath)
     if len(prepath) > 0:
         plugin_path = os.path.join(prepath, 'simnibs_env', 'plugins', 'platforms')
-        print(plugin_path)
         if not os.path.isdir(plugin_path):
             plugin_path = os.path.join(prepath, 'simnibs_env', 'Library', 'plugins', 'platforms')
         if not os.path.isdir(plugin_path):
             import glob
             print(os.path.join(prepath, '**', 'plugins', 'platforms'))
             plugin_path = glob.glob(os.path.join(prepath, '**', 'plugins', 'platforms'), recursive=True)[-1]
-            print(plugin_path)
         if os.path.isdir(plugin_path):
                 os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
         print(f'PyQt workaround: QT_QPA_PLATFORM_PLUGIN_PATH set to {os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]}')
