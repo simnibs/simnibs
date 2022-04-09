@@ -35,11 +35,6 @@ import requests
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
-try:
-    from PyQt5 import QtCore, QtWidgets, QtGui
-    GUI = True
-except ImportError:
-    GUI = False
 
 if sys.platform == 'win32':
     import winreg
@@ -704,6 +699,40 @@ def run_tests(args):
     exitcode = pytest.main(args)
     return exitcode
 
+def fix_qtconf(install_dir):
+    import glob
+    import re
+    fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
+    if len(fns)<1:
+        print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
+        return
+    import configparser
+    for fn in fns:
+        config = configparser.ConfigParser()
+        config.read(fn)
+        paths = config['Paths']
+        keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
+        for key in keys:
+            if not os.path.isdir(paths[key]):
+                dirs = os.path.normpath(paths[key]).split(os.sep)
+                idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
+                newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
+                if os.path.isdir(newpath):
+                    paths[key] = newpath
+                else:
+                    print(f'Warning dir {newpath} does not exist')
+            else:
+                paths[key]=os.path.abspath(paths[key])
+        with open(fn, 'w') as configfile:
+            config.write(configfile)
+        os.environ['QT_PLUGIN_PATH']=os.path.join(paths[key],'plugins')
+
+try:
+    from PyQt5 import QtCore, QtWidgets, QtGui
+    GUI = True
+except ImportError:
+    GUI = False
+
 if GUI:
     class PostInstallGUI(QtWidgets.QDialog):
         def __init__(self,
@@ -878,34 +907,6 @@ if GUI:
             uninstall(install_dir)
         else:
             raise Exception('uninstall cancelled by user')
-
-def fix_qtconf(install_dir):
-    import glob
-    import re
-    fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
-    if len(fns)<1:
-        print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
-        return
-    import configparser
-    for fn in fns:
-        config = configparser.ConfigParser()
-        config.read(fn)
-        paths = config['Paths']
-        keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
-        for key in keys:
-            if not os.path.isdir(paths[key]):
-                dirs = os.path.normpath(paths[key]).split(os.sep)
-                idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
-                newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
-                if os.path.isdir(newpath):
-                    paths[key] = newpath
-                else:
-                    print(f'Warning dir {newpath} does not exist')
-            else:
-                paths[key]=os.path.abspath(paths[key])
-        with open(fn, 'w') as configfile:
-            config.write(configfile)
-        os.environ['QT_PLUGIN_PATH']=os.path.join(paths[key],'plugins')
 
 def install(install_dir,
             force,
