@@ -39,6 +39,13 @@ from simnibs import file_finder
 if sys.platform == 'win32':
     import winreg
 
+#script_path = os.path.normpath(os.path.realpath(__file__)).split(os.sep)
+#print(script_path)
+#idx = [script_path.index(s)  for s in script_path if 'simnibs_env' in s]
+#if len(idx)>0:
+#    os.environ['QT_PLUGIN_PATH']=os.path.join('/', *script_path[:idx[-1]+1], 'plugins')
+#    print(f'setting QT_PLUGIN_PATH to: {os.environ["QT_PLUGIN_PATH"]}')
+
 MINOR_VERSION = '.'.join(__version__.split('.')[:2])
 
 def create_scripts(dest_dir):
@@ -709,24 +716,40 @@ def fix_qtconf(install_dir):
     import configparser
     for fn in fns:
         config = configparser.ConfigParser()
+        config.optionxform = str
         config.read(fn)
         paths = config['Paths']
         keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
+        changed = False
         for key in keys:
-            if not os.path.isdir(paths[key]):
-                dirs = os.path.normpath(paths[key]).split(os.sep)
-                idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
+            dirs = os.path.normpath(paths[key]).split(os.sep)
+            idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
+            if len(idx)>0:
                 newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
                 if os.path.isdir(newpath):
                     paths[key] = newpath
+                    changed = True
                 else:
                     print(f'Warning dir {newpath} does not exist')
-            else:
-                paths[key]=os.path.abspath(paths[key])
+
         with open(fn, 'w') as configfile:
             config.write(configfile)
-        os.environ['QT_PLUGIN_PATH']=os.path.join(paths[key],'plugins')
-
+try:
+    import PyQt5
+    dirnames = os.path.normpath(os.path.dirname(PyQt5.__file__)).split(os.sep)
+    idx = [dirnames.index(s) for s in dirnames if 'simnibs_env' in s]
+    if len(idx) > 0:
+        plugin_path = os.path.join('/', *dirnames[:idx[-1]+1], 'plugins', 'platforms')
+        if os.path.isdir(plugin_path):
+            os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+        else:
+            import glob
+            plugin_path = glob.glob(os.path.join('/', *dirnames[:idx[-1]+1], '**', 'plugins', 'platforms'), recursive=True)
+            if os.path.isdir(plugin_path[0]):
+                os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path[0]
+        print(f'PyQt workaround: QT_QPA_PLATFORM_PLUGIN_PATH set to {os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]}')
+except:
+    print(f'PyQt workaround failed')
 try:
     from PyQt5 import QtCore, QtWidgets, QtGui
     GUI = True
@@ -1001,13 +1024,13 @@ def main():
         except:
             print('Mac OS sw_vers failed.')
     if big_sur:
-        print('Big Sur detected, using dirty workaround.')
+        print('MacOS version later than Big Sur detected, using dirty workaround.')
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
         try:
             import OpenGL.GL
         except:
             import OpenGL
-            print('Big Sur OpenGL problem dectected, implementing OpenGL workaround')
+            print('OpenGL problem dectected, implementing OpenGL workaround')
             ctypesloader_fn = os.path.join(os.path.split(OpenGL.__file__)[0], 'platform', 'ctypesloader.py')
             fid = open(ctypesloader_fn)
             ctypesloader_code = fid.read()
