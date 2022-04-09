@@ -3,7 +3,7 @@
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2020 Guilherme B Saturnino
+    Copyright (C) 2022 Guilherme B Saturnino & Kristoffer H. Madsen
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -727,26 +727,30 @@ def fix_qtconf(install_dir):
             if len(idx)>0:
                 newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
                 if os.path.isdir(newpath):
-                    paths[key] = newpath
+                    paths[key] = newpath.replace(os.sep, '/')
                     changed = True
                 else:
                     print(f'Warning dir {newpath} does not exist')
-
-        with open(fn, 'w') as configfile:
-            config.write(configfile)
+        if changed:
+            with open(fn, 'w') as configfile:
+                config.write(configfile)
 try:
     import PyQt5
-    dirnames = os.path.normpath(os.path.dirname(PyQt5.__file__)).split(os.sep)
-    idx = [dirnames.index(s) for s in dirnames if 'simnibs_env' in s]
-    if len(idx) > 0:
-        plugin_path = os.path.join('/', *dirnames[:idx[-1]+1], 'plugins', 'platforms')
-        if os.path.isdir(plugin_path):
-            os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
-        else:
+    dirname = os.path.normpath(os.path.dirname(PyQt5.__file__))
+    prepath = dirname[:dirname.rindex('simnibs_env')]
+    print(prepath)
+    if len(prepath) > 0:
+        plugin_path = os.path.join(prepath, 'simnibs_env', 'plugins', 'platforms')
+        print(plugin_path)
+        if not os.path.isdir(plugin_path):
+            plugin_path = os.path.join(prepath, 'simnibs_env', 'Library', 'plugins', 'platforms')
+        if not os.path.isdir(plugin_path):
             import glob
-            plugin_path = glob.glob(os.path.join('/', *dirnames[:idx[-1]+1], '**', 'plugins', 'platforms'), recursive=True)
-            if os.path.isdir(plugin_path[0]):
-                os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path[0]
+            print(os.path.join(prepath, '**', 'plugins', 'platforms'))
+            plugin_path = glob.glob(os.path.join(prepath, '**', 'plugins', 'platforms'), recursive=True)[-1]
+            print(plugin_path)
+        if os.path.isdir(plugin_path):
+                os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
         print(f'PyQt workaround: QT_QPA_PLATFORM_PLUGIN_PATH set to {os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]}')
 except:
     print(f'PyQt workaround failed')
