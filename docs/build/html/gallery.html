@@ -96,9 +96,11 @@
                               newCell.style="padding-top:2vh;"
                               let newCell2 = table.rows[table.rows.length - 1].insertCell();
                               newCell2.style="background-image:url(_static/gallery/"+filelist[entry]+");height:50vh;"
-                              let aTag = document.createElement('a');
-                              aTag.setAttribute('href',links[entry]);
-                              newCell2.appendChild(aTag);
+                              if ( links[entry] ) {
+                                      let aTag = document.createElement('a');
+                                      aTag.setAttribute('href',links[entry]);
+                                      newCell2.appendChild(aTag);
+                                      }
                               entry++
                         }
                       }
