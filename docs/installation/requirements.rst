@@ -26,5 +26,5 @@ Hardware
 --------
 
   * 3 GB disk space
-  * 6GB of memory (8GB are recommended)
+  * 8 GB of memory
 
