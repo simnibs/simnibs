@@ -6,7 +6,7 @@
 
 %% Load simulation results
 subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
-results_folder = fullfile('bipolar', 'fsavg_overlays');
+results_folder = 'fsavg_overlays';
 fsavg_msh_name = '_TDCS_1_scalar_fsavg.msh';
 field_name = 'E_normal';
 
@@ -14,7 +14,7 @@ fields = {};
 for i = 1:length(subjects)
     sub = subjects{i};
     % load mesh with results transformed to fsaverage space
-    m = mesh_load_gmsh4(fullfile(pwd, sub, results_folder, [sub fsavg_msh_name]));
+    m = mesh_load_gmsh4(fullfile('bipolar', sub, results_folder, [sub fsavg_msh_name]));
     % Save the field of each subject
     fields{i} = m.node_data{get_field_idx(m, field_name, 'node')}.data;
 end

@@ -30,6 +30,9 @@ cathode.shape = 'rect'
 cathode.dimensions = [50, 70]
 cathode.thickness = 4
 
+# create main results folder
+if not os.path.exists('bipolar'):
+    os.mkdir('bipolar')
 
 # Run the simulation in each subject
 for sub in subjects:
@@ -38,8 +41,8 @@ for sub in subjects:
     s.map_to_fsavg = True
     s.map_to_MNI = True
     s.fields = 'eEjJ'
-    s.subpath = os.path.join(sub, 'm2m_' + sub)
-    s.pathfem = os.path.join(sub, 'bipolar')
+    s.subpath = 'm2m_' + sub
+    s.pathfem = os.path.join('bipolar', sub)
     # Don't open in gmsh
     s.open_in_gmsh = False
     # Add the tdcslist we defined above

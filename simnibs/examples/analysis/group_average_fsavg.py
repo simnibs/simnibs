@@ -11,7 +11,7 @@ import simnibs
 
 ## Load simulation results
 subjects = ['sub01', 'sub09', 'sub10', 'sub12', 'sub15']
-results_folder = os.path.join('bipolar', 'fsavg_overlays')
+results_folder = 'fsavg_overlays'
 fsavg_msh_name = '_TDCS_1_scalar_fsavg.msh'
 field_name = 'E_normal'
 
@@ -19,7 +19,7 @@ fields = []
 for sub in subjects:
     # read mesh with results transformed to fsaverage space
     results_fsavg = simnibs.read_msh(
-        os.path.join(sub, results_folder, sub + fsavg_msh_name)
+        os.path.join('bipolar', sub, results_folder, sub + fsavg_msh_name)
     )
     # save the field in each subject
     fields.append(results_fsavg.field[field_name].value)

@@ -8,7 +8,7 @@ subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
 % Start a SESSION
 S = sim_struct('SESSION');
 S.map_to_fsavg = true;
-S.map_to_mni = true;
+S.map_to_MNI = true;
 S.fields = 'eEjJ';
 
 % Set a TDCSLIST with the simulation set-up
@@ -29,10 +29,15 @@ S.poslist{1}.electrode(2).shape = 'rect';
 S.poslist{1}.electrode(2).dimensions = [50, 70];
 S.poslist{1}.electrode(2).thickness = 4;
 
+% create main results folder
+if ~exist('bipolar','dir')
+    mkdir('bipolar');
+end
+
 % Run the simulation in each subject
 for i = 1:length(subjects)
      sub = subjects{i};
-     S.subpath = fullfile(sub, ['m2m_' sub]);  % head mesh
-     S.pathfem = fullfile(sub, 'bipolar'); % Output directory
+     S.subpath = fullfile(['m2m_' sub]);  % head mesh
+     S.pathfem = fullfile('bipolar', sub); % Output directory
      run_simnibs(S);
 end
