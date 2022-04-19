@@ -4,15 +4,17 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>TMS Optimization &#8212; SimNIBS 4.0b0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -73,7 +75,7 @@ coil at various angles.</p>
 <p>As a recipient of this software, you may choose which license to receive the code under. Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.</p>
 <p>To enter a license agreement without the GPL-v2.0 restrictions, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (<a class="reference external" href="https://olv.duke.edu/software/">https://olv.duke.edu/software/</a>) at <a class="reference external" href="mailto:olvquestions&#37;&#52;&#48;duke&#46;edu">olvquestions<span>&#64;</span>duke<span>&#46;</span>edu</a> with reference to “OLV File No. 7148” in your email.</p>
 <p>Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
-</div>
+</aside>
 <p></p>
 <section id="basic-setting">
 <h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Permalink to this headline">¶</a></h2>
@@ -108,24 +110,24 @@ solver uses approximately three times more memory than the standard solver.</p>
 </section>
 <section id="matlab">
 <h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization</span><span class="w"></span>
-<span class="c">% Guilherme Saturnino, 2019</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization</span>
+<span class="c">% Guilherme Saturnino, 2019</span>
 
-<span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="c">% Subject folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select output folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization/&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select the coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select a target for the optimization</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span><span class="w"> </span><span class="mf">7.5</span><span class="p">,</span><span class="w"> </span><span class="mf">65.6</span><span class="p">];</span><span class="w"></span>
-<span class="c">% Optional: Use the MKL PARDISO solver</span><span class="w"></span>
-<span class="c">% Will make the simulations much faster</span><span class="w"></span>
-<span class="c">% but has large (approx 12GB) memory usage</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">solver_options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;pardiso&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Run optimization</span><span class="w"></span>
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">);</span><span class="w"></span>
+<span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
+<span class="c">% Subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
+<span class="c">% Select output folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization/&#39;</span><span class="p">;</span>
+<span class="c">% Select the coil model</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span>
+<span class="c">% Select a target for the optimization</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">];</span>
+<span class="c">% Optional: Use the MKL PARDISO solver</span>
+<span class="c">% Will make the simulations much faster</span>
+<span class="c">% but has large (approx 12GB) memory usage</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">solver_options</span> <span class="p">=</span> <span class="s">&#39;pardiso&#39;</span><span class="p">;</span>
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>This will first generate a grid of positions and start simulating. After it is done
@@ -138,8 +140,8 @@ magnitude at the target.</p>
 <h2>Refining the Search<a class="headerlink" href="#refining-the-search" title="Permalink to this headline">¶</a></h2>
 <p>If you already have a good idea of where the coil should be located or oriented, you can
 refine the search by precisely specifying the search region, search angles and resolution.</p>
-<section id="id1">
-<h3>Python<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<section id="python-1">
+<h3>Python<a class="headerlink" href="#python-1" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Refining the TMS Optimization &#39;&#39;&#39;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
@@ -177,39 +179,39 @@ refine the search by precisely specifying the search region, search angles and r
 </pre></div>
 </div>
 </section>
-<section id="id2">
-<h3>MATLAB<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refining the TMS Optimization</span><span class="w"></span>
+<section id="matlab-1">
+<h3>MATLAB<a class="headerlink" href="#matlab-1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refining the TMS Optimization</span>
 
-<span class="c">% Initialize structure</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="c">% subject folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select output folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization_refined/&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select the coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select a target for the optimization</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span><span class="w"> </span><span class="mf">7.5</span><span class="p">,</span><span class="w"> </span><span class="mf">65.6</span><span class="p">];</span><span class="w"></span>
-<span class="c">% Optional: Use the MKL PARDISO solver</span><span class="w"></span>
-<span class="c">% Will make the simulations much faster</span><span class="w"></span>
-<span class="c">% but has large (approx 12GB) memory usage</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">solver_options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;pardiso&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="c">% Initialize structure</span>
+<span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
+<span class="c">% subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
+<span class="c">% Select output folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization_refined/&#39;</span><span class="p">;</span>
+<span class="c">% Select the coil model</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span>
+<span class="c">% Select a target for the optimization</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">];</span>
+<span class="c">% Optional: Use the MKL PARDISO solver</span>
+<span class="c">% Will make the simulations much faster</span>
+<span class="c">% but has large (approx 12GB) memory usage</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">solver_options</span> <span class="p">=</span> <span class="s">&#39;pardiso&#39;</span><span class="p">;</span>
 
-<span class="c">% Set the center of the search area</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span><span class="w"> </span><span class="mf">8.8</span><span class="p">,</span><span class="w"> </span><span class="mf">78.7</span><span class="p">];</span><span class="w"></span>
-<span class="c">% Change the search radius</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">search_radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Change the search resolution</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">spatial_resolution</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">2.5</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Set the coil direction reference</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span><span class="w"> </span><span class="mf">2.9</span><span class="p">,</span><span class="w"> </span><span class="mf">80.0</span><span class="p">];</span><span class="w"></span>
-<span class="c">% Change the angles to include in the search</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">search_angle</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">90</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Change the angular resolution</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">angle_resolution</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">15</span><span class="p">;</span><span class="w"></span>
+<span class="c">% Set the center of the search area</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">centre</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">8.8</span><span class="p">,</span> <span class="mf">78.7</span><span class="p">];</span>
+<span class="c">% Change the search radius</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">search_radius</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
+<span class="c">% Change the search resolution</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">spatial_resolution</span> <span class="p">=</span> <span class="mf">2.5</span><span class="p">;</span>
+<span class="c">% Set the coil direction reference</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pos_ydir</span> <span class="p">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">52.5</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mf">80.0</span><span class="p">];</span>
+<span class="c">% Change the angles to include in the search</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">search_angle</span> <span class="p">=</span> <span class="mi">90</span><span class="p">;</span>
+<span class="c">% Change the angular resolution</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">angle_resolution</span> <span class="p">=</span> <span class="mi">15</span><span class="p">;</span>
 
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">)</span><span class="w"></span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -222,8 +224,8 @@ refine the search by precisely specifying the search region, search angles and r
 </pre></div>
 </div>
 <p></p>
-<section id="id3">
-<h3>Python<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<section id="python-2">
+<h3>Python<a class="headerlink" href="#python-2" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">mni2subject_coords</span>
 
 <span class="c1"># Initialize structure</span>
@@ -244,22 +246,22 @@ refine the search by precisely specifying the search region, search angles and r
 </pre></div>
 </div>
 </section>
-<section id="id4">
-<h3>MATLAB<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="c">% Subject folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select output folder</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization_adm&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select the coil model</span><span class="w"></span>
-<span class="c">% The ADM method requires a &#39;.ccd&#39; coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Select a target for the optimization</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="w"> </span><span class="mi">58</span><span class="p">],</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="c">% Use the ADM method</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">method</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ADM&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="c">% Run optimization</span><span class="w"></span>
-<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">);</span><span class="w"></span>
+<section id="matlab-2">
+<h3>MATLAB<a class="headerlink" href="#matlab-2" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span> <span class="p">=</span> <span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
+<span class="c">% Subject folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span> <span class="p">=</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
+<span class="c">% Select output folder</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span> <span class="p">=</span> <span class="s">&#39;tms_optimization_adm&#39;</span><span class="p">;</span>
+<span class="c">% Select the coil model</span>
+<span class="c">% The ADM method requires a &#39;.ccd&#39; coil model</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span> <span class="p">=</span> <span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">;</span>
+<span class="c">% Select a target for the optimization</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span> <span class="p">=</span> <span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s">&#39;m2m_ernie&#39;</span><span class="p">);</span>
+<span class="c">% Use the ADM method</span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">method</span> <span class="p">=</span> <span class="s">&#39;ADM&#39;</span><span class="p">;</span>
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">tms_opt</span><span class="p">);</span>
 </pre></div>
 </div>
 </section>
@@ -356,7 +358,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -378,7 +380,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

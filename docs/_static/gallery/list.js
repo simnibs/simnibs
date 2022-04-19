@@ -4,6 +4,7 @@ var filelist = ["simnibs_frontpage.png",
                 "dadt.png",
 				"dadt.png",
 				"dadt.png",
+			"_ernie_anim.gif"
                 ];
 
 var description = ["SimNIBS workflow",

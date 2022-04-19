@@ -70,18 +70,18 @@ SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil 
 		i=i+1;
 		if (i >= shuffled.length) { i=0; }
 		document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
-		, 8000); /* time point for changing bgimg1 */
+		, 12000); /* time point for changing bgimg1 */
 	setInterval( function myRefresh(){
 		setTimeout( function myRefresh1(){
 			i=i+1;
 			if (i >= shuffled.length) { i=0; }
 			document.getElementById("bgimg2").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
-		, 3000); /* time point for changing bgimg2 */
+		, 6000); /* time point for changing bgimg2 */
 		setTimeout( function myRefresh2(){
 		i=i+1;
 		if (i >= shuffled.length) { i=0; }
 		document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
-		, 8000);} /* time point for changing bgimg1 */
+		, 12000);} /* time point for changing bgimg1 */
 	, 12000);
   </script>
   </embed>
