@@ -3,7 +3,7 @@
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2020 Guilherme B Saturnino
+    Copyright (C) 2022 Guilherme B Saturnino & Kristoffer H. Madsen
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,14 +35,16 @@ import requests
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
-try:
-    from PyQt5 import QtCore, QtWidgets, QtGui
-    GUI = True
-except ImportError:
-    GUI = False
 
 if sys.platform == 'win32':
     import winreg
+
+#script_path = os.path.normpath(os.path.realpath(__file__)).split(os.sep)
+#print(script_path)
+#idx = [script_path.index(s)  for s in script_path if 'simnibs_env' in s]
+#if len(idx)>0:
+#    os.environ['QT_PLUGIN_PATH']=os.path.join('/', *script_path[:idx[-1]+1], 'plugins')
+#    print(f'setting QT_PLUGIN_PATH to: {os.environ["QT_PLUGIN_PATH"]}')
 
 MINOR_VERSION = '.'.join(__version__.split('.')[:2])
 
@@ -704,6 +706,60 @@ def run_tests(args):
     exitcode = pytest.main(args)
     return exitcode
 
+def fix_qtconf(install_dir):
+    import glob
+    import re
+    fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
+    if len(fns)<1:
+        print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
+        return
+    import configparser
+    for fn in fns:
+        config = configparser.ConfigParser()
+        #because PyQt is case-sensitive for the variable in the qt.conf file
+        config.optionxform = str
+        config.read(fn)
+        paths = config['Paths']
+        keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
+        changed = False
+        for key in keys:
+            dirs = os.path.normpath(paths[key]).split(os.sep)
+            idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
+            if len(idx)>0:
+                newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
+                if os.path.isdir(newpath):
+                    #separators needs to be / even in windows otherwise this does not work
+                    paths[key] = newpath.replace(os.sep, '/')
+                    changed = True
+                else:
+                    print(f'Warning dir {newpath} does not exist')
+        if changed:
+            with open(fn, 'w') as configfile:
+                config.write(configfile)
+try:
+    import PyQt5
+    dirname = os.path.normpath(os.path.dirname(PyQt5.__file__))
+    #these weird workarounds are needed to form the path are needed to make it work on both windows and posix
+    prepath = dirname[:dirname.rindex('simnibs_env')]
+    if len(prepath) > 0:
+        plugin_path = os.path.join(prepath, 'simnibs_env', 'plugins', 'platforms')
+        if not os.path.isdir(plugin_path):
+            plugin_path = os.path.join(prepath, 'simnibs_env', 'Library', 'plugins', 'platforms')
+        if not os.path.isdir(plugin_path):
+            import glob
+            print(os.path.join(prepath, '**', 'plugins', 'platforms'))
+            plugin_path = glob.glob(os.path.join(prepath, '**', 'plugins', 'platforms'), recursive=True)[-1]
+        if os.path.isdir(plugin_path):
+                os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+        print(f'PyQt workaround: QT_QPA_PLATFORM_PLUGIN_PATH set to {os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"]}')
+except:
+    print(f'PyQt workaround failed')
+try:
+    from PyQt5 import QtCore, QtWidgets, QtGui
+    GUI = True
+except ImportError:
+    GUI = False
+
 if GUI:
     class PostInstallGUI(QtWidgets.QDialog):
         def __init__(self,
@@ -879,33 +935,6 @@ if GUI:
         else:
             raise Exception('uninstall cancelled by user')
 
-def fix_qtconf(install_dir):
-    import glob
-    import re
-    fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
-    if len(fns)<1:
-        print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
-        return
-    import configparser
-    for fn in fns:
-        config = configparser.ConfigParser()
-        config.read(fn)
-        paths = config['Paths']
-        keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
-        for key in keys:
-            if not os.path.isdir(paths[key]):
-                dirs = os.path.normpath(paths[key]).split(os.sep)
-                idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
-                newpath = os.path.join(install_dir, 'simnibs_env', *dirs[idx[0]+1:])
-                if os.path.isdir(newpath):
-                    paths[key] = newpath
-                else:
-                    print(f'Warning dir {newpath} does not exist')
-            else:
-                paths[key]=os.path.abspath(paths[key])
-        with open(fn, 'w') as configfile:
-            config.write(configfile)
-
 def install(install_dir,
             force,
             silent,
@@ -999,13 +1028,13 @@ def main():
         except:
             print('Mac OS sw_vers failed.')
     if big_sur:
-        print('Big Sur detected, using dirty workaround.')
+        print('MacOS version later than Big Sur detected, using dirty workaround.')
         os.environ['QT_MAC_WANTS_LAYER'] = '1'
         try:
             import OpenGL.GL
         except:
             import OpenGL
-            print('Big Sur OpenGL problem dectected, implementing OpenGL workaround')
+            print('OpenGL problem dectected, implementing OpenGL workaround')
             ctypesloader_fn = os.path.join(os.path.split(OpenGL.__file__)[0], 'platform', 'ctypesloader.py')
             fid = open(ctypesloader_fn)
             ctypesloader_code = fid.read()

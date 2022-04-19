@@ -3,6 +3,7 @@ from unittest import mock
 import numpy as np
 import scipy.optimize
 import pytest
+import warnings
 
 from .. import optimization_methods
 from ...simulation.analytical_solutions import fibonacci_sphere
@@ -173,6 +174,8 @@ def optimize_lstsq(A, b,
         iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
         constraints += (iq_constraint, )
 
+    warnings.filterwarnings("ignore", message="Values in x were outside bounds during a minimize step, clipping to bounds")
+        
     res = scipy.optimize.minimize(
         objective, x0, jac=jac,
         bounds=bounds,
@@ -779,7 +782,7 @@ class TestLinearAngleElecConstrained:
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
         assert np.isclose(tes_problem.l.dot(x), target_mean)
-        assert x.dot(tes_problem.Q).dot(x) <= obj_bf
+        assert x.dot(tes_problem.Q).dot(x) <= obj_bf + 1.0e-14
 
     def test_solve_angle_elec_infeasible(self):
         np.random.seed(1)
@@ -1215,12 +1218,12 @@ class TestDistributed:
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
         A = leadfield[..., 1].T.dot(P)
         b = target_field[..., 1]
-
+        
         x_sp = optimize_lstsq(
             A, b,
             max_el_current, max_total_current
         )
-
+        
         objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)

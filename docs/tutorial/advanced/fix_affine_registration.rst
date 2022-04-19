@@ -6,11 +6,11 @@
 Fixing the Affine Registration
 ==============================
 
-.. note:: This tutorial applies only when setting :python:`init_type = "atlas"` in the :ref:`charm_docs` configuration file.
+.. note:: This tutorial applies only when setting :python:`init_type = "atlas"` in the :ref:`charm_docs` configuration file (settings.ini).
 
 When encountering spurious segmentation results, we have found that this can often be traced back to a suboptimal affine registration between the structural scan(s) and the atlas. Identifying what exactly is causing the segmentation to fail can be a bit tricky (at least initially) so here we provide a few examples showing the type of errors that one might encounter and how they can be alleviated by modifying the settings of :ref:`charm_docs`. Charm writes a `settings.ini` inside the m2m-folder of the subject. Make a copy of this and then modify it as described below. This way, different changes can be made for individual subjects. To use the modified settings file, pass it using the `--usesettings` argument when running :ref:`charm_docs`.
 
-Here we use the visualizations provided by :ref:`charm_docs` in the `reports` directory, specifically, `affine_reg.html` and `final_tissues.html`.
+Here we use the visualizations provided by :ref:`charm_docs` in the `charm_report.html` document, specifically, the `Coregistered template` and `Tissue labels` overlays.
 
 1. Bad Rotation
 ---------------
