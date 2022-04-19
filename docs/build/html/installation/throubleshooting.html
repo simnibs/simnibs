@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Troubleshooting &#8212; SimNIBS 4.0b0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example Dataset" href="../dataset.html" />
+    <link rel="prev" title="Install Using Conda (Advanced)" href="conda.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="conda.html" title="Previous document">Install Using Conda (Advanced)</a>
+        </li>
+        <li>
+          <a href="../dataset.html" title="Next document">Example Dataset</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="troubleshooting">
+<span id="install-throubleshooting"></span><h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li><p>Antivirus software and other security features might interfere with the installation.</p></li>
+<li><p>if you are seeing the error messages such as</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="code docutils literal notranslate"><span class="pre">.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">find</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span> <span class="pre">&quot;xcb&quot;</span> <span class="pre">in</span> <span class="pre">&quot;&quot;</span></code></p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">find</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span> <span class="pre">&quot;windows&quot;</span> <span class="pre">in</span> <span class="pre">&quot;&quot;</span></code></p></li>
+</ul>
+<p>You likely have <a class="reference external" href="https://en.wikipedia.org/wiki/ASCII">non-ASCII charactes</a> (e.g. Chinese characters) in your installation path. Please change the installation path so that it only includes ASCII characters.</p>
+</div></blockquote>
+</li>
+<li><p>Often times, <a class="reference internal" href="conda.html#conda-install"><span class="std std-ref">installing with the conda package manager</span></a> can help overcome problems with the installer. Please try it out</p></li>
+<li><p><strong>glError</strong> messages when opening the GUI can often be solved by updating video drivers.</p></li>
+<li><p>If you are stuck, please <a class="reference internal" href="../contact.html#contact"><span class="std std-ref">contact us</span></a> and attach the <code class="file docutils literal notranslate"><span class="pre">simnibs_install_log.txt</span></code> file, which can be found in your SimNIBS installation directory</p></li>
+</ul>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="conda.html" title="Previous document">Install Using Conda (Advanced)</a>
+        </li>
+        <li>
+          <a href="../dataset.html" title="Next document">Example Dataset</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="simnibs_installer.html">Install SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="requirements.html">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optional.html">Optional Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uninstall.html">Uninstall SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conda.html">Install Using Conda (Advanced)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="installation.html">Installation</a><ul>
+      <li>Previous: <a href="conda.html" title="previous chapter">Install Using Conda (Advanced)</a></li>
+      <li>Next: <a href="../dataset.html" title="next chapter">Example Dataset</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/installation/throubleshooting.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
