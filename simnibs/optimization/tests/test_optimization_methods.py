@@ -1215,12 +1215,15 @@ class TestDistributed:
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
         A = leadfield[..., 1].T.dot(P)
         b = target_field[..., 1]
-
+        
+        import warnings
+        warnings.filterwarnings("ignore", message="Values in x were outside bounds during a minimize step, clipping to bounds")
+        
         x_sp = optimize_lstsq(
             A, b,
             max_el_current, max_total_current
         )
-
+        
         objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
