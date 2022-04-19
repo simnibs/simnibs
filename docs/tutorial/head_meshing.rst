@@ -5,6 +5,8 @@ Creating Head Models
 
 .. note:: The following describes head model creation using *charm*. For head modeling with *headreco* or *mri2mesh* in older SimNIBS versions, please see :ref:`here <head_modeling_tutorial_old>`.
 
+\
+
 MRI Scan
 ---------
 
