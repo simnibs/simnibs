@@ -3,6 +3,7 @@ from unittest import mock
 import numpy as np
 import scipy.optimize
 import pytest
+import warnings
 
 from .. import optimization_methods
 from ...simulation.analytical_solutions import fibonacci_sphere
@@ -173,6 +174,8 @@ def optimize_lstsq(A, b,
         iq_constraint['fun'] = lambda x: 2 * max_total_current - np.linalg.norm(x, 1)
         constraints += (iq_constraint, )
 
+    warnings.filterwarnings("ignore", message="Values in x were outside bounds during a minimize step, clipping to bounds")
+        
     res = scipy.optimize.minimize(
         objective, x0, jac=jac,
         bounds=bounds,
@@ -1215,9 +1218,6 @@ class TestDistributed:
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
         A = leadfield[..., 1].T.dot(P)
         b = target_field[..., 1]
-        
-        import warnings
-        warnings.filterwarnings("ignore", message="Values in x were outside bounds during a minimize step, clipping to bounds")
         
         x_sp = optimize_lstsq(
             A, b,
