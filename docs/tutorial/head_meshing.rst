@@ -70,7 +70,7 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
 
 Please see :ref:`charm_docs` for details and available options.
 
-4. Check the segmentation. Click on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject). The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
+4. Check the segmentation. Open the `charm_report.html` document inside the m2m-folder of the subject. The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
 
 Troubleshooting
 ----------------

@@ -146,6 +146,8 @@ def main():
         if not args.forcerun:
             raise RuntimeError("ERROR: --forcerun has to be set to overwrite existing m2m_{subID} folder")
         else:
+            if os.path.dirname(os.path.abspath(args.usesettings[0])) == os.path.abspath(subject_dir):
+                raise RuntimeError("ERROR: move the custom settings file out of the m2m-folder before running with --forcerun.")
             shutil.rmtree(subject_dir)
             time.sleep(2)
 
