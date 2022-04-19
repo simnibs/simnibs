@@ -10,6 +10,6 @@ var description = ["SimNIBS workflow",
 			"CHARM headmodeling"];
 				
 var links = ["tutorial/tutorial.html",
-			 "../../../simnibs/examples/simulations/tDCS_advanced.py",
+			 "../../simnibs/examples/simulations/tDCS_advanced.py",
 			 "tutorial/gui.html",
 			 "tutorial/head_meshing.html"];
