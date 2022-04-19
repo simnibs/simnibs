@@ -779,7 +779,7 @@ class TestLinearAngleElecConstrained:
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
         assert np.isclose(tes_problem.l.dot(x), target_mean)
-        assert x.dot(tes_problem.Q).dot(x) <= obj_bf
+        assert x.dot(tes_problem.Q).dot(x) <= obj_bf + 1.0e-14
 
     def test_solve_angle_elec_infeasible(self):
         np.random.seed(1)
