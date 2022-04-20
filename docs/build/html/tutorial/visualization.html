@@ -4,15 +4,17 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Visualizing Results &#8212; SimNIBS 4.0b0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -60,7 +62,7 @@ Here we will give a walk-through of a few useful features in Gmsh.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is distributed together with SimNIBS, you don’t need to install it separately</p>
-</div>
+</aside>
 <section id="starting-gmsh">
 <h3>Starting Gmsh<a class="headerlink" href="#starting-gmsh" title="Permalink to this headline">¶</a></h3>
 <p>Gmsh automatically opens when a simulation is finished.
@@ -135,12 +137,12 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 <section id="visualizing-results-in-matlab">
 <h2>Visualizing Results in MATLAB<a class="headerlink" href="#visualizing-results-in-matlab" title="Permalink to this headline">¶</a></h2>
 <p>To visualize results in MATLAB, add the <code class="file docutils literal notranslate"><span class="pre">&lt;SIMNIBS_INSTALL_DIR&gt;/matlab/</span></code> folder to your MATLAB path. Afterwards, type</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_get_simulation_result</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_get_simulation_result</span>
 </pre></div>
 </div>
 <p></p>
 <p>or use</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_show_surface</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">mesh_show_surface</span>
 </pre></div>
 </div>
 <p></p>
@@ -228,7 +230,7 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -250,7 +252,7 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

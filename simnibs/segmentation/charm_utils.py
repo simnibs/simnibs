@@ -108,7 +108,7 @@ def _register_atlas_to_input_affine(
 
 def _denoise_input_and_save(input_name, output_name):
     input_raw = nib.load(input_name)
-    img = input_raw.get_data()
+    img = input_raw.get_fdata()
     # Sometimes the images have an extra unit dimension,
     # squeeze that out if it's there.
     img = img.squeeze()
@@ -794,6 +794,3 @@ def _open_sulci(
 
     return label_img
 
-
-def view(subject_dir):
-    print("charm viewer not yet implemented, sorry...")

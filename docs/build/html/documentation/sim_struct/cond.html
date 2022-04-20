@@ -4,15 +4,17 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>COND &#8212; SimNIBS 4.0b0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -65,9 +67,9 @@
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">gm_cond</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span> <span class="p">=</span> <span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
+<span class="n">gm_cond</span> <span class="p">=</span> <span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 <p></p>
@@ -94,7 +96,7 @@
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Setting this property will trigger a run of the UQ algorithm. Please see the tutorial on <a class="reference internal" href="../../tutorial/advanced/uq.html#uq-tutorial"><span class="std std-ref">Uncertainty Quantification</span></a> for more information</p>
-</div>
+</aside>
 </dd>
 </dl>
 </li>
@@ -121,7 +123,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In this examples, we will consider a list/array of COND structures</p>
-</div>
+</aside>
 <ul>
 <li><p>Change the value of gray matter conductivity. See the <a class="reference internal" href="../conductivity.html#conductivity"><span class="std std-ref">Standard conductivity values</span></a>.</p>
 <ul>
@@ -134,7 +136,7 @@
 <p></p>
 </li>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">value</span> <span class="p">=</span> <span class="mf">0.2</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
@@ -151,8 +153,8 @@
 <p></p>
 </li>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">cond</span><span class="p">(</span><span class="mi">11</span><span class="p">).</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Awesome tissue&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="nb">cond</span><span class="p">(</span><span class="mi">11</span><span class="p">).</span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">cond</span><span class="p">(</span><span class="mi">11</span><span class="p">).</span><span class="n">name</span> <span class="p">=</span> <span class="s">&#39;Awesome tissue&#39;</span><span class="p">;</span>
+<span class="n">cond</span><span class="p">(</span><span class="mi">11</span><span class="p">).</span><span class="n">value</span> <span class="p">=</span> <span class="mi">10</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
@@ -242,7 +244,7 @@
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -264,7 +266,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
