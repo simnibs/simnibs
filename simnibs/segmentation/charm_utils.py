@@ -41,7 +41,7 @@ def _register_atlas_to_input_affine(
     vertical_shifts = init_atlas_settings["affine_vertical_shifts"]
     thetas_rad = [theta * np.pi / 180 for theta in thetas]
     neck_search_bounds = init_atlas_settings["neck_search_bounds"]
-    ds_factor = init_atlas_settings["dowsampling_factor_affine"]
+    ds_factor = init_atlas_settings["downsampling_factor_affine"]
 
     affine = samseg.AffineWholeHead(T1, affine_mesh_collection_name, template_file_name)
 
@@ -149,6 +149,8 @@ def _estimate_parameters(
     segment_settings,
     gmm_parameters,
     visualizer,
+    user_optimization_options=None,
+    user_model_specifications=None
 ):
 
     ds_targets = segment_settings["downsampling_targets"]
@@ -158,36 +160,39 @@ def _estimate_parameters(
     stiffness = segment_settings["mesh_stiffness"]
     covariances = segment_settings["diagonal_covariances"]
     shared_gmm_parameters = samseg.io.kvlReadSharedGMMParameters(gmm_parameters)
-    user_optimization_options = {
-        "multiResolutionSpecification": [
-            {
-                "atlasFileName": os.path.join(
-                    path_to_segment_folder, "atlas_level1.txt.gz"
-                ),
-                "targetDownsampledVoxelSpacing": ds_targets[0],
-                "maximumNumberOfIterations": 100,
-                "estimateBiasField": True,
-            },
-            {
-                "atlasFileName": os.path.join(
-                    path_to_segment_folder, "atlas_level2.txt.gz"
-                ),
-                "targetDownsampledVoxelSpacing": ds_targets[1],
-                "maximumNumberOfIterations": 100,
-                "estimateBiasField": True,
-            },
-        ]
-    }
 
-    user_model_specifications = {
-        "atlasFileName": os.path.join(path_to_segment_folder, "atlas_level2.txt.gz"),
-        "biasFieldSmoothingKernelSize": kernel_size,
-        "brainMaskingSmoothingSigma": bg_mask_sigma,
-        "brainMaskingThreshold": bg_mask_th,
-        "K": stiffness,
-        "useDiagonalCovarianceMatrices": covariances,
-        "sharedGMMParameters": shared_gmm_parameters,
-    }
+    if user_optimization_options is None:
+        user_optimization_options = {
+            "multiResolutionSpecification": [
+                {
+                    "atlasFileName": os.path.join(
+                        path_to_segment_folder, "atlas_level1.txt.gz"
+                    ),
+                    "targetDownsampledVoxelSpacing": ds_targets[0],
+                    "maximumNumberOfIterations": 100,
+                    "estimateBiasField": True,
+                },
+                {
+                    "atlasFileName": os.path.join(
+                        path_to_segment_folder, "atlas_level2.txt.gz"
+                    ),
+                    "targetDownsampledVoxelSpacing": ds_targets[1],
+                    "maximumNumberOfIterations": 100,
+                    "estimateBiasField": True,
+                },
+            ]
+        }
+
+    if user_model_specifications is None:
+        user_model_specifications = {
+            "atlasFileName": os.path.join(path_to_segment_folder, "atlas_level2.txt.gz"),
+            "biasFieldSmoothingKernelSize": kernel_size,
+            "brainMaskingSmoothingSigma": bg_mask_sigma,
+            "brainMaskingThreshold": bg_mask_th,
+            "K": stiffness,
+            "useDiagonalCovarianceMatrices": covariances,
+            "sharedGMMParameters": shared_gmm_parameters,
+        }
 
     samseg_kwargs = dict(
         imageFileNames=input_images,
@@ -673,7 +678,7 @@ def _get_largest_components(vol, se, vol_limit=0, num_limit=-1, return_sizes=Fal
         num_limit = len(labels)
 
     labels = labels[np.argsort(region_size)[::-1]]
-    components = np.zeros_like(vol)
+    components = np.zeros_like(vol, dtype=bool)
     for i in labels[:num_limit]:
         components = components | (vol_lbl == i)
 
@@ -696,7 +701,7 @@ def _registerT1T2(fixed_image, moving_image, output_image):
     if os.path.exists(output_image):
         T2_reg = nib.load(output_image)
         fixed_tmp = nib.load(fixed_image)
-        T2_data = T2_reg.get_data().astype(np.float32)
+        T2_data = T2_reg.get_fdata().astype(np.float32)
         T2_im = nib.Nifti1Image(T2_data, fixed_tmp.affine)
         nib.save(T2_im, output_image)
 

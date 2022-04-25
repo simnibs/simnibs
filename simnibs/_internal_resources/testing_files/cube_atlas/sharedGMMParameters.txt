@@ -1,0 +1,5 @@
+# The format is: mergedName numberOfComponents searchStrings
+
+
+BG 1 Background
+FG 1 Cube
