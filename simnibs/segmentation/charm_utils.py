@@ -32,6 +32,8 @@ def _register_atlas_to_input_affine(
     noneck,
     init_transform=None,
     world_to_world_transform_matrix=None,
+    scaling_center = [0.0, -100.0, 0.0],
+    k_values = [20.0, 10.0, 5.0]
 ):
 
     # Import the affine registration function
@@ -48,7 +50,7 @@ def _register_atlas_to_input_affine(
     init_options = samseg.initializationOptions(
         pitchAngles=thetas_rad,
         scales=scales,
-        scalingCenter=[0.0, -100.0, 0.0],
+        scalingCenter=scaling_center,
         horizontalTableShifts=horizontal_shifts,
         verticalTableShifts=vertical_shifts,
     )
@@ -64,6 +66,7 @@ def _register_atlas_to_input_affine(
         targetDownsampledVoxelSpacing=ds_factor,
         visualizer=visualizer,
         noneck=noneck,
+        Ks=k_values
     )
 
     affine.saveResults(
@@ -282,7 +285,7 @@ def _post_process_segmentation(
     return upsampled_tissues
 
 
-def _clean_brain(label_img, tissues, unass, se, vol_limit=10):
+def _clean_brain(label_img, tissues, unass, se, se_n, vol_limit=10):
     # Do some clean-ups, mainly CSF and skull
     # First combine the WM and GM
     brain = (label_img == tissues["WM"]) | (label_img == tissues["GM"])
@@ -297,7 +300,7 @@ def _clean_brain(label_img, tissues, unass, se, vol_limit=10):
     unass |= brain ^ dil
 
     # Add the CSF and open again
-    csf = label_img == simnibs_tissues["CSF"]
+    csf = label_img == tissues["CSF"]
     brain_csf = brain | csf
     # Vol limit in voxels
     dil = mrph.binary_dilation(
@@ -309,9 +312,10 @@ def _clean_brain(label_img, tissues, unass, se, vol_limit=10):
     )
     unass |= csf & ~dil
     del brain, csf, dil
+    return brain_csf
 
 
-def _get_skull(label_img, tissues, se_n, se, num_iter=2, vol_limit=50):
+def _get_skull(label_img, brain_csf, tissues, se_n, se, num_iter=2, vol_limit=50):
     # Clean the outer border of the skull
     bone = (label_img == tissues["Compact_bone"]) | (
         label_img == tissues["Spongy_bone"]
@@ -433,8 +437,8 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     se = ndimage.generate_binary_structure(3, 3)
     se_n = ndimage.generate_binary_structure(3, 1)
     unass = np.zeros_like(label_img) > 0
-    _clean_brain(label_img, simnibs_tissues, unass, se_n)
-    bone, skull_outer, dil = _get_skull(label_img, simnibs_tissues, se_n, se)
+    brain_csf = _clean_brain(label_img, simnibs_tissues, unass, se, se_n)
+    bone, skull_outer, dil = _get_skull(label_img, brain_csf, simnibs_tissues, se_n, se)
     # Protect thin areas that would be removed by erosion
     bone_thickness = _calc_thickness(dil)
 
