@@ -412,7 +412,7 @@ def _ensure_csf(label_img, tissues, upper_part, se, num_iter1=1, num_iter2=6):
     CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, num_iter1)
     spongy_csf = CSF_brain_dilated & S_BONE
     upper_part = mrph.binary_erosion(upper_part, se, num_iter2)
-    skin_csf = CSF_brain_dilated & (label_img == simnibs_tissues["Scalp"]) & upper_part
+    skin_csf = CSF_brain_dilated & (label_img == tissues["Scalp"]) & upper_part
     label_img[spongy_csf] = tissues["Compact_bone"]
     label_img[skin_csf] = tissues["Compact_bone"]
 
