@@ -27,7 +27,7 @@ import os
 import sys
 import argparse
 import nibabel
-
+import numpy as np
 from simnibs.utils.transformations import volumetric_affine
 from simnibs import __version__
 
@@ -35,12 +35,12 @@ from simnibs import __version__
 def parseArguments(argv):
 
     parser = argparse.ArgumentParser(prog="add_tissues_to_upsampled",
-                                     description="Resamples the input label data to the space
-                                     of the target scan and adds the labels. Meant to be used
-                                     to add tissue masks that are in the same space as the
-                                     charm input (T1.nii.gz) to the upsampled tissue mask
-                                     (tissue_labels_upsampled.nii.gz) for meshing.
-                                     Ignores labels that are smaller than or equal to zero.")
+                                     description="Resamples the input label data to the space "
+                                     "of the target scan and adds the labels. Meant to be used "
+                                     "to add tissue masks that are in the same space as the "
+                                     "charm input (T1.nii.gz) to the upsampled tissue mask "
+                                     "(tissue_labels_upsampled.nii.gz) for meshing. "
+                                     "Ignores labels that are smaller than or equal to zero.")
     parser.add_argument("label_input", help="Input label file to be resampled")
     parser.add_argument("target_scan", help="Target label file where the iput labels will be added.")
     parser.add_argument('fn_out', help="Output file name")
@@ -68,10 +68,11 @@ def main():
 
     # Check the largest label in the target and use as base label
     base_label = np.unique(target_vol).max()
-    input_labels = np.unique(input_scan)
+    input_labels = np.unique(input_vol)
     input_labels = input_labels[input_labels > 0]
-    for l in input_labels:
-        target_vol[upsampled == l] = base_label + l
+    target_array = target_scan.get_fdata()
+    for l in input_labels.tolist():
+        target_array[upsampled == l] = base_label + l
 
     if args.fn_out is None:
         split_path = os.path.split(args.target_scan)
@@ -82,7 +83,7 @@ def main():
     else:
         output_name = args.fn_out
 
-    output_image = nibabel.Nifti1Image(target_vol, target_affine)
+    output_image = nibabel.Nifti1Image(target_array, target_affine)
     nibabel.save(output_image, output_name)
 
 if __name__ == '__main__':

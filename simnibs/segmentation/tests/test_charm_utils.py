@@ -146,7 +146,7 @@ def test_atlas_affine(tmpdir, testmni_nii, testtemplate_nii, testaffinemesh_msh)
                            "affine_horizontal_shifts": [0],
                            "affine_vertical_shifts": [0],
                            "neck_search_bounds": [0, 0],
-                           "downsampling_factor_affine": 5.0}
+                           "downsampling_factor_affine": 1.0}
     visualizer = initVisualizer(False, False)
     charm_utils._register_atlas_to_input_affine(str(trans_scan_name),
                                                 testtemplate_nii,
@@ -271,6 +271,6 @@ def test_segmentation(tmpdir, testcube_nii, testcubenoise_nii, testcubeatlas_pat
 
     orig_cube = nib.load(testcube_nii)
     est_cube = nib.load(seg)
-    dice = _calc_dice(orig_cube.get_fdata() == 1, est_cube.get_fdata() == 1)
+    dice = _calc_dice(orig_cube.get_fdata()==1, est_cube.get_fdata()==1)
     print("Dice score: "+str(dice))
     assert dice > 0.95
