@@ -22,6 +22,7 @@ def testmni_nii():
         SIMNIBSDIR, '_internal_resources', 'testing_files', 'MNI_test_ds5.nii.gz')
     return fn
 
+
 @pytest.fixture(scope='module')
 def testtemplate_nii():
     fn = os.path.join(
@@ -141,7 +142,7 @@ def test_atlas_affine(tmpdir, testmni_nii, testtemplate_nii, testaffinemesh_msh)
     trans_affine = trans_mat@input_scan.affine
     trans_mni = nib.Nifti1Image(input_scan.get_fdata(), trans_affine)
     nib.save(trans_mni, trans_scan_name)
-    init_atlas_settings = {"affine_scales": [[1, 1, 1]],
+    init_atlas_settings = {"affine_scales": [[1.0, 1.0, 1.0]],
                            "affine_rotations": [0],
                            "affine_horizontal_shifts": [0],
                            "affine_vertical_shifts": [0],
@@ -160,14 +161,16 @@ def test_atlas_affine(tmpdir, testmni_nii, testtemplate_nii, testaffinemesh_msh)
                                                 visualizer,
                                                 True,
                                                 init_transform=None,
-                                                world_to_world_transform_matrix=None)
+                                                world_to_world_transform_matrix=None,
+                                                scaling_center=[0, 0, 0],
+                                                k_values=[100])
 
     matrices = loadmat(str(tmpdir.join('coregistrationMatrices.mat')))
     w2w = matrices['worldToWorldTransformMatrix']
     #I wouldn't expect the match to be as good as for the mni-mni reg above,
     #so relaxing the tolerances here
-    np.testing.assert_allclose(trans_mat[:3,3],
-                               w2w[:3,3], rtol=1e-5, atol=3)
+    np.testing.assert_allclose(trans_mat[:2,3],
+                               w2w[:2,3], rtol=5e-2, atol=1)
     np.testing.assert_allclose(trans_mat[:3,:3], w2w[:3, :3], rtol=5e-2, atol=5e-2)
 
 def test_T1T2(tmpdir, testmni_nii):
