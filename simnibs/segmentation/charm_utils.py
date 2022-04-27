@@ -282,27 +282,19 @@ def _post_process_segmentation(
     return upsampled_tissues
 
 
-def _morphological_operations(label_img, upper_part, simnibs_tissues):
-    """Does morphological operations to
-    1. Smooth out the labeling and remove noise
-    2. A CSF layer between GM and Skull and between GM and CSF
-    3. Outer bone layers are compact bone
-    """
-    se = ndimage.generate_binary_structure(3, 3)
-    se_n = ndimage.generate_binary_structure(3, 1)
-
+def _clean_brain(label_img, tissues, unass, se, vol_limit=10):
     # Do some clean-ups, mainly CSF and skull
     # First combine the WM and GM
-    brain = (label_img == simnibs_tissues["WM"]) | (label_img == simnibs_tissues["GM"])
+    brain = (label_img == tissues["WM"]) | (label_img == tissues["GM"])
     dil = mrph.binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(brain, se_n, 1), se_n, vol_limit=10
+            mrph.binary_erosion(brain, se_n, 1), se, vol_limit
         ),
-        se_n,
+        se,
         1,
     )
 
-    unass = brain ^ dil
+    unass |= brain ^ dil
 
     # Add the CSF and open again
     csf = label_img == simnibs_tissues["CSF"]
@@ -318,22 +310,23 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     unass |= csf & ~dil
     del brain, csf, dil
 
+
+def _get_skull(label_img, tissues, se_n, se, num_iter=2, vol_limit=50):
     # Clean the outer border of the skull
-    bone = (label_img == simnibs_tissues["Compact_bone"]) | (
-        label_img == simnibs_tissues["Spongy_bone"]
+    bone = (label_img == tissues["Compact_bone"]) | (
+        label_img == tissues["Spongy_bone"]
     )
-    veins = label_img == simnibs_tissues["Blood"]
-    air_pockets = label_img == simnibs_tissues["Air_pockets"]
-    scalp = label_img == simnibs_tissues["Scalp"]
-    muscle = label_img == simnibs_tissues["Muscle"]
-    eyes = label_img == simnibs_tissues["Eyes"]
+    veins = label_img == tissues["Blood"]
+    air_pockets = label_img == tissues["Air_pockets"]
+    scalp = label_img == tissues["Scalp"]
+    muscle = label_img == tissues["Muscle"]
+    eyes = label_img == tissues["Eyes"]
     # Use scalp to clean out noisy skull bits within the scalp
     skull_outer = brain_csf | bone | veins | air_pockets
     skull_outer = mrph.binary_fill_holes(skull_outer, se_n)
-    num_iter = 2
     skull_outer = mrph.binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(skull_outer, se, num_iter), se_n, vol_limit=50
+            mrph.binary_erosion(skull_outer, se, num_iter), se_n, vol_limit
         ),
         se,
         num_iter,
@@ -342,14 +335,109 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     skull_inner = mrph.binary_fill_holes(skull_inner, se_n)
     skull_inner = mrph.binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(skull_inner, se, num_iter), se_n, vol_limit=50
+            mrph.binary_erosion(skull_inner, se, num_iter), se_n, vol_limit
         ),
+        se,
+        num_iter)
+
+    dil = bone & skull_outer & skull_inner
+    return bone, skull_outer, dil
+
+
+def _clean_veins(label_img, unass, tissues, se, se_n, num_iter=1, vol_limit=10):
+    # Open the veins
+    veins = label_img == tissues["Blood"]
+    dil = mrph.binary_dilation(
+        _get_largest_components(mrph.binary_erosion(veins, se, num_iter), se_n, vol_limit),
         se,
         num_iter,
     )
-    dil = bone & skull_outer & skull_inner
+    unass |= dil ^ veins
+
+
+def _clean_eyes(label_img, unass, tissues, se, se_n, num_iter=1, vol_limit=10):
+    # Clean the eyes
+    eyes = label_img == tissues["Eyes"]
+    dil = mrph.binary_dilation(
+        _get_largest_components(mrph.binary_erosion(eyes, se, num_iter), se_n, vol_limit),
+        se,
+        num_iter,
+    )
+    # dil = mrph.binary_opening(eyes, se, 1)
+    unass |= dil ^ eyes
+
+
+def _clean_muscles(label_img, unass, tissues, se, num_iter=1):
+    # Clean muscles
+    muscle = label_img == tissues["Muscle"]
+    dil = mrph.binary_opening(muscle, se, num_iter)
+    unass |= dil ^ muscle
+
+
+def _clean_scalp(label_img, unass, skull_outer, tissues, se, se_n, num_iter=2, num_limit=1):
+    # And finally the scalp
+    scalp = label_img == tissues["Scalp"]
+    eyes = label_img == tissues["Eyes"]
+    muscle = label_img == tissues["Muscle"]
+    head = scalp | skull_outer | eyes | muscle
+    dil = mrph.binary_dilation(
+        _get_largest_components(mrph.binary_erosion(head, se, num_iter), se_n, num_limit),
+        se,
+        num_iter,
+    )
+    unass |= scalp & ~dil
+
+
+def _ensure_csf(label_img, tissues, upper_part, se, num_iter1=1, num_iter2=6):
+    # Ensuring a CSF layer between GM and Skull and GM and Blood
+    # Relabel regions in the expanded GM which are in skull or blood to CSF
+    logger.info("Ensure CSF")
+
+    brain_gm = label_img == tissues["GM"]
+    C_BONE = label_img == tissues["Compact_bone"]
+    S_BONE = label_img == tissues["Spongy_bone"]
+    U_SKIN = (label_img == tissues["Scalp"]) & upper_part
+
+    brain_dilated = mrph.binary_dilation(brain_gm, se, num_iter1)
+    overlap = brain_dilated & (C_BONE | S_BONE | U_SKIN)
+    label_img[overlap] = tissues["CSF"]
+
+    S_BONE = label_img == tissues["Spongy_bone"]
+
+    CSF_brain = brain_gm | (label_img == tissues["CSF"])
+    CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, num_iter1)
+    spongy_csf = CSF_brain_dilated & S_BONE
+    upper_part = mrph.binary_erosion(upper_part, se, num_iter2)
+    skin_csf = CSF_brain_dilated & (label_img == simnibs_tissues["Scalp"]) & upper_part
+    label_img[spongy_csf] = tissues["Compact_bone"]
+    label_img[skin_csf] = tissues["Compact_bone"]
+
+
+def _ensure_skull(label_img, tissues, se, num_iter=1):
+    # Ensure the outer skull label is compact bone
+    C_BONE = label_img == tissues["Compact_bone"]
+    S_BONE = label_img == tissues["Spongy_bone"]
+    SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se, num_iter)
+    label_img[SKULL_outer] = tissues["Compact_bone"]
+    # Relabel air pockets to air
+    label_img[label_img == tissues["Air_pockets"]] = 0
+
+
+
+def _morphological_operations(label_img, upper_part, simnibs_tissues):
+    """Does morphological operations to
+    1. Smooth out the labeling and remove noise
+    2. A CSF layer between GM and Skull and between GM and CSF
+    3. Outer bone layers are compact bone
+    """
+    se = ndimage.generate_binary_structure(3, 3)
+    se_n = ndimage.generate_binary_structure(3, 1)
+    unass = np.zeros_like(label_img) > 0
+    _clean_brain(label_img, simnibs_tissues, unass, se_n)
+    bone, skull_outer, dil = _get_skull(label_img, simnibs_tissues, se_n, se)
     # Protect thin areas that would be removed by erosion
     bone_thickness = _calc_thickness(dil)
+
     thin_parts = bone & (bone_thickness < 3.5) & (bone_thickness > 0)
     dil |= thin_parts
     del thin_parts
@@ -358,35 +446,10 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     unass = unass | (dil ^ bone)
     del bone, dil
 
-    # Open the veins
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(veins, se, 1), se_n, vol_limit=10),
-        se,
-        1,
-    )
-    unass |= dil ^ veins
-
-    # Clean the eyes
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(eyes, se, 1), se_n, vol_limit=10),
-        se,
-        1,
-    )
-    # dil = mrph.binary_opening(eyes, se, 1)
-    unass |= dil ^ eyes
-
-    # Clean muscles
-    dil = mrph.binary_opening(muscle, se, 1)
-    unass |= dil ^ muscle
-
-    # And finally the scalp
-    head = scalp | skull_outer | eyes | muscle
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(head, se, 2), se_n, num_limit=1),
-        se,
-        2,
-    )
-    unass |= scalp & ~dil
+    _clean_veins(label_img, unass, simnibs_tissues, se, se_n)
+    _clean_eyes(label_img, unass, simnibs_tissues, se, se_n)
+    _clean_muscles(label_img, unass, simnibs_tissues, se)
+    _clean_scalp(label_img, unass, skull_outer, simnibs_tissues, se, se_n)
 
     # Filling missing parts
     # NOTE: the labeling is uint16, so I'll code the unassigned voxels with the max value
@@ -400,36 +463,8 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     )
     _smoothfill(label_img, unass, simnibs_tissues)
 
-    # Ensuring a CSF layer between GM and Skull and GM and Blood
-    # Relabel regions in the expanded GM which are in skull or blood to CSF
-    logger.info("Ensure CSF")
-
-    brain_gm = label_img == simnibs_tissues["GM"]
-    C_BONE = label_img == simnibs_tissues["Compact_bone"]
-    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
-    U_SKIN = (label_img == simnibs_tissues["Scalp"]) & upper_part
-
-    brain_dilated = mrph.binary_dilation(brain_gm, se, 1)
-    overlap = brain_dilated & (C_BONE | S_BONE | U_SKIN)
-    label_img[overlap] = simnibs_tissues["CSF"]
-
-    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
-
-    CSF_brain = brain_gm | (label_img == simnibs_tissues["CSF"])
-    CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, 1)
-    spongy_csf = CSF_brain_dilated & S_BONE
-    upper_part = mrph.binary_erosion(upper_part, se, 6)
-    skin_csf = CSF_brain_dilated & (label_img == simnibs_tissues["Scalp"]) & upper_part
-    label_img[spongy_csf] = simnibs_tissues["Compact_bone"]
-    label_img[skin_csf] = simnibs_tissues["Compact_bone"]
-
-    # Ensure the outer skull label is compact bone
-    C_BONE = label_img == simnibs_tissues["Compact_bone"]
-    S_BONE = label_img == simnibs_tissues["Spongy_bone"]
-    SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se, 1)
-    label_img[SKULL_outer] = simnibs_tissues["Compact_bone"]
-    # Relabel air pockets to air
-    label_img[label_img == simnibs_tissues["Air_pockets"]] = 0
+    _ensure_csf(label_img, tissues, upper_part, se)
+    _ensure_skull(label_img, tissues, se)
 
     return label_img
 
@@ -567,6 +602,26 @@ def label_unassigned_elements(
     labeling = labeling.T if label_arr.flags["F_CONTIGUOUS"] else labeling
 
     return labeling
+
+def _smooth(label_img, simnibs_tissues, tissues_to_smooth):
+    """Smooth some of the tissues for "nicer" tissue labelings.
+    """
+    labs = label_img.copy()
+    max_val = np.zeros_like(label_img, dtype=np.float32)
+    for i, t in enumerate(simnibs_tissues):
+        vol = (label_img == simnibs_tissues[t]).astype(np.float32)
+        if t in tissues_to_smooth:
+            cs = gaussian_filter(vol, 1)
+        else:
+            cs = vol
+
+        # Check the max values and update
+        max_mask = cs > max_val
+        labs[max_mask] = tissues_to_smooth[t]
+        max_val[max_mask] = cs[max_mask]
+
+    label_img[:] = labs[:]
+    del labs
 
 
 def _smoothfill(label_img, unassign, simnibs_tissues):

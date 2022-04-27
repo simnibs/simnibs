@@ -1214,7 +1214,7 @@ class TDCSoptimize():
             with h5py.File(self.leadfield_hdf, 'r') as f:
                 try:
                     elec_names = f[self.leadfield_path].attrs['electrode_names']
-                    elec_names = [n.decode() for n in elec_names]
+                    elec_names = [n.decode() if isinstance(n,bytes) else n for n in elec_names]
                 except KeyError:
                     elec_names = None
 
