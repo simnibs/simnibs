@@ -467,8 +467,8 @@ def _morphological_operations(label_img, upper_part, simnibs_tissues):
     )
     _smoothfill(label_img, unass, simnibs_tissues)
 
-    _ensure_csf(label_img, tissues, upper_part, se)
-    _ensure_skull(label_img, tissues, se)
+    _ensure_csf(label_img, simnibs_tissues, upper_part, se)
+    _ensure_skull(label_img, simnibs_tissues, se)
 
     return label_img
 
