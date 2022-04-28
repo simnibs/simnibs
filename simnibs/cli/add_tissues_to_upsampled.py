@@ -41,9 +41,10 @@ def parseArguments(argv):
                                      "charm input (T1.nii.gz) to the upsampled tissue mask "
                                      "(tissue_labels_upsampled.nii.gz) for meshing. "
                                      "Ignores labels that are smaller than or equal to zero.")
-    parser.add_argument("label_input", help="Input label file to be resampled")
-    parser.add_argument("target_scan", help="Target label file where the iput labels will be added.")
-    parser.add_argument('fn_out', help="Output file name")
+    parser.add_argument("-i","--input", dest="label_input", required=True, help="Input label file to be resampled")
+    parser.add_argument("-t", "--target", dest="target_scan", required=True, help="Target label file where the iput labels will be added.")
+    parser.add_argument("-o", "--out", dest='fn_out', help="Output file name")
+    parser.add_argument("--offset", dest='offset', help="Offset to be added to the labels.")
     parser.add_argument('--version', action='version', version=__version__)
     return parser.parse_args(argv)
 
@@ -66,20 +67,24 @@ def main():
                                   np.eye(4), target_affine,
                                   target_vol.shape, intorder=0)
 
+    if args.offset is None:
+        base_label = 0
+    else:
+        base_label = int(args.offset)
     # Check the largest label in the target and use as base label
-    base_label = np.unique(target_vol).max()
     input_labels = np.unique(input_vol)
     input_labels = input_labels[input_labels > 0]
     target_array = target_scan.get_fdata()
-    for l in input_labels.tolist():
-        target_array[upsampled == l] = base_label + l
+
+    for label in input_labels.tolist():
+        target_array[upsampled == label] = base_label + label
 
     if args.fn_out is None:
         split_path = os.path.split(args.target_scan)
-        output_path =  split_path[0]
+        output_path = split_path[0]
         filename = split_path[1]
         parts = filename.split(".")
-        output_name = os.path.join(output_path, part[0]+'_added.nii.gz')
+        output_name = os.path.join(output_path, parts[0]+'_added.nii.gz')
     else:
         output_name = args.fn_out
 
