@@ -6,6 +6,7 @@ Changelog
 4.0.0
 ------
  * New head segmentation and meshing pipeline *charm* with improved accuracy and robustness
+ * Many new TMS coil models
  * New head models with additional tissue types, in particular spongy bone and large blood vessels
  * New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh
  * New command line tool *meshmesh* to support meshing of custom geometries

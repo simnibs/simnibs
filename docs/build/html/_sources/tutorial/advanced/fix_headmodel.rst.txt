@@ -117,3 +117,7 @@ The simulation results with the new tissue:
 .. image:: ../../images/tutorial_fixheadmodel_4_runsimu.png
    :align: center
    
+Further notes
+---------------
+* Tissue labels have to be lower than 99
+* Please see :ref:`add_tissues_to_upsampled_doc` for an example on how to upsample a custom volume mask from the original resolution of the T1 image to the resolutoin of the "tissue_labeling_upsampled.nii.gz" image
