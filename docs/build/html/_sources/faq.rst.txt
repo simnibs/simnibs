@@ -40,7 +40,9 @@ The Electric Field varies linearly with :math:`^{dI}/_{dt}`
   \boldsymbol E(t) = \boldsymbol E_0 \frac{dI}{dt}(t)
 
 
-Where :math:`\boldsymbol E_0` is the electric field obtained with a unit :math:`^{dI}/_{dt}` value
+Where :math:`\boldsymbol E_0` is the electric field obtained with a unit :math:`^{dI}/_{dt}` value.
+
+For the 25 coil models in the subfolder Drakaki_BrainStim_2022, the maximal :math:`^{dI}/_{dt}` values are listed in Table 2 of the the `corresponding paper <https://doi.org/10.1016/j.brs.2022.04.017>`_ for the most commonly used biphasic stimulators.
 
 
 Are the SimNIBS coordinates in MNI Space?
