@@ -224,7 +224,7 @@ def _estimate_parameters(
             % (multiResolutionLevel, item["numberOfIterations"], item["perVoxelCost"])
         )
 
-    return samsegment.saveParametersAndInput(path_to_segment_folder)
+    return samsegment.saveParametersAndInput()
 
 
 def _post_process_segmentation(
