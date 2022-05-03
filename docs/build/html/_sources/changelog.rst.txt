@@ -6,6 +6,7 @@ Changelog
 4.0.0
 ------
  * New head segmentation and meshing pipeline *charm* with improved accuracy and robustness
+ * Many new TMS coil models
  * New head models with additional tissue types, in particular spongy bone and large blood vessels
  * New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh
  * New command line tool *meshmesh* to support meshing of custom geometries
@@ -16,6 +17,17 @@ Changelog
  * Headreco and mri2mesh are deprecated.
  * NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
  
+3.2.6
+------
+* fixed a bug causing headreco to fail on MacOS
+* Note: On Apple M1s using .ccd coil files does not yet work, please use niftis instead.
+
+3.2.5
+------
+* added skin smoothing options for TMS optimization
+* more informative matlab error messages
+* small bug fixes
+
 3.2.4
 ------
  * Small bug fix related to gmsh options.

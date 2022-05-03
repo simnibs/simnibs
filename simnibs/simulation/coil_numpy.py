@@ -144,7 +144,7 @@ def parseccd(ccd_file):
         res = a
     return d_position, d_moment, bb, res, info
 
-def read_ccd(fn):
+def read_ccl(fn):
     """ reads a ccl file, this format is similar to the ccd format. However,
     only line segments positions are included (first 3 columns) and an optional
     weighting in the forth column
@@ -164,8 +164,8 @@ def read_ccd(fn):
     # if there is only 1 dipole, loadtxt return as array of the wrong shape
     if (len(np.shape(ccl_file)) == 1):
         a = np.zeros([1, 4])
-        a[0, 0:3] = ccd_file[0:3]
-        a[0, 3:] = ccd_file[3:]
+        a[0, 0:3] = ccl_file[0:3]
+        a[0, 3:] = ccl_file[3:]
         ccd_file = a
 
     return ccd_file[:, 0:3], ccd_file[:, 3:]

@@ -24,3 +24,6 @@ These command line tools can be accessed through the Windows Command Prompt (see
    subject2mni_coords
    get_fields_at_coordinates 
    calc_b
+   add_tissues_to_upsampled
+   register
+   ccd2nifti

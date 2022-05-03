@@ -9,6 +9,7 @@ Current Contributors
    * Project coordination
    * Debugging and maintenance across the complete code.
    * Meshing part of :ref:`charm_docs` (4.0)
+   * new TMS coil models (4.0)
    * :ref:`dwi2cond_docs` (2.1)
    * Example dataset *ernie* (2.1)
 
@@ -22,6 +23,7 @@ Current Contributors
    * Cross-platform building (4.0)
    * new html-based viewer (4.0)
    * ccd to nifti conversion (4.0)
+   * new TMS coil models (4.0)
    * MNI transformation (2.1)
    * Fast I/O for gmsh-meshes in python (2.0)
    * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
@@ -29,6 +31,9 @@ Current Contributors
 * Jesper D. Nielsen
    * Contributions to the segmentation functions in :ref:`charm_docs` (4.0)
    * Main author of the *headreco* pipeline, now discontinued (2.1)
+
+* Maria Drakaki
+   * Main contributor to the new TMS coil models (4.0)
 
 * Fang Cao
    * Code testing and updating to python 3.9 (4.0)

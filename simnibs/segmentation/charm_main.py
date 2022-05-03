@@ -32,7 +32,6 @@ from ..mesh_tools.mesh_io import (
 )
 from ..simulation import cond
 from ..utils import plotting, html_writer
-from . import charm_utils
 
 
 def run(

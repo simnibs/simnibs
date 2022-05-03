@@ -4,17 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
     <title>Contributors and Funding &#8212; SimNIBS 4.0b0 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
-    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -61,6 +59,7 @@
 <li><p>Project coordination</p></li>
 <li><p>Debugging and maintenance across the complete code.</p></li>
 <li><p>Meshing part of <a class="reference internal" href="documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> (4.0)</p></li>
+<li><p>new TMS coil models (4.0)</p></li>
 <li><p><a class="reference internal" href="documentation/command_line/dwi2cond.html#dwi2cond-docs"><span class="std std-ref">dwi2cond</span></a> (2.1)</p></li>
 <li><p>Example dataset <em>ernie</em> (2.1)</p></li>
 </ul>
@@ -82,6 +81,7 @@
 <li><p>Cross-platform building (4.0)</p></li>
 <li><p>new html-based viewer (4.0)</p></li>
 <li><p>ccd to nifti conversion (4.0)</p></li>
+<li><p>new TMS coil models (4.0)</p></li>
 <li><p>MNI transformation (2.1)</p></li>
 <li><p>Fast I/O for gmsh-meshes in python (2.0)</p></li>
 <li><p>Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)</p></li>
@@ -93,6 +93,13 @@
 <dt>Jesper D. Nielsen</dt><dd><ul>
 <li><p>Contributions to the segmentation functions in <a class="reference internal" href="documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> (4.0)</p></li>
 <li><p>Main author of the <em>headreco</em> pipeline, now discontinued (2.1)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Maria Drakaki</dt><dd><ul>
+<li><p>Main contributor to the new TMS coil models (4.0)</p></li>
 </ul>
 </dd>
 </dl>
@@ -298,7 +305,7 @@ and FEM calculations into one coherent pipeline:</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -320,7 +327,7 @@ and FEM calculations into one coherent pipeline:</p>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
