@@ -7,7 +7,7 @@ Description
 ------------
 
 This command line utility function allows conversion of coil dipole definition files (.ccd) files to nifti-1 volumes describing the magnetic vector potential (A-field).
-The conversion utilized the fast multipole methods to efficiently calculate the A-field on a grid. The size and resolution of this grid is defined in the header of the ccd file.
+The conversion utilizes the fast multipole methods to efficiently calculate the A-field on a grid. The size and resolution of this grid is defined in the header of the ccd file.
 
 Usage example
 -------------
