@@ -56,7 +56,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
     ''' Finds the transformation to make  '''
     center = np.array(center, dtype=float)
 
-    c = project_points_on_surface(mesh, center, surface_tags = mesh_surface)
+    c = project_points_on_surface(mesh, center, surface_tags = mesh_surface).flatten()
     if nodes_roi is None:
         nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
         kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
@@ -97,7 +97,6 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relativ
             if nr_iter == 10:
                 raise ValueError('Could not define coordinate system: '
                                  'Y reference perpendicular to surface?')
-
         y_axis = (y_ref - c) - normal * normal.dot(y_ref - c)
         y_axis /= np.linalg.norm(y_axis)
 
@@ -857,7 +856,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
             if elec.pos_ydir is not None and len(elec.pos_ydir) == 2:
                 raise NotImplementedError('Relative y axis not implemented yet')
         elif len(center) == 3:
-            center = project_points_on_surface(mesh, center, surface_tags = skin_tag)
+            center = project_points_on_surface(mesh, center, surface_tags = skin_tag).flatten()
         else:
             raise ValueError('Wrong dimension of electrode centre: it should be 1x3 (or 1x2 for plugs)')
 
@@ -869,7 +868,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
         if pos_y:
             y_axis = np.array(elec.pos_ydir, dtype=float)
             if len(y_axis) == 3:
-                y_axis = project_points_on_surface(mesh, y_axis, surface_tags = skin_tag)
+                y_axis = project_points_on_surface(mesh, y_axis, surface_tags = skin_tag).flatten()
         else:
             y_axis = None
 

@@ -166,6 +166,22 @@ def shear():
     dim = [13, 13, 13]
     return affine, target_affine, dim
 
+def toCartesian(pts):
+    r=pts[:,0]
+    phi=pts[:,1]
+    theta=pts[:,2]
+    
+    pts_cart = np.zeros(pts.shape,dtype='float64')
+    pts_cart[:,0] = r*np.cos(phi * np.pi / 180.)*np.sin(theta * np.pi / 180.)
+    pts_cart[:,1] = r*np.sin(phi * np.pi / 180.)*np.sin(theta * np.pi / 180.)
+    pts_cart[:,2] = r*np.cos(theta * np.pi / 180.)
+    return pts_cart
+
+def get_angle(v1,v2):
+    angle = np.sum(v1 * v2, axis=1)/(np.linalg.norm(v1,axis=1)*np.linalg.norm(v2,axis=1))
+    angle[angle>1.] = 1.
+    angle = np.arccos(angle)/np.pi*180
+    return angle
 
 
 class TestNonlTransformVolume:
@@ -364,17 +380,6 @@ class TestWarpCoordinates:
             vec, R, keep_length=True)
         assert np.allclose(vec_transf, vec)
 
-class TestProjectOnScalp():
-    def test_project_scalp_0_dist(self, sphere3_msh):
-        coords = np.array([[100., 0., 0.], [0., -100., 0]])
-        c = transformations.project_on_scalp(coords, sphere3_msh)
-        assert np.allclose(c, np.array([[95., 0., 0.], [0., -95., 0.]]))
-
-    def test_project_scalp_dist(self, sphere3_msh):
-        coords = np.array([[100., 0., 0.], [0., -100., 0]])
-        c = transformations.project_on_scalp(coords, sphere3_msh, distance=2)
-        assert np.allclose(c, np.array([[97., 0., 0.], [0., -97., 0.]]),
-                           atol=1e-1)
 
 class TestTransformPositions:
     def test_transform_tdcs_position_linear(self, sphere3_msh, affine_rotate):
@@ -382,8 +387,9 @@ class TestTransformPositions:
         pos_y = np.array([[-100., 0., 0.], [0., 100., 0]])
         c, y = transformations.transform_tdcs_positions(
             coords, 'affine', affine_rotate[0], pos_y, sphere3_msh)
-        assert np.allclose(c, [[0., 95, 0], [95, 0, 0]])
-        assert np.allclose(y, [[0.,-95, 0], [-95, 0, 0]])
+        assert np.allclose(c, [[0.8, 94.9, -0.8], [94.9, -0.7, -0.7]], atol=1e-1) 
+        assert np.allclose(y, [[0.8,-94.9, -0.7], [-94.9, -0.8, -0.8]], atol=1e-1)
+
 
     def test_transform_tdcs_position_nonl(self, sphere3_msh, nonl_large_rotate):
         coords = np.array([[100., 0., 0.], [0., -100., 0]])
@@ -402,7 +408,7 @@ class TestTransformPositions:
         distances = np.array([1, 2])
         c, y, z = transformations.transform_tms_positions(
             coords, v_y, v_z, 'affine', affine_rotate[0], sphere3_msh, distances)
-        assert np.allclose(c, [[0., 96, 0], [97, 0, 0]], atol=1e-2)
+        assert np.allclose(c, [[0.8, 95.9, -0.8], [96.9, -0.8, -0.8]], atol=1e-1)
         assert np.allclose(y, [[-1. / np.sqrt(2),-1. / np.sqrt(2), 0],
                                [1. / np.sqrt(2),1. / np.sqrt(2), 0]])
         assert np.allclose(z, [[0, 0, 1],
@@ -646,3 +652,172 @@ def test_surf2surf(sphere3_msh):
     out_nodes /= np.average(np.linalg.norm(out_nodes, axis=1))
     out_field, _ = transformations._surf2surf(field, in_surf, out_surf)
     assert np.allclose(out_field, out_nodes[:, 0], atol=1e-1)
+
+def test_get_triangle_neighbors():
+    """Triangulate an array of points and test neighbors like
+
+        .  .  .
+        .  .  .
+        .  .  .
+
+    e.g.,
+
+        x, y, z = (-1, 0, 1), (-1, 0, 1), (0, )
+        points = np.dstack(np.meshgrid(x, y, z)).reshape(-1,3)
+
+    """
+    tris = np.array(
+        [
+            [0, 3, 1],
+            [1, 3, 4],
+            [3, 7, 4],
+            [3, 6, 7],
+            [1, 5, 2],
+            [1, 4, 5],
+            [4, 7, 5],
+            [5, 7, 8],
+        ]
+    )
+    pttris = transformations._get_triangle_neighbors(tris, nr=9)
+    pttris_expected = [
+        [0],
+        [0, 1, 4, 5],
+        [4],
+        [0, 1, 2, 3],
+        [1, 2, 5, 6],
+        [4, 5, 6, 7],
+        [3],
+        [2, 3, 6, 7],
+        [7],
+    ]
+    for i, j in zip(pttris, pttris_expected):
+        assert all(i == j)
+
+
+def test_project_points_to_surface():
+    """Make a surface consisting of one triangle and project a point from each
+    'region' to it.
+    """
+    surf = dict(
+        points=np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]]), tris=np.array([[0, 1, 2]])
+    )
+
+    # Test a point in each region
+    points = np.array(
+        [
+            [0.25, 0.25, 0.67],  # Region 0
+            [1, 1, 0.27],  # Region 1
+            [-0.25, 2, 1.1],  # Region 2
+            [-1, 0.5, -1.4],  # Region 3
+            [-1, -1, 0.53],  # Region 4
+            [0.5, -1, -0.77],  # Region 5
+            [2, -0.25, -0.16],
+        ]
+    )  # Region 6
+    pttris = np.atleast_2d(np.zeros(len(points), dtype=int)).T
+
+    # Expected output
+    tris = np.zeros(len(points), dtype=int)
+    weights = np.array(
+        [
+            [0.5, 0.25, 0.25],
+            [0, 0.5, 0.5],
+            [0, 0, 1],
+            [0.5, 0, 0.5],
+            [1, 0, 0],
+            [0.5, 0.5, 0],
+            [0, 1, 0],
+        ]
+    )
+    projs = np.array(
+        [
+            [0.25, 0.25, 0],
+            [0.5, 0.5, 0],
+            [0, 1, 0],
+            [0, 0.5, 0],
+            [0, 0, 0],
+            [0.5, 0, 0],
+            [1, 0, 0],
+        ]
+    )
+    dists = np.linalg.norm(points - projs, axis=1)
+
+    # Actual output
+    t, w, p, d = transformations._project_points_to_surface(points, surf, pttris)
+
+    np.testing.assert_array_equal(t, tris)
+    np.testing.assert_allclose(w, weights)
+    np.testing.assert_allclose(p, projs)
+    np.testing.assert_allclose(d, dists)
+
+
+def test_project_points_on_surface(sphere3_msh):
+    
+    # r phi theta
+    pts_org_sp = np.array((
+                    (100, 0, 0),
+                    (100, 0, 45),
+                    (100, 0, 90),
+                    (100, 45, 0),
+                    (100, 45, 45),
+                    (100, 45, 90)
+                    ))
+    pts_cart = toCartesian(pts_org_sp)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 95.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, [0., 0., 100.])
+    assert np.all(get_angle(pts_prj, np.array([0., 0., 100.]).reshape(1,3))<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 95.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart[0])
+    assert np.all(get_angle(pts_prj, pts_cart[0].reshape(1,3))<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 95.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1005)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 95.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1003)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 85.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, [0., 0., 90.],
+                                                        surface_tags = 1005, distance = 10.)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 105.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1005, distance = 10.)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 105.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1005,
+                                                        distance = [10., 10., 10., 10., 10., 10.])
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 105.) < 0.5)
+    
+    pts_org_sp[:,0] = 80
+    pts_cart = toCartesian(pts_org_sp)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 85.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1005)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.75)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 95.) < 0.5)
+    
+    pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
+                                                        surface_tags = 1003)
+    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 85.) < 0.5)
+    
+    
+

@@ -113,7 +113,7 @@ Setting up a TMS Simulation
    :align: center
 
 \
-2. Click on *Browse* and select the *Magstim_70mm_Fig8.nii.gz* coil file
+2. Click on *Browse* and select the *Magstim_70mm_Fig8.nii.gz* coil file in the *legacy* subfolder
 
 .. image:: ../images/tutorial_addcoil.png
    :align: center
@@ -149,6 +149,8 @@ Setting up a TMS Simulation
 \
 
 .. attention:: This is **NOT the electric field**, but it can be interpreted as a very smooth approximation of it.
+
+.. note:: Most coil files are supplied in *.ccd*-format, which need less disk space compared to *.nii.gz*. However, the preview option *Show dA/dt field* in the GUI currently works only for *.nii.gz* coil file. If needed, you can use the command line tool :ref:`ccd2nifti_doc` to convert coil files from *.ccd* to *.nii.gz*.
 
 Setting Simulation Options
 ---------------------------

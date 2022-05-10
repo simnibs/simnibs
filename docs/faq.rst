@@ -28,9 +28,11 @@ When multiple channels are involved, and especially when they are out of phase, 
 
 What is the dI/dt in TMS simulations?
 -------------------------------------
-The dI/dt is the speed of variation of the current through the coil. This values depends on coil model, stimulator model and pulse intensity. In some stimulators, this value is displayed in the screen after a pulse. The variation with pulse is usually linear, meaning that an 80% maximum stimulator output will also give 80% of the :math:`^{dI}/_{dt}` value if the maximum stimulator output.
+:math:`dI/dt` is the speed of variation of the current through the coil. This value depends on the coil model, the stimulator model and the pulse intensity. In some stimulators, it is displayed on the screen after a pulse. As :math:`dI/dt` varies in time, usually the value at the beginning of the pulse is taken, which corresponds to the peak :math:`dI/dt` for most pulse shapes.
 
-The :math:`^{dI}/_{dt}` also varies in time. We normally take maximum value, which usually happens right at the beginning of the pulse.
+:math:`dI/dt` depends approx. linearly on the pulse intensity set by the user, meaning that a setting of 80% maximum stimulator output (MSO) will also give 80% of the maximal :math:`dI/dt`. That is, :math:`^{dI}/_{dt}=0.8*{^{dI}/_{dt}}_{max}` when stimulating at 80% MSO.
+
+For the 25 coil models in the subfolder Drakaki_BrainStim_2022, the :math:`{^{dI}/_{dt}}_{max}` values are listed in Table 2 of the the `corresponding paper <https://doi.org/10.1016/j.brs.2022.04.017>`_ for the most commonly used biphasic stimulators. They can be used together with the %MSO to calculate the :math:`dI/dt` for the simulations.
 
 The Electric Field varies linearly with :math:`^{dI}/_{dt}`
 
@@ -42,7 +44,7 @@ The Electric Field varies linearly with :math:`^{dI}/_{dt}`
 
 Where :math:`\boldsymbol E_0` is the electric field obtained with a unit :math:`^{dI}/_{dt}` value.
 
-For the 25 coil models in the subfolder Drakaki_BrainStim_2022, the maximal :math:`^{dI}/_{dt}` values are listed in Table 2 of the the `corresponding paper <https://doi.org/10.1016/j.brs.2022.04.017>`_ for the most commonly used biphasic stimulators.
+
 
 
 Are the SimNIBS coordinates in MNI Space?

@@ -11,7 +11,7 @@
     
     Copyright (C) 2021 Axel Thielscher
 '''
-
+import os
 from simnibs import sim_struct, run_simnibs
 
 S = sim_struct.SESSION()
@@ -49,7 +49,7 @@ electrode2.thickness = 4  # 4 mm thickness
 
 # add a TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'  # Choose a coil model
+tms.fnamecoil = os.path.join('legacy','Magstim_70mm_Fig8.ccd')  # Choose a coil model
 
 tms.cond[16].value = 2 # [S/m]
 tms.cond[16].name = 'custom_tissue'

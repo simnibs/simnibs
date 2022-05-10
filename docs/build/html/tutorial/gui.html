@@ -149,7 +149,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created</p></li>
 </ol>
 <img alt="../_images/tutorial_addtms.png" class="align-center" src="../_images/tutorial_addtms.png" />
-<p>2. Click on <em>Browse</em> and select the <em>Magstim_70mm_Fig8.nii.gz</em> coil file</p>
+<p>2. Click on <em>Browse</em> and select the <em>Magstim_70mm_Fig8.nii.gz</em> coil file in the <em>legacy</em> subfolder</p>
 <img alt="../_images/tutorial_addcoil.png" class="align-center" src="../_images/tutorial_addcoil.png" />
 <p>3. Click on <em>Add Position</em></p>
 <img alt="../_images/tutorial_addposition.png" class="align-center" src="../_images/tutorial_addposition.png" />
@@ -167,6 +167,10 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>This is <strong>NOT the electric field</strong>, but it can be interpreted as a very smooth approximation of it.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Most coil files are supplied in <em>.ccd</em>-format, which need less disk space compared to <em>.nii.gz</em>. However, the preview option <em>Show dA/dt field</em> in the GUI currently works only for <em>.nii.gz</em> coil file. If needed, you can use the command line tool <a class="reference internal" href="../documentation/command_line/ccd2nifti.html#ccd2nifti-doc"><span class="std std-ref">ccd2nifti</span></a> to convert coil files from <em>.ccd</em> to <em>.nii.gz</em>.</p>
 </div>
 </section>
 <section id="setting-simulation-options">

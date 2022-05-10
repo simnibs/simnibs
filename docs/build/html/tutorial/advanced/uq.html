@@ -248,7 +248,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 
 <span class="c1">## Define the TMS simulation</span>
 <span class="n">tms</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
-<span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;m2m_ernie&#39;</span><span class="p">,</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">))</span>
 
 <span class="c1"># We need to set the EEG cap as we are giving the coil</span>

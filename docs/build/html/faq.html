@@ -65,13 +65,13 @@
 </section>
 <section id="what-is-the-di-dt-in-tms-simulations">
 <h2>What is the dI/dt in TMS simulations?<a class="headerlink" href="#what-is-the-di-dt-in-tms-simulations" title="Permalink to this headline">¶</a></h2>
-<p>The dI/dt is the speed of variation of the current through the coil. This values depends on coil model, stimulator model and pulse intensity. In some stimulators, this value is displayed in the screen after a pulse. The variation with pulse is usually linear, meaning that an 80% maximum stimulator output will also give 80% of the <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value if the maximum stimulator output.</p>
-<p>The <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> also varies in time. We normally take maximum value, which usually happens right at the beginning of the pulse.</p>
+<p><span class="math notranslate nohighlight">\(dI/dt\)</span> is the speed of variation of the current through the coil. This value depends on the coil model, the stimulator model and the pulse intensity. In some stimulators, it is displayed on the screen after a pulse. As <span class="math notranslate nohighlight">\(dI/dt\)</span> varies in time, usually the value at the beginning of the pulse is taken, which corresponds to the peak <span class="math notranslate nohighlight">\(dI/dt\)</span> for most pulse shapes.</p>
+<p><span class="math notranslate nohighlight">\(dI/dt\)</span> depends approx. linearly on the pulse intensity set by the user, meaning that a setting of 80% maximum stimulator output (MSO) will also give 80% of the maximal <span class="math notranslate nohighlight">\(dI/dt\)</span>. That is, <span class="math notranslate nohighlight">\(^{dI}/_{dt}=0.8*{^{dI}/_{dt}}_{max}\)</span> when stimulating at 80% MSO.</p>
+<p>For the 25 coil models in the subfolder Drakaki_BrainStim_2022, the <span class="math notranslate nohighlight">\({^{dI}/_{dt}}_{max}\)</span> values are listed in Table 2 of the the <a class="reference external" href="https://doi.org/10.1016/j.brs.2022.04.017">corresponding paper</a> for the most commonly used biphasic stimulators. They can be used together with the %MSO to calculate the <span class="math notranslate nohighlight">\(dI/dt\)</span> for the simulations.</p>
 <p>The Electric Field varies linearly with <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span></p>
 <div class="math notranslate nohighlight">
 \[\boldsymbol E(t) = \boldsymbol E_0 \frac{dI}{dt}(t)\]</div>
 <p>Where <span class="math notranslate nohighlight">\(\boldsymbol E_0\)</span> is the electric field obtained with a unit <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> value.</p>
-<p>For the 25 coil models in the subfolder Drakaki_BrainStim_2022, the maximal <span class="math notranslate nohighlight">\(^{dI}/_{dt}\)</span> values are listed in Table 2 of the the <a class="reference external" href="https://doi.org/10.1016/j.brs.2022.04.017">corresponding paper</a> for the most commonly used biphasic stimulators.</p>
 </section>
 <section id="are-the-simnibs-coordinates-in-mni-space">
 <h2>Are the SimNIBS coordinates in MNI Space?<a class="headerlink" href="#are-the-simnibs-coordinates-in-mni-space" title="Permalink to this headline">¶</a></h2>

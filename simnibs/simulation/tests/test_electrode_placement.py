@@ -41,17 +41,6 @@ class TestDrawElectrodes:
         assert np.allclose(affine.dot([0., 100., 0., 1.]), [0, 0, 5, 1], atol=1e-1,
                            rtol=1e-1)
 
-        affine, c = electrode_placement._get_transform(
-             [0., 100., 0.], [0., 100., 2.], sphere3_msh)
-        assert np.allclose(c, [0., 95., 0.])
-        assert np.allclose(affine[:3, :3].dot([0., 0., 1]), [0., 1., 0.], atol=1e-2)
-        assert np.allclose(affine[:3, :3].dot([0., 1., 0]), [0., 0., 1.], atol=1e-2)
-        assert np.allclose(affine[:3, :3].dot([1., 0., 0]), [1., 0., 0.], atol=1e-2)
-        assert np.allclose(affine.dot([0., 100., 0., 1.]), [0, 0, 5, 1], atol=1e-1,
-                           rtol=1e-1)
-
-
-
     def test_get_roi(self, sphere3_msh):
         roi_triangles, roi_nodes, roi_triangles_reordering = electrode_placement._get_roi(
              [0., 0., 95.], 15, sphere3_msh)

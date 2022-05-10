@@ -41,7 +41,7 @@ S.poslist{1}.electrode(2).thickness = 4; % 4 mm thickness
 
 % add a TMS simulation
 S.poslist{2} = sim_struct('TMSLIST');
-S.poslist{2}.fnamecoil = 'Magstim_70mm_Fig8.nii.gz';  % Choose a coil model
+S.poslist{2}.fnamecoil = fullfile('legacy','Magstim_70mm_Fig8.ccd');  % Choose a coil model
 
 S.poslist{2}.cond(17).value = 2; % in S/m
 S.poslist{2}.cond(17).name = 'custom_tissue';
