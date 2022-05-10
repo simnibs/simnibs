@@ -27,6 +27,8 @@ import copy
 import numpy as np
 import scipy.spatial
 from ..mesh_tools.mesh_io import _hash_rows
+from ..utils.transformations import project_points_on_surface
+
 
 def _remove_unconnected_triangles(mesh, roi_triangles, center,
                                   roi_nodes, triangles):
@@ -49,25 +51,12 @@ def _get_nodes_in_surface(mesh, surface_tags):
     nodes_in_surface = np.unique(mesh.elm.node_number_list[tr_of_interest, :3])
     return nodes_in_surface
 
-
-def _find_closest_surface_pos(pos, mesh, surface_tags):
-    nodes_in_surface = _get_nodes_in_surface(mesh, surface_tags)
-    if len(nodes_in_surface) == 0:
-        raise ValueError('Surface with tags: {0} not found'.format(surface_tags))
-    kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
-    _, center_idx = kd_tree.query(pos)
-    #center_idx = np.argmin(np.linalg.norm(mesh.nodes[nodes_in_surface] - pos))
-    pos = mesh.nodes.node_coord[nodes_in_surface - 1][center_idx]
-    return pos
-
-
 def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relative',
                    nodes_roi=None):
     ''' Finds the transformation to make  '''
     center = np.array(center, dtype=float)
 
-    c = _find_closest_surface_pos(center, mesh, mesh_surface)
-
+    c = project_points_on_surface(mesh, center, surface_tags = mesh_surface)
     if nodes_roi is None:
         nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
         kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
@@ -868,7 +857,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
             if elec.pos_ydir is not None and len(elec.pos_ydir) == 2:
                 raise NotImplementedError('Relative y axis not implemented yet')
         elif len(center) == 3:
-            center = _find_closest_surface_pos(center, mesh, skin_tag)
+            center = project_points_on_surface(mesh, center, surface_tags = skin_tag)
         else:
             raise ValueError('Wrong dimension of electrode centre: it should be 1x3 (or 1x2 for plugs)')
 
@@ -880,7 +869,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
         if pos_y:
             y_axis = np.array(elec.pos_ydir, dtype=float)
             if len(y_axis) == 3:
-                y_axis = _find_closest_surface_pos(y_axis, mesh, skin_tag)
+                y_axis = project_points_on_surface(mesh, y_axis, surface_tags = skin_tag)
         else:
             y_axis = None
 
