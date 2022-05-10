@@ -20,7 +20,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
 import warnings
 import os
 from functools import partial
@@ -769,35 +768,60 @@ def vectors_affine(vectors, affine, keep_length=True):
     return vectors_tr
 
 
-def project_on_scalp(coords, mesh, distance=0., scalp_tag=1005):
-    ''' Find the node in the scalp closest to each coordinate
+def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
+    ''' Find the position on the surface closest to each coordinate
 
-    Parameters
-    -------
-    coords: nx3 ndarray
-        Vectors to be transformed
-    mesh: simnibs.msh.mesh_io.Msh
-        Mesh structure
-    distance: float or nx1 ndarray (optional)
-        Distance (normal) to the scalp to be enforced. Default: 0
-    scalp_tag: int (optional)
-        Tag in the mesh where the scalp is to be set. Default: 1005
+     Parameters
+     -------
+     coords: nx3 ndarray
+         Vectors to be transformed
+     mesh: simnibs.msh.mesh_io.Msh
+         Mesh structure
+     surface_tags: int (optional)
+             Tag of the target surface. Default: None (positions will be projected on closest surface)
+     distance: float or nx1 ndarray (optional)
+         Distance (normal) to the surface to be enforced. Default: 0
 
-    Returns
-    ------
-    coords_projected: nx3 ndarray
-        coordinates projected scalp
+     Returns
+     ------
+     coords_projected: nx3 ndarray
+         coordinates projected on the surface
     '''
-    m = mesh.crop_mesh(elm_type=2)
-    m = m.crop_mesh(scalp_tag)
-    coords, idx = m.nodes.find_closest_node(coords, return_index=True)
+    # get surface
+    if surface_tags is not None:
+        tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
+    else:
+        tr_of_interest = mesh.elm.elm_type == 2
+    tri_node_list = mesh.elm.node_number_list[tr_of_interest, :3] - 1
+    tri_nodes = np.unique(tri_node_list)
+    
+    old2new = np.zeros(tri_nodes[-1] + 1, dtype = 'int32')
+    old2new[tri_nodes] = np.arange(len(tri_nodes))
+    surf = {
+        'tris': old2new[tri_node_list],
+        'points': mesh.nodes.node_coord[tri_nodes]
+    }
+    
+    # get indices of close-by surface nodes and their connected triangles
+    pttris, indices = _get_nearest_triangles_on_surface(pts, surf, n = 3,
+                                                        return_indices = True)
+    if indices.ndim > 1:
+        indices = indices[:,0] # keep only indices of the closest nodes
+        
+    # project points on triangles
+    _, _, projs, _ = _project_points_to_surface(pts, surf, pttris)
+    
+    # ensure distance (optional)
     if not np.all(np.isclose(distance, 0)):
-        normals = m.nodes_normals(smooth=2)
+        normals = mesh.nodes_normals(smooth=2,
+                                     triangles=np.argwhere(tr_of_interest).flatten() + 1)
+                                     # nodes_normals expects a 1-based list  
         try:
-            coords += distance * normals[idx]
+                projs += distance * normals.value[tri_nodes[indices]]
         except:
-            coords += distance[:, None] * normals[idx]
-    return coords
+                projs += distance[:, None] * normals.value[tri_nodes[indices]]
+                
+    return projs
 
 
 def transform_tdcs_positions(coords, transf_type, transf_def, pos_y=None, mesh=None):
@@ -846,9 +870,9 @@ def transform_tdcs_positions(coords, transf_type, transf_def, pos_y=None, mesh=N
         raise ValueError('Invalid transformation type')
 
     if mesh:
-        coords_transf = project_on_scalp(coords_transf, mesh)
+        coords_transf = project_points_on_surface(mesh, coords_transf, surface_tags = 1005)
         if pos_y is not None:
-            pos_y_transf = project_on_scalp(pos_y_transf, mesh)
+            pos_y_transf = project_points_on_surface(mesh, pos_y_transf, surface_tags = 1005)
 
     if pos_y is not None:
         return coords_transf, pos_y_transf
@@ -900,8 +924,9 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
     if transf_type == 'affine':
         coords_transf = coordinates_affine(coords, transf_def)
         if mesh:
-            coords_transf = project_on_scalp(
-                coords_transf, mesh, distance=distances)
+            coords_transf = project_points_on_surface(mesh, coords_transf, 
+                                                      surface_tags = 1005,
+                                                      distance=distances)
         vy_transf = vectors_affine(v_y, transf_def)
         vz_transf = vectors_affine(v_z, transf_def)
 
@@ -911,8 +936,9 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
         coords_transf, vz_transf = coordinates_nonlinear(coords, transf_def,
                                                          vectors=v_z)
         if mesh:
-            coords_transf = project_on_scalp(
-                coords_transf, mesh, distance=distances)
+            coords_transf = project_points_on_surface(mesh, coords_transf, 
+                                                      surface_tags = 1005,
+                                                      distance=distances)
     else:
         raise ValueError('Invalid transformation type')
 
