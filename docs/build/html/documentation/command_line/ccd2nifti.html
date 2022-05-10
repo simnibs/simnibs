@@ -53,19 +53,22 @@
 <span id="ccd2nifti-doc"></span><h1>ccd2nifti<a class="headerlink" href="#ccd2nifti" title="Permalink to this headline">¶</a></h1>
 <section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Kris will tell you what it is</p>
+<p>This command line utility function allows conversion of coil dipole definition files (.ccd) files to nifti-1 volumes describing the magnetic vector potential (A-field).
+The conversion utilizes the fast multipole methods to efficiently calculate the A-field on a grid. The size and resolution of this grid is defined in the header of the ccd file.</p>
 </section>
 <section id="usage-example">
 <h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
-<p>!! This needs update from Kris!!
-1. Rigid registration: open a terminaĺ and run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>register -f ernie_T1.nii.gz -m ernie_T2.nii.gz -o ernie_T2_registered.nii.gz -dof <span class="m">6</span>
+<ol class="arabic simple">
+<li><p>Expand a specific ccd-file: Open a terminal, go to the coil directory and run</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ccd2nifti -i Drakaki_BrainStim_2022/MagVenture_C-B70.ccd
 </pre></div>
 </div>
+<p>This will expand the file MagVenture_C-B70.ccd into MagVenture_C-B70.nii.gz, if the file does not already exist, in which case it will skip the expansion unless you force overwrite with the -f flag.</p>
 <ol class="arabic simple" start="2">
-<li><p>Affine registration: open a terminal and run</p></li>
+<li><p>Expand coil within the current path recursively: Open a terminal, go to the intended directory and run</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>register -f ernie_T1.nii.gz -m MNI152_T1_1mm.nii.gz -o MNI_template_registered.nii.gz -dof <span class="m">12</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ccd2nifti -i .
 </pre></div>
 </div>
 </section>
