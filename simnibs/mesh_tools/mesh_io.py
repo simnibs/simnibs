@@ -1429,21 +1429,18 @@ class Msh:
             NodeData structure with normals for each surface node
 
         '''
-        nodes = np.unique(self.elm[self.elm.triangles, :3])
         if triangles is None:
-            elements = self.elm.triangles
+            elements = self.elm.triangles - 1
         else:
-            elements = triangles
+            elements = triangles - 1
+        triangle_nodes = self.elm.node_number_list[elements, :3] - 1
 
-        nd = np.zeros((self.nodes.nr, 3))
-
-        node_tr = self.nodes[self.elm.node_number_list[elements - 1, :3]]
+        node_tr = self.nodes.node_coord[triangle_nodes]
         sideA = node_tr[:, 1] - node_tr[:, 0]
-
         sideB = node_tr[:, 2] - node_tr[:, 0]
         normals = np.cross(sideA, sideB)
-
-        triangle_nodes = self.elm.node_number_list[elements - 1, :3] - 1
+        
+        nd = np.zeros((self.nodes.nr, 3))
         for s in range(smooth + 1):
             for i in range(3):
                 nd[:, i] = \
@@ -1451,11 +1448,11 @@ class Msh:
                                 np.repeat(normals[:, i], 3),
                                 self.nodes.nr)
 
-            normals = np.sum(nd[self.elm.node_number_list[elements - 1, :3] - 1], axis=1)
+            normals = np.sum(nd[triangle_nodes], axis=1)
             normals /= np.linalg.norm(normals, axis=1)[:, None]
-
-        nd[nodes - 1] = nd[nodes-1] / \
-            np.linalg.norm(nd[nodes-1], axis=1)[:, None]
+        
+        nodes = np.unique(triangle_nodes)
+        nd[nodes] = nd[nodes] / np.linalg.norm(nd[nodes], axis=1)[:, None]
  
         return NodeData(nd, 'normals')
 
