@@ -788,7 +788,7 @@ def test_project_points_on_surface(sphere3_msh):
     
     pts_prj = transformations.project_points_on_surface(sphere3_msh, [0., 0., 90.],
                                                         surface_tags = 1005, distance = 10.)
-    assert np.all(get_angle(pts_prj, pts_cart)<0.5)
+    assert np.all(get_angle(pts_prj, np.array([0., 0., 100.]).reshape(1,3))<0.5)
     assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 105.) < 0.5)
     
     pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
