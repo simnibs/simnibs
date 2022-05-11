@@ -24,5 +24,5 @@ S.poslist{1}.pos(1).distance = 4; % 4 mm distance from coil surface to head surf
 run_simnibs(S);
 
 %% Visualize Simulations
-m = mesh_load_gmsh4(fullfile(S.pathfem, 'ernie_TMS_1-0001_Magstim_70mm_Fig8_nii_scalar.msh'));
+m = mesh_load_gmsh4(fullfile(S.pathfem, 'ernie_TMS_1-0001_Magstim_70mm_Fig8_scalar.msh'));
 mesh_show_surface(m);

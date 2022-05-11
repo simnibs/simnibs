@@ -17,6 +17,9 @@ Changelog
  * Headreco and mri2mesh are deprecated.
  * NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
  
+ Known issues:
+ * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)
+ 
 3.2.6
 ------
 * fixed a bug causing headreco to fail on MacOS

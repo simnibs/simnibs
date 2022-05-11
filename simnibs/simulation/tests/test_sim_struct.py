@@ -391,8 +391,7 @@ class TestTDCSLEADFIELD:
 
 class TestGetSurroundPos:
     def test_get_surround_pos(self,sphere3_fn):
-        P = sim_struct.get_surround_pos([0, 0, 95], sphere3_fn,
-                                        radius_surround = 94.5*np.pi, N = 3,
-                                        pos_dir_1stsurround = [10, 0, 95])
-        P = np.asarray(P)
-        assert np.max(np.abs(np.diff(P,axis=0))) < 0.1
+        P = sim_struct.get_surround_pos([0., 0., 95.], sphere3_fn,
+                                        radius_surround = 94.9*np.pi, N = 3,
+                                        pos_dir_1stsurround = [10., 0., 95.])
+        assert np.max(np.abs(P-np.array([[0., 0., -95.]]))) < 0.15

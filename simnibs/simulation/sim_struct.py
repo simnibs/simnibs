@@ -42,6 +42,7 @@ from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from ..utils.csv_reader import read_csv_positions, _get_eeg_positions
+from ..utils.transformations import project_points_on_surface
 from . import fem
 from . import electrode_placement
 from .. import  __version__
@@ -3089,7 +3090,8 @@ def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
     idx = (m.elm.elm_type == 2) & (
         (m.elm.tag1 == tissue_idx) | (m.elm.tag1 == tissue_idx-1000))
     m = m.crop_mesh(elements=m.elm.elm_number[idx])
-    P_centre = m.find_closest_element(tmp.centre)
+    #P_centre = m.find_closest_element(tmp.centre)
+    P_centre = project_points_on_surface(m, tmp.centre)
     idx = np.sum((m.nodes[:] - P_centre)**2,
                  1) <= (np.max(radius_surround)+10)**2
     m = m.crop_mesh(nodes=m.nodes.node_number[idx])
@@ -3151,7 +3153,8 @@ def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
 
         # project skin points into XZ-plane that contains the arc
         Pts = (M_to_world @ arc).T
-        Pts[:, :3] = m.find_closest_element(Pts[:, :3])
+        #Pts[:, :3] = m.find_closest_element(Pts[:, :3])
+        Pts[:, :3] = project_points_on_surface(m, Pts[:, :3])
         Pts = M_from_world @ Pts.T
 
         # fit individual arc
@@ -3177,7 +3180,8 @@ def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
                         0.,
                         r_arc*np.cos(theta_on_arc) + arc_centre[1],
                         1.))
-        P_surround.append(m.find_closest_element((M_to_world @ tmp).T[:3]))
+        #P_surround.append(m.find_closest_element((M_to_world @ tmp).T[:3]))
+        P_surround.append(project_points_on_surface(m, (M_to_world @ tmp).T[:3]))
 
         if DEBUG:
             surround_fit.append(

@@ -77,7 +77,7 @@ Troubleshooting
 
 * If you encounter spurious segmentation results this *could* be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial :ref:`fix_affine_registration_tutorial`.
 * Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
-
+* If you want to embed a custom-created mask (e.g. of a lesion or tumor) in the head model, then please see the description of the command-line tool :ref:`add_tissues_to_upsampled_doc`.
 
 Further Reading
 ---------------

@@ -1023,7 +1023,7 @@ class Msh:
     def find_closest_element(self, querry_points, return_index=False,
                              elements_of_interest=None,
                              k=1, return_distance=False):
-        """ Finds the closest node to each point in p
+        """ Finds the closest element to each point in p
 
         Parameters
         --------------------------------

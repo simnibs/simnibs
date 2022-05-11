@@ -1,3 +1,4 @@
+import os
 import simnibs
 from simnibs import sim_struct
 
