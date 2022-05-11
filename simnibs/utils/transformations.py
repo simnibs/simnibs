@@ -787,9 +787,12 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
      mesh: simnibs.msh.mesh_io.Msh
          Mesh structure
      surface_tags: int (optional)
-             Tag of the target surface. Default: None (positions will be projected on closest surface)
+             Tag of the target surface.
+             Default: None (positions will be projected on closest surface)
      distance: float or nx1 ndarray (optional)
          Distance (normal) to the surface to be enforced. Default: 0
+         Note: negative values will move the point inside, positive values 
+               outside the volume defined by the surface
 
      Returns
      ------
@@ -819,15 +822,22 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
     pttris = _get_nearest_triangles_on_surface(pts, surf, n = 3)
         
     # project points on triangles
-    _, _, projs, dists = _project_points_to_surface(pts, surf, pttris)
+    tris, _, projs, dists = _project_points_to_surface(pts, surf, pttris)
     
     # ensure distance (optional)
-    if not np.all(np.isclose(distance, 0)):                        
-        try:
-            projs += distance/dists[:,None]*(pts-projs)
-        except:
-            projs += np.array(distance)[:,None]/dists[:,None]*(pts-projs)
-   
+    if not np.all(np.isclose(distance, 0)):
+        distance = np.array(distance)
+        if distance.ndim == 0:
+            distance = distance.reshape(1)
+            
+        tri_pts = surf['points'][surf['tris'][tris]]
+        sideA = tri_pts[:, 1] - tri_pts[:, 0]
+        sideB = tri_pts[:, 2] - tri_pts[:, 0]
+        n = np.cross(sideA, sideB)
+        n /= np.linalg.norm(n, axis=1)[:, None]
+        
+        projs += distance[:, None]*n                       
+
     return projs
 
 

@@ -424,7 +424,7 @@ class TestTransformPositions:
         distances = np.array([1, 2])
         c, y, z = transformations.transform_tms_positions(
             coords, v_y, v_z, 'nonl', nonl_large_rotate, sphere3_msh, distances)
-        assert np.allclose(c, [[0., 96, 0], [97, 0, 0]], atol=1e-2)
+        assert np.allclose(c, [[0., 96, 0], [97, 0, 0]], atol=1.1e-1)
         assert np.allclose(y, [[-1. / np.sqrt(2),-1. / np.sqrt(2), 0],
                                [1. / np.sqrt(2),1. / np.sqrt(2), 0]], atol=1e-2)
         assert np.allclose(z, [[0, 0, 1],
@@ -788,7 +788,7 @@ def test_project_points_on_surface(sphere3_msh):
     
     pts_prj = transformations.project_points_on_surface(sphere3_msh, [0., 0., 90.],
                                                         surface_tags = 1005, distance = 10.)
-    assert np.all(get_angle(pts_prj, np.array([0., 0., 100.]).reshape(1,3))<0.5)
+    assert np.all(get_angle(pts_prj, np.array([0., 0., 100.]).reshape(1,3))<0.75)
     assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 105.) < 0.5)
     
     pts_prj = transformations.project_points_on_surface(sphere3_msh, pts_cart,
