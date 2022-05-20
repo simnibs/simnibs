@@ -101,7 +101,8 @@ MANUAL EDITING:
                         template *to* subject space. Supplied as a path to a
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
-
+    parser.add_argument('--forceqform', action='store_true', default=False,
+                        help="""Force sform and qform to be the same.""")
     args=parser.parse_args(argv)
 
     # subID is required, otherwise print help and exit (-v and -h handled by parser)
@@ -155,10 +156,9 @@ def main():
 
     charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                    args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
-                   args.inittransform,
+                   args.inittransform, args.forceqform,
                    " ".join(sys.argv[1:]))
 
-        
-        
+
 if __name__ == '__main__':
     main()

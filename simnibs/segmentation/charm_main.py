@@ -46,6 +46,7 @@ def run(
     usesettings=None,
     noneck=False,
     init_transform=None,
+    force_forms=False,
     options_str=None,
     debug=False,
 ):
@@ -114,8 +115,8 @@ def run(
         RAS2LPS = np.diag([-1, -1, 1, 1])
         init_transform = RAS2LPS @ init_transform @ RAS2LPS
 
-    _prepare_t1(T1, sub_files.reference_volume)
-    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg)
+    _prepare_t1(T1, sub_files.reference_volume, force_forms)
+    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg, force_forms)
 
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
@@ -604,31 +605,47 @@ def _read_settings_and_copy(usesettings, fn_settingslog):
     return settings
 
 
-def _prepare_t1(T1, reference_volume):
+def _prepare_t1(T1, reference_volume, force_forms):
     # copy T1 (as nii.gz) if supplied
     if T1:
         if os.path.exists(T1):
             # Cast to float32 and save
             T1_tmp = nib.load(T1)
+            T1_tmp = _check_q_and_s_form(T1_tmp, force_forms)
             T1_tmp.set_data_dtype(np.float32)
             nib.save(T1_tmp, reference_volume)
         else:
             raise FileNotFoundError(f"Could not find input T1 file: {T1}")
 
 
-def _prepare_t2(T1, T2, registerT2, T2_reg):
+def _prepare_t2(T1, T2, registerT2, T2_reg, force_forms):
     if T2:
         T2_exists = os.path.exists(T2)
         if registerT2:
             if T2_exists:
-                charm_utils._registerT1T2(T1, T2, T2_reg)
+                # Abuse the T2_reg filename to save a temporary
+                # file in case the q and sform need to be fixed
+                T2_tmp = nib.load(T2)
+                T2_tmp = _check_q_and_s_form(T2_tmp, force_forms)
+                nib.save(T2_tmp, T2_reg)
+                charm_utils._registerT1T2(T1, T2_reg, T2_reg)
             else:
                 raise FileNotFoundError(f"Could not find input T2 file: {T2}")
         else:
             if T2_exists:
                 T2_tmp = nib.load(T2)
+                T2_tmp = _check_q_and_s_form(T2_tmp, force_forms)
                 T2_tmp.set_data_dtype(np.float32)
                 nib.save(T2_tmp, T2_reg)
+
+
+def _check_q_and_s_form(scan, force_forms=False):
+    if not np.array_equal(scan.get_qform(), scan.get_sform()):
+        if not force_forms:
+            raise ValueError("The qform and sform of do not match. Please run charm with the --forceqform option")
+        else:
+            scan.set_sform(scan.get_qform())
+    return scan
 
 
 def _setup_atlas(samseg_settings, T2_reg):
