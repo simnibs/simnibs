@@ -102,6 +102,7 @@ def getRASdata(nii, returncoords=False):
 
     axcodes = nib.aff2axcodes(nii.affine)
     #-1 will indicate axis flip
+    orig_shape = nii.shape
     flip = np.array([1, 1, 1])
     order = [0,1,2]
     for i in range(3):
@@ -111,15 +112,19 @@ def getRASdata(nii, returncoords=False):
             flip[i] = -1
         else:
             order[i]=order[i][0]
+            
     data = np.transpose(nii.dataobj,order)[::flip[0],::flip[1],::flip[2]]
+    mincoord = np.array([0, 0, 0])
+    for i,o in enumerate(order):
+        if flip[i]<0:
+            mincoord[o] = orig_shape[o] - 1
+    affine = nii.affine
+    affine[:3,3]=affine[:3,:3]@mincoord + affine[:3,3]
     aff = np.zeros((3,3))
     for i in range(3):
         aff[order[i],i] = flip[i]
-    affine = nii.affine
-    affine[:3,:3] = aff[:3,:3] @ affine[:3,:3]
-    for i in range(3):
-        if flip[i] == -1:
-            affine[i,3] -= data.shape[i]
+
+    affine[:3,:3] =  affine[:3,:3] @ aff[:3,:3]
 
     if returncoords:
         voxcoords = np.meshgrid(*[np.arange(s) for s in data.shape[:3]],
