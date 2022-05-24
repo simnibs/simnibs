@@ -26,7 +26,7 @@ You can install the `Spyder IDE <https://www.spyder-ide.org>`_ editor by running
 
 .. code-block::
   
-  simnibs_python -m pip install --upgrade rtree spyder==4.2.5
+  simnibs_python -m pip install spyder==5.3.1
 
 \
 
