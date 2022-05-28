@@ -119,7 +119,7 @@ float fsqr(float x) {
   return x*x; 
 }
 
-float fsqrt(float x) {
+float sqrtf(float x) {
   return (float) sqrt((double) x); 
 }
 
@@ -399,7 +399,7 @@ void vol_eidist(float *D, unsigned int *I, float *B, float *L, int *sL, float *S
         dinu = (float)iu - (float)nu; dinu *= s1;
         dinv = (float)iv - (float)nv; dinv *= s2;
         dinw = (float)iw - (float)nw; dinw *= s3;
-        DIN  = fsqrt(fsqr(dinu) + fsqr(dinv) + fsqr(dinw)); 
+        DIN  = sqrtf(fsqr(dinu) + fsqr(dinv) + fsqr(dinw)); 
 
         /* For voxels that are not too close to the object the exact 
          * Euclidean distance should be estimated. For closer points
@@ -425,7 +425,7 @@ void vol_eidist(float *D, unsigned int *I, float *B, float *L, int *sL, float *S
             dinu = (float)iu - WMu; dinu *= s1;
             dinv = (float)iv - WMv; dinv *= s2;
             dinw = (float)iw - WMw; dinw *= s3;
-            DINE = fsqrt(fsqr(dinu) + fsqr(dinv) + fsqr(dinw)); 
+            DINE = sqrtf(fsqr(dinu) + fsqr(dinv) + fsqr(dinw)); 
 
             if ( WM<0.4 || WM>0.6 ) {
               WMu = (float)nu + 0.5*dinu*dcf; 
