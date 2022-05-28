@@ -119,10 +119,6 @@ float fsqr(float x) {
   return x*x; 
 }
 
-float sqrtf(float x) {
-  return (float) sqrt((double) x); 
-}
-
 float ffloor(float x) {
   return (float) floor((double) x); 
 }
