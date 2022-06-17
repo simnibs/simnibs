@@ -1151,7 +1151,16 @@ def create_mesh(label_img, affine,
     start = time.time()
     m = m.crop_mesh(elm_type=4)
     # Assign the right labels to the mesh as CGAL modifies them
-    indices_seg = np.unique(label_img)[1:]
+    indices_seg, label_counts = np.unique(label_img,return_counts=True)
+    indices_seg = indices_seg[1:]
+    label_counts = label_counts[1:]
+    indices_cgal = np.unique(m.elm.tag1)
+    n_dropped = len(indices_seg)-len(indices_cgal)
+    if n_dropped:    
+        idx_keep = np.argsort(label_counts)[::-1]
+        idx_keep = idx_keep[:-n_dropped]
+        indices_seg = np.sort(indices_seg[idx_keep])
+        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
     new_tags = np.copy(m.elm.tag1)
     for i, t in enumerate(indices_seg):
         new_tags[m.elm.tag1 == i+1] = t
