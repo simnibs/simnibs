@@ -165,7 +165,7 @@ def plot_matsimnibs_list(matsimnibs_list, values, field_name, fn_geo):
         f.write("};\n")
 
 
-def define_target_region(mesh, target_position, target_radius, tags, elm_type=4):
+def define_target_region(mesh, target_position, target_radius, tags, elm_type=4, target_tetrahedral_indices=0):
     ''' Defines a target based on a position, a radius and an element tag
 
     Paramters
@@ -180,19 +180,34 @@ def define_target_region(mesh, target_position, target_radius, tags, elm_type=4)
         Tag where the target is located
     elm_type: int
         Type of target element (4 for tetrahedra and 2 for triangles)
-
+    target_tetrahedral_indices: list of int
+        Index of ROI tetrahedrons
+	
     Returns
     -------
     elements: array of size (n,)
         Numbers (1-based) of elements in the tag
     '''
     bar = mesh.elements_baricenters()[:]
-    dist = np.linalg.norm(bar - target_position, axis=1)
-    elm = mesh.elm.elm_number[
-        (dist < target_radius) *
-        np.isin(mesh.elm.tag1, tags) *
-        np.isin(mesh.elm.elm_type, elm_type)
-    ]
+    elm_tag = []
+    if target_tetrahedral_indices != []:
+        triangles = mesh.elm.elm_number[np.isin(mesh.elm.elm_type, 2)]
+        target_tetrahedral_indices = [x + len(triangles) for x in target_tetrahedral_indices]
+        elm_type = np.isin(mesh.elm.elm_type, 4)	
+        elm_type = np.unique(elm_type[target_tetrahedral_indices])
+        elm_tag = np.isin(mesh.elm.tag1, 2) 
+        elm_tag = np.unique(elm_tag[target_tetrahedral_indices])
+
+    if np.all(elm_type == True) and np.all(elm_tag == True):
+        elm =  mesh.elm.elm_number[target_tetrahedral_indices]  
+    else:
+        dist = np.linalg.norm(bar - target_position, axis=1)
+        elm = mesh.elm.elm_number[
+            (dist < target_radius) *
+            np.isin(mesh.elm.tag1, tags) *
+           np.isin(mesh.elm.elm_type, elm_type)
+        ]
+
     return elm
 
 
