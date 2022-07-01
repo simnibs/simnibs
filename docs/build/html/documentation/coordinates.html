@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Coordinates in SimNIBS &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -50,17 +51,17 @@
           <div class="body" role="main">
             
   <section id="coordinates-in-simnibs">
-<span id="coords-doc"></span><h1>Coordinates in SimNIBS<a class="headerlink" href="#coordinates-in-simnibs" title="Permalink to this headline">¶</a></h1>
+<span id="coords-doc"></span><h1>Coordinates in SimNIBS<a class="headerlink" href="#coordinates-in-simnibs" title="Permalink to this heading">¶</a></h1>
 <section id="definitions">
-<h2>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h2>
+<h2>Definitions<a class="headerlink" href="#definitions" title="Permalink to this heading">¶</a></h2>
 <p>Coordinates in SimNIBS are <strong>always world coordinates in subject space</strong>. Coordinates are given in <strong>millimiters</strong> and along <em>x</em>, <em>y</em> and <em>z</em> axis. The origin and the alignment of the axes correspond to those of the original T1w image that was used for head model creation in <em>charm</em> (stored as <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1.nii.gz</span></code>).</p>
 </section>
 <section id="mni-transformations">
-<h2>MNI Transformations<a class="headerlink" href="#mni-transformations" title="Permalink to this headline">¶</a></h2>
+<h2>MNI Transformations<a class="headerlink" href="#mni-transformations" title="Permalink to this heading">¶</a></h2>
 <p>During head meshing, SimNIBS calculates 6 degrees-of-freedom, 12 degrees-of-freedom and non-linear MNI transformations. They are stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/toMNI/</span></code> folder.
 SimNIBS uses these transformations when transforming simulation results to MNI space (see the <a class="reference internal" href="gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a> and <a class="reference internal" href="sim_struct/session.html#session-doc"><span class="std std-ref">map_to_mni attribute</span></a>).</p>
 <section id="command-line-utilities">
-<h3>Command line Utilities<a class="headerlink" href="#command-line-utilities" title="Permalink to this headline">¶</a></h3>
+<h3>Command line Utilities<a class="headerlink" href="#command-line-utilities" title="Permalink to this heading">¶</a></h3>
 <p>SimNIBS has several command line utilities to transform data and coordinates between MNI and Subject space</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="command_line/mni2subject.html#mni2subject-docs"><span class="std std-ref">mni2subject</span></a>, to transform data in MNI space to subject space.</p></li>
@@ -70,7 +71,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
 </ul>
 </section>
 <section id="python-and-matlab-functionas">
-<h3>Python and MATLAB Functionas<a class="headerlink" href="#python-and-matlab-functionas" title="Permalink to this headline">¶</a></h3>
+<h3>Python and MATLAB Functionas<a class="headerlink" href="#python-and-matlab-functionas" title="Permalink to this heading">¶</a></h3>
 <p>We also provide <em>Python</em> and <em>MATLAB</em> interfaces to transform coordinates between MNI and Subject Space. Those have the signature</p>
 <ul class="simple">
 <li><p><code class="code docutils literal notranslate"><span class="pre">mni2subject_coords(coords_mni,</span> <span class="pre">subdir,</span> <span class="pre">transformation_type)</span></code></p>
@@ -168,7 +169,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -185,7 +186,7 @@ SimNIBS uses these transformations when transforming simulation results to MNI s
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Scripting Simulations &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -50,18 +51,18 @@
           <div class="body" role="main">
             
   <section id="scripting-simulations">
-<span id="scripting-tutorial"></span><h1>Scripting Simulations<a class="headerlink" href="#scripting-simulations" title="Permalink to this headline">¶</a></h1>
+<span id="scripting-tutorial"></span><h1>Scripting Simulations<a class="headerlink" href="#scripting-simulations" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial is based on the <a class="reference external" href="https://github.com/simnibs/example-dataset/releases/download/v4.0/simnibs_examples.zip">Example Dataset</a>.
 Please download it before continuing.</p>
 <p>SimNIBS offers both <em>Python</em> and <em>MATLAB</em> interfaces for setting up and running simulations.
 In both, we use a set of nested structures to define the simulation, and then use the <em>run_simnibs</em> function to run the simulation.</p>
 <section id="running-scripts">
-<span id="run-scripts"></span><h2>Running Scripts<a class="headerlink" href="#running-scripts" title="Permalink to this headline">¶</a></h2>
+<span id="run-scripts"></span><h2>Running Scripts<a class="headerlink" href="#running-scripts" title="Permalink to this heading">¶</a></h2>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
 <p>Run SimNIBS <em>Python</em> scripts using the <a class="reference internal" href="../documentation/command_line/simnibs_python.html#simnibs-python-cli"><span class="std std-ref">simnibs_python</span></a> command so that your scripts run in the correct <em>Python</em> interpreter.</p>
 <section id="spyder-ide-setup-optional">
-<h4>Spyder IDE Setup (optional)<a class="headerlink" href="#spyder-ide-setup-optional" title="Permalink to this headline">¶</a></h4>
+<h4>Spyder IDE Setup (optional)<a class="headerlink" href="#spyder-ide-setup-optional" title="Permalink to this heading">¶</a></h4>
 <p>You can install the <a class="reference external" href="https://www.spyder-ide.org">Spyder IDE</a> editor by running</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">simnibs_python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">spyder</span><span class="o">==</span><span class="mf">5.3.1</span>
 </pre></div>
@@ -75,7 +76,7 @@ In both, we use a set of nested structures to define the simulation, and then us
 </section>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
 <p>Add the SimNIBS <em>MATLAB</em> functions to the <em>MATLAB</em> path. In default installations, you can call</p>
 <ul>
 <li><p><strong>Windows:</strong></p>
@@ -104,7 +105,7 @@ In both, we use a set of nested structures to define the simulation, and then us
 </section>
 </section>
 <section id="starting-a-session-and-selecting-a-head-mesh">
-<h2>Starting a SESSION and Selecting a Head Mesh<a class="headerlink" href="#starting-a-session-and-selecting-a-head-mesh" title="Permalink to this headline">¶</a></h2>
+<h2>Starting a SESSION and Selecting a Head Mesh<a class="headerlink" href="#starting-a-session-and-selecting-a-head-mesh" title="Permalink to this heading">¶</a></h2>
 <p>The base structure for SimNIBS scripts is the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a>. It may contain many
 simulations of different types (TMS or tDCS), sharing the same head model.</p>
 <p>We always start our scripts by initializing a <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> <em>class</em> (<em>Python</em>) or <em>struct</em> (<em>MATLAB</em>), selecting a head mesh and the output folder.
@@ -140,7 +141,7 @@ If the scripts are not in the same folder as the subject folder, you should also
 </div>
 </section>
 <section id="setting-up-a-tms-simulation">
-<h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this headline">¶</a></h2>
+<h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this heading">¶</a></h2>
 <p>Now, we want to set-up a TMS simulation.
 To do it, we add a <a class="reference internal" href="../documentation/sim_struct/tmslist.html#tmslist-doc"><span class="std std-ref">TMSLIST</span></a> to the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> structure and selecting a coil model (<a class="reference internal" href="../documentation/coils.html#coil-fies"><span class="std std-ref">list of avaliable coils</span></a>).</p>
 <ul>
@@ -211,7 +212,7 @@ more coil position, now with the coil pointing towards Cz.</p>
 </div>
 </section>
 <section id="setting-up-a-tdcs-simulation">
-<h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Permalink to this headline">¶</a></h2>
+<h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Permalink to this heading">¶</a></h2>
 <p>To perform a tDCS simulation, we begin by setting a <a class="reference internal" href="../documentation/sim_struct/tdcslist.html#tdcslist-doc"><span class="std std-ref">TDCSLIST</span></a> structure to the <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> and setting the current flow through each channel. Here, we will only use two electrodes and set the current to 1mA. The first electrode will be a cathode, and the second an anode.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -307,7 +308,7 @@ more coil position, now with the coil pointing towards Cz.</p>
 </div>
 </section>
 <section id="running-simulations">
-<h2>Running Simulations<a class="headerlink" href="#running-simulations" title="Permalink to this headline">¶</a></h2>
+<h2>Running Simulations<a class="headerlink" href="#running-simulations" title="Permalink to this heading">¶</a></h2>
 <p>After the simulations are set, we can use the <em>run_simnibs</em> function to run the
 simulations</p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">run_simnibs</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="w"></span>
@@ -321,7 +322,7 @@ After the simulations are finished running the results can be found in the newly
 </ul>
 </section>
 <section id="more-examples">
-<h2>More Examples<a class="headerlink" href="#more-examples" title="Permalink to this headline">¶</a></h2>
+<h2>More Examples<a class="headerlink" href="#more-examples" title="Permalink to this heading">¶</a></h2>
 <p>More examples can be found in the <code class="file docutils literal notranslate"><span class="pre">examples/</span></code> folder in your SimNIBS installation directory. In default installations, it can be found at</p>
 <ul>
 <li><p><strong>Windows:</strong></p>
@@ -336,7 +337,7 @@ After the simulations are finished running the results can be found in the newly
 </ul>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p></li>
 <li><p>More information on the <a class="reference internal" href="../documentation/sim_struct/sim_struct.html#sim-struct-doc"><span class="std std-ref">Simulation Data Structures</span></a></p></li>
@@ -426,7 +427,7 @@ After the simulations are finished running the results can be found in the newly
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -443,7 +444,7 @@ After the simulations are finished running the results can be found in the newly
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.SubjectFiles &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -50,13 +51,13 @@
           <div class="body" role="main">
             
   <section id="simnibs-subjectfiles">
-<h1>simnibs.SubjectFiles<a class="headerlink" href="#simnibs-subjectfiles" title="Permalink to this headline">¶</a></h1>
+<h1>simnibs.SubjectFiles<a class="headerlink" href="#simnibs-subjectfiles" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="simnibs.SubjectFiles">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.</span></span><span class="sig-name descname"><span class="pre">SubjectFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fnamehead</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class to find files for a given subject</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fnamehead</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – Path to head mesh. Either fnamehead or subpath need to be set. subpath has
 preference when it comes to finding other files.</p></li>
@@ -70,7 +71,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">fnamehead</span></span><a class="headerlink" href="#simnibs.SubjectFiles.fnamehead" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to head mesh (.msh)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -81,7 +82,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">subpath</span></span><a class="headerlink" href="#simnibs.SubjectFiles.subpath" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to m2m_folder (dir)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -92,7 +93,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">subid</span></span><a class="headerlink" href="#simnibs.SubjectFiles.subid" title="Permalink to this definition">¶</a></dt>
 <dd><p>The subject ID (eg: ernie)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -103,7 +104,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">tensor_file</span></span><a class="headerlink" href="#simnibs.SubjectFiles.tensor_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the NifTi file with the tensor conductivity information (.nii.gz)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -114,7 +115,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">eeg_cap_folder</span></span><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the folder with EEG caps (dir)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -125,7 +126,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">segmentation_folder</span></span><a class="headerlink" href="#simnibs.SubjectFiles.segmentation_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the output from the segmentation</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -136,7 +137,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">surface_folder</span></span><a class="headerlink" href="#simnibs.SubjectFiles.surface_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to surfaces from middle GM reconstruction</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -147,7 +148,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">label_prep_folder</span></span><a class="headerlink" href="#simnibs.SubjectFiles.label_prep_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the output from upsampling</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -158,7 +159,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">mni_transf_folder</span></span><a class="headerlink" href="#simnibs.SubjectFiles.mni_transf_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to MNI transformations</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -169,7 +170,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">eeg_cap_1010</span></span><a class="headerlink" href="#simnibs.SubjectFiles.eeg_cap_1010" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the EEG 10-10 electrode file (.csv)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -180,7 +181,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">reference_volume</span></span><a class="headerlink" href="#simnibs.SubjectFiles.reference_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Path to the reference subject volume (T1.nii.gz)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -191,7 +192,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">mni2conf_nonl</span></span><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_nonl" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform nonlinear transformation (.nii.gz)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -202,7 +203,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">conf2mni_nonl</span></span><a class="headerlink" href="#simnibs.SubjectFiles.conf2mni_nonl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Conform to MNI nonlinear tansformation (.nii.gz)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -213,7 +214,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">mni2conf_6dof</span></span><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_6dof" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform 6 DOF transfomation (.txt or .mat)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -224,7 +225,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">mni2conf_12dof</span></span><a class="headerlink" href="#simnibs.SubjectFiles.mni2conf_12dof" title="Permalink to this definition">¶</a></dt>
 <dd><p>MNI to conform 12 DOF transfomation (.txt or .mat)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -235,7 +236,7 @@ preference when it comes to finding other files</p></li>
 <span class="sig-name descname"><span class="pre">final_labels_MNI</span></span><a class="headerlink" href="#simnibs.SubjectFiles.final_labels_MNI" title="Permalink to this definition">¶</a></dt>
 <dd><p>Label image created from final mesh in MNI space</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -247,7 +248,7 @@ preference when it comes to finding other files</p></li>
 <dd><p>Reference FreeSurfer space file (.nii.gz)
 Now always set to True, so that a standard header is added, which seems to work</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -262,7 +263,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -273,7 +274,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">central_surfaces</span></span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Same as above but for the pial surfaces</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -284,7 +285,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">sphere_reg_surfaces</span></span><a class="headerlink" href="#simnibs.SubjectFiles.sphere_reg_surfaces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Same as above but for the spherical registration files</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -295,7 +296,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">thickness</span></span><a class="headerlink" href="#simnibs.SubjectFiles.thickness" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cortical thicknesses are stored also as SurfaceFile</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -306,7 +307,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">regions</span></span><a class="headerlink" href="#simnibs.SubjectFiles.regions" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of region names (e.g. ‘lh’, ‘rh’) where all surfaces above are present</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
@@ -317,7 +318,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T1</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T1" title="Permalink to this definition">¶</a></dt>
 <dd><p>T1 image after applying transformations</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -328,7 +329,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T2_reg</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg" title="Permalink to this definition">¶</a></dt>
 <dd><p>T2 image after rigid co-registration to T1</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -339,7 +340,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T1_denoised</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T1_denoised" title="Permalink to this definition">¶</a></dt>
 <dd><p>T1 image after running filtering (optional)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -350,7 +351,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T2_reg_denoised</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg_denoised" title="Permalink to this definition">¶</a></dt>
 <dd><p>T2 image after co-registration and filtering (optional)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -361,7 +362,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T1_bias_corrected</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T1_bias_corrected" title="Permalink to this definition">¶</a></dt>
 <dd><p>T1 image after bias correction</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -372,7 +373,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T2_reg_bias_corrected</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T2_reg_bias_corrected" title="Permalink to this definition">¶</a></dt>
 <dd><p>T2 image after bias correction</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -383,7 +384,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">labeling</span></span><a class="headerlink" href="#simnibs.SubjectFiles.labeling" title="Permalink to this definition">¶</a></dt>
 <dd><p>Output segmentation from samseg</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -394,7 +395,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">final_labels</span></span><a class="headerlink" href="#simnibs.SubjectFiles.final_labels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Label image created from final mesh</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -405,7 +406,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">template_coregistered</span></span><a class="headerlink" href="#simnibs.SubjectFiles.template_coregistered" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affine mapping from atlas voxel space to T1 voxel space</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -416,7 +417,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T1_upsampled</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T1_upsampled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bias corrected T1 upsampled to 0.5mm^3 resolution</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -427,7 +428,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">T2_upsampled</span></span><a class="headerlink" href="#simnibs.SubjectFiles.T2_upsampled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bias corrected T2 upsampled to 0.5mm^3 resolution</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -438,7 +439,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">tissue_labeling_upsampled</span></span><a class="headerlink" href="#simnibs.SubjectFiles.tissue_labeling_upsampled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Labeling mapped to conductivity values and reconstructed at 0.5mm^3 resolution</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -449,7 +450,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">head_mesh</span></span><a class="headerlink" href="#simnibs.SubjectFiles.head_mesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Final head mesh</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -460,7 +461,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">cerebrum_mask</span></span><a class="headerlink" href="#simnibs.SubjectFiles.cerebrum_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mask indicating cerebrum and cerebellum. Needed for surfaces.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -471,7 +472,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">norm_image</span></span><a class="headerlink" href="#simnibs.SubjectFiles.norm_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Normalized intensity image. Needed for surfaces.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -482,7 +483,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">subcortical_mask</span></span><a class="headerlink" href="#simnibs.SubjectFiles.subcortical_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mask of subcortical structures. Needed for surfaces</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -493,7 +494,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">parahippo_mask</span></span><a class="headerlink" href="#simnibs.SubjectFiles.parahippo_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mask of parahippocampal area. Needed for surfaces.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -504,7 +505,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">hemi_mask</span></span><a class="headerlink" href="#simnibs.SubjectFiles.hemi_mask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mask indicating left/right. Needed for surfaces.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -515,7 +516,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">charm_log</span></span><a class="headerlink" href="#simnibs.SubjectFiles.charm_log" title="Permalink to this definition">¶</a></dt>
 <dd><p>The charm run log (.html)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -526,7 +527,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <span class="sig-name descname"><span class="pre">summary_report</span></span><a class="headerlink" href="#simnibs.SubjectFiles.summary_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>html summarizing the run and linking to the reports (.html)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -542,11 +543,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.SubjectFiles.__init__" title="simnibs.SubjectFiles.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([fnamehead, subpath])</p></td>
 <td><p></p></td>
@@ -647,7 +644,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -664,7 +661,7 @@ region: ‘lh’, ‘rh’, ‘lc’ or ‘rc’</p>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

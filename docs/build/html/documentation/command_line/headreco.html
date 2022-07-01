@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>headreco &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -40,13 +41,13 @@
           <div class="body" role="main">
             
   <section id="headreco">
-<span id="headreco-docs"></span><h1>headreco<a class="headerlink" href="#headreco" title="Permalink to this headline">¶</a></h1>
+<span id="headreco-docs"></span><h1>headreco<a class="headerlink" href="#headreco" title="Permalink to this heading">¶</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><em>Headreco</em> is deprecated. Please use <a class="reference internal" href="charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
 </div>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>headreco reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but it will achieve more reliable skull segmentations when a T2w image is supplied.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -58,7 +59,7 @@
 </div>
 </section>
 <section id="usage-example">
-<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Open a terminal and go to the <code class="file docutils literal notranslate"><span class="pre">ernie/</span></code> folder of the example data set.</p></li>
 <li><p>Run the reconstruction:</p></li>
@@ -97,7 +98,7 @@
 </div></blockquote>
 </section>
 <section id="further-notes">
-<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this heading">¶</a></h2>
 <ul>
 <li><p>Mesh resolution can be controlled using the -v option, which allows setting the vertex density (nodes per mm²) of the surface meshes. As a standard, <code class="code docutils literal notranslate"><span class="pre">headreco</span></code> uses 0.5 nodes per mm², resulting in head meshes with around 4 million tetrahedra.</p></li>
 <li><p>After the head mesh creation, temporary files are deleted to save disk space. Adding <code class="code docutils literal notranslate"><span class="pre">--noclean</span></code> prevents this.</p></li>
@@ -124,7 +125,7 @@
 </div>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen, J. D., Madsen, K. H., Puonti, O., Siebner, H. R., Bauer, C., Madsen, C. G., …, and Thielscher, A. (2018). Automatic skull segmentation from MR images for realistic volume conductor models of the head: Assessment of the state-of-the-art. NeuroImage, 174, 587-598.</a></p>
 </section>
 </section>
@@ -187,7 +188,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -204,7 +205,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

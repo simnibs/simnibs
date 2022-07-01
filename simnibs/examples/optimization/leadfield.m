@@ -1,7 +1,7 @@
 % Example of a SimNIBS tDCS leadfield 
 % Copyright (C) 2019 Guilherme B Saturnino
 
-% place script in the 'ernie' folder of the example dataset
+% place script in the main folder of the example dataset
 
 tdcs_lf = sim_struct('TDCSLEADFIELD');
 % subject folder

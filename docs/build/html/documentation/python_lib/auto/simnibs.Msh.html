@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.Msh &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -50,14 +51,14 @@
           <div class="body" role="main">
             
   <section id="simnibs-msh">
-<h1>simnibs.Msh<a class="headerlink" href="#simnibs-msh" title="Permalink to this headline">¶</a></h1>
+<h1>simnibs.Msh<a class="headerlink" href="#simnibs-msh" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="simnibs.Msh">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.</span></span><span class="sig-name descname"><span class="pre">Msh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.Msh" title="Permalink to this definition">¶</a></dt>
 <dd><p>class to handle the meshes.
 Gathers Nodes, Elements and Data</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nodes</strong> (<em>(</em><em>optional</em><em>) </em><em>simnibs.msh.Nodes</em>) – Nodes structure</p></li>
 <li><p><strong>elements</strong> (<em>(</em><em>optional</em><em>) </em><em>simnibs.msh.Elements</em><em>(</em><em>)</em>) – Elements structure</p></li>
@@ -71,7 +72,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#simnibs.Msh.nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>a Nodes field</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>simnibs.msh.Nodes</p>
 </dd>
 </dl>
@@ -82,7 +83,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">elm</span></span><a class="headerlink" href="#simnibs.Msh.elm" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Elements field</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>simnibs.msh.Elements</p>
 </dd>
 </dl>
@@ -93,7 +94,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">nodedata</span></span><a class="headerlink" href="#simnibs.Msh.nodedata" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of NodeData filds</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>simnibs.msh.NodeData</p>
 </dd>
 </dl>
@@ -104,7 +105,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">elmdata</span></span><a class="headerlink" href="#simnibs.Msh.elmdata" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of ElementData fields</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>simnibs.msh.ElementData</p>
 </dd>
 </dl>
@@ -115,7 +116,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">fn</span></span><a class="headerlink" href="#simnibs.Msh.fn" title="Permalink to this definition">¶</a></dt>
 <dd><p>name of file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
@@ -126,7 +127,7 @@ Overides nodes and elements</p></li>
 <span class="sig-name descname"><span class="pre">binary</span></span><a class="headerlink" href="#simnibs.Msh.binary" title="Permalink to this definition">¶</a></dt>
 <dd><p>wheather or not the mesh was in binary format</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type</dt>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
@@ -138,11 +139,7 @@ Overides nodes and elements</p></li>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.Msh.__init__" title="simnibs.Msh.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([nodes, elements, fn])</p></td>
 <td><p></p></td>
@@ -285,11 +282,7 @@ Overides nodes and elements</p></li>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></p></td>
 <td><p>Dictionary of fields indexed by their name</p></td>
@@ -384,7 +377,7 @@ Overides nodes and elements</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -401,7 +394,7 @@ Overides nodes and elements</p></li>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>mri2mesh &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -40,13 +41,13 @@
           <div class="body" role="main">
             
   <section id="mri2mesh">
-<span id="mri2mesh-docs"></span><h1>mri2mesh<a class="headerlink" href="#mri2mesh" title="Permalink to this headline">¶</a></h1>
+<span id="mri2mesh-docs"></span><h1>mri2mesh<a class="headerlink" href="#mri2mesh" title="Permalink to this heading">¶</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><em>Mri2mesh</em> is deprecated. Please use <a class="reference internal" href="charm.html#charm-docs"><span class="std std-ref">charm</span></a> instead.</p>
 </div>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>mri2mesh reconstructs a tetrahedral head mesh from T1- and T2-weighted structural MR images. It runs also with only a T1w image, but will create better skull segmentations when also a T2w image is available.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -54,7 +55,7 @@
 </div>
 </section>
 <section id="usage-example">
-<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
 <li><p>Run the reconstruction:</p></li>
@@ -85,7 +86,7 @@
 </div></blockquote>
 </section>
 <section id="further-notes">
-<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A quick check can be performed by looking at the final volume masks overlaid over the structural images in fslview: <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span> <span class="pre">--qc</span> <span class="pre">ernie</span></code></p></li>
 <li><p>As a standard, <code class="code docutils literal notranslate"><span class="pre">mri2mesh</span></code> uses 60000 triangles for each white matter surface, and the number of triangles for the other surfaces are scaled relative to this number. This results in a volume mesh of ~3.5 million tetrahedra. Alternatively, you can adjust the mesh resolution by setting <code class="code docutils literal notranslate"><span class="pre">--numvertices=&lt;mynumber&gt;</span></code>.</p></li>
@@ -97,7 +98,7 @@
 </ul>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1002/hbm.21479">Windhoff, M., Opitz, A., and Thielscher, A. (2013). Electric field calculations in brain stimulation based on finite elements: an optimized processing pipeline for the generation and usage of accurate individual head models. Human brain mapping, 34(4), 923-935.</a></p>
 </section>
 </section>
@@ -160,7 +161,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -177,7 +178,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
