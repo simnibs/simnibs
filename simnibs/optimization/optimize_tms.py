@@ -190,15 +190,17 @@ def define_target_region(mesh, target_position, target_radius, tags, elm_type=4,
     '''
     bar = mesh.elements_baricenters()[:]
     elm_tag = []
-    if target_tetrahedral_indices != []:
-        triangles = mesh.elm.elm_number[np.isin(mesh.elm.elm_type, 2)]
-        target_tetrahedral_indices = [x + len(triangles) for x in target_tetrahedral_indices]
-        elm_type = np.isin(mesh.elm.elm_type, 4)	
-        elm_type = np.unique(elm_type[target_tetrahedral_indices])
-        elm_tag = np.isin(mesh.elm.tag1, 2) 
-        elm_tag = np.unique(elm_tag[target_tetrahedral_indices])
+    element_types = False
+    element_tags = False
+    if (target_tetrahedral_indices != []) and (target_tetrahedral_indices!=0):
+        triangles = mesh.elm.elm_number[np.isin(mesh.elm.elm_type, 2)] 
+        target_tetrahedral_indices = [x + len(triangles) -1 for x in target_tetrahedral_indices]
+        element_types = np.isin(mesh.elm.elm_type, 4)	
+        element_types = np.unique(element_types[target_tetrahedral_indices])
+        element_tags = np.isin(mesh.elm.tag1, 2) 
+        element_tags = np.unique(element_tags[target_tetrahedral_indices])
 
-    if np.all(elm_type == True) and np.all(elm_tag == True):
+    if np.all(element_types == True) and np.all(element_tags == True):
         elm =  mesh.elm.elm_number[target_tetrahedral_indices]  
     else:
         dist = np.linalg.norm(bar - target_position, axis=1)
