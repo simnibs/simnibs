@@ -570,13 +570,14 @@ landmarks_mapper = {
 
 
 def simnibs_montage_to_mne_montage(montage, coord_frame="unknown"):
+    valid_entries = {"Electrode", "ReferenceElectrode"}
     if len(montage.ch_names) > 0 and len(montage.ch_pos) > 0:
         ch_pos = {
             n: p
             for n, p, t in zip(
                 montage.ch_names, 1e-3 * montage.ch_pos, montage.ch_types
             )
-            if t == "Electrode"
+            if t in valid_entries
         }
     else:
         ch_pos = None

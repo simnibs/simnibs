@@ -10,6 +10,7 @@ from typing import (
 import h5py
 import nibabel as nib
 import numpy as np
+import pyvista as pv
 import scipy.ndimage as ndi
 from scipy.optimize import least_squares
 from scipy.sparse import coo_matrix, csr_matrix
@@ -19,28 +20,28 @@ import simnibs
 from simnibs.utils.file_finder import SubjectFiles
 
 HEMISPHERES = ("lh", "rh")
-MORPH_DATA = set(("area", "curv", "sulc", "thickness"))
-GEOMETRY = set(("inflated", "pial", "sphere", "white"))
-ANNOT = set(
-    (
-        "aparc",
-        "aparc.a2005s",
-        "aparc.a2009s",
-        "oasis.chubs",
-        "PALS_B12_Brodmann",
-        "PALS_B12_Lobes",
-        "PALS_B12_OrbitoFrontal",
-        "PALS_B12_Visuotopic",
-        "Yeo2011_7Networks_N1000",
-        "Yeo2011_17Networks_N1000",
-    )
-)
+MORPH_DATA = {"area", "curv", "sulc", "thickness"}
+GEOMETRY = {"inflated", "pial", "sphere", "white"}
+ANNOT = {
+    "aparc",
+    "aparc.a2005s",
+    "aparc.a2009s",
+    "oasis.chubs",
+    "PALS_B12_Brodmann",
+    "PALS_B12_Lobes",
+    "PALS_B12_OrbitoFrontal",
+    "PALS_B12_Visuotopic",
+    "Yeo2011_7Networks_N1000",
+    "Yeo2011_17Networks_N1000",
+}
 # LABEL = set((""))
 
 # UTILITIES
 
 
-def load_surface(sub_files: SubjectFiles, surf: str, subsampling: int = None):
+def load_surface(
+    sub_files: SubjectFiles, surf: str, subsampling: Union[int, None] = None
+):
     """Load subject-specific surface files into a dictionary. Also load the
     corresponding *normals.txt file if present (and relevant).
 
@@ -101,10 +102,11 @@ class FsAverage(object):
 
         try:
             self.name = mapper[subdivision]
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"{subdivision} is not a valid FsAverage subdivision factor."
-            )
+            ) from e
+
         self.path = (
             Path(simnibs.SIMNIBSDIR)
             / "resources"
@@ -146,7 +148,7 @@ class FsAverage(object):
         # only aparc and aparc.a2009s are available for fsaverage5 and fsaverage6
         assert annot in ANNOT, f"{annot} is not a valid annotation."
 
-        files = self._get_files(annot + ".annot", "annot")
+        files = self._get_files(f"{annot}.annot", "annot")
         keys = ("labels", "ctab", "names")
         return {
             k: dict(zip(keys, nib.freesurfer.read_annot(v))) for k, v in files.items()
@@ -167,7 +169,7 @@ def load_landmarks(name: Union[Path, str]):
         simnibs.utils.file_finder.get_landmarks(name)
     )
     assert all(i == "Fiducial" for i in ch_types)
-    return {n: p for n, p in zip(ch_names, ch_pos)}
+    return dict(zip(ch_names, ch_pos))
 
 
 def make_montage(name: Union[Path, str]):
@@ -182,7 +184,7 @@ def make_montage(name: Union[Path, str]):
     )
     lm = ch_types == "Fiducial"
     if any(lm):
-        landmarks = {n: p for n, p in zip(ch_names[lm], ch_pos[lm])}
+        landmarks = dict(zip(ch_names[lm], ch_pos[lm]))
         not_fids = ~lm
         ch_types = ch_types[not_fids]
         ch_pos = ch_pos[not_fids]
@@ -200,12 +202,12 @@ def apply_trans(trans, arr):
 class Montage:
     def __init__(
         self,
-        name: Union[Path, str] = None,
-        ch_names: Union[List[str], Tuple[str]] = None,
-        ch_pos: Union[List, Tuple, np.ndarray] = None,
-        ch_types: Union[List[str], Tuple[str], str] = None,
-        landmarks: Dict = None,
-        headpoints: Union[List, Tuple, np.ndarray] = None,
+        name: Union[None, Path, str] = None,
+        ch_names: Union[None, List[str], Tuple[str]] = None,
+        ch_pos: Union[None, List, Tuple, np.ndarray] = None,
+        ch_types: Union[None, List[str], Tuple[str], str] = None,
+        landmarks: Union[None, Dict] = None,
+        headpoints: Union[None, List, Tuple, np.ndarray] = None,
     ):
         self.name = name
         self.ch_names = [] if ch_names is None else ch_names
@@ -232,7 +234,7 @@ class Montage:
     def get_landmark_names(self):
         return list(self.landmarks.keys())
 
-    def get_landmark_pos(self, names: Iterable = None):
+    def get_landmark_pos(self, names: Union[Iterable, None] = None):
         names = names or self.get_landmark_names()
         return np.array([self.landmarks[n] for n in names]).reshape(-1, 3)
 
@@ -577,7 +579,7 @@ def normalize_vectors(v: np.ndarray):
 # MORPH MAPS
 
 
-def get_triangle_neighbors(tris: np.ndarray, nr: int = None):
+def get_triangle_neighbors(tris: np.ndarray, nr: Union[int, None] = None):
     """For each point get its neighboring triangles (i.e., the triangles to
     which it belongs).
 
@@ -945,13 +947,13 @@ def make_morph_maps(src_from: Dict, src_to: Dict, n: int = 1):
     ]
 
 
-def compute_leadfield(
+def compute_tdcs_leadfield(
     m2m_dir: Union[Path, str],
     fem_dir: Union[Path, str],
     fname_montage: Union[Path, str],
-    subsampling: int = None,
-    init_kwargs: Dict = None,
-    run_kwargs: Dict = None,
+    subsampling: Union[int, None] = None,
+    init_kwargs: Union[Dict, None] = None,
+    run_kwargs: Union[Dict, None] = None,
 ):
     """Convenience function for running a TDCS simulation. The result can be
     converted to an EEG forward solution using `prepare_for_inverse`.
@@ -963,7 +965,7 @@ def compute_leadfield(
     fname_montage : str
         The filename of the montage to use.
     subsampling : int | None
-        The subsampling to use. The subsampled files must already exist
+        The subsampling to use. If the files do not exist, they are created
         (default = None).
     init_kwargs : dict
         Kwargs used to update the initialization of `TDCSLEADFIELD`. Can be
@@ -986,6 +988,16 @@ def compute_leadfield(
 
     subfiles = SubjectFiles(subpath=str(m2m_dir))
 
+    # Subsampling
+    if (
+        subsampling
+        and len((subfiles.get_surface(h, subsampling=subsampling) for h in HEMISPHERES))
+        == 0
+    ):
+        _ = simnibs.segmentation.brain_surface.subsample_surfaces(
+            m2m_dir, n_points=subsampling
+        )
+
     # The paths should be strings otherwise errors might occur when writing the
     # .hdf5 file
     lf = simnibs.simulation.sim_struct.TDCSLEADFIELD()
@@ -993,7 +1005,7 @@ def compute_leadfield(
     lf.subpath = str(subfiles.subpath)
     lf.pathfem = str(fem_dir)
     lf.field = "E"
-    lf.solver_options = "pardiso"
+    # lf.solver_options = "pardiso"
     lf.eeg_cap = str(fname_montage)
     # Tissues to include results from. Default is 1006, which is the eyes,
     # however, we do not want field estimates here, we only want to interpolate
@@ -1021,7 +1033,7 @@ def compute_leadfield(
     return Path(fem_dir) / lf._lf_name()
 
 
-def prepare_forward(fwd_name: Union[Path, str], contains_ref: bool = False):
+def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True):
     """Read a file (.hdf5) containing a leadfield of class TDCS_LEADFIELD and
     prepare it for use with EEG. The leadfield has the reference electrode
     reinserted and is rereferenced to an average reference. The source space is
@@ -1035,18 +1047,11 @@ def prepare_forward(fwd_name: Union[Path, str], contains_ref: bool = False):
     ----------
     fwd_name : str | path-like
         Path to the hdf5 file containing the leadfield.
-    contains_ref : bool
-        Whether the "actual" reference electrode (i.e., the one which was used
-        when the data was acquired) was used in the simulation or not. If this
-        was *not* the case (e.g., because the position of the reference
-        electrode is not known), then the first electrode would have been used
-        as reference in the simulations and this should be False. In that case,
-        we will add this electrode before rereferencing to an average
-        reference and the forward solution will be rank deficient.
-        If, on the other hand, the reference electrode was used in the
-        simulation (this would have been marked as "ReferenceElectrode" in the
-        montage definition file) then this should be True and we will *not* add
-        this before rereferencing.
+    apply_average_proj : bool
+        Apply a column-wise average reference to the leadfield matrix (default
+        = True). If the data contains the actual reference electrode this can
+        be turned off to retain the full rank of the data. Average projection
+        reduces the data rank by 1.
 
     RETURNS
     -------
@@ -1103,11 +1108,10 @@ def prepare_forward(fwd_name: Union[Path, str], contains_ref: bool = False):
 
     # Forward solution
     # Insert the reference channel and rereference to an average reference
-    if not contains_ref:
-        lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
-    else:
-        ch_names.remove(ch_ref)
-    lf -= lf.mean(0)
+    lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
+    ch_names.remove(ch_ref)
+    if apply_average_proj:
+        lf -= lf.mean(0)
     nchan, nsrc, nori = lf.shape  # leadfield is always calculated in x, y, z
     assert len(ch_names) == nchan
 
@@ -1144,10 +1148,10 @@ def prepare_for_inverse(
     m2m_dir: Union[Path, str],
     fname_leadfield: Union[Path, str],
     out_format: str,
-    info: Union[Path, str] = None,
-    trans: Union[Path, str] = None,
+    info: Union[None, Path, str] = None,
+    trans: Union[None, Path, str] = None,
     morph_to_fsaverage: int = 5,
-    contains_ref=False,
+    apply_average_proj=True,
     write: bool = False,
 ):
     """Create a source space object, a source morph object (to the fsaverage
@@ -1176,6 +1180,8 @@ def prepare_for_inverse(
         morph to fsaverage5/6/7 (n = 10,242/40,962/163,842 vertices pe
         hemisphere) where 7 is the standard (full resolution) fsaverage
          template (default = 5). Use None to omit morph.
+    apply_average_proj : bool
+
     write : bool
         Whether or not to write the results to disk. The forward object is
         saved to the same directory as `leadfield`. The source space and source
@@ -1202,7 +1208,7 @@ def prepare_for_inverse(
     ALLOWED_EEG_FORMATS = ("mne", "fieldtrip")
     assert out_format in ALLOWED_EEG_FORMATS
 
-    forward = prepare_forward(fname_leadfield, contains_ref)
+    forward = prepare_forward(fname_leadfield, apply_average_proj)
     subsampling = forward["subsampling"]
 
     if out_format == "mne":
@@ -1229,38 +1235,36 @@ def prepare_for_inverse(
 
     if write:
         _write_src_fwd_morph(
-            src, forward, morph, fname_leadfield, m2m_dir, subsampling, out_format
+            src, forward, morph, fname_leadfield, subsampling, out_format
         )
 
     return src, forward, morph
 
 
-def _write_src_fwd_morph(
-    src, forward, morph, fname_leadfield, m2m_dir, subsampling, out_format
-):
+def _write_src_fwd_morph(src, forward, morph, fname_leadfield, subsampling, out_format):
     leadfield = Path(fname_leadfield)
-    fwd_fname = leadfield.parent / (leadfield.stem + "-fwd")
-    sub_files = SubjectFiles(subpath=m2m_dir)
-    subject_id = sub_files.subid
-    surf_dir = Path(sub_files.surface_folder)
-    src_name = subject_id
-    if subsampling is not None:
-        src_name += "_subsampling-" + str(subsampling)
+    stem = f"{leadfield.stem}_subsampling-{subsampling:d}-{{:s}}"
+    fname_fwd = leadfield.parent / stem.format("fwd")
+    fname_morph = leadfield.parent / stem.format("morph")
+    fname_src = leadfield.parent / stem.format("src")
 
     if out_format == "mne":
         import mne
 
         kw = dict(overwrite=True)
-        src.save(surf_dir.with_name(src_name + "-src.fif"), **kw)
-        mne.write_forward_solution(fwd_fname.with_suffix(".fif"), forward, **kw)
+
+        mne.write_forward_solution(fname_fwd.with_suffix(".fif"), forward, **kw)
         if morph:
-            morph.save(surf_dir.with_name(src_name + "-morph.h5"), **kw)
+            morph.save(fname_morph.with_suffix(".h5"), **kw)
+        src.save(fname_src.with_suffix(".fif"), **kw)
+
     elif out_format == "fieldtrip":
         import scipy.io
 
-        v = dict(sourcemodel=src, morph=morph)
-        scipy.io.savemat(surf_dir.with_name(src_name + "-src.mat"), v)
-        scipy.io.savemat(fwd_fname.with_suffix(".mat"), dict(forward=forward))
+        scipy.io.savemat(fname_fwd.with_suffix(".mat"), dict(fwd=forward))
+        if morph:
+            scipy.io.savemat(fname_morph.with_suffix(".mat"), dict(morph=morph))
+        scipy.io.savemat(fname_src.with_suffix(".mat"), dict(src=src))
 
 
 # def project_points_to_surface_example():
