@@ -10,48 +10,55 @@ from simnibs.simulation import eeg
 # EEG MONTAGE
 
 to_m = dict(m=1, cm=1e-2, mm=1e-3)
-from_m = {k:1/v for k,v in to_m.items()}
+from_m = {k: 1 / v for k, v in to_m.items()}
 
-def prepare_montage(fname_montage: Union[Path, str], fname_info: Union[Path, str], fname_trans: Union[Path, str]):
+
+def prepare_montage(
+    fname_montage: Union[Path, str],
+    fname_info: Union[Path, str],
+    fname_trans: Union[Path, str],
+):
 
     fname_info = Path(fname_info)
     fname_trans = Path(fname_trans)
 
-    info = loadmat(fname_info)['elec'][0]
+    info = loadmat(fname_info)["elec"][0]
     info = dict(zip(info.dtype.names, info[0]))
-    info['label'] = np.array([label[0] for label in info['label'].squeeze()])
-    info['chantype'] = np.array([ct[0] for ct in info['chantype'].squeeze()])
-    info['unit'] = info['unit'][0]
-    del info['chanunit']
-    scale = to_m[info['chanunit']] * from_m['mm']
-    info['elecpos'] *= scale
-    info['chanpos'] *= scale # unused
+    info["label"] = np.array([label[0] for label in info["label"].squeeze()])
+    info["chantype"] = np.array([ct[0] for ct in info["chantype"].squeeze()])
+    info["unit"] = info["unit"][0]
+    scale = to_m[info["unit"]] * from_m["mm"]
+    info["elecpos"] *= scale
+    info["chanpos"] *= scale  # unused
 
-    if fname_trans.suffix == '.mat':
-        trans = loadmat(fname_trans)['trans'][0]
-    elif fname_trans.suffix == '.txt':
+    if fname_trans.suffix == ".mat":
+        trans = loadmat(fname_trans)["trans"]
+    elif fname_trans.suffix == ".txt":
         trans = np.loadtxt(fname_trans)
     else:
         raise ValueError("`fname_trans` must be either a MAT or a TXT file.")
 
-    info['elecpos'] = eeg.apply_trans(trans, info['elecpos'])
-    info['chanpos'] = eeg.apply_trans(trans, info['chanpos'])
+    info["elecpos"] = eeg.apply_trans(trans, info["elecpos"])
+    info["chanpos"] = eeg.apply_trans(trans, info["chanpos"])
 
-    is_eeg = info['chantype'] == 'eeg'
-    montage = np.column_stack((
-        np.broadcast_to(np.array(['Electrode']), is_eeg.sum()),
-        info['elecpos'][is_eeg],
-        info['label'][is_eeg]
-    ))
-    np.savetxt(fname_montage, montage, fmt="%s", delimiter=',')
-
+    is_eeg = info["chantype"] == "eeg"
+    montage = np.column_stack(
+        (
+            np.broadcast_to(np.array(["Electrode"]), is_eeg.sum()),
+            info["elecpos"][is_eeg],
+            info["label"][is_eeg],
+        )
+    )
+    np.savetxt(fname_montage, montage, fmt="%s", delimiter=",")
 
 
 # SOURCE SPACE
 
 
 def setup_source_space(
-    m2m_dir: Union[Path, str], subsampling: int = None, morph_to_fsaverage: int = 5
+    m2m_dir: Union[Path, str],
+    subsampling: Union[None, int] = None,
+    morph_to_fsaverage: int = 5,
 ):
     """Setup a source space for use with FieldTrip.
 
@@ -67,9 +74,9 @@ def setup_source_space(
 
     RETURNS
     -------
-    src_from : dictionary
+    src_from : dict
         Dictionary with the source model information.
-    mmaps : dictionary
+    mmaps : dict
         Dictionary with scipy.sparse.csr_matrix describing the morph from
         subject to fsaverage.
     """

@@ -17,6 +17,7 @@ from scipy.sparse import coo_matrix, csr_matrix
 from scipy.spatial.ckdtree import cKDTree
 
 import simnibs
+from simnibs.segmentation.brain_surface import subsample_surfaces
 from simnibs.utils.file_finder import SubjectFiles
 
 HEMISPHERES = ("lh", "rh")
@@ -937,14 +938,14 @@ def make_morph_maps(src_from: Dict, src_to: Dict, n: int = 1):
 
     RETURNS
     -------
-    mmaps : List
-        List of scipy.sparse.csr_matrix corresponding to the morph map for left
-        and right hemispheres, respectively.
+    mmaps : dict
+        Dictionary of scipy.sparse.csr_matrix corresponding to the morph map
+        for left and right hemispheres.
     """
-    return [
-        make_morph_map(src_to[hemi]["points"], src_from[hemi], n)
+    return {
+        hemi: make_morph_map(src_to[hemi]["points"], src_from[hemi], n)
         for hemi in HEMISPHERES
-    ]
+    }
 
 
 def compute_tdcs_leadfield(
@@ -989,14 +990,10 @@ def compute_tdcs_leadfield(
     subfiles = SubjectFiles(subpath=str(m2m_dir))
 
     # Subsampling
-    if (
-        subsampling
-        and len((subfiles.get_surface(h, subsampling=subsampling) for h in HEMISPHERES))
-        == 0
-    ):
-        _ = simnibs.segmentation.brain_surface.subsample_surfaces(
-            m2m_dir, n_points=subsampling
-        )
+    try:
+        _ = [subfiles.get_surface(h, subsampling=subsampling) for h in HEMISPHERES]
+    except FileNotFoundError:
+        _ = subsample_surfaces(m2m_dir, n_points=subsampling)
 
     # The paths should be strings otherwise errors might occur when writing the
     # .hdf5 file
@@ -1109,11 +1106,11 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
     # Forward solution
     # Insert the reference channel and rereference to an average reference
     lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
-    ch_names.remove(ch_ref)
     if apply_average_proj:
         lf -= lf.mean(0)
     nchan, nsrc, nori = lf.shape  # leadfield is always calculated in x, y, z
     assert len(ch_names) == nchan
+    assert nori == 3
 
     return dict(
         data=lf,

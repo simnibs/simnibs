@@ -16,6 +16,12 @@ from simnibs.simulation import eeg
 
 # SOURCE SPACE
 
+from simnibs.simulation.eeg import HEMISPHERES
+
+HEMISPHERES_MNE = dict(
+    lh=FIFF.FIFFV_MNE_SURF_LEFT_HEMI, rh=FIFF.FIFFV_MNE_SURF_RIGHT_HEMI
+)
+
 
 def _get_src_sphere(src, subsampling=None):
     if isinstance(src, (Path, str)):
@@ -264,8 +270,8 @@ def _add_surface_info(src, tris, nn):
 def _make_source_morph(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
-    mmaps: List,
-    smooth: int = None,
+    mmaps: Dict,
+    smooth: Union[None, int] = None,
     warn: bool = True,
 ):
     """Make an MNE-Python source morph object.
@@ -276,8 +282,8 @@ def _make_source_morph(
         The source space to map from.
     src_to : mne.SourceSpaces
         The source space to map to.
-    mmaps : list
-        The morph maps describing the morph from `src_from` to `src_to`. A list
+    mmaps : dict
+        The morph maps describing the morph from `src_from` to `src_to`. A dict
         of length two corresponding to left and right hemispheres should be
         provided.
     smooth : int | None
@@ -317,12 +323,12 @@ def _make_source_morph(
 def compute_morph_matrix(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
-    mmaps: List,
-    smooth: int = None,
+    mmaps: Dict,
+    smooth: Union[None, int] = None,
     warn: bool = True,
 ):
     """Collect the mmaps into one sparse block matrix and apply smoothing if
-    desired.
+    desired/needed.
 
     PARAMETERS
     ----------
@@ -330,7 +336,7 @@ def compute_morph_matrix(
         The source space to map from.
     src_to : mne.SourceSpaces
         The source space to map to.
-    mmaps : list of scipy.sparse.csr_matrix
+    mmaps : dict of scipy.sparse.csr_matrix
         The morph maps describing the morph from `src_from` to `src_to`.
     smooth : int | None
     warn : bool
@@ -350,17 +356,21 @@ def compute_morph_matrix(
     ), "The length of the inputs must be compatible"
 
     # iterate over to / block-rows of CSR matrix
-    morpher = [
-        mne.morph._hemi_morph(
-            src_from[i]["tris"],
-            src_to[i]["vertno"],
-            src_from[i]["vertno"],
-            smooth,
-            mmaps[i],
-            warn,
+    # Ensure we have the same hemispheres from src and mmaps
+    morpher = []
+    for i, (hemi, hemi_mne) in enumerate(HEMISPHERES_MNE.items()):
+        assert src_from[i]["id"] == hemi_mne
+        assert src_to[i]["id"] == hemi_mne
+        morpher.append(
+            mne.morph._hemi_morph(
+                src_from[i]["tris"],
+                src_to[i]["vertno"],
+                src_from[i]["vertno"],
+                smooth,
+                mmaps[hemi],
+                warn,
+            )
         )
-        for i in range(len(src_from))
-    ]
     return scipy.sparse.block_diag(morpher).tocsr()
 
 
