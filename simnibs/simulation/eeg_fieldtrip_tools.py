@@ -2,9 +2,49 @@ from pathlib import Path
 from typing import Dict, Union
 
 import numpy as np
+from scipy.io import loadmat
 
 import simnibs
 from simnibs.simulation import eeg
+
+# EEG MONTAGE
+
+to_m = dict(m=1, cm=1e-2, mm=1e-3)
+from_m = {k:1/v for k,v in to_m.items()}
+
+def prepare_montage(fname_montage: Union[Path, str], fname_info: Union[Path, str], fname_trans: Union[Path, str]):
+
+    fname_info = Path(fname_info)
+    fname_trans = Path(fname_trans)
+
+    info = loadmat(fname_info)['elec'][0]
+    info = dict(zip(info.dtype.names, info[0]))
+    info['label'] = np.array([label[0] for label in info['label'].squeeze()])
+    info['chantype'] = np.array([ct[0] for ct in info['chantype'].squeeze()])
+    info['unit'] = info['unit'][0]
+    del info['chanunit']
+    scale = to_m[info['chanunit']] * from_m['mm']
+    info['elecpos'] *= scale
+    info['chanpos'] *= scale # unused
+
+    if fname_trans.suffix == '.mat':
+        trans = loadmat(fname_trans)['trans'][0]
+    elif fname_trans.suffix == '.txt':
+        trans = np.loadtxt(fname_trans)
+    else:
+        raise ValueError("`fname_trans` must be either a MAT or a TXT file.")
+
+    info['elecpos'] = eeg.apply_trans(trans, info['elecpos'])
+    info['chanpos'] = eeg.apply_trans(trans, info['chanpos'])
+
+    is_eeg = info['chantype'] == 'eeg'
+    montage = np.column_stack((
+        np.broadcast_to(np.array(['Electrode']), is_eeg.sum()),
+        info['elecpos'][is_eeg],
+        info['label'][is_eeg]
+    ))
+    np.savetxt(fname_montage, montage, fmt="%s", delimiter=',')
+
 
 
 # SOURCE SPACE
