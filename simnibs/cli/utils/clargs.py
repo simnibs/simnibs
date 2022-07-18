@@ -105,7 +105,7 @@ trans_fieldtrip = CommandLineArgument(
         Name of a MAT file containing the variable `trans` which is a 4x4
         affine transformation matrix mapping from the coordinate system of the
         electrodes to MRI subject space. This is applied to the positions
-        before writing the result.
+        before writing the result. Units are assumed to be mm.
     """,
     ),
 )
