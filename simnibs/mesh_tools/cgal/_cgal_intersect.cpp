@@ -1,5 +1,3 @@
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polyhedron_3.h>
