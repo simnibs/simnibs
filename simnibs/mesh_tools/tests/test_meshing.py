@@ -390,11 +390,18 @@ class TestRelabelSpikes:
         elmdata = spikyblob.elmdata[0]
         assert (elmdata.field_name == 'despiked')
         assert np.any(spikyblob.elm.tag1 != elmdata.value)
+        
         faces, tet_faces, adj_tets = spikyblob.elm._get_tet_faces_and_adjacent_tets() 
         spikyblob=meshing.update_tag_from_tet_neighbors(spikyblob, faces, tet_faces, adj_tets, nr_iter = 12)
-        spikyblob=meshing.update_tag_from_surface(spikyblob, faces, tet_faces, adj_tets)
-        assert np.all(spikyblob.elm.tag1 == elmdata.value)
-        assert np.all(spikyblob.elm.tag2 == elmdata.value)
+        spikyblob2=meshing.update_tag_from_surface(copy.deepcopy(spikyblob), faces, tet_faces, adj_tets)
+        assert np.all(spikyblob2.elm.tag1 == elmdata.value)
+        assert np.all(spikyblob2.elm.tag2 == elmdata.value)
+        
+        spikyblob.elmdata=[]
+        spikyblob=meshing.update_tag_from_surface(spikyblob, faces, tet_faces, adj_tets, do_splits = True)
+        assert spikyblob.elm.nr - spikyblob2.elm.nr == 51
+        assert len(spikyblob.elm.tag1) == spikyblob.elm.nr
+        assert np.all(spikyblob.elm.tag1 == spikyblob.elm.tag2)
 
 class TestMeshing:
     def test_sizing_field_from_thickness(self):

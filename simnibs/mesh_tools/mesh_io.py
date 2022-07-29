@@ -2953,6 +2953,71 @@ class Msh:
         return EC
 
 
+    def split_tets_along_line(self, idx_n1, idx_n2, do_checks = True, 
+                              return_tetindices = False):
+        """
+        Adds a new node in the middle between the two given nodes 
+        and splits all tetrahedra connected to the line between the
+        two given nodes. Works in-place.
+    
+        Parameters
+        ----------
+        idx_n1 : int
+            index of first node
+        idx_n2 : int
+            index of second node
+        do_checks : bool, optional
+            The mesh must only contain tets and no data. The corresponding
+            checks can be disabled to gain a bit of speed. The default is True.
+        return_tetindices : bool, optional
+            The indices of the new tetrahedra are returned if set to True.
+            The default is False.
+    
+        Returns
+        -------
+        tets1, tets2: lists of ints (optinal)
+            Returns the indices of the new tetrahedra connected to nodes n1 and n2.
+            (when return_tetindices = True). The new node is added at the end, i.e.
+            its index equals the number of nodes in the mesh. Add indices are 1-based.
+        """
+        if do_checks:
+            if not np.all(self.elm.elm_type == 4):
+                raise TypeError("The mesh must only contain tetrahedra")
+            if len(self.elmdata) > 0 or len(self.nodedata) > 0:
+                raise TypeError("The mesh must not contain data")
+        
+        # get tets connected to the two nodes
+        idx_orgtets = np.where( np.any(self.elm.node_number_list == idx_n1,axis=1) * 
+                                np.any(self.elm.node_number_list == idx_n2,axis=1) )[0]
+        if len(idx_orgtets) == 0:
+            raise ValueError("The two nodes are not connected!")
+        
+        # add new node
+        pos_newnode = np.mean( self.nodes.node_coord[[idx_n1-1,idx_n2-1],:],
+                               axis=0 )
+        self.nodes.node_coord = np.vstack((self.nodes.node_coord, pos_newnode))
+        idx_newnode = self.nodes.nr
+        
+        # add new tets - connect them to the new node and node n2
+        idx_newtets = np.arange(self.elm.nr, self.elm.nr+len(idx_orgtets))
+        self.elm.node_number_list = np.vstack((self.elm.node_number_list, 
+                                               self.elm.node_number_list[idx_orgtets]))
+        self.elm.tag1 = np.hstack((self.elm.tag1, self.elm.tag1[idx_orgtets]))
+        self.elm.tag2 = np.hstack((self.elm.tag2, self.elm.tag2[idx_orgtets]))
+        self.elm.elm_type = np.hstack((self.elm.elm_type, 
+                                       4*np.ones((len(idx_orgtets)), np.int32)))
+        
+        idx = np.where(self.elm.node_number_list[idx_newtets] == idx_n1)[1]
+        self.elm.node_number_list[idx_newtets,idx] = idx_newnode
+        
+        # connect old tets to to the new node and node n1
+        idx = np.where(self.elm.node_number_list[idx_orgtets] == idx_n2)[1]
+        self.elm.node_number_list[idx_orgtets,idx] = idx_newnode
+        
+        if return_tetindices:
+            return idx_orgtets+1, idx_newtets+1
+
+
 class Data(object):
     """Store data in elements or nodes
 

@@ -520,7 +520,7 @@ def _get_elm_and_new_tag(tag, adj_tets, nr_diff, return_diffmat = False):
 
 
 def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff, 
-                    nneighb, node_coord, tag):
+                    nneighb, node_coord, tag, node_number_list, fast_track=False):
     ''' returns indices of the to-be-tested surface nodes that might potentially
         be a spike
 
@@ -543,6 +543,14 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
             n_nodesx3 ndarray of node positions
         tag: 
             n_tetx1 ndarray of tet labels
+        node_number_list:
+                n_tetx4 ndarray of node indices
+        fast_track: bool (standard: False)
+                when set to True, only nodes connected to three different 
+                regions are detected as putative spike nodes. This leads
+                to far less nodes that need to be tested, making the next
+                steps faster. However, spikes, e.g. in GM sulci will then
+                not be detected.
         
         Returns
         -------
@@ -557,25 +565,45 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
     '''
     idx_test_nodes = np.zeros(len(nneighb), dtype=bool)
     
-    # get nodes belonging to tets with 3 different neighbors
-    idx_elm, _, adj_diff = _get_elm_and_new_tag(tag, adj_tets, 3, return_diffmat = True)
-    # get the node that is shared by the three tet faces facing the different neighbor tets
-    faces_elm = tet_faces[idx_elm]
-    faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,3))
-    idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1)[0]
-    if len(idx_node) > 0:
-        idx_test_nodes[idx_node] = True
-    
-    # get nodes belonging to tets with 2 different neighbors
-    idx_elm = _get_elm_and_new_tag(tag, adj_tets, 2)[0]
-    # get the 2 nodes that are shared by the two tet faces facing the different neighbor tets
-    faces_elm = tet_faces[idx_elm]
-    faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,2))
-    idx_node = np.sort(faces[faces_elm].reshape((-1,6)))
-    idx_node = idx_node[:,:5][np.diff(idx_node) == 0]
-    if len(idx_node) > 0:
-        idx_test_nodes[idx_node] = True
+    if not fast_track:
+        # get nodes belonging to tets with 3 different neighbors
+        idx_elm, _, adj_diff = _get_elm_and_new_tag(tag, adj_tets, 3, return_diffmat = True)
+        # get the node that is shared by the three tet faces facing the different neighbor tets
+        faces_elm = tet_faces[idx_elm]
+        faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,3))
+        idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1)[0]
+        if len(idx_node) > 0:
+            idx_test_nodes[idx_node] = True
         
+        # get nodes belonging to tets with 2 different neighbors
+        idx_elm = _get_elm_and_new_tag(tag, adj_tets, 2)[0]
+        # get the 2 nodes that are shared by the two tet faces facing the different neighbor tets
+        faces_elm = tet_faces[idx_elm]
+        faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,2))
+        idx_node = np.sort(faces[faces_elm].reshape((-1,6)))
+        idx_node = idx_node[:,:5][np.diff(idx_node) == 0]
+        if len(idx_node) > 0:
+            idx_test_nodes[idx_node] = True
+        
+        # the above steps are quite liberal and add too many nodes
+        # therefore, exclude nodes with too low surface curvature
+        # even though a few true spikes can get lost
+        m_surf = mesh_io.Msh()
+        m_surf.nodes.node_coord = node_coord
+        m_surf.elm.add_triangles(faces[idx_surface_tri,:]+1, 
+                                  np.ones(len(idx_surface_tri),dtype=int))
+        nd = m_surf.gaussian_curvature()
+        nd.value = np.abs(nd.value)
+        idx_test_nodes *= nd.value > 0.1
+    
+    # add nodes that belong to tets of three different regions
+    C = scipy.sparse.lil_matrix((len(nneighb), np.max(tag)+2), dtype=bool)
+    for i in range(4):
+        C[node_number_list[:,i]-1, tag] = True
+    C[:,-1] = False # do not count tags of air tets
+    n_node_tags = np.asarray( C.sum(axis=1) ).reshape(-1)
+    idx_test_nodes += n_node_tags == 3       
+    
     # a spike node needs at least 6 neighbor nodes
     idx_test_nodes *= nneighb > 5
     # exclude more complex surface geometries (e.g. T-junctions)
@@ -584,15 +612,7 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
     idx = tet_faces[adj_tets == -1]
     idx = np.unique(faces[idx])    
     idx_test_nodes[idx] = False
-    # exclude nodes with too low surface curvature
-    m_surf = mesh_io.Msh()
-    m_surf.nodes.node_coord = node_coord
-    m_surf.elm.add_triangles(faces[idx_surface_tri,:]+1, 
-                              np.ones(len(idx_surface_tri),dtype=int))
-    nd = m_surf.gaussian_curvature()
-    nd.value = np.abs(nd.value)
-    idx_test_nodes *= nd.value > 0.1
-    
+
     return idx_test_nodes
 
 
@@ -706,7 +726,7 @@ def _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, elm, tag, node_nr):
         Parameters
         ----------
         idx_spike_nodes : ndarray
-            DESCRIPTION.
+            indices of the spike nodes
         adj_tets: 
             n_tetx4 ndarray of tet neighbors (-1 in case of "air")
         elm:
@@ -720,6 +740,8 @@ def _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, elm, tag, node_nr):
         -------
         tag:
             updated n_tetx1 ndarray of tet labels
+        spike_data: list of tuples of the form
+            (idx_spikenode (1-based), idx_spike_tets, tag_old, tag_new)
             
         Notes
         ------
@@ -741,6 +763,7 @@ def _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, elm, tag, node_nr):
     
     tag_buff = -1*np.ones_like(tag_spk)
     idx_spike_tets = np.empty(0,dtype=int)
+    spike_data = []
     for idx_node in idx_spike_nodes:
         idx_all_tets = np.where(np.any(elm == idx_node,axis=1))[0]
         idx_tets = np.copy(idx_all_tets)
@@ -766,12 +789,221 @@ def _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, elm, tag, node_nr):
         if np.any(np.diff(tag_neigh)):
             logger.warning('ambiguous new tag for node ' + str(idx_node))
         tag_buff[idx_spike_tets] = tag_neigh[0]
-    
+        
+        spike_data.append((idx_node+1, map_new_old[idx_spike_tets], 
+                           tag_spk[idx_spike_tets[0]], tag_neigh[0]))
+
     new_tag = -1*np.ones_like(tag)
     new_tag[map_new_old] = tag_buff
     tag = np.copy(tag)
     tag[new_tag != -1] = new_tag[new_tag != -1]
-    return tag
+    return tag, spike_data
+
+
+def _get_candidates_for_splitting(sp_dat, node_number_list, idx_surf_nodes):
+    """
+    Determines all spikes that might be suited for splitting. The basic idea is
+    that a spike can be split if there is a second node to which all tets of the 
+    spike are also connected. Then, the spike can be split by adding a new node
+    in the middle of the line between the orignal spike node and the second node.
+    
+    Parameters
+    ----------
+    sp_dat : list of tuples of the form
+        (idx_spikenode (1-based), idx_spike_tets, tag_old, tag_new)
+    node_number_list :
+        n_tetx4 ndarray of node indices
+    idx_surf_nodes : boolean ndarray
+        True for nodes at region boundaries
+
+    Returns
+    -------
+    splittest : list of tuples of the form
+        (idx_spikenode (1-based), idx_2nd_node, tag_old, tag_new)
+    sp2_spike_tets : nx2 ndarray
+        tet indices of spikes having 2 tets
+        (see _combine_small_spikes for further information)
+    sp2_unique_nodes : nx1 ndarray
+        indices of the spike nodes for the spikes with 2 tets
+
+    """
+    splittest = []
+    sp2_spike_tets = np.empty((0,2),dtype='int32')
+    sp2_unique_nodes = np.empty((0,2),dtype='int32')
+    
+    for sp in sp_dat:
+        idx_sp_node = sp[0]
+        idx_sp_tets = sp[1]
+        old_tag = sp[2]
+        new_tag = sp[3]
+        
+        if len(idx_sp_tets)<2:
+            logger.info(' _get_candidates_for_splitting: spike with one tetrahedron should not occur at this stage')
+            
+        elif len(idx_sp_tets)==2:
+            un, cn = np.unique(node_number_list[idx_sp_tets], return_counts=True)
+            idx = np.where(cn == 1)[0]
+            if len(idx) == 2:
+                sp2_unique_nodes = np.append(sp2_unique_nodes, un[idx].reshape((1,2)), axis=0)
+                sp2_spike_tets = np.append(sp2_spike_tets, idx_sp_tets.reshape((1,2)), axis=0)
+            else:
+                logger.info(' _get_candidates_for_splitting: weird spike with two tets')
+        else:
+            # try to find a 2nd node to which all tets of the spike are also connected
+            un, cn = np.unique(node_number_list[idx_sp_tets], return_counts=True)
+            idx = np.where((un != idx_sp_node) * (cn == len(idx_sp_tets)))[0]
+            if len(idx) == 0:
+                # if not all tets of the spike are connected to a 2nd node,
+                # try to pick one non-surface node as 2nd node
+                idx2 = np.where(~idx_surf_nodes[un-1])[0]
+                if len(idx2) == 1:
+                    splittest.append((idx_sp_node, un[idx2[0]], old_tag, new_tag))
+                    # Note: all tets of the spike that are not connected to the 
+                    # 2nd node will not be tested and automatically get the standard new tag
+            elif len(idx) == 1:
+                splittest.append((idx_sp_node, un[idx[0]], old_tag, new_tag))
+            else:
+                logger.info(' _get_candidates_for_splitting: weird spike with two fully connected 2nd nodes')
+            
+    return splittest, sp2_spike_tets, sp2_unique_nodes
+
+
+def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_org):
+    """
+    Determines the spikes that will be split from the candidates.
+    The spikes have to fulfill two criteria:
+        * All tets connected to both the spike node and the 2nd node have to 
+          have the same tag.
+        * When projected on the line between the spike node and the 2nd node,
+          all other nodes of these tets have to fall approx. in the middle of
+          the line.
+
+    Parameters
+    ----------
+    splittest : list of tuples of the form
+        (idx_spikenode (1-based), idx_2nd_node, tag_old, tag_new)
+    node_number_list :
+        n_tetx4 ndarray of node indices
+    node_coord :
+        n_nodesx3 ndarray of node positions.
+    tag_org : 
+        n_tetx1 ndarray of tet labels BEFORE any spike removal
+
+    Returns
+    -------
+    splitlist : list of tuples of the form
+        (idx_spikenode (1-based), idx_2nd_node, tag_old, tag_new)
+
+    """
+    splitlist = []
+    for sp in splittest:
+        idx_n1 = sp[0]
+        idx_n2 = sp[1]
+        idx_orgtets = np.where( np.any(node_number_list == idx_n1,axis=1) * 
+                                np.any(node_number_list == idx_n2,axis=1) )[0]
+        if len(idx_orgtets) == 0:
+            raise ValueError("The two nodes are not connected!")
+            
+        if np.max(tag_org[idx_orgtets]) != np.min(tag_org[idx_orgtets]):
+            # this can happen when the 2nd node is part of the "ring" of surface nodes connected to the first node
+            continue
+            
+        un = np.unique(node_number_list[idx_orgtets])
+        idx_others = un[(un != idx_n1) * (un != idx_n2)]
+        
+        v1 = node_coord[idx_n1-1,:] - node_coord[idx_n2-1,:]
+        v2 = node_coord[idx_n1-1,:] - node_coord[idx_others-1,:]
+        norm_v1 = np.linalg.norm(v1)
+        norm_v2 = np.linalg.norm(v2,axis=1)
+        cosalpha = np.sum(v1*v2, axis=1)/(norm_v1*norm_v2)
+        
+        if np.all(np.abs(cosalpha-0.5) < 0.3): # 0.3 is a magic number determined during initial testing
+            splitlist.append(sp)
+        
+    return splitlist
+
+
+def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
+                          node_number_list, tag_org, nr_nodes):
+    """
+    At thin interfaces, two spikes with each 2 tets can be directly next to each other.
+    The function combines them to a common spike with 4 tets and returns them as list 
+    of spikes for splitting.
+
+    Parameters
+    ----------
+    sp2_unique_nodes : nx2 ndarray
+        tet indices of spikes having 2 tets
+    sp2_spike_tets : nx1 ndarray
+        indices of the spike nodes for the spikes with 2 tets
+    adj_tets :
+        n_tetx4 ndarray of tet neighbors (-1 in case of "air")
+    node_number_list :
+        n_tetx4 ndarray of node indices
+    tag_org : TYPE
+        DESCRIPTION.
+    nr_nodes :
+        total number of nodes 
+
+    Returns
+    -------
+    splitlist : list of tuples of the form
+        (idx_spikenode (1-based), idx_2nd_node, tag_old, tag_new)
+
+    """
+    sp2_unique_nodes = np.sort(np.copy(sp2_unique_nodes), axis=1)
+    un, cn = np.unique(sp2_unique_nodes, axis=0, return_counts = True)
+    un = un[cn>1]
+    
+    splitlist = []
+    for i in un:
+        idx_spikes = np.where(np.all(i == sp2_unique_nodes,axis=1))[0]
+        un2, cn2 = np.unique(node_number_list[sp2_spike_tets[idx_spikes]], return_counts=True)
+        idx_sp_nodes = un2[cn2 == 4]
+        
+        if len(idx_sp_nodes) == 2:        
+            # get the correct tags and append to splitlist
+            _, sp_dat_hlp = _get_new_tag_for_spikes(idx_sp_nodes-1, adj_tets, node_number_list,
+                                                    tag_org, nr_nodes)
+            splitlist.append((idx_sp_nodes[0], idx_sp_nodes[1], sp_dat_hlp[1][3], sp_dat_hlp[0][3]))
+    
+    return splitlist
+
+
+def _split_spikes(m, splitlist):
+    """
+    Splits the spikes in the splitlist and updates the tags
+    (works in place on the supplied mesh)
+
+    Parameters
+    ----------
+    m :
+        mesh of meshio.Msh() type
+    splitlist : list of tuples of the form
+        (idx_spikenode (1-based), idx_2nd_node, tag_old, tag_new)
+
+    Returns
+    -------
+    idx_splittets :
+        indices of the split tets (for visualization and debugging)
+
+    """
+    idx_splittets = np.empty((0),dtype='int32')
+    for sp in splitlist:
+        idx_n1 = sp[0]
+        idx_n2 = sp[1]
+        old_tag = sp[2]
+        new_tag = sp[3]
+        
+        idx_tets1, idx_tets2 = m.split_tets_along_line(idx_n1,idx_n2,return_tetindices = True)
+        m.elm.tag1[idx_tets1-1] = new_tag
+        m.elm.tag1[idx_tets2-1] = old_tag
+        
+        idx_splittets=np.append(idx_splittets,idx_tets1)
+        idx_splittets=np.append(idx_splittets,idx_tets2)
+
+    m.elm.tag2[:] =  m.elm.tag1
+    return idx_splittets
 
 
 def update_tag_from_label_img(m, adj_tets, vol, affine, label_GM=None, label_CSF=None):
@@ -936,7 +1168,8 @@ def update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets, nr_iter = 12):
     return m     
 
 
-def update_tag_from_surface(m, faces, tet_faces, adj_tets):
+def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
+                            fast_track = False):
     ''' relables tetrahedra when they are part of a localized spike
         as detected by analysis of the surface topology
     
@@ -950,6 +1183,14 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets):
             n_tetsx4 ndarray of tet faces (indices into the faces array)
         adj_tets: 
             n_tetx4 ndarray of tet neighbors (-1 in case of "air")
+        do_splits: bool 
+            whether to split spikes that reach deep into two regions
+            (standard: False)
+        fast_track: bool
+            whether to test only nodes connected to three different regions. 
+            This leads to far less nodes that need to be tested. However, 
+            spikes, e.g. in GM sulci will then not be removed.
+            (standard: False)
             
         Returns
         -------
@@ -959,15 +1200,19 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets):
         Notes
         ------
         * The mesh must contain only tetrahedra
-        * updates tag1 and tag2 of m.elm      
+        * updates tag1 and tag2 of m.elm
+        * for do_splits=True: variables faces, tet_faces, adj_tets will
+          be outdated after the call, as the function adds new tetrahedra
     '''
+    DEBUG=False
     # reconstruct surface, get node-connectivity matrix
     idx_surface_tri, face_node_diff, nneighb, conn_nodes = _get_surfaces(faces, tet_faces, adj_tets, 
                                                                          m.elm.tag1, m.nodes.nr)
     
     # get to-be-tested surface nodes (uses heuristics to lower the number of candidate nodes)
-    idx_test_nodes = _get_test_nodes(faces, tet_faces, adj_tets, 
-                                     idx_surface_tri, face_node_diff, nneighb, m.nodes[:], m.elm.tag1)
+    idx_test_nodes = _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
+                                     nneighb, m.nodes[:], m.elm.tag1, m.elm.node_number_list,
+                                     fast_track = fast_track)
     
     # detect spikes by analysis of surface topology around each test node
     logger.info('     Testing '+ str(np.sum(idx_test_nodes)) + ' nodes (matrix: '
@@ -975,9 +1220,39 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets):
     idx_spike_nodes = _get_spikes_from_conn_matrix(conn_nodes, idx_test_nodes, nneighb)
     
     # set new tag for spike nodes
-    m.elm.tag1 = _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, m.elm[:], m.elm.tag1, m.nodes.nr)
+    tag_buff = m.elm.tag1
+    m.elm.tag1, sp_dat = _get_new_tag_for_spikes(idx_spike_nodes, adj_tets, m.elm[:],
+                                                 m.elm.tag1, m.nodes.nr)
     logger.info('   Relabled ' + str(np.sum(m.elm.tag1 != m.elm.tag2)) + ' tets')
     m.elm.tag2[:] = m.elm.tag1
+    
+    if do_splits:
+        # split spikes that reach deep into two regions        
+        #   step 1: determine candidate spikes that might be suited for splitting
+        idx_surf_nodes = conn_nodes.getnnz(axis=0)>0
+        splittest, sp2_tets, sp2_uniquenodes = _get_candidates_for_splitting(sp_dat, m.elm.node_number_list, 
+                                                                             idx_surf_nodes)
+        #   step 2: determine the spikes that will be split from the candidates
+        splitlist = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
+                                                   m.nodes.node_coord, tag_buff)
+        
+        #   step 3: at thin interfaces, two spikes with each 2 tets can be directly next
+        #   to each other --> combine to a common spike with 4 tets that will be split
+        splitlist += _combine_small_spikes(sp2_uniquenodes, sp2_tets, adj_tets, 
+                                           m.elm.node_number_list, tag_buff, m.nodes.nr)
+        
+        #   step 4: split (updates the mesh in place)
+        n_tet_pre = m.elm.nr
+        idx_splittets = _split_spikes(m, splitlist)
+        logger.info('   Split ' + str(m.elm.nr - n_tet_pre) + ' tets')
+        m.elm.tag2 = m.elm.tag1.copy()
+        
+        if DEBUG:
+            ed=np.zeros_like(m.elm.tag1)
+            ed[idx_splittets-1] = 1
+            ed=mesh_io.ElementData(ed)
+            m.add_element_field(ed,'splittets')
+        
     return m
 
 
@@ -1174,6 +1449,7 @@ def create_mesh(label_img, affine,
     faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
     
     # Remove spikes from mesh
+    do_splits = True # allow for splitting tets to resolve some spikes (needs additional time)
     if remove_spikes:
         logger.info('Removing Spikes')
         logger.info(' Step 1: Update tags from label image')
@@ -1185,10 +1461,19 @@ def create_mesh(label_img, affine,
         m = update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets)
         
         logger.info(' Step 3: Resolve remaining localized spikes ')
-        m = update_tag_from_surface(m, faces, tet_faces, adj_tets)
-        logger.info('Done Removing Spikes: Total number of relabled tets: ' 
-                    + str(np.sum(m.elm.tag1 != tag_buff)) )
+        m = update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = do_splits)
+                
+        logger.info('Done Removing Spikes: Total number of relabled tets: ' +
+                    str(np.sum(m.elm.tag1[:len(tag_buff)] != tag_buff)) +
+                    '; Number of split tets: ' + str(len(m.elm.tag1) - len(tag_buff)))
 
+        if do_splits:
+            # remove "air" tetrahedra with label -1 and corresponding nodes
+            idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
+            m = m.crop_mesh(elements = idx_keep)
+            # redo preparation step, as it's needed by the later surface smoothing
+            faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
+        
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
