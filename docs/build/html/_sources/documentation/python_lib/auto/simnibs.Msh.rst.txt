@@ -51,6 +51,7 @@
       ~Msh.remove_from_mesh
       ~Msh.smooth_surfaces
       ~Msh.smooth_surfaces_simple
+      ~Msh.split_tets_along_line
       ~Msh.surface_EC
       ~Msh.test_inside_volume
       ~Msh.tetrahedra_quality
