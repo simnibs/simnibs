@@ -2350,7 +2350,7 @@ class Msh:
             return np.unique(idx_inside[:,0])
         else:
             return []
-
+    
     def any_pts_inside_surface(self, pts, AABBTree):
         """
         Test if any of the points are inside the surface.

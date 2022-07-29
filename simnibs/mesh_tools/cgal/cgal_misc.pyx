@@ -17,6 +17,10 @@ cdef extern from "_cgal_intersect.cpp" nogil:
         TreeC() except+
         pair[vector[int], vector[float]] _intersections(
             float* segment_start, float* segment_end, int n_segments)
+        bool _any_intersections(
+            float* segment_start, float* segment_end, int n_segments)
+        bool _any_point_inside(
+            float* pts, int n_points)
 
 cdef class pyAABBTree:
     cdef TreeC *thisptr
@@ -44,6 +48,18 @@ cdef class pyAABBTree:
         positions = np.array(out.second, dtype=float).reshape(-1, 3)
         return pairs, positions
     
+    def any_intersection(self, segment_start, segment_end):
+        cdef np.ndarray[float] ss = np.ascontiguousarray(segment_start, dtype=np.float32).reshape(-1)
+        cdef np.ndarray[float] se = np.ascontiguousarray(segment_end, dtype=np.float32).reshape(-1)
+        out = self.thisptr._any_intersections(&ss[0], &se[0], len(segment_start))
+        return out
+
+    def any_point_inside(self, points):
+        cdef np.ndarray[float] pts = np.ascontiguousarray(points, dtype=np.float32).reshape(-1)
+        out = self.thisptr._any_point_inside(&pts[0], len(points))
+        return out
+
+
 def segment_triangle_intersection(vertices, faces, segment_start, segment_end):
     ''' Calculates the intersection between a triangular mesh and line segments
     '''
