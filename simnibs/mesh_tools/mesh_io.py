@@ -2351,6 +2351,40 @@ class Msh:
         else:
             return []
 
+    def any_pts_inside_surface(self, pts, AABBTree):
+        """
+        Test if any of the points are inside the surface.
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+        pts: (Nx3) np.ndarray
+        AABBTree: PyAABBTree cython object
+            precalculated AABBTree
+    
+        Returns
+        -------
+        any_intersection: bool
+        
+        """
+        directions = np.zeros_like(pts)
+        directions[:,2] = 1
+
+        if pts.ndim == 1:
+            pts = points[None, :]
+        if directions.ndim == 1:
+            directions = directions[None, :]
+        if not (pts.shape[1] == 3 and directions.shape[1] == 3):
+            raise ValueError('start points and directions should be arrays of size (N, 3)')
+
+        idx, far = self._intersect_segment_getfarpoint(pts, directions)
+
+        if len(idx) > 0:
+            any_intersections = AABBTree.any_intersection(pts[idx, :], far)
+        else:
+            return False
+        return any_intersections
 
     def get_AABBTree(self):
         """
