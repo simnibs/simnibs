@@ -1,10 +1,3 @@
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/boost/graph/graph_traits_Polyhedron_3.h>
-#include <CGAL/algorithm.h>
-
-
-
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Polyhedron_3.h>
@@ -14,8 +7,8 @@
 #include <CGAL/AABB_face_graph_triangle_primitive.h>
 #include <CGAL/Side_of_triangle_mesh.h>
 
-
 #include <cstdlib>
+
 // Domain
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::FT FT;
@@ -33,15 +26,7 @@ typedef boost::optional<Tree::Intersection_and_primitive_id<Segment>::Type> Segm
 typedef Tree::Primitive_id Primitive_id;
 
 // Side of triangle
-
-typedef CGAL::Simple_cartesian<double> KS;
-typedef KS::Point_3 PointT;
-typedef CGAL::Polyhedron_3<KS> Polyhedron;
-typedef CGAL::AABB_face_graph_triangle_primitive<Polyhedron> PrimitiveT;
-typedef CGAL::AABB_traits<KS, PrimitiveT> TraitsT;
-typedef CGAL::AABB_tree<TraitsT> TreeT;
-typedef CGAL::Side_of_triangle_mesh<Polyhedron, KS> Point_inside;
-//typedef CGAL::Side_of_triangle_mesh<Surface_mesh, K> Point_inside;
+typedef CGAL::Side_of_triangle_mesh<Surface_mesh, K> Point_inside;
 
 
 // To avoid verbose function and named parameters call
@@ -98,16 +83,14 @@ std::pair<std::vector<int>, std::vector<float>> _segment_triangle_intersection(
 class TreeC{
   public:
   Tree tree;
-  TreeT ttree;
   Surface_mesh m;
-  Polyhedron p;
-  //Point_inside points_inside;
   TreeC() {tree = Tree();};
   ~TreeC();
   TreeC(float* , int , int* , int);
   std::pair<std::vector<int>, std::vector<float>> _intersections(float*, float*, int);
   bool _any_intersections(float*, float*, int);
   bool _any_point_inside(float*, int);
+  std::vector<int> _points_inside(float*, int);
 };
 
 TreeC::TreeC(float* vertices, int n_vertices, int* tris, int n_faces) {
@@ -126,24 +109,12 @@ TreeC::TreeC(float* vertices, int n_vertices, int* tris, int n_faces) {
   this->tree = Tree();
   this->tree.insert(faces(this->m).first, faces(this->m).second, this->m);
   this->tree.build();
-
-  this->p = Polyhedron();
-  CGAL::copy_face_graph(this->m,this->p);
-  this->ttree = TreeT();
-  this->ttree.insert(faces(this->p).first, faces(this->p).second, this->p);
-  this->ttree.build();
-  this->ttree.accelerate_distance_queries();
-  // Create inside_query
-  //this->points_inside = Point_inside(this->ttree);
-  //Point_inside points_inside(this->ttree);
-//  this->points_inside = Point_inside(this->p);
+  this->tree.accelerate_distance_queries();
 };
 
 TreeC::~TreeC () {
   this->tree.clear();
-  this->ttree.clear();
   this->m.clear();
-  this->p.clear();
 }
 
 std::pair<std::vector<int>, std::vector<float>> TreeC::_intersections(
@@ -180,8 +151,6 @@ std::pair<std::vector<int>, std::vector<float>> TreeC::_intersections(
 bool TreeC::_any_intersections(
         float* segment_start, float* segment_end, int n_segments) {
   // Output vectors
-  std::vector<int> indices_pairs;
-  std::vector<float> intersect_positions;
   for (int i=0; i < n_segments; i++){
       Segment segment(
         Point(segment_start[3*i], segment_start[3*i + 1], segment_start[3*i + 2]),
@@ -203,14 +172,27 @@ bool TreeC::_any_intersections(
 }
 
 bool TreeC::_any_point_inside(float* points, int n_points) {
- Point_inside points_inside(this->ttree);
+ Point_inside points_inside(this->tree);
  for (int i=0; i < n_points; i++){
   // Determine the side and return true if inside!
   if (points_inside(
-    PointT(points[3*i], points[3*i + 1], points[3*i + 2])) ==  CGAL::ON_BOUNDED_SIDE) {
+    Point(points[3*i], points[3*i + 1], points[3*i + 2])) ==  CGAL::ON_BOUNDED_SIDE) {
       return true;
       break;
     };
  }
   return false;
+}
+
+std::vector<int> TreeC::_points_inside(float* points, int n_points) {
+ Point_inside points_inside(this->tree);
+ std::vector<int> indices;
+ for (int i=0; i < n_points; i++){
+  // Determine the side and return true if inside!
+  if (points_inside(
+    Point(points[3*i], points[3*i + 1], points[3*i + 2])) ==  CGAL::ON_BOUNDED_SIDE) {
+      indices.push_back(i);
+    };
+ }
+  return indices;
 }

@@ -21,6 +21,8 @@ cdef extern from "_cgal_intersect.cpp" nogil:
             float* segment_start, float* segment_end, int n_segments)
         bool _any_point_inside(
             float* pts, int n_points)
+        vector[int] _points_inside(
+            float* pts, int n_points)
 
 cdef class pyAABBTree:
     cdef TreeC *thisptr
@@ -57,6 +59,12 @@ cdef class pyAABBTree:
     def any_point_inside(self, points):
         cdef np.ndarray[float] pts = np.ascontiguousarray(points, dtype=np.float32).reshape(-1)
         out = self.thisptr._any_point_inside(&pts[0], len(points))
+        return out
+    
+    def points_inside(self, points):
+        cdef np.ndarray[float] pts = np.ascontiguousarray(points, dtype=np.float32).reshape(-1)
+        cdef vector[int] out
+        out = self.thisptr._points_inside(&pts[0], len(points))
         return out
 
 
