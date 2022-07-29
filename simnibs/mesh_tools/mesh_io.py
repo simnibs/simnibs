@@ -2200,7 +2200,7 @@ class Msh:
 
 
 
-    def intersect_ray(self, points, directions):
+    def intersect_ray(self, points, directions, AABBTree=None):
         ''' Finds the triangle (if any) that intersects with the rays starting
             at points and pointing into directions
         
@@ -2210,6 +2210,8 @@ class Msh:
             start points
         directions: (N, 3) array
             direction vectors
+        AABBTree: PyAABBTree cython object
+            optional precalculated AABBTree
 
         Returns
         --------
@@ -2230,11 +2232,14 @@ class Msh:
         idx, far = self._intersect_segment_getfarpoint(points, directions)
 
         if len(idx) > 0:
-            indices, intercpt_pos = cgal.segment_triangle_intersection(
-                self.nodes[:],
-                self.elm[self.elm.elm_type == 2, :3] - 1,
-                points[idx, :], far
-            )
+            if AABBTree is None:
+                indices, intercpt_pos = cgal.segment_triangle_intersection(
+                    self.nodes[:],
+                    self.elm[self.elm.elm_type == 2, :3] - 1,
+                    points[idx, :], far
+                )
+            else:
+                indices, intercpt_pos = AABBTree.intersection(points[idx, :], far)
 
             if len(indices) > 0:
                 indices[:, 1] = self.elm.triangles[indices[:, 1]]
@@ -2317,7 +2322,7 @@ class Msh:
         return np.where(has_far)[0], far
 
 
-    def pts_inside_surface(self, pts):
+    def pts_inside_surface(self, pts, AABBTree=None):
         """
         Test which points are inside the surface.
         
@@ -2326,6 +2331,8 @@ class Msh:
         Parameters
         -----------
         pts: (Nx3) np.ndarray
+        AABBTree: PyAABBTree cython object
+            optional precalculated AABBTree
     
         Returns
         -------
@@ -2335,13 +2342,71 @@ class Msh:
         NOTE: This function works but would benefit from improvements!
         """
         directions = np.zeros_like(pts)
-        directions[:,2] = 1    
-        idx_inside, _ = self.intersect_ray(pts, directions)
+        directions[:,2] = 1
+        idx_inside, _ = self.intersect_ray(pts, directions, AABBTree)
+            
         
         if len(idx_inside):
             return np.unique(idx_inside[:,0])
         else:
             return []
+
+    def any_pts_inside_surface(self, pts, AABBTree):
+        """
+        Test if any of the points are inside the surface.
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+        pts: (Nx3) np.ndarray
+        AABBTree: PyAABBTree cython object
+            precalculated AABBTree
+    
+        Returns
+        -------
+        any_intersection: bool
+        
+        """
+        directions = np.zeros_like(pts)
+        directions[:,2] = 1
+
+        if pts.ndim == 1:
+            pts = points[None, :]
+        if directions.ndim == 1:
+            directions = directions[None, :]
+        if not (pts.shape[1] == 3 and directions.shape[1] == 3):
+            raise ValueError('start points and directions should be arrays of size (N, 3)')
+
+        idx, far = self._intersect_segment_getfarpoint(pts, directions)
+
+        if len(idx) > 0:
+            any_intersections = AABBTree.any_intersection(pts[idx, :], far)
+        else:
+            return False
+        return any_intersections
+
+    def get_AABBTree(self):
+        """
+        Build AABBTree for efficient intersection tests
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+    
+        Returns
+        -------
+        AABBTree: pyAABBTree cython object
+        precalculated AABBTree
+         
+        NOTE: In order to free up memory you might have to call 
+        __del__() explicitly on the return object!
+        """
+        
+        AABBTree = cgal.pyAABBTree()
+        AABBTree.set_data(self.nodes[:], self.elm[self.elm.elm_type == 2, :3] - 1)
+        return AABBTree
     
     
     def view(self,
