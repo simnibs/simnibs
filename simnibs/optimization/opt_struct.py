@@ -98,6 +98,8 @@ class TMSoptimize():
         coil format
     scalp_normals_smoothing_steps (optional): float
         Number of iterations for smoothing the scalp normals to control tangential scalp placement of TMS coil
+    target_tetrahedral_indices (optional) : (Rx1) array
+        List of tetrahedral mesh element indices to specify arbitrary targeting ROIs in the brain 
     '''
     def __init__(self, matlab_struct=None):
         # : Date when the session was initiated
@@ -125,6 +127,7 @@ class TMSoptimize():
         self.target_direction = None
         self.tissues = [2]
         self.target_size = 5
+        self.target_tetrahedral_indices = []
         self.centre = []
         self.pos_ydir = []
         self.distance = 4.
@@ -235,6 +238,7 @@ class TMSoptimize():
         mat['solver_options'] = remove_None(self.solver_options)
         mat['method'] = remove_None(self.method)
         mat['scalp_normals_smoothing_steps'] = remove_None(self.scalp_normals_smoothing_steps)
+        mat['target_tetrahedral_indices'] = remove_None(self.target_tetrahedral_indices)
         return mat
 
     @classmethod
@@ -312,6 +316,9 @@ class TMSoptimize():
         )
         self.scalp_normals_smoothing_steps = try_to_read_matlab_field(
             mat, 'scalp_normals_smoothing_steps', int, self.scalp_normals_smoothing_steps
+        )
+        self.target_tetrahedral_indices = try_to_read_matlab_field(
+            mat, 'target_tetrahedral_indices', list, self.target_tetrahedral_indices
         )
         return self
 
@@ -478,7 +485,8 @@ class TMSoptimize():
             self.mesh,
             self.target,
             self.target_size,
-            self.tissues
+            self.tissues,
+            target_tetrahedral_indices=self.target_tetrahedral_indices 
         )
 
     def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus, keep_hdf5=False):
