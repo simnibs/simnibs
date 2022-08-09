@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.simulation.tdcs_leadfield &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -50,14 +51,14 @@
           <div class="body" role="main">
             
   <section id="simnibs-simulation-tdcs-leadfield">
-<h1>simnibs.simulation.tdcs_leadfield<a class="headerlink" href="#simnibs-simulation-tdcs-leadfield" title="Permalink to this headline">¶</a></h1>
+<h1>simnibs.simulation.tdcs_leadfield<a class="headerlink" href="#simnibs-simulation-tdcs-leadfield" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.tdcs_leadfield">
 <span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tdcs_leadfield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">electrode_surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_hdf5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_pro</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tag'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs_leadfield" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulates tDCS fields using Neumann boundary conditions and writes the output
 Electric fields to an HDF5 file</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
 <li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
@@ -78,7 +79,7 @@ field</p></li>
 <li><p><strong>input_type</strong> (<em>'tag'</em><em>  or </em><em>'node'</em><em> (</em><em>optional</em><em>)</em>) – Wether electrode_surface refers to surface tags (default) or nodes.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><em>Writes the field resulting from each simulation to a dataset called</em></p></li>
 <li><p><em>fn_dataset in an hdf5 file called fn_hdf5</em></p></li>
@@ -174,7 +175,7 @@ field</p></li>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -191,7 +192,7 @@ field</p></li>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

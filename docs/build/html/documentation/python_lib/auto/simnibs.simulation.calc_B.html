@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.simulation.calc_B &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -50,13 +51,13 @@
           <div class="body" role="main">
             
   <section id="simnibs-simulation-calc-b">
-<h1>simnibs.simulation.calc_B<a class="headerlink" href="#simnibs-simulation-calc-b" title="Permalink to this headline">¶</a></h1>
+<h1>simnibs.simulation.calc_B<a class="headerlink" href="#simnibs-simulation-calc-b" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.calc_B">
 <span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">calc_B</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">J</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_voxels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">affine</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calc_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.calc_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the magnetic field caused by a current density distribution J</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>J</strong> (<em>simnibs.msh.ElementData</em>) – ElementData field with the current density field</p></li>
 <li><p><strong>n_voxels</strong> (<em>list</em><em> or </em><em>tuple</em>) – number of voxels in x, y, and z directions for the output B</p></li>
@@ -65,7 +66,7 @@
 <li><p><strong>mask</strong> (<em>bool</em><em> (</em><em>optional</em><em>)</em>) – Wether to mask the resul using the mesh. Default: False</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>B</strong> (<em>ndarray</em>) – numpy array of size n_voxesx3 with the magnetic field</p></li>
 <li><p><em>Reference</em></p></li>
@@ -174,7 +175,7 @@ Defined by a nifti file
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -191,7 +192,7 @@ Defined by a nifti file
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

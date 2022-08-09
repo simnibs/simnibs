@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>eeg_positions &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -50,13 +51,13 @@
           <div class="body" role="main">
             
   <section id="eeg-positions">
-<span id="eeg-positions-doc"></span><h1>eeg_positions<a class="headerlink" href="#eeg-positions" title="Permalink to this headline">¶</a></h1>
+<span id="eeg-positions-doc"></span><h1>eeg_positions<a class="headerlink" href="#eeg-positions" title="Permalink to this heading">¶</a></h1>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>Calculates the 10/10 EEG positions based on 4 fiducial points based on the UI 10/10 definition provided in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2006.09.024">Jurcak et al., 2007</a>).⁠</p>
 </section>
 <section id="usage-example">
-<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
 <li><p>Open the mesh file in the GUI</p></li>
@@ -80,7 +81,7 @@
 </ol>
 </section>
 <section id="further-notes">
-<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>We have compared positions obtained using this procedure against positions automatically obtained from MNI electrodes definitions and found no large differences (<a class="reference external" href="https://doi.org/10.1101/500314">Saturnino et al., 2018</a>). The later are automatically calculated during our head meshing programs <strong>headreco</strong> and <strong>mri2mesh</strong> and stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/eeg_positions/EEG10-10_UI_Jurak_2007.csv</span></code> file.</p></li>
 </ul>
@@ -171,7 +172,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -188,7 +189,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

@@ -2200,7 +2200,7 @@ class Msh:
 
 
 
-    def intersect_ray(self, points, directions):
+    def intersect_ray(self, points, directions, AABBTree=None):
         ''' Finds the triangle (if any) that intersects with the rays starting
             at points and pointing into directions
         
@@ -2210,6 +2210,8 @@ class Msh:
             start points
         directions: (N, 3) array
             direction vectors
+        AABBTree: PyAABBTree cython object
+            optional precalculated AABBTree
 
         Returns
         --------
@@ -2230,11 +2232,14 @@ class Msh:
         idx, far = self._intersect_segment_getfarpoint(points, directions)
 
         if len(idx) > 0:
-            indices, intercpt_pos = cgal.segment_triangle_intersection(
-                self.nodes[:],
-                self.elm[self.elm.elm_type == 2, :3] - 1,
-                points[idx, :], far
-            )
+            if AABBTree is None:
+                indices, intercpt_pos = cgal.segment_triangle_intersection(
+                    self.nodes[:],
+                    self.elm[self.elm.elm_type == 2, :3] - 1,
+                    points[idx, :], far
+                )
+            else:
+                indices, intercpt_pos = AABBTree.intersection(points[idx, :], far)
 
             if len(indices) > 0:
                 indices[:, 1] = self.elm.triangles[indices[:, 1]]
@@ -2317,7 +2322,7 @@ class Msh:
         return np.where(has_far)[0], far
 
 
-    def pts_inside_surface(self, pts):
+    def pts_inside_surface(self, pts, AABBTree=None):
         """
         Test which points are inside the surface.
         
@@ -2326,6 +2331,8 @@ class Msh:
         Parameters
         -----------
         pts: (Nx3) np.ndarray
+        AABBTree: PyAABBTree cython object
+            optional precalculated AABBTree
     
         Returns
         -------
@@ -2335,13 +2342,71 @@ class Msh:
         NOTE: This function works but would benefit from improvements!
         """
         directions = np.zeros_like(pts)
-        directions[:,2] = 1    
-        idx_inside, _ = self.intersect_ray(pts, directions)
+        directions[:,2] = 1
+        idx_inside, _ = self.intersect_ray(pts, directions, AABBTree)
+            
         
         if len(idx_inside):
             return np.unique(idx_inside[:,0])
         else:
             return []
+    
+    def any_pts_inside_surface(self, pts, AABBTree):
+        """
+        Test if any of the points are inside the surface.
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+        pts: (Nx3) np.ndarray
+        AABBTree: PyAABBTree cython object
+            precalculated AABBTree
+    
+        Returns
+        -------
+        any_intersection: bool
+        
+        """
+        directions = np.zeros_like(pts)
+        directions[:,2] = 1
+
+        if pts.ndim == 1:
+            pts = points[None, :]
+        if directions.ndim == 1:
+            directions = directions[None, :]
+        if not (pts.shape[1] == 3 and directions.shape[1] == 3):
+            raise ValueError('start points and directions should be arrays of size (N, 3)')
+
+        idx, far = self._intersect_segment_getfarpoint(pts, directions)
+
+        if len(idx) > 0:
+            any_intersections = AABBTree.any_intersection(pts[idx, :], far)
+        else:
+            return False
+        return any_intersections
+
+    def get_AABBTree(self):
+        """
+        Build AABBTree for efficient intersection tests
+        
+        NOTE: Assumes that the mesh is a closed surface!
+            
+        Parameters
+        -----------
+    
+        Returns
+        -------
+        AABBTree: pyAABBTree cython object
+        precalculated AABBTree
+         
+        NOTE: In order to free up memory you might have to call 
+        __del__() explicitly on the return object!
+        """
+        
+        AABBTree = cgal.pyAABBTree()
+        AABBTree.set_data(self.nodes[:], self.elm[self.elm.elm_type == 2, :3] - 1)
+        return AABBTree
     
     
     def view(self,
@@ -2951,6 +3016,71 @@ class Msh:
         
         EC = nr_node_tr + nr_tr - nr_edges
         return EC
+
+
+    def split_tets_along_line(self, idx_n1, idx_n2, do_checks = True, 
+                              return_tetindices = False):
+        """
+        Adds a new node in the middle between the two given nodes 
+        and splits all tetrahedra connected to the line between the
+        two given nodes. Works in-place.
+    
+        Parameters
+        ----------
+        idx_n1 : int
+            index of first node
+        idx_n2 : int
+            index of second node
+        do_checks : bool, optional
+            The mesh must only contain tets and no data. The corresponding
+            checks can be disabled to gain a bit of speed. The default is True.
+        return_tetindices : bool, optional
+            The indices of the new tetrahedra are returned if set to True.
+            The default is False.
+    
+        Returns
+        -------
+        tets1, tets2: lists of ints (optinal)
+            Returns the indices of the new tetrahedra connected to nodes n1 and n2.
+            (when return_tetindices = True). The new node is added at the end, i.e.
+            its index equals the number of nodes in the mesh. Add indices are 1-based.
+        """
+        if do_checks:
+            if not np.all(self.elm.elm_type == 4):
+                raise TypeError("The mesh must only contain tetrahedra")
+            if len(self.elmdata) > 0 or len(self.nodedata) > 0:
+                raise TypeError("The mesh must not contain data")
+        
+        # get tets connected to the two nodes
+        idx_orgtets = np.where( np.any(self.elm.node_number_list == idx_n1,axis=1) * 
+                                np.any(self.elm.node_number_list == idx_n2,axis=1) )[0]
+        if len(idx_orgtets) == 0:
+            raise ValueError("The two nodes are not connected!")
+        
+        # add new node
+        pos_newnode = np.mean( self.nodes.node_coord[[idx_n1-1,idx_n2-1],:],
+                               axis=0 )
+        self.nodes.node_coord = np.vstack((self.nodes.node_coord, pos_newnode))
+        idx_newnode = self.nodes.nr
+        
+        # add new tets - connect them to the new node and node n2
+        idx_newtets = np.arange(self.elm.nr, self.elm.nr+len(idx_orgtets))
+        self.elm.node_number_list = np.vstack((self.elm.node_number_list, 
+                                               self.elm.node_number_list[idx_orgtets]))
+        self.elm.tag1 = np.hstack((self.elm.tag1, self.elm.tag1[idx_orgtets]))
+        self.elm.tag2 = np.hstack((self.elm.tag2, self.elm.tag2[idx_orgtets]))
+        self.elm.elm_type = np.hstack((self.elm.elm_type, 
+                                       4*np.ones((len(idx_orgtets)), np.int32)))
+        
+        idx = np.where(self.elm.node_number_list[idx_newtets] == idx_n1)[1]
+        self.elm.node_number_list[idx_newtets,idx] = idx_newnode
+        
+        # connect old tets to to the new node and node n1
+        idx = np.where(self.elm.node_number_list[idx_orgtets] == idx_n2)[1]
+        self.elm.node_number_list[idx_orgtets,idx] = idx_newnode
+        
+        if return_tetindices:
+            return idx_orgtets+1, idx_newtets+1
 
 
 class Data(object):

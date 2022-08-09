@@ -11,14 +11,17 @@ Changelog
  * New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh
  * New command line tool *meshmesh* to support meshing of custom geometries
  * Support of Nx1 center-surround montages in python and Matlab
+ * added python examples for temporal interference simulations using pre-calculated leadfields for speed
  * Update to python 3.9
  * Major code cleanup and restructuring under the hood
  * Tested on Windows 10, Linux and Macs with Intel and Apple Silicon
  * Headreco and mri2mesh are deprecated.
- * NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
  
- Known issues:
+NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
+ 
+Known issues:
  * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)
+ * simnibs_gui does not work on linux systems with wayland (workaround: use docker image for now)
  
 3.2.6
 ------

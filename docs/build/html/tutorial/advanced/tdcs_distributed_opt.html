@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>TDCS Network Optimization &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -50,7 +51,7 @@
           <div class="body" role="main">
             
   <section id="tdcs-network-optimization">
-<span id="tdcs-distributed-opt"></span><h1>TDCS Network Optimization<a class="headerlink" href="#tdcs-network-optimization" title="Permalink to this headline">¶</a></h1>
+<span id="tdcs-distributed-opt"></span><h1>TDCS Network Optimization<a class="headerlink" href="#tdcs-network-optimization" title="Permalink to this heading">¶</a></h1>
 <p>As of SimNIBS 3.2, you can use SimNIBS to optimize electric fields based on distributed
 targets, such as t-maps from resting state networks. We use the problem set-up
 proposed in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini et al. 2014</a>),
@@ -60,14 +61,14 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
 </div>
 <section id="leadfield-calculations">
-<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this heading">¶</a></h2>
 <p>To run an optimization, please start by <a class="reference internal" href="../optimization.html#tutorial-leadfield"><span class="std std-ref">Creating a Leadfield</span></a>.</p>
 </section>
 <section id="optimiztion">
-<h2>Optimiztion<a class="headerlink" href="#optimiztion" title="Permalink to this headline">¶</a></h2>
+<h2>Optimiztion<a class="headerlink" href="#optimiztion" title="Permalink to this heading">¶</a></h2>
 <p>In the examples below, we use the T-map defined in <a class="reference download internal" download="" href="../../_downloads/4c63c1b578247f138b65915f2110b3e0/ID03_MOTOR_ICA.nii.gz"><code class="xref download docutils literal notranslate"><span class="pre">ID03_MOTOR_ICA</span></code></a> file as a target. This T-map is defined in MNI space</p>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example of a SimNIBS tDCS optimization with a distributed target in Python</span>
 <span class="sd">    Run with:</span>
 
@@ -106,7 +107,7 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
 </div>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this headline">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a SimNIBS tDCS optimization with a distributed target in Python</span><span class="w"></span>
 
 <span class="c">%    Copyright (C) 2020 Guilherme B Saturnino</span><span class="w"></span>
@@ -142,11 +143,11 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
 </section>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this headline">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
 <p>Please see <a class="reference internal" href="../../documentation/opt_struct/tdcsdistributedoptimize.html#tdcsdistributedoptimize-doc"><span class="std std-ref">TDCSDistributedOptimize</span></a> for a detailed description of all TDCS Network optimization options.</p>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2013.12.002">Ruffini, G., Fox, M. D., Ripolles, O., Miranda, P. C., &amp; Pascual-Leone, A. (2014). Optimization of multifocal transcranial current stimulation for weighted cortical pattern targeting from realistic modeling of electric fields. Neuroimage, 89, 216-225.</a></p>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
 </section>
@@ -235,7 +236,7 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -252,7 +253,7 @@ and solve it using algorithms proposed in (<a class="reference external" href="h
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

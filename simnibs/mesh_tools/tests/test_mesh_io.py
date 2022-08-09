@@ -1145,6 +1145,14 @@ class TestMsh:
         curvature_after = mesh.gaussian_curvature()
         low_q = mesh_before.gamma_metric()[:] >= 3
         assert np.all(mesh_before.gamma_metric()[~low_q] < 3)
+      
+    def test_split_tets_along_line(self, sphere3_msh):
+        m=sphere3_msh.crop_mesh(elm_type = 4)
+        n_nodes_pre = m.nodes.nr
+        n_tets_pre = m.elm.nr
+        idx_tet1, idx_tet2 = m.split_tets_along_line(1246,2337,return_tetindices=True)
+        assert m.nodes.nr == n_nodes_pre+1
+        assert m.elm.nr == n_tets_pre + len(idx_tet1)
 
 
 class TestData:

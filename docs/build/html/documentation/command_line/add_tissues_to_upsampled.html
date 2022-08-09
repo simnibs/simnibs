@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>add_tissues_to_upsampled &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -50,13 +51,13 @@
           <div class="body" role="main">
             
   <section id="add-tissues-to-upsampled">
-<span id="add-tissues-to-upsampled-doc"></span><h1>add_tissues_to_upsampled<a class="headerlink" href="#add-tissues-to-upsampled" title="Permalink to this headline">¶</a></h1>
+<span id="add-tissues-to-upsampled-doc"></span><h1>add_tissues_to_upsampled<a class="headerlink" href="#add-tissues-to-upsampled" title="Permalink to this heading">¶</a></h1>
 <section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>Adds extra tissues from an existing tissue label file to tissue_labeling_upsampled.nii.gz. The tissues to-be-added need to be in a NIfTI-file, which is in the same space as the T1-weighted scan that was used as input to <em>charm</em>.</p>
 </section>
 <section id="usage-example">
-<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Download an example extra tissue file <a class="reference download internal" download="" href="../../_downloads/be5e743a008ef2c5aa3af838e775f8ad/simnibs.nii.gz"><code class="xref download docutils literal notranslate"><span class="pre">here</span></code></a>. The mask contains the letter “SIMNIBS” (each letter has a different label from 1 to 7), as can be seen when, e.g. overlaying the mask on the original T1-weighted image:</p></li>
 </ol>
@@ -193,7 +194,7 @@ charm ernie --mesh
 <a class="reference internal image-reference" href="../../_images/custom_mask4.jpg"><img alt="../../_images/custom_mask4.jpg" class="align-center" src="../../_images/custom_mask4.jpg" style="width: 500.40000000000003px; height: 350.40000000000003px;" /></a>
 </section>
 <section id="further-notes">
-<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this headline">¶</a></h2>
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Type <code class="code docutils literal notranslate"><span class="pre">add_tissues_to_upsampled</span> <span class="pre">-h</span></code> for more information and options</p></li>
 <li><p>Please see <a class="reference internal" href="../../tutorial/advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">How to manually edit a head model</span></a> for a related example</p></li>
@@ -285,7 +286,7 @@ charm ernie --mesh
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -302,7 +303,7 @@ charm ernie --mesh
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

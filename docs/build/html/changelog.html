@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Changelog &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -50,9 +51,9 @@
           <div class="body" role="main">
             
   <section id="changelog">
-<span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this heading">¶</a></h1>
 <section id="id2">
-<h2>4.0.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<h2>4.0.0<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>New head segmentation and meshing pipeline <em>charm</em> with improved accuracy and robustness</p></li>
@@ -61,25 +62,31 @@
 <li><p>New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh</p></li>
 <li><p>New command line tool <em>meshmesh</em> to support meshing of custom geometries</p></li>
 <li><p>Support of Nx1 center-surround montages in python and Matlab</p></li>
+<li><p>added python examples for temporal interference simulations using pre-calculated leadfields for speed</p></li>
 <li><p>Update to python 3.9</p></li>
 <li><p>Major code cleanup and restructuring under the hood</p></li>
 <li><p>Tested on Windows 10, Linux and Macs with Intel and Apple Silicon</p></li>
 <li><p>Headreco and mri2mesh are deprecated.</p></li>
-<li><p>NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).</p></li>
 </ul>
-<p>Known issues:
-* Installation fails on paths with non-standard characters, such as backslash, chinese characters, … (workaround: provide another path)</p>
 </div></blockquote>
+<p>NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).</p>
+<dl class="simple">
+<dt>Known issues:</dt><dd><ul class="simple">
+<li><p>Installation fails on paths with non-standard characters, such as backslash, chinese characters, … (workaround: provide another path)</p></li>
+<li><p>simnibs_gui does not work on linux systems with wayland (workaround: use docker image for now)</p></li>
+</ul>
+</dd>
+</dl>
 </section>
 <section id="id3">
-<h2>3.2.6<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.6<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>fixed a bug causing headreco to fail on MacOS</p></li>
 <li><p>Note: On Apple M1s using .ccd coil files does not yet work, please use niftis instead.</p></li>
 </ul>
 </section>
 <section id="id4">
-<h2>3.2.5<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.5<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>added skin smoothing options for TMS optimization</p></li>
 <li><p>more informative matlab error messages</p></li>
@@ -87,7 +94,7 @@
 </ul>
 </section>
 <section id="id5">
-<h2>3.2.4<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.4<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Small bug fix related to gmsh options.</p></li>
@@ -95,7 +102,7 @@
 </div></blockquote>
 </section>
 <section id="id6">
-<h2>3.2.3<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.3<a class="headerlink" href="#id6" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Gmsh version changed to avoid issues with Big Sur (only MacOS)</p></li>
@@ -105,7 +112,7 @@
 </div></blockquote>
 </section>
 <section id="id7">
-<h2>3.2.2<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<h2>3.2.2<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added matlab and python examples for TACSchallenge</p></li>
@@ -134,7 +141,7 @@
 </dl>
 </section>
 <section id="id8">
-<h2>3.2<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<h2>3.2<a class="headerlink" href="#id8" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)</p></li>
@@ -149,7 +156,7 @@
 </div></blockquote>
 </section>
 <section id="id9">
-<h2>3.1<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<h2>3.1<a class="headerlink" href="#id9" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added TDCS and TMS Optimization</p></li>
@@ -159,7 +166,7 @@
 </div></blockquote>
 </section>
 <section id="id10">
-<h2>3.0<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<h2>3.0<a class="headerlink" href="#id10" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Major update to SimNIBS</p></li>
@@ -176,7 +183,7 @@
 </div></blockquote>
 </section>
 <section id="id11">
-<h2>2.1.2<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<h2>2.1.2<a class="headerlink" href="#id11" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on the MATLAB library for SimNIBS</p></li>
@@ -187,7 +194,7 @@
 </div></blockquote>
 </section>
 <section id="id12">
-<h2>2.1.1<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<h2>2.1.1<a class="headerlink" href="#id12" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on usability of SimNIBS</p></li>
@@ -200,7 +207,7 @@
 </div></blockquote>
 </section>
 <section id="id13">
-<h2>2.1.0<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<h2>2.1.0<a class="headerlink" href="#id13" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>2.1.0 is a major update of SimNIBS 2</p></li>
@@ -215,7 +222,7 @@
 </div></blockquote>
 </section>
 <section id="g">
-<h2>2.0.1g<a class="headerlink" href="#g" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1g<a class="headerlink" href="#g" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>More fixes to the GUI</p></li>
@@ -225,7 +232,7 @@
 </div></blockquote>
 </section>
 <section id="f">
-<h2>2.0.1f<a class="headerlink" href="#f" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1f<a class="headerlink" href="#f" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Changed 3dcalc wrapper in Linux</p></li>
@@ -234,7 +241,7 @@
 </div></blockquote>
 </section>
 <section id="e">
-<h2>2.0.1e<a class="headerlink" href="#e" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1e<a class="headerlink" href="#e" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Changed from PySide to PyQt</p></li>
@@ -244,7 +251,7 @@
 </div></blockquote>
 </section>
 <section id="d">
-<h2>2.0.1d<a class="headerlink" href="#d" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1d<a class="headerlink" href="#d" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Fixed the intallation of qt on mac</p></li>
@@ -253,7 +260,7 @@
 </div></blockquote>
 </section>
 <section id="c">
-<h2>2.0.1c<a class="headerlink" href="#c" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1c<a class="headerlink" href="#c" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>freeglut is no longer required</p></li>
@@ -263,7 +270,7 @@
 </div></blockquote>
 </section>
 <section id="b">
-<h2>2.0.1b<a class="headerlink" href="#b" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1b<a class="headerlink" href="#b" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Now SimNIBS gui gives out a warning if there are any spaces in the file path</p></li>
@@ -272,7 +279,7 @@
 </div></blockquote>
 </section>
 <section id="a">
-<h2>2.0.1a<a class="headerlink" href="#a" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.1a<a class="headerlink" href="#a" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>support of conductivity tensors for gray and white matter added to GUI</p></li>
@@ -381,7 +388,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -398,7 +405,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

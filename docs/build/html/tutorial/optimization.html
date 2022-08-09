@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>TDCS Optimization &#8212; SimNIBS 4.0b1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -12,6 +12,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -50,7 +51,7 @@
           <div class="body" role="main">
             
   <section id="tdcs-optimization">
-<span id="tdcs-opt"></span><h1>TDCS Optimization<a class="headerlink" href="#tdcs-optimization" title="Permalink to this headline">¶</a></h1>
+<span id="tdcs-opt"></span><h1>TDCS Optimization<a class="headerlink" href="#tdcs-optimization" title="Permalink to this heading">¶</a></h1>
 <p>SimNIBS can automatically optimize TDCS montages for maximal focality or intensity at the target.
 There are two steps for performing the optimizations.</p>
 <ol class="arabic simple">
@@ -62,7 +63,7 @@ There are two steps for performing the optimizations.</p>
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
 </div>
 <section id="leadfield-calculations">
-<span id="tutorial-leadfield"></span><h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this headline">¶</a></h2>
+<span id="tutorial-leadfield"></span><h2>Leadfield Calculations<a class="headerlink" href="#leadfield-calculations" title="Permalink to this heading">¶</a></h2>
 <p>The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.</p>
 <p>With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
 As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.</p>
@@ -76,7 +77,7 @@ As the leadfield involves calculating many electric fields, it takes some time t
 
 <span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
 <span class="sd">    </span>
-<span class="sd">    place script in the “ernie” folder of the example dataset</span>
+<span class="sd">    place script in the main folder of the example dataset</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
 
@@ -104,7 +105,7 @@ As the leadfield involves calculating many electric fields, it takes some time t
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example of a SimNIBS tDCS leadfield </span><span class="w"></span>
 <span class="c">% Copyright (C) 2019 Guilherme B Saturnino</span><span class="w"></span>
 
-<span class="c">% place script in the &#39;ernie&#39; folder of the example dataset</span><span class="w"></span>
+<span class="c">% place script in the main folder of the example dataset</span><span class="w"></span>
 
 <span class="n">tdcs_lf</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLEADFIELD&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% subject folder</span><span class="w"></span>
@@ -146,10 +147,10 @@ As the leadfield involves calculating many electric fields, it takes some time t
 </ul>
 </section>
 <section id="optimization">
-<h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h2>
+<h2>Optimization<a class="headerlink" href="#optimization" title="Permalink to this heading">¶</a></h2>
 <p>Now, we will use the leadfield to optimize the electric field at a given target.</p>
 <section id="simple-optimiztion">
-<h3>Simple Optimiztion<a class="headerlink" href="#simple-optimiztion" title="Permalink to this headline">¶</a></h3>
+<h3>Simple Optimiztion<a class="headerlink" href="#simple-optimiztion" title="Permalink to this heading">¶</a></h3>
 <p>The first step is to set <a class="reference internal" href="../documentation/opt_struct/tdcsoptimize.html#tdcsoptimize-doc"><span class="std std-ref">TDCSoptimize</span></a> structure.
 In this structure, we need to select the leadfield we will use for the optimization, a name for the optimization problem, safety constraints and limit the number of electrodes.</p>
 <p>Afterwards, we need to define an optimization target using an <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a> structure.</p>
@@ -234,7 +235,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>For more information see the documentation for <a class="reference internal" href="../documentation/opt_struct/tdcsoptimize.html#tdcsoptimize-doc"><span class="std std-ref">TDCSoptimize</span></a> and <a class="reference internal" href="../documentation/opt_struct/tdcstarget.html#tdcstarget-doc"><span class="std std-ref">TDCStarget</span></a>.</p>
 </div>
 <section id="output-files">
-<h4>Output files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h4>
+<h4>Output files<a class="headerlink" href="#output-files" title="Permalink to this heading">¶</a></h4>
 <p>The optimization outputs:</p>
 <ul class="simple">
 <li><p><code class="file docutils literal notranslate"><em><span class="pre">name</span></em><span class="pre">.csv</span></code>: comma separated values (CSV) files with optimal current values at each electrode (in A)</p></li>
@@ -245,7 +246,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </section>
 </section>
 <section id="maximizing-intensity">
-<h3>Maximizing intensity<a class="headerlink" href="#maximizing-intensity" title="Permalink to this headline">¶</a></h3>
+<h3>Maximizing intensity<a class="headerlink" href="#maximizing-intensity" title="Permalink to this heading">¶</a></h3>
 <p>To maximize intensity at the target, disregarding field focality, simply use a large value for the target intensity.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -303,7 +304,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 </section>
 <section id="using-mni-coordinates">
-<h3>Using MNI Coordinates<a class="headerlink" href="#using-mni-coordinates" title="Permalink to this headline">¶</a></h3>
+<h3>Using MNI Coordinates<a class="headerlink" href="#using-mni-coordinates" title="Permalink to this heading">¶</a></h3>
 <p>The target positions are, as always in SimNIBS, given in <strong>world coordinates</strong> in <strong>subject space</strong> (<a class="reference internal" href="../documentation/coordinates.html#coords-doc"><span class="std std-ref">see here for more information</span></a>). However, we can use the <em>mni2subject_coords</em> function to transform coordinates from MNI space to subject space. When the transformed coordinates are outside the gray matter of the subject, they will be projected to the closest gray matter position.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -356,7 +357,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p></p>
 </section>
 <section id="multiple-targets">
-<h3>Multiple targets<a class="headerlink" href="#multiple-targets" title="Permalink to this headline">¶</a></h3>
+<h3>Multiple targets<a class="headerlink" href="#multiple-targets" title="Permalink to this heading">¶</a></h3>
 <p>To optimize multiple distant targets simultaneously, just use multiple <strong>target</strong> structures.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -418,7 +419,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 <p>By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many <strong>positions</strong> in a single target, SimNIBS will try to hit the average intensity over the many positions.</p>
 </section>
 <section id="electric-field-strength">
-<h3>Electric Field Strength<a class="headerlink" href="#electric-field-strength" title="Permalink to this headline">¶</a></h3>
+<h3>Electric Field Strength<a class="headerlink" href="#electric-field-strength" title="Permalink to this heading">¶</a></h3>
 <p>For using electric field strength (magnitude) rather than an specific direction, just set the <strong>directions</strong> attribute to <em>None</em> (Python) or <em>‘none’</em> (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a <a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">novel optimization method</a>.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -486,7 +487,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </div>
 </section>
 <section id="avoidance-regions">
-<h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this headline">¶</a></h3>
+<h3>Avoidance Regions<a class="headerlink" href="#avoidance-regions" title="Permalink to this heading">¶</a></h3>
 <p>You can also add regions where the electric field should be more penalized than elsewhere. This is done using the <strong>avoid</strong> optional structure. In this examples, we will set the field to avoid the eyes.</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -551,7 +552,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
 </section>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2019.116183">Saturnino, G. B., Siebner, H. R., Thielscher, A., &amp; Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183.</a></p>
 <p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.118422">Saturnino, G. B., Madsen, K. H., &amp; Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv.</a></p>
 </section>
@@ -638,7 +639,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
 
 
 
@@ -655,7 +656,7 @@ In this structure, we need to select the leadfield we will use for the optimizat
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.4.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
