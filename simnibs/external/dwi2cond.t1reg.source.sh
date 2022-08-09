@@ -1,7 +1,7 @@
 
 # check for mri2mesh or headreco output files
 if [ ! -d $M2M_DIR ]; then e echo "ERROR: Directory $M2M_DIR doesn't exist or is not readable! Did you run mri2mesh or headreco before?"; exit; fi
-for i in {$M2M_DIR/T1.nii.gz,$M2M_DIR/labeling.nii.gz,$M2M_DIR/segmentation/T1_bias_corrected.nii.gz}; do
+for i in {$M2M_DIR/T1.nii.gz,$M2M_DIR/segmentation/labeling.nii.gz,$M2M_DIR/segmentation/T1_bias_corrected.nii.gz}; do
      if [ ! -f $i ]; then 
        e echo "ERROR: Input file '$i' doesn't exist. Did you run charm?"
        exit 1
@@ -18,7 +18,7 @@ done
 
 # create T1 brain mask
   if [ ! -f $M2M_DIR'/final_tissues.nii.gz' ]; then e echo "ERROR: This version of dwi2cond requires a charm segmentation"; exit; fi
-  e fslmaths $M2M_DIR/labeling.nii.gz -thr 1 -uthr 499 -bin T1_brainmask
+  e fslmaths $M2M_DIR/segmentation/labeling.nii.gz -thr 1 -uthr 499 -bin T1_brainmask
   e fslmaths $M2M_DIR/segmentation/T1_bias_corrected -mas T1_brainmask T1_brain
   e fslmaths T1_brainmask -edge -thr 0.3 -bin T1_brainrim_QA # for QA
 
