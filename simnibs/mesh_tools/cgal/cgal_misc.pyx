@@ -29,7 +29,7 @@ cdef class pyAABBTree:
     def ___cinit___(self):
         self.thisptr = new TreeC()
 
-    cdef __dealloc___(self):
+    def __dealloc___(self):
         del self.thisptr
 
     def __del__(self):
