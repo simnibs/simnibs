@@ -188,12 +188,12 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.ndarray[np.int_t, ndim=3] labelimage,
                 np.ndarray[double, ndim=3] maximage):
     
-    cdef np.int_t n_comp = len(compartments)
-    cdef np.ndarray[np.int_t, ndim=1] c_counts = np.array([len(c) for c in compartments], dtype=int)
     cdef np.ndarray[double, ndim=1] c_weights = np.array([1.0/float(len(c)) for c in compartments], dtype=float)
-    cdef np.ndarray[np.int_t, ndim=1] comp = np.asarray([c for ci in compartments for c in ci]).astype(int)
+    cdef np.ndarray[np.int_t, ndim=1] comp = np.asarray([c for ci in compartments for c in ci],dtype=int)
+    cdef np.ndarray[np.uint8_t, ndim=1] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
+    cdef np.int_t n_comp = len(comp)
     
-    cdef np.int_t nr_components = field.shape[1]
+    #cdef np.int_t nr_components = field.shape[1]
     cdef np.int_t node_data = field.shape[0] == nd.shape[0]
     ## Create bounding box with each tetrahedra
     cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
@@ -217,7 +217,7 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
     # pre-calculate the inverse of M (this is faster than solving every M[j])
     #invM[in_roi] = np.linalg.inv(M[in_roi])
 
-    cdef int i, j, k, x, y, z, info, n, m, jj
+    cdef int i, j, k, x, y, z, info, m, jj
     cdef np.ndarray[double, ndim=1] b = np.zeros((4, ), dtype=float)
     cdef double xc, yc, zc
     cdef double eps = 1e-5
@@ -249,17 +249,18 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
                                 if b[2] > -eps and b[3] > -eps:
                                     m = 0
                                     for k in range(n_comp):
-                                        current_field = 0.0
-                                        for n in range(c_counts[k]):
-                                            if node_data:
-                                                for i in range(4):
-                                                    current_field += (b[i] * field[tetrahedra[j, i], comp[m]]) * c_weights[m]
-                                            else:
-                                                current_field +=  field[j, comp[k]] * c_weights[m]
+                                        if node_data:
+                                            for i in range(4):
+                                                current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
+                                        else:
+                                            current_field +=  field[j, comp[k]]
+                                        if c_last[k]:
+                                            current_field *= c_weights[m]
+                                            if current_field > maximage[x,y,z]:
+                                                maximage[x,y,z] = current_field
+                                                labelimage[x,y,z] = m
                                             m += 1
-                                        if current_field > maximage[x,y,z]:
-                                            maximage[x,y,z] = current_field
-                                            labelimage[x,y,z] = k
+                                            current_field = 0.0
     
     del invM
     del th_boxes_min
@@ -269,7 +270,7 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
     del b
     del comp
     del c_weights
-    del c_counts    
+    del c_last
     return 
 
 @cython.boundscheck(False)
