@@ -4598,8 +4598,6 @@ class NodeData(Data):
             msh_th.elm.node_number_list - 1,
             comp)
         maximage = maximage.astype(self.value.dtype)
-        if self.nr_comp == 1:
-            maximage = np.squeeze(maximage, axis=3)
         del nd
         del msh_th
         del field
@@ -4646,12 +4644,6 @@ class NodeData(Data):
         #handle compartments
         if compartments is None:
             compartments = [[i,] for i in range(v.shape[1])]
-        max_members = np.max([len(c) for c in compartments])
-        comp = np.ones((len(compartments),max_members),dtype=int) * -1
-        for i,c in enumerate(compartments):
-            for j,cc in enumerate(c):
-                comp[i,j] = cc
-        
 
         # initialize image
         labelimage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=int)
@@ -4663,23 +4655,20 @@ class NodeData(Data):
                              'the number of nodes present in the volume-only mesh')
         import threading
         import multiprocessing
+        from multiprocessing.pool import ThreadPool
         n = msh_th.elm.node_number_list.shape[0]
         n_elm = int(np.ceil(n / multiprocessing.cpu_count()))
+        pool = ThreadPool()
         i = 0
         tlist = []
         while i < n:
-            tlist.append(threading.Thread(target=cython_msh.interp_grid_max2,args=(
-                np.array(n_voxels, dtype=int), field, nd, 
-                msh_th.elm.node_number_list[i:i+n_elm] - 1,
-                comp,labelimage,maximage)))
-            tlist[-1].start()
-            # cython_msh.interp_grid_max2(
-            #     np.array(n_voxels, dtype=int), field, nd, 
-            #     msh_th.elm.node_number_list[i:i+n_elm] - 1,
-            #     comp,labelimage,maximage)
+            pool.apply_async(cython_msh.interp_grid_maxp,args=(
+               np.array(n_voxels, dtype=int), field, nd, 
+               msh_th.elm.node_number_list[i:i+n_elm] - 1,
+               compartments,labelimage,maximage))
             i += n_elm
-        for t in tlist:
-            t.join()
+        pool.close()
+        pool.join()
         maximage = maximage.astype(self.value.dtype)
         del nd
         del msh_th
