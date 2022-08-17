@@ -95,8 +95,9 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.ndarray[np.int_t, ndim=3] labelimage,
                 np.ndarray[double, ndim=3] maximage):
     
-    cdef double[:] c_weights =  np.array([1.0/float(len(c)) for c in compartments], dtype=np.double)
+    cdef double[:] c_weights =  np.array([1.0/float(len(ci)) for ci in compartments for c in ci], dtype=np.double)
     cdef int[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=int)
+    cdef int[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=int)
     cdef np.uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
     cdef np.int_t n_comp = len(comp)
     
@@ -121,7 +122,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
     th_boxes_min = np.maximum(th_boxes_min, 0)
 
-    cdef int i, j, k, x, y, z, info, m, jj
+    cdef int i, j, k, x, y, z, info, jj
     cdef double[4] b
     cdef double[3] xcv, ycv
     cdef double xc, yc, zc
@@ -153,19 +154,18 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                             if b[1] > -eps and b[0] + b[1] < 1. + eps:
                                 b[2] = ycv[2] + \
                                        invM[j, 2, 2] * zc
-                                b[3] = 1. - b[0] - b[1] - b[2]
-                                if b[2] > -eps and b[3] > -eps:
-                                    m = 0
-                                    for k in range(n_comp):
-                                        for i in range(4):
-                                            current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
-                                        if c_last[k]:
-                                            current_field *= c_weights[m]
-                                            if current_field > maximage[x,y,z]:
-                                                maximage[x,y,z] = current_field
-                                                labelimage[x,y,z] = m
-                                            m += 1
-                                            current_field = 0.0
+                                if b[2] > -eps:
+                                    b[3] = 1. - b[0] - b[1] - b[2]
+                                    if b[3] > -eps:
+                                        for k in range(n_comp):
+                                            for i in range(4):
+                                                current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
+                                            if c_last[k]: # note that putting the weighting here assumes that weight for all elements in the subcompartment is the same
+                                                current_field *= c_weights[k]
+                                                if current_field > maximage[x,y,z]:
+                                                    maximage[x,y,z] = current_field
+                                                    labelimage[x,y,z] = comp_k[k]
+                                                current_field = 0.0
     
     del invM
     del th_boxes_min
