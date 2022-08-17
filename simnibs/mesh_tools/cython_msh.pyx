@@ -96,8 +96,8 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.ndarray[double, ndim=3] maximage):
     
     cdef double[:] c_weights =  np.array([1.0/float(len(ci)) for ci in compartments for c in ci], dtype=np.double)
-    cdef int[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=int)
-    cdef int[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=int)
+    cdef int[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.int32)
+    cdef int[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.int32)
     cdef np.uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
     cdef np.int_t n_comp = len(comp)
     
