@@ -65,7 +65,7 @@ def read_itk_tetrahedron(fn):
     
     nodestrings=[line.replace('false','0').replace('true','1')
                         for line in lines[i+2:i+2+vals[0]]]
-    nodedata = np.fromstring(''.join(nodestrings), sep=' ',dtype='float').reshape(vals[0],1+vals[2]+4)
+    nodedata = np.fromstring(''.join(nodestrings), sep=' ',dtype='float32').reshape(vals[0],1+vals[2]+4)
     # nodedata = np.genfromtxt(nodestring, delimiter=' ',dtype='float').reshape(vals[0],1+vals[2]+4)
     # nodedata = np.array([np.array(line.split(), dtype=float) for line in nodestrings])
     # nodedata = nodedata.reshape(vals[0],1+vals[2]+4)

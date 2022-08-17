@@ -4580,10 +4580,10 @@ class NodeData(Data):
             compartments = [[i,] for i in range(v.shape[1])]
 
         # initialize image
-        labelimage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=int)
-        maximage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.float64)
+        labelimage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.uint16)
+        maximage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.float32)
 
-        field = v.astype(float)
+        field = v.astype(np.float32)
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '
                              'the number of nodes present in the volume-only mesh')
@@ -4607,7 +4607,6 @@ class NodeData(Data):
                np.array(n_voxels, dtype=int), field, nd, 
                msh_th.elm.node_number_list - 1,
                compartments,labelimage,maximage)
-        maximage = maximage.astype(self.value.dtype)
         del nd
         del msh_th
         del field

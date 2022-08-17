@@ -8,6 +8,8 @@ cimport numpy as np
 from libcpp cimport bool
 from libc.math cimport abs
 from libc.math cimport sqrt
+from libc.stdint cimport uint16_t
+from libc.stdint cimport uint8_t
 
 cdef inline int int_max(int a, int b): return a if a >= b else b
 cdef inline int int_min(int a, int b): return a if a <= b else b
@@ -88,17 +90,17 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
-                np.ndarray[double, ndim=2] field,
+                np.ndarray[float, ndim=2] field,
                 np.ndarray[double, ndim=2] nd,
                 np.ndarray[np.int_t, ndim=2] tetrahedra,
                 compartments,
-                np.ndarray[np.int_t, ndim=3] labelimage,
-                np.ndarray[double, ndim=3] maximage):
+                np.ndarray[uint16_t, ndim=3] labelimage,
+                np.ndarray[float, ndim=3] maximage):
     
     cdef double[:] c_weights =  np.array([1.0/float(len(ci)) for ci in compartments for c in ci], dtype=np.double)
-    cdef int[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.int32)
-    cdef int[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.int32)
-    cdef np.uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
+    cdef uint16_t[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.uint16)
+    cdef uint16_t[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.uint16)
+    cdef uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
     cdef np.int_t n_comp = len(comp)
     
     cdef np.int_t node_data = field.shape[0] == nd.shape[0]
