@@ -4538,73 +4538,7 @@ class NodeData(Data):
         gc.collect()
         return image
 
-    def interpolate_to_grid_max(self, n_voxels, affine, compartments=None):
-        ''' Interpolates the NodeData into a grid.
-            finds which tetrahedra contais the given voxel and
-            performs linear interpolation inside the voxel
-
-        The kwargs is ony to have the same interface as the ElementData version
-
-        Parameters
-        ------
-            n_voxels: list or tuple
-                number of voxels in x, y, and z directions
-            affine: ndarray
-                A 4x4 matrix specifying the transformation from voxels to xyz
-        Returns
-        ----
-            image: ndarray
-                An (n_voxels[0], n_voxels[1], n_voxels[2], nr_comp) matrix with
-                interpolated values. If nr_comp == 1, the last dimension is squeezed out
-        '''
-
-        msh = self.mesh
-        self._test_msh()
-        if len(n_voxels) != 3:
-            raise ValueError('n_voxels should have length = 3')
-        if affine.shape != (4, 4):
-            raise ValueError('Affine should be a 4x4 matrix')
-        if len(msh.elm.tetrahedra) == 0:
-            raise InvalidMeshError('Mesh has no volume elements')
-
-        v = np.atleast_2d(self.value)
-        if v.shape[0] < v.shape[1]:
-            v = v.T
-        msh_th = msh.crop_mesh(elm_type=4)
-        inv_affine = np.linalg.inv(affine)
-        nd = np.hstack([msh_th.nodes.node_coord, np.ones((msh_th.nodes.nr, 1))])
-        nd = inv_affine.dot(nd.T).T[:, :3]
-        
-        #handle compartments
-        if compartments is None:
-            compartments = [[i,] for i in range(v.shape[1])]
-        max_members = np.max([len(c) for c in compartments])
-        comp = np.ones((len(compartments),max_members),dtype=int) * -1
-        for i,c in enumerate(compartments):
-            for j,cc in enumerate(c):
-                comp[i,j] = cc
-        
-
-        # initialize image
-        labelimage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=int)
-        maximage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.float64)
-
-        field = v.astype(float)
-        if v.shape[0] != msh_th.nodes.nr:
-            raise ValueError('Number of data points in the structure does not match '
-                             'the number of nodes present in the volume-only mesh')
-        labelimage, maximage = cython_msh.interp_grid_max(
-            np.array(n_voxels, dtype=int), field, nd,
-            msh_th.elm.node_number_list - 1,
-            comp)
-        maximage = maximage.astype(self.value.dtype)
-        del nd
-        del msh_th
-        del field
-        gc.collect()
-        return labelimage, maximage
-
-    def interpolate_to_grid_maxp(self, n_voxels, affine, compartments=None):
+    def interpolate_to_grid_max(self, n_voxels, affine, compartments=None, parallel=True):
         ''' Interpolates the NodeData into a grid.
             finds which tetrahedra contais the given voxel and
             performs linear interpolation inside the voxel
@@ -4653,22 +4587,26 @@ class NodeData(Data):
         if v.shape[0] != msh_th.nodes.nr:
             raise ValueError('Number of data points in the structure does not match '
                              'the number of nodes present in the volume-only mesh')
-        import threading
-        import multiprocessing
-        from multiprocessing.pool import ThreadPool
-        n = msh_th.elm.node_number_list.shape[0]
-        n_elm = int(np.ceil(n / multiprocessing.cpu_count()))
-        pool = ThreadPool()
-        i = 0
-        tlist = []
-        while i < n:
-            pool.apply_async(cython_msh.interp_grid_maxp,args=(
+        if parallel:
+            import multiprocessing
+            from multiprocessing.pool import ThreadPool
+            n = msh_th.elm.node_number_list.shape[0]
+            n_elm = int(np.ceil(n / multiprocessing.cpu_count()))
+            pool = ThreadPool()
+            i = 0
+            while i < n:
+                pool.apply_async(cython_msh.interp_grid_nodedata_max,args=(
+                   np.array(n_voxels, dtype=int), field, nd, 
+                   msh_th.elm.node_number_list[i:i+n_elm] - 1,
+                   compartments,labelimage,maximage))
+                i += n_elm
+            pool.close()
+            pool.join()
+        else:
+            cython_msh.interp_grid_nodedata_max(
                np.array(n_voxels, dtype=int), field, nd, 
-               msh_th.elm.node_number_list[i:i+n_elm] - 1,
-               compartments,labelimage,maximage))
-            i += n_elm
-        pool.close()
-        pool.join()
+               msh_th.elm.node_number_list - 1,
+               compartments,labelimage,maximage)
         maximage = maximage.astype(self.value.dtype)
         del nd
         del msh_th

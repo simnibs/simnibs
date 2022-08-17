@@ -87,100 +87,7 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def interp_grid_max(np.ndarray[np.int_t, ndim=1] n_voxels,
-                np.ndarray[double, ndim=2] field,
-                np.ndarray[double, ndim=2] nd,
-                np.ndarray[np.int_t, ndim=2] tetrahedra,
-                np.ndarray[np.int_t, ndim=2] compartments):
-    # image
-    cdef np.ndarray[np.int_t, ndim=3] labelimage = np.zeros((n_voxels[0], n_voxels[1],
-                                                      n_voxels[2]), int)
-
-    cdef np.ndarray[double, ndim=3] maximage = np.zeros((n_voxels[0], n_voxels[1],
-                                                      n_voxels[2]), np.double)
-
-    cdef np.int_t nr_components = field.shape[1]
-    cdef np.int_t node_data = field.shape[0] == nd.shape[0]
-    ## Create bounding box with each tetrahedra
-    cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
-
-    cdef np.ndarray[double, ndim=3] invM = \
-            np.linalg.inv(
-                np.transpose(th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1)))
-
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_min = np.rint(
-        np.min(th_coords, axis=1)).astype(int)
-
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
-        np.max(th_coords, axis=1)).astype(int)
-
-    cdef np.ndarray[np.int_t, ndim=1] in_roi = np.where(
-        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
-
-    th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
-    th_boxes_min = np.maximum(th_boxes_min, 0)
-    # pre-calculate the inverse of M (this is faster than solving every M[j])
-    #invM[in_roi] = np.linalg.inv(M[in_roi])
-    
-    cdef np.int_t n_compartments = compartments.shape[0]
-    cdef np.int_t max_members = compartments.shape[1]
-
-    cdef int i, j, k, x, y, z, info, n, m
-    cdef np.ndarray[double, ndim=1] b = np.zeros((4, ), dtype=float)
-    cdef double xc, yc, zc
-    cdef double eps = 1e-5
-    cdef double current_field
-
-    for j in in_roi:
-        for x in range(th_boxes_min[j, 0], th_boxes_max[j, 0] + 1):
-            xc = x - th_coords[j, 3, 0]
-            for y in range(th_boxes_min[j, 1], th_boxes_max[j, 1] + 1):
-                yc = y - th_coords[j, 3, 1]
-                for z in range(th_boxes_min[j, 2], th_boxes_max[j, 2] + 1):
-                    zc = z - th_coords[j, 3, 2]
-                    b[0] = invM[j, 0, 0] * xc + \
-                           invM[j, 0, 1] * yc + \
-                           invM[j, 0, 2] * zc
-                    if b[0] > -eps and b[0] < 1. + eps:
-                        b[1] = invM[j, 1, 0] * xc + \
-                               invM[j, 1, 1] * yc + \
-                               invM[j, 1, 2] * zc
-                        if b[1] > -eps and b[0] + b[1] < 1. + eps:
-                            b[2] = invM[j, 2, 0] * xc + \
-                                   invM[j, 2, 1] * yc + \
-                                   invM[j, 2, 2] * zc
-                            b[3] = 1. - b[0] - b[1] - b[2]
-                            if b[2] > -eps and b[3] > -eps:
-                                for k in range(n_compartments):
-                                    current_field = 0.0
-                                    n = 0
-                                    for m in range(max_members):
-                                        if compartments[k,m] == -1:
-                                            break
-                                        elif node_data:
-                                            for i in range(4):
-                                                current_field += (b[i] * field[tetrahedra[j, i], compartments[k,m]])
-                                            n += 1
-                                        else:
-                                            current_field +=  field[j, compartments[k,m]]
-                                            n += 1
-                                    if n > 1:
-                                        current_field /= n
-                                    if current_field > maximage[x,y,z]:
-                                        maximage[x,y,z] = current_field
-                                        labelimage[x,y,z] = k
-
-    del invM
-    del th_boxes_min
-    del th_boxes_max
-    del in_roi
-    del th_coords
-    del b
-    return labelimage, maximage
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
+def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.ndarray[double, ndim=2] field,
                 np.ndarray[double, ndim=2] nd,
                 np.ndarray[np.int_t, ndim=2] tetrahedra,
@@ -188,12 +95,11 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
                 np.ndarray[np.int_t, ndim=3] labelimage,
                 np.ndarray[double, ndim=3] maximage):
     
-    cdef np.ndarray[double, ndim=1] c_weights = np.array([1.0/float(len(c)) for c in compartments], dtype=float)
-    cdef np.ndarray[np.int_t, ndim=1] comp = np.asarray([c for ci in compartments for c in ci],dtype=int)
-    cdef np.ndarray[np.uint8_t, ndim=1] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
+    cdef double[:] c_weights =  np.array([1.0/float(len(c)) for c in compartments], dtype=np.double)
+    cdef int[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=int)
+    cdef np.uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
     cdef np.int_t n_comp = len(comp)
     
-    #cdef np.int_t nr_components = field.shape[1]
     cdef np.int_t node_data = field.shape[0] == nd.shape[0]
     ## Create bounding box with each tetrahedra
     cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
@@ -208,17 +114,16 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
 
     cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
         np.max(th_coords, axis=1)).astype(int)
-
-    cdef np.ndarray[np.int_t, ndim=1] in_roi = np.where(
+    
+    cdef int[:] in_roi = np.where(
         np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
 
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
     th_boxes_min = np.maximum(th_boxes_min, 0)
-    # pre-calculate the inverse of M (this is faster than solving every M[j])
-    #invM[in_roi] = np.linalg.inv(M[in_roi])
 
     cdef int i, j, k, x, y, z, info, m, jj
-    cdef np.ndarray[double, ndim=1] b = np.zeros((4, ), dtype=float)
+    cdef double[4] b
+    cdef double[3] xcv, ycv
     cdef double xc, yc, zc
     cdef double eps = 1e-5
     cdef double current_field = 0.0
@@ -229,31 +134,31 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
         for jj in range(n_in_roi):
             j = in_roi[jj]
             for x in range(th_boxes_min[j, 0], th_boxes_max[j, 0] + 1):
-                xc = x - th_coords[j, 3, 0]
+                xc = (x - th_coords[j, 3, 0])
+                xcv[0] = xc * invM[j, 0, 0]
+                xcv[1] = xc * invM[j, 1, 0]
+                xcv[2] = xc * invM[j, 2, 0]
                 for y in range(th_boxes_min[j, 1], th_boxes_max[j, 1] + 1):
                     yc = y - th_coords[j, 3, 1]
+                    ycv[0] = xcv[0] + yc * invM[j, 0, 1]
+                    ycv[1] = xcv[1] + yc * invM[j, 1, 1]
+                    ycv[2] = xcv[2] + yc * invM[j, 2, 1]
                     for z in range(th_boxes_min[j, 2], th_boxes_max[j, 2] + 1):
                         zc = z - th_coords[j, 3, 2]
-                        b[0] = invM[j, 0, 0] * xc + \
-                               invM[j, 0, 1] * yc + \
+                        b[0] = ycv[0] + \
                                invM[j, 0, 2] * zc
                         if b[0] > -eps and b[0] < 1. + eps:
-                            b[1] = invM[j, 1, 0] * xc + \
-                                   invM[j, 1, 1] * yc + \
+                            b[1] = ycv[1] + \
                                    invM[j, 1, 2] * zc
                             if b[1] > -eps and b[0] + b[1] < 1. + eps:
-                                b[2] = invM[j, 2, 0] * xc + \
-                                       invM[j, 2, 1] * yc + \
+                                b[2] = ycv[2] + \
                                        invM[j, 2, 2] * zc
                                 b[3] = 1. - b[0] - b[1] - b[2]
                                 if b[2] > -eps and b[3] > -eps:
                                     m = 0
                                     for k in range(n_comp):
-                                        if node_data:
-                                            for i in range(4):
-                                                current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
-                                        else:
-                                            current_field +=  field[j, comp[k]]
+                                        for i in range(4):
+                                            current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
                                         if c_last[k]:
                                             current_field *= c_weights[m]
                                             if current_field > maximage[x,y,z]:
@@ -267,7 +172,6 @@ def interp_grid_maxp(np.ndarray[np.int_t, ndim=1] n_voxels,
     del th_boxes_max
     del in_roi
     del th_coords
-    del b
     del comp
     del c_weights
     del c_last
