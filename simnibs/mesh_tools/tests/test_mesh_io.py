@@ -2004,10 +2004,10 @@ class TestNodeRasterization:
 class TestAABBTree:
     def test_AABBTree(self, sphere3_msh):
         tree = sphere3_msh.get_AABBTree()
+        
         insideidx = tree.points_inside(np.array(((0,0,0),(50,50,50),(10,50,50))))
         assert(insideidx==[0,2])
         assert(tree.any_point_inside(np.array(((0,0,0),(50,30,25)))))
-        assert(not tree.any_point_inside(np.array((68,68,0))))
-        
+        assert(tree.any_point_inside(np.array((50,30,25))==False))
         tree.__del__()
         del tree
