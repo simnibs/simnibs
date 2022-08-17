@@ -117,7 +117,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
         np.max(th_coords, axis=1)).astype(int)
     
     cdef int[:] in_roi = np.where(
-        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
+        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(np.int32)
 
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
     th_boxes_min = np.maximum(th_boxes_min, 0)
