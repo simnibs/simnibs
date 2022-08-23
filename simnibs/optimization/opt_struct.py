@@ -1107,10 +1107,13 @@ class TDCSoptimize():
             v.Mesh.SurfaceFaces = 0
             v.View[0].Visible = 1
             # Change vector type for target field
+            offset=2
+            if self.lf_type == 'node':
+                offset=3
             for i, t in enumerate(self.target):
-                v.View[2 + i].VectorType = 4
-                v.View[2 + i].ArrowSizeMax = 60
-                v.View[2 + i].Visible = 1
+                v.View[offset + i].VectorType = 4
+                v.View[offset + i].ArrowSizeMax = 60
+                v.View[offset + i].Visible = 1
             # Electrode geo file
             el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
             self.electrode_geo(el_geo_fn, currents)
@@ -1259,7 +1262,6 @@ class TDCSoptimize():
         mesh_io.write_geo_spheres(elec_positions, fn_out, currents, "electrode_currents")
 
 
-
     def field_mesh(self, currents):
         ''' Creates showing the targets and the field
         Parameters
@@ -1279,9 +1281,13 @@ class TDCSoptimize():
                          enumerate(self.avoid)]
         e_field = self.field(currents)
         e_magn_field = e_field.norm()
+        if self.lf_type == 'node':
+            normals = -self.mesh.nodes_normals()[:]
+            e_normal_field = np.sum(e_field[:]*normals, axis=1)
+            e_normal_field = mesh_io.NodeData(e_normal_field, 'normal' + e_field.field_name, mesh=self.mesh)
         m = copy.deepcopy(self.mesh)
         if self.lf_type == 'node':
-            m.nodedata = [e_magn_field, e_field] + target_fields + weight_fields
+            m.nodedata = [e_magn_field, e_field, e_normal_field] + target_fields + weight_fields
         elif self.lf_type == 'element':
             m.elmdata = [e_magn_field, e_field] + target_fields + weight_fields
         return m

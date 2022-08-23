@@ -1573,7 +1573,6 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         for hemi in subject_files.regions:
             if fields is None or name in fields:
                 # Interpolate to middle gm
-                data = data.as_nodedata()
                 interpolated = data.interpolate_to_surface(
                     middle_surf[hemi], th_indices=th_indices)
 
