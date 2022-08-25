@@ -31,6 +31,6 @@ Further notes
 .. code-block:: python
   
   from simnibs.cli.convert_3_to_4 import convert_old_new
-  convert_old_new(m2m_<subID_old>, m2m_<subID_new>)
+  convert_old_new('m2m_<subID_old>', 'm2m_<subID_new>')
 
 \
