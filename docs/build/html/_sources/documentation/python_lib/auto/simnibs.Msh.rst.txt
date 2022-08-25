@@ -16,6 +16,7 @@
       ~Msh.__init__
       ~Msh.add_element_field
       ~Msh.add_node_field
+      ~Msh.any_pts_inside_surface
       ~Msh.calc_matsimnibs
       ~Msh.compact_ordering
       ~Msh.crop_mesh
@@ -35,6 +36,7 @@
       ~Msh.fix_tr_node_ordering
       ~Msh.gamma_metric
       ~Msh.gaussian_curvature
+      ~Msh.get_AABBTree
       ~Msh.interp_matrix
       ~Msh.intersect_ray
       ~Msh.intersect_segment

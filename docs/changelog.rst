@@ -17,7 +17,7 @@ Changelog
  * Tested on Windows 10, Linux and Macs with Intel and Apple Silicon
  * Headreco and mri2mesh are deprecated.
  
-NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Likewise, head models from older versions will not be fully supported in SimNIBS 4 (postprocessing options will not run).
+NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cannot be used in older versions. Head models from older versions need to be converted using the command line tool *convert_3_to_4* for use with SimNIBS 4.
  
 Known issues:
  * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)

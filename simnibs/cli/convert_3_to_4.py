@@ -245,14 +245,33 @@ def _setup_logger(logfile):
     register_excepthook(logger)
     
     
-def convert_old_new(sf_old, sf_new):
+def convert_old_new(subpath_old, subpath_new):
     ''' convert old head models to simnibs 4 
     '''
+    # get old and new file structure
+    sf_old = SubjectFiles_old(subpath = subpath_old)
+    if not os.path.exists(sf_old.subpath):
+        raise FileNotFoundError('Did not find folder '+sf_old.subpath)
+    
+    if not subpath_new:
+        subpath_new = sf_old.subpath+'_v4'
+    else:
+        pn = os.path.split(subpath_new)[1]
+        if not pn.startswith('m2m_'):
+            raise IOError('The new folder name has to start with \'m2m_\'. Now it is: '+subpath_new)    
+    sf_new = SubjectFiles(subpath = subpath_new)    
+    
+    if os.path.abspath(sf_old.subpath) == os.path.abspath(sf_new.subpath):
+        raise FileExistsError('The names of the m2m-folders for the old and converted data have to differ')
+    
     # create directory and start logging
     if not os.path.exists(sf_new.subpath):
         os.mkdir(sf_new.subpath)
     _setup_logger(sf_new.charm_log)  
     logger.info("Converting from "+sf_old.subpath+" to "+sf_new.subpath)
+    if sf_old.seg_type is None:
+        logger.error("The head model was not created with mri2mesh or headreco")
+        return
     logger.info("The original head model was created by "+sf_old.seg_type)
     
     # Copying MR images and mesh
@@ -369,7 +388,6 @@ def convert_old_new(sf_old, sf_new):
         
 
 def parseArguments(argv):
-    
     usage_text = textwrap.dedent('''
                                  
 Converts head models created by mri2mesh or headreco for use in simnibs 4:
@@ -379,7 +397,7 @@ Note:
     m2m_new can be left out, then the new folder name will be m2m_old_v4
 
     ''')
-    
+
     parser = argparse.ArgumentParser(
         prog="convert_3_to_4",usage=usage_text)
     parser.add_argument('m2m_old', nargs='?', help="original m2m-folder")
@@ -395,25 +413,7 @@ Note:
 
 def main():
     args = parseArguments(sys.argv[1:])
-    subpath_old = args.m2m_old
-    subpath_new = args.m2m_new
-    
-    sf_old = SubjectFiles_old(subpath = subpath_old)
-    if not os.path.exists(sf_old.subpath):
-        raise FileNotFoundError('Did not find folder '+sf_old.subpath)
-    
-    if not subpath_new:
-        subpath_new = sf_old.subpath+'_v4'
-    else:
-        pn = os.path.split(subpath_new)[1]
-        if not pn.startswith('m2m_'):
-            raise IOError('The new folder name has to start with \'m2m_\'. Now it is: '+subpath_new)    
-    sf_new = SubjectFiles(subpath = subpath_new)    
-    
-    if os.path.abspath(sf_old.subpath) == os.path.abspath(sf_new.subpath):
-        raise FileExistsError('The names of the m2m-folders for the old and converted data have to differ')
-        
-    convert_old_new(sf_old, sf_new)
+    convert_old_new(args.m2m_old, args.m2m_new)
     
 
 if __name__ == '__main__':
