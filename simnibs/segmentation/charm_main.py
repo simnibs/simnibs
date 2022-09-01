@@ -154,7 +154,7 @@ def run(
         atlas_level2,
         atlas_affine_name,
         gmm_parameters,
-    ) = _setup_atlas(samseg_settings, sub_files.T2_reg)
+    ) = _setup_atlas(samseg_settings, sub_files.T2_reg, usesettings)
 
     if initatlas:
         # initial affine registration of atlas to input images,
@@ -648,7 +648,7 @@ def _check_q_and_s_form(scan, force_forms=False):
     return scan
 
 
-def _setup_atlas(samseg_settings, T2_reg):
+def _setup_atlas(samseg_settings, T2_reg, usesettings):
     # Set-up atlas paths
     atlas_name = samseg_settings["atlas_name"]
     logger.info("Using " + atlas_name + " as charm atlas.")
@@ -661,14 +661,26 @@ def _setup_atlas(samseg_settings, T2_reg):
     atlas_affine_name = os.path.join(atlas_path, atlas_settings_names["affine_atlas"])
     atlas_level1 = os.path.join(atlas_path, atlas_settings_names["atlas_level1"])
     atlas_level2 = os.path.join(atlas_path, atlas_settings_names["atlas_level2"])
-    if os.path.exists(T2_reg):
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t2"]
-        )
+    custom_gmm_parameters = samseg_settings["gmm_parameter_file"]
+
+    if type(usesettings) == list:
+        usesettings = usesettings[0]
+
+    if not usesettings or not custom_gmm_parameters:
+        if os.path.exists(T2_reg):
+            gmm_parameters = os.path.join(
+                atlas_path, atlas_settings_names["gaussian_parameters_t2"]
+            )
+        else:
+            gmm_parameters = os.path.join(
+                atlas_path, atlas_settings_names["gaussian_parameters_t1"]
+            )
     else:
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t1"]
-        )
+        settings_dir = os.path.dirname(usesettings)
+        gmm_parameters = os.path.join(settings_dir, custom_gmm_parameters)
+        if not os.path.exists(gmm_parameters):
+            raise FileNotFoundError(f"Could not find gmm parameter file: {gmm_parameters}")
+
     return (
         template_name,
         atlas_settings,
