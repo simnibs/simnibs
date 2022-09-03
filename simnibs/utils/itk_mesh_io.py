@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-\
 '''
-    IO functions for Gmsh .msh files
+    Convert vtk text files to simNIBS mesh objects
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
@@ -25,7 +25,7 @@ import gzip
 
 def read_itk_tetrahedron(fn):
     with gzip.open(fn,'rt') as fid:
-        lines=fid.readlines()
+        lines=fid.read().split('\n')
     keys = ('Number of points:','Number of cells:','Number of labels:')
     vals = [0 for key in keys]
     j = 0
@@ -40,38 +40,25 @@ def read_itk_tetrahedron(fn):
         if line.find('Reference position')>=0:
             break
         i += 1
-    vertices = np.fromstring(''.join(lines[i+1:i+1+vals[0]]),sep=' ',dtype='float').reshape(vals[0],4)
-    i += vals[0]+1
+    vertices = np.fromstring(''.join(lines[i+1:i+1+vals[0]]), sep=' ', dtype='float32').reshape(vals[0], 4)
+    i += vals[0] + 1
+    
+    i += next(j for j,line in enumerate(lines[i+1:]) if line.startswith('Cells:'))
+    
+    ii = next(j for j,line in enumerate(lines[i+1:]) if line.startswith('Point parameters:'))
+    tet = np.fromstring(' '.join([' '.join(line.split()[2:]) 
+                                for line in lines[i+1:i+1+ii] if line.find('TETRAHEDRON')>=0]
+                               ), dtype=int, sep=' ').reshape(-1,4)
 
-    for line in lines[i:]:
-        if line.startswith('Cells:'):
-            break
-        i += 1
-    thetra = []
-
-    for line in lines[i+1:]:
-        j = line.find('TETRAHEDRON')
-        if j>=0:
-            thetra.append(np.fromstring(line[j+11:], sep=' ', dtype='int', count=4))
-        if line.startswith('Point parameters:'):
-            break
-        i += 1
-    thetra=np.array(thetra)
+    i += ii
+    vertidx = vertices[:, 0].astype('int')
+    tet = np.searchsorted(vertidx, tet)
+    vertices = vertices[:, 1:]
     
+    nodedata = np.array([np.array(line.split()[:-4], dtype='float32') for line in lines[i+2:i+2+vals[0]]])
     
-    vertidx = vertices[:,0].astype('int')
-    thetra = np.searchsorted(vertidx,thetra)
-    vertices = vertices[:,1:]
-    
-    nodestrings=[line.replace('false','0').replace('true','1')
-                        for line in lines[i+2:i+2+vals[0]]]
-    nodedata = np.fromstring(''.join(nodestrings), sep=' ',dtype='float32').reshape(vals[0],1+vals[2]+4)
-    # nodedata = np.genfromtxt(nodestring, delimiter=' ',dtype='float').reshape(vals[0],1+vals[2]+4)
-    # nodedata = np.array([np.array(line.split(), dtype=float) for line in nodestrings])
-    # nodedata = nodedata.reshape(vals[0],1+vals[2]+4)
     assert np.allclose(nodedata[:,0],vertidx)
-    
-    return vertices, thetra, nodedata[:,1:-4]
+    return vertices, tet, nodedata[:,1:]
 
 def itk_to_msh(fn):
     vertices,tetrahedra,nodedata=read_itk_tetrahedron(fn)
