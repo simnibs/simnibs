@@ -24,6 +24,7 @@
       ~NodeData.gradient
       ~NodeData.interpolate_scattered
       ~NodeData.interpolate_to_grid
+      ~NodeData.interpolate_to_grid_max
       ~NodeData.interpolate_to_surface
       ~NodeData.mean_field_norm
       ~NodeData.node_data2elm_data

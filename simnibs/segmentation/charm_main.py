@@ -46,6 +46,7 @@ def run(
     usesettings=None,
     noneck=False,
     init_transform=None,
+    use_transform=None,
     force_forms=False,
     options_str=None,
     debug=False,
@@ -71,6 +72,12 @@ def run(
     mesh_image : bool
         run tetrahedral meshing (default = False)
     --> further parameters:
+    use_transform: path-like
+        Transformation matrix used instead of the affine registration of the
+        MNI template to the subject MRI, i.e., it takes the MNI template *to*
+        subject space. Supplied as a path to a space delimited .txt file
+        containing a 4x4 transformation matrix (default = None, corresponding
+        to the identity matrix).
     init_transform: path-like
         Transformation matrix used to initialize the affine registration of the
         MNI template to the subject MRI, i.e., it takes the MNI template *to*
@@ -104,16 +111,11 @@ def run(
     samseg_settings = settings["samseg"]
     logger.debug(settings)
 
-
     if init_transform:
-        init_transform = np.loadtxt(init_transform)
-        assert init_transform.shape == (
-            4,
-            4,
-        ), f"`init_transform` should have shape (4, 4), got {init_transform.shape}"
-        # Change from RAS to LPS. ITK uses LPS internally
-        RAS2LPS = np.diag([-1, -1, 1, 1])
-        init_transform = RAS2LPS @ init_transform @ RAS2LPS
+        init_transform = _read_transform(init_transform)
+
+    if use_transform:
+        use_transform = _read_transform(use_transform)
 
     _prepare_t1(T1, sub_files.reference_volume, force_forms)
     _prepare_t2(T1, T2, registerT2, sub_files.T2_reg, force_forms)
@@ -154,7 +156,7 @@ def run(
         atlas_level2,
         atlas_affine_name,
         gmm_parameters,
-    ) = _setup_atlas(samseg_settings, sub_files.T2_reg)
+    ) = _setup_atlas(samseg_settings, sub_files.T2_reg, usesettings)
 
     if initatlas:
         # initial affine registration of atlas to input images,
@@ -162,17 +164,22 @@ def run(
         logger.info("Starting affine registration and neck correction.")
         inputT1 = sub_files.T1_denoised if do_denoise else T1
 
-        if samseg_settings["init_type"] == "atlas":
-            trans_mat = None
-        elif samseg_settings["init_type"] == "mni":
-            mni_template = file_finder.Templates().mni_volume
-            mni_settings = settings["initmni"]
-            trans_mat = charm_utils._init_atlas_affine(
-                inputT1, mni_template, mni_settings
-            )
+        if use_transform is not None:
+            logger.info("Using world-to-world transform provided by user.")
+            trans_mat = use_transform
         else:
-            logger.info("Affine initialization type unknown. Defaulting to 'atlas'")
-            trans_mat = None
+            if samseg_settings["init_type"] == "atlas":
+                trans_mat = None
+            elif samseg_settings["init_type"] == "mni":
+                mni_template = file_finder.Templates().mni_volume
+                mni_settings = settings["initmni"]
+                trans_mat = charm_utils._init_atlas_affine(
+                    inputT1, mni_template, mni_settings
+                )
+            else:
+                logger.info("Affine initialization type unknown. Defaulting to 'atlas'")
+                trans_mat = None
+
 
         charm_utils._register_atlas_to_input_affine(
             inputT1,
@@ -648,7 +655,7 @@ def _check_q_and_s_form(scan, force_forms=False):
     return scan
 
 
-def _setup_atlas(samseg_settings, T2_reg):
+def _setup_atlas(samseg_settings, T2_reg, usesettings):
     # Set-up atlas paths
     atlas_name = samseg_settings["atlas_name"]
     logger.info("Using " + atlas_name + " as charm atlas.")
@@ -661,14 +668,26 @@ def _setup_atlas(samseg_settings, T2_reg):
     atlas_affine_name = os.path.join(atlas_path, atlas_settings_names["affine_atlas"])
     atlas_level1 = os.path.join(atlas_path, atlas_settings_names["atlas_level1"])
     atlas_level2 = os.path.join(atlas_path, atlas_settings_names["atlas_level2"])
-    if os.path.exists(T2_reg):
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t2"]
-        )
+    custom_gmm_parameters = samseg_settings["gmm_parameter_file"]
+
+    if type(usesettings) == list:
+        usesettings = usesettings[0]
+
+    if not usesettings or not custom_gmm_parameters:
+        if os.path.exists(T2_reg):
+            gmm_parameters = os.path.join(
+                atlas_path, atlas_settings_names["gaussian_parameters_t2"]
+            )
+        else:
+            gmm_parameters = os.path.join(
+                atlas_path, atlas_settings_names["gaussian_parameters_t1"]
+            )
     else:
-        gmm_parameters = os.path.join(
-            atlas_path, atlas_settings_names["gaussian_parameters_t1"]
-        )
+        settings_dir = os.path.dirname(usesettings)
+        gmm_parameters = os.path.join(settings_dir, custom_gmm_parameters)
+        if not os.path.exists(gmm_parameters):
+            raise FileNotFoundError(f"Could not find gmm parameter file: {gmm_parameters}")
+
     return (
         template_name,
         atlas_settings,
@@ -688,3 +707,12 @@ def _denoise_inputs(T1, T2, sub_files):
         logger.info("Denoising the registered T2 and saving.")
         charm_utils._denoise_input_and_save(sub_files.T2_reg, sub_files.T2_reg_denoised)
 
+def _read_transform(transform_file):
+    transform = np.loadtxt(transform_file)
+    assert transform.shape == (
+        4,
+        4,
+    ), f"`transform` should have shape (4, 4), got {transform.shape}"
+    # Change from RAS to LPS. ITK uses LPS internally
+    RAS2LPS = np.diag([-1, -1, 1, 1])
+    return RAS2LPS @ transform @ RAS2LPS

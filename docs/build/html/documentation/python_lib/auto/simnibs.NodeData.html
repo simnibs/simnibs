@@ -169,43 +169,46 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_grid</span></code>(n_voxels, affine, **kwargs)</p></td>
 <td><p>Interpolates the NodeData into a grid.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_surface</span></code>(surface[, out_fill, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_grid_max</span></code>(n_voxels, affine[, ...])</p></td>
+<td><p>Interpolates the NodeData into a grid.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interpolate_to_surface</span></code>(surface[, out_fill, ...])</p></td>
 <td><p>Interpolates the field in the nodes of a given surface The interpolation occurs in the tetrahedra!</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_field_norm</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_field_norm</span></code>()</p></td>
 <td><p>Calculates V*w/sum(w) Where V is the magnitude of the field, and w is the volume or area of the mesh where the field is defined.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_data2elm_data</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_data2elm_data</span></code>()</p></td>
 <td><p>Transforms an ElementData field into a NodeData field the value in the element is the average of the value in the nodes</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm</span></code>([ord])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm</span></code>([ord])</p></td>
 <td><p>Calculate the norm (magnitude) of the field</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">normal</span></code>([fill])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">normal</span></code>([fill])</p></td>
 <td><p>Calculate the normal component of the field in the mesh surfaces</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5_data_matrix_row</span></code>(leadfield_fn, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5_data_matrix_row</span></code>(leadfield_fn, ...)</p></td>
 <td><p>Reads a row of an hdf5 data matrix and store it as Data</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">summary</span></code>([percentiles, focality_cutoffs, units])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">summary</span></code>([percentiles, focality_cutoffs, units])</p></td>
 <td><p>Creates a text summaty of the field</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tangent</span></code>([fill])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tangent</span></code>([fill])</p></td>
 <td><p>Calculate the tangent component of the field in the surfaces</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_deformed_grid</span></code>(warp, reference[, out, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_deformed_grid</span></code>(warp, reference[, out, ...])</p></td>
 <td><p>Interpolates field to a grid and apply non-linear interpolation</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_nifti</span></code>(n_voxels, affine[, fn, units, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_nifti</span></code>(n_voxels, affine[, fn, units, ...])</p></td>
 <td><p>Transforms the data in a nifti file</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view_options</span></code>([v_range, percentile, visible, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view_options</span></code>([v_range, percentile, visible, ...])</p></td>
 <td><p>Generates a View object with visualization opions</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(fn)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(fn)</p></td>
 <td><p>Writes this NodeData field to a file with field information only This file needs to be merged with a mesh for visualization</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_hdf5</span></code>(hdf5_fn[, path])</p></td>
 <td><p>Writes the field to an hdf5 file</p></td>
 </tr>
 </tbody>

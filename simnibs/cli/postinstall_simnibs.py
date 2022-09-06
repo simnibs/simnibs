@@ -723,6 +723,7 @@ def fix_qtconf(install_dir):
         keys = ('Prefix', 'Binaries', 'Libraries', 'Headers')
         changed = False
         for key in keys:
+            if not config.has_option('Paths',key): continue
             dirs = os.path.normpath(paths[key]).split(os.sep)
             idx = [dirs.index(s) for s in dirs if 'simnibs_env' in s]
             if len(idx)>0:

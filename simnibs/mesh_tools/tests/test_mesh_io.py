@@ -9,6 +9,7 @@ from scipy.spatial import ConvexHull
 
 from ... import SIMNIBSDIR
 from .. import mesh_io
+from ...utils import itk_mesh_io
 
 
 @pytest.fixture(scope='module')
@@ -32,6 +33,10 @@ def sphere3_baricenters(sphere3_msh):
             sphere3_msh.elm.node_number_list[tr_indexes, :3] - 1], axis=1)
     return baricenters
 
+@pytest.fixture
+def atlas_itk_msh():
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'cube_atlas', 'atlas.txt.gz')
+    return itk_mesh_io.itk_to_msh(fn)
 
 class TestGetitem:
     def test_getitem_scalar(self):
@@ -1975,4 +1980,34 @@ class TestHashing:
         hash_ = mesh_io._hash_rows(np.array(array))
         _, count = np.unique(hash_, return_counts=True)
         assert np.all(count == 1)
+        
+class TestNodeRasterization:
+    def test_interpolate_to_grid_max(self, atlas_itk_msh):
+        l, p = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
+            np.max(atlas_itk_msh.nodes.node_coord,axis=0).astype(int),
+            np.identity(4), parallel=False)
+        assert np.allclose(np.bincount(l.ravel()),(49984, 9335))
+        assert np.allclose(np.bincount(p.ravel().astype(int)),(5652, 53667))
+        
+        lp, pp = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
+            np.max(atlas_itk_msh.nodes.node_coord,axis=0).astype(int),
+            np.identity(4), parallel=True)
+        assert(np.allclose(l,lp))
+        assert(np.allclose(p,pp))
+        
+        lp, pp = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
+            np.max(atlas_itk_msh.nodes.node_coord,axis=0).astype(int), compartments=[[1],[0]],
+            affine=np.identity(4), parallel=True)
+        assert(np.all(l!=lp))
+        assert(np.allclose(p,pp))
 
+class TestAABBTree:
+    def test_AABBTree(self, sphere3_msh):
+        tree = sphere3_msh.get_AABBTree()
+        
+        insideidx = tree.points_inside(np.array(((0,0,0),(50,50,50),(10,50,50))))
+        assert(insideidx==[0,2])
+        assert(tree.any_point_inside(np.array(((0,0,0),(50,30,25)))))
+        assert(tree.any_point_inside(np.array((50,30,25))==False))
+        tree.__del__()
+        del tree

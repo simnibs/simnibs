@@ -387,42 +387,42 @@ class Elements:
 
         outside_faces = faces[idx[count == 1]]
         return outside_faces
-    
-    
+
+
     def get_surface_outline(self, triangle_indices=None):
         """ returns the outline of a non-closed surface
-        
+
         Parameters
         ----------------
         triangle_indices: np.ndarray (optional)
             Indices of the triangles for which the outline should be determined
             (1-based element indices, default: all triangles)
-    
+
         Returns
         -------------
         edges: np.ndarray
             Nx2 array of node indices
-    
+
         """
         if triangle_indices is None:
-            triangle_indices = self.triangles        
+            triangle_indices = self.triangles
         tr = self[triangle_indices][:,0:3]
-        
+
         edges = tr[:, [[0, 1], [1, 2], [2, 0]]]
         edges = edges.reshape(-1, 2)
-        
+
         _, idx, count = np.unique(
                 np.sort(edges, axis=1),
                 return_index=True,
                 return_counts=True,
                 axis=0)
-        
+
         if np.any(count > 2):
             warnings.warn('Found an edge with more than 2 adjacent triangles!')
-    
+
         return edges[idx[count == 1]]
-    
-    
+
+
     def nodes_with_tag(self, tags):
         ''' Gets all nodes indexes that are part of at least one element with the given
         tags
@@ -490,23 +490,23 @@ class Elements:
     def _get_tet_faces_and_adjacent_tets(self):
         ''' reconstructs the triangle faces of the tetrahedra for further use
             by Msh.reconstruct_unique_surface() and during mesh despiking
-        
+
         Returns
         ---------
             faces: N_faces x 3 array
                 node indices of all tet faces
-            idx_tet_faces: N_tet x 4 array 
+            idx_tet_faces: N_tet x 4 array
                 indices of the tet faces (indices into the faces array)
             adj_th: N_tet x 4 array
                 indices of tet neighbors (-1 marks no adjacent; i.e, "air")
-        
+
         Notes
         ------
             * All returned indices are 0-based !!
             * The mesh must contain only tetrahedra
         '''
         assert np.all(self.elm_type==4)
-        
+
         faces, th_faces, adjacency_list = self.get_faces()
         faces = np.sort(faces,axis=1)-1
 
@@ -515,9 +515,9 @@ class Elements:
         for i in range(4):
             adj = adjacency_list[th_faces[:, i]]
             adj_th[:, i] = adj[adj != th_indexing]
-    
+
         return faces, th_faces.astype(int), adj_th
-    
+
 
     def connected_components(self, element_indexes=None):
         ''' Finds connected components
@@ -613,8 +613,8 @@ class Elements:
 
     def add_triangles(self, triangles, tag):
         ''' Add triangles to mesh in-place
-        
-        Parameters 
+
+        Parameters
         -----------
         triangles: (Nx1) array
             Triangles to be added to mesh
@@ -852,7 +852,7 @@ class Msh:
         """
         if self.nodes.nr == 0:
             return copy.deepcopy(other)
-        
+
         joined = copy.deepcopy(self)
         joined.elmdata = []
         joined.nodedata = []
@@ -1300,7 +1300,7 @@ class Msh:
 
     def triangle_angles(self):
         ''' Calculates minimum angle of the mesh triangles
-        
+
         Returns
         --------
         min_triangle_angles: ElementData
@@ -1439,7 +1439,7 @@ class Msh:
         sideA = node_tr[:, 1] - node_tr[:, 0]
         sideB = node_tr[:, 2] - node_tr[:, 0]
         normals = np.cross(sideA, sideB)
-        
+
         nd = np.zeros((self.nodes.nr, 3))
         for s in range(smooth + 1):
             for i in range(3):
@@ -1450,10 +1450,10 @@ class Msh:
 
             normals = np.sum(nd[triangle_nodes], axis=1)
             normals /= np.linalg.norm(normals, axis=1)[:, None]
-        
+
         nodes = np.unique(triangle_nodes)
         nd[nodes] = nd[nodes] / np.linalg.norm(nd[nodes], axis=1)[:, None]
- 
+
         return NodeData(nd, 'normals')
 
     def gaussian_curvature(self):
@@ -1527,7 +1527,7 @@ class Msh:
                 (th_min <= points_max + slack) * (th_max >= points_min - slack), axis=1))[0]
         th_indices = th_indices[th_in_box]
         # if all the points are outside the bounding box
-        if len(th_indices) == 0: 
+        if len(th_indices) == 0:
             if compute_baricentric:
                 return -np.ones(len(points), dtype=int), np.zeros_like(points)
             else:
@@ -1678,9 +1678,9 @@ class Msh:
         normals = self.triangle_normals()[:]
         baricenters = self.elements_baricenters()[idx_tr]
         CoG = np.mean(baricenters, axis=0)
-        
+
         nr_inward = sum(np.einsum("ij,ij->i", normals, baricenters-CoG)<0)
-        
+
         if nr_inward/sum(idx_tr) > 0.5:
             buffer = self.elm.node_number_list[idx_tr, 1].copy()
             self.elm.node_number_list[idx_tr, 1] = self.elm.node_number_list[idx_tr, 2]
@@ -1689,7 +1689,7 @@ class Msh:
 
     def compact_ordering(self, node_number):
         ''' Changes the node and element ordering so that it goes from 1 to nr_nodes
-        
+
         Parameters
         --------------
         node_number: N_nodes x 1 ndarray of inte
@@ -1780,22 +1780,22 @@ class Msh:
             faces = faces.reshape(-1, 3)
             faces_hash_array = _hash_rows(faces)
             # keep only tet faces that occur once (i.e. at the outer boundary)
-            [faces_hash_array, idx_fc, counts] = np.unique(faces_hash_array, 
+            [faces_hash_array, idx_fc, counts] = np.unique(faces_hash_array,
                                                   return_index = True,
                                                   return_counts = True)
             faces_hash_array = faces_hash_array[counts == 1]
             idx_fc = idx_fc[counts == 1]
-            
+
             tr_of_interest = self.elm.triangles[corresponding_th_indices==-1]-1
             tr = self.elm.node_number_list[tr_of_interest, :3]
             tr_hash_array = _hash_rows(tr)
-            _, idx_tr, idx_th = np.intersect1d(tr_hash_array, faces_hash_array, 
+            _, idx_tr, idx_th = np.intersect1d(tr_hash_array, faces_hash_array,
                                                return_indices = True)
             # recover indices
             idx_tr = tr_of_interest[idx_tr]
             idx_th = idx_th_all[ idx_fc[idx_th]//4 ] + 1
             corresponding_th_indices[idx_tr] = idx_th
-                
+
         self._correspondance_node_nr_list_hash = node_nr_list_hash
         self._corresponding_tetrahedra = corresponding_th_indices
         gc.collect()
@@ -2100,7 +2100,7 @@ class Msh:
             th_with_points[~np.isin(th_with_points, th_indices)] = -1
         inside = th_with_points != -1
         pos_nr = np.arange(len(pos))
-        
+
         if th_indices is None:
             th_nodes = self.elm[th_with_points[inside]]
             M = scipy.sparse.csc_matrix((len(pos), self.nodes.nr))
@@ -2159,7 +2159,7 @@ class Msh:
                 M = M @ self.elm2node_matrix()
             else:
                 M = M @ msh_in_volume.elm2node_matrix()
- 
+
         return M
 
 
@@ -2203,7 +2203,7 @@ class Msh:
     def intersect_ray(self, points, directions, AABBTree=None):
         ''' Finds the triangle (if any) that intersects with the rays starting
             at points and pointing into directions
-        
+
         Parameters
         ------------
         points: (N, 3) array
@@ -2250,13 +2250,13 @@ class Msh:
             intercpt_pos = []
 
         return indices, intercpt_pos
-    
+
 
     def _intersect_segment_getfarpoint(self, points, directions):
         """
         Gives back the indices of the rays that intersect with the bounding
-        box of the mesh. For intersecting rays, also the end points at the 
-        boundaries of the bounding box after traversing the ROI will be 
+        box of the mesh. For intersecting rays, also the end points at the
+        boundaries of the bounding box after traversing the ROI will be
         returned.
 
         Parameters
@@ -2274,7 +2274,7 @@ class Msh:
         end_points : (N, 3) array
             end points of the intersecting rays
 
-        """ 
+        """
 
         eps=0.01
         ROI = [
@@ -2325,48 +2325,48 @@ class Msh:
     def pts_inside_surface(self, pts, AABBTree=None):
         """
         Test which points are inside the surface.
-        
+
         NOTE: Assumes that the mesh is a closed surface!
-            
+
         Parameters
         -----------
         pts: (Nx3) np.ndarray
         AABBTree: PyAABBTree cython object
             optional precalculated AABBTree
-    
+
         Returns
         -------
         idx_inside: 1d np.ndarray
         Indices of points inside the surface
-    
+
         NOTE: This function works but would benefit from improvements!
         """
         directions = np.zeros_like(pts)
         directions[:,2] = 1
         idx_inside, _ = self.intersect_ray(pts, directions, AABBTree)
-            
-        
+
+
         if len(idx_inside):
             return np.unique(idx_inside[:,0])
         else:
             return []
-    
+
     def any_pts_inside_surface(self, pts, AABBTree):
         """
         Test if any of the points are inside the surface.
-        
+
         NOTE: Assumes that the mesh is a closed surface!
-            
+
         Parameters
         -----------
         pts: (Nx3) np.ndarray
         AABBTree: PyAABBTree cython object
             precalculated AABBTree
-    
+
         Returns
         -------
         any_intersection: bool
-        
+
         """
         directions = np.zeros_like(pts)
         directions[:,2] = 1
@@ -2389,26 +2389,26 @@ class Msh:
     def get_AABBTree(self):
         """
         Build AABBTree for efficient intersection tests
-        
+
         NOTE: Assumes that the mesh is a closed surface!
-            
+
         Parameters
         -----------
-    
+
         Returns
         -------
         AABBTree: pyAABBTree cython object
         precalculated AABBTree
-         
-        NOTE: In order to free up memory you might have to call 
+
+        NOTE: In order to free up memory you might have to call
         __del__() explicitly on the return object!
         """
-        
+
         AABBTree = cgal.pyAABBTree()
         AABBTree.set_data(self.nodes[:], self.elm[self.elm.elm_type == 2, :3] - 1)
         return AABBTree
-    
-    
+
+
     def view(self,
              visible_tags=None,
              visible_fields=[],
@@ -2589,7 +2589,7 @@ class Msh:
             percentiles_table.append([fn] + [f'{p:.2e}{u}' for p in prc])
             focality = f.get_focality(focality_cutoffs, 99.9)
             focality_table.append([fn] + [f'{fv:.2e}{units_mesh}' for fv in focality])
-        
+
         def format_table(table):
             entry_sizes = np.array([[len(e) for e in row] for row in table])
             col_sizes = np.max(entry_sizes, axis=0)
@@ -2639,12 +2639,12 @@ class Msh:
             unique_tags = unique_tags[np.in1d(unique_tags, tags)]
         if len(unique_tags) == 0:
             raise ValueError('Could not find given tags in mesh')
-            
+
         tr_to_add = []
         for t in unique_tags:
             elm_in_tag = (self.elm.tag1 == t) * (self.elm.elm_type == 4)
             tr_to_add.append(self.elm.get_outside_faces(elm_in_tag))
-        
+
         for tr, tag in zip(tr_to_add, unique_tags):
             self.elm.add_triangles(tr, 1000+tag)
 
@@ -2654,7 +2654,7 @@ class Msh:
     # def remove_triangle_twins(self, hierarchy=None):
     #     """
     #     Fix triangle twins created by reconstruct_surfaces.
-        
+
     #     The triangle that has the tag with the lower hierarchy level will
     #     be deleted from each twin pair.
 
@@ -2665,24 +2665,24 @@ class Msh:
     #         for twin pairs.
     #         Default: (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
     #         Skin (1005) has the highest priority, WM (1001) comes next, ...
-        
+
     #     Returns
     #     -------
     #         simnibs.msh.Msh
     #             Mesh without triangle twins
-                
+
     #     Note
     #     ----
     #     Will not fix any element_data that might be associated with this mesh
     #     """
     #     if hierarchy is None:
     #         hierarchy = (1005, 1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010)
-            
+
     #     # generate hash for all triangles, get their tags
     #     idx_tr = np.where(self.elm.elm_type == 2)[0]
     #     hash_tr = _hash_rows(self.elm.node_number_list[idx_tr,:3])
     #     tag_tr = self.elm.tag1[idx_tr]
-        
+
     #     # add any tags not listed in the hierarchy to its end
     #     hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag_tr),hierarchy) )
 
@@ -2692,37 +2692,37 @@ class Msh:
     #     for i in hierarchy:
     #         test_tri = np.where((tag_tr == i) & np.logical_not(idx_done))[0]
     #         idx_done[test_tri] = True
-            
+
     #         _, idx_hlp = np.unique(hash_tr[test_tri], return_index=True)
     #         test_tri = test_tri[idx_hlp]
     #         idx_keep[test_tri] = True
-    
+
     #         other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
     #         idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
     #         idx_done[other_tri[idx_tricopies]] = True
-    
+
     #     if np.sum(idx_done) != idx_done.shape[0]:
     #         warnings.warn('Final mesh might contain overlapping triangles')
     #     if np.unique(hash_tr[idx_keep]).shape[0] != np.sum(idx_keep):
-    #         warnings.warn('Final mesh might contain overlapping triangles - 2')           
-            
+    #         warnings.warn('Final mesh might contain overlapping triangles - 2')
+
     #     # delete overlapping triangles
     #     idx_keep = np.setdiff1d(self.elm.elm_number, idx_tr[np.logical_not(idx_keep)]+1) # 1-based indexing of elm_number
     #     return self.crop_mesh(elements=idx_keep)
 
 
-    def reconstruct_unique_surface(self, hierarchy = None, add_outer_as = None, 
-                                   faces = None, idx_tet_faces = None, adj_tets = None): 
+    def reconstruct_unique_surface(self, hierarchy = None, add_outer_as = None,
+                                   faces = None, idx_tet_faces = None, adj_tets = None):
         ''' Reconstructs the mesh surfaces from the tetrahedra.
-            
+
             Triangles will be added between tetrahedra of different labels,
             or at tetrahedra faces towards "air", whereby the triangle label is
             determined according to the given hierarchy.
-        
+
         Parameters
         ------------
         hierarchy: list of ints or None (optional)
-            Hierarchy of triangle labels that determines which label will 
+            Hierarchy of triangle labels that determines which label will
             be chosen
             Default: (1001, 1002, 1009, 1003, 1004, 1008, 1007, 1006, 1010, 1005)
             WM (1001) has the highest priority, GM (1002) comes next, ...
@@ -2730,8 +2730,8 @@ class Msh:
             add outer boundary to mesh using given index. NOTE: This boundary
             has highest priority, and will be placed "first" (Default: None)
         faces (Default: None), idx_tet_faces (Default: None), adj_tets (Default: None):
-            Output of mesh_io.Elements._get_tet_faces_and_adjacent_tets(). 
-            Can be passed here to speed up surface reco. 
+            Output of mesh_io.Elements._get_tet_faces_and_adjacent_tets().
+            Can be passed here to speed up surface reco.
 
         Note
         ------
@@ -2740,44 +2740,44 @@ class Msh:
         * Will not fix any element_data that might be associated with this mesh
         * will not add triangles to "air" tetrahedra (having label -1)
         '''
-        
-        
+
+
         assert np.all(self.elm.elm_type==4)
-        
+
         if hierarchy is None: hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
         hierarchy = np.asarray(hierarchy)
         if np.any(hierarchy>1000): hierarchy -= 1000
-         
+
         if (add_outer_as is not None) and (add_outer_as > 1000): add_outer_as -= 1000
-                
+
         if (faces is None) or (idx_tet_faces is None) or (adj_tets is None):
             faces, idx_tet_faces, adj_tets = self.elm._get_tet_faces_and_adjacent_tets()
-    
+
         tag = copy.copy(self.elm.tag1)
-    
+
         # get matrix (n_tet x 4) that indicates neighbors with different labels
         adj_labels = tag[adj_tets]
         adj_labels[adj_tets == -1] = -1 # -1 indicates "air"
         adj_diff = adj_labels - tag.reshape((len(tag),1)) != 0
         adj_diff[tag == -1] = False # do not add triangles for "air" tetrahedra
-        
+
         # temporarily renumber tags according to hierarchy
         hierarchy = np.asarray(hierarchy)
         if add_outer_as is not None:
             hierarchy = np.append(-1, hierarchy)
         hierarchy = np.append(hierarchy, np.setdiff1d(np.unique(tag),hierarchy) )
-        
+
         map_old_new = np.zeros(np.max(hierarchy)+2, dtype = int)
-        map_old_new[hierarchy] = np.arange(len(hierarchy))+1       
+        map_old_new[hierarchy] = np.arange(len(hierarchy))+1
         tag = map_old_new[tag]
-        
+
         # get index and tag of surface faces (small tag wins)
         idx_tri = idx_tet_faces[adj_diff]
         tag_tri = np.tile(tag, (4,1)).T
         if add_outer_as is not None:
             tag_tri[adj_labels == -1] = 1 # because map_old_new[-1] == 1
-        tag_tri = tag_tri[adj_diff]    
-        
+        tag_tri = tag_tri[adj_diff]
+
         idx_tri = np.vstack((idx_tri, tag_tri))
         idx_tri = recfunctions.unstructured_to_structured(idx_tri.T,
                                     dtype=np.dtype([('a', int), ('b', int)]))
@@ -2785,18 +2785,18 @@ class Msh:
         idx_tri = recfunctions.structured_to_unstructured(idx_tri)
         idx = np.hstack((True, np.diff(idx_tri[:,0]) != 0))
         idx_tri = idx_tri[idx,:]
-        
+
         # undo renumbering
         tag_tri = idx_tri[:,1]
         tag_tri = hierarchy[tag_tri-1]
         if add_outer_as is not None:
             tag_tri[tag_tri == -1] = add_outer_as
         idx_tri = idx_tri[:,0]
-        
+
         self.elm.add_triangles(faces[idx_tri,:]+1, 1000+tag_tri)
         self.fix_tr_node_ordering()
 
-        
+
     def smooth_surfaces(self, n_steps, step_size=.3, tags=None, max_gamma=5):
         ''' In-place smoothing of the mesh surfaces using Taubin smoothing,
             ensures that the tetrahedra quality does not fall below
@@ -2814,10 +2814,10 @@ class Msh:
             list of tags to be smoothed. Default: all
         max_gamma: (optional) float
             Maximum gamma tetrahedron quality metric. Surface nodes are
-            excluded from smoothing when gamma of neighboring tetrahedra 
+            excluded from smoothing when gamma of neighboring tetrahedra
             would exceed max_gamma otherwise. Default: 5
-            (for gamma metric see Parthasarathy et al., Finite Elements in 
-             Analysis and Design, 1994) 
+            (for gamma metric see Parthasarathy et al., Finite Elements in
+             Analysis and Design, 1994)
         '''
         assert step_size > 0 and step_size < 1
         # Surface nodes and surface node mask
@@ -2839,7 +2839,7 @@ class Msh:
                     shape=adj_tr.shape
                 )
         adj_tr -= scipy.sparse.dia_matrix((np.ones(adj_tr.shape[0]), 0), shape=adj_tr.shape)
-        
+
         # Tetrahedron neighbourhood information
         th = self.elm[self.elm.tetrahedra] - 1
         adj_th = scipy.sparse.csr_matrix((self.nodes.nr, len(th)), dtype=bool)
@@ -2856,7 +2856,7 @@ class Msh:
         th = th[idx,:]
         adj_th = adj_th[:,idx]
         adj_th = adj_th.tocsc()
-        
+
         def calc_gamma(nodes_coords,th):
             ''' gamma of tetrahedra '''
             node_th = nodes_coords[th]
@@ -2868,7 +2868,7 @@ class Msh:
             for i in range(4):
                 for j in range(i+1, 4):
                     edge_rms += np.sum(
-                        (node_th[:,i,:] - node_th[:,j,:])**2, 
+                        (node_th[:,i,:] - node_th[:,j,:])**2,
                         axis=1
                     )
             edge_rms = edge_rms/6.
@@ -2877,7 +2877,7 @@ class Msh:
             gamma /= 8.479670
             gamma[vol<0] = -1
             return gamma
-    
+
         nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
         gamma = calc_gamma(nodes_coords,th)
         n_badgamma = np.sum((gamma < 0) + (gamma > max_gamma))
@@ -2907,12 +2907,12 @@ class Msh:
                 idx_badnodes = np.sum(adj_th[:,idx_badtet], axis=1) > 0
                 idx_badnodes = np.asarray(idx_badnodes).reshape(-1)
                 nodes_coords[idx_badnodes] = nc_before[idx_badnodes]
-                
+
                 gamma = calc_gamma(nodes_coords,th)
                 idx_badtet = (gamma < 0) + (gamma > max_gamma)
-                
+
             n_badgamma = np.sum(idx_badtet)
-            
+
         self.nodes.node_coord = nodes_coords
 
 
@@ -2939,14 +2939,14 @@ class Msh:
         if tags is not None:
             idx *= np.in1d(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
-        
+
         if nodes_mask is not None:
             assert len(nodes_mask) == self.nodes.nr
             mask = np.zeros(self.nodes.nr, dtype=bool)
             mask[surf_nodes] = True
             mask *= nodes_mask
             surf_nodes = np.where(mask)[0]
-            
+
         # Triangle neighbourhood information
         adj_tr = scipy.sparse.csr_matrix((self.nodes.nr, self.nodes.nr), dtype=bool)
         tr = self.elm[self.elm.triangles, :3] - 1
@@ -2958,7 +2958,7 @@ class Msh:
                     shape=adj_tr.shape
                 )
         adj_tr -= scipy.sparse.dia_matrix((np.ones(adj_tr.shape[0]), 0), shape=adj_tr.shape)
-                
+
         nodes_coords = np.ascontiguousarray(self.nodes.node_coord, float)
         for i in range(n_steps):
             cython_msh.gauss_smooth_simple(
@@ -2978,7 +2978,7 @@ class Msh:
             )
 
         self.nodes.node_coord = nodes_coords
-        
+
 
     def gamma_metric(self):
         """ calculates the (normalized) Gamma quality metric for tetrahedra
@@ -3007,24 +3007,24 @@ class Msh:
     def surface_EC(self):
         """ return euler characteristic of surfaces """
         idx_tr = self.elm.elm_type == 2
-        
+
         nr_tr = np.sum(idx_tr)
         nr_node_tr = np.unique(self.elm.node_number_list[idx_tr,0:3].flatten()).shape[0]
-        
+
         M = np.sort(self.elm.node_number_list[idx_tr,0:3], axis=1)
         nr_edges = np.unique(np.vstack( (M[:,[0,1]], M[:,[1,2]], M[:,[0,2]]) ), axis=0).shape[0]
-        
+
         EC = nr_node_tr + nr_tr - nr_edges
         return EC
 
 
-    def split_tets_along_line(self, idx_n1, idx_n2, do_checks = True, 
+    def split_tets_along_line(self, idx_n1, idx_n2, do_checks = True,
                               return_tetindices = False):
         """
-        Adds a new node in the middle between the two given nodes 
+        Adds a new node in the middle between the two given nodes
         and splits all tetrahedra connected to the line between the
         two given nodes. Works in-place.
-    
+
         Parameters
         ----------
         idx_n1 : int
@@ -3037,7 +3037,7 @@ class Msh:
         return_tetindices : bool, optional
             The indices of the new tetrahedra are returned if set to True.
             The default is False.
-    
+
         Returns
         -------
         tets1, tets2: lists of ints (optinal)
@@ -3050,35 +3050,35 @@ class Msh:
                 raise TypeError("The mesh must only contain tetrahedra")
             if len(self.elmdata) > 0 or len(self.nodedata) > 0:
                 raise TypeError("The mesh must not contain data")
-        
+
         # get tets connected to the two nodes
-        idx_orgtets = np.where( np.any(self.elm.node_number_list == idx_n1,axis=1) * 
+        idx_orgtets = np.where( np.any(self.elm.node_number_list == idx_n1,axis=1) *
                                 np.any(self.elm.node_number_list == idx_n2,axis=1) )[0]
         if len(idx_orgtets) == 0:
             raise ValueError("The two nodes are not connected!")
-        
+
         # add new node
         pos_newnode = np.mean( self.nodes.node_coord[[idx_n1-1,idx_n2-1],:],
                                axis=0 )
         self.nodes.node_coord = np.vstack((self.nodes.node_coord, pos_newnode))
         idx_newnode = self.nodes.nr
-        
+
         # add new tets - connect them to the new node and node n2
         idx_newtets = np.arange(self.elm.nr, self.elm.nr+len(idx_orgtets))
-        self.elm.node_number_list = np.vstack((self.elm.node_number_list, 
+        self.elm.node_number_list = np.vstack((self.elm.node_number_list,
                                                self.elm.node_number_list[idx_orgtets]))
         self.elm.tag1 = np.hstack((self.elm.tag1, self.elm.tag1[idx_orgtets]))
         self.elm.tag2 = np.hstack((self.elm.tag2, self.elm.tag2[idx_orgtets]))
-        self.elm.elm_type = np.hstack((self.elm.elm_type, 
+        self.elm.elm_type = np.hstack((self.elm.elm_type,
                                        4*np.ones((len(idx_orgtets)), np.int32)))
-        
+
         idx = np.where(self.elm.node_number_list[idx_newtets] == idx_n1)[1]
         self.elm.node_number_list[idx_newtets,idx] = idx_newnode
-        
+
         # connect old tets to to the new node and node n1
         idx = np.where(self.elm.node_number_list[idx_orgtets] == idx_n2)[1]
         self.elm.node_number_list[idx_orgtets,idx] = idx_newnode
-        
+
         if return_tetindices:
             return idx_orgtets+1, idx_newtets+1
 
@@ -3392,7 +3392,7 @@ class Data(object):
 
         peak_percentile: float (optional)
             Percentile to be used to calculate peak value. Default: 99.9
-        
+
         Returns
         ---------
         focality: ndarray
@@ -3939,7 +3939,7 @@ class ElementData(Data):
                             f[where_inside_with_t] = np.einsum('ikj, ik -> ij',
                                                                nd[msh_tag.elm[idx+1]],
                                                                bar[where_inside_with_t])
-                                                               
+
         else:
             raise ValueError('Invalid interpolation method!')
 
@@ -4427,7 +4427,7 @@ class NodeData(Data):
         self._test_msh()
 
         msh = copy.deepcopy(self.mesh)
-        
+
         if len(msh.elm.tetrahedra) == 0:
             raise InvalidMeshError('Mesh has no volume elements')
         if len(self.value.shape) > 1:
@@ -4538,6 +4538,82 @@ class NodeData(Data):
         gc.collect()
         return image
 
+    def interpolate_to_grid_max(self, n_voxels, affine, compartments=None, parallel=True):
+        ''' Interpolates the NodeData into a grid.
+            finds which tetrahedra contais the given voxel and
+            performs linear interpolation inside the voxel
+
+        The kwargs is ony to have the same interface as the ElementData version
+
+        Parameters
+        ------
+            n_voxels: list or tuple
+                number of voxels in x, y, and z directions
+            affine: ndarray
+                A 4x4 matrix specifying the transformation from voxels to xyz
+        Returns
+        ----
+            image: ndarray
+                An (n_voxels[0], n_voxels[1], n_voxels[2], nr_comp) matrix with
+                interpolated values. If nr_comp == 1, the last dimension is squeezed out
+        '''
+
+        msh = self.mesh
+        self._test_msh()
+        if len(n_voxels) != 3:
+            raise ValueError('n_voxels should have length = 3')
+        if affine.shape != (4, 4):
+            raise ValueError('Affine should be a 4x4 matrix')
+        if len(msh.elm.tetrahedra) == 0:
+            raise InvalidMeshError('Mesh has no volume elements')
+
+        v = np.atleast_2d(self.value)
+        if v.shape[0] < v.shape[1]:
+            v = v.T
+        msh_th = msh.crop_mesh(elm_type=4)
+        inv_affine = np.linalg.inv(affine)
+        nd = np.hstack([msh_th.nodes.node_coord, np.ones((msh_th.nodes.nr, 1))])
+        nd = inv_affine.dot(nd.T).T[:, :3]
+        
+        #handle compartments
+        if compartments is None:
+            compartments = [[i,] for i in range(v.shape[1])]
+
+        # initialize image
+        labelimage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.uint16)
+        maximage = np.zeros([n_voxels[0], n_voxels[1], n_voxels[2]], dtype=np.float32)
+
+        field = v.astype(np.float32)
+        if v.shape[0] != msh_th.nodes.nr:
+            raise ValueError('Number of data points in the structure does not match '
+                             'the number of nodes present in the volume-only mesh')
+        if parallel:
+            import multiprocessing
+            from multiprocessing.pool import ThreadPool
+            n = msh_th.elm.node_number_list.shape[0]
+            n_elm = int(np.ceil(n / multiprocessing.cpu_count()))
+            pool = ThreadPool()
+            i = 0
+            while i < n:
+                pool.apply_async(cython_msh.interp_grid_nodedata_max,args=(
+                   np.array(n_voxels, dtype=int), field, nd, 
+                   msh_th.elm.node_number_list[i:i+n_elm] - 1,
+                   compartments,labelimage,maximage))
+                i += n_elm
+            pool.close()
+            pool.join()
+        else:
+            cython_msh.interp_grid_nodedata_max(
+               np.array(n_voxels, dtype=int), field, nd, 
+               msh_th.elm.node_number_list - 1,
+               compartments,labelimage,maximage)
+        del nd
+        del msh_th
+        del field
+        gc.collect()
+        return labelimage, maximage
+
+
     @classmethod
     def from_data_grid(cls, mesh, data_grid, affine, field_name='', **kwargs):
         ''' Defines an NodeData field from a mesh and gridded data
@@ -4555,7 +4631,7 @@ class NodeData(Data):
         '''
         assert len(data_grid.shape) in [3, 4], \
                 'The data grid must have 3 or 4 dimensions'
-                
+
         pos=mesh.nodes.node_coord.T
         iM = np.linalg.inv(affine)
         coords = iM[:3, :3].dot(pos) + iM[:3, 3, None]
@@ -4577,13 +4653,13 @@ class NodeData(Data):
 
         nd = cls(outdata, name=field_name, mesh=mesh)
         return nd
-    
+
     def norm(self, ord=2):
         ''' Calculate the norm (magnitude) of the field
 
         Parameters
         ------------
-        ord: float 
+        ord: float
             Order of norm. Default: 2 (euclidian norm, i.e. magnitude)
 
         Returns
@@ -4628,7 +4704,7 @@ class NodeData(Data):
 
     def angle(self, fill=np.nan):
         ''' Calculate the angle between the field and the surface normal
-        
+
         Parameters
         -------------
         fill: float (optional)
@@ -4659,7 +4735,7 @@ class NodeData(Data):
 
     def tangent(self, fill=np.nan):
         ''' Calculate the tangent component of the field in the surfaces
-        
+
         Parameters
         -----------
         fill: float (optional)
@@ -5829,7 +5905,7 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
         if set to True, a standard LIA orientation string will be written to tail
         if set to Name of a ref_fs file, the orientation of that file will be set
     '''
-    
+
     def write_3byte_integer(f, n):
         b1 = struct.pack('B', (n >> 16) & 255)
         b2 = struct.pack('B', (n >> 8) & 255)
@@ -5949,7 +6025,7 @@ def write_gifti_surface(msh, fn, ref_image=None):
     )
     # as coordsys defaults to unity, we need to overwrite it to None for the triangles
     faces_da.coordsys = None
-    
+
     image = nibabel.gifti.GiftiImage(
         header=header,
         darrays=[verts_da, faces_da]
@@ -6107,20 +6183,20 @@ def read_off(fn):
         # Read first line. This should be "OFF"
         line = f.readline().strip()
         assert line == "OFF", ".off files should start with OFF"
-        
+
         # Read empty lines and comments (#)
         while True:
             line = f.readline().strip()
             if line and not line.startswith("#"):
                 break
         n_verts, n_faces, _ = list(map(int, line.split()))
-        
+
         # Now read the data
         vertices = np.fromfile(f, dtype=float, count=3*n_verts, sep=' ')
         vertices = vertices.reshape(n_verts, 3)
         faces = np.fromfile(f, dtype=int, count=4*n_faces, sep=' ')
         faces = faces.reshape(n_faces, 4)[:, 1:]
-        
+
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertices)
@@ -6403,5 +6479,3 @@ class _GetitemTester():
 
     def __getitem__(self, index):
         return _getitem_one_indexed(self.array, index)
-
-

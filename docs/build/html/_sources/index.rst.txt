@@ -134,7 +134,8 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
  News
 ======
 
-  * **Version 4.0.0** is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. *Charm* replaces the previous methods *mri2mesh* and *headreco* which are discontinued. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
+  * **Version 4.0.0** is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
+  * *Charm* replaces the previous methods *mri2mesh* and *headreco* which are discontinued. Use the tool :ref:`convert_3_to_4` to convert old head models for use in SimNIBS4 simulations.
   * Further major new features are our *many new TMS coil models* and a *flexible meshing approach* to simplify manual editing and inclusion of custom tissue types in the head mesh
 
 Please see details in the :ref:`changelog <changelog>`.

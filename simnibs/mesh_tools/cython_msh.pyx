@@ -8,6 +8,8 @@ cimport numpy as np
 from libcpp cimport bool
 from libc.math cimport abs
 from libc.math cimport sqrt
+from libc.stdint cimport uint16_t
+from libc.stdint cimport uint8_t
 
 cdef inline int int_max(int a, int b): return a if a >= b else b
 cdef inline int int_min(int a, int b): return a if a <= b else b
@@ -44,7 +46,7 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
     th_boxes_min = np.maximum(th_boxes_min, 0)
     # pre-calculate the inverse of M (this is faster than solving every M[j])
     #invM[in_roi] = np.linalg.inv(M[in_roi])
- 
+
     cdef int i, j, k, x, y, z, info
     cdef np.ndarray[double, ndim=1] b = np.zeros((4, ), dtype=float)
     cdef double xc, yc, zc
@@ -77,13 +79,105 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
                                             image[x, y, z, k] += b[i] * field[tetrahedra[j, i], k]
                                     else:
                                         image[x, y, z, k] = field[j, k]
-                   
+
     del invM
     del th_boxes_min
     del th_boxes_max
     del in_roi
     del th_coords
     return image
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
+                np.ndarray[float, ndim=2] field,
+                np.ndarray[double, ndim=2] nd,
+                np.ndarray[np.int_t, ndim=2] tetrahedra,
+                compartments,
+                np.ndarray[uint16_t, ndim=3] labelimage,
+                np.ndarray[float, ndim=3] maximage):
+    
+    cdef double[:] c_weights =  np.array([1.0/float(len(ci)) for ci in compartments for c in ci], dtype=np.double)
+    cdef uint16_t[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.uint16)
+    cdef uint16_t[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.uint16)
+    cdef uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
+    cdef np.int_t n_comp = len(comp)
+    
+    cdef np.int_t node_data = field.shape[0] == nd.shape[0]
+    ## Create bounding box with each tetrahedra
+    cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
+    
+    cdef np.ndarray[double, ndim=3] invM = \
+            np.linalg.inv(np.transpose(
+                th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1))
+                )
+
+    cdef np.ndarray[np.int_t, ndim=2] th_boxes_min = np.rint(
+        np.min(th_coords, axis=1)).astype(int)
+
+    cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
+        np.max(th_coords, axis=1)).astype(int)
+    
+    cdef int[:] in_roi = np.where(
+        np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(np.int32)
+
+    th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
+    th_boxes_min = np.maximum(th_boxes_min, 0)
+
+    cdef int i, j, k, x, y, z, info, jj
+    cdef double[4] b
+    cdef double[3] xcv, ycv
+    cdef double xc, yc, zc
+    cdef double eps = 1e-5
+    cdef double current_field = 0.0
+    
+    cdef np.int_t n_in_roi = len(in_roi)
+    
+    with nogil:
+        for jj in range(n_in_roi):
+            j = in_roi[jj]
+            for x in range(th_boxes_min[j, 0], th_boxes_max[j, 0] + 1):
+                xc = (x - th_coords[j, 3, 0])
+                xcv[0] = xc * invM[j, 0, 0]
+                xcv[1] = xc * invM[j, 1, 0]
+                xcv[2] = xc * invM[j, 2, 0]
+                for y in range(th_boxes_min[j, 1], th_boxes_max[j, 1] + 1):
+                    yc = y - th_coords[j, 3, 1]
+                    ycv[0] = xcv[0] + yc * invM[j, 0, 1]
+                    ycv[1] = xcv[1] + yc * invM[j, 1, 1]
+                    ycv[2] = xcv[2] + yc * invM[j, 2, 1]
+                    for z in range(th_boxes_min[j, 2], th_boxes_max[j, 2] + 1):
+                        zc = z - th_coords[j, 3, 2]
+                        b[0] = ycv[0] + \
+                               invM[j, 0, 2] * zc
+                        if b[0] > -eps and b[0] < 1. + eps:
+                            b[1] = ycv[1] + \
+                                   invM[j, 1, 2] * zc
+                            if b[1] > -eps and b[0] + b[1] < 1. + eps:
+                                b[2] = ycv[2] + \
+                                       invM[j, 2, 2] * zc
+                                if b[2] > -eps:
+                                    b[3] = 1. - b[0] - b[1] - b[2]
+                                    if b[3] > -eps:
+                                        for k in range(n_comp):
+                                            for i in range(4):
+                                                current_field += (b[i] * field[tetrahedra[j, i], comp[k]])
+                                            if c_last[k]: # note that putting the weighting here assumes that weight for all elements in the subcompartment is the same
+                                                current_field *= c_weights[k]
+                                                if current_field > maximage[x,y,z]:
+                                                    maximage[x,y,z] = current_field
+                                                    labelimage[x,y,z] = comp_k[k]
+                                                current_field = 0.0
+    
+    del invM
+    del th_boxes_min
+    del th_boxes_max
+    del in_roi
+    del th_coords
+    del comp
+    del c_weights
+    del c_last
+    return 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -248,7 +342,7 @@ def calc_quantities_for_test_point_in_triangle(triangles):
     bb_max = np.max(triangles, axis=1)
     inv_det = np.ones(len(triangles), dtype=float)
     inv_det[~det_zero] = 1.0 / det[~det_zero]
-    
+
     triangle0 = np.array(triangles[:, 0, :], dtype=float)
     edge0 = np.array(edge0, dtype=float)
     edge1 = np.array(edge1, dtype=float)
@@ -363,7 +457,7 @@ cdef int _test_sign(
     for i in range(3):
         for j in range(3):
             M[i][j] = nodes_pos[th[i], j] - nodes_pos[th[3], j]
-    
+
     det = M[0][0]*(M[1][1]*M[2][2] - M[2][1]*M[1][2]) - \
           M[0][1]*(M[1][0]*M[2][2] - M[2][0]*M[1][2]) + \
           M[0][2]*(M[1][0]*M[2][1] - M[2][0]*M[1][1])
@@ -394,7 +488,7 @@ cdef float _calc_gamma(
     for i in range(3):
         for j in range(3):
             M[i][j] = nodes_pos[th[i + 1], j] - nodes_pos[th[0], j]
-    
+
     det = M[0][0]*(M[1][1]*M[2][2] - M[2][1]*M[1][2]) - \
           M[0][1]*(M[1][0]*M[2][2] - M[2][0]*M[1][2]) + \
           M[0][2]*(M[1][0]*M[2][1] - M[2][0]*M[1][1])
@@ -419,4 +513,3 @@ def calc_gamma(
     double[:, ::1] nodes_pos,
     np.uint_t[:] th):
     return _calc_gamma(nodes_pos, th)
-

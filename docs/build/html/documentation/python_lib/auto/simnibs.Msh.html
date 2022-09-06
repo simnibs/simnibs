@@ -150,67 +150,73 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_node_field</span></code>(field, field_name)</p></td>
 <td><p>Adds field defined in the nodes</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_matsimnibs</span></code>(center, pos_ydir, distance)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">any_pts_inside_surface</span></code>(pts, AABBTree)</p></td>
+<td><p>Test if any of the points are inside the surface.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_matsimnibs</span></code>(center, pos_ydir, distance)</p></td>
 <td><p>Calculate the matsimnibs matrix for TMS simulations</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compact_ordering</span></code>(node_number)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compact_ordering</span></code>(node_number)</p></td>
 <td><p>Changes the node and element ordering so that it goes from 1 to nr_nodes</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mesh</span></code>([tags, elm_type, nodes, elements])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">crop_mesh</span></code>([tags, elm_type, nodes, elements])</p></td>
 <td><p>Crops the specified tags from the mesh Generates a new mesh, with only the specified tags The nodes are also reordered</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_baricenters</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_baricenters</span></code>()</p></td>
 <td><p>Calculates the baricenter of the elements</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elements_volumes_and_areas</span></code>()</p></td>
 <td><p>Calculates the volumes of tetrahedra and areas of triangles</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code>([elm_indices])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm2node_matrix</span></code>([elm_indices])</p></td>
 <td><p>Calculates a sparse matrix to tranform from ElementData to NodeData Uses Superconvergent patch recovery for volumetric data.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code>([elm_nr, tag, elm_type])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_node_coords</span></code>([elm_nr, tag, elm_type])</p></td>
 <td><p>Returns the position of each of the element's nodes</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields_summary</span></code>([roi, fields, percentiles, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fields_summary</span></code>([roi, fields, percentiles, ...])</p></td>
 <td><p>Creates a text summaty of the field</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_element</span></code>(querry_points[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_closest_element</span></code>(querry_points[, ...])</p></td>
 <td><p>Finds the closest element to each point in p</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_corresponding_tetrahedra</span></code>()</p></td>
 <td><p>Finds the tetrahedra corresponding to each triangle</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_shared_nodes</span></code>(tags)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_shared_nodes</span></code>(tags)</p></td>
 <td><p>Finds the nodes which are shared by all given tags</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code>(points[, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_tetrahedron_with_points</span></code>(points[, ...])</p></td>
 <td><p>Finds the tetrahedron that contains each of the described points using a stochastic walk algorithm</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_labels</span></code>()</p></td>
 <td><p>Fixels labels of surfaces</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_orientation</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_surface_orientation</span></code>()</p></td>
 <td><p>Ensure that the majority of triangle normals point outwards.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_th_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of tetrahedra in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_thin_tetrahedra</span></code>([n_iter, step_length])</p></td>
 <td><p>Optimize the locations of the points by moving them towards the center of their patch.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fix_tr_node_ordering</span></code>()</p></td>
 <td><p>Fixes the node ordering of the triangles in-place</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gamma_metric</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gamma_metric</span></code>()</p></td>
 <td><p>calculates the (normalized) Gamma quality metric for tetrahedra</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_curvature</span></code>()</p></td>
 <td><p>Calculates the Gaussian curvature at each node</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_AABBTree</span></code>()</p></td>
+<td><p>Build AABBTree for efficient intersection tests</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, ...])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_ray</span></code>(points, directions)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_ray</span></code>(points, directions[, AABBTree])</p></td>
 <td><p>Finds the triangle (if any) that intersects with the rays starting</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_segment</span></code>(near, far)</p></td>
@@ -234,7 +240,7 @@ Overides nodes and elements</p></li>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pts_inside_surface</span></code>(pts)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pts_inside_surface</span></code>(pts[, AABBTree])</p></td>
 <td><p>Test which points are inside the surface.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
