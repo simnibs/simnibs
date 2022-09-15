@@ -99,7 +99,7 @@ def main():
      
     # load label image
     label_nifti = nib.load(args.label_image)
-    label_image = label_nifti.get_fdata().astype(np.uint16) # Cast to uint16, otherwise meshing complains
+    label_image = np.squeeze(label_nifti.get_fdata().astype(np.uint16)) # Cast to uint16, otherwise meshing complains
     label_affine = label_nifti.get_qform()
     
     # load sizing field (optional) 
@@ -108,7 +108,7 @@ def main():
         if type(args.fn_sizing_field) == list:
                 args.fn_sizing_field = args.fn_sizing_field[0]
         sf_nifti = nib.load(args.fn_sizing_field)
-        sf_image = sf_nifti.get_fdata()
+        sf_image = np.squeeze(sf_nifti.get_fdata())
         assert sf_image.shape == label_image.shape
         
     # upsample (optional)
