@@ -464,6 +464,8 @@ def run(
         elem_sizes = mesh_settings["elem_sizes"]
         smooth_size_field = mesh_settings["smooth_size_field"]
         skin_facet_size = mesh_settings["skin_facet_size"]
+        if not skin_facet_size:
+            skin_facet_size = None
         facet_distances = mesh_settings["facet_distances"]
         optimize = mesh_settings["optimize"]
         remove_spikes = mesh_settings["remove_spikes"]
