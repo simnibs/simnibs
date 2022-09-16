@@ -561,28 +561,7 @@ def run(
     )
 
     # stop logging ...
-    while logger.hasHandlers():
-        logger.removeHandler(logger.handlers[0])
-    utils.simnibs_logger.unregister_excepthook()
-    logging.shutdown()
-    with open(sub_files.charm_log, "r") as f:
-        logtext = f.read()
-
-    # Explicitly remove this really annoying stuff from the log
-    removetext = (
-        re.escape("-\|/"),
-        re.escape("Selecting intersections ... ")
-        + "\d{1,2}"
-        + re.escape(" %Selecting intersections ... ")
-        + "\d{1,2}"
-        + re.escape(" %"),
-    )
-    with open(sub_files.charm_log, "w") as f:
-        for text in removetext:
-            logtext = re.sub(text, "", logtext)
-        f.write(logtext)
-        f.write("</pre></BODY></HTML>")
-        f.close()
+    _stop_logger(sub_files.charm_log)
 
 
 def _setup_logger(logfile):
@@ -596,6 +575,32 @@ def _setup_logger(logfile):
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
     utils.simnibs_logger.register_excepthook(logger)
+
+
+def _stop_logger(logfile):
+    """Close down logging"""
+    while logger.hasHandlers():
+        logger.removeHandler(logger.handlers[0])
+    utils.simnibs_logger.unregister_excepthook()
+    logging.shutdown()
+    with open(logfile, "r") as f:
+        logtext = f.read()
+
+    # Explicitly remove this really annoying stuff from the log
+    removetext = (
+        re.escape("-\|/"),
+        re.escape("Selecting intersections ... ")
+        + "\d{1,2}"
+        + re.escape(" %Selecting intersections ... ")
+        + "\d{1,2}"
+        + re.escape(" %"),
+    )
+    with open(logfile, "w") as f:
+        for text in removetext:
+            logtext = re.sub(text, "", logtext)
+        f.write(logtext)
+        f.write("</pre></BODY></HTML>")
+        f.close()
 
 
 def _read_settings_and_copy(usesettings, fn_settingslog):

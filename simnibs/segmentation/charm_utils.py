@@ -8,14 +8,14 @@ import scipy.ndimage.morphology as mrph
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage import affine_transform
 from scipy.ndimage.measurements import label
+from scipy.io import loadmat
 
-from .. import __version__
 from . import samseg
 from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
 from ..utils.simnibs_logger import logger
-from ..utils.transformations import resample_vol
+from ..utils.transformations import resample_vol, volumetric_affine
 
 
 def _register_atlas_to_input_affine(
@@ -858,3 +858,54 @@ def _open_sulci(
 
     return label_img
 
+
+def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template, 
+                            fn_affine, tms_settings):
+    """
+    Cut away neck of tissue_labeling_upsampled.nii.gz and 
+    combine some of the labels. Overwrites the original file.
+    Used to create meshes optimized for TMS.
+
+    Parameters
+    ----------
+    fn_tissue_labeling_upsampled : string
+        filename of tissue_labeling_upsampled.nii.gz
+    fn_mni_template : string
+        filename of the MNI template
+    fn_affine : string
+        filename of the affine transformation from T1 to MNI
+    tms_settings : dict
+        specifies old and new labels
+
+    Returns
+    -------
+    None.
+
+    """
+    # cut label image using MNI mask
+    logger.info("Cutting neck region using MNI mask")
+    label_image  = nib.load(fn_tissue_labeling_upsampled)
+    label_buffer = np.round(label_image.get_fdata()).astype( np.uint16 )  # Cast to uint16, otherwise meshing complains
+    label_affine = label_image.affine
+    
+    mni_image  = nib.load(fn_mni_template)
+    mni_buffer = np.ones(mni_image.shape, dtype=bool)
+    mni_affine = mni_image.affine
+    
+    trafo = loadmat(fn_affine)['worldToWorldTransformMatrix']
+
+    upperhead = volumetric_affine((mni_buffer, mni_affine),
+                                  np.linalg.inv(trafo),
+                                  target_space_affine=label_affine,
+                                  target_dimensions=label_image.shape,
+                                  intorder=0)
+    label_buffer[~upperhead] = 0
+    
+    # combine labels
+    logger.info("Combining labels")
+    for idx_old, idx_new in zip(tms_settings["old_label"], tms_settings["new_label"]):
+        logger.debug("  old label: %d, new label: %d " % (idx_old, idx_new))
+        label_buffer[label_buffer == idx_old] = idx_new
+  
+    label_image = nib.Nifti1Image(label_buffer, label_affine)
+    nib.save(label_image, fn_tissue_labeling_upsampled)
