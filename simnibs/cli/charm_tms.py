@@ -29,8 +29,9 @@ import textwrap
 import time
 from simnibs import __version__
 from simnibs import SIMNIBSDIR
+from simnibs.mesh_tools.mesh_io import read_gifti_surface, write_gifti_surface
 from simnibs.segmentation import charm_main
-from simnibs.segmentation.charm_utils import _cut_and_combine_labels
+from simnibs.segmentation.charm_utils import _cut_and_combine_labels, _downsample_surface
 from simnibs.utils.settings_reader import read_ini
 from simnibs.utils import file_finder
 
@@ -172,6 +173,7 @@ def main():
                        args.inittransform, args.usetransform, args.forceqform,
                        " ".join(sys.argv[1:]))
         
+    if args.segment:
         # update label image: cut neck and combine labels
         sub_files = file_finder.SubjectFiles(subpath = subject_dir)
         charm_main._setup_logger(sub_files.charm_log)
@@ -183,9 +185,23 @@ def main():
                                 templates.mni_volume,
                                 fn_affine, settings["tms"])
         
-        # TODO: create downsampled central surfaces
-        print('TODO: create downsampled central surfaces')
+        charm_main._stop_logger(sub_files.charm_log)
+    
+    if args.surfaces:
+        # create downsampled central surfaces
+        sub_files = file_finder.SubjectFiles(subpath = subject_dir)
+        charm_main._setup_logger(sub_files.charm_log)
+        settings = read_ini(args.usesettings)
         
+        hemis = settings["surfaces"]["pial"]
+        for s in hemis:
+            fn_surforg = sub_files.get_surface(s)
+            fn_surfout = os.path.join(sub_files.surface_folder,s+'.central_tms.gii')
+            
+            m = read_gifti_surface(fn_surforg)
+            mout = _downsample_surface(m, settings["tms"]["n_nodes"])
+            write_gifti_surface(mout, fn_surfout)    
+            
         charm_main._stop_logger(sub_files.charm_log)
         
     # run meshing after update of label image

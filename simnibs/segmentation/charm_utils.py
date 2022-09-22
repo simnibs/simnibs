@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import nibabel as nib
@@ -9,13 +10,17 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage import affine_transform
 from scipy.ndimage.measurements import label
 from scipy.io import loadmat
+import tempfile
 
 from . import samseg
 from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
+from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.transformations import resample_vol, volumetric_affine
+from ..utils.spawn_process import spawn_process
+from ..mesh_tools.mesh_io import read_off, write_off
 
 
 def _register_atlas_to_input_affine(
@@ -909,3 +914,37 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
   
     label_image = nib.Nifti1Image(label_buffer, label_affine)
     nib.save(label_image, fn_tissue_labeling_upsampled)
+    
+ 
+def _downsample_surface(m, n_nodes):
+    """
+        downsample a surface using meshfix
+
+    Parameters
+    ----------
+    m : simnibs.Msh 
+        surface
+    n_nodes : int
+        target number of nodes.
+
+    Returns
+    -------
+    mout : simnibs.Msh
+        downsampled surface
+        
+    NOTE: this is a primitive wrapper around meshfix, tag1 and tag2 of the
+    returned mesh will be set to 1, meshes with multiple surfaces are not 
+    supported
+    """
+    with tempfile.NamedTemporaryFile(suffix=".off") as f:
+        mesh_fn = f.name
+    write_off(m, mesh_fn)
+    cmd = [file_finder.path2bin("meshfix"), mesh_fn, 
+           "-u", "2", "--vertices", str(n_nodes), "-o", mesh_fn]
+    spawn_process(cmd, lvl=logging.DEBUG)
+    
+    mout = read_off(mesh_fn)
+    os.remove(mesh_fn)
+    if os.path.isfile("meshfix_log.txt"):
+        os.remove("meshfix_log.txt")
+    return mout
