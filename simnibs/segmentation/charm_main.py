@@ -343,6 +343,8 @@ def run(
                 "--nprocesses", str(nprocesses),
             ]
         )
+        if debug:
+            argslist += ["--debug"]
         # fmt: on
 
         proc = subprocess.run(
@@ -553,7 +555,7 @@ def run(
     # Create charm_report.html
     logger.info("Creating report")
     html_writer.write_report(sub_files)
-    
+
     # log stopping time and total duration ...
     logger.info("charm run finished: " + time.asctime())
     logger.info(

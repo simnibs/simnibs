@@ -40,7 +40,7 @@ from ..utils.transformations import resample_vol, crop_vol
 def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
              deform="expand", smooth_mesh=True, skip_lastsmooth=True,
              smooth_mm2move=True, despike_nonmove=True, fix_faceflips=True,
-             actualsurf=''):
+             actualsurf='', debug=False):
     """Deform a mesh by either expanding it in the direction of node normals
     or shinking it in the opposite direction of the normals.
 
@@ -80,14 +80,14 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
         (default = True).
     actualsurf : string
         string added to the beginning of the logged messages (default = '')
+    debug : bool
+        Write results from intermediate steps to disk (default = False).
 
     RETURNS
     ----------
     vertices : ndarray
         Vertices describing the expanded mesh.
     """
-
-    DEBUG = False # controls writing of additional meshes for debugging
 
     # check inputs
     assert deform in ["expand", "shrink"]
@@ -165,7 +165,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
             vertices[move] + (mm2move[move, None] + ensure_distance) * node_normals[move]
         )
         n_intersections2 = np.bincount(intersect_pairs[:, 0], minlength=len(vertices[move]))
-        if DEBUG:
+        if debug:
             move_backup = move.copy()
 
         move[move] = (n_intersections == 0) & (n_intersections2 < 2)
@@ -193,7 +193,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
             mm2move[~move] = 0
             pass
 
-        if DEBUG:
+        if debug:
             vertices_beforemove = vertices.copy()
 
         vertices += node_normals*mm2move[:, None]
@@ -224,7 +224,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
 
         logger.info(f'{actualsurf}: Moved {np.sum(move)} of {len(vertices)} vertices.')
 
-        if DEBUG:
+        if debug:
             tmpmsh = mesh_io.Msh(nodes=mesh_io.Nodes(vertices),
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
@@ -619,56 +619,59 @@ def mask_from_surface(vertices, faces, affine, shape):
 
 def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
              surffolder, fsavgDir, vdist=[1.0, 0.75], voxsize_pbt=[0.5, 0.25],
-             voxsize_refineCS=[0.75, 0.5], th_initial=0.714, no_selfintersections=True):
+             voxsize_refineCS=[0.75, 0.5], th_initial=0.714,
+             no_selfintersections=True, debug=False):
     """ reconstruction of cortical surfaces based on probalistic label image
 
     PARAMETERS
     ----------
-        Ymf : float32
-            image prepared for surface reconstruction
-        Yleft : uint8
-            binary mask to distinguish between left and right parts of brain
-        Ymaskhemis : uint8
-            volume with the following labels: lh - 1, rh - 2, lc - 3, rc - 4
-        vox2mm : 4x4 array of float
-            affine transformation from voxel indices to mm space
-        actualsurf : str
-            surface to be reconstructed ('lh', 'rh', 'lc' or 'rc')
-        surffolder : str
-            path for storing results
-        fsavgDir : str
-            directory containing fsaverage templates
+    Ymf : float32
+        image prepared for surface reconstruction
+    Yleft : uint8
+        binary mask to distinguish between left and right parts of brain
+    Ymaskhemis : uint8
+        volume with the following labels: lh - 1, rh - 2, lc - 3, rc - 4
+    vox2mm : 4x4 array of float
+        affine transformation from voxel indices to mm space
+    actualsurf : str
+        surface to be reconstructed ('lh', 'rh', 'lc' or 'rc')
+    surffolder : str
+        path for storing results
+    fsavgDir : str
+        directory containing fsaverage templates
 
-        --> optional parameters:
-        vdist : list of float
-            final surface resolution (distance between vertices)
-            for cerebrum (1. value) and cerebellum (2. value) surfaces
-            (default = [1.0, 0.75])
-        voxsize_pbt : list of float
-            internal voxel size used for pbt calculation and creation of
-            initial central surface by marching cubes for cerebrum and
-            cerebellum surfaces
-            (default=[0.5, 0.25])
-        voxsize_refineCS : list of float
-             internal voxel size of GM percentage position image used during
-             expansion of central surface for cerebrum and cerebellum surfaces
-             (default=[0.75, 0.5])
-        th_initial : float
-             Intensity threshold for the initial central surface. Values closer
-             to 1 moves the intial central surface closer to the WM boundary
-             (WM-GM boundary corresponds to 1, final CS to 0.5, pial surface to 0)
-             (default = 0.714)
-        no_selfintersections : bool
-            if True:
-                1. CAT_DeformSurf is run with the option to avoid selfintersections
-                during surface expansion. Helps in particular for the cerebellum
-                central surfaces, but is not perfect.
-                2. meshfix is used to remove selfintersections after
-                surface expansion. CAT_FixTopology can cut away large parts
-                of the initial surface. CAT_DeformSurf tries to expand the
-                surface again, which is instable and can result in selfintersections
-                even when CAT_DeformSurf is run with the option listed in 1.
-            (default = True)
+    --> optional parameters:
+    vdist : list of float
+        final surface resolution (distance between vertices)
+        for cerebrum (1. value) and cerebellum (2. value) surfaces
+        (default = [1.0, 0.75])
+    voxsize_pbt : list of float
+        internal voxel size used for pbt calculation and creation of
+        initial central surface by marching cubes for cerebrum and
+        cerebellum surfaces
+        (default=[0.5, 0.25])
+    voxsize_refineCS : list of float
+            internal voxel size of GM percentage position image used during
+            expansion of central surface for cerebrum and cerebellum surfaces
+            (default=[0.75, 0.5])
+    th_initial : float
+            Intensity threshold for the initial central surface. Values closer
+            to 1 moves the intial central surface closer to the WM boundary
+            (WM-GM boundary corresponds to 1, final CS to 0.5, pial surface to 0)
+            (default = 0.714)
+    no_selfintersections : bool
+        if True:
+            1. CAT_DeformSurf is run with the option to avoid selfintersections
+            during surface expansion. Helps in particular for the cerebellum
+            central surfaces, but is not perfect.
+            2. meshfix is used to remove selfintersections after
+            surface expansion. CAT_FixTopology can cut away large parts
+            of the initial surface. CAT_DeformSurf tries to expand the
+            surface again, which is instable and can result in selfintersections
+            even when CAT_DeformSurf is run with the option listed in 1.
+        (default = True)
+    debug : bool
+        Write results from intermediate steps to disk (default = False).
 
     RETURNS
     ----------
@@ -688,7 +691,6 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
         This function is adapted from cat_surf_createCS.m of CAT12
         (version 2019-03-22, http://www.neuro.uni-jena.de/cat/).
     """
-    debug=False # keep intermediate results if set to True
 
     if sys.platform == 'win32':
         # Make logging to stderrr more talkative to capture
@@ -1259,7 +1261,8 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     return Ygmt, Ypp
 
 
-def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfintersections=True, debug=False):
+def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
+        no_selfintersections=True, debug=False):
     """ wrapper around the CAT12 binaries to refine the initial central surface
         and register it to the fsaverage template.
 
@@ -1456,7 +1459,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0, no_selfinters
 
 
     # AT: this part can create self intersections when neighboring surfaces are close to each other
-    # which lead to artifacts during expansion to pial surfaces. 
+    # which lead to artifacts during expansion to pial surfaces.
     # # ---- final correction of central surface in highly folded areas --------
     # # ----------------  with high mean curvature --------------
     # stimet = time.time()
