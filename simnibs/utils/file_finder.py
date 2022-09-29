@@ -17,6 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+from pathlib import Path
 import sys
 import os
 import re
@@ -28,6 +29,9 @@ import nibabel
 from .. import SIMNIBSDIR
 
 __all__ = ['templates', 'get_atlas', 'get_reference_surf', 'SubjectFiles', 'coil_models']
+
+HEMISPHERES = {"lh", "rh"}
+VALID_HEMI = HEMISPHERES.union({"both"})
 
 class Templates:
     ''' Defines the Templates for file names used in SimNIBS
@@ -252,10 +256,10 @@ class SubjectFiles:
         List of SurfaceFile objects which containts 2 fields:
             fn: name of surface file (.gii format)
             region: 'lh', 'rh', 'lc' or 'rc'
-            
+
     central_surfaces: list
         Same as above but for the pial surfaces
-            
+
     sphere_reg_surfaces: list
         Same as above but for the spherical registration files
 
@@ -321,10 +325,10 @@ class SubjectFiles:
 
     charm_log: str
         The charm run log (.html)
-        
+
     summary_report: str
         html summarizing the run and linking to the reports (.html)
-        
+
     Warning
     --------
     This class does not check for existance of the files
@@ -425,7 +429,7 @@ class SubjectFiles:
                 self.central_surfaces.append(
                     SurfaceFile(fn, region, subsampling)
                 )
-                
+
         surfaces = glob.glob(os.path.join(self.surface_folder, '*.thickness'))
         self.thickness = []
         for fn in surfaces:
@@ -507,7 +511,7 @@ class SubjectFiles:
         -------
         FileNotFoundError if the specified reference surface is not found
 
-        '''                
+        '''
         if surf_type == 'central':
             for s in self.central_surfaces:
                 if s.region == region and s.subsampling == subsampling:
@@ -528,11 +532,80 @@ class SubjectFiles:
             raise ValueError('invalid surf_type')
         raise FileNotFoundError('Could not find surface')
 
+    #### START: new get surface methods ####
+    #### Remove "v2v2_" if keep
+    def v2v2_get_surface_file(self, surf, subsampling=None, hemi="both"):
+        """Get surface files, e.g., central, pial, sphere, sphere.reg
+        """
+        subsampling, hemi = self._parse_surface_args(subsampling, hemi)
+        return {h: Path(self.surface_folder) / subsampling / f"{h}.{surf}.gii" for h in hemi}
+
+
+    def v2v2_get_morph_data_file(self, data, subsampling=None, hemi="both"):
+        """Get morphometry data files, e.g., thickness.
+        """
+        subsampling, hemi = self._parse_surface_args(subsampling, hemi)
+        return {h: Path(self.surface_folder) / subsampling / f"{h}.{data}" for h in hemi}
+
+
+    def v2v2_read_surface(self, surf, subsampling=None, hemi="both"):
+        return {h: self.v2v2_read_gifti_to_dict(f) for h, f in self.v2v2_get_surface_file(surf, subsampling, hemi).items()}
+
+
+    def v2v2_read_morph_data(self, data, subsampling=None, hemi="both"):
+        return {h: nibabel.freesurfer.read_morph_data(f) for h, f in self.v2v2_get_morph_data_file(data, subsampling, hemi).items()}
+
+
+    def v2v2_write_surface(self, surf_dict, surf, subsampling=None):
+        hemi = list(surf_dict.keys())
+        hemi = "both" if len(hemi) == 2 else hemi[0]
+        files = self.v2v2_get_surface_file(surf, subsampling, hemi)
+        for h in surf_dict:
+            if not files[h].parent.exists():
+                files[h].parent.mkdir()
+            self.v2v2_write_dict_to_gifti(files[h], surf_dict[h])
+
+
+    def v2v2_write_morph_data(self, data_dict, data, subsampling=None):
+        hemi = list(data_dict.keys())
+        hemi = "both" if len(hemi) == 2 else hemi[0]
+        files = self.v2v2_get_morph_data_file(data, subsampling, hemi)
+        for h in data_dict:
+            nibabel.freesurfer.write_morph_data(files[h], data_dict[h])
+
+
+    @staticmethod
+    def v2v2_write_dict_to_gifti(filename, surf):
+        darrays = (
+            nibabel.gifti.gifti.GiftiDataArray(surf['points'], 'pointset'),
+            nibabel.gifti.gifti.GiftiDataArray(surf['tris'], 'triangle')
+        )
+        gii = nibabel.GiftiImage(darrays=darrays)
+        gii.to_filename(filename)
+
+
+    @staticmethod
+    def v2v2_read_gifti_to_dict(filename):
+        gii = nibabel.load(filename)
+        return dict(
+            points=gii.agg_data("pointset"), tris=gii.agg_data("triangle")
+        )
+
+
+    @staticmethod
+    def _parse_surface_args(subsampling, hemi):
+        assert hemi in VALID_HEMI, f"Invalid hemisphere argument. Please choose one of {VALID_HEMI}."
+        hemi = HEMISPHERES if hemi == 'both' else [hemi]
+        subsampling = "" if subsampling is None else str(subsampling)
+        return subsampling, hemi
+    #### END: new get surface methods ####
+
+
 def _get_subsampling(parts):
     """Get subsampling if `parts` is of the format (subsampling, gii).
     """
-    if len(parts) == 2: 
-        # If parts[0] cannot be interpreted as an int we will get an error 
+    if len(parts) == 2:
+        # If parts[0] cannot be interpreted as an int we will get an error
         # here. In that case, assume no subsampling has been performed.
         try:
             subsampling = int(parts[0])
