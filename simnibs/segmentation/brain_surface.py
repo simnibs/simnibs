@@ -1504,8 +1504,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
         if os.path.isfile(Pdefects0):
             os.remove(Pdefects0)
 
-        if os.path.isfile(Psphere):
-            os.remove(Psphere)
+        # if os.path.isfile(Psphere):
+        #     os.remove(Psphere)
 
     return Pcentral, Pspherereg, Pthick, defect_sizeOut
 
