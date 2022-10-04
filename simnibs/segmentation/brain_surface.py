@@ -1637,6 +1637,8 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     assert isinstance(sphere_surf, dict)
     assert n_points < (n_full := central_surf['points'].shape[0])
 
+    visualize = False # temporary debug flag for testing; requires pyvista
+
     sphere_points = sphere_surf["points"] / np.linalg.norm(sphere_surf["points"], axis=1, keepdims=True)
     tree = cKDTree(sphere_points)
 
@@ -1649,41 +1651,48 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     used = np.zeros(n_full, dtype=bool)
     used[uniq] = True
 
-    A = get_weighted_and_smoothed_adjacency_matrix(central_surf['tris'], n_points / n_full)
-    coverage = A[:, used].sum(1) # A @ x
+    n_smooth = get_n_smooth(n_points / n_full)
+    basis = compute_gaussian_basis_functions(central_surf, n_smooth)
+    # rescale to avoid numerical problems?
+    basis.data /= basis.mean(1).mean()
+    coverage = basis[:, used].sum(1) # i.e., basis @ x where x is indicator vector
 
-    # surfs = {}
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "init")
+    if visualize:
+        surfs = {}
+        add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "init")
 
     # updates `coverage` in-place
-    used, unused = maximize_coverage_by_addition(used, coverage, A, n_points - uniq.size)
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "add")
+    used, unused = maximize_coverage_by_addition(used, coverage, basis, n_points - uniq.size)
+    if visualize:
+        add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "add")
 
     if refine:
         # updates `used`, `ununsed`, and `coverage` in-place
-        indptr, indices, data = A.indptr, A.indices, A.data
-        # covs, pairs, hard_swaps = equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
+        indptr, indices, data = basis.indptr, basis.indices, basis.data
         equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
+        # covs, pairs, hard_swaps = equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
 
     # Triangulate
     hull = ConvexHull(sphere_surf['points'][used])
     points, tris = hull.points, hull.simplices
     ensure_orientation_consistency(points, tris)
 
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "swap")
+    if visualize:
+        add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "swap")
 
-    # # visualize with pyvista
-    # clim = np.percentile(surfs["cent_init"]['coverage'], [5,95])
-    # names = ["init", "add", "swap"]
+        # visualize with pyvista
+        clim = np.percentile(surfs["cent_init"]['coverage'], [5,95])
+        names = ["init", "add", "swap"]
 
-    # p = pv.Plotter(shape=(2,3), window_size=(1600,1000), notebook=False)
-    # for i, name in enumerate(names):
-    #     p.subplot(0,i)
-    #     p.add_mesh(surfs[f"cent_{name}_sub"], show_edges=True)
-    #     p.subplot(1,i)
-    #     p.add_mesh(surfs[f"cent_{name}"], clim=clim, show_edges=True)
-    # p.link_views()
-    # p.show()
+        p = pv.Plotter(shape=(2,3), window_size=(1600,1000), notebook=False)
+        for i, name in enumerate(names):
+            p.subplot(0,i)
+            p.add_mesh(surfs[f"cent_{name}_sub"], show_edges=True)
+            p.subplot(1,i)
+            p.add_mesh(surfs[f"cent_{name}"], clim=clim, show_edges=True)
+        # p.add_points(surfs[f'cent_{name}_sub'].points)
+        p.link_views()
+        p.show()
 
     # Use the normals from the original (high resolution) surface as this
     # should be more accurate
@@ -1832,7 +1841,7 @@ def recursive_matmul(X, n):
     return X if n == 1 else recursive_matmul(X, n-1) @ X
 
 
-def get_adjacency_matrix(tris): # , verts=None
+def compute_adjacency_matrix(tris):
     """Make sparse adjacency matrix for vertices with connections `tris`.
     """
     N = tris.max() + 1
@@ -1841,54 +1850,50 @@ def get_adjacency_matrix(tris): # , verts=None
     row_ind = np.concatenate([tris[:, i] for p in pairs for i in p])
     col_ind = np.concatenate([tris[:, i] for p in pairs for i in p[::-1]])
 
-    # if verts is not None:
-    #     data = np.linalg.norm(verts[row_ind]-verts[col_ind], axis=1)
-    # else:
     data = np.ones_like(row_ind)
     return scipy.sparse.csr_array((data / 2, (row_ind, col_ind)), shape=(N, N))
 
 
-def scale_adjacency_matrix(A):
-    """This needs to be changed...
-    """
-    d = np.diff(A.indptr) # nonzero per row
-    dd = np.repeat(d,d)/2/d.mean()
-    A.data /= dd
-    A = A.tocsc()
-    A.data /= dd
-    A = A.tolil()
-    A.setdiag(A.sum(1))
-    A = A.tocsc()
+def compute_gaussian_basis_functions(surf, degree):
+    A = compute_adjacency_matrix(surf['tris'])
+
+    # Estimate standard deviation for Gaussian distance computation
+    Acoo = A.tocoo()
+    v = surf['points']
+    data = np.linalg.norm(v[Acoo.row]-v[Acoo.col], axis=1)
+    # set sigma to half average distance to neighbors. This is arbitrary but
+    # seems to work. Large sigmas do not seems to work well as they tend to
+    # created "striped" pattern in dense regions
+    sigma = 0.5*data.mean()
+
+    # smooth to `neighborhood` degree neighbors
+    A = recursive_matmul(A, degree)
+
+    # # remove point itself
+    # A = A.tolil()
+    # A.setdiag(0)
+    # A = A.tocsc()
+
+    # compute gaussian distances
+    Acoo = A.tocoo()
+    v = surf['points']
+    data = np.linalg.norm(v[Acoo.row]-v[Acoo.col], axis=1)
+    A.data = np.exp(-data**2/(2*sigma**2))
+
     return A
 
 
-def smooth_adjacency_matrix(A, frac):
-    """Smooth adjacency matrix based on subsampling fraction (more decimation
-    implies more smoothing). This is currently very heuristic.
-    """
+def get_n_smooth(frac):
+    """How much to smooth adjacency matrix.
 
-    # if n_full == 100,000
-    # 2500  5
-    # 5000  4
-    # 10000 4
-    # 25000 3
-    # 50000 3
-    # 75000 3
-    # 90000 3
+    These numbers are pretty heuristic at the moment.
+    """
     n_smooth = 3
     if frac < 0.2:
         n_smooth += 1
     if frac < 0.05:
         n_smooth += 1
-    # print(f"smoothing adjacency matrix {n_smooth} times")
-    return recursive_matmul(A, n_smooth).power(1/n_smooth)
-
-
-def get_weighted_and_smoothed_adjacency_matrix(tris, frac):
-    A = get_adjacency_matrix(tris)
-    A = scale_adjacency_matrix(A)
-    A = smooth_adjacency_matrix(A, frac)
-    return A
+    return n_smooth
 
 
 @numba.jit(nopython=True, fastmath=True)
@@ -1932,7 +1937,7 @@ def masked_indexed_argmin(x, index, mask, range_of_index):
 # numba complains about the np.ones stuff. Also, A would have to be unpacked
 # before. However, doesn't seem to make much difference
 # @numba.jit(nopython=True, fastmath=True)
-def maximize_coverage_by_addition(used, coverage, A, n_add):
+def maximize_coverage_by_addition(used, coverage, basis, n_add):
     """Add `n_add` points (move from unused to used) and update `coverage`
     accordingly (this is done in-place).
 
@@ -1954,7 +1959,7 @@ def maximize_coverage_by_addition(used, coverage, A, n_add):
         Indices of the unused points.
     """
 
-    indptr, indices, data = A.indptr, A.indices, A.data
+    indptr, indices, data = basis.indptr, basis.indices, basis.data
 
     unused = np.where(~used)[0]
     added = -np.ones(n_add, dtype=int)
@@ -2005,11 +2010,9 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
 
     """
-    # indptr, indices, data = A.indptr, A.indices, A.data
-
     coverage_var = coverage.var()
 
-    n_swaps = 0
+    # n_swaps = 0
     # covs = []
     # pairs = []
     # hard_swaps = []
@@ -2034,18 +2037,17 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
             coverage_var = coverage_swap_var
 
             # covs.append(coverage_swap_var)
-            n_swaps += 1
+            # n_swaps += 1
         else:
             update_vec(coverage, indptr, indices, data, subi, addi) # undo
 
             # hard_swaps.append(iteration)
 
-            # slow
+            # this is the "slow" bit
             addiis = cov_un.argpartition(k)[:k] # [::10]
             subiis = cov_us.argpartition(-k)[-k:] # [::10]
 
-            # order in pairs
-            # skip the 1st as we already checked that
+            # order in pairs (skip the 1st as we already checked that)
             addiis = addiis[cov_un[addiis].argsort()][1:]
             subiis = subiis[cov_us[subiis].argsort()[::-1]][1:]
 
@@ -2068,16 +2070,14 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
                     # covs.append(coverage_swap_var)
                     # pairs.append(i)
 
-                    break
+                    break # next iteration
                 else:
                     update_vec(coverage, indptr, indices, data, subi, addi) # undo
 
             if not found:
-                break
+                break # if nothing to swap, terminate
 
     # return covs, pairs, hard_swaps
-
-
 
 # some temporary stuff for plotting results of subsampling...
 def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
