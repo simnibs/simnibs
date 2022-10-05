@@ -1652,9 +1652,9 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     used[uniq] = True
 
     n_smooth = get_n_smooth(n_points / n_full)
-    basis = compute_gaussian_basis_functions(central_surf, n_smooth)
+    basis = compute_gaussian_basis_functions(central_surf, n_smooth).tocsc()
     # rescale to avoid numerical problems?
-    basis.data /= basis.mean(1).mean()
+    basis.data /= basis.mean(0).mean()
     coverage = basis[:, used].sum(1) # i.e., basis @ x where x is indicator vector
 
     if visualize:
