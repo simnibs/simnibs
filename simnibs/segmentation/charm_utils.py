@@ -865,7 +865,7 @@ def _open_sulci(
 
 
 def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template, 
-                            fn_affine, tms_settings):
+                            fn_affine, tms_settings, n_dil=20):
     """
     Cut away neck of tissue_labeling_upsampled.nii.gz and 
     combine some of the labels. Overwrites the original file.
@@ -904,6 +904,7 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
                                   target_space_affine=label_affine,
                                   target_dimensions=label_image.shape,
                                   intorder=0)
+    upperhead = mrph.binary_dilation(upperhead, iterations=n_dil)
     label_buffer[~upperhead] = 0
     
     # combine labels
