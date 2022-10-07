@@ -179,7 +179,7 @@ class Elements:
     --------------------------
     triangles (optional): (Nx3) ndarray
         List of nodes composing each triangle
-    tetrahedra(optional): (Nx3) ndarray
+    tetrahedra(optional): (Nx4) ndarray
         List of nodes composing each tetrahedra
 
 
@@ -197,7 +197,7 @@ class Elements:
         4xnumber_of_element matrix of the nodes that constitute the element.
         For the triangles, the fourth element = -1
     nr: int
-        Number or elemets
+        Number or elements
 
 
     Notes
@@ -205,13 +205,15 @@ class Elements:
     Node and element count starts at 1!
 
     """
-
     def __init__(self, triangles=None, tetrahedra=None):
         # gmsh fields
         self.elm_type = np.zeros(0, 'int8')
         self.tag1 = np.zeros(0, dtype='int16')
         self.tag2 = np.zeros(0, dtype='int16')
         self.node_number_list = np.zeros((0, 4), dtype='int32')
+
+        # if lines is not None:
+        #     assert lines.shape[1] == 2
 
         if triangles is not None:
             assert triangles.shape[1] == 3
@@ -736,6 +738,13 @@ class Msh:
             Name of output file
         '''
         write_msh(self, out_fn)
+
+    # TODO: add function to modify mesh in case of surface impedances (needs COND struct for regions)
+    def modify_mesh_surface_impedance(self, cond):
+        pass
+    #1 get tissues of boundary nodes
+    #2 duplicate nodes and label them
+    #3 save as NodeData (init with zero as "normal" node) and save pairs of nodes
 
     def crop_mesh(self, tags=None, elm_type=None, nodes=None, elements=None):
         """ Crops the specified tags from the mesh

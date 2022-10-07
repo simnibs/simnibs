@@ -582,7 +582,7 @@ class FIDUCIALS(object):
                         'Acceptable fiducuals are: {1}'
                         .format(n, ['Nz', 'Iz', 'LPA', 'RPA']))
 
-
+# TODO: add "surface_impedance" as field in POSLIST
 class SimuList(object):
     """ Parent class
 
@@ -635,6 +635,7 @@ class SimuList(object):
         self.solver_options = None
         self._anisotropy_type = 'scalar'
         self._postprocess = ['e', 'E', 'j', 'J']
+        self._surface_impedance = False
 
     @property
     def type(self):
@@ -643,6 +644,10 @@ class SimuList(object):
     @property
     def anisotropy_type(self):
         return self._anisotropy_type
+
+    @property
+    def surface_impedance(self):
+        return self._surface_impedance
 
     @anisotropy_type.setter
     def anisotropy_type(self, value):
@@ -1162,6 +1167,10 @@ class TMSLIST(SimuList):
         output_names = [f + self.anisotropy_type + '.msh' for f in fn_simu]
         geo_names = [f + 'coil_pos.geo' for f in fn_simu]
 
+        # modify mesh in case of surface impedances
+        if self._surface_impedance:
+            self.mesh.modify_mesh_surface_impedance()
+
         # call tms_coil
         fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
@@ -1457,8 +1466,10 @@ class COND(object):
     """
 
     def __init__(self, matlab_struct=None):
-        self.name = None  # e.g. WM, GM
-        self.value = None  # in S/m
+        self.name = None        # e.g. WM, GM
+        self.value = None       # in S/m
+        self.regions = None     # indices
+        self.thickness = None   # in mm
         self.descrip = ''
         self._distribution_type = None
         self.distribution_parameters = []
@@ -1522,7 +1533,7 @@ class TDCSLIST(SimuList):
 
     Parameters
     ----------------------------------------
-    matlab_struct(optinal): dict
+    matlab_struct(optional): dict
         matlab structure as red with scipy.io, not compressed
 
     Attributes
@@ -1789,10 +1800,19 @@ class TDCSLIST(SimuList):
         fn_no_extension, extension = os.path.splitext(fn_simu)
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
+
+        # modify mesh in case of surface impedances
+        # TODO: modify mesh in case of surface impedances
+        if self._surface_impedance:
+            self.mesh.modify_mesh_surface_impedance()
+
+        # assemble, solve, return v
         v = fem.tdcs(mesh_elec, cond, self.currents,
                      np.unique(electrode_surfaces),
                      solver_options=self.solver_options,
                      n_workers=cpus)
+
+        # calc fields from v
         m = fem.calc_fields(v, self.postprocess, cond=cond)
         final_name = fn_simu + '_' + self.anisotropy_type + '.msh'
         mesh_io.write_msh(m, final_name)
@@ -2489,6 +2509,7 @@ class TDCSLEADFIELD(LEADFIELD):
             raise ValueError('Found a None in an Electrode Channel number',
                              'please connect all electrodes to a channel')
 
+        # TODO: add surfaces like here in other places as well
         for i in self.unique_channels:
             while len(self.cond) < 500 + i:
                 self.cond.append(COND())
@@ -2498,6 +2519,16 @@ class TDCSLEADFIELD(LEADFIELD):
             if self.cond[499 + i].value is None:
                 self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
                 self.cond[499 + i].value = self.cond[499].value
+            if self.cond[10099 + i].value is None:
+                self.cond[10099 + i].name = 'el' + str(i)
+                self.cond[10099 + i].value = self.cond[99].value
+                self.cond[10099 + i].regions = self.cond[99].regions
+                self.cond[10099 + i].thickness = self.cond[99].thickness
+            if self.cond[10499 + i].value is None:
+                self.cond[10499 + i].name = 'gel_sponge' + str(i + 1)
+                self.cond[10499 + i].value = self.cond[499].value
+                self.cond[10499 + i].regions = self.cond[499].regions
+                self.cond[10499 + i].thickness = self.cond[499].thickness
 
     def _place_electrodes(self):
         """ Add the defined electrodes to a mesh """
@@ -2766,6 +2797,10 @@ class TDCSLEADFIELD(LEADFIELD):
         logger.info('Running Leadfield')
 
         c = SimuList.cond2elmdata(self, w_elec)
+
+        if self._surface_impedance:
+            self.mesh.modify_mesh_surface_impedance()
+
         fem.tdcs_leadfield(
             w_elec, c, electrode_surfaces, fn_hdf5, dset,
             current=1., roi=roi,
@@ -3034,7 +3069,6 @@ def sphereFit(pts, bounds=None):
     dim = pts.shape[1]
     R = np.sqrt(np.sum(C[0:dim]**2) + C[dim])
     return R, C[0:dim]
-
 
 def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
                      pos_dir_1stsurround=None, phis_surround=None,

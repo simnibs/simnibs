@@ -409,7 +409,7 @@ def get_names_from_folder_structure(m2m_folder):
         'mni2conf_12dof': mni2conf_12dof}
     return names
 
-
+# TODO: add skip_field variable here as well
 def warp_volume(image_fn, m2m_folder, out_name,
                 transformation_direction='subject2mni',
                 transformation_type='nonl',
@@ -420,7 +420,8 @@ def warp_volume(image_fn, m2m_folder, out_name,
                 method='linear',
                 continuous=False,
                 binary=False,
-                keep_tissues=None):
+                keep_tissues=None,
+                skip_field=None):
     ''' Warps a nifti image or a mesh using a linear or non-linar transform, writes out
     the output as a nifti file
 
@@ -558,10 +559,10 @@ def warp_volume(image_fn, m2m_folder, out_name,
                         mask=mask, order=order, inverse_warp=inverse_warp,
                         binary=binary)
 
-
+# TODO: add skip_field here as well
 def interpolate_to_volume(fn_mesh, reference, fn_out, create_masks=False,
                           method='linear', continuous=False, create_label=False,
-                          keep_tissues=None):
+                          keep_tissues=None, skip_field=None):
     ''' Interpolates the fields in a mesh and writem them to nifti files
 
     Parameters:
@@ -1465,10 +1466,10 @@ def _surf2surf(field, in_surf, out_surf, kdtree=None):
     _, closest = kdtree.query(out_v)
     return field[closest], kdtree
 
-
+# TODO: add skip_field variable to skip surface impedance field data (not to add to fsaverage projection)
 def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                             depth=0.5, quantities=['magn', 'normal', 'tangent', 'angle'],
-                            fields=None, open_in_gmsh=False, f_geo=None):
+                            fields=None, open_in_gmsh=False, f_geo=None, skip_field=None):
     ''' Interpolates the vector fieds in the middle gray matter surface
 
     Parameters
@@ -1569,6 +1570,7 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         kdtree[hemi] = None
 
     h = []
+    # TODO: implement skip_field here
     for name, data in m.field.items():
         for hemi in subject_files.regions:
             if fields is None or name in fields:

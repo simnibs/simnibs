@@ -28,10 +28,12 @@ from . import sim_struct
 from ..mesh_tools import mesh_io
 from ..utils.simnibs_logger import logger
 
+# TODO: handle 3 node interactions with 3 tissues by weighting them with two 2-node configurations
+# TODO: update conductivities in MATLAB: (matlab_tools/standard_cond.m) (index! +1)
 
 def standard_cond():
     S = []
-    for i in range(1000):
+    for i in range(11000):
         S.append(sim_struct.COND())
 
     # WM
@@ -94,8 +96,43 @@ def standard_cond():
     S[499].value = 1.
     S[499].descrip = 'for tDCS sponge electrodes'
 
-    return S
+    # Surface impedances
+    # Pia (between GM and CSF, no touching)
+    S[10000].name = 'Pia'
+    S[10000].value = .15
+    S[10000].descrip = 'between GM and CSF, no touching to skull'
+    S[10000].regions = [1, 2]
+    S[10000].thickness = 0.1
 
+    # Arachnoidea (between CSF and Skull)
+    S[10001].name = 'Arachnoidea'
+    S[10001].value = 0.125
+    S[10001].descrip = 'between CSF and Skull'
+    S[10001].regions = [[2, 3], [2, 6]]
+    S[10001].thickness = 0.2
+
+    # Pia and Arachnoidea (touching)
+    S[10002].name = 'Pia_Arachnoidea'
+    S[10002].value = (S[10000].value * S[10000].thickness + S[10001].value * S[10001].thickness) / (S[10000].thickness * S[10001].thickness)
+    S[10002].descrip = 'Joint surface of Pia and Arachnoidea between GM and Skull'
+    S[10002].regions = [[1, 3], [1, 6]]
+    S[10002].thickness = S[10000].thickness + S[10001].thickness
+
+    # Skin-Rubber
+    S[10099].name = 'Skin_Rubber'
+    S[10099].value = 1.
+    S[10099].descrip = 'between Skin and Rubber'
+    S[10099].regions = [4, 99]
+    S[10099].thickness = .1
+
+    # Skin-Saline
+    S[10499].name = 'Skin_Saline'
+    S[10499].value = 1.
+    S[10499].descrip = 'between Skin and Saline'
+    S[10499].regions = [4, 499]
+    S[10499].thickness = .1
+
+    return S
 
 def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
                  aniso_tissues=[1, 2], correct_FSL=True, normalize=False,
