@@ -23,6 +23,7 @@ dependencies:
   - nibabel=3.2.2
   - pyqt=5.9.2
   - mkl=2022.0.1
+  - numba
   - pip:  
     - fmm3dpy==1.0.0
     - charm_gems==1.3
