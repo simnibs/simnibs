@@ -1655,7 +1655,7 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     basis = compute_gaussian_basis_functions(central_surf, n_smooth).tocsc()
     # rescale to avoid numerical problems?
     basis.data /= basis.mean(0).mean()
-    coverage = basis[:, used].sum(1) # i.e., basis @ x where x is indicator vector
+    coverage = np.asarray(basis[:, used].sum(1)).ravel() # i.e., basis @ x where x is indicator vector
 
     if visualize:
         surfs = {}
@@ -1851,7 +1851,7 @@ def compute_adjacency_matrix(tris):
     col_ind = np.concatenate([tris[:, i] for p in pairs for i in p[::-1]])
 
     data = np.ones_like(row_ind)
-    return scipy.sparse.csr_array((data / 2, (row_ind, col_ind)), shape=(N, N))
+    return scipy.sparse.csr_matrix((data / 2, (row_ind, col_ind)), shape=(N, N))
 
 
 def compute_gaussian_basis_functions(surf, degree):
