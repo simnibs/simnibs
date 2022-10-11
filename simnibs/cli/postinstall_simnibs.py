@@ -690,15 +690,8 @@ def download_extra_coils(timeout=None):
         z.extractall(file_finder.coil_models)
     os.remove(tmpname)
     src = os.path.join(file_finder.coil_models, f'simnibs-coils-{version}')
-    for f in glob.glob(os.path.join(src, '*')):
-        d = os.path.join(file_finder.coil_models, os.path.basename(f))
-        if os.path.isdir(d):
-            shutil.rmtree(d)
-        if os.path.isfile(d):
-            os.remove(d)
-        shutil.move(f, d)
-    shutil.rmtree(
-        os.path.join(SIMNIBSDIR, 'ccd-files', f'simnibs-coils-{version}'))
+    dst = os.path.join(file_finder.coil_models, f'Deng-coils-{version}')
+    shutil.move(src, dst)
 
 def run_tests(args):
     ''' run tests on pytest '''
@@ -708,7 +701,6 @@ def run_tests(args):
 
 def fix_qtconf(install_dir):
     import glob
-    import re
     fns = glob.glob(os.path.join(install_dir,'**','qt.conf'),recursive=True)
     if len(fns)<1:
         print(f'Warning: no qt.conf file found within {install_dir}, cannot setup PyQt5')
