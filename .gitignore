@@ -18,9 +18,9 @@ simnibs/segmentation/_thickness.c
 Contents/
 simnibs/ccd-files/LICENSE
 simnibs/ccd-files/README.md
-/build #notice the first /
+# notice the first / (no recursivity)
+/build
 
-#
 # Object files
 *.o
 
@@ -111,6 +111,9 @@ coverage.xml
 
 # Misc
 miniconda3/
+
+# msvc debug file
+*.pdb
 
 ###LaTeX###
 *.acn
