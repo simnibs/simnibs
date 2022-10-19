@@ -11,7 +11,6 @@ import logging
 #from math import log, sqrt
 #from multiprocessing import Process
 import nibabel as nib
-import numba
 import numpy as np
 import os
 #from queue import Queue, Empty
@@ -1827,6 +1826,7 @@ def ensure_orientation_consistency(points, tris):
     orientation = np.sum(centroid_tris * n, axis=1)
     swap_select_columns(tris, orientation < 0, [1, 2])
 
+
 def swap_select_columns(arr, rows, cols):
     """Swap the columns (cols) of the selected rows (rows) in the array (arr).
     Operates in-place on arr.
@@ -1838,46 +1838,63 @@ def swap_select_columns(arr, rows, cols):
 
 
 def recursive_matmul(X, n):
+    """Compute X @ X @ ... `n` times"""
     assert isinstance(n, int) and  n >= 1
     return X if n == 1 else recursive_matmul(X, n-1) @ X
 
 
-def compute_adjacency_matrix(tris):
-    """Make sparse adjacency matrix for vertices with connections `tris`.
-    """
-    N = tris.max() + 1
+def compute_adjacency_matrix(el, with_diag=False):
+    """Make (sparse) adjacency matrix of vertices with connections as specified
+    by `el`.
 
-    pairs = list(itertools.combinations(np.arange(tris.shape[1]), 2))
-    row_ind = np.concatenate([tris[:, i] for p in pairs for i in p])
-    col_ind = np.concatenate([tris[:, i] for p in pairs for i in p[::-1]])
+    PARAMETERS
+    ----------
+    el : ndarray
+        n x m array describing the connectivity of the elements (e.g.,
+        n x 3 for a triangulated of surface).
+    with_diag : bool
+        Include ones on the diagonal (default = False).
+
+    RETURNS
+    -------
+    a : csr_matrix
+        Sparse matrix in column order.
+    """
+    N = el.max() + 1
+
+    pairs = np.array(list(itertools.combinations(np.arange(el.shape[1]), 2))).T
+    row_ind = el[:, pairs.ravel()].ravel()
+    col_ind = el[:, pairs[::-1].ravel()].ravel()
 
     data = np.ones_like(row_ind)
-    return scipy.sparse.csr_matrix((data / 2, (row_ind, col_ind)), shape=(N, N))
+    a = scipy.sparse.csr_matrix((data / 2, (row_ind, col_ind)), shape=(N, N))
+
+    if with_diag:
+        a = a.tolil()
+        a.setdiag(1)
+        a = a.tocsr()
+
+    return a
 
 
 def compute_gaussian_basis_functions(surf, degree):
+    """Generate a set of basis functions centered on each vertex"""
+    v = surf['points']
     A = compute_adjacency_matrix(surf['tris'])
 
     # Estimate standard deviation for Gaussian distance computation
     Acoo = A.tocoo()
-    v = surf['points']
     data = np.linalg.norm(v[Acoo.row]-v[Acoo.col], axis=1)
     # set sigma to half average distance to neighbors. This is arbitrary but
-    # seems to work. Large sigmas do not seems to work well as they tend to
-    # created "striped" pattern in dense regions
+    # seems to work. Large sigmas do not seem to work well as they tend to
+    # created a "striped" pattern in dense regions
     sigma = 0.5*data.mean()
 
     # smooth to `neighborhood` degree neighbors
     A = recursive_matmul(A, degree)
 
-    # # remove point itself
-    # A = A.tolil()
-    # A.setdiag(0)
-    # A = A.tocsc()
-
     # compute gaussian distances
     Acoo = A.tocoo()
-    v = surf['points']
     data = np.linalg.norm(v[Acoo.row]-v[Acoo.col], axis=1)
     A.data = np.exp(-data**2/(2*sigma**2))
 
@@ -1885,9 +1902,8 @@ def compute_gaussian_basis_functions(surf, degree):
 
 
 def get_n_smooth(frac):
-    """How much to smooth adjacency matrix.
-
-    These numbers are pretty heuristic at the moment.
+    """How much to smooth adjacency matrix. These numbers are heuristic at the
+    moment.
     """
     n_smooth = 3
     if frac < 0.2:
@@ -1897,7 +1913,7 @@ def get_n_smooth(frac):
     return n_smooth
 
 
-@numba.jit(nopython=True, fastmath=True)
+# @numba.jit(nopython=True, fastmath=True)
 def update_vec(vec, indptr, indices, data, addi, subi):
     addi_indptr0, addi_indptr1 = indptr[addi:addi+2]
     subi_indptr0, subi_indptr1 = indptr[subi:subi+2]
@@ -1910,33 +1926,32 @@ def update_vec(vec, indptr, indices, data, addi, subi):
     vec[subi_indices] -= subi_data
 
 
-@numba.jit(nopython=True, fastmath=True)
-def masked_indexed_argmin(x, index, mask, range_of_index):
-    """Equivalent to (but faster than)
+# @numba.jit(nopython=True, fastmath=True)
+# def masked_indexed_argmin(x, index, mask, range_of_index):
+#     """Equivalent to (but slightly faster than)
 
-        ixm = index[mask]
-        iargmin = x[ixm].argmin()
-        ixargmin = ixm[iargmin]
+#         iargmin = range_of_index[mask][x[index[mask]].argmin()]
+#         ixargmin = ixm[iargmin]
 
-    the more sparse/irregular `mask` is (since the boolean indexing operation
-    becomes slow).
+#     the more sparse/irregular `mask` is (since the boolean indexing operation
+#     becomes slow).
 
-    """
-    iargmin, ixargmin = 0, 0
-    minval = np.inf
-    for i in range_of_index:
-        if mask[i]:
-            ixi = index[i]
-            val = x[ixi]
-            if val < minval:
-                minval = val
-                iargmin = i
-                ixargmin = ixi
-    return iargmin, ixargmin, minval
+#     """
+#     iargmin, ixargmin = 0, 0
+#     minval = np.inf
+#     for i in range_of_index:
+#         if mask[i]:
+#             ixi = index[i]
+#             val = x[ixi]
+#             if val < minval:
+#                 minval = val
+#                 iargmin = i
+#                 ixargmin = ixi
+#     return iargmin, ixargmin, minval
 
 
-# numba complains about the np.ones stuff. Also, A would have to be unpacked
-# before. However, doesn't seem to make much difference
+# numba complains about the np.ones stuff. However, doesn't seem to make much
+# difference
 # @numba.jit(nopython=True, fastmath=True)
 def maximize_coverage_by_addition(used, coverage, basis, n_add):
     """Add `n_add` points (move from unused to used) and update `coverage`
@@ -1969,7 +1984,10 @@ def maximize_coverage_by_addition(used, coverage, basis, n_add):
 
     for i in np.arange(n_add):
         # identify vertex to add
-        irem, iadd, _ = masked_indexed_argmin(coverage, unused, mask, range_of_index)
+        # irem, iadd, _ = masked_indexed_argmin(coverage, unused, mask, range_of_index)
+        irem = range_of_index[mask][coverage[unused[mask]].argmin()]
+        iadd = unused[irem]
+
         mask[irem] = False
         added[i] = iadd
 
@@ -2013,12 +2031,7 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
     """
     coverage_var = coverage.var()
 
-    # n_swaps = 0
-    # covs = []
-    # pairs = []
-    # hard_swaps = []
-
-    for iteration in np.arange(max_iter):
+    for _ in np.arange(max_iter):
 
         cov_un = coverage[unused]
         cov_us = coverage[used]
@@ -2029,32 +2042,23 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
         update_vec(coverage, indptr, indices, data, addi, subi)
 
-        # if iteration % 1000 == 0:
-        #     print(iteration)
-
         if (coverage_swap_var := coverage.var()) < coverage_var:
             unused[addii] = subi
             used[subii] = addi
             coverage_var = coverage_swap_var
-
-            # covs.append(coverage_swap_var)
-            # n_swaps += 1
         else:
             update_vec(coverage, indptr, indices, data, subi, addi) # undo
 
-            # hard_swaps.append(iteration)
-
             # this is the "slow" bit
-            addiis = cov_un.argpartition(k)[:k] # [::10]
-            subiis = cov_us.argpartition(-k)[-k:] # [::10]
+            addiis = cov_un.argpartition(k)[:k]
+            subiis = cov_us.argpartition(-k)[-k:]
 
             # order in pairs (skip the 1st as we already checked that)
             addiis = addiis[cov_un[addiis].argsort()][1:]
             subiis = subiis[cov_us[subiis].argsort()[::-1]][1:]
 
             found = False
-            for i, (addii, subii) in enumerate(zip(addiis, subiis)):
-
+            for addii, subii in zip(addiis, subiis):
                 addi = unused[addii]
                 subi = used[subii]
 
@@ -2062,14 +2066,9 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
                 if (coverage_swap_var := coverage.var()) < coverage_var:
                     found = True
-
                     unused[addii] = subi
                     used[subii] = addi
-
                     coverage_var = coverage_swap_var
-
-                    # covs.append(coverage_swap_var)
-                    # pairs.append(i)
 
                     break # next iteration
                 else:
@@ -2078,7 +2077,6 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
             if not found:
                 break # if nothing to swap, terminate
 
-    # return covs, pairs, hard_swaps
 
 # some temporary stuff for plotting results of subsampling...
 def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):

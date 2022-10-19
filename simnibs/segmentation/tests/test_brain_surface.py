@@ -354,3 +354,46 @@ class TestSurfaceSubsampling:
         cols = [1, 2]
         brain_surface.swap_select_columns(x, rows, cols)
         np.testing.assert_allclose(x, y)
+
+    def test_compute_adjacency_matrix(self):
+        # VERY primitive sphere originally created with PyVista
+        #   sphere = pv.Sphere(theta_resolution=4, phi_resolution=4)
+        faces = np.array(
+            [
+                [2, 4, 0],
+                [4, 6, 0],
+                [6, 8, 0],
+                [8, 2, 0],
+                [3, 1, 5],
+                [5, 1, 7],
+                [7, 1, 9],
+                [9, 1, 3],
+                [2, 3, 5],
+                [2, 5, 4],
+                [4, 5, 7],
+                [4, 7, 6],
+                [6, 7, 9],
+                [6, 9, 8],
+                [8, 9, 3],
+                [8, 3, 2]
+            ]
+        )
+        # target adjacency matrix (as originally computed by function)
+        adj = np.array(
+            [
+                [0., 0., 1., 0., 1., 0., 1., 0., 1., 0.],
+                [0., 0., 0., 1., 0., 1., 0., 1., 0., 1.],
+                [1., 0., 0., 1., 1., 1., 0., 0., 1., 0.],
+                [0., 1., 1., 0., 0., 1., 0., 0., 1., 1.],
+                [1., 0., 1., 0., 0., 1., 1., 1., 0., 0.],
+                [0., 1., 1., 1., 1., 0., 0., 1., 0., 0.],
+                [1., 0., 0., 0., 1., 0., 0., 1., 1., 1.],
+                [0., 1., 0., 0., 1., 1., 1., 0., 0., 1.],
+                [1., 0., 1., 1., 0., 0., 1., 0., 0., 1.],
+                [0., 1., 0., 1., 0., 0., 1., 1., 1., 0.]
+            ]
+        )
+        assert np.array_equal(adj, brain_surface.compute_adjacency_matrix(faces).todense())
+        idx = np.arange(adj.shape[0])
+        adj[idx, idx] = 1
+        assert np.array_equal(adj, brain_surface.compute_adjacency_matrix(faces, with_diag=True).todense())
