@@ -127,3 +127,74 @@ class TestSubjectFiles:
                 s.get_surface('rc', 'central')
                 s.get_surface('rc', 'sphere_reg')
                 s.get_surface('lh', 'central', 20000)
+
+    def test_v2v2_get_surface_and_morph_files(self):
+        """Check that the """
+        m2m_dir = "/path/to/m2m_subid"
+        sf = file_finder.SubjectFiles(subpath=m2m_dir)
+
+        # surface
+        surf = "mysurf"
+        subsamp = 12345
+
+        res = sf.v2v2_get_surface_file(surf)
+        assert res["lh"] == Path(f"{m2m_dir}/surfaces/lh.{surf}.gii")
+        assert res["rh"] == Path(f"{m2m_dir}/surfaces/rh.{surf}.gii")
+
+        res = sf.v2v2_get_surface_file(surf, subsamp)
+        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{surf}.gii")
+        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{surf}.gii")
+
+        res = sf.v2v2_get_surface_file(surf, subsamp, "lh")
+        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{surf}.gii")
+        with pytest.raises(KeyError):
+            res["rh"]
+
+        # morph data
+        data = "mydata"
+        subsamp = 10000
+
+        res = sf.v2v2_get_morph_data_file(data)
+        assert res["lh"] == Path(f"{m2m_dir}/surfaces/lh.{data}")
+        assert res["rh"] == Path(f"{m2m_dir}/surfaces/rh.{data}")
+
+        res = sf.v2v2_get_morph_data_file(data, subsamp)
+        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{data}")
+        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{data}")
+
+        res = sf.v2v2_get_morph_data_file(data, subsamp, "rh")
+        with pytest.raises(KeyError):
+            res["lh"]
+        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{data}")
+
+    def test_v2v2_read_write_files(self):
+        """Write a few files, read them again, and check equality."""
+        rng = np.random.default_rng()
+
+        # surface
+        surf_hemi = dict(
+            points=rng.uniform(0, 10, size=(10,3)),
+            tris=rng.integers(0, 10, size=(16,3))
+        )
+        surf_dict = dict(lh=surf_hemi, rh=surf_hemi)
+        surf_name = "mysurf"
+
+        # data
+        d = rng.uniform(0,10,size=10)
+        data_dict = dict(lh=d, rh=d)
+        data_name = "mydata"
+
+        with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
+
+            sf = file_finder.SubjectFiles(subpath=tmpdir)
+
+            sf.v2v2_write_surface(surf_dict, surf_name)
+            surf_read = sf.v2v2_read_surface(surf_name)
+            for hemi in surf_dict:
+                for field in surf_dict[hemi]:
+                    np.testing.assert_allclose(surf_dict[hemi][field], surf_read[hemi][field])
+
+            sf.v2v2_write_morph_data(data_dict, data_name)
+            data_read = sf.v2v2_read_morph_data(data_name)
+            for hemi in surf_dict:
+                np.testing.assert_allclose(data_dict[hemi], data_read[hemi])
