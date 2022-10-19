@@ -917,35 +917,35 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
     nib.save(label_image, fn_tissue_labeling_upsampled)
     
  
-def _downsample_surface(m, n_nodes):
-    """
-        downsample a surface using meshfix
+# def _downsample_surface(m, n_nodes):
+#     """
+#         downsample a surface using meshfix
 
-    Parameters
-    ----------
-    m : simnibs.Msh 
-        surface
-    n_nodes : int
-        target number of nodes.
+#     Parameters
+#     ----------
+#     m : simnibs.Msh 
+#         surface
+#     n_nodes : int
+#         target number of nodes.
 
-    Returns
-    -------
-    mout : simnibs.Msh
-        downsampled surface
+#     Returns
+#     -------
+#     mout : simnibs.Msh
+#         downsampled surface
         
-    NOTE: this is a primitive wrapper around meshfix, tag1 and tag2 of the
-    returned mesh will be set to 1, meshes with multiple surfaces are not 
-    supported
-    """
-    with tempfile.NamedTemporaryFile(suffix=".off") as f:
-        mesh_fn = f.name
-    write_off(m, mesh_fn)
-    cmd = [file_finder.path2bin("meshfix"), mesh_fn, 
-           "-u", "2", "--vertices", str(n_nodes), "-o", mesh_fn]
-    spawn_process(cmd, lvl=logging.DEBUG)
+#     NOTE: this is a primitive wrapper around meshfix, tag1 and tag2 of the
+#     returned mesh will be set to 1, meshes with multiple surfaces are not 
+#     supported
+#     """
+#     with tempfile.NamedTemporaryFile(suffix=".off") as f:
+#         mesh_fn = f.name
+#     write_off(m, mesh_fn)
+#     cmd = [file_finder.path2bin("meshfix"), mesh_fn, 
+#            "-u", "2", "--vertices", str(n_nodes), "-o", mesh_fn]
+#     spawn_process(cmd, lvl=logging.DEBUG)
     
-    mout = read_off(mesh_fn)
-    os.remove(mesh_fn)
-    if os.path.isfile("meshfix_log.txt"):
-        os.remove("meshfix_log.txt")
-    return mout
+#     mout = read_off(mesh_fn)
+#     os.remove(mesh_fn)
+#     if os.path.isfile("meshfix_log.txt"):
+#         os.remove("meshfix_log.txt")
+#     return mout

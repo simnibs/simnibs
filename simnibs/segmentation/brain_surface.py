@@ -1589,8 +1589,9 @@ def subsample_surfaces(m2m_dir, n_points):
     However, for consistency the filename will reflect the *requested* number
     of points rather than the *actual* number of points.
     """
-    surfs = ('central', 'sphere')
+    logger.info(f'Downsampling brain surfaces to {n_points} points')
 
+    surfs = ('central', 'sphere')
     surfs_full, surfs_sub = {}, {s: {} for s in surfs}
     sf = file_finder.SubjectFiles(subpath=m2m_dir)
 
