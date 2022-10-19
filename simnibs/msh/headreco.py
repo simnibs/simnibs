@@ -240,17 +240,33 @@ def headmodel(argv):
             catcall = "segment_CAT('{0}','{1}',{2})".format(fcat,etpm_dir,int(not(args.cat_print)))
             spmcall +="; "+ catcall
         
+        spm_log_file = os.path.join(segment, 'spmcat.log')
+        matlab_args = []
+
         # -nosplash -nodesktop - CAT12 will stall on using -nodisplay due to the graphical report
         if (sys.platform == 'win32'):
-            cmd = "matlab -nosplash -nodesktop -wait -logfile \""+segment+"\spmcat.log\" -r "
-        else:
-            cmd = "matlab -nosplash -nodesktop -r "
-        cmd += "\"addpath('{0}','{1}');".format(path2mfiles[0],path2mfiles[1])
-        cmd += "try,{};catch ME,rethrow(ME);end,exit;\"".format(spmcall)
+            matlab_args.append("-wait")
+        
+        matlab_cmd = "addpath('{0}','{1}');\n".format(path2mfiles[0],path2mfiles[1])
+        matlab_cmd += format(spmcall)
+        
+        matlab_script_name = 'matlab_cat_script'
+        f = open(os.path.join(segment, matlab_script_name)+'.m', "w+")
+        f.write(matlab_cmd)
+        f.close()
+        
+        matlab_args.append("-batch %s" % os.path.basename(matlab_script_name))
+        matlab_args.append("-sd \"%s\"" % segment)
+        matlab_args.append("-logfile \"%s\"" % spm_log_file)
+        
+        cmd = "matlab %s" % ' '.join(matlab_args)
         
         # Call MATLAB
         hmu.log("Starting MATLAB")
         hmu.log("="*width)
+        
+        hmu.log(cmd)
+
         exitcode = hmu.spawn_process(cmd, verbose=True, return_exit_status=True)
         
         if exitcode is 2:
