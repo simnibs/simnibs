@@ -183,7 +183,8 @@ def main():
 
         _cut_and_combine_labels(sub_files.tissue_labeling_upsampled, 
                                 templates.mni_volume,
-                                fn_affine, settings["tms"])
+                                fn_affine, settings["tms"], n_dil=60)
+        # 60 dilations with 0.5 mm each --> cut 30 mm below MNI mask
         
         charm_main._stop_logger(sub_files.charm_log)
     

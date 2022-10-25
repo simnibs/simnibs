@@ -865,7 +865,7 @@ def _open_sulci(
 
 
 def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template, 
-                            fn_affine, tms_settings, n_dil=20):
+                            fn_affine, tms_settings, n_dil=40):
     """
     Cut away neck of tissue_labeling_upsampled.nii.gz and 
     combine some of the labels. Overwrites the original file.
