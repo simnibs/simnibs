@@ -1,4 +1,4 @@
-import logging
+#import logging
 import os
 import shutil
 import nibabel as nib
@@ -10,17 +10,17 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage import affine_transform
 from scipy.ndimage.measurements import label
 from scipy.io import loadmat
-import tempfile
+#import tempfile
 
 from . import samseg
 from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
-from ..utils import file_finder
+#from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.transformations import resample_vol, volumetric_affine
-from ..utils.spawn_process import spawn_process
-from ..mesh_tools.mesh_io import read_off, write_off
+#from ..utils.spawn_process import spawn_process
+#from ..mesh_tools.mesh_io import read_off, write_off
 
 
 def _register_atlas_to_input_affine(

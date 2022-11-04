@@ -844,7 +844,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
     mesh_io.write_gifti_surface(CS, Praw)
     del Yppi, CS
     gc.collect()
-    logger.info(f'Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # -------- refine intial surface and register to fsaverage template --------
@@ -1044,7 +1044,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ywmd=os.path.join(surffolder,'Ywm_after_a_million_steps_' + actualsurf + '.nii.gz')
         nib.save(Ywmd_image, fname_Ywmd)
 
-    logger.info(f'WM distance: ' +
+    logger.info('WM distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     #  CSF distance
@@ -1129,7 +1129,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_a_million_steps_' + actualsurf + '.nii.gz')
         nib.save(Ycsfdc_image, fname_Ycsfdc)
 
-    logger.info(f'CSF distance: ' +
+    logger.info('CSF distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     # PBT thickness mapping using pbt2x
@@ -1252,7 +1252,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     Ygmt = Ygmt * resV
     Ygmt[Ygmt > 10] = 10
 
-    logger.info(f'PBT2x thickness: ' +
+    logger.info('PBT2x thickness: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     logger.info(f'Cortical thickness and surface position estimation: {debug}: ' + time.strftime(
@@ -1332,8 +1332,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.freesurfer.gii')
     Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.freesurfer.gii')
 
-    if debug:
-        Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
+    # if debug:
+        # Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
         # contains:
         # region 1: initial surface with defects (as node data)
         # region 2: spherical version of initial surface with defects (as node data)
@@ -1369,7 +1369,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     if os.path.isfile(Pdefects0):
         os.remove(Pdefects0)
 
-    logger.info(f'Preparing surface improvment: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Preparing surface improvment: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # --------- topology correction ---------
@@ -1388,7 +1388,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
         del CS
         gc.collect()
 
-    logger.info(f'Topology correction: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Topology correction: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # --------- surface refinement by deformation based on the PP map ---------
@@ -1455,7 +1455,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     del CS, Vthk, nd
     gc.collect()
 
-    logger.info(f'Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # AT: this part can create self intersections when neighboring surfaces are close to each other
@@ -1492,7 +1492,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
            '-i', Pcentral, '-is', Psphere, '-t', Pfsavg, '-ts', Pfsavgsph, '-ws', Pspherereg]
     spawn_process(cmd)
 
-    logger.info(f'Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # -------- remove unnecessary files --------
@@ -1678,6 +1678,7 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     ensure_orientation_consistency(points, tris)
 
     if visualize:
+        import pyvista as pv
         add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "swap")
 
         # visualize with pyvista
@@ -2080,6 +2081,7 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
 # some temporary stuff for plotting results of subsampling...
 def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
+    import pyvista as pv
     surfs[f"cent_{name}"] = pv.make_tri_mesh(central_surf["points"], central_surf['tris'])
     surfs[f"cent_{name}"]['coverage'] = coverage
     surfs[f"sphe_{name}"] = pv.make_tri_mesh(sphere_surf["points"], sphere_surf['tris'])

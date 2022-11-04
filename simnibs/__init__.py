@@ -13,6 +13,7 @@ from .utils import transformations
 from .utils.transformations import *
 from .utils import file_finder
 from .utils.file_finder import *
+from .utils.nnav import localite, softaxic, brainsight
 from .simulation import sim_struct
 from .simulation import cond
 from .simulation import fem
