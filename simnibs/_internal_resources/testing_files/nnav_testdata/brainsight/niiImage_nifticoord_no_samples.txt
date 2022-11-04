@@ -1,0 +1,43 @@
+# Version: 7
+# Coordinate system: NIfTI:Scanner
+# Created by: Brainsight 2.3.5
+# units: millimetres, degrees, milliseconds, and microvolts
+# Encoding: UTF-8
+# Notes: Each column is delimited by a tab. Each value within a column is delimited by a semicolon.
+# Target Name	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2
+Sample 2	15.020	53.062	87.219	-0.997	-0.056	0.056	0.053	-0.997	-0.048	0.059	-0.044	0.997
+Sample 1	-44.198	75.810	65.742	0.712	0.013	0.702	0.321	0.883	-0.342	-0.624	0.469	0.624
+Sample 6	-42.977	0.962	85.362	0.739	0.013	0.674	-0.013	1.000	-0.004	-0.674	-0.006	0.739
+Sample 11	-40.127	-67.042	42.366	0.757	-0.626	0.187	0.252	0.544	0.800	-0.603	-0.559	0.569
+Sample 14	66.067	47.033	57.804	0.592	0.253	-0.765	-0.420	0.907	-0.025	0.688	0.337	0.643
+Sample 18	65.572	-18.315	69.130	0.789	0.104	-0.605	0.097	0.952	0.290	0.606	-0.287	0.742
+Sample 23	52.644	-73.348	39.001	0.854	-0.008	-0.519	0.364	0.723	0.588	0.371	-0.691	0.620
+# Electrode Name	Electrode Type	Session Name	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2
+# Planned Landmark Name	Loc. X	Loc. Y	Loc. Z
+LPA	-78.055	18.147	-27.638
+Nasion	-6.446	115.489	-18.295
+RPA	76.361	20.144	-44.653
+# Session Landmark Name	Session Name	Loc. X	Loc. Y	Loc. Z
+LPA	Session 1	-75.385	13.826	-29.872
+Nasion	Session 1	-6.785	116.530	-20.583
+RPA	Session 1	70.371	17.275	-45.903
+Refinement landmark 1	Session 1	-67.444	20.797	46.155
+Refinement landmark 2	Session 1	-32.512	-3.850	86.817
+Refinement landmark 3	Session 1	19.311	-27.480	92.783
+Refinement landmark 4	Session 1	58.843	-9.543	72.879
+Refinement landmark 5	Session 1	78.443	-14.877	39.876
+Refinement landmark 6	Session 1	81.447	-1.453	5.418
+Refinement landmark 7	Session 1	77.013	33.030	20.524
+Refinement landmark 8	Session 1	56.552	34.327	70.088
+Refinement landmark 9	Session 1	17.084	47.793	90.499
+Refinement landmark 10	Session 1	-33.233	53.799	82.231
+Refinement landmark 11	Session 1	-62.235	46.902	49.821
+Refinement landmark 12	Session 1	-37.748	80.668	68.308
+Refinement landmark 13	Session 1	18.645	84.396	78.809
+Refinement landmark 14	Session 1	32.702	86.046	67.041
+Refinement landmark 15	Session 1	58.815	85.550	24.226
+Refinement landmark 16	Session 1	67.303	-45.668	-10.479
+Refinement landmark 17	Session 1	46.647	-70.936	20.167
+Refinement landmark 18	Session 1	5.127	-84.097	29.515
+Refinement landmark 19	Session 1	-51.088	-51.020	31.813
+Refinement landmark 20	Session 1	-66.711	-17.746	38.925

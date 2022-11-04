@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TriggerMarkerList coordinateSpace="RAS" isOnlineReading="false" startTime="17:06:40.58">
+    <!--All positions are saved in the coordinate system of the corresponding medical data.
+NIfTI image data are recommended using RAS system (x-axis increases from the left hand side to the right hand side of the patient,
+y-axis increases from the posterior side to the anterior side of the patient and z-axis increases from the feet toward the head of the patient).-->
+    <ResponseParameters selectedResponseChannel="0">
+        <responseDescription id="response" maxValue="51200.0"
+            minValue="-51200.0" name="Response" unit="uV"/>
+        <responseDescription id="valueA" maxValue="200.0" minValue="0.0"
+            name="Value A (di/dt)" unit="A/us"/>
+        <responseDescription id="amplitudeA" maxValue="100.0"
+            minValue="0.0" name="Amplitude A" unit="%"/>
+    </ResponseParameters>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="26098"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="31615"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="36345"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="41014"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="46157"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="50698"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="63.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="56550"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="61465"
+        selected="false" set="false" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="1.0" data01="0.0" data02="0.0" data03="0.0"
+            data10="0.0" data11="1.0" data12="0.0" data13="0.0"
+            data20="0.0" data21="0.0" data22="1.0" data23="0.0"
+            data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+</TriggerMarkerList>

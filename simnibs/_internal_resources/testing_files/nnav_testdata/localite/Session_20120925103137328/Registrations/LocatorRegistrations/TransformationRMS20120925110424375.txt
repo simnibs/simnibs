@@ -1,0 +1,27 @@
+MRI Volume
+Study Instance UID: 1.3.12.2.1107.5.2.36.40493.30000012092414465898400000007
+Study ID: 1
+Series Instance UID: 1.3.12.2.1107.5.2.36.40493.2012092418575814740941004.0.0.0
+Series Number: 3
+
+Landmark Registration
+Distances:
+MRI Position 1 -  Instrument Position 1 = 3.22 mm
+MRI Position 2 -  Instrument Position 2 = 5.65 mm
+MRI Position 3 -  Instrument Position 3 = 3.26 mm
+
+RMS Deviation = 4.20 mm
+
+Surface Registration
+Finished after 199 steps.
+Number of Surface Markers: 375
+Rotation: 34.5°
+Translation: 84.1 mm
+Time: 33.7 s
+RMS Deviation: 2.7 mm
+
+Transformation Matrix
+   0.052  -0.104  -0.993  88.722
+  -0.908  -0.419  -0.004 -26.154
+  -0.416   0.902  -0.116  56.755
+   0.000   0.000   0.000   1.000

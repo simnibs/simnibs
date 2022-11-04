@@ -1,0 +1,14 @@
+<LocRegistration>
+  <baseMarkerReference>
+    <fileReferencePath>BaseMarker20120925105342359.xml</fileReferencePath>
+  </baseMarkerReference>
+  <mixMarkerReference>
+    <fileReferencePath>MixMarker20120925105514406.xml</fileReferencePath>
+  </mixMarkerReference>
+  <selectionReference>
+    <fileReferencePath>Selection20120925110424375.xml</fileReferencePath>
+  </selectionReference>
+  <transformationReference>
+    <fileReferencePath>Transformation20120925110424375.xml</fileReferencePath>
+  </transformationReference>
+</LocRegistration>

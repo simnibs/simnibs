@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TriggerMarkerList coordinateSpace="RAS" isOnlineReading="false" startTime="17:06:40.58">
+    <!--All positions are saved in the coordinate system of the corresponding medical data.
+NIfTI image data are recommended using RAS system (x-axis increases from the left hand side to the right hand side of the patient,
+y-axis increases from the posterior side to the anterior side of the patient and z-axis increases from the feet toward the head of the patient).-->
+    <ResponseParameters selectedResponseChannel="0">
+        <responseDescription id="response" maxValue="51200.0"
+            minValue="-51200.0" name="Response" unit="uV"/>
+        <responseDescription id="valueA" maxValue="200.0" minValue="0.0"
+            name="Value A (di/dt)" unit="A/us"/>
+        <responseDescription id="amplitudeA" maxValue="100.0"
+            minValue="0.0" name="Amplitude A" unit="%"/>
+    </ResponseParameters>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="26098"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.2665191293849743"
+            data01="-0.7390477645755741" data02="-0.618652573350447"
+            data03="-20.874041171151493" data10="-0.06120944873625217"
+            data11="-0.6535535561226794" data12="0.7543713964820058"
+            data13="-27.645790791372022" data20="-0.9618607010491106"
+            data21="-0.16319069250620427" data22="-0.21942616257426154"
+            data23="102.09055429831781" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="31615"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.40496513818070956"
+            data01="-0.6879633722176982" data02="-0.6022591376434753"
+            data03="-29.123378092492562" data10="-0.07503047447484662"
+            data11="-0.681469571531738" data12="0.7279945635142887"
+            data13="-30.26952627303153" data20="-0.9112519400738132"
+            data21="-0.2496238271742775" data22="-0.32758858366632426"
+            data23="98.24371894448535" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="36345"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.41050200172536466"
+            data01="-0.6891074143296674" data02="-0.5972152756343448"
+            data03="-33.232319226197745" data10="-0.10866489067252433"
+            data11="-0.6872388677172696" data12="0.7182908099018611"
+            data13="-19.374513069666406" data20="-0.905387792865717"
+            data21="-0.22995807785381972" data22="-0.35698632230826405"
+            data23="95.66349010941744" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="41014"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.39356179908338806"
+            data01="-0.7110192604757535" data02="-0.5827050071524152"
+            data03="-24.91023615607479" data10="-0.08725460251674017"
+            data11="-0.6598898330429597" data12="0.7462683474541293"
+            data13="-21.57110083417895" data20="-0.9151394147711202"
+            data21="-0.2428609134973847" data22="-0.3217496418853073"
+            data23="99.6147902911199" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="46157"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.39617224107910204"
+            data01="-0.6877636560514248" data02="-0.6082907846632672"
+            data03="-29.89575552814893" data10="-0.07195982675972157"
+            data11="-0.6837195683951232" data12="0.7261806283696993"
+            data13="-23.443610265376506" data20="-0.9153460048660211"
+            data21="-0.24392145272910815" data22="-0.32036383405036345"
+            data23="97.18163381528818" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="50698"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="63.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.48707273269843665"
+            data01="-0.6438922643398862" data02="-0.5900173512047128"
+            data03="-31.746373186911736" data10="-0.079317147736504"
+            data11="-0.7053976118260699" data12="0.7043298723202907"
+            data13="-21.988415391402057" data20="-0.86972783839217"
+            data21="-0.2962676676436796" data22="-0.39466001314086974"
+            data23="95.35587365191415" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="56550"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.40714975884274884"
+            data01="-0.7477064675930047" data02="-0.5245776280552282"
+            data03="-30.459819227440203" data10="-0.07603433219484934"
+            data11="-0.600088921023022" data12="0.7963225746236732"
+            data13="-25.638665840075262" data20="-0.9102007634934949"
+            data21="-0.28433413591614964" data22="-0.3011747747585146"
+            data23="96.99047458181582" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+    <TriggerMarker color="#ffafaf" description="" recordingTime="61465"
+        selected="false" set="true" visibility="true">
+        <ResponseValues>
+            <Value key="valueA" response="62.0"/>
+            <Value key="response" response="NaN"/>
+            <Value key="amplitudeA" response="45.0"/>
+        </ResponseValues>
+        <Matrix4D data00="0.48988375346175284"
+            data01="-0.6823340200008299" data02="-0.5426511405948993"
+            data03="-30.422768684549983" data10="-0.06008878596311096"
+            data11="-0.6474006484734555" data12="0.7598011616882685"
+            data13="-25.77259542203568" data20="-0.8697351970806497"
+            data21="-0.33960087257083155" data22="-0.3581452239712627"
+            data23="95.90058357624929" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TriggerMarker>
+</TriggerMarkerList>
