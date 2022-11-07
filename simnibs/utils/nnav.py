@@ -19,6 +19,25 @@ from ..simulation import TMSLIST, POSITION
 from .. import __version__ as simnibs_v
 
 
+def _lps2ras():
+    """
+    Flip matrix from LPS to RAS coordinate system and vice versa.
+
+    Example:
+        if mat_in_lps.shape is (n_pos, 4, 4)
+        mat_in_ras = _lps2ras() @ mat_in_lps
+        mat_in_lps = _lps2ras() @ map_in_ras
+
+        if mat_in_lps.shape is (4, 4, n_pos):
+         mat_in_ras = np.tensordot(_lps2ras(), mat_in_lps, axes=[0,0])
+    """
+    return np.array([
+        [-1, +0, +0, +0],  # +x -> -x (R -> L)
+        [+0, -1, +0, +0],  # +y -> -y (A -> P)
+        [+0, +0, +1, +0],  # z -> z
+        [0, 0, 0, 1]])
+
+
 
 class localite:
     """
@@ -168,7 +187,7 @@ class localite:
     
                 # transform into correct coordinate axes system
                 if out_coord_space == 'LPS':
-                    im = self._lps2ras() @ im
+                    im = _lps2ras() @ im
     
                 f.write('    ' + f'<InstrumentMarker alwaysVisible="false" index="{idx}" selected="false">\n')
                 f.write('    ' * 2 + f'<Marker additionalInformation="" '
@@ -227,7 +246,7 @@ class localite:
             lps2ras_flipmat = np.eye(4)
         elif coord_system == 'LPS':
             print("Transforming 'LPS' to 'RAS' coordinate system.")
-            lps2ras_flipmat = self._lps2ras()
+            lps2ras_flipmat = _lps2ras()
         else:
             raise ValueError(f"Coordinate system {coord_system} not supported. Use 'RAS' or 'LPS'.")
         coil_axes_flipmat = self._simnibs2localite()
@@ -305,23 +324,7 @@ class localite:
             [0, 0, 0, 1]])
     
     
-    def _lps2ras(self):
-        """
-        Flip matrix from LPS to RAS coordinate system and vice versa.
-    
-        Example:
-            if mat_in_lps.shape is (n_pos, 4, 4)
-            mat_in_ras = localite._lps2ras() @ mat_in_lps
-            mat_in_lps = localite._lps2ras() @ map_in_ras
-    
-            if mat_in_lps.shape is (4, 4, n_pos):
-             mat_in_ras = np.tensordot(localite._lps2ras(), mat_in_lps, axes=[0,0])
-        """
-        return np.array([
-            [-1, +0, +0, +0],  # +x -> -x (R -> L)
-            [+0, -1, +0, +0],  # +y -> -y (A -> P)
-            [+0, +0, +1, +0],  # z -> z
-            [0, 0, 0, 1]])
+
 
 
 
@@ -435,41 +438,38 @@ class brainsight:
             # read data, probably 'Targets'
             if line.startswith('# Target Name'):
                 # get column names
-                col_names = line.replace('# ', '').split('\t')
+                col_names_targets = line.replace('# ', '').split('\t')
     
                 # read all target lines
                 while line:
                     line = f.readline()
                     if line.startswith('#'):
-                        break
-    
+                        break    
                     if line:
                         data_targets.append(line.rstrip().split('\t'))
-                data_targets = pd.DataFrame(data_targets, columns=col_names)
-    
+                        
             if line.startswith('# Sample Name'):
                 # get column names
-                col_names = line.replace('# ', '').split('\t')
+                col_names_samples = line.replace('# ', '').split('\t')
     
                 # read all sample lines
                 while line:
                     line = f.readline()
                     if line.startswith('#'):
-                        break
-    
+                        break    
                     data_samples.append(line.rstrip().split('\t'))
-                data_samples = pd.DataFrame(data_samples, columns=col_names)
-    
+
             # get matsimnibs arrays in simnibs space and axes definition
-            try:
-                names_targets, matsimnibs_targets = self._transform_brainsight(data_targets, coord_sys)
-            except TypeError:
+            if len(data_targets):
+                names_targets, matsimnibs_targets = self._transform_brainsight(data_targets, coord_sys, col_names_targets)
+            else:
                 names_targets, matsimnibs_targets = [], None
-            try:
-                names_samples, matsimnibs_samples = self._transform_brainsight(data_samples, coord_sys)
-            except TypeError:
+                
+            if len(data_samples):
+                names_samples, matsimnibs_samples = self._transform_brainsight(data_samples, coord_sys, col_names_samples)
+            else:
                 names_samples, matsimnibs_samples = [], None
-    
+            
             if (matsimnibs_targets is None or matsimnibs_targets.size == 0) and \
                     (matsimnibs_samples is None or matsimnibs_samples.size == 0):
                 raise ValueError(f"Could not find any targets in {fn}.")
@@ -540,7 +540,7 @@ class brainsight:
         else:
             out_coord_space = 'World'
             # apply RAS->LPS transformation
-            matsimnibs = np.tensordot(localite()._lps2ras(), matsimnibs, axes=[0, 0])
+            matsimnibs = np.tensordot(_lps2ras(), matsimnibs, axes=[0, 0])
     
         # change coil axes definition to brainsight
         matsimnibs = np.matmul(self._simnibs2brainsight(), matsimnibs)
@@ -571,13 +571,14 @@ class brainsight:
                         f'{matsimnibs[0, 2, i]:.4f}\t{matsimnibs[1, 2, i]:.4f}\t{matsimnibs[2, 2, i]:.4f}\n')
     
     
-    def _transform_brainsight(self, data, coord_sys):
+    def _transform_brainsight(self, data, coord_sys, col_names):
         """
         Transforms Brainsight coil position/orientation into SimNIBS matsimnibs
     
-        data: pd.DataFrame
+        data: list of lists with positions
         coord_sys: str
             One of ('NIfTI:Scanner', 'World')
+        col_names: list of str
     
         Returns:
         --------
@@ -592,25 +593,26 @@ class brainsight:
         if coord_sys.lower() not in ['nifti:scanner', 'world', 'nifti:aligned']:
             raise ValueError(f"Coordinate system '{coord_sys} is not supported. "
                              f"Export targes/samples as NIfTI:Scanner (or Dicom/World).")
-    
-        # pull the needed columns in correct order
-        col_order = ['m0n0', 'm1n0', 'm2n0', 'Loc. X',
-                     'm0n1', 'm1n1', 'm2n1', 'Loc. Y',
-                     'm0n2', 'm1n2', 'm2n2', 'Loc. Z']
-        matsimnibs = data[col_order].astype(float).values
-    
-        # add [0,0,0,1] for each
-        matsimnibs = np.array([np.hstack((m, [0, 0, 0, 1])) for m in matsimnibs])
-    
-        # reshape to (n_target, 4, 4)
-        matsimnibs = matsimnibs.reshape((matsimnibs.shape[0], 4, 4))
-    
+            
+        matsimnibs = np.zeros((len(data),4,4))
+        pos_names = []
+        for pos, i in zip(data, range(len(data))):
+            p_dict = {x: pos[k] for x, k in zip(col_names, range(len(col_names)))}
+            
+            m = [[p_dict['m0n0'], p_dict['m1n0'], p_dict['m2n0'], p_dict['Loc. X']], 
+                 [p_dict['m0n1'], p_dict['m1n1'], p_dict['m2n1'], p_dict['Loc. Y']], 
+                 [p_dict['m0n2'], p_dict['m1n2'], p_dict['m2n2'], p_dict['Loc. Z']],
+                 [0, 0, 0, 1]]
+            
+            matsimnibs[i] = np.array(m).astype(float)
+            pos_names.append(pos[0])
+   
         # apply world coordinate system transformation (LPS -> RAS for dicoms, nothing for nifti)
         if coord_sys.lower() == 'world':
-            matsimnibs = localite()._lps2ras() @ matsimnibs
+            matsimnibs = _lps2ras() @ matsimnibs
     
         # adjust coil axes definition to simnibs style
-        return data.values[:, 0].tolist(), matsimnibs @ self._simnibs2brainsight()
+        return pos_names, matsimnibs @ self._simnibs2brainsight()
     
     
     def _simnibs2brainsight(self):
