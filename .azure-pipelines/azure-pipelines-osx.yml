@@ -7,20 +7,20 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
     maxParallel: 4
 
   steps:
   # Install certificates for signing the package
   - task: InstallAppleCertificate@2
     inputs:
-      certSecureFile: 'certificate_installer.p12'
+      certSecureFile: 'certificate_installer_new.p12'
       certPwd: '$(P12password)'
       keychain: 'temp'
     displayName: Install Installer Certificate
   - task: InstallAppleCertificate@2
     inputs:
-      certSecureFile: 'certificate_application.p12'
+      certSecureFile: 'certificate_application_new.p12'
       certPwd: '$(P12password)'
       keychain: 'temp'
     displayName: Install Application Certificate
@@ -58,10 +58,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-10.14:
-        vmImage: 'macOS-10.14'
       MacOSX-10.15:
         vmImage: 'macOS-10.15'
+      MacOSX-11:
+        vmImage: 'macOS-11'
 
   pool:
     vmImage: $(vmImage)
@@ -94,7 +94,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'macOS-10.14'
+    vmImage: 'macOS-10.15'
     maxParallel: 4
 
   steps:
@@ -150,10 +150,11 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs # I use my connection because github does not generate OAuth token for organizations
+      gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
       assets: $(System.ArtifactsDirectory)/macos/*
       assetUploadMode: 'replace'
       isDraft: true
+
