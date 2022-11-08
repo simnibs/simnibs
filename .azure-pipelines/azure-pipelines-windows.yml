@@ -7,7 +7,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
@@ -39,10 +39,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      Windows-2016:
-        vmImage: 'vs2017-win2016'
       Windows-2019:
-         vmImage: 'windows-2019'
+        vmImage: 'windows-2019'
+      Windows-2022:
+         vmImage: 'windows-2022'
 
   pool:
     vmImage: $(vmImage)
@@ -60,7 +60,7 @@ jobs:
 
   - script: |
       start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs --junit-xml=test-results.xml
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
 
   - task: PublishTestResults@2
@@ -73,7 +73,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - checkout: none
@@ -91,7 +91,7 @@ jobs:
 
   - script: |
       start /wait "" $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\examples\tests\examples.py -v -s --junit-xml=test-results.xml
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\tests\examples\examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
 
   - task: PublishTestResults@2
@@ -106,7 +106,7 @@ jobs:
    - Test
    - Examples
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - checkout: none
@@ -121,12 +121,13 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs # I use my connection because github does not generate OAuth token for organizations
+      gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
       assets: $(System.ArtifactsDirectory)\windows\*
       assetUploadMode: 'replace'
       isDraft: true
+
 
 

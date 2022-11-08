@@ -41,14 +41,12 @@ jobs:
     matrix:
       centos7:
         containerImage: centos:7
-      ubuntu16:
-        containerImage: ubuntu:16.04
       ubuntu18:
         containerImage: ubuntu:18.04
       ubuntu20:
         containerImage: ubuntu:20.04
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
     maxParallel: 4
 
   container:  $[ variables['containerImage'] ]
@@ -66,7 +64,7 @@ jobs:
   - bash: |
       tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
       simnibs_installer/install -s -t simnibs_install
-      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
+      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/tests --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
   
   - task: PublishTestResults@2
@@ -79,7 +77,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
 
   steps:
   - checkout: none
@@ -102,7 +100,7 @@ jobs:
       tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
       simnibs_installer/install -s -t simnibs_install
       simnibs_install/bin/simnibs_python -m pip install --force-reinstall --upgrade certifi
-      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/examples/tests/examples.py -v -s --junit-xml=test-results.xml
+      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
   - task: PublishTestResults@2
@@ -132,10 +130,11 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs # I use my connection because github does not generate OAuth token for organizations
+      gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
       assets: $(System.ArtifactsDirectory)/linux/*
       assetUploadMode: 'replace'
       isDraft: true
+
