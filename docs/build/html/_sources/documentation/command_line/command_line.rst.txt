@@ -9,6 +9,7 @@ These command line tools can be accessed through the Windows Command Prompt (see
    :maxdepth: 1
    
    charm
+   convert_3_to_4
    dwi2cond
    simnibs
    simnibs_gui
