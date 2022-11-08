@@ -1,4 +1,3 @@
-
 '''
     Optimization problem set-up and post-processing in SimNIBS
     This program is part of the SimNIBS package.
@@ -20,5 +19,8 @@
 
 '''
 
-# TODO: import stuff from optimize_tms, optimize_teslf, optimize_tes
+from .optimize_tms import *
+from .optimize_teslf import *
+from .optimize_tes import *
+
 # TODO: adapt matlab_tools/opt_struct.m and adapt it to changes made

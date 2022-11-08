@@ -5,36 +5,25 @@ some examples on how to use these.
 Written by Ole Numssen & Konstantin Weise, 2019.
 Adapted by Guilherme Saturnino, 2019
 """
-import numpy as np
 
-import copy
-import csv
-import re
 import os
 import time
 import glob
 import functools
-import logging
 import gc
-
 import numpy as np
-import scipy.spatial
 import h5py
-import nibabel
 
-from . import optimize_tms
-from . import optimization_methods
+
 from . import ADMlib
 from ..simulation import fem
 from ..simulation import cond
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
 from ..mesh_tools import mesh_io, gmsh_view
-from ..utils import transformations
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 
-# TODO: adapt imports
 
 class TMSoptimize():
     """
@@ -375,7 +364,7 @@ class TMSoptimize():
         # Run simulations
         if self.method.lower() == 'direct':
             # Write out the grid
-            optimize_tms.plot_matsimnibs_list(
+            plot_matsimnibs_list(
                 pos_matrices,
                 np.ones(len(pos_matrices)),
                 "Grid",
@@ -396,7 +385,7 @@ class TMSoptimize():
         else:
             raise ValueError("method should be 'direct' or 'ADM'")
         # Update the .geo file with the E values
-        optimize_tms.plot_matsimnibs_list(
+        plot_matsimnibs_list(
             pos_matrices,
             E_roi,
             "E at target",
@@ -459,7 +448,7 @@ class TMSoptimize():
         return name
 
     def _get_coil_positions(self):
-        return optimize_tms.get_opt_grid(
+        return get_opt_grid(
             self.mesh, self.centre,
             handle_direction_ref=self.pos_ydir,
             distance=self.distance, radius=self.search_radius,
@@ -470,7 +459,7 @@ class TMSoptimize():
         )
 
     def _get_target_region(self):
-        return optimize_tms.define_target_region(
+        return define_target_region(
             self.mesh,
             self.target,
             self.target_size,
@@ -530,7 +519,7 @@ class TMSoptimize():
         return E_roi
 
     def _ADM_optimize(self, cond_field, target_region):
-        coil_matrices, rotations = optimize_tms.get_opt_grid_ADM(
+        coil_matrices, rotations = get_opt_grid_ADM(
             self.mesh, self.centre,
             handle_direction_ref=self.pos_ydir,
             distance=self.distance, radius=self.search_radius,

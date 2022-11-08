@@ -30,6 +30,8 @@ from .. import SIMNIBSDIR
 
 __all__ = ['templates', 'get_atlas', 'get_reference_surf', 'SubjectFiles', 'coil_models']
 
+# TODO: add electrode mask here
+
 HEMISPHERES = {"lh", "rh"}
 VALID_HEMI = HEMISPHERES.union({"both"})
 
@@ -64,6 +66,10 @@ class Templates:
         # MNI
         self.mni_volume = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
+
+        # Electrode mask of valid skin region in MNI space
+        self.mni_volume_electrode_mask = os.path.join(
+            self._resources, 'templates', 'MNI152_T1_1mm_electrode_mask.nii.gz')
 
         # path to fsaverage surfaces
         self.freesurfer_templates = os.path.join(
@@ -331,12 +337,12 @@ class SubjectFiles:
 
     Warning
     --------
-    This class does not check for existance of the files
+    This class does not check for existence of the files
     '''
 
     def __init__(self, fnamehead: str = None, subpath: str = None):
         if not fnamehead and not subpath:
-            raise ValueError('Either fnamehear or subpath need to be set')
+            raise ValueError('Either fnamehead or subpath need to be set')
 
         if fnamehead:
             if not fnamehead.endswith('.msh'):
@@ -484,7 +490,7 @@ class SubjectFiles:
 
         Warning
         --------
-        This does not check for existance of the file
+        This does not check for existence of the file
 
         '''
         return os.path.join(self.eeg_cap_folder, cap_name)

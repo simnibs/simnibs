@@ -2195,7 +2195,7 @@ class Msh:
         if far.ndim == 1:
             far = far[None, :]
         if not (near.shape[1] == 3 and far.shape[1] == 3):
-            raise ValueError('near and far poins should be arrays of size (N, 3)')
+            raise ValueError('near and far points should be arrays of size (N, 3)')
 
         indices, points = cgal.segment_triangle_intersection(
             self.nodes[:],

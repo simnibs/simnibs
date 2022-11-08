@@ -974,13 +974,13 @@ def subject2mni_coords(coordinates, m2m_folder, transformation_type='nonl'):
     Parameters
     ------------
     coordinates: list or numpy array in Nx3 format
-        Coordinates to be transformd
+        Coordinates to be transformed
 
     m2m_folder: str
-        Path to the m2m_{subject_id} folder, generated during the segmantation
+        Path to the m2m_{subject_id} folder, generated during the segmentation
 
     transformation_type: {'nonl', '6dof', '12dof'}
-        Type of tranformation, non-linear, 6 or 12 degrees of freedom
+        Type of transformation, non-linear, 6 or 12 degrees of freedom
 
     Returns
     ----------

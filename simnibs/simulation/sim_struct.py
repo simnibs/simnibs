@@ -47,7 +47,6 @@ from . import fem
 from . import electrode_placement
 from .. import  __version__
 
-
 class SESSION(object):
     """Class that defines a set of simnibs simulations
 

@@ -2,33 +2,21 @@ import copy
 import csv
 import re
 import os
-import time
-import glob
-import functools
 import logging
-import gc
-
 import numpy as np
 import scipy.spatial
 import h5py
 import nibabel
 
-from . import optimize_tms
 from . import optimization_methods
-from . import ADMlib
-from ..simulation import fem
-from ..simulation import cond
-from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
 from ..mesh_tools import mesh_io, gmsh_view
 from ..utils import transformations
 from ..utils.simnibs_logger import logger
-from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 
-# TODO: adapt imports
 
-class TDCSoptimize():
-    ''' Defines a tdcs optimization problem
+class TESLFoptimize():
+    ''' Defines a tes optimization problem using a leadfield approach
 
     Parameters
     --------------
@@ -237,7 +225,7 @@ class TDCSoptimize():
 
         Returns
         ----------
-        p: TDCSoptimize
+        p: TESLFoptimize
             TDCSoptimize structure
         '''
         t = cls()
@@ -256,7 +244,7 @@ class TDCSoptimize():
         target = []
         if len(mat['target']) > 0:
             for t in mat['target'][0]:
-                target_struct = TDCStarget.read_mat_struct(t)
+                target_struct = TESLFtarget.read_mat_struct(t)
                 if target_struct is not None:
                     target.append(target_struct)
         if len(target) == 0:
@@ -266,7 +254,7 @@ class TDCSoptimize():
         if len(mat['avoid']) > 0:
             avoid = []
             for t in mat['avoid'][0]:
-                avoid_struct = TDCSavoid.read_mat_struct(t)
+                avoid_struct = TESLFavoid.read_mat_struct(t)
                 if avoid_struct is not None:
                     avoid.append(avoid_struct)
         if len(avoid) == 0:
@@ -320,7 +308,7 @@ class TDCSoptimize():
             TDCStarget added to the structure
         '''
         if target is None:
-            target = TDCStarget(mesh=self.mesh, lf_type=self.lf_type)
+            target = TESLFtarget(mesh=self.mesh, lf_type=self.lf_type)
         self.target.append(target)
         return target
 
@@ -338,7 +326,7 @@ class TDCSoptimize():
             TDCStarget added to the structure
         '''
         if avoid is None:
-            avoid = TDCSavoid(mesh=self.mesh, lf_type=self.lf_type)
+            avoid = TESLFavoid(mesh=self.mesh, lf_type=self.lf_type)
         self.avoid.append(avoid)
         return avoid
 
@@ -809,8 +797,8 @@ class TDCSoptimize():
         return s
 
 
-class TDCStarget:
-    ''' Defines a target for TDCS optimization
+class TESLFtarget:
+    ''' Defines a target for TES optimization using a leadfield approach
 
     Attributes
     -------------
@@ -887,7 +875,7 @@ class TDCStarget:
 
         Returns
         ----------
-        t: TDCStarget
+        t: TESLFtarget
             TDCStarget structure
         '''
         t = cls()
@@ -1124,7 +1112,7 @@ class TDCStarget:
         return s
 
 
-class TDCSavoid:
+class TESLFavoid:
     ''' List of positions to be avoided by optimizer
 
     Attributes
@@ -1185,7 +1173,7 @@ class TDCSavoid:
 
         Returns
         ----------
-        t: TDCSavoid
+        t: TESLFavoid
             TDCSavoid structure
         '''
         t = cls()
@@ -1311,7 +1299,7 @@ class TDCSavoid:
         return s
 
 
-class TDCSDistributedOptimize():
+class TESLFDistributedOptimize():
     ''' Defines a tdcs optimization problem with distributed sources
 
     This function uses the problem setup from
@@ -1422,7 +1410,7 @@ class TDCSDistributedOptimize():
                  min_img_value=0,
                  open_in_gmsh=True):
 
-        self._tdcs_opt_obj = TDCSoptimize(
+        self._tdcs_opt_obj = TESLFoptimize(
             leadfield_hdf=leadfield_hdf,
             max_total_current=max_total_current,
             max_individual_current=max_individual_current,
@@ -1556,7 +1544,7 @@ class TDCSDistributedOptimize():
 
         Returns
         ----------
-        p: TDCSoptimize
+        p: TESLFoptimize
             TDCSoptimize structure
         '''
         t = cls()
@@ -1861,7 +1849,7 @@ class TDCSDistributedOptimize():
             Does not do anything, it is just here for the common interface with the
             simulation's run function
         '''
-        return TDCSoptimize.run(self)
+        return TESLFoptimize.run(self)
 
 
 def _save_TDCStarget_mat(target):
