@@ -11,7 +11,8 @@ Changelog
  * New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh
  * New command line tool *meshmesh* to support meshing of custom geometries
  * Support of Nx1 center-surround montages in python and Matlab
- * added python examples for temporal interference simulations using pre-calculated leadfields for speed
+ * Added python examples for temporal interference simulations using pre-calculated leadfields for speed
+ * Added basic I/O functions for neuronavigation data in python
  * Update to python 3.9
  * Major code cleanup and restructuring under the hood
  * Tested on Windows 10, Linux and Macs with Intel and Apple Silicon

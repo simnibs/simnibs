@@ -12,6 +12,8 @@ Version 4.0
 '''''''''''''''''''''''''''''''''''''''
 * `Puonti O, Van Leemput K, Saturnino GB, Siebner HR, Madsen KH, Thielscher A. (2020). Accurate and robust whole-head segmentation from magnetic resonance images for individualized head modeling. Neuroimage, 219:117044. <https://doi.org/10.1016/j.neuroimage.2020.117044>`_
 
+.. _coilmodels:
+
 TMS coil models
 '''''''''''''''
 * `Drakaki M, Mathiesen C, Siebner HR, Madsen KH, Thielscher A. (2022). Database of 25 validated coil models for electric field simulations for TMS. Brain Stimulation. <https://doi.org/10.1016/j.brs.2022.04.017>`_

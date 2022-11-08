@@ -350,9 +350,11 @@ class softaxic:
 
         """
         tmslist = TMSLIST()
-        for M in self._parse_softaxic(filename):
+        M_lst, pos_id_lst = self._parse_softaxic(filename)
+        for M, pos_id in zip(M_lst, pos_id_lst):
             position = tmslist.add_position()
             position.matsimnibs = M
+            position.name = pos_id
         return tmslist
     
     def _parse_softaxic(self, fn):
@@ -370,9 +372,12 @@ class softaxic:
         D = []
         # Placeholder for positions (not really used except inside the loop)
         pos = []
-        #Iterate over all fp elements
-        for k,elem in enumerate(root.iter('fp')):
-            attrib = elem.attrib #extract fp attributes
+        # Placeholder for list of position ids
+        pos_id = []
+        #Iterate over all fmp elements
+        for k,elem in enumerate(root.iter('fmp')):
+            pos_id.append(elem.attrib['id'])
+            attrib = elem.find('fp').attrib #extract fp attributes
             D.append(np.zeros((3,3))) #init D
             pos.append(np.zeros(3)) #init pos
             for i in range(3): #loop over first dimension af M
@@ -382,7 +387,7 @@ class softaxic:
             M.append(np.identity(4)) #init M
             M[k][:3, :3] = D[k]@R #rotate DCT part
             M[k][:3, 3] = pos[k] #set center position
-        return M
+        return M, pos_id
 
 
 
