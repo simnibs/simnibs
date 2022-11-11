@@ -68,8 +68,8 @@ class Templates:
             self._resources, 'templates', 'MNI152_T1_1mm.nii.gz')
 
         # Electrode mask of valid skin region in MNI space
-        self.mni_volume_electrode_mask = os.path.join(
-            self._resources, 'templates', 'MNI152_T1_1mm_electrode_mask.nii.gz')
+        self.mni_volume_upper_head_mask = os.path.join(
+            self._resources, 'templates', 'MNI152_T1_1mm_upper_head_mask.nii.gz')
 
         # path to fsaverage surfaces
         self.freesurfer_templates = os.path.join(
@@ -473,7 +473,6 @@ class SubjectFiles:
         self.summary_report = os.path.join(self.subpath, 'charm_report.html')
         #self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         self.ref_fs = True # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
-
 
     def get_eeg_cap(self, cap_name: str = 'EEG10-10_UI_Jurak_2007.csv') -> str:
         ''' Gets the name of an EEG cap for this subject

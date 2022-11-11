@@ -2,8 +2,9 @@ import copy
 import os
 import time
 import copy
-import nibabel
 import numpy as np
+import nibabel as nib
+import scipy.ndimage.morphology as mrph
 
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from numpy.linalg import eig, inv
@@ -42,7 +43,16 @@ class TESoptimize():
         Maximum number of active electrodes. Default: no maximum
     init_pos : str or list of str or list of str and np.array of float [3]
         Initial positions of movable Electrode arrays (for each movable array)
-
+    fn_eeg_cap : str, optional, default: 'EEG10-10_UI_Jurak_2007.csv'
+        Filename of EEG cap to use for initial position (without path)
+        - 'EEG10-10_UI_Jurak_2007.csv'
+        - 'easycap_BC_TMS64_X21.csv'
+        - 'EEG10-10_Cutini_2011.csv'
+        - 'EEG10-10_Neuroelectrics.csv'
+        - 'EEG10-20_extended_SPM12.csv'
+        - 'EEG10-20_Okamoto_2004.csv'
+    plot : bool, optional, default: False
+        Plot configurations in output folder for visualization and control
 
     name: str (optional)
         Name of optimization problem. Default: optimization
@@ -106,14 +116,18 @@ class TESoptimize():
                  msh=None,
                  electrode=None,
                  roi=None,
-                 init_pos=["C3"],
+                 init_pos=None,
+                 fn_eeg_cap=None,
+                 plot=False,
                  max_total_current=2e-3,
                  max_individual_current=1e-3,
                  max_active_electrodes=None,
-                 name='optimization/tes',
+                 output_folder=None,
                  target=None,
-                 avoid=None,
-                 open_in_gmsh=True):
+                 avoid=None):
+
+        if init_pos is None:
+            init_pos = ["C3"]
 
         if type(init_pos) is str:
             init_pos = list(init_pos)
@@ -121,19 +135,63 @@ class TESoptimize():
         if type(init_pos) is np.ndarray:
             init_pos = [init_pos]
 
+        if fn_eeg_cap is None:
+            self.fn_eeg_cap = 'EEG10-10_UI_Jurak_2007.csv'
+        else:
+            self.fn_eeg_cap = os.path.split(fn_eeg_cap)[1]
+
+        assert type(output_folder) is str, "Please prove an output folder to save optimization results in."
+
         self.electrode = electrode
         self.n_ele_free = len(electrode.electrode_arrays)
         self.max_total_current = max_total_current
         self.max_individual_current = max_individual_current
         self.max_active_electrodes = max_active_electrodes
-        self.fn_mesh = None
-        self.open_in_gmsh = open_in_gmsh
         self.roi = roi
         self.init_pos = init_pos
+        self.init_pos_subject_coords = []
+        self.output_folder = output_folder
+        self.plot_folder = os.path.join(self.output_folder, "plots")
+        self.plot = plot
+        self.fn_results_hdf5 = os.path.join(self.output_folder, "opt.hdf5")
         init_pos_list = ["C3", "C4"]
 
         assert len(init_pos) == self.n_ele_free, "Number of initial positions has to match number of freely movable" \
                                                  "electrode arrays"
+
+        if not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder)
+
+        if not os.path.exists(self.plot_folder):
+            os.makedirs(self.plot_folder)
+
+        # read mesh or store in self
+        if type(msh) is str:
+            self.msh = mesh_io.read_msh(msh)
+        elif type(msh) == Msh:
+            self.msh = msh
+        else:
+            raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
+
+        self.ff_templates = Templates()
+        self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
+        self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask  # os.path.join(SIMNIBSDIR, "resources", "templates", "MNI152_T1_1mm_electrode_mask.nii.gz")
+
+        # relabel internal air
+        self.msh_relabel = relabel_internal_air(m=self.msh,
+                                                subpath=os.path.split(self.msh.fn)[0],
+                                                label_skin=1005,
+                                                label_new=1099,
+                                                label_internal_air=501)
+
+        # create skin surface
+        self.skin_surface = surface.Surface(mesh=self.msh_relabel, labels=1005)
+
+        # determine point indices where the electrodes may be applied during optimization
+        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.msh_relabel)
+
+        # fit optimal ellipsoid to valid skin points
+        self.eli_center, self.eli_radii, self.eli_rotmat = fit_ellipsoid(self.skin_surface.nodes)
 
         # set initial positions to electrode C3 (and C4) if nothing is provided
         if init_pos is None:
@@ -142,38 +200,16 @@ class TESoptimize():
                                           "freely movable electrode array (init_pos)!")
             self.init_pos = [init_pos_list[i] for i in range(self.n_ele_free)]
 
-        # read mesh or store in self
-        if type(msh) is str:
-            self.msh = mesh_io.read_msh(msh)
-            self.skin_surface = surface.Surface(mesh=self.msh, labels=1005)
-        elif type(msh) == Msh:
-            self.msh = msh
-            self.skin_surface = surface.Surface(mesh=self.msh, labels=1005)
-        else:
-            raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
-
-        self.ff_templates = Templates()
-        self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
-        self.fn_electrode_mask = self.ff_templates.mni_volume_electrode_mask  # os.path.join(SIMNIBSDIR, "resources", "templates", "MNI152_T1_1mm_electrode_mask.nii.gz")
-
         # get subject coordinates of initial positions
         if type(self.init_pos[0]) is str:
-            # self.init_pos_subject_coords
-            tmp = ELECTRODE()
-            tmp.centre = self.init_pos[0]
-            #TODO: EEG Kappe rausführen als Parameter
-            tmp.substitute_positions_from_cap(cap=self.ff_subject.get_eeg_cap(cap_name='EEG10-10_UI_Jurak_2007.csv'))
+            for eeg_pos in self.init_pos:
+                tmp = ELECTRODE()
+                tmp.centre = eeg_pos
+                tmp.substitute_positions_from_cap(cap=self.ff_subject.get_eeg_cap(cap_name=self.fn_eeg_cap))
+                self.init_pos_subject_coords.append(tmp.centre)
+        else:
+            self.init_pos_subject_coords = self.init_pos
 
-        # INIT:
-        # ff = SubjectFiles(fnamehead=fnamehead)
-        # tmp = ELECTRODE()
-        # tmp.centre = center_pos
-        # tmp.substitute_positions_from_cap(ff.get_eeg_cap())
-
-        #        self._field_name = None
-#        self._field_units = None
-#        self.name = name
-        # I can't put [] in the arguments for weird reasons (it gets the previous value)
         if target is None:
             self.target = []
         else:
@@ -183,20 +219,36 @@ class TESoptimize():
         else:
             self.avoid = avoid
 
-        # TODO: add Axels inner/outer air relabel function before calling valid_skin_region(), implement this is charm_utils
+        if self.plot:
+            theta = np.linspace(0, np.pi, 180)
+            phi = np.linspace(0, 2*np.pi, 360)
+            coords_sphere = np.array(np.meshgrid(theta, phi)).T.reshape(-1, 2)
+            # coords_sphere = np.hstack([theta[:, np.newaxis], phi[:, np.newaxis]])
+            eli_coords = ellipsoid2cartesian(coords=coords_sphere,
+                                             center=self.eli_center,
+                                             radii=self.eli_radii,
+                                             rotmat=self.eli_rotmat,
+                                             return_normal=False)
 
-        # determine point indices where the electrodes may be applied during optimization
-        self.valid_skin_region()
+            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords)
 
-        # fit optimal ellipsoid to valid skin points
-        self.eli_center, self.eli_radii, self.eli_rotmat = fit_ellipsoid(self.skin_surface.nodes_valid)
+            import pynibs
+            # write hdf5 _geo files for visualization in paraview
+            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
+                                       points=self.skin_surface.nodes,
+                                       con=self.skin_surface.tr_nodes,
+                                       replace=True,
+                                       hdf5_path='/mesh')
+
+            pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
+                                        data_names=["domain"],
+                                        data_hdf_fn_out=os.path.join(self.output_folder, "plots", "upper_head_region_data.hdf5"),
+                                        geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
+                                        replace=True)
 
         # gauge problem (find node in COG of head and move to end), modifies self.mesh
         self.gauge_mesh()
 
-
-        # in sim_struct -> filefinder to get filenames of EEG cap for example
-        # from EEG electrode -> surface point
         # get_surround_pos
 
         # TODO: solver_options: use PARDISO solver as standard
@@ -206,14 +258,45 @@ class TESoptimize():
         #     solver_options=solver_options,
         #     input_type='node'
         # )
-    # ellipsoid
-    def ellipsoid2subject(self, coords_sphere):
+
+    def subject2ellipsoid(self, coords: np.ndarray, normals: np.ndarray):
+        """
+        Transform coordinates from subject to ellipsoid space
+        Line intersection of skin surface point along normal and ellipsoid.
+        https://math.stackexchange.com/questions/3309397/line-ellipsoid-intersection
+
+        Parameters
+        ----------
+        coords : np.array of float [n_points x 3]
+            Cartesian coordinates in subject space (x, y, z)
+        normals : np.array of float [n_points x 3]
+            Surface normals of points
+
+        Returns
+        -------
+        coords : np.array of float [n_coords x 2]
+            Spherical coordinates [theta, phi] in radiant.
+        """
+
+        R = self.eli_rotmat
+        A = np.diag(np.array(1/(self.eli_radii**2)))
+        v = coords - self.eli_center
+        B = R @ A @ R.transpose()
+
+        p = np.zeros(3)
+        p[0] = normals @ B @ normals.transpose()
+        p[1] = 2 * v @ B @ normals.transpose()
+        p[2] = v @ B @ v.transpose()
+
+        lam = np.roots(p)
+
+    def ellipsoid2subject(self, coords: np.ndarray):
         """
         Transform coordinates from ellipsoid to subject space
 
         Parameters
         ----------
-        coords_sphere : np.array of float [n_points x 2]
+        coords : np.array of float [n_points x 2]
             Spherical coordinates [theta, phi] in radiant.
 
         Returns
@@ -224,7 +307,7 @@ class TESoptimize():
         """
 
         # get cartesian coordinates and normal
-        x0, n = ellipsoid2cartesian(coords_sphere=coords_sphere,
+        x0, n = ellipsoid2cartesian(coords=coords,
                                     center=self.eli_center,
                                     radii=self.eli_radii,
                                     rotmat=self.eli_rotmat,
@@ -246,47 +329,61 @@ class TESoptimize():
 
         return index, points
 
-
-    def valid_skin_region(self):
+    def valid_skin_region(self, skin_surface, mesh):
         """
         Determine the nodes of the scalp surface where the electrode can be applied (not ears and face etc.)
+
+        Parameters
+        ----------
+        skin_surface : Surface object
+            Surface of the mesh (mesh_tools/surface.py)
+        mesh : Msh object
+            Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
         """
         # load mask of valid electrode positions (in MNI space)
-        mask_img = nibabel.load(self.fn_electrode_mask)
+        mask_img = nib.load(self.fn_electrode_mask)
         mask_img_data = mask_img.get_fdata()
 
         # transform skin surface points to MNI space
-        skin_nodes_mni_ras = subject2mni_coords(coordinates=self.skin_surface.nodes,
-                                                m2m_folder=os.path.split(self.msh.fn)[0],
+        skin_nodes_mni_ras = subject2mni_coords(coordinates=skin_surface.nodes,
+                                                m2m_folder=os.path.split(mesh.fn)[0],
                                                 transformation_type='nonl')
 
         # transform coordinates to voxel space
         skin_nodes_mni_voxel = np.floor(np.linalg.inv(mask_img.affine) @
                                         np.hstack((skin_nodes_mni_ras,
                                                    np.ones(skin_nodes_mni_ras.shape[0])[:, np.newaxis]))
-                                        .transpose())[:3,:].transpose().astype(int)
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 0]>=mask_img.shape[0], 0] = mask_img.shape[0] - 1
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 1]>=mask_img.shape[1], 1] = mask_img.shape[1] - 1
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 2]>=mask_img.shape[2], 2] = mask_img.shape[2] - 1
+                                        .transpose())[:3, :].transpose().astype(int)
+        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 0] >= mask_img.shape[0], 0] = mask_img.shape[0] - 1
+        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 1] >= mask_img.shape[1], 1] = mask_img.shape[1] - 1
+        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 2] >= mask_img.shape[2], 2] = mask_img.shape[2] - 1
         # skin_nodes_mni_voxel[skin_nodes_mni_voxel < 0] = 0
 
         # get boolean mask of valid skin points
-        self.skin_surface.mask_valid = mask_img_data[skin_nodes_mni_voxel[:, 0],
-                                                     skin_nodes_mni_voxel[:, 1],
-                                                     skin_nodes_mni_voxel[:, 2]].astype(bool)
+        skin_surface.mask_valid_nodes = mask_img_data[skin_nodes_mni_voxel[:, 0],
+                                                      skin_nodes_mni_voxel[:, 1],
+                                                      skin_nodes_mni_voxel[:, 2]].astype(bool)
 
         # remove points outside of MNI space (lower neck)
-        self.skin_surface.mask_valid[(skin_nodes_mni_voxel < 0).any(axis=1)] = False
+        skin_surface.mask_valid_nodes[(skin_nodes_mni_voxel < 0).any(axis=1)] = False
+
+        skin_surface.mask_valid_tr = np.zeros(skin_surface.tr_centers.shape).astype(bool)
+
+        unique_points = np.unique(skin_surface.tr_nodes[skin_surface.mask_valid_nodes[skin_surface.tr_nodes].all(axis=1), :])
+        for point in unique_points:
+            idx_where = np.where(skin_surface.tr_nodes == point)
+            skin_surface.mask_valid_tr[idx_where[0], idx_where[1]] = True
+        skin_surface.mask_valid_tr = skin_surface.mask_valid_tr.all(axis=1)
 
         # determine connectivity list of valid skin region (creates new node and connectivity list)
-        self.skin_surface.nodes_valid, self.skin_surface.tr_nodes_valid = \
-            self.create_new_connectivity_list_point_mask(points=self.skin_surface.nodes,
-                                                         con=self.skin_surface.tr_nodes,
-                                                         point_mask=self.skin_surface.mask_valid)
+        skin_surface.nodes, skin_surface.tr_nodes = \
+            self.create_new_connectivity_list_point_mask(points=skin_surface.nodes,
+                                                         con=skin_surface.tr_nodes,
+                                                         point_mask=skin_surface.mask_valid_nodes)
 
         # identify spurious skin patches inside head and remove them
-        tri_domain = np.ones(self.skin_surface.tr_nodes_valid.shape[0]).astype(int) * -1
-        point_domain = np.ones(self.skin_surface.nodes_valid.shape[0]).astype(int) * -1
+        tri_domain = np.ones(skin_surface.tr_nodes.shape[0]).astype(int) * -1
+        point_domain = np.ones(skin_surface.nodes.shape[0]).astype(int) * -1
 
         domain = 0
         while (tri_domain == -1).any():
@@ -295,10 +392,10 @@ class TESoptimize():
 
             n_current = -1
             n_last = 0
-            while n_last!=n_current:
+            while n_last != n_current:
                 n_last = copy.deepcopy(n_current)
-                nodes_idx_of_domain = np.unique(np.append(nodes_idx_of_domain, self.skin_surface.tr_nodes_valid[tri_idx_of_domain, :])).astype(int)
-                tri_idx_of_domain = np.isin(self.skin_surface.tr_nodes_valid, nodes_idx_of_domain).any(axis=1)
+                nodes_idx_of_domain = np.unique(np.append(nodes_idx_of_domain, skin_surface.tr_nodes[tri_idx_of_domain, :])).astype(int)
+                tri_idx_of_domain = np.isin(skin_surface.tr_nodes, nodes_idx_of_domain).any(axis=1)
                 n_current = np.sum(tri_idx_of_domain)
                 # print(f"domain: {domain}, n_current: {n_current}")
 
@@ -308,24 +405,20 @@ class TESoptimize():
 
         domain_idx_main = np.argmax([np.sum(point_domain == d) for d in range(domain)])
 
-        self.skin_surface.nodes_valid, self.skin_surface.tr_nodes_valid = \
-            self.create_new_connectivity_list_point_mask(points=self.skin_surface.nodes_valid,
-                                                         con=self.skin_surface.tr_nodes_valid,
+        skin_surface.nodes, skin_surface.tr_nodes = \
+            self.create_new_connectivity_list_point_mask(points=skin_surface.nodes,
+                                                         con=skin_surface.tr_nodes,
                                                          point_mask=point_domain == domain_idx_main)
 
-        # import pynibs
-        # # write hdf5 _geo file
-        # pynibs.write_geo_hdf5_surf(out_fn="/home/kporzig/tmp/test_geo_head.hdf5",
-        #                            points=self.skin_surface.nodes_valid_cropped,
-        #                            con=self.skin_surface.tr_nodes_valid_cropped,
-        #                            replace=True,
-        #                            hdf5_path='/mesh')
-        #
-        # pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes_valid_cropped.shape[0])],
-        #                             data_names=["domain"],
-        #                             data_hdf_fn_out="/home/kporzig/tmp/test_data_head.hdf5",
-        #                             geo_hdf_fn="/home/kporzig/tmp/test_geo_head.hdf5",
-        #                             replace=True)
+        skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
+        skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
+        skin_surface.surf2msh_nodes = skin_surface.surf2msh_nodes[skin_surface.mask_valid_nodes, :]
+        skin_surface.surf2msh_triangles = skin_surface.surf2msh_triangles[skin_surface.mask_valid_tr]
+        skin_surface.tr_areas = skin_surface.tr_areas[skin_surface.mask_valid_tr]
+        skin_surface.tr_centers = skin_surface.tr_centers[skin_surface.mask_valid_tr, :]
+        skin_surface.tr_normals = skin_surface.tr_normals[skin_surface.mask_valid_tr, :]
+
+        return skin_surface
 
     def create_new_connectivity_list_point_mask(self, points, con, point_mask):
         """
@@ -480,7 +573,8 @@ class TESoptimize():
         return v, v_elec, v_norm, I_norm
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True, return_n_max=1):
-        ''' Runs the optimization problem
+        """
+        Runs the optimization problem
 
         Parameters
         -------------
@@ -495,8 +589,9 @@ class TESoptimize():
         ------------
         currents: N_elec x 1 ndarray
             Optimized currents. The first value is the current in the reference electrode
-        '''
+        """
         pass
+
 
 def fit_ellipsoid(points):
     """
@@ -520,6 +615,7 @@ def fit_ellipsoid(points):
     center, radii, rotmat = polyToParams3D(eansa)    # get ellipsoid 3D parameters
 
     return center, radii, rotmat
+
 
 def ls_ellipsoid(xx, yy, zz):
     """
@@ -555,6 +651,7 @@ def ls_ellipsoid(xx, yy, zz):
     eansa = np.append(ABC, -1)
 
     return (eansa)
+
 
 def polyToParams3D(vec):
     """
@@ -616,13 +713,14 @@ def polyToParams3D(vec):
 
     return (center, radii, rotmat)
 
-def ellipsoid2cartesian(coords_sphere, center, radii, rotmat, return_normal=False):
+
+def ellipsoid2cartesian(coords, center, radii, rotmat, return_normal=False):
     """
     Transforms spherical coordinates on ellipsoid to cartesian coordinates and optionally returns surface normal.
 
     Parameters
     ----------
-    coords_sphere : np.array of float [n_points x 2]
+    coords : np.array of float [n_points x 2]
         Spherical coordinates [theta, phi] in radiant.
     return_normal : bool, optional, default: False
         Additionally return surface normal (pointing outwards)
@@ -635,13 +733,17 @@ def ellipsoid2cartesian(coords_sphere, center, radii, rotmat, return_normal=Fals
         Surface normal of given points (pointing outwards)
     """
 
-    u = coords_sphere[:, 1]
-    v = coords_sphere[:, 0]
+    u = coords[:, 1]
+    v = coords[:, 0]
 
     # Cartesian coordinates that correspond to the spherical angles
-    x = radii[0] * np.outer(np.cos(u), np.sin(v))
-    y = radii[1] * np.outer(np.sin(u), np.sin(v))
-    z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
+    x = radii[0] * np.cos(u) * np.sin(v)
+    y = radii[1] * np.sin(u) * np.sin(v)
+    z = radii[2] * np.ones_like(u) * np.cos(v)
+
+    # x = radii[0] * np.outer(np.cos(u), np.sin(v))
+    # y = radii[1] * np.outer(np.sin(u), np.sin(v))
+    # z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
 
     x_flatten = x.flatten()
     y_flatten = y.flatten()
@@ -660,6 +762,28 @@ def ellipsoid2cartesian(coords_sphere, center, radii, rotmat, return_normal=Fals
         return xyz_flatten_rot, normal_rot
     else:
         return xyz_flatten_rot
+
+
+def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
+    ''' relabels skin in internal air cavities to something else;
+        relevant for charm meshes
+    '''
+    subject_files = SubjectFiles(subpath=subpath)
+
+    # relabel internal skin to some other label
+    label_nifti = nib.load(subject_files.labeling)
+    label_affine = label_nifti.affine
+    label_img = label_nifti.get_fdata().astype(int)
+    label_img = label_img == label_internal_air
+    label_img = mrph.binary_dilation(label_img, iterations=2)
+
+    m = copy.copy(m)
+    ed = mesh_io.ElementData.from_data_grid(m, label_img, label_affine, order=0)
+    idx = ed.value * (m.elm.tag1 == label_skin)
+    m.elm.tag1[idx] = label_new
+    m.elm.tag2[:] = m.elm.tag1
+
+    return m
 
 # def get_element_intersect_line_surface(p, w, points, con, triangle_center=None, triangle_normals=None):
 #     """
