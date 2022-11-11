@@ -55,28 +55,17 @@
 <span id="coil-fies"></span><h1>Coil Models Included in SimNIBS<a class="headerlink" href="#coil-models-included-in-simnibs" title="Permalink to this heading">¶</a></h1>
 <section id="default-coil-files">
 <h2>Default Coil Files<a class="headerlink" href="#default-coil-files" title="Permalink to this heading">¶</a></h2>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 50.0%" />
-<col style="width: 50.0%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Coil Name</p></th>
-<th class="head"><p>File Names</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>Magstim 70mm Figure-of-Eight</p></td>
-<td><p>Magstim_70mm_Fig8.ccd Magstim_70mm_Fig8.nii.gz</p></td>
-</tr>
-<tr class="row-odd"><td><p>MagVenture MC B70</p></td>
-<td><p>MagVenture_MC_B70.ccd MagVenture_MC_B70.nii.gz</p></td>
-</tr>
-</tbody>
-</table>
-<p>These coil models were constructed based on X-ray images.</p>
+<p>Please use the files in the coil_models subfolder <em>Drakaki_BrainStim_2022</em>. They were reconstructed from direct measurements of their fields, making them quite accurate. Further details, including maximal dI/dt values at 100% MSO, are listed in the corresponding publication.</p>
 <section id="reference">
 <h3>Reference<a class="headerlink" href="#reference" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://doi.org/10.1016/j.brs.2022.04.017">Drakaki M, Mathiesen C, Siebner HR, Madsen KH, Thielscher A. (2022). Database of 25 validated coil models for electric field simulations for TMS. Brain Stimulation.</a></p>
+</section>
+</section>
+<section id="previous-coil-files">
+<h2>Previous Coil Files<a class="headerlink" href="#previous-coil-files" title="Permalink to this heading">¶</a></h2>
+<p>The two previously included models of the Magstim 70mm and MagVenture MC-B70 Figure-of-Eight coils can be found in subfolder <em>legacy_and_other</em>. They were constructed based on X-ray images.</p>
+<section id="id1">
+<h3>Reference<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <p><a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher, Axel, and Thomas Kammer. “Electric field properties of two commercial figure-8 coils in TMS: calculation of focality and efficiency.” Clinical neurophysiology 115.7 (2004): 1697-1708.</a></p>
 </section>
 </section>
@@ -92,8 +81,12 @@ These models were constructed from geometrical values about the coil windings ta
 Please note that some of the models represent non-planar coils.
 Setting the coil position for those in the SimNIBS GUI can easily result in the simulation of physically impossible coil placements,
 i.e. corresponding to parts of the coil being inside the head, and are only meant for expert use!</p>
-<section id="id1">
-<h3>Reference<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<section id="note-29-8-22">
+<h3>Note (29.8.22)<a class="headerlink" href="#note-29-8-22" title="Permalink to this heading">¶</a></h3>
+<p>The coil model “No9_H1.nii.gz” is inaccurate, mainly (but not only) because it is left-right mirrored. We are looking into ways to provide a more accurate model of that coil.</p>
+</section>
+<section id="id2">
+<h3>Reference<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <p><a class="reference external" href="https://doi.org/10.1016/j.brs.2012.02.005">Deng, Zhi-De, Sarah H. Lisanby, and Angel V. Peterchev. “Electric field depth–focality tradeoff in transcranial magnetic stimulation: simulation comparison of 50 coil designs.” Brain stimulation 6.1 (2013): 1-13.</a></p>
 </section>
 </section>

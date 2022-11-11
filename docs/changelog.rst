@@ -23,6 +23,7 @@ NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cann
 Known issues:
  * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)
  * simnibs_gui does not work on linux systems with wayland (workaround: use docker image for now)
+ * The PARDISO solver (available as option for the FEM calculations) does not work on Apple Silicon
  
 3.2.6
 ------
