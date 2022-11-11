@@ -1,4 +1,3 @@
-
 '''
     Optimization problem set-up and post-processing in SimNIBS
     This program is part of the SimNIBS package.
@@ -140,7 +139,6 @@ class TMSoptimize():
         self.open_in_gmsh = True
         self.solver_options = ''
         self.method = 'direct'
-        self.keep_hdf5 = False
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
 
@@ -490,7 +488,13 @@ class TMSoptimize():
             self.tissues
         )
 
-    def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus):
+    def _direct_optimize(self, cond_field, target_region, pos_matrices, cpus, keep_hdf5=False):
+        """
+        Parameters:
+        -----------
+        keep_hdf5 : bool (optional)
+            Keep .hdf5 file with target E for all coil positions. Default: False.
+        """
         didt_list = [self.didt for i in pos_matrices]
         fn_hdf5 = os.path.join(self.pathfem, self._name_hdf5())
         if os.path.isfile(fn_hdf5):
@@ -537,7 +541,7 @@ class TMSoptimize():
         with h5py.File(fn_hdf5, 'a') as f:
             E_roi = f[dataset][:]
 
-        if not hasattr(self, 'keep_hdf5') or not self.keep_hdf5:
+        if not keep_hdf5:
             os.remove(fn_hdf5)
             
         return E_roi
