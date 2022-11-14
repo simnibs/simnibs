@@ -1105,9 +1105,11 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
 
     # Forward solution
     # Insert the reference channel and rereference to an average reference
-    lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
     if apply_average_proj:
+        lf = np.insert(lf, ch_names.index(ch_ref), np.zeros((1, *lf.shape[1:])), axis=0)
         lf -= lf.mean(0)
+    else:
+        ch_names.remove(ch_ref)
     nchan, nsrc, nori = lf.shape  # leadfield is always calculated in x, y, z
     assert len(ch_names) == nchan
     assert nori == 3
