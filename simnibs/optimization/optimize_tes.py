@@ -150,6 +150,7 @@ class TESoptimize():
         self.roi = roi
         self.init_pos = init_pos
         self.init_pos_subject_coords = []
+        self.init_pos_ellipsoid_coords = []
         self.output_folder = output_folder
         self.plot_folder = os.path.join(self.output_folder, "plots")
         self.plot = plot
@@ -210,6 +211,14 @@ class TESoptimize():
         else:
             self.init_pos_subject_coords = self.init_pos
 
+        # transform initial positions from subject to ellipsoid space
+        for coords in self.init_pos_subject_coords:
+            # get closest point idx on subject surface
+            point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
+            self.init_pos_ellipsoid_coords.append(
+                self.subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
+                                       normals=self.skin_surface.nodes_normals[point_idx, :]))
+
         if target is None:
             self.target = []
         else:
@@ -230,6 +239,11 @@ class TESoptimize():
                                              rotmat=self.eli_rotmat,
                                              return_normal=False)
 
+            # coords_sphere_test = cartesian2ellipsoid(coords=eli_coords,
+            #                                          center=self.eli_center,
+            #                                          radii=self.eli_radii,
+            #                                          rotmat=self.eli_rotmat)
+            # np.isclose(coords_sphere, coords_sphere_test)
             np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords)
 
             import pynibs
@@ -278,6 +292,12 @@ class TESoptimize():
             Spherical coordinates [theta, phi] in radiant.
         """
 
+        if coords.ndim==1:
+            coords = coords[np.newaxis, :]
+
+        if normals.ndim==1:
+            normals = normals[np.newaxis, :]
+
         R = self.eli_rotmat
         A = np.diag(np.array(1/(self.eli_radii**2)))
         v = coords - self.eli_center
@@ -286,9 +306,20 @@ class TESoptimize():
         p = np.zeros(3)
         p[0] = normals @ B @ normals.transpose()
         p[1] = 2 * v @ B @ normals.transpose()
-        p[2] = v @ B @ v.transpose()
+        p[2] = v @ B @ v.transpose() - 1
 
         lam = np.roots(p)
+        lam = np.min(np.abs(lam))
+
+        eli_intersect_cart = coords + lam * normals
+
+        eli_intersect_sphere = cartesian2ellipsoid(coords=eli_intersect_cart,
+                                                   center=self.eli_center,
+                                                   radii=self.eli_radii,
+                                                   rotmat=self.eli_rotmat,
+                                                   return_normal=False)
+
+        return eli_intersect_sphere
 
     def ellipsoid2subject(self, coords: np.ndarray):
         """
@@ -412,7 +443,7 @@ class TESoptimize():
 
         skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
         skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
-        skin_surface.surf2msh_nodes = skin_surface.surf2msh_nodes[skin_surface.mask_valid_nodes, :]
+        skin_surface.surf2msh_nodes = skin_surface.surf2msh_nodes[skin_surface.mask_valid_nodes]
         skin_surface.surf2msh_triangles = skin_surface.surf2msh_triangles[skin_surface.mask_valid_tr]
         skin_surface.tr_areas = skin_surface.tr_areas[skin_surface.mask_valid_tr]
         skin_surface.tr_centers = skin_surface.tr_centers[skin_surface.mask_valid_tr, :]
@@ -733,13 +764,13 @@ def ellipsoid2cartesian(coords, center, radii, rotmat, return_normal=False):
         Surface normal of given points (pointing outwards)
     """
 
-    u = coords[:, 1]
-    v = coords[:, 0]
+    phi = coords[:, 1]
+    theta = coords[:, 0]
 
     # Cartesian coordinates that correspond to the spherical angles
-    x = radii[0] * np.cos(u) * np.sin(v)
-    y = radii[1] * np.sin(u) * np.sin(v)
-    z = radii[2] * np.ones_like(u) * np.cos(v)
+    x = radii[0] * np.cos(phi) * np.sin(theta)
+    y = radii[1] * np.sin(phi) * np.sin(theta)
+    z = radii[2] * np.cos(theta)  # * np.ones_like(phi)
 
     # x = radii[0] * np.outer(np.cos(u), np.sin(v))
     # y = radii[1] * np.outer(np.sin(u), np.sin(v))
@@ -763,6 +794,44 @@ def ellipsoid2cartesian(coords, center, radii, rotmat, return_normal=False):
     else:
         return xyz_flatten_rot
 
+
+def cartesian2ellipsoid(coords, center, radii, rotmat, return_normal=False):
+    """
+    Transforms cartesian coordinates on ellipsoid to spherical coordinates and optionally returns surface normal.
+
+    Parameters
+    ----------
+    coords : np.array of float [n_points x 3]
+        Cartesian coordinates [x, y, z].
+    return_normal : bool, optional, default: False
+        Additionally return surface normal (pointing outwards)
+
+    Returns
+    -------
+    coords_sphere : np.array of float [n_points x 3]
+        Spherical coordinates of given points [theta, phi], in radiant.
+    normal : np.array of float [n_points x 3]
+        Surface normal of given points (pointing outwards)
+    """
+
+    # rotate cartesian coordinates back to center and align with coordinate axes
+    coords_rot = (coords - center) @ rotmat
+
+    # quadrant (sign of x and y axes)
+    mask_q1 = np.logical_and(coords_rot[:,0] >= 0, coords_rot[:,1] >= 0)
+    mask_q2 = np.logical_and(coords_rot[:,0] < 0, coords_rot[:,1] > 0)
+    mask_q3 = np.logical_and(coords_rot[:,0] <= 0, coords_rot[:,1] <= 0)
+    mask_q4 = np.logical_and(coords_rot[:,0] > 0, coords_rot[:,1] < 0)
+
+    # Cartesian coordinates that correspond to the spherical angles
+    theta = np.arccos(coords_rot[:, 2] / radii[2])
+    phi = np.zeros(theta.shape)
+    phi[mask_q1] = np.arctan(coords_rot[mask_q1, 1]/coords_rot[mask_q1, 0] * (radii[0]/radii[1]))
+    phi[mask_q2] = np.arctan(coords_rot[mask_q2, 1]/coords_rot[mask_q2, 0] * (radii[0]/radii[1])) + np.pi
+    phi[mask_q3] = np.arctan(coords_rot[mask_q3, 1]/coords_rot[mask_q3, 0] * (radii[0]/radii[1])) + np.pi
+    phi[mask_q4] = np.arctan(coords_rot[mask_q4, 1]/coords_rot[mask_q4, 0] * (radii[0]/radii[1])) + 2*np.pi
+
+    return np.hstack((theta[:, np.newaxis], phi[:, np.newaxis]))
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     ''' relabels skin in internal air cavities to something else;

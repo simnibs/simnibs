@@ -13,11 +13,18 @@ import simnibs
 import numpy as np
 import matplotlib.pyplot as plt
 
+# output_folder="/data/pt_01756/probands/15484.08/opt/ttf"
+output_folder="/home/kporzig/tmp"
+
+# fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/m2m_15484.08/15484.08.msh"
+fn_mesh = "/home/kporzig/tmp/charm_beta_fine/m2m_15484.08/15484.08.msh"
+# fn_mesh = os.path.join(example_data_folder, 'sphere3.msh')
+
+# fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
+fn_roi = "/home/kporzig/tmp/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
+
 # location of example data
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
-
-# fn_mesh = os.path.join(example_data_folder, 'sphere3.msh')
-fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/m2m_15484.08/15484.08.msh"
 
 # create a circular array with 1 center electrode and 6 outer electrodes
 circular_array = simnibs.CircularArray(radius_inner=5, distance=15, n_outer=6, radius_outer=3)
@@ -26,7 +33,6 @@ circular_array = simnibs.CircularArray(radius_inner=5, distance=15, n_outer=6, r
 msh = simnibs.read_msh(fn_mesh)
 
 # load roi points
-fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
 with h5py.File(fn_roi, "r") as f:
     points = f["mesh/nodes/node_coord"][:]
 
@@ -44,7 +50,7 @@ opt = simnibs.opt_struct.TESoptimize(msh=msh,
                                      roi=roi,
                                      electrode=circular_array,
                                      init_pos=["C3"],
-                                     output_folder="/data/pt_01756/probands/15484.08/opt/ttf",
+                                     output_folder=output_folder,
                                      plot=True)
 
 # pynibs.plot_surface(data=np.arange(len(opt.skin_surface.surf2msh_triangles)),
