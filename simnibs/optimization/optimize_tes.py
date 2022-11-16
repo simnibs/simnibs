@@ -6,17 +6,16 @@ import numpy as np
 import nibabel as nib
 import scipy.ndimage.morphology as mrph
 
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
-from numpy.linalg import eig, inv
+from numpy.linalg import eig
 
 from ..mesh_tools import Msh
-from ..mesh_tools import cgal
 from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
 from ..simulation.sim_struct import ELECTRODE
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
+from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
@@ -125,7 +124,9 @@ class TESoptimize():
                  output_folder=None,
                  target=None,
                  avoid=None):
-
+        """
+        Constructor of TESOptimize class instance
+        """
         if init_pos is None:
             init_pos = ["C3"]
 
@@ -155,6 +156,7 @@ class TESoptimize():
         self.plot_folder = os.path.join(self.output_folder, "plots")
         self.plot = plot
         self.fn_results_hdf5 = os.path.join(self.output_folder, "opt.hdf5")
+        self.ellipsoid = Ellipsoid()
         init_pos_list = ["C3", "C4"]
 
         assert len(init_pos) == self.n_ele_free, "Number of initial positions has to match number of freely movable" \
@@ -192,7 +194,7 @@ class TESoptimize():
         self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.msh_relabel)
 
         # fit optimal ellipsoid to valid skin points
-        self.eli_center, self.eli_radii, self.eli_rotmat = fit_ellipsoid(self.skin_surface.nodes)
+        self.ellipsoid.fit(points=self.skin_surface.nodes)
 
         # set initial positions to electrode C3 (and C4) if nothing is provided
         if init_pos is None:
@@ -216,8 +218,9 @@ class TESoptimize():
             # get closest point idx on subject surface
             point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
             self.init_pos_ellipsoid_coords.append(
-                self.subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
-                                       normals=self.skin_surface.nodes_normals[point_idx, :]))
+                subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
+                                  normals=self.skin_surface.nodes_normals[point_idx, :],
+                                  ellipsoid=self.ellipsoid))
 
         if target is None:
             self.target = []
@@ -229,22 +232,27 @@ class TESoptimize():
             self.avoid = avoid
 
         if self.plot:
+            import matplotlib
+            matplotlib.use('Qt5Agg')
+            import matplotlib.pyplot as plt
+
             theta = np.linspace(0, np.pi, 180)
             phi = np.linspace(0, 2*np.pi, 360)
+            theta = np.linspace(0, np.pi, 10)
+            phi = np.linspace(0, 2 * np.pi, 20)
             coords_sphere = np.array(np.meshgrid(theta, phi)).T.reshape(-1, 2)
             # coords_sphere = np.hstack([theta[:, np.newaxis], phi[:, np.newaxis]])
-            eli_coords = ellipsoid2cartesian(coords=coords_sphere,
-                                             center=self.eli_center,
-                                             radii=self.eli_radii,
-                                             rotmat=self.eli_rotmat,
-                                             return_normal=False)
-
-            # coords_sphere_test = cartesian2ellipsoid(coords=eli_coords,
-            #                                          center=self.eli_center,
-            #                                          radii=self.eli_radii,
-            #                                          rotmat=self.eli_rotmat)
+            eli_coords = self.ellipsoid.ellipsoid2cartesian(coords=coords_sphere, return_normal=False)
+            eli_coords_rot = (self.ellipsoid.rotmat.T @ (eli_coords - self.ellipsoid.center).T).T
+            # coords_sphere_test = self.ellipsoid.cartesian2ellipsoid(coords=eli_coords)
             # np.isclose(coords_sphere, coords_sphere_test)
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            # ax.scatter(eli_coords[:, 0], eli_coords[:, 1], eli_coords[:, 2])
+            ax.scatter(eli_coords_rot[:, 0], eli_coords_rot[:, 1], eli_coords_rot[:, 2])
+
             np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords)
+            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_rot.txt"), eli_coords_rot)
 
             import pynibs
             # write hdf5 _geo files for visualization in paraview
@@ -273,92 +281,6 @@ class TESoptimize():
         #     input_type='node'
         # )
 
-    def subject2ellipsoid(self, coords: np.ndarray, normals: np.ndarray):
-        """
-        Transform coordinates from subject to ellipsoid space
-        Line intersection of skin surface point along normal and ellipsoid.
-        https://math.stackexchange.com/questions/3309397/line-ellipsoid-intersection
-
-        Parameters
-        ----------
-        coords : np.array of float [n_points x 3]
-            Cartesian coordinates in subject space (x, y, z)
-        normals : np.array of float [n_points x 3]
-            Surface normals of points
-
-        Returns
-        -------
-        coords : np.array of float [n_coords x 2]
-            Spherical coordinates [theta, phi] in radiant.
-        """
-
-        if coords.ndim==1:
-            coords = coords[np.newaxis, :]
-
-        if normals.ndim==1:
-            normals = normals[np.newaxis, :]
-
-        R = self.eli_rotmat
-        A = np.diag(np.array(1/(self.eli_radii**2)))
-        v = coords - self.eli_center
-        B = R @ A @ R.transpose()
-
-        p = np.zeros(3)
-        p[0] = normals @ B @ normals.transpose()
-        p[1] = 2 * v @ B @ normals.transpose()
-        p[2] = v @ B @ v.transpose() - 1
-
-        lam = np.roots(p)
-        lam = np.min(np.abs(lam))
-
-        eli_intersect_cart = coords + lam * normals
-
-        eli_intersect_sphere = cartesian2ellipsoid(coords=eli_intersect_cart,
-                                                   center=self.eli_center,
-                                                   radii=self.eli_radii,
-                                                   rotmat=self.eli_rotmat,
-                                                   return_normal=False)
-
-        return eli_intersect_sphere
-
-    def ellipsoid2subject(self, coords: np.ndarray):
-        """
-        Transform coordinates from ellipsoid to subject space
-
-        Parameters
-        ----------
-        coords : np.array of float [n_points x 2]
-            Spherical coordinates [theta, phi] in radiant.
-
-        Returns
-        -------
-        index : int
-        coords : np.array of float [n_coords x 3]
-            Cartesian coordinates in subject space (x, y, z)
-        """
-
-        # get cartesian coordinates and normal
-        x0, n = ellipsoid2cartesian(coords=coords,
-                                    center=self.eli_center,
-                                    radii=self.eli_radii,
-                                    rotmat=self.eli_rotmat,
-                                    return_normal=True)
-
-        # define near and far point
-        near = (x0 - 100*n)[np.newaxis, :]
-        far = (x0 + 100*n)[np.newaxis, :]
-
-        indices, points = cgal.segment_triangle_intersection(
-            self.skin_surface.nodes_valid,
-            self.skin_surface.tr_nodes_valid,
-            near, far
-        )
-
-        idx_closest_point = np.argmin(np.linalg.norm(points-x0, axis=1))
-        index = indices[idx_closest_point, 1]
-        points = points[idx_closest_point, :]
-
-        return index, points
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -496,7 +418,7 @@ class TESoptimize():
             ElectrodeArray instance containing Electrode instances
         """
         # get
-        index, point = self.ellipsoid2subject(coords)
+        index, point = ellipsoid2subject(coords, ellipsoid=self.ellipsoid)
 
     def gauge_mesh(self):
         """
@@ -622,216 +544,6 @@ class TESoptimize():
             Optimized currents. The first value is the current in the reference electrode
         """
         pass
-
-
-def fit_ellipsoid(points):
-    """
-    Determines best fitting ellipsoid to point cloud.
-
-    Parameters
-    ----------
-    points : np.array of float [n_points x 3]
-        Scattered points an ellipsoid is fitted to
-    """
-    # get convex hull
-    hullV = ConvexHull(points)
-    lH = len(hullV.vertices)
-    hull = np.zeros((lH, 3))
-    for i in range(len(hullV.vertices)):
-        hull[i] = points[hullV.vertices[i]]
-    hull = np.transpose(hull)
-
-    # fit ellipsoid on convex hull
-    eansa = ls_ellipsoid(hull[0], hull[1], hull[2])  # get ellipsoid polynomial coefficients
-    center, radii, rotmat = polyToParams3D(eansa)    # get ellipsoid 3D parameters
-
-    return center, radii, rotmat
-
-
-def ls_ellipsoid(xx, yy, zz):
-    """
-    Finds best fit ellipsoid. (http://www.juddzone.com/ALGORITHMS/least_squares_3D_ellipsoid.html)
-    least squares fit to a 3D-ellipsoid:
-
-    Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz  = 1
-
-    Note that sometimes it is expressed as a solution to
-    Ax^2 + By^2 + Cz^2 + 2Dxy + 2Exz + 2Fyz + 2Gx + 2Hy + 2Iz  = 1
-    where the last six terms have a factor of 2 in them
-    This is in anticipation of forming a matrix with the polynomial coefficients.
-    Those terms with factors of 2 are all off diagonal elements.  These contribute
-    two terms when multiplied out (symmetric) so would need to be divided by two
-    """
-    x = xx[:, np.newaxis]
-    y = yy[:, np.newaxis]
-    z = zz[:, np.newaxis]
-
-    #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz = 1
-    J = np.hstack((x * x, y * y, z * z, x * y, x * z, y * z, x, y, z))
-    K = np.ones_like(x)
-    JT = J.transpose()
-    JTJ = np.dot(JT, J)
-    InvJTJ = np.linalg.inv(JTJ)
-    ABC = np.dot(InvJTJ, np.dot(JT, K))
-
-    # Rearrange, move the 1 to the other side
-    #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz - 1 = 0
-    #    or
-    #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz + J = 0
-    #  where J = -1
-    eansa = np.append(ABC, -1)
-
-    return (eansa)
-
-
-def polyToParams3D(vec):
-    """
-    Gets 3D parameters of an ellipsoid. (http://www.juddzone.com/ALGORITHMS/least_squares_3D_ellipsoid.html)
-    Convert the polynomial form of a 3D-ellipsoid to parameters center, axes, and transformation matrix.
-    Algebraic form: X.T * Amat * X --> polynomial form
-
-    Parameters
-    ----------
-    vec : np.array of float []
-        Vector whose elements are the polynomial coefficients A...J
-
-    Returns
-    -------
-    center : np.array of float [3]
-        Center of ellipsoid
-    radii : np.array of float [3]
-        Axes length
-    rotmat : np.array of float [3 x 3]
-        Rotation matrix of ellipsoid (direction of principal axes)
-    """
-
-    # polynomial
-    Amat = np.array(
-        [
-            [vec[0], vec[3] / 2.0, vec[4] / 2.0, vec[6] / 2.0],
-            [vec[3] / 2.0, vec[1], vec[5] / 2.0, vec[7] / 2.0],
-            [vec[4] / 2.0, vec[5] / 2.0, vec[2], vec[8] / 2.0],
-            [vec[6] / 2.0, vec[7] / 2.0, vec[8] / 2.0, vec[9]]
-        ])
-
-    # Algebraic form of polynomial
-    # See B.Bartoni, Preprint SMU-HEP-10-14 Multi-dimensional Ellipsoidal Fitting
-    # eq. (20) for the following method for finding the center
-    A3 = Amat[0:3, 0:3]
-    A3inv = inv(A3)
-    ofs = vec[6:9] / 2.0
-
-    # center of ellipsoid
-    center = -np.dot(A3inv, ofs)
-
-    # Center the ellipsoid at the origin
-    Tofs = np.eye(4)
-    Tofs[3, 0:3] = center
-    R = np.dot(Tofs, np.dot(Amat, Tofs.T))
-
-    # Algebraic form translated to center
-    R3 = R[0:3, 0:3]
-    s1 = -R[3, 3]
-    R3S = R3 / s1
-    (el, ec) = eig(R3S)
-    recip = 1.0 / np.abs(el)
-
-    # radii
-    radii = np.sqrt(recip)
-
-    # rotation matrix
-    rotmat = inv(ec)
-
-    return (center, radii, rotmat)
-
-
-def ellipsoid2cartesian(coords, center, radii, rotmat, return_normal=False):
-    """
-    Transforms spherical coordinates on ellipsoid to cartesian coordinates and optionally returns surface normal.
-
-    Parameters
-    ----------
-    coords : np.array of float [n_points x 2]
-        Spherical coordinates [theta, phi] in radiant.
-    return_normal : bool, optional, default: False
-        Additionally return surface normal (pointing outwards)
-
-    Returns
-    -------
-    coords_cart : np.array of float [n_points x 3]
-        Cartesian coordinates of given points
-    normal : np.array of float [n_points x 3]
-        Surface normal of given points (pointing outwards)
-    """
-
-    phi = coords[:, 1]
-    theta = coords[:, 0]
-
-    # Cartesian coordinates that correspond to the spherical angles
-    x = radii[0] * np.cos(phi) * np.sin(theta)
-    y = radii[1] * np.sin(phi) * np.sin(theta)
-    z = radii[2] * np.cos(theta)  # * np.ones_like(phi)
-
-    # x = radii[0] * np.outer(np.cos(u), np.sin(v))
-    # y = radii[1] * np.outer(np.sin(u), np.sin(v))
-    # z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
-
-    x_flatten = x.flatten()
-    y_flatten = y.flatten()
-    z_flatten = z.flatten()
-
-    xyz_flatten = np.hstack((x_flatten[:, np.newaxis], y_flatten[:, np.newaxis], z_flatten[:, np.newaxis])).T
-    xyz_flatten_rot = (rotmat @ xyz_flatten + center[:, np.newaxis]).T
-
-    if return_normal:
-        normal = 2 * np.hstack(((x_flatten / radii[0] ** 2)[:, np.newaxis],
-                                (y_flatten / radii[1] ** 2)[:, np.newaxis],
-                                (z_flatten / radii[2] ** 2)[:, np.newaxis]))
-        normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
-        normal_rot = (rotmat @ normal.T).T
-
-        return xyz_flatten_rot, normal_rot
-    else:
-        return xyz_flatten_rot
-
-
-def cartesian2ellipsoid(coords, center, radii, rotmat, return_normal=False):
-    """
-    Transforms cartesian coordinates on ellipsoid to spherical coordinates and optionally returns surface normal.
-
-    Parameters
-    ----------
-    coords : np.array of float [n_points x 3]
-        Cartesian coordinates [x, y, z].
-    return_normal : bool, optional, default: False
-        Additionally return surface normal (pointing outwards)
-
-    Returns
-    -------
-    coords_sphere : np.array of float [n_points x 3]
-        Spherical coordinates of given points [theta, phi], in radiant.
-    normal : np.array of float [n_points x 3]
-        Surface normal of given points (pointing outwards)
-    """
-
-    # rotate cartesian coordinates back to center and align with coordinate axes
-    coords_rot = (coords - center) @ rotmat
-
-    # quadrant (sign of x and y axes)
-    mask_q1 = np.logical_and(coords_rot[:,0] >= 0, coords_rot[:,1] >= 0)
-    mask_q2 = np.logical_and(coords_rot[:,0] < 0, coords_rot[:,1] > 0)
-    mask_q3 = np.logical_and(coords_rot[:,0] <= 0, coords_rot[:,1] <= 0)
-    mask_q4 = np.logical_and(coords_rot[:,0] > 0, coords_rot[:,1] < 0)
-
-    # Cartesian coordinates that correspond to the spherical angles
-    theta = np.arccos(coords_rot[:, 2] / radii[2])
-    phi = np.zeros(theta.shape)
-    phi[mask_q1] = np.arctan(coords_rot[mask_q1, 1]/coords_rot[mask_q1, 0] * (radii[0]/radii[1]))
-    phi[mask_q2] = np.arctan(coords_rot[mask_q2, 1]/coords_rot[mask_q2, 0] * (radii[0]/radii[1])) + np.pi
-    phi[mask_q3] = np.arctan(coords_rot[mask_q3, 1]/coords_rot[mask_q3, 0] * (radii[0]/radii[1])) + np.pi
-    phi[mask_q4] = np.arctan(coords_rot[mask_q4, 1]/coords_rot[mask_q4, 0] * (radii[0]/radii[1])) + 2*np.pi
-
-    return np.hstack((theta[:, np.newaxis], phi[:, np.newaxis]))
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     ''' relabels skin in internal air cavities to something else;
