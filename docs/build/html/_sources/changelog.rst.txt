@@ -2,28 +2,6 @@
 
 Changelog
 ===========
-3.2.6
-------
-* fixed a bug causing headreco to fail on MacOS
-* Note: On Apple M1s using .ccd coil files does not yet work, please use niftis instead.
-
-3.2.5
-------
-* added skin smoothing options for TMS optimization
-* more informative matlab error messages
-* small bug fixes
-
-3.2.4
-------
-* small bug fix related to gmsh options
-
-
-3.2.3
-------
-* Gmsh version changed to avoid issues with Big Sur (only MacOS)
-* Headreco bug fixes to make meshing more stable in the eye region and air cavities
-* Added a Nx1 example for a center-surround electrode montage
-
 
 4.0.0
 ------

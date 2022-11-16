@@ -194,12 +194,12 @@ class TestLocalite:
         poslist = localite().read(tm_fn)
         assert len(poslist.pos) == 8
         assert np.all(np.isclose(poslist.pos[0].matsimnibs, arr_tm_0))
-
         assert poslist.pos[7].didt == 62000000
 
     def test_read_tm_no_pos(self, tm_no_pos_fn, arr_tm_0):
         """Read TriggerMarker file that has some positions with untracked coil"""
-        poslist = localite().read(tm_no_pos_fn)
+        with pytest.warns(UserWarning):
+            poslist = localite().read(tm_no_pos_fn)
         assert len(poslist.pos) == 1
         assert np.all(np.isclose(poslist.pos[0].matsimnibs, arr_tm_0))
         assert poslist.pos[0].didt == 62000000

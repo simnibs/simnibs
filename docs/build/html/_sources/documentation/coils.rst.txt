@@ -31,8 +31,7 @@ Reference
 Extra Coil Files
 ----------------
 
-Please see :download:`here <Deng_Brain_Stim_2013_docu.pdf>` for more information.
-These coil files are optionally downloaded by SimNIBS during the installation, or can be downloaded after installation with the command
+Please see :download:`here <Deng_Brain_Stim_2013_docu.pdf>` for more information. These coil files can be downloaded after installation with the command
 
 .. code-block::
 
