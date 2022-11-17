@@ -15,22 +15,22 @@ radius   = np.array([ 0,  5,  0,  5,  5,  5,  0,  5,  0])
 length_x = np.array([10,  0, 10,  0,  0,  0, 10,  0, 10])
 length_y = np.array([10,  0, 10,  0,  0,  0, 10,  0, 10])
 electrode_array_pair = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-electrode_array_pair.electrode_arrays[0].plot(show=True, fn_plot="/home/kporzig/tmp/electrode_array_pair.png")
+electrode_array_pair.electrode_arrays[0].plot(show=False, fn_plot="/home/kporzig/tmp/electrode_array_pair.png")
 
 # update geometry (keep centers untouched)
 radius   = np.array([ 5,  0,  5,  0,  0,  0,  5,  0, 5])
 length_x = np.array([ 0, 10,  0, 10, 10, 10,  0, 10, 0])
 length_y = np.array([ 0, 10,  0, 10, 10, 10,  0, 10, 0])
 electrode_array_pair.update_geometry(center=None, radius=radius, length_x=length_x, length_y=length_y)
-electrode_array_pair.electrode_arrays[0].plot(show=True, fn_plot="/home/kporzig/tmp/electrode_array_pair_modified.png")
+electrode_array_pair.electrode_arrays[0].plot(show=False, fn_plot="/home/kporzig/tmp/electrode_array_pair_modified.png")
 
 # create a circular array with 1 center electrode and 6 outer electrodes
 circular_array = simnibs.CircularArray(radius_inner=5, distance=15, n_outer=6, radius_outer=3)
-circular_array.electrode_arrays[0].plot(fn_plot="/home/kporzig/tmp/circular_array.png")
+circular_array.electrode_arrays[0].plot(show=False, fn_plot="/home/kporzig/tmp/circular_array.png")
 
 # update geometry
 circular_array.update_geometry(distance=10)
-circular_array.electrode_arrays[0].plot(fn_plot="/home/kporzig/tmp/circular_array_modified.png")
+circular_array.electrode_arrays[0].plot(show=False, fn_plot="/home/kporzig/tmp/circular_array_modified.png")
 
 # create 3 x 3 mixed electrode array (circular and rectangular)
 center = np.array([[-20,  25, 0],

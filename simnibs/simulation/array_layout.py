@@ -194,6 +194,8 @@ class ElectrodeArray():
         fn_plot : str
             Filename of output.png file
         """
+        import matplotlib
+        matplotlib.use('Qt5Agg')
         import matplotlib.pyplot as plt
 
         prop_cycle = plt.rcParams['axes.prop_cycle']

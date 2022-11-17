@@ -3,8 +3,6 @@ import scipy.sparse as sparse
 
 from ..utils.simnibs_logger import logger
 
-# TODO: properly implement the following postproc methods to compute e-fields from potential very fast
-
 def _get_gradient(local_dist):
     ''' Calculate the gradient of a function in each tetrahedra
     The way it works: The operator has 2 parts
@@ -43,18 +41,42 @@ def _get_edge_lengths(mesh):
 
 
 class RegionOfInterest:
-    """ Region of interest class containing methods to compute the electric field from the electric
-    potential very fast.
+    """
+    Region of interest class containing methods to compute the electric field from the electric potential (fast).
 
     Parameters
     ----------
-
+    msh : Msh object instance
+        Head mesh
+    points : np.ndarray of float [n_roi_points x 3]
+        Coordinates of points in the ROI
+    con : np.ndarray of float [n_ele x 3(4)], optional, default: None
+        Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
+        be calculated in the nodes only.
 
     Attributes
     ----------
+    msh : Msh object instance
+        Head mesh
+    points : np.ndarray of float [n_roi_points x 3]
+        Coordinates of points in the ROI
+    con : np.ndarray of float [n_ele x 3(4)], optional, default: None
+        Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
+        be calculated in the nodes only.
+    n_points : int
+        Number of ROI points
+    gradient :
+        Gradient operator of the tetrahedral edges
+    node_idx_list :
+        Connectivity of whole head model
+    sF : sparse matrix
+
+    inside :
+
+    idx :
 
     """
-    def __init__(self, points, msh, con=None, gradient=None, out_fill=0):
+    def __init__(self, msh, points, con=None, gradient=None, out_fill=0):
         """
         Initializes RegionOfInterest class instance
         """
@@ -62,6 +84,7 @@ class RegionOfInterest:
         assert self.points.shape[1] == 3
         self.n_points = self.points.shape[0]
         self.con = con
+        self.sF = None
 
         # crop mesh that only tetrahedra are included
         msh_cropped = msh.crop_mesh(elm_type=4)
@@ -80,6 +103,38 @@ class RegionOfInterest:
             gradient = _get_gradient(local_dist)
         self.gradient = gradient[self.idx]
         self.node_index_list = msh_cropped.elm.node_number_list[self.idx] - 1
+
+    def calc_fields(self, v, dadt=None):
+        """
+        Calculate electric field in ROI from v (and A)
+
+        Parameters
+        ----------
+        v : np.ndarray of float [n_nodes_total]
+            Electric potential in each node in the whole head model
+        dadt : np.ndarray of float, optional, default: None
+            Magnetic vector potential in each node in the whole head model (for TMS)
+
+        Returns
+        -------
+        e : np.ndarray of float
+            Electric field in ROI
+        """
+        # get the E field in all tetrahedra (v: (number_of_nodes, 1))
+        if dadt is None:
+            # TES
+            fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list])
+        else:
+            # TMS
+            fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list]) - dadt[self.idx]
+
+        # calculate the magnitude of E
+        fields = np.linalg.norm(fields, axis=1, keepdims=True)
+
+        # interpolate to ROI
+        e = self.sF @ fields
+
+        return e
 
     def _get_sF_matrix(self, msh, points, out_fill, tags=None):
         """Create a sparse matrix for SPR interpolation from element data to arbitrary positions (here: the surface nodes)
@@ -209,8 +264,8 @@ class RegionOfInterest:
             sparse.csr_matrix: (bar.shape[0], msh.elm.nr)
 
         References
-            Zienkiewicz, Olgierd Cecil, and Jian
-            Zhong Zhu. "The superconvergent patch recovery and a posteriori error
+            Zienkiewicz, Olgierd Cecil, and Jian Zhong Zhu.
+            "The superconvergent patch recovery and a posteriori error
             estimates. Part 1: The recovery technique." International Journal for
             Numerical Methods in Engineering 33.7 (1992): 1331-1364.
         """

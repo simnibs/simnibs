@@ -150,6 +150,7 @@ class TESoptimize():
         self.max_active_electrodes = max_active_electrodes
         self.roi = roi
         self.init_pos = init_pos
+        self.electrode_pos = [np.zeros(3) for _ in range(self.n_ele_free)] # theta, phi, alpha for each array
         self.init_pos_subject_coords = []
         self.init_pos_ellipsoid_coords = []
         self.output_folder = output_folder
@@ -214,13 +215,12 @@ class TESoptimize():
             self.init_pos_subject_coords = self.init_pos
 
         # transform initial positions from subject to ellipsoid space
-        for coords in self.init_pos_subject_coords:
+        for i, coords in enumerate(self.init_pos_subject_coords):
             # get closest point idx on subject surface
             point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
-            self.init_pos_ellipsoid_coords.append(
-                subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
-                                  normals=self.skin_surface.nodes_normals[point_idx, :],
-                                  ellipsoid=self.ellipsoid))
+            self.electrode_pos[i][:2] = subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
+                                                          normals=self.skin_surface.nodes_normals[point_idx, :],
+                                                          ellipsoid=self.ellipsoid)
 
         if target is None:
             self.target = []
@@ -449,43 +449,34 @@ class TESoptimize():
     # TODO: From Fang (TMS) adapt accordingly
     # TODO: surface can be a ROI class with a .get_fields(v) method, is initialized with either "TMS" (with dAdt or "TES" raw)
     # TODO: change dataType ROI specific in ROI class init
-    def update_field(self, matsimnibs, coil_id, amplitude, surfaceIDs, dataType):
-        '''Calculate the E field with the different coil positions. The input matsimnibs is a 4x4 affine matrix which defines the coil position in 3D'''
+    def update_field(self, electrode_pos):
+        """
+        Calculate the E field for given electrode positions.
 
-        start = time()
-        a_affine = self.coil[coil_id].a_affine
-        a_field = self.coil[coil_id].a_field
-        didtmax = self.coil[coil_id].didtmax
+        Parameters
+        ----------
+        electrode_pos : list of np.ndarray [3]
+            List containing a numpy arrays with electrodes positions in spherical coordinates (theta, phi, alpha)
+            for each freely movable array.
 
-        assert dataType in [0, 1]
+        Returns
+        -------
+        e : np.ndarray of float [n_roi_ele] or list of np.ndarray of float [n_roi] with n_roi_elements each
+            Electric field in ROI(s). If multiple ROIs exist (in self.roi), a table is returned for each ROI
+            containing the e-field values.
 
-
-
-        start = time()
-
-        # update electrode positions
-        self.update_electrode()
+        """
+        # assign surface nodes to electrode positions
+        self.assign_nodes(electrode_pos=electrode_pos)
 
         # Assemble RHS
         self.update_rhs()
-
-        logger.debug('Assemble the right hand side force vector: {0:.6f}s'.format(time() - start))
-
-        start = time()
 
         # Solve the linear equation Mx = F. M is the stiffness matrix and F is the force vector.
         # x = self.solve_and_normalize(rhs)
 
         # TODO: generalize
         # Dirichlet node in case of TMS (last one set to zero)
-        v = np.append(x, 0)
-
-        logger.debug('Estimate the x: {0:.2f}s'.format(
-            time() - start))
-
-        start = time()
-
-        m = []
 
         # TODO: this is done in the new ROI class in the .calc_fields() method, TMS needs dAdt !!!
         # loop over the surfaces
@@ -543,7 +534,9 @@ class TESoptimize():
         currents: N_elec x 1 ndarray
             Optimized currents. The first value is the current in the reference electrode
         """
-        pass
+        electrode_pos_init = self.electrode_pos
+
+        e = self.update_field(electrode_pos_init)
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     ''' relabels skin in internal air cavities to something else;
