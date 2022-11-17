@@ -292,7 +292,6 @@ class Ellipsoid():
         # coords_jacobi = np.hstack((beta[:, np.newaxis], lam[:, np.newaxis]))
 
 
-
     # TODO: untested + implement return of normals
     def jacobi2cartesian(self, coords: np.ndarray, norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
@@ -420,22 +419,17 @@ class Ellipsoid():
 
         # Initial conditions
         ################################################################################################################
-        # Dirichlet
+        # Dirichlet boundary conditions
         x0 = start[0]
         y0 = start[1]
         z0 = start[2]
         beta0 = start_jacobi[0]
         lambda0 = start_jacobi[1]
 
-        # Neumann
+        # Calculate Neumann boundary conditions
         H0 = H(start)
         H0_sqrt = np.sqrt(H0)
-        L0 = L(lambda0)
-        F0 = F(lambda0, beta0)
-        B0 = B(beta0)
-        t10 = t1(beta0)
-        t20 = t2(lambda0)
-        G0 = G(beta0,lambda0)
+        G0 = G(beta0, lambda0)
 
         # normal vector to start point on ellipsoid, eq. (58)
         n = np.zeros(3)
@@ -444,6 +438,11 @@ class Ellipsoid():
         n[2] = z0 / ((1-self.e_x2)*H0_sqrt)
 
         # unit vector tangent to line of constant beta, eq. (63)-(65)
+        # L0 = L(lambda0)
+        # F0 = F(lambda0, beta0)
+        # B0 = B(beta0)
+        # t10 = t1(beta0)
+        # t20 = t2(lambda0)
         # p = np.zeros(3)
         # p[0] = -np.sign(y0) * np.sqrt(L0/(F0*t20)) * self.radii[0]/(self.E_x*self.E_e) * \
         #        np.sqrt(B0) * np.sqrt(t20-self.radii2[1])
@@ -470,6 +469,7 @@ class Ellipsoid():
         dyds_0 = sigma[1]
         dzds_0 = sigma[2]
 
+        # Initial conditions
         initial_conditions = [x0, dxds_0, y0, dyds_0, z0, dzds_0]
 
         # Solve
@@ -494,12 +494,11 @@ class Ellipsoid():
             Cy = lambda t, y: self.radii2[1]*y/(t+self.radii2[1])
             Cz = lambda t, z: self.radii2[2]*z/(t+self.radii2[2])
 
-            # import scipy
-            # import time
-            # start_time = time.time()
+            # walk along path in steps of ds and update coordinates
             for i, s_ in enumerate(s[:-1]):
+                # apply correction step after every 20 steps (project point to ellipsoid surface)
+                # https://www.geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf
                 if not (i % 20):
-                    # apply correction step
                     t = fsolve(self.F_t, -50,
                                args=np.array([x1[i], y1[i], z1[i]]).astype(np.float64),
                                xtol=1e-12,
@@ -508,10 +507,12 @@ class Ellipsoid():
                     y1[i] = Cy(t,y1[i])
                     z1[i] = Cz(t,z1[i])
 
+                # constants
                 h = x2[i] ** 2 + y2[i] ** 2 / (1 - self.e_e2) + z2[i] ** 2 / (1 - self.e_x2)  # eq. (44)
                 H = x1[i] ** 2 + y1[i] ** 2 / (1 - self.e_e2) + z1[i] ** 2 / (1 - self.e_x2)  # eq. (43)
                 h_H = h / H
 
+                # update equations of system of 1st order ODE
                 x1[i + 1] = x2[i] * ds + x1[i]
                 x2[i + 1] = -h_H * x1[i] * ds + x2[i]
                 y1[i + 1] = y2[i] * ds + y1[i]
@@ -520,6 +521,7 @@ class Ellipsoid():
                 z2[i + 1] = -h_H * z1[i] / (1. - self.e_x2) * ds + z2[i]
 
             coords_destination = np.array([x1[-1], y1[-1], z1[-1]])
+
         else:
             x_rk = solve_ivp(self.direct_geodesic_cartesian, [0, distance], initial_conditions,
                              method=method,
@@ -529,6 +531,7 @@ class Ellipsoid():
             x_rk = x_rk.y
             coords_destination = np.array([x_rk[0, -1], x_rk[2, -1], x_rk[4, -1]])
 
+        return coords_destination
 
         # import matplotlib
         # matplotlib.use('Qt5Agg')
@@ -551,12 +554,6 @@ class Ellipsoid():
         # ax.set_zlabel("z")
         # plt.savefig("/home/kporzig/tmp/plots/ellipse_geodesic_test.png", dpi=300)
 
-        return coords_destination
-
-
-
-        # end_time=time.time()
-        # print(end_time-start_time)
 
 
         # x = odeint(self.direct_geodesic_cartesian, initial_conditions, s)
@@ -574,15 +571,38 @@ class Ellipsoid():
 
 
     def F_t(self,t, coords):
+        """
+        Function to find root for t to find closest point on ellipsoid
+
+        Parameters
+        ----------
+        t : float
+            t-value
+        coords : np.ndarray of float [3]
+            Coordinates of query point
+        Returns
+        -------
+        y : float
+            Funtion value of F(t)
+        """
         y = (self.radii[0] * coords[0] / (t + self.radii2[0])) ** 2 + \
             (self.radii[1] * coords[1] / (t + self.radii2[1])) ** 2 + \
             (self.radii[2] * coords[2] / (t + self.radii2[2])) ** 2 - 1
         return y
     def coords_correction(self, coords):
         """
+        Apply correction of coordinates on ellipsoid by finding closest point on ellipsoid.
+        https://www.geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf
 
-        :param coords:
-        :return:
+        Parameters
+        ----------
+        coords : np.ndarray of float [3]
+            Coordinates of query point
+
+        Returns
+        -------
+        coords : np.ndarray of float [3]
+            Coordinates of query point on ellipsoid (closest point to ellipsoid surface)
         """
         t = fsolve(self.F_t, -50.,
                    args=np.array([coords[0], coords[1], coords[2]]).astype(np.float64),
@@ -621,10 +641,12 @@ class Ellipsoid():
         x[2] = x_corr[1]
         x[4] = x_corr[2]
 
+        # determine constants
         h = x[1]**2 + x[3]**2/(1-self.e_e2) + x[5]**2/(1-self.e_x2)     # eq. (44)
         H = x[0]**2 + x[2]**2/(1-self.e_e2) + x[4]**2/(1-self.e_x2)     # eq. (43)
         h_H = h / H
 
+        # system of 1st order ODE
         dx1dt = x[1]
         dx2dt = -h_H * x[0]
         dy1dt = x[3]
