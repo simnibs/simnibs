@@ -3,6 +3,7 @@ import scipy.sparse as sparse
 
 from ..utils.simnibs_logger import logger
 
+
 def _get_gradient(local_dist):
     ''' Calculate the gradient of a function in each tetrahedra
     The way it works: The operator has 2 parts

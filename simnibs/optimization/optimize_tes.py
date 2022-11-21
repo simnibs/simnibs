@@ -179,7 +179,7 @@ class TESoptimize():
 
         self.ff_templates = Templates()
         self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
-        self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask  # os.path.join(SIMNIBSDIR, "resources", "templates", "MNI152_T1_1mm_electrode_mask.nii.gz")
+        self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask
 
         # relabel internal air
         self.msh_relabel = relabel_internal_air(m=self.msh,
@@ -221,6 +221,8 @@ class TESoptimize():
             self.electrode_pos[i][:2] = subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
                                                           normals=self.skin_surface.nodes_normals[point_idx, :],
                                                           ellipsoid=self.ellipsoid)
+
+        # ellipsoid2subject(coords=1, ellipsoid=self.ellipsoid, surface=self.skin_surface)
 
         if target is None:
             self.target = []
@@ -446,7 +448,6 @@ class TESoptimize():
         # self.rhs = self.fem.assemble_tdcs_neumann_rhs([np.hstack((self.array_layout_node_idx))], [np.hstack((I))], input_type='node', areas=self.areas)
 
 
-    # TODO: From Fang (TMS) adapt accordingly
     # TODO: surface can be a ROI class with a .get_fields(v) method, is initialized with either "TMS" (with dAdt or "TES" raw)
     # TODO: change dataType ROI specific in ROI class init
     def update_field(self, electrode_pos):
@@ -467,45 +468,50 @@ class TESoptimize():
 
         """
         # assign surface nodes to electrode positions
-        self.assign_nodes(electrode_pos=electrode_pos)
+        node_idx = self.assign_nodes(electrode_pos=electrode_pos)
 
-        # Assemble RHS
-        self.update_rhs()
-
-        # Solve the linear equation Mx = F. M is the stiffness matrix and F is the force vector.
-        # x = self.solve_and_normalize(rhs)
-
-        # TODO: generalize
-        # Dirichlet node in case of TMS (last one set to zero)
-
-        # TODO: this is done in the new ROI class in the .calc_fields() method, TMS needs dAdt !!!
-        # loop over the surfaces
-        for s in surfaceIDs:
-
-            # Post-processing: estimate the E field
-            # step1: get the E field in all tetrahedra
-            # v: (number_of_nodes, 1)
-            fields = np.einsum('ijk,ij->ik', self.surface[s].gradient, - (v * 1e3)[self.surface[s].node_index_list])
-
-            if dataType == 0:
-                # calculate the magnitutde of E
-                fields = np.linalg.norm(fields, axis=1, keepdims=True)
-
-            m.append(self.surface[s].sF @ fields)
-
-        logger.debug('Estimate the E field on the surfaces: {0:.2f}s'.format(
-            time() - start))
-
-        return m
-
-    def solve_and_normalize(self, node_idx, I, v_norm, I_norm):
         # set RHS (in fem.py, check for speed)
-        b = self.fem.assemble_tdcs_neumann_rhs([np.hstack((self.array_layout_node_idx))], [np.hstack((I))], input_type='node')
+        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
+
+        # solve
+        v = self.fem._solver.solve(b[:-1])  # v = self.fem.solve(b)
+        v = np.append(v, 0)
+
+        # Determine e in ROIs
+        e = [0 for _ in len(self.roi)]
+        for i_roi, r in enumerate(self.roi):
+            e[i_roi] = r.calc_fields(v)
+
+        # determine QOIs in ROIs
+
+        # if normalize:
+        #     v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
+        #
+        #     v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
+        #     for k in range(len(I)):
+        #         vn = (v_elec[k] - np.mean(v_elec[k])) / np.std(v_mean)
+        #         In = (I[k] - np.mean(I[k])) / np.mean(I[k])
+        #
+        #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
+        #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
+
+
+
+    def solve(self, node_idx, I, v_norm, I_norm):
+        """
+
+        :param node_idx:
+        :param I:
+        :param v_norm:
+        :param I_norm:
+        :return:
+        """
+        # set RHS (in fem.py, check for speed)
+        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
         # solve
         v = self.fem.solve(b)
-        v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
 
-        # TODO: add postprocessing step from Fang to get e-fields
+        v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
 
         v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
         for k in range(len(I)):
@@ -514,6 +520,7 @@ class TESoptimize():
 
             v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
             I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
+
         return v, v_elec, v_norm, I_norm
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True, return_n_max=1):
@@ -537,6 +544,7 @@ class TESoptimize():
         electrode_pos_init = self.electrode_pos
 
         e = self.update_field(electrode_pos_init)
+
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     ''' relabels skin in internal air cavities to something else;

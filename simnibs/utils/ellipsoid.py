@@ -1,11 +1,16 @@
 import numpy as np
+import multiprocessing.pool
 
+from _functools import partial
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
+import warnings
+warnings.filterwarnings('ignore', 'The iteration is not making good progress')
 
 from ..mesh_tools import cgal
 from ..mesh_tools.surface import Surface
+
 
 class Ellipsoid():
     """
@@ -60,6 +65,20 @@ class Ellipsoid():
             self.rotmat = rotmat.astype(np.float128)
         else:
             self.rotmat = None
+
+    # in place functions
+    def H(self,coords):
+        return coords[0] ** 2 + coords[1] ** 2 / (1 - self.e_e2) ** 2 + coords[2] / (1 - self.e_x2) ** 2  # eq. (43)
+
+    def G(self, beta, lam):
+        return np.sqrt(1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
+
+
+        # H = lambda coords: coords[0] ** 2 + coords[1] ** 2 / (1 - self.e_e2) ** 2 + coords[2] / (
+        #             1 - self.e_x2) ** 2  # eq. (43)
+        # G = lambda beta, lam: np.sqrt(
+        #     1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
+
 
     @property
     def radii(self):
@@ -256,7 +275,7 @@ class Ellipsoid():
             J[2, 1] = self.radii[2]*self.E_e2/(2*self.E_x)*np.sin(beta)*np.sin(2*lam)/L_sqrt    # dz/dlam
 
             N = J.T @ J
-            N_inv = 1/(N[0, 0]*N[1, 1]-N[0, 1]*N[1, 0]) * np.array([[ N[1, 1], -N[0, 1]], [-N[1, 0],  N[0, 0]]])
+            N_inv = 1/(N[0, 0]*N[1, 1]-N[0, 1]*N[1, 0]) * np.array([[N[1, 1], -N[0, 1]], [-N[1, 0],  N[0, 0]]])
             coords_current = self.jacobi2cartesian(coords=np.array([[beta, lam]]), norm=True)
             dI = coords - coords_current
 
@@ -377,8 +396,56 @@ class Ellipsoid():
         self.radii = radii[sort_idx].astype(np.float128)
         self.rotmat = rotmat[:, sort_idx] * np.tile(sign_flip, (3, 1)).astype(np.float128)
 
+    def get_geodesic_destination(self, start, alpha, distance, n_steps=400, method="Euler", n_cpu=None):
+        """
+        Calculates the destination point (in cartesian coordinates) on the triaxial ellipsoid using the geodesic.
+        Originating from a start position (x, y, z)_start we walk into the direction alpha (angle with respect to
+        constant lambda) for a given distance and end at a destination point (x, y, z)_end.
 
-    def get_geodesic_destination(self, start, alpha, distance, n_steps=400, method="Euler"):
+        Parameters
+        ----------
+        start : np.ndarray of float [n_start x 3]
+            Starting points on ellipsoid in cartesian coordinates
+        alpha : np.ndarray of float [n_start]
+            Directions of travel (angle with respect to line of constant lambda)
+        distance : np.ndarray of float [n_start]
+            Traveling distances for each start point
+        n_steps: int, optional, default: 1000
+            Number of steps to solve differential equation
+        method : str, optional, default: "euler"
+            Integration method ("Euler", "RK45")
+        n_cpu : int, optional, default: None
+            Number of parallel threads (default: all available)
+
+        Returns
+        -------
+        end : np.ndarray of float [n_start x 3]
+            End points in cartesian coordinates
+        """
+        n_points = start.shape[0]
+
+        # prepare input data
+        input_data = [np.hstack(([start[i, :].flatten(), alpha[i], distance[i]])) for i in range(n_points)]
+
+        if n_cpu is None:
+            n_cpu = multiprocessing.cpu_count()
+        n_cpu = min(n_cpu, len(input_data))
+
+        workhorse = partial(self._workhorse_geodesic_destination_wrapper, n_steps=n_steps, method=method)
+
+        pool = multiprocessing.Pool(n_cpu)
+        coords_destination = np.vstack((pool.map(workhorse, input_data)))
+
+        pool.close()
+        pool.join()
+
+        return coords_destination
+
+    def _workhorse_geodesic_destination_wrapper(self, input_data, n_steps, method):
+        return self._get_geodesic_destination(start=input_data[:3], alpha=input_data[3], distance=input_data[4],
+                                              n_steps=n_steps, method=method)
+
+    def _get_geodesic_destination(self, start, alpha, distance, n_steps=400, method="Euler"):
         """
         Calculates the destination point (in cartesian coordinates) on the triaxial ellipsoid using the geodesic.
         Originating from a start position (x, y, z)_start we walk into the direction alpha (angle with respect to
@@ -395,82 +462,14 @@ class Ellipsoid():
         n_steps: int, optional, default: 1000
             Number of steps to solve differential equation
         method : str, optional, default: "euler"
-            Integration method ("Euler", "RK45")
+            Integration method ("Euler", "DOP853", "RK45", ...)
 
         Returns
         -------
         end : np.ndarray of float [3]
             End point in cartesian coordinates
         """
-        # Parameter definition and initialization
-        ################################################################################################################
-        start = (self.rotmat.T @ (start - self.center).T).T
-        start_jacobi = self.cartesian2jacobi(coords=start, norm=True)
-
-        # in place functions
-        H = lambda coords: coords[0]**2 + coords[1]**2/(1-self.e_e2)**2 + coords[2]/(1-self.e_x2)**2        # eq. (43)
-        t1 = lambda beta: self.radii2[1]*np.sin(beta)**2 + self.radii2[2]*np.cos(beta)**2                   # eq. (13)
-        t2 = lambda lam: self.radii2[0]*np.sin(lam)**2 + self.radii2[1]*np.cos(lam)**2                      # eq. (14)
-        L = lambda lam: t2(lam) - self.radii2[2]                                                            # eq. (67)
-        F = lambda lam, beta: t2(lam) - t1(beta)                                                            # eq. (68)
-        G = lambda beta, lam: np.sqrt(1-self.e_x2*np.cos(beta)**2-self.e_e2*np.sin(beta)**2*np.sin(lam)**2) # eq. (44)'
-        B = lambda beta: self.E_x2/self.E_y2 * (self.radii2[1] - t1(beta)) + \
-                         self.E_e2/self.E_y2 * (t1(beta) - self.radii2[2])                                  # eq. (66)
-
-        # Initial conditions
-        ################################################################################################################
-        # Dirichlet boundary conditions
-        x0 = start[0]
-        y0 = start[1]
-        z0 = start[2]
-        beta0 = start_jacobi[0]
-        lambda0 = start_jacobi[1]
-
-        # Calculate Neumann boundary conditions
-        H0 = H(start)
-        H0_sqrt = np.sqrt(H0)
-        G0 = G(beta0, lambda0)
-
-        # normal vector to start point on ellipsoid, eq. (58)
-        n = np.zeros(3)
-        n[0] = x0 / H0_sqrt
-        n[1] = y0 / ((1-self.e_e2)*H0_sqrt)
-        n[2] = z0 / ((1-self.e_x2)*H0_sqrt)
-
-        # unit vector tangent to line of constant beta, eq. (63)-(65)
-        # L0 = L(lambda0)
-        # F0 = F(lambda0, beta0)
-        # B0 = B(beta0)
-        # t10 = t1(beta0)
-        # t20 = t2(lambda0)
-        # p = np.zeros(3)
-        # p[0] = -np.sign(y0) * np.sqrt(L0/(F0*t20)) * self.radii[0]/(self.E_x*self.E_e) * \
-        #        np.sqrt(B0) * np.sqrt(t20-self.radii2[1])
-        # p[1] = np.sign(x0) * np.sqrt(L0/(F0*t20)) * self.radii[1]/(self.E_y*self.E_e) * \
-        #        np.sqrt((self.radii2[1]-t10) * (self.radii2[0]-t20))
-        # p[2] = np.sign(x0)*np.sign(y0)*np.sign(z0) * (1/np.sqrt(F0*t20)) * self.radii[2]/(self.E_x*self.E_y) * \
-        #        np.sqrt((t10-self.radii2[2])*(t20-self.radii2[1])*(self.radii2[0]-t20))
-
-        # unit vector tangent to line of constant lambda, eq. (71)-(73)
-        # q = np.cross(n, p)
-        q = np.zeros(3)
-        q[0] = -1/G0*np.sin(beta0)*np.cos(lambda0)
-        q[1] = -1/G0*np.sqrt(1-self.e_e2)*np.sin(beta0)*np.sin(lambda0)
-        q[2] = 1/G0*np.sqrt(1-self.e_x2)*np.cos(beta0)
-
-        # unit vector tangent to line of constant beta, eq. (63)-(65)
-        p = np.cross(q, n)
-
-        # unit vector tangent to geodesic, eq. (57)
-        sigma = p*np.sin(alpha) + q*np.cos(alpha)
-
-        # Neumann
-        dxds_0 = sigma[0]
-        dyds_0 = sigma[1]
-        dzds_0 = sigma[2]
-
-        # Initial conditions
-        initial_conditions = [x0, dxds_0, y0, dyds_0, z0, dzds_0]
+        initial_conditions = self.get_initial_conditions(start=start, alpha=alpha)
 
         # Solve
         ################################################################################################################
@@ -478,34 +477,35 @@ class Ellipsoid():
         ds = distance / n_steps
 
         if method == "Euler":
-            x1 = np.zeros(n_steps).astype(np.float128)
-            x2 = np.zeros(n_steps).astype(np.float128)
-            y1 = np.zeros(n_steps).astype(np.float128)
-            y2 = np.zeros(n_steps).astype(np.float128)
-            z1 = np.zeros(n_steps).astype(np.float128)
-            z2 = np.zeros(n_steps).astype(np.float128)
-            x1[0] = x0
-            x2[0] = dxds_0
-            y1[0] = y0
-            y2[0] = dyds_0
-            z1[0] = z0
-            z2[0] = dzds_0
+            x1 = np.zeros(n_steps)
+            x2 = np.zeros(n_steps)
+            y1 = np.zeros(n_steps)
+            y2 = np.zeros(n_steps)
+            z1 = np.zeros(n_steps)
+            z2 = np.zeros(n_steps)
+            x1[0] = initial_conditions[0]
+            x2[0] = initial_conditions[1]
+            y1[0] = initial_conditions[2]
+            y2[0] = initial_conditions[3]
+            z1[0] = initial_conditions[4]
+            z2[0] = initial_conditions[5]
             Cx = lambda t, x: self.radii2[0]*x/(t+self.radii2[0])
             Cy = lambda t, y: self.radii2[1]*y/(t+self.radii2[1])
             Cz = lambda t, z: self.radii2[2]*z/(t+self.radii2[2])
 
+            t = -50
             # walk along path in steps of ds and update coordinates
             for i, s_ in enumerate(s[:-1]):
                 # apply correction step after every 20 steps (project point to ellipsoid surface)
                 # https://www.geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf
-                if not (i % 20):
-                    t = fsolve(self.F_t, -50,
+                if not (i % 5):
+                    t = fsolve(self.F_t, t,
                                args=np.array([x1[i], y1[i], z1[i]]).astype(np.float64),
-                               xtol=1e-12,
-                               maxfev=1000)
-                    x1[i] = Cx(t,x1[i])
-                    y1[i] = Cy(t,y1[i])
-                    z1[i] = Cz(t,z1[i])
+                               xtol=1e-9,
+                               maxfev=200)
+                    x1[i] = Cx(t, x1[i])
+                    y1[i] = Cy(t, y1[i])
+                    z1[i] = Cz(t, z1[i])
 
                 # constants
                 h = x2[i] ** 2 + y2[i] ** 2 / (1 - self.e_e2) + z2[i] ** 2 / (1 - self.e_x2)  # eq. (44)
@@ -521,15 +521,20 @@ class Ellipsoid():
                 z2[i + 1] = -h_H * z1[i] / (1. - self.e_x2) * ds + z2[i]
 
             coords_destination = np.array([x1[-1], y1[-1], z1[-1]])
+            # coords_path = np.hstack((x1[:, np.newaxis], y1[:, np.newaxis], z1[:, np.newaxis]))
 
         else:
             x_rk = solve_ivp(self.direct_geodesic_cartesian, [0, distance], initial_conditions,
                              method=method,
-                             t_eval=np.linspace(0,distance, 10),
-                             atol=1e-9,
-                             rtol=1e-6)
+                             t_eval=np.linspace(0, distance, 1000),
+                             atol=1e-12,
+                             rtol=1e-9)
             x_rk = x_rk.y
             coords_destination = np.array([x_rk[0, -1], x_rk[2, -1], x_rk[4, -1]])
+            # coords_path = np.hstack((x_rk[0, :][:, np.newaxis], x_rk[2, :][:, np.newaxis], x_rk[4, :][:, np.newaxis]))
+
+        # distance_check = np.sum(np.linalg.norm(coords_path[1:, :] - coords_path[:-1, :], axis=1))
+        # print(f"distance: {distance}, distance_check: {distance_check}")
 
         return coords_destination
 
@@ -554,8 +559,6 @@ class Ellipsoid():
         # ax.set_zlabel("z")
         # plt.savefig("/home/kporzig/tmp/plots/ellipse_geodesic_test.png", dpi=300)
 
-
-
         # x = odeint(self.direct_geodesic_cartesian, initial_conditions, s)
         # start_time = time.time()
         # x_rk = scipy.integrate.solve_ivp(self.direct_geodesic_cartesian, [0, distance], initial_conditions,
@@ -567,10 +570,97 @@ class Ellipsoid():
         # end_time = time.time()
         # print(end_time - start_time)
 
+    def get_initial_conditions(self, start, alpha):
+        """
+        Determine initial conditions of geodesic walk algorithm
 
+        Parameters
+        ----------
+        start : np.ndarray of float [3]
+            Starting point on ellipsoid in cartesian coordinates
+        alpha : float
+            Direction of travel (angle with respect to line of constant lambda)
 
+        Returns
+        -------
+        initial_conditions : np.ndarray of float [6]
+            Initial conditions [x0, dxds_0, y0, dyds_0, z0, dzds_0]
+        """
+        if start.ndim == 2:
+            start = start.flatten()
 
-    def F_t(self,t, coords):
+        # Parameter definition and initialization
+        ################################################################################################################
+        start = (self.rotmat.T @ (start - self.center).T).T
+
+        start_jacobi = self.cartesian2jacobi(coords=start, norm=True)
+
+        # t1 = lambda beta: self.radii2[1]*np.sin(beta)**2 + self.radii2[2]*np.cos(beta)**2                   # eq. (13)
+        # t2 = lambda lam: self.radii2[0]*np.sin(lam)**2 + self.radii2[1]*np.cos(lam)**2                      # eq. (14)
+        # L = lambda lam: t2(lam) - self.radii2[2]                                                            # eq. (67)
+        # F = lambda lam, beta: t2(lam) - t1(beta)                                                            # eq. (68)
+
+        # B = lambda beta: self.E_x2/self.E_y2 * (self.radii2[1] - t1(beta)) + \
+        #                  self.E_e2/self.E_y2 * (t1(beta) - self.radii2[2])                                  # eq. (66)
+
+        # Initial conditions
+        ################################################################################################################
+        # Dirichlet boundary conditions
+        x0 = start[0]
+        y0 = start[1]
+        z0 = start[2]
+        beta0 = start_jacobi[0]
+        lambda0 = start_jacobi[1]
+
+        # Calculate Neumann boundary conditions
+        H0 = self.H(start)
+        H0_sqrt = np.sqrt(H0)
+        G0 = self.G(beta0, lambda0)
+
+        # normal vector to start point on ellipsoid, eq. (58)
+        n = np.zeros(3)
+        n[0] = x0 / H0_sqrt
+        n[1] = y0 / ((1 - self.e_e2) * H0_sqrt)
+        n[2] = z0 / ((1 - self.e_x2) * H0_sqrt)
+
+        # unit vector tangent to line of constant beta, eq. (63)-(65)
+        # L0 = L(lambda0)
+        # F0 = F(lambda0, beta0)
+        # B0 = B(beta0)
+        # t10 = t1(beta0)
+        # t20 = t2(lambda0)
+        # p = np.zeros(3)
+        # p[0] = -np.sign(y0) * np.sqrt(L0/(F0*t20)) * self.radii[0]/(self.E_x*self.E_e) * \
+        #        np.sqrt(B0) * np.sqrt(t20-self.radii2[1])
+        # p[1] = np.sign(x0) * np.sqrt(L0/(F0*t20)) * self.radii[1]/(self.E_y*self.E_e) * \
+        #        np.sqrt((self.radii2[1]-t10) * (self.radii2[0]-t20))
+        # p[2] = np.sign(x0)*np.sign(y0)*np.sign(z0) * (1/np.sqrt(F0*t20)) * self.radii[2]/(self.E_x*self.E_y) * \
+        #        np.sqrt((t10-self.radii2[2])*(t20-self.radii2[1])*(self.radii2[0]-t20))
+
+        # unit vector tangent to line of constant lambda, eq. (71)-(73)
+        # q = np.cross(n, p)
+        q = np.zeros(3)
+        q[0] = -1 / G0 * np.sin(beta0) * np.cos(lambda0)
+        q[1] = -1 / G0 * np.sqrt(1 - self.e_e2) * np.sin(beta0) * np.sin(lambda0)
+        q[2] = 1 / G0 * np.sqrt(1 - self.e_x2) * np.cos(beta0)
+
+        # unit vector tangent to line of constant beta, eq. (63)-(65)
+        p = np.cross(q, n)
+
+        # unit vector tangent to geodesic, eq. (57)
+        sigma = p * np.sin(alpha) + q * np.cos(alpha)
+
+        # Neumann
+        dxds_0 = sigma[0]
+        dyds_0 = sigma[1]
+        dzds_0 = sigma[2]
+
+        # Initial conditions
+        initial_conditions = np.array([x0, dxds_0, y0, dyds_0, z0, dzds_0])
+
+        return initial_conditions
+
+    def F_t(self, t, coords):
         """
         Function to find root for t to find closest point on ellipsoid
 
@@ -589,6 +679,7 @@ class Ellipsoid():
             (self.radii[1] * coords[1] / (t + self.radii2[1])) ** 2 + \
             (self.radii[2] * coords[2] / (t + self.radii2[2])) ** 2 - 1
         return y
+
     def coords_correction(self, coords):
         """
         Apply correction of coordinates on ellipsoid by finding closest point on ellipsoid.
@@ -614,6 +705,7 @@ class Ellipsoid():
         coords[2] = self.radii2[2]*coords[2]/(t+self.radii2[2])
 
         return coords
+
     def direct_geodesic_cartesian(self, s, x):
         """
         System of differential equations to determine the (direct) geodesic in cartesian coordinates.
@@ -655,6 +747,7 @@ class Ellipsoid():
         dz2dt = -h_H * x[4] / (1-self.e_x2)
 
         return [dx1dt, dx2dt, dy1dt, dy2dt, dz1dt, dz2dt]
+
 
 def ls_ellipsoid(xx: np.ndarray, yy: np.ndarray, zz: np.ndarray) -> np.ndarray:
     """
@@ -753,7 +846,8 @@ def polyToParams3D(vec: np.ndarray) -> (np.ndarray,  np.ndarray,  np.ndarray):
 
     return (center, radii, rotmat)
 
-def subject2ellipsoid(coords: np.ndarray, normals: np.ndarray, ellipsoid: Ellipsoid) ->  np.ndarray:
+
+def subject2ellipsoid(coords: np.ndarray, normals: np.ndarray, ellipsoid: Ellipsoid) -> np.ndarray:
     """
     Transform coordinates from subject to ellipsoid space
     Line intersection of skin surface point along normal and ellipsoid.
@@ -774,10 +868,10 @@ def subject2ellipsoid(coords: np.ndarray, normals: np.ndarray, ellipsoid: Ellips
         Spherical coordinates [theta, phi] in radiant.
     """
 
-    if coords.ndim==1:
+    if coords.ndim == 1:
         coords = coords[np.newaxis, :]
 
-    if normals.ndim==1:
+    if normals.ndim == 1:
         normals = normals[np.newaxis, :]
 
     R = ellipsoid.rotmat
@@ -798,6 +892,7 @@ def subject2ellipsoid(coords: np.ndarray, normals: np.ndarray, ellipsoid: Ellips
     eli_intersect_sphere = ellipsoid.cartesian2ellipsoid(coords=eli_intersect_cart, return_normal=False)
 
     return eli_intersect_sphere
+
 
 def ellipsoid2subject(coords: np.ndarray, ellipsoid: Ellipsoid, surface: Surface) -> (int, np.ndarray):
     """
