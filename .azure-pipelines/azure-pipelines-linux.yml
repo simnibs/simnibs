@@ -18,7 +18,7 @@ jobs:
     displayName: Create Conda environment
 
   - bash: |
-      conda activate simnibs_env
+      source activate simnibs_env
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
       python packing/pack.py dist/
