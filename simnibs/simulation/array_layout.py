@@ -9,7 +9,7 @@ class Electrode():
     ----------
     channel_id : int
         Channel identifier, indicates connected electrodes (same identifier)
-    center : np.array of float [3]
+    center : np.ndarray of float [3]
         Center of electrode (in mm)
     radius : float, optional, default: None
         Radius of circular electrode, None in case of rectangular electrodes (in mm)
@@ -17,12 +17,16 @@ class Electrode():
         Electrode extension in x-direction (rectangular electrode), None in case of circular electrodes (in mm)
     length_y : float, optional, default: None
         Electrode extension in y-direction (rectangular electrode), None in case of circular electrodes (in mm)
+    current : float, optional, default: None
+        Current assigned to electrode
+    voltage : float, optional, default: None
+        Voltage assigned to electrode
 
     Attributes
     ----------
     channel_id : int
         Channel identifier, indicates connected electrodes (same identifier)
-    center : np.array of float [3]
+    center : np.ndarray of float [3]
         Center of electrode
     radius : float or None
         Radius of circular electrode
@@ -30,23 +34,31 @@ class Electrode():
         Electrode extension in x-direction (rectangular electrode)
     length_y : float or None
         Electrode extension in y-direction (rectangular electrode)
-    posmat_norm : np.array of float [4x4]
+    posmat_norm : np.ndarray of float [4x4]
         Position matrix [4x4] of electrode in normalized space (in mm)
         np.array([1, 0, 0, center[0],
                   0, 1, 0, center[1],
                   0, 0, 1, center[2],
                   0, 0, 0, 1])
-    posmat : np.array of float [4x4]
+    posmat : np.ndarray of float [4x4]
         Position matrix [4x4] of electrode in head coordinate system (in mm)
     area : float
         Electrode area (in mm²)
-    points : np.array of float [n_points, 3]
+    points : np.ndarray of float [n_points, 3]
         Points of the mesh the electrode is located
-    points_area : np.array of float [n_points]
+    points_area : np.ndarray of float [n_points]
         Associated area of the points
+    node_idx : np.ndarray of int [n_nodes]
+        Node indices assigned to electrode on subject skin surface
+    current : float, optional, default: None
+        Current assigned to electrode
+    voltage : float, optional, default: None
+        Voltage assigned to electrode
+    type : str
+        Type of electrode ("spherical", "rectangular")
     """
 
-    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None):
+    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None, voltage=None):
         if radius is None:
             radius = 0
 
@@ -61,15 +73,21 @@ class Electrode():
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
+        self.current = current
+        self.voltage = voltage
+        self.transmat = None
+        self.points = None
+        self.points_area = None
+        self.node_idx = None
         self.posmat_norm = np.array([[1, 0, 0, center[0]],
                                      [0, 1, 0, center[1]],
                                      [0, 0, 1, center[2]],
                                      [0, 0, 0, 1]])
         self.posmat = copy.deepcopy(self.posmat_norm)
-        self.transmat = None
-        self.points = None
-        self.points_area = None
 
+
+        if self.voltage is not None and self.current is not None:
+            raise AssertionError("Define either voltage or current to electrode.")
 
         if radius !=0 and (length_x != 0 or length_y != 0):
             raise AssertionError("Define either radius for circular electrode or "
@@ -77,8 +95,10 @@ class Electrode():
 
         if self.radius is not None or radius != 0:
             self.area = np.pi*radius**2
+            self.type = "spherical"
         else:
             self.area = length_x * length_y
+            self.type = "rectangular"
 
     def transform(self, transmat):
         """
@@ -105,31 +125,31 @@ class ElectrodeArray():
 
     Parameters
     ----------
-    channel_id : np.array of int [n_ele]
+    channel_id : np.ndarray of int [n_ele]
         Channel identifiers, indicates connected electrodes (same identifier), in case of mixed definitions (circular
         and rectangular), the IDs of the circular electrodes are coming first followed by the rectangular ones.
-    center : np.array of float [n_ele, 3]
+    center : np.ndarray of float [n_ele, 3]
         Center coordinates (x,y,z) of electrodes in normalized space (in mm)
-    radius : np.array of float [n_ele_circ] or None
+    radius : np.ndarray of float [n_ele_circ] or None
         Radii of circular electrodes (in mm)
-    length_x : np.array of float [n_ele_rect] or None
+    length_x : np.ndarray of float [n_ele_rect] or None
         Electrode extensions in x-direction (rectangular electrodes)
-    length_y : np.array of float [n_ele_rect] or None
+    length_y : np.ndarray of float [n_ele_rect] or None
         Electrode extensions in y-direction (rectangular electrodes)
 
     Attributes
     ----------
-    channel_id : np.array of int [n_ele]
+    channel_id : np.ndarray of int [n_ele]
         Channel identifiers, indicates connected electrodes (same identifier)
-    array_center : np.array of float [3]
+    array_center : np.ndarray of float [3]
         Center of the whole electrode array
-    center : np.array of float [n_ele, 3]
+    center : np.ndarray of float [n_ele, 3]
         Center of the individual electrodes (in mm)
-    radius : np.array of float [n_ele_circ]
+    radius : np.ndarray of float [n_ele_circ]
         Radii of circular electrodes (in mm)
-    length_x : np.array of float [n_ele_rect] or None
+    length_x : np.ndarray of float [n_ele_rect] or None
         Electrode extensions in x-direction (rectangular electrodes)
-    length_y : np.array of float [n_ele_rect] or None
+    length_y : np.ndarray of float [n_ele_rect] or None
         Electrode extensions in y-direction (rectangular electrodes)
     n_ele : int
         Total number of electrodes (n_ele_circ + n_ele_rect)
@@ -137,23 +157,30 @@ class ElectrodeArray():
         Electrodes in the array
     type : list of str
         List containing the type of electrodes ("circ" and/or "rect")
-    posmat_norm : np.array of float [4x4]
+    posmat_norm : np.ndarray of float [4x4]
         Position matrix [4x4] of electrode array in normalized space (in mm)
         np.array([1, 0, 0, center[0],
                   0, 1, 0, center[1],
                   0, 0, 1, center[2],
                   0, 0, 0, 1])
-    posmat : np.array of float [4x4]
+    posmat : np.ndarray of float [4x4]
         Position matrix [4x4] of electrode array in head coordinate system (in mm)
+    distance : np.ndarray of float [n_ele]
+        Euclidean distances of electrodes to array center (0, 0, 0)
+    angle : np.ndarray of float [n_ele]
+        Angle between connection line electrodes <-> array center and principal direction axis of array (0, 1, 0)
     """
 
     def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None):
         self.channel_id = channel_id
+        self.array_center = np.array([0, 0, 0])
         self.center = center
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
         self.n_ele = len(channel_id)
+        self.distance = np.zeros(self.n_ele)
+        self.angle = np.zeros(self.n_ele)
         self.electrodes = []
         self.posmat_norm = np.array([[1, 0, 0, 0],
                                      [0, 1, 0, 0],
@@ -163,11 +190,26 @@ class ElectrodeArray():
         self.transmat = None
 
         for i_ele in range(self.n_ele):
+            self.distance[i_ele] = np.linalg.norm(center[i_ele, :] - self.array_center)
+
+            if self.distance[i_ele] == 0:
+                self.angle[i_ele] = 0
+            else:
+                if center[i_ele, 0] > 0 and center[i_ele, 1] > 0:
+                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele])
+                elif center[i_ele, 0] < 0 and center[i_ele, 1] > 0:
+                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele])
+                elif center[i_ele, 0] < 0 and center[i_ele, 1] < 0:
+                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele]) - np.pi/2
+                elif center[i_ele, 0] > 0 and center[i_ele, 1] < 0:
+                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele]) + np.pi/2
+
             self.electrodes.append(Electrode(channel_id=channel_id[i_ele],
                                              center=center[i_ele, :],
                                              radius=radius[i_ele],
                                              length_x=length_x[i_ele],
                                              length_y=length_y[i_ele]))
+
 
     def transform(self, transmat):
         """
@@ -256,20 +298,20 @@ class ElectrodeArrayPair():
 
     Parameters
     ----------
-    center : np.array of float [n_ele x 3]
+    center : np.ndarray of float [n_ele x 3]
         Center positions of electrodes in normalized x/y plane (z=0)
-    radius : np.array of float [n_ele] or None
+    radius : np.ndarray of float [n_ele] or None
         Radii of single circular electrodes in array (in mm)
-    length_x : np.array of float [n_ele] or None
+    length_x : np.ndarray of float [n_ele] or None
         Extensions in x-direction of single rectangular electrodes in array
-    length_y : np.array of float [n_ele] or None
+    length_y : np.ndarray of float [n_ele] or None
         Extensions in y-direction of single rectangular electrodes in array
 
     Attributes
     ----------
     n_ele : int
         Number of electrodes
-    center : np.array of float [n_ele, 3]
+    center : np.ndarray of float [n_ele, 3]
         Center of electrodes (in mm)
     radius : list of float
         Radii of electrodes (in mm)
@@ -298,13 +340,13 @@ class ElectrodeArrayPair():
 
         Parameters
         ----------
-        center : np.array of float [n_ele x 3]
+        center : np.ndarray of float [n_ele x 3]
             Center positions of electrodes in normalized x/y plane (z=0)
-        radius : np.array of float [n_ele_circ] or None
+        radius : np.ndarray of float [n_ele_circ] or None
             Radii of circular electrodes (in mm)
-        length_x : np.array of float [n_ele_rect] or None
+        length_x : np.ndarray of float [n_ele_rect] or None
             Electrode extensions in x-direction (rectangular electrodes)
-        length_y : np.array of float [n_ele_rect] or None
+        length_y : np.ndarray of float [n_ele_rect] or None
             Electrode extensions in y-direction (rectangular electrodes)
         """
         if center is not None:
@@ -345,7 +387,7 @@ class CircularArray():
     ----------
     n_ele : int
         Number of electrodes
-    center : np.array of float [n_ele, 3]
+    center : np.ndarray of float [n_ele, 3]
         Center of electrodes (in mm)
     radius : list of float
         Radii of electrodes (in mm)

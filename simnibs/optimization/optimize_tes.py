@@ -40,7 +40,7 @@ class TESoptimize():
         Maximum current for any single electrode (in Amperes). Default: 1e-3
     max_active_electrodes: int (optional)
         Maximum number of active electrodes. Default: no maximum
-    init_pos : str or list of str or list of str and np.array of float [3]
+    init_pos : str or list of str or list of str and np.ndarray of float [3]
         Initial positions of movable Electrode arrays (for each movable array)
     fn_eeg_cap : str, optional, default: 'EEG10-10_UI_Jurak_2007.csv'
         Filename of EEG cap to use for initial position (without path)
@@ -65,9 +65,9 @@ class TESoptimize():
     electrode : Electrode Object
         Electrode object containing ElectrodeArray instances
         (see /simulation/array_layout.py for pre-implemented examples)
-    nodes_areas : np.array of float [n_nodes_skin]
+    nodes_areas : np.ndarray of float [n_nodes_skin]
         Areas of skin nodes
-    nodes_normals : np.array of float [n_nodes_skin x 3]
+    nodes_normals : np.ndarray of float [n_nodes_skin x 3]
         Normals of skin nodes
     max_total_current: float (optional)
         Maximum current across all electrodes (in Amperes). Default: 2e-3
@@ -222,8 +222,6 @@ class TESoptimize():
                                                           normals=self.skin_surface.nodes_normals[point_idx, :],
                                                           ellipsoid=self.ellipsoid)
 
-        # ellipsoid2subject(coords=1, ellipsoid=self.ellipsoid, surface=self.skin_surface)
-
         if target is None:
             self.target = []
         else:
@@ -232,6 +230,8 @@ class TESoptimize():
             self.avoid = []
         else:
             self.avoid = avoid
+
+        self.run()
 
         if self.plot:
             import matplotlib
@@ -381,18 +381,18 @@ class TESoptimize():
 
         Parameters
         ----------
-        points : np.array of float [n_points x 3]
+        points : np.ndarray of float [n_points x 3]
             Point coordinates
-        con : np.array of float [n_tri x 3]
+        con : np.ndarray of float [n_tri x 3]
             Connectivity of triangles
         point_mask : nparray of bool [n_points]
             Mask of (True/False) which points are kept in the mesh
 
         Returns
         -------
-        points_new : np.array of float [n_points_new x 3]
+        points_new : np.ndarray of float [n_points_new x 3]
             New point array containing the remaining points after applying the mask
-        con_new : np.array of float [n_tri_new x 3]
+        con_new : np.ndarray of float [n_tri_new x 3]
             New connectivity list containing the remaining points (includes reindexing)
         """
         con_global = con[point_mask[con].all(axis=1), :]
@@ -407,20 +407,109 @@ class TESoptimize():
 
         return points_new, con_new
 
-    def assign_skin_points_electrode(self, coords, electrode_array):
+    def get_nodes_electrode(self, electrode_pos):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
         electrode_array.electrodes[i].points and electrode_array.electrodes[i].points_area
 
         Parameters
         ----------
-        coords : np.array of float [3]
-            Spherical coordinates (theta, phi) and orientation angle (alpha) of electrode array (in this order)
-        electrode_array : ElectrodeArray instance
-            ElectrodeArray instance containing Electrode instances
+        electrode_pos : list of np.ndarray of float [3] of length n_ele_free
+            Spherical coordinates (theta, phi) and orientation angle (alpha) for each electrode array.
+                      electrode array 1                        electrode array 2
+            [ np.array([theta_1, phi_1, alpha_1]),   np.array([theta_2, phi_2, alpha_2]) ]
+
+        Returns
+        -------
+        node_idx : list of np.ndarray of int [n_nodes] of length n_ele_free
+            List containing np.ndarrays for each free electrode array with skin node indices
+
         """
-        # get
-        index, point = ellipsoid2subject(coords, ellipsoid=self.ellipsoid)
+        # collect all parameters
+        start = np.zeros((self.n_ele_free, 3))
+        distance = []
+        alpha = []
+
+        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
+            start[i_array, :] = self.ellipsoid.ellipsoid2cartesian(coords=electrode_pos[i_array][:2])
+            distance.append(_electrode_array.distance)
+            # TODO: correct this angle to constant lambda (jac)
+            alpha.append(_electrode_array.angle + electrode_pos[i_array][2])
+
+        distance = np.array(distance).flatten()
+        alpha = np.array(alpha).flatten()
+
+        # transform to ellipsoid (jacobi) coordinates
+        start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
+                           for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays)])
+
+        # determine electrode center on ellipsoid
+        electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
+                                                                            distance=distance,
+                                                                            alpha=alpha)
+
+        # transform to ellipsoidal coordinates
+        electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
+
+        # project coordinates to subject
+        _, electrode_coords_subject = ellipsoid2subject(coords=electrode_coords_eli_eli,
+                                                        ellipsoid=self.ellipsoid,
+                                                        surface=self.skin_surface)
+
+        # loop over electrodes and determine node indices
+        i_ele = 0
+        node_idx = [[] for _ in range(self.n_ele_free)]
+        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
+            for _electrode in _electrode_array.electrodes:
+                if _electrode.type == "spherical":
+                    # mask with a sphere
+                    mask = np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < _electrode.radius
+
+                elif _electrode.type == "rectangular":
+                    # TODO: set rotation matrix
+                    # rotate skin nodes to electrode
+                    rotmat = np.array([[0, 0, 0, electrode_coords_subject[i_ele, 0]],
+                                       [0, 0, 0, electrode_coords_subject[i_ele, 1]],
+                                       [0, 0, 0, electrode_coords_subject[i_ele, 2]],
+                                       [0, 0, 0, 1]])
+                    skin_nodes_rotated = (np.hstack(self.skin_surface.nodes,
+                                                    np.ones(self.skin_surface.nodes.shape[0])[:, np.newaxis])
+                                          @ rotmat)[:, :3]
+                    # mask with a box
+                    mask_x = np.logical_and(skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
+                                            skin_nodes_rotated[:, 0] > +_electrode.length_x / 2)
+                    mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
+                                            skin_nodes_rotated[:, 1] > +_electrode.length_y / 2)
+                    mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -10,
+                                            skin_nodes_rotated[:, 2] > +10)
+                    mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
+                else:
+                    raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
+
+                _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
+                _electrode.node_idx = np.where(mask)[0]
+                node_idx[i_array].append(_electrode.node_idx)
+                i_ele += 1
+
+        return node_idx
+
+        # np.savetxt("/home/kporzig/tmp/plots/electrode_coords_eli_cart.txt", electrode_coords_eli_cart)
+        #
+        # import pynibs
+        # # write hdf5 _geo files for visualization in paraview
+        # pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
+        #                            points=self.skin_surface.nodes,
+        #                            con=self.skin_surface.tr_nodes,
+        #                            replace=True,
+        #                            hdf5_path='/mesh')
+        #
+        # pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
+        #                             data_names=["domain"],
+        #                             data_hdf_fn_out=os.path.join(self.output_folder, "plots",
+        #                                                          "upper_head_region_data.hdf5"),
+        #                             geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
+        #                             replace=True)
+
 
     def gauge_mesh(self):
         """
@@ -447,9 +536,6 @@ class TESoptimize():
         """
         # self.rhs = self.fem.assemble_tdcs_neumann_rhs([np.hstack((self.array_layout_node_idx))], [np.hstack((I))], input_type='node', areas=self.areas)
 
-
-    # TODO: surface can be a ROI class with a .get_fields(v) method, is initialized with either "TMS" (with dAdt or "TES" raw)
-    # TODO: change dataType ROI specific in ROI class init
     def update_field(self, electrode_pos):
         """
         Calculate the E field for given electrode positions.
@@ -468,19 +554,26 @@ class TESoptimize():
 
         """
         # assign surface nodes to electrode positions
-        node_idx = self.assign_nodes(electrode_pos=electrode_pos)
+        start = time.time()
+        node_idx = self.get_nodes_electrode(electrode_pos=electrode_pos)
+        stop = time.time()
+        print(f"get_nodes_electrode: {stop-start}")
+        # # set RHS (in fem.py, check for speed)
+        # b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
+        #
+        # # solve
+        # v = self.fem._solver.solve(b[:-1])  # v = self.fem.solve(b)
+        # v = np.append(v, 0)
+        #
+        # # Determine e in ROIs
+        # e = [0 for _ in len(self.roi)]
+        # for i_roi, r in enumerate(self.roi):
+        #     e[i_roi] = r.calc_fields(v)
+        #
+        # return e
 
-        # set RHS (in fem.py, check for speed)
-        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
 
-        # solve
-        v = self.fem._solver.solve(b[:-1])  # v = self.fem.solve(b)
-        v = np.append(v, 0)
 
-        # Determine e in ROIs
-        e = [0 for _ in len(self.roi)]
-        for i_roi, r in enumerate(self.roi):
-            e[i_roi] = r.calc_fields(v)
 
         # determine QOIs in ROIs
 
@@ -541,9 +634,14 @@ class TESoptimize():
         currents: N_elec x 1 ndarray
             Optimized currents. The first value is the current in the reference electrode
         """
-        electrode_pos_init = self.electrode_pos
 
-        e = self.update_field(electrode_pos_init)
+        # update electrode position
+
+        # update field
+        e = self.update_field(electrode_pos=self.electrode_pos)
+
+        # calculate QOI
+
 
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
@@ -574,24 +672,24 @@ def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_inte
 #
 #     Parameters
 #     ----------
-#     p : np.array of float [3]
+#     p : np.ndarray of float [3]
 #         Base point of ray
-#     w : np.array of float [3]
+#     w : np.ndarray of float [3]
 #         Direction of ray
-#     points : np.array of float [n_points x 3]
+#     points : np.ndarray of float [n_points x 3]
 #         Surface points
-#     con : np.array of int [n_tri x 3]
+#     con : np.ndarray of int [n_tri x 3]
 #         Connectivity list of triangles
-#     triangle_center : np.array of float [n_tri x 3]
+#     triangle_center : np.ndarray of float [n_tri x 3]
 #         Center of triangles
-#     triangle_normals : np.array of float [n_tri x 3]
+#     triangle_normals : np.ndarray of float [n_tri x 3]
 #         Normals of triangles
 #
 #     Returns
 #     -------
-#     ele_idx : np.array of int [n_tri_intersect]
+#     ele_idx : np.ndarray of int [n_tri_intersect]
 #         Index of triangles where ray intersects surface
-#     dist : np.array of float [n_tri_intersect]
+#     dist : np.ndarray of float [n_tri_intersect]
 #         Distances between source point p and intersection
 #     """
 #

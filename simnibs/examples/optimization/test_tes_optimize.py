@@ -27,7 +27,7 @@ fn_roi = "/home/kporzig/tmp/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
 
 # create a circular array with 1 center electrode and 6 outer electrodes
-circular_array = simnibs.CircularArray(radius_inner=5, distance=15, n_outer=6, radius_outer=3)
+circular_array = simnibs.CircularArray(radius_inner=7, distance=15, n_outer=6, radius_outer=4)
 
 # load mesh
 msh = simnibs.read_msh(fn_mesh)
