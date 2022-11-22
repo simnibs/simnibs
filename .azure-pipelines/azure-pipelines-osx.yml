@@ -148,9 +148,9 @@ jobs:
       artifactName: 'macos'
       downloadPath: '$(System.ArtifactsDirectory)'
     displayName: Download SimNIBS version
-#  - bash: |
-#      xcrun stapler staple "$(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg"
-#    displayName: Staple notarization ticket
+  - bash: |
+      xcrun stapler staple "$(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg"
+    displayName: Staple notarization ticket
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
