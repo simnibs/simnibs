@@ -9,9 +9,10 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'ubuntu-latest'
-
-  container: simnibs/simnibs-testing:centos7
+#    vmImage: 'ubuntu-latest'
+     vmImage: 'ubuntu-20.04'
+     
+#  container: simnibs/simnibs-testing:centos7
   steps:
   - bash: |
       conda update -y conda
