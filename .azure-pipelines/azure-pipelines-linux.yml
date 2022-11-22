@@ -9,10 +9,8 @@ trigger:
 jobs:
 - job: Build
   pool:
-#    vmImage: 'ubuntu-latest'
      vmImage: 'ubuntu-20.04'
-     
-#  container: simnibs/simnibs-testing:centos7
+
   steps:
   - bash: |
       conda update -y conda
@@ -20,7 +18,6 @@ jobs:
     displayName: Create Conda environment
 
   - bash: |
-#      source activate simnibs_env
       conda activate simnibs_env
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
