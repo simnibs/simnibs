@@ -179,6 +179,8 @@ if sys.platform == 'win32':
         '/D _MBCS'
     ]
     cgal_link_args = None
+    
+    cat_compile_args = None
 
 elif sys.platform == 'linux':
     petsc_libs = ['petsc']
@@ -212,6 +214,10 @@ elif sys.platform == 'linux':
     ]
     cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
+    
+    cat_compile_args = [
+      '-std=gnu99',
+    ]
 
 elif sys.platform == 'darwin':
     petsc_libs = ['petsc']
@@ -246,6 +252,8 @@ elif sys.platform == 'darwin':
         '-stdlib=libc++',
         '-Wl,-rpath,@loader_path/../../external/lib/osx'
     ]
+    
+    cat_compile_args = None
 
 else:
     raise OSError('OS not supported!')
@@ -263,7 +271,8 @@ marching_cubes_lewiner_cy = Extension(
 cat_c_utils = Extension(
     'simnibs.segmentation._cat_c_utils',
     ["simnibs/segmentation/_cat_c_utils.pyx", "simnibs/segmentation/cat_c_utils/genus0.c"],
-    include_dirs=[np.get_include(), 'simnibs/segmentation/cat_c_utils']
+    include_dirs=[np.get_include(), 'simnibs/segmentation/cat_c_utils'],
+    extra_compile_args=cat_compile_args
 )
 thickness = Extension(
     'simnibs.segmentation._thickness',
