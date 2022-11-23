@@ -10,7 +10,8 @@ jobs:
 - job: Build
   pool:
      vmImage: 'ubuntu-20.04'
-
+     
+  container: simnibs/simnibs-testing:latest
   steps:
   - bash: |
       conda update -y conda
