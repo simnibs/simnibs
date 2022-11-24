@@ -63,6 +63,8 @@ jobs:
       echo $(System.ArtifactsDirectory)
       start $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       echo I am here 2
+      echo | dir
+      echo | dir simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\ --junit-xml=test-results.xml
       echo I am here 3
     displayName: Install SimNIBS and run unit tests
