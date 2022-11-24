@@ -112,9 +112,11 @@ jobs:
 
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
-  dependsOn:
-    - Test
-    - Examples
+#  dependsOn:
+#    - Test
+#    - Examples
+  dependsOn: Build
+  
   pool:
     vmImage: 'ubuntu-latest'
 
