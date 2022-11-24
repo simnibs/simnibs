@@ -61,6 +61,8 @@ jobs:
   - script: |
       echo I am here
       echo $(System.ArtifactsDirectory)
+      echo | dir $(System.ArtifactsDirectory)
+      echo | dir $(System.ArtifactsDirectory)\windows
       start $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       echo %cd%
       echo I am here 2
