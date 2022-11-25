@@ -8,6 +8,7 @@ import tempfile
 import zipfile
 import tarfile
 from setuptools.command.build_ext import build_ext
+from setuptools import find_namespace_packages
 from distutils.dep_util import newer_group
 import numpy as np
 
@@ -384,7 +385,7 @@ def download_and_extract(url, path='.'):
     os.remove(tmpname)
 
 
-def install_lib(url, path, libs):
+def install_lib(url, path, libs, build_path):
     ''' Downloads a compiled library from the internet and move to "lib" folder '''
     download_and_extract(url, path)
     if sys.platform == 'darwin':
@@ -398,6 +399,11 @@ def install_lib(url, path, libs):
             l, f'simnibs/external/lib/{folder_name}',
             follow_symlinks=False
         )
+        if build_path:
+            shutil.copy(
+                l, f'{build_path}simnibs/external/lib/{folder_name}',
+                follow_symlinks=False
+            )
 
 
 class build_ext_(build_ext):
@@ -428,7 +434,13 @@ class build_ext_(build_ext):
         )
         if self.force or changed_meshing:
             download_and_extract(CGAL_url)
-            install_lib(tbb_url, tbb_path, tbb_libs)
+            if self.inplace:
+                build_lib = ""
+            else:
+                build_lib = self.build_lib + "/"
+
+            install_lib(tbb_url, tbb_path, tbb_libs, build_lib)
+
         # Compile
         build_ext.run(self)
         # cleanup downloads
@@ -469,7 +481,7 @@ setup(name='simnibs',
       description='www.simnibs.org',
       author='SimNIBS developers',
       author_email='support@simnibs.org',
-      packages=find_packages(),
+      packages=find_namespace_packages(),
       license='GPL3',
       ext_modules=extensions,
       include_package_data=True,
