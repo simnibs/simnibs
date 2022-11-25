@@ -13,21 +13,36 @@ import simnibs
 import numpy as np
 import matplotlib.pyplot as plt
 
-# output_folder="/data/pt_01756/probands/15484.08/opt/ttf"
-output_folder="/home/kporzig/tmp"
+output_folder = "/data/pt_01756/studies/ttf"
+# output_folder = "/home/kporzig/tmp"
 
-# fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/m2m_15484.08/15484.08.msh"
-fn_mesh = "/home/kporzig/tmp/charm_beta_fine/m2m_15484.08/15484.08.msh"
+fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/m2m_15484.08/15484.08.msh"
+# fn_mesh = "/home/kporzig/tmp/charm_beta_fine/m2m_15484.08/15484.08.msh"
 # fn_mesh = os.path.join(example_data_folder, 'sphere3.msh')
 
-# fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
-fn_roi = "/home/kporzig/tmp/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
+fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
+# fn_roi = "/home/kporzig/tmp/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
 
 # location of example data
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
 
 # create a circular array with 1 center electrode and 6 outer electrodes
-circular_array = simnibs.CircularArray(radius_inner=7, distance=15, n_outer=6, radius_outer=4)
+# electrode = simnibs.CircularArray(radius_inner=7.5, distance=15, n_outer=6, radius_outer=5)
+# create 3 x 3 circular electrode array pair
+center = np.array([[-30, 20, 0],
+                   [0, 20, 0],
+                   [30, 20, 0],
+                   [-30, 0, 0],
+                   [0, 0, 0],
+                   [30, 0, 0],
+                   [-30, -20, 0],
+                   [0, -20, 0],
+                   [30, -20, 0]])
+radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# electrode.electrode_arrays[0].plot(fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # load mesh
 msh = simnibs.read_msh(fn_mesh)
@@ -48,8 +63,8 @@ roi = None
 # Initialize structure
 opt = simnibs.opt_struct.TESoptimize(msh=msh,
                                      roi=roi,
-                                     electrode=circular_array,
-                                     init_pos=["C3"],
+                                     electrode=electrode,
+                                     init_pos=["C3", "C4"],
                                      output_folder=output_folder,
                                      plot=True)
 

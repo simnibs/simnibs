@@ -57,7 +57,7 @@ class Ellipsoid():
             self.center = None
 
         if radii is not None:
-            self.radii = radii
+            self.radii = np.flip(np.sort(radii))
         else:
             self.radii = None
 
@@ -124,6 +124,40 @@ class Ellipsoid():
             self.e_x2 = None
             self.e_e2 = None
 
+    def get_normal(self, coords: np.ndarray, norm=False, return_norm=False):
+        """
+        Returns the normal vector in cartesian coordinates of a given point in cartesian coordinates
+
+        Parameters
+        ----------
+        coords : np.ndarray of float [n_points x 3]
+            Cartesian coordinates of given points
+        norm : bool, optional, default: False
+            Cartesian coordinates are given in normalized ellipsoidal space.
+        return_norm : bool, optional, default: False
+            Return normals in normalized space.
+
+        Returns
+        -------
+        normal : np.ndarray of float [n_points x 3]
+            Surface normal of given points (pointing outwards)
+        """
+        # rotate to normalized space if not already provided in normalized space
+        if not norm:
+            coords = self.rot_org2norm(coords=coords)
+
+        # calculate normal in normalized space
+        normal = 2 * np.hstack(((coords[:, 0] / self.radii2[0])[:, np.newaxis],
+                                (coords[:, 1] / self.radii2[1])[:, np.newaxis],
+                                (coords[:, 2] / self.radii2[2])[:, np.newaxis]))
+        normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
+
+        # rotate normal to original space if desired
+        if not return_norm:
+            normal = (self.rotmat @ normal.T).T
+
+        return normal
+
     def ellipsoid2cartesian(self, coords: np.ndarray, norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
         Transforms spherical coordinates on ellipsoid to cartesian coordinates and optionally returns surface normal.
@@ -154,34 +188,26 @@ class Ellipsoid():
         # Cartesian coordinates that correspond to the spherical angles
         x = self.radii[0] * np.cos(phi) * np.sin(theta)
         y = self.radii[1] * np.sin(phi) * np.sin(theta)
-        z = self.radii[2] * np.cos(theta)  # * np.ones_like(phi)
-
-        # x = radii[0] * np.outer(np.cos(u), np.sin(v))
-        # y = radii[1] * np.outer(np.sin(u), np.sin(v))
-        # z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
+        z = self.radii[2] * np.cos(theta)
 
         x_flatten = x.flatten()
         y_flatten = y.flatten()
         z_flatten = z.flatten()
 
-        coords_cart = np.hstack((x_flatten[:, np.newaxis], y_flatten[:, np.newaxis], z_flatten[:, np.newaxis])).T
+        coords_cart = np.hstack((x_flatten[:, np.newaxis], y_flatten[:, np.newaxis], z_flatten[:, np.newaxis]))
 
         if not norm:
-            coords_cart = (self.rotmat @ coords_cart + self.center[:, np.newaxis]).T
+            coords_cart = self.rot_norm2org(coords=coords_cart)
+            # coords_cart = ((self.rotmat @ coords_cart) + self.center[:, np.newaxis]).T
 
         if return_normal:
-            normal = 2 * np.hstack(((x_flatten / self.radii2[0])[:, np.newaxis],
-                                    (y_flatten / self.radii2[1])[:, np.newaxis],
-                                    (z_flatten / self.radii2[2])[:, np.newaxis]))
-            normal = normal / np.linalg.norm(normal, axis=1)[:, np.newaxis]
-            normal_rot = (self.rotmat @ normal.T).T
+            normal = self.get_normal(coords=coords_cart, norm=norm, return_norm=norm)
 
-            return coords_cart, normal_rot
+            return coords_cart, normal
         else:
             return coords_cart
 
-    # TODO: implement return of normals
-    def cartesian2ellipsoid(self, coords: np.ndarray, return_normal=False) -> (np.ndarray,  np.ndarray):
+    def cartesian2ellipsoid(self, coords: np.ndarray, norm=False, return_norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
         Transforms cartesian coordinates on ellipsoid to spherical coordinates and optionally returns surface normals.
 
@@ -193,6 +219,10 @@ class Ellipsoid():
         ----------
         coords : np.ndarray of float [n_points x 3]
             Cartesian coordinates [x, y, z].
+        norm : bool, optional, default: False
+            Cartesian coordinates are given in normalized ellipsoidal space.
+        return_norm : bool, optional, default: False
+            Return normals in normalized space.
         return_normal : bool, optional, default: False
             Additionally return surface normal (pointing outwards)
 
@@ -204,29 +234,38 @@ class Ellipsoid():
             Surface normal of given points (pointing outwards)
         """
 
-        # rotate cartesian coordinates back to center and align with coordinate axes
-        coords_rot = (coords - self.center) @ self.rotmat
+        if coords.ndim == 1:
+            coords = coords[np.newaxis, :]
+
+        if not norm:
+            # rotate cartesian coordinates back to center and align with coordinate axes
+            coords = self.rot_org2norm(coords=coords)
+            # coords_rot = (coords - self.center) @ self.rotmat
 
         # quadrant (sign of x and y axes)
-        mask_q1 = np.logical_and(coords_rot[:, 0] >= 0, coords_rot[:, 1] >= 0)
-        mask_q2 = np.logical_and(coords_rot[:, 0] < 0, coords_rot[:, 1] > 0)
-        mask_q3 = np.logical_and(coords_rot[:, 0] <= 0, coords_rot[:, 1] <= 0)
-        mask_q4 = np.logical_and(coords_rot[:, 0] > 0, coords_rot[:, 1] < 0)
+        mask_q1 = np.logical_and(coords[:, 0] >= 0, coords[:, 1] >= 0)
+        mask_q2 = np.logical_and(coords[:, 0] < 0,  coords[:, 1] > 0)
+        mask_q3 = np.logical_and(coords[:, 0] <= 0, coords[:, 1] <= 0)
+        mask_q4 = np.logical_and(coords[:, 0] > 0,  coords[:, 1] < 0)
 
         # Cartesian coordinates that correspond to the spherical angles
-        theta = np.arccos(coords_rot[:, 2] / self.radii[2])
+        theta = np.arccos(coords[:, 2] / self.radii[2])
         phi = np.zeros(theta.shape)
-        phi[mask_q1] = np.arctan(coords_rot[mask_q1, 1] / coords_rot[mask_q1, 0] * (self.radii[0] / self.radii[1]))
-        phi[mask_q2] = np.arctan(coords_rot[mask_q2, 1] / coords_rot[mask_q2, 0] * (self.radii[0] / self.radii[1])) + np.pi
-        phi[mask_q3] = np.arctan(coords_rot[mask_q3, 1] / coords_rot[mask_q3, 0] * (self.radii[0] / self.radii[1])) + np.pi
-        phi[mask_q4] = np.arctan(coords_rot[mask_q4, 1] / coords_rot[mask_q4, 0] * (self.radii[0] / self.radii[1])) + 2 * np.pi
+        phi[mask_q1] = np.arctan(coords[mask_q1, 1] / coords[mask_q1, 0] * (self.radii[0] / self.radii[1]))
+        phi[mask_q2] = np.arctan(coords[mask_q2, 1] / coords[mask_q2, 0] * (self.radii[0] / self.radii[1])) + np.pi
+        phi[mask_q3] = np.arctan(coords[mask_q3, 1] / coords[mask_q3, 0] * (self.radii[0] / self.radii[1])) + np.pi
+        phi[mask_q4] = np.arctan(coords[mask_q4, 1] / coords[mask_q4, 0] * (self.radii[0] / self.radii[1])) + 2 * np.pi
 
         coords_eli = np.hstack((theta[:, np.newaxis], phi[:, np.newaxis]))
 
+        if return_normal:
+            normal = self.get_normal(coords=coords, norm=True, return_norm=return_norm)
+
+            return coords_eli, normal
+
         return coords_eli
 
-    # TODO: untested + implement return of normals
-    def cartesian2jacobi(self, coords: np.ndarray, norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
+    def cartesian2jacobi(self, coords: np.ndarray, norm=False,  return_norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
         Transforms cartesian coordinates on ellipsoid to spherical coordinates in Jacobi form and optionally
         returns the surface normals.
@@ -241,6 +280,8 @@ class Ellipsoid():
             Cartesian coordinates [x, y, z]
         norm : bool, optional, default: False
             Coordinates are given in normalized space (ellipsoid centered at (0,0,0) and not rotated).
+        return_norm : bool, optional, default: False
+            Return normals in normalized space.
         return_normal : bool, optional, default: False
             Additionally return surface normal (pointing outwards)
 
@@ -256,68 +297,21 @@ class Ellipsoid():
 
         # if coords are provided in original space, normalize them
         if not norm:
-            coords = (self.rotmat.T @ (coords - self.center).T).T
+            coords = self.rot_org2norm(coords=coords)
 
-        coords_jacobi = np.zeros((coords.shape[0], 2))
-        eps0 = 1e-16
-        eps = np.inf
-        beta = 1.3
-        lam = 0.5
-        J = np.zeros((3, 2))
-        L = lambda lam: self.E_x2 - self.E_e2 * np.cos(lam)**2
-        B = lambda beta: self.E_x2*np.cos(beta)**2 + self.E_e2*np.sin(beta)**2
+        # calculate beta and lambda from normalized coordinates
+        beta = np.arctan((1-self.e_e2)/(1-self.e_x2) * coords[:, 2] / np.sqrt((1-self.e_e2)**2 * coords[:, 0]**2 + coords[:, 1]**2))
+        lam = np.arctan(1/(1-self.e_e2) * coords[:, 1] / coords[:, 0])
+        coords_jacobi = np.hstack((beta[:, np.newaxis], lam[:, np.newaxis]))
 
-        for i_point, point in enumerate(coords):
-            while eps > eps0:
-                B_sqrt = np.sqrt(B(beta))
-                L_sqrt = np.sqrt(L(lam))
+        if return_normal:
+            normal = self.get_normal(coords=coords, norm=True, return_norm=return_norm)
 
-                J[0, 0] = -self.radii[0]*self.E_y2/(2*self.E_x)*np.sin(2*beta)/B_sqrt*np.cos(lam)   # dx/dbeta
-                J[1, 0] = -self.radii[1]*np.sin(beta)*np.sin(lam)                                   # dy/dbeta
-                J[2, 0] = self.radii[2]/self.E_x*np.cos(beta)*L_sqrt                                # dz/dbeta
-                J[0, 1] = -self.radii[0]/self.E_x*B_sqrt*np.sin(lam)                                # dx/dlam
-                J[1, 1] = self.radii[1]*np.cos(beta)*np.cos(lam)                                    # dy/dlam
-                J[2, 1] = self.radii[2]*self.E_e2/(2*self.E_x)*np.sin(beta)*np.sin(2*lam)/L_sqrt    # dz/dlam
-
-                N = J.T @ J
-                N_inv = 1/(N[0, 0]*N[1, 1]-N[0, 1]*N[1, 0]) * np.array([[N[1, 1], -N[0, 1]], [-N[1, 0],  N[0, 0]]])
-                coords_current = self.jacobi2cartesian(coords=np.array([[beta, lam]]), norm=True)
-                dI = point - coords_current
-
-                dbeta_dlam = N_inv @ J.T @ dI.T  # np.linalg.inv(N)
-
-                beta += dbeta_dlam[0]
-                lam += dbeta_dlam[1]
-
-                eps = np.linalg.norm(dbeta_dlam)
-
-                # print(coords, coords_current, eps) #coords_current, coords,
-
-            coords_jacobi[i_point, :] = np.hstack((beta, lam))
+            return coords_jacobi, normal
 
         return coords_jacobi
 
-        # coords2 = coords**2
-        # c1 = np.sum(coords2, axis=1) - np.sum(self.radii2)
-        # c0 = (self.radii2[0]*self.radii2[1]) + (self.radii2[0]*self.radii2[2]) + (self.radii2[1]*self.radii2[2]) - \
-        #      (self.radii2[1] + self.radii2[2]) * coords2[:, 0] - \
-        #      (self.radii2[0] + self.radii2[2]) * coords2[:, 1] - \
-        #      (self.radii2[0] + self.radii2[1]) * coords2[:, 2]
-        #
-        # t2 = (-c1 + np.sqrt(c1**2 - 4*c0)) / 2
-        # t1 = c0 / t2
-        #
-        # # implement right function depending on the signs of x,y,z (beta = [-pi/2, pi/2], lam = [-pi, pi]
-        # beta = np.arctan(np.sqrt((t1 - self.radii2[2]) / (self.radii2[1] - t1)))
-        # # beta = np.arctan(1 / np.sqrt((self.radii2[1] - t1) / (t1 - self.radii2[2])))
-        # lam = np.arctan(np.sqrt((t2 - self.radii2[1]) / (self.radii2[0] - t2)))
-        # # lam = np.arctan(1 / np.sqrt((self.radii2[0] - t2) / (t2 - self.radii2[1])))
-        #
-        # coords_jacobi = np.hstack((beta[:, np.newaxis], lam[:, np.newaxis]))
-
-
-    # TODO: untested + implement return of normals
-    def jacobi2cartesian(self, coords: np.ndarray, norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
+    def jacobi2cartesian(self, coords: np.ndarray, norm=False, return_norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
         Transforms spherical coordinates on ellipsoid in Jacobi form to cartesian coordinates and optionally
         returns surface normals.
@@ -327,8 +321,9 @@ class Ellipsoid():
         coords : np.ndarray of float [n_points x 2]
             Spherical coordinates [beta, lambda] in radiant.
         norm : bool, optional, default: False
-            Return cartesian coordinates in normalized space (ellipsoid centered at (0,0,0) and
-            not rotated or in original space)
+            Return cartesian coordinates in normalized space (ellipsoid centered at (0,0,0) and not rotated)
+        return_norm : bool, optional, default: False
+            Return normals in normalized space.
         return_normal : bool, optional, default: False
             Additionally return surface normal (pointing outwards)
 
@@ -344,19 +339,57 @@ class Ellipsoid():
 
         coords_cart = np.zeros((coords.shape[0], 3))
 
+        v = lambda beta, lam: self.radii[0] / np.sqrt(
+            1 - self.e_x2 * np.sin(beta) ** 2 - self.e_e2 * np.cos(beta) ** 2 * np.sin(lam) ** 2)
+
+        v_ = v(coords[:, 0], coords[:, 1])
+
         # cartesian coordinates in normalized space
-        coords_cart[:, 0] = self.radii[0] / self.E_x * \
-                            np.sqrt(self.E_x**2 * np.cos(coords[:, 0])**2 + self.E_e**2 * np.sin(coords[:, 0])**2) * \
-                            np.cos(coords[:, 1])
-        coords_cart[:, 1] = self.radii[1] * np.cos(coords[:, 0]) * np.sin(coords[:, 1])
-        coords_cart[:, 2] = self.radii[2] / self.E_x * \
-                            np.sin(coords[:, 0]) * np.sqrt(self.E_x**2 - self.E_e**2 * np.sin(coords[:, 0])**2)
+        coords_cart[:, 0] = v_ * np.cos(coords[:, 0]) * np.cos(coords[:, 1])
+        coords_cart[:, 1] = v_ * (1 - self.e_e2) * np.cos(coords[:, 0]) * np.sin(coords[:, 1])
+        coords_cart[:, 2] = v_ * (1 - self.e_x2) * np.sin(coords[:, 0])
 
         # transform to original space
         if not norm:
-            coords_cart = (self.rotmat @ coords_cart.T + self.center[:, np.newaxis]).T
+            coords_cart = self.rot_norm2org(coords=coords_cart)
+
+        if return_normal:
+            normal = self.get_normal(coords=coords_cart, norm=norm, return_norm=return_norm)
+            return coords_cart, normal
 
         return coords_cart
+
+    def rot_org2norm(self, coords):
+        """
+        Rotate cartesian coordinates from original to normalized space (ellipsoid centered and alligned with axes)
+
+        Parameters
+        ----------
+        coords : np.ndarray of float [n_points, 3]
+            Coordinates in original space
+
+        Returns
+        -------
+        coords_norm : np.ndarray of float [n_points, 3]
+            Coordinates in normalized space
+        """
+        return (coords - self.center) @ self.rotmat
+
+    def rot_norm2org(self, coords):
+        """
+        Rotate cartesian coordinates from normalized (ellipsoid centered and alligned with axes) to original space.
+
+        Parameters
+        ----------
+        coords : np.ndarray of float [n_points, 3]
+            Coordinates in normalized space
+
+        Returns
+        -------
+        coords_norm : np.ndarray of float [n_points, 3]
+            Coordinates in original space
+        """
+        return (coords @ self.rotmat.T) + self.center[np.newaxis, :]
 
     def fit(self, points: np.ndarray):
         """
@@ -477,14 +510,16 @@ class Ellipsoid():
             End point in cartesian coordinates
         """
         # transform coordinates to normalized space (ellipsoid centered and axes oriented)
-        start = (self.rotmat.T @ (start - self.center).T).T
+        start = self.rot_org2norm(coords=start)
+        # start = (self.rotmat.T @ (start - self.center).T).T
 
         initial_conditions = self.get_initial_conditions(start=start, alpha=alpha, norm=True)
 
         # Solve
         ################################################################################################################
-        s = np.linspace(0, distance, n_steps)
-        ds = distance / n_steps
+        s = np.linspace(0, 1.1*distance, n_steps)
+        ds = 1.1*distance / n_steps
+        distance_current = 0
 
         if method == "Euler":
             x1 = np.zeros(n_steps)
@@ -530,8 +565,13 @@ class Ellipsoid():
                 z1[i + 1] = z2[i] * ds + z1[i]
                 z2[i + 1] = -h_H * z1[i] / (1. - self.e_x2) * ds + z2[i]
 
-            coords_destination = np.array([x1[-1], y1[-1], z1[-1]])
-            # coords_path = np.hstack((x1[:, np.newaxis], y1[:, np.newaxis], z1[:, np.newaxis]))
+                distance_current += np.linalg.norm(np.array([x1[i+1]-x1[i], y1[i+1]-y1[i], z1[i+1]-z1[i]]))
+
+                if distance_current > distance:
+                    break
+
+            coords_destination = np.array([x1[i+1], y1[i+1], z1[i+1]])
+            #coords_path = np.hstack((x1[:, np.newaxis], y1[:, np.newaxis], z1[:, np.newaxis]))
 
         else:
             x_rk = solve_ivp(self.direct_geodesic_cartesian, [0, distance], initial_conditions,
@@ -541,14 +581,13 @@ class Ellipsoid():
                              rtol=1e-9)
             x_rk = x_rk.y
             coords_destination = np.array([x_rk[0, -1], x_rk[2, -1], x_rk[4, -1]])
-            # coords_path = np.hstack((x_rk[0, :][:, np.newaxis], x_rk[2, :][:, np.newaxis], x_rk[4, :][:, np.newaxis]))
+            #coords_path = np.hstack((x_rk[0, :][:, np.newaxis], x_rk[2, :][:, np.newaxis], x_rk[4, :][:, np.newaxis]))
 
-        # distance_check = np.sum(np.linalg.norm(coords_path[1:, :] - coords_path[:-1, :], axis=1))
-        # print(f"distance: {distance}, distance_check: {distance_check}")
+        #distance_check = np.sum(np.linalg.norm(coords_path[1:(i+2), :] - coords_path[:(i+1), :], axis=1))
+        #print(f"target distance: {distance}, actual distance: {distance_check}, distance_current: {distance_current}")
 
-        # start = (self.rotmat.T @ (start - self.center).T).T
         # rotate coordinates back to original space
-        coords_destination = (self.rotmat @ coords_destination.T) + self.center
+        coords_destination = self.rot_norm2org(coords=coords_destination)
 
         return coords_destination
 
@@ -607,8 +646,9 @@ class Ellipsoid():
 
         # Parameter definition and initialization
         ################################################################################################################
-        if norm == False:
-            start = (self.rotmat.T @ (start - self.center).T).T
+        if not norm:
+            start = self.rot_org2norm(coords=start)
+            # start = (self.rotmat.T @ (start - self.center).T).T
 
         start_jacobi = self.cartesian2jacobi(coords=start, norm=True).flatten()
 
@@ -616,7 +656,7 @@ class Ellipsoid():
         # t2 = lambda lam: self.radii2[0]*np.sin(lam)**2 + self.radii2[1]*np.cos(lam)**2                      # eq. (14)
         # L = lambda lam: t2(lam) - self.radii2[2]                                                            # eq. (67)
         # F = lambda lam, beta: t2(lam) - t1(beta)                                                            # eq. (68)
-
+        #
         # B = lambda beta: self.E_x2/self.E_y2 * (self.radii2[1] - t1(beta)) + \
         #                  self.E_e2/self.E_y2 * (t1(beta) - self.radii2[2])                                  # eq. (66)
 
@@ -631,14 +671,16 @@ class Ellipsoid():
 
         # Calculate Neumann boundary conditions
         H0 = self.H(start)
-        H0_sqrt = np.sqrt(H0)
+        # H0_sqrt = np.sqrt(H0)
         G0 = self.G(beta0, lambda0)
 
         # normal vector to start point on ellipsoid, eq. (58)
-        n = np.zeros(3)
-        n[0] = x0 / H0_sqrt
-        n[1] = y0 / ((1 - self.e_e2) * H0_sqrt)
-        n[2] = z0 / ((1 - self.e_x2) * H0_sqrt)
+        _, n = self.cartesian2ellipsoid(coords=start, return_normal=True)
+        n = n.flatten()
+        # n = np.zeros(3)
+        # n[0] = x0 / H0_sqrt
+        # n[1] = y0 / ((1 - self.e_e2) * H0_sqrt)
+        # n[2] = z0 / ((1 - self.e_x2) * H0_sqrt)
 
         # unit vector tangent to line of constant beta, eq. (63)-(65)
         # L0 = L(lambda0)
@@ -697,7 +739,7 @@ class Ellipsoid():
             (self.radii[2] * coords[2] / (t + self.radii2[2])) ** 2 - 1
         return y
 
-    def coords_correction(self, coords):
+    def coords_correction(self, coords, norm=False, return_norm=False):
         """
         Apply correction of coordinates on ellipsoid by finding closest point on ellipsoid.
         https://www.geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf
@@ -706,12 +748,20 @@ class Ellipsoid():
         ----------
         coords : np.ndarray of float [3]
             Coordinates of query point
+        norm : bool, optional, default: False
+            Coordinates are given in normalized space
+        return_norm : bool, optional, default: False
+            Return corrected coordinates in normalized space
 
         Returns
         -------
         coords : np.ndarray of float [3]
             Coordinates of query point on ellipsoid (closest point to ellipsoid surface)
         """
+        # normalize coordinates if they are given in original space
+        if not norm:
+            coords = self.rot_org2norm(coords)
+
         t = fsolve(self.F_t, -50.,
                    args=np.array([coords[0], coords[1], coords[2]]).astype(np.float64),
                    xtol=1e-6,
@@ -720,6 +770,9 @@ class Ellipsoid():
         coords[0] = self.radii2[0]*coords[0]/(t+self.radii2[0])
         coords[1] = self.radii2[1]*coords[1]/(t+self.radii2[1])
         coords[2] = self.radii2[2]*coords[2]/(t+self.radii2[2])
+
+        if not return_norm:
+            coords = self.rot_norm2org(coords=coords)
 
         return coords
 
@@ -745,7 +798,7 @@ class Ellipsoid():
             Coordinates and derivatives
         """
         # apply coordinate correction
-        x_corr = self.coords_correction(coords=np.array([x[0], x[2], x[4]]))
+        x_corr = self.coords_correction(coords=np.array([x[0], x[2], x[4]]), norm=True, return_norm=True)
         x[0] = x_corr[0]
         x[2] = x_corr[1]
         x[4] = x_corr[2]
@@ -950,4 +1003,48 @@ def ellipsoid2subject(coords: np.ndarray, ellipsoid: Ellipsoid, surface: Surface
         [far[i, :] for i in range(coords.shape[0])]  # near[i, :], far[i, :]
     )
 
-    return (indices[:, 1], points)
+    return (indices, points)
+
+
+
+# coords_jacobi = np.zeros((coords.shape[0], 2))
+        # eps0 = 1e-15
+        # eps = np.inf
+        # beta = 1.
+        # lam = 1.
+        # J = np.zeros((3, 2))
+        # L = lambda lam: self.E_x2 - self.E_e2 * np.cos(lam)**2
+        # B = lambda beta: self.E_x2*np.cos(beta)**2 + self.E_e2*np.sin(beta)**2
+        #
+        # for i_point, point in enumerate(coords):
+        #     while eps > eps0:
+        #         try:
+        #             B_sqrt = np.sqrt(B(beta))
+        #             L_sqrt = np.sqrt(L(lam))
+        #         except RuntimeWarning:
+        #             beta = np.random.rand(1)
+        #             lam = np.random.rand(1)
+        #
+        #         J[0, 0] = -self.radii[0]*self.E_y2/(2*self.E_x)*np.sin(2*beta)/B_sqrt*np.cos(lam)   # dx/dbeta
+        #         J[1, 0] = -self.radii[1]*np.sin(beta)*np.sin(lam)                                   # dy/dbeta
+        #         J[2, 0] = self.radii[2]/self.E_x*np.cos(beta)*L_sqrt                                # dz/dbeta
+        #         J[0, 1] = -self.radii[0]/self.E_x*B_sqrt*np.sin(lam)                                # dx/dlam
+        #         J[1, 1] = self.radii[1]*np.cos(beta)*np.cos(lam)                                    # dy/dlam
+        #         J[2, 1] = self.radii[2]*self.E_e2/(2*self.E_x)*np.sin(beta)*np.sin(2*lam)/L_sqrt    # dz/dlam
+        #
+        #         N = J.T @ J
+        #         N_inv = np.linalg.inv(N)
+        #         # N_inv = 1/(N[0, 0]*N[1, 1]-N[0, 1]*N[1, 0]) * np.array([[N[1, 1], -N[0, 1]], [-N[1, 0],  N[0, 0]]])
+        #         coords_current = self.jacobi2cartesian(coords=np.array([[beta, lam]]), norm=True)
+        #         dI = point - coords_current
+        #
+        #         dbeta_dlam = N_inv @ J.T @ dI.T  # np.linalg.inv(N)
+        #
+        #         beta += dbeta_dlam[0]
+        #         lam += dbeta_dlam[1]
+        #
+        #         eps = np.linalg.norm(dbeta_dlam)
+        #
+        #         print(coords, coords_current, eps) #coords_current, coords,
+        #
+        #     coords_jacobi[i_point, :] = np.hstack((beta, lam))

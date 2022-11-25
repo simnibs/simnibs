@@ -240,21 +240,26 @@ class TESoptimize():
 
             theta = np.linspace(0, np.pi, 180)
             phi = np.linspace(0, 2*np.pi, 360)
-            theta = np.linspace(0, np.pi, 10)
-            phi = np.linspace(0, 2 * np.pi, 20)
+
+            beta = np.linspace(-np.pi/2, np.pi/2, 180)
+            lam = np.linspace(0, 2 * np.pi, 360)
+
             coords_sphere = np.array(np.meshgrid(theta, phi)).T.reshape(-1, 2)
-            # coords_sphere = np.hstack([theta[:, np.newaxis], phi[:, np.newaxis]])
+            coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
             eli_coords = self.ellipsoid.ellipsoid2cartesian(coords=coords_sphere, return_normal=False)
-            eli_coords_rot = (self.ellipsoid.rotmat.T @ (eli_coords - self.ellipsoid.center).T).T
+            eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
+            # eli_coords_rot = (self.ellipsoid.rotmat.T @ (eli_coords - self.ellipsoid.center).T).T
             # coords_sphere_test = self.ellipsoid.cartesian2ellipsoid(coords=eli_coords)
             # np.isclose(coords_sphere, coords_sphere_test)
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
+            # fig = plt.figure()
+            # ax = fig.add_subplot(projection='3d')
             # ax.scatter(eli_coords[:, 0], eli_coords[:, 1], eli_coords[:, 2])
-            ax.scatter(eli_coords_rot[:, 0], eli_coords_rot[:, 1], eli_coords_rot[:, 2])
+            # ax.scatter(eli_coords_rot[:, 0], eli_coords_rot[:, 1], eli_coords_rot[:, 2])
 
             np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords)
-            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_rot.txt"), eli_coords_rot)
+            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_jacobian.txt"), eli_coords_jac)
+            # np.savetxt(os.path.join("/data/pt_01756/studies/ttf/fitted_ellipsoid.txt"), eli_coords)
+            # np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_rot.txt"), eli_coords_rot)
 
             import pynibs
             # write hdf5 _geo files for visualization in paraview
@@ -282,7 +287,6 @@ class TESoptimize():
         #     solver_options=solver_options,
         #     input_type='node'
         # )
-
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -331,10 +335,10 @@ class TESoptimize():
         skin_surface.mask_valid_tr = skin_surface.mask_valid_tr.all(axis=1)
 
         # determine connectivity list of valid skin region (creates new node and connectivity list)
-        skin_surface.nodes, skin_surface.tr_nodes = \
-            self.create_new_connectivity_list_point_mask(points=skin_surface.nodes,
-                                                         con=skin_surface.tr_nodes,
-                                                         point_mask=skin_surface.mask_valid_nodes)
+        skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
+            points=skin_surface.nodes,
+            con=skin_surface.tr_nodes,
+            point_mask=skin_surface.mask_valid_nodes)
 
         # identify spurious skin patches inside head and remove them
         tri_domain = np.ones(skin_surface.tr_nodes.shape[0]).astype(int) * -1
@@ -360,10 +364,10 @@ class TESoptimize():
 
         domain_idx_main = np.argmax([np.sum(point_domain == d) for d in range(domain)])
 
-        skin_surface.nodes, skin_surface.tr_nodes = \
-            self.create_new_connectivity_list_point_mask(points=skin_surface.nodes,
-                                                         con=skin_surface.tr_nodes,
-                                                         point_mask=point_domain == domain_idx_main)
+        skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
+            points=skin_surface.nodes,
+            con=skin_surface.tr_nodes,
+            point_mask=point_domain == domain_idx_main)
 
         skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
         skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
@@ -375,39 +379,7 @@ class TESoptimize():
 
         return skin_surface
 
-    def create_new_connectivity_list_point_mask(self, points, con, point_mask):
-        """
-        Creates a new point and connectivity list when applying a point mask (changes indices of points)
-
-        Parameters
-        ----------
-        points : np.ndarray of float [n_points x 3]
-            Point coordinates
-        con : np.ndarray of float [n_tri x 3]
-            Connectivity of triangles
-        point_mask : nparray of bool [n_points]
-            Mask of (True/False) which points are kept in the mesh
-
-        Returns
-        -------
-        points_new : np.ndarray of float [n_points_new x 3]
-            New point array containing the remaining points after applying the mask
-        con_new : np.ndarray of float [n_tri_new x 3]
-            New connectivity list containing the remaining points (includes reindexing)
-        """
-        con_global = con[point_mask[con].all(axis=1), :]
-        unique_points = np.unique(con_global)
-        points_new = points[unique_points, :]
-
-        con_new = np.zeros(con_global.shape).astype(int)
-
-        for i, idx in enumerate(unique_points):
-            idx_where = np.where(con_global == idx)
-            con_new[idx_where[0], idx_where[1]] = i
-
-        return points_new, con_new
-
-    def get_nodes_electrode(self, electrode_pos):
+    def get_nodes_electrode(self, electrode_pos, plot=False):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
         electrode_array.electrodes[i].points and electrode_array.electrodes[i].points_area
@@ -418,6 +390,8 @@ class TESoptimize():
             Spherical coordinates (theta, phi) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([theta_1, phi_1, alpha_1]),   np.array([theta_2, phi_2, alpha_2]) ]
+        plot : bool, optional, default: False
+            Generate output files for plotting (debugging)
 
         Returns
         -------
@@ -433,11 +407,17 @@ class TESoptimize():
         for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
             start[i_array, :] = self.ellipsoid.ellipsoid2cartesian(coords=electrode_pos[i_array][:2])
             distance.append(_electrode_array.distance)
-            # TODO: correct this angle to constant lambda (jac)
-            alpha.append(_electrode_array.angle + electrode_pos[i_array][2])
+            alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) + _electrode_array.angle)
+            # alpha.append(_electrode_array.angle)
 
         distance = np.array(distance).flatten()
         alpha = np.array(alpha).flatten()
+
+        for i_a, a in enumerate(alpha):
+            if a > np.pi:
+                alpha[i_a] = a - 2 * np.pi
+            elif a < -np.pi:
+                alpha[i_a] = a + 2 * np.pi
 
         # transform to ellipsoid (jacobi) coordinates
         start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
@@ -446,15 +426,37 @@ class TESoptimize():
         # determine electrode center on ellipsoid
         electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
                                                                             distance=distance,
-                                                                            alpha=alpha)
+                                                                            alpha=alpha,
+                                                                            n_steps=400)
+
+        # determine additional destination points for rectangular electrodes
+        electrode_coords_eli_cart_rect = np.zeros(electrode_coords_eli_cart.shape)
+        i_ele = 0
+        ele_idx_rect = []
+        alpha_rect = []
+        distance_rect = []
+
+        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
+            for _electrode in _electrode_array.electrodes:
+                if _electrode.type == "rectangular":
+                    ele_idx_rect.append(i_ele)
+                    alpha_rect.append(alpha[i_ele])
+                    distance_rect.append(distance[i_ele])
+
+        if len(ele_idx_rect) > 0:
+            start_rect = np.tile(start_shifted, (len(ele_idx_rect), 1))
+            electrode_coords_eli_cart_rect[ele_idx_rect, :] = self.ellipsoid.get_geodesic_destination(start=start_rect,
+                                                                                                      distance=distance_rect,
+                                                                                                      alpha=alpha_rect,
+                                                                                                      n_steps=400)
 
         # transform to ellipsoidal coordinates
         electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
 
         # project coordinates to subject
-        _, electrode_coords_subject = ellipsoid2subject(coords=electrode_coords_eli_eli,
-                                                        ellipsoid=self.ellipsoid,
-                                                        surface=self.skin_surface)
+        ele_idx, electrode_coords_subject = ellipsoid2subject(coords=electrode_coords_eli_eli,
+                                                              ellipsoid=self.ellipsoid,
+                                                              surface=self.skin_surface)
 
         # loop over electrodes and determine node indices
         i_ele = 0
@@ -463,11 +465,22 @@ class TESoptimize():
             for _electrode in _electrode_array.electrodes:
                 if _electrode.type == "spherical":
                     # mask with a sphere
-                    mask = np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < _electrode.radius
+                    radius_list = np.linspace(0.90, 1.1, 5) * _electrode.radius
+                    mask_list = []
+                    area_list = np.zeros(len(radius_list))
+
+                    for i_r, r in enumerate(radius_list):
+                        mask_list.append(np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < r)
+                        area_list = np.sum(self.skin_surface.nodes_areas[mask_list[-1]])
+
+                    mask = mask_list[np.argmin(np.abs(area_list - _electrode.area))]
 
                 elif _electrode.type == "rectangular":
                     # TODO: set rotation matrix
-                    # rotate skin nodes to electrode
+                    p = electrode_coords_eli_cart_rect[i_ele] - electrode_coords_eli_cart[i_ele]
+                    _, n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
+
+                    # rotate skin nodes to normalized electrode space
                     rotmat = np.array([[0, 0, 0, electrode_coords_subject[i_ele, 0]],
                                        [0, 0, 0, electrode_coords_subject[i_ele, 1]],
                                        [0, 0, 0, electrode_coords_subject[i_ele, 2]],
@@ -491,25 +504,14 @@ class TESoptimize():
                 node_idx[i_array].append(_electrode.node_idx)
                 i_ele += 1
 
+        if plot:
+            np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
+            np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject)
+            node_idx_all = np.hstack([np.hstack(node_idx[i]) for i in range(len(node_idx))])
+            points_nodes = self.skin_surface.nodes[node_idx_all, :]
+            np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), points_nodes)
+
         return node_idx
-
-        # np.savetxt("/home/kporzig/tmp/plots/electrode_coords_eli_cart.txt", electrode_coords_eli_cart)
-        #
-        # import pynibs
-        # # write hdf5 _geo files for visualization in paraview
-        # pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
-        #                            points=self.skin_surface.nodes,
-        #                            con=self.skin_surface.tr_nodes,
-        #                            replace=True,
-        #                            hdf5_path='/mesh')
-        #
-        # pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
-        #                             data_names=["domain"],
-        #                             data_hdf_fn_out=os.path.join(self.output_folder, "plots",
-        #                                                          "upper_head_region_data.hdf5"),
-        #                             geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
-        #                             replace=True)
-
 
     def gauge_mesh(self):
         """
@@ -555,7 +557,7 @@ class TESoptimize():
         """
         # assign surface nodes to electrode positions
         start = time.time()
-        node_idx = self.get_nodes_electrode(electrode_pos=electrode_pos)
+        node_idx = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=True)
         stop = time.time()
         print(f"get_nodes_electrode: {stop-start}")
         # # set RHS (in fem.py, check for speed)
@@ -572,9 +574,6 @@ class TESoptimize():
         #
         # return e
 
-
-
-
         # determine QOIs in ROIs
 
         # if normalize:
@@ -587,8 +586,6 @@ class TESoptimize():
         #
         #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
         #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
-
-
 
     def solve(self, node_idx, I, v_norm, I_norm):
         """
@@ -643,7 +640,6 @@ class TESoptimize():
         # calculate QOI
 
 
-
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     ''' relabels skin in internal air cavities to something else;
         relevant for charm meshes
@@ -664,6 +660,73 @@ def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_inte
     m.elm.tag2[:] = m.elm.tag1
 
     return m
+
+
+def get_array_direction(electrode_pos, ellipsoid):
+    """
+    Determine electrode array direction given in ellipsoidal coordinates [theta, phi, alpha] and return direction
+    angle alpha in Jacobian coordinates.
+
+    Parameters
+    ----------
+    electrode_pos : np.ndarray of float [3]
+        Spherical coordinates (theta, phi) and orientation angle (alpha) for electrode array (in this order)
+    ellipsoid : Ellipsoid class instance
+        Ellipsoid
+
+    Returns
+    -------
+    alpha_jac : float
+        Angle of array with respect to constant lambda (Jacobian coordinates)
+    """
+    # create cartesian vector in direction of electrode array in ellipsoidal coordinates (c1 -> c4)
+    c1 = ellipsoid.ellipsoid2cartesian(coords=electrode_pos[:2])
+    c2 = ellipsoid.ellipsoid2cartesian(coords=np.array([electrode_pos[0] - 1e-3, electrode_pos[1]]))
+    c3 = ellipsoid.ellipsoid2cartesian(coords=np.array([electrode_pos[0], electrode_pos[1] - 1e-3]))
+    c4 = c1 + (1e-3 * ((c3 - c1) * np.sin(electrode_pos[2]) + (c2 - c1) * np.cos(electrode_pos[2])))
+
+    # create vector in direction of constant lambda
+    l1 = ellipsoid.cartesian2jacobi(coords=c1)
+    l2 = ellipsoid.jacobi2cartesian(coords=np.array([l1[0, 0] + 1e-3, l1[0, 1]]))
+
+    l2c1 = ((l2 - c1) / np.linalg.norm(l2 - c1)).flatten()
+    c4c1 = ((c4 - c1) / np.linalg.norm(c4 - c1)).flatten()
+    angle_jac = np.arccos(np.dot((c4c1), (l2c1)))
+
+    return angle_jac
+
+
+def create_new_connectivity_list_point_mask(points, con, point_mask):
+    """
+    Creates a new point and connectivity list when applying a point mask (changes indices of points)
+
+    Parameters
+    ----------
+    points : np.ndarray of float [n_points x 3]
+        Point coordinates
+    con : np.ndarray of float [n_tri x 3]
+        Connectivity of triangles
+    point_mask : nparray of bool [n_points]
+        Mask of (True/False) which points are kept in the mesh
+
+    Returns
+    -------
+    points_new : np.ndarray of float [n_points_new x 3]
+        New point array containing the remaining points after applying the mask
+    con_new : np.ndarray of float [n_tri_new x 3]
+        New connectivity list containing the remaining points (includes reindexing)
+    """
+    con_global = con[point_mask[con].all(axis=1), :]
+    unique_points = np.unique(con_global)
+    points_new = points[unique_points, :]
+
+    con_new = np.zeros(con_global.shape).astype(int)
+
+    for i, idx in enumerate(unique_points):
+        idx_where = np.where(con_global == idx)
+        con_new[idx_where[0], idx_where[1]] = i
+
+    return points_new, con_new
 
 # def get_element_intersect_line_surface(p, w, points, con, triangle_center=None, triangle_normals=None):
 #     """
@@ -781,3 +844,18 @@ def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_inte
 #                                     data_hdf_fn_out="/home/kporzig/tmp/test_data_skin_surface_valid_project.hdf5",
 #                                     geo_hdf_fn="/home/kporzig/tmp/test_geo_skin_surface_valid_project.hdf5",
 #                                     replace=True)
+
+
+# import pynibs
+# # write hdf5 _geo files for visualization in paraview
+# pynibs.write_geo_hdf5_surf(out_fn="/data/pt_01756/studies/ttf/upper_head_region_geo.hdf5",
+#                            points=self.skin_surface.nodes,
+#                            con=self.skin_surface.tr_nodes,
+#                            replace=True,
+#                            hdf5_path='/mesh')
+#
+# pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
+#                             data_names=["domain"],
+#                             data_hdf_fn_out="/data/pt_01756/studies/ttf/upper_head_region_data.hdf5",
+#                             geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
+#                             replace=True)

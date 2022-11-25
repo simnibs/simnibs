@@ -85,7 +85,6 @@ class Electrode():
                                      [0, 0, 0, 1]])
         self.posmat = copy.deepcopy(self.posmat_norm)
 
-
         if self.voltage is not None and self.current is not None:
             raise AssertionError("Define either voltage or current to electrode.")
 
@@ -112,6 +111,7 @@ class Electrode():
         """
         self.transmat = transmat
         self.posmat = self.posmat_norm @ transmat
+
 
 class ElectrodeArray():
     """ Array of physically connected electrodes. Can only be moved together. Contains multiple Electrode instances.
@@ -195,21 +195,35 @@ class ElectrodeArray():
             if self.distance[i_ele] == 0:
                 self.angle[i_ele] = 0
             else:
-                if center[i_ele, 0] > 0 and center[i_ele, 1] > 0:
+                if (center[i_ele, 0] > 0 and center[i_ele, 1] > 0) or (center[i_ele, 0] < 0 and center[i_ele, 1] > 0):
                     self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele])
-                elif center[i_ele, 0] < 0 and center[i_ele, 1] > 0:
-                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele])
+
                 elif center[i_ele, 0] < 0 and center[i_ele, 1] < 0:
-                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele]) - np.pi/2
+                    self.angle[i_ele] = - np.pi - np.arcsin(center[i_ele, 0] / self.distance[i_ele])
+
                 elif center[i_ele, 0] > 0 and center[i_ele, 1] < 0:
-                    self.angle[i_ele] = np.arcsin(center[i_ele, 0] / self.distance[i_ele]) + np.pi/2
+                    self.angle[i_ele] = np.pi - np.arcsin(center[i_ele, 0] / self.distance[i_ele])
+
+                elif center[i_ele, 0] == 0 and center[i_ele, 1] > 0:
+                    self.angle[i_ele] = 0
+
+                elif center[i_ele, 0] == 0 and center[i_ele, 1] < 0:
+                    self.angle[i_ele] = -np.pi
+
+                elif center[i_ele, 0] > 0 and center[i_ele, 1] == 0:
+                    self.angle[i_ele] = np.pi/2
+
+                elif center[i_ele, 0] < 0 and center[i_ele, 1] == 0:
+                    self.angle[i_ele] = -np.pi/2
+
+                elif center[i_ele, 0] == 0 and center[i_ele, 1] == 0:
+                    self.angle[i_ele] = 0
 
             self.electrodes.append(Electrode(channel_id=channel_id[i_ele],
                                              center=center[i_ele, :],
                                              radius=radius[i_ele],
                                              length_x=length_x[i_ele],
                                              length_y=length_y[i_ele]))
-
 
     def transform(self, transmat):
         """
@@ -225,7 +239,7 @@ class ElectrodeArray():
         for i in range(self.n_ele):
             self.electrodes[i].transform(transmat=transmat)
 
-    def plot(self, show=True, fn_plot=None):
+    def plot(self, fn_plot=None, show=True):
         """
         Plot electrode array
 
@@ -367,6 +381,7 @@ class ElectrodeArrayPair():
                                                 length_y=self.length_y,
                                                 channel_id=[i for _ in range(self.n_ele)]) for i in range(2)]
 
+
 class CircularArray():
     """
     Generates a circular electrode array with one center electrode and n_outer equally spaced electrodes.
@@ -414,6 +429,12 @@ class CircularArray():
             self.center = np.vstack((self.center, np.array([[0., 0., 0.]])))
             self.center[-1, 0] = np.cos(i*(2*np.pi)/n_outer+np.pi/2) * distance
             self.center[-1, 1] = np.sin(i*(2*np.pi)/n_outer+np.pi/2) * distance
+
+            if np.isclose(self.center[-1, 0], 0):
+                self.center[-1, 0] = 0.
+
+            if np.isclose(self.center[-1, 1], 0):
+                self.center[-1, 1] = 0.
 
         self.electrode_arrays = [ElectrodeArray(channel_id=[0] + [1] * n_outer,
                                                 center=self.center,
