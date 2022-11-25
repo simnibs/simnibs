@@ -59,18 +59,8 @@ jobs:
     displayName: Download Installer
 
   - script: |
-      echo I am here
-      echo $(System.ArtifactsDirectory)
-      echo | dir $(System.ArtifactsDirectory)
-      echo | dir $(System.ArtifactsDirectory)\windows
-      start $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      rem $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      echo %cd%
-      echo I am here 2
-      echo | dir
-      echo | dir simnibs_install
+      start /wait $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\ --junit-xml=test-results.xml
-      echo I am here 3
     displayName: Install SimNIBS and run unit tests
 
   - task: PublishTestResults@2
