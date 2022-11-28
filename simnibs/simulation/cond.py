@@ -134,6 +134,7 @@ def standard_cond():
 
     return S
 
+
 def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
                  aniso_tissues=[1, 2], correct_FSL=True, normalize=False,
                  excentricity_scaling=None, max_ratio=10, max_cond=2, correct_intensity=True):

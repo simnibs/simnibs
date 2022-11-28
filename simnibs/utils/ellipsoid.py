@@ -142,6 +142,9 @@ class Ellipsoid():
         normal : np.ndarray of float [n_points x 3]
             Surface normal of given points (pointing outwards)
         """
+        if coords.ndim == 1:
+            coords = coords[np.newaxis, :]
+
         # rotate to normalized space if not already provided in normalized space
         if not norm:
             coords = self.rot_org2norm(coords=coords)

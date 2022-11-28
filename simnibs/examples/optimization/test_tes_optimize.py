@@ -29,6 +29,21 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 # create a circular array with 1 center electrode and 6 outer electrodes
 # electrode = simnibs.CircularArray(radius_inner=7.5, distance=15, n_outer=6, radius_outer=5)
 # create 3 x 3 circular electrode array pair
+# center = np.array([[-30, 20, 0],
+#                    [0, 20, 0],
+#                    [30, 20, 0],
+#                    [-30, 0, 0],
+#                    [0, 0, 0],
+#                    [30, 0, 0],
+#                    [-30, -20, 0],
+#                    [0, -20, 0],
+#                    [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+
+# create 3 x 3 circular electrode array pair
 center = np.array([[-30, 20, 0],
                    [0, 20, 0],
                    [30, 20, 0],
@@ -38,9 +53,9 @@ center = np.array([[-30, 20, 0],
                    [-30, -20, 0],
                    [0, -20, 0],
                    [30, -20, 0]])
-radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+radius = np.array([0, 0, 0, 7, 7, 7, 0, 0, 0])
+length_x = np.array([20, 20, 20, 0, 0, 0, 20, 20, 20])
+length_y = np.array([20, 20, 20, 0, 0, 0, 20, 20, 20])
 electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
 # electrode.electrode_arrays[0].plot(fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 

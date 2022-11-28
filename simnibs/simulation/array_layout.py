@@ -88,11 +88,11 @@ class Electrode():
         if self.voltage is not None and self.current is not None:
             raise AssertionError("Define either voltage or current to electrode.")
 
-        if radius !=0 and (length_x != 0 or length_y != 0):
+        if radius != 0 and (length_x != 0 or length_y != 0):
             raise AssertionError("Define either radius for circular electrode or "
                                  "length_x and length_y for rectangular electrode")
 
-        if self.radius is not None or radius != 0:
+        if self.radius is not None and radius != 0:
             self.area = np.pi*radius**2
             self.type = "spherical"
         else:
@@ -188,6 +188,13 @@ class ElectrodeArray():
                                      [0, 0, 0, 1]])
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
+
+        assert center.shape[0] == len(radius), "Elements in 'center' doe not match 'radius'!"
+        assert center.shape[0] == len(length_x), "Elements in 'center' doe not match 'length_x'!"
+        assert center.shape[0] == len(length_y), "Elements in 'center' doe not match 'length_y'!"
+        assert len(radius) == len(length_x), "Elements in 'radius' doe not match 'length_x'!"
+        assert len(radius) == len(length_y), "Elements in 'radius' doe not match 'length_y'!"
+        assert len(length_x) == len(length_y), "Elements in 'length_x' doe not match 'length_y'!"
 
         for i_ele in range(self.n_ele):
             self.distance[i_ele] = np.linalg.norm(center[i_ele, :] - self.array_center)

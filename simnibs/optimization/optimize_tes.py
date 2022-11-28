@@ -11,7 +11,8 @@ from numpy.linalg import eig
 from ..mesh_tools import Msh
 from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
-from ..simulation.sim_struct import ELECTRODE
+from ..simulation.sim_struct import ELECTRODE, SimuList
+from ..simulation.fem import FEMSystem
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
@@ -117,6 +118,7 @@ class TESoptimize():
                  roi=None,
                  init_pos=None,
                  fn_eeg_cap=None,
+                 solver_options=None,
                  plot=False,
                  max_total_current=2e-3,
                  max_individual_current=1e-3,
@@ -160,6 +162,11 @@ class TESoptimize():
         self.ellipsoid = Ellipsoid()
         init_pos_list = ["C3", "C4"]
 
+        if solver_options is None:
+            self.solver_options = "pardiso"
+        else:
+            self.solver_options = solver_options
+
         assert len(init_pos) == self.n_ele_free, "Number of initial positions has to match number of freely movable" \
                                                  "electrode arrays"
 
@@ -176,6 +183,9 @@ class TESoptimize():
             self.msh = msh
         else:
             raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
+
+        # Calculate node areas for whole mesh
+        self.msh_nodes_areas = self.msh.nodes_areas()
 
         self.ff_templates = Templates()
         self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
@@ -218,9 +228,14 @@ class TESoptimize():
         for i, coords in enumerate(self.init_pos_subject_coords):
             # get closest point idx on subject surface
             point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
-            self.electrode_pos[i][:2] = subject2ellipsoid(coords=self.skin_surface.nodes[point_idx, :],
-                                                          normals=self.skin_surface.nodes_normals[point_idx, :],
-                                                          ellipsoid=self.ellipsoid)
+            self.electrode_pos[i][:2] = self.ellipsoid.cartesian2jacobi(
+                coords=self.ellipsoid.ellipsoid2cartesian(
+                    coords=subject2ellipsoid(
+                        coords=self.skin_surface.nodes[point_idx, :],
+                        normals=self.skin_surface.nodes_normals[point_idx, :],
+                        ellipsoid=self.ellipsoid)))
+
+            self.electrode_pos[i][2] = 0.
 
         if target is None:
             self.target = []
@@ -230,6 +245,19 @@ class TESoptimize():
             self.avoid = []
         else:
             self.avoid = avoid
+
+        # TODO: solver_options: use PARDISO solver as standard
+        self.simulist = SimuList(mesh=self.msh)
+
+        # set conductivities
+        cond = self.simulist.cond2elmdata()
+
+        # prepare FEM
+        self.fem = FEMSystem.tdcs_neumann(mesh=self.msh,
+                                          cond=cond,
+                                          ground_electrode=self.msh.nodes.nr,
+                                          solver_options=self.solver_options,
+                                          input_type='node')
 
         self.run()
 
@@ -278,15 +306,9 @@ class TESoptimize():
         # gauge problem (find node in COG of head and move to end), modifies self.mesh
         self.gauge_mesh()
 
-        # get_surround_pos
 
-        # TODO: solver_options: use PARDISO solver as standard
-        # assemble FEM matrix
-        # self.fem=FEMSystem.tdcs_neumann(
-        #     self.mesh, elm_cond, self.mesh.node.nr,  # last element is 0 was shifted from center
-        #     solver_options=solver_options,
-        #     input_type='node'
-        # )
+
+
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -397,29 +419,52 @@ class TESoptimize():
         -------
         node_idx : list of np.ndarray of int [n_nodes] of length n_ele_free
             List containing np.ndarrays for each free electrode array with skin node indices
-
         """
+
         # collect all parameters
         start = np.zeros((self.n_ele_free, 3))
+        a = np.zeros((self.n_ele_free, 3))
+        b = np.zeros((self.n_ele_free, 3))
+        cx = np.zeros((self.n_ele_free, 3))
+        cy = np.zeros((self.n_ele_free, 3))
+        n = np.zeros((self.n_ele_free, 3))
+        start_shifted_ = np.zeros((self.n_ele_free, 3))
         distance = []
         alpha = []
 
         for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            start[i_array, :] = self.ellipsoid.ellipsoid2cartesian(coords=electrode_pos[i_array][:2])
+            start[i_array, :], n[i_array, :] = self.ellipsoid.jacobi2cartesian(
+                coords=electrode_pos[i_array][:2],
+                return_normal=True)
+
+            c0, n[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_array][:2], return_normal=True)
+            a[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_array][0] - 1e-2, electrode_pos[i_array][1]])) - c0
+            b[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_array][0], electrode_pos[i_array][1] - 1e-2])) - c0
+            a[i_array, :] /= np.linalg.norm(a[i_array, :])
+            b[i_array, :] /= np.linalg.norm(b[i_array, :])
+
+            start_shifted_[i_array, :] = c0 + (1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_array][2]) +
+                                                       (b[i_array, :]) * np.sin(electrode_pos[i_array][2])))
+
+            cy[i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
+            cy[i_array, :] /= np.linalg.norm(cy[i_array, :])
+            cx[i_array, :] = np.cross(cy[i_array, :], -n[i_array, :])
+            cx[i_array, :] /= np.linalg.norm(cx[i_array, :])
+
             distance.append(_electrode_array.distance)
-            alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) + _electrode_array.angle)
-            # alpha.append(_electrode_array.angle)
+            alpha.append(electrode_pos[i_array][2] + _electrode_array.angle)
+            # alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) +
+            #              _electrode_array.angle)
 
         distance = np.array(distance).flatten()
         alpha = np.array(alpha).flatten()
 
-        for i_a, a in enumerate(alpha):
-            if a > np.pi:
-                alpha[i_a] = a - 2 * np.pi
-            elif a < -np.pi:
-                alpha[i_a] = a + 2 * np.pi
+        for i_a, _alpha in enumerate(alpha):
+            if _alpha > np.pi:
+                alpha[i_a] = _alpha - 2 * np.pi
+            elif _alpha < -np.pi:
+                alpha[i_a] = _alpha + 2 * np.pi
 
-        # transform to ellipsoid (jacobi) coordinates
         start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
                            for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays)])
 
@@ -429,26 +474,7 @@ class TESoptimize():
                                                                             alpha=alpha,
                                                                             n_steps=400)
 
-        # determine additional destination points for rectangular electrodes
-        electrode_coords_eli_cart_rect = np.zeros(electrode_coords_eli_cart.shape)
-        i_ele = 0
-        ele_idx_rect = []
-        alpha_rect = []
-        distance_rect = []
-
-        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            for _electrode in _electrode_array.electrodes:
-                if _electrode.type == "rectangular":
-                    ele_idx_rect.append(i_ele)
-                    alpha_rect.append(alpha[i_ele])
-                    distance_rect.append(distance[i_ele])
-
-        if len(ele_idx_rect) > 0:
-            start_rect = np.tile(start_shifted, (len(ele_idx_rect), 1))
-            electrode_coords_eli_cart_rect[ele_idx_rect, :] = self.ellipsoid.get_geodesic_destination(start=start_rect,
-                                                                                                      distance=distance_rect,
-                                                                                                      alpha=alpha_rect,
-                                                                                                      n_steps=400)
+        n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
 
         # transform to ellipsoidal coordinates
         electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
@@ -458,9 +484,22 @@ class TESoptimize():
                                                               ellipsoid=self.ellipsoid,
                                                               surface=self.skin_surface)
 
+        i_ele = 0
+        ele_idx_rect = []
+        start_shifted = []
+
+        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
+            for _electrode in _electrode_array.electrodes:
+                if _electrode.type == "rectangular":
+                    ele_idx_rect.append(i_ele)
+                    start_shifted.append(start_shifted_[i_array])
+                i_ele += 1
+
         # loop over electrodes and determine node indices
         i_ele = 0
         node_idx = [[] for _ in range(self.n_ele_free)]
+        node_idx_dict = dict()
+
         for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
             for _electrode in _electrode_array.electrodes:
                 if _electrode.type == "spherical":
@@ -476,25 +515,24 @@ class TESoptimize():
                     mask = mask_list[np.argmin(np.abs(area_list - _electrode.area))]
 
                 elif _electrode.type == "rectangular":
-                    # TODO: set rotation matrix
-                    p = electrode_coords_eli_cart_rect[i_ele] - electrode_coords_eli_cart[i_ele]
-                    _, n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
+                    cx_local = np.cross(n[i_ele, :], cy[i_array, :])
 
                     # rotate skin nodes to normalized electrode space
-                    rotmat = np.array([[0, 0, 0, electrode_coords_subject[i_ele, 0]],
-                                       [0, 0, 0, electrode_coords_subject[i_ele, 1]],
-                                       [0, 0, 0, electrode_coords_subject[i_ele, 2]],
-                                       [0, 0, 0, 1]])
-                    skin_nodes_rotated = (np.hstack(self.skin_surface.nodes,
-                                                    np.ones(self.skin_surface.nodes.shape[0])[:, np.newaxis])
-                                          @ rotmat)[:, :3]
+                    rotmat = np.array([[cx_local[0], cy[i_array, 0], n[i_ele, 0]],
+                                       [cx_local[1], cy[i_array, 1], n[i_ele, 1]],
+                                       [cx_local[2], cy[i_array, 2], n[i_ele, 2]]])
+                    center = np.array([electrode_coords_subject[i_ele, 0],
+                                       electrode_coords_subject[i_ele, 1],
+                                       electrode_coords_subject[i_ele, 2]])
+                    skin_nodes_rotated = (self.skin_surface.nodes - center) @ rotmat
+
                     # mask with a box
                     mask_x = np.logical_and(skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
-                                            skin_nodes_rotated[:, 0] > +_electrode.length_x / 2)
+                                            skin_nodes_rotated[:, 0] < +_electrode.length_x / 2)
                     mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
-                                            skin_nodes_rotated[:, 1] > +_electrode.length_y / 2)
-                    mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -10,
-                                            skin_nodes_rotated[:, 2] > +10)
+                                            skin_nodes_rotated[:, 1] < +_electrode.length_y / 2)
+                    mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -20,
+                                            skin_nodes_rotated[:, 2] < +20)
                     mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
                 else:
                     raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
@@ -502,7 +540,15 @@ class TESoptimize():
                 _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
                 _electrode.node_idx = np.where(mask)[0]
                 node_idx[i_array].append(_electrode.node_idx)
+
+                if _electrode.channel_id in node_idx_dict.keys():
+                    node_idx_dict[_electrode.channel_id] = np.append(node_idx_dict[_electrode.channel_id], _electrode.node_idx)
+                else:
+                    node_idx_dict[_electrode.channel_id] = _electrode.node_idx
+
                 i_ele += 1
+
+        # TODO: transform node idx to global head mesh
 
         if plot:
             np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
@@ -511,7 +557,7 @@ class TESoptimize():
             points_nodes = self.skin_surface.nodes[node_idx_all, :]
             np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), points_nodes)
 
-        return node_idx
+        return node_idx_dict
 
     def gauge_mesh(self):
         """
@@ -519,17 +565,6 @@ class TESoptimize():
         :return:
         """
         pass
-
-    def update_electrode(self, location_parameters):
-        """
-        Updates
-        :return:
-        """
-        # this function is currently in sim_struct and rather slow
-        # self.array_layout.get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
-        #                  pos_dir_1stsurround=None, phis_surround=None,
-        #                  tissue_idx=1005, DEBUG=False)
-        self.array_layout_node_idx = 1
 
     def update_rhs(self):
         """
@@ -553,26 +588,29 @@ class TESoptimize():
         e : np.ndarray of float [n_roi_ele] or list of np.ndarray of float [n_roi] with n_roi_elements each
             Electric field in ROI(s). If multiple ROIs exist (in self.roi), a table is returned for each ROI
             containing the e-field values.
-
         """
         # assign surface nodes to electrode positions
         start = time.time()
-        node_idx = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=True)
+        node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=True)
         stop = time.time()
         print(f"get_nodes_electrode: {stop-start}")
-        # # set RHS (in fem.py, check for speed)
-        # b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
-        #
-        # # solve
-        # v = self.fem._solver.solve(b[:-1])  # v = self.fem.solve(b)
-        # v = np.append(v, 0)
-        #
-        # # Determine e in ROIs
-        # e = [0 for _ in len(self.roi)]
-        # for i_roi, r in enumerate(self.roi):
-        #     e[i_roi] = r.calc_fields(v)
-        #
-        # return e
+
+        # set RHS (in fem.py, check for speed)
+        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[n] for n in node_idx_dict],
+                                               currents=[c for c in self.electrode.currents], # TODO hier Ströme für jeden channel einfügen
+                                               input_type='node',
+                                               areas=self.msh_nodes_areas)
+
+        # solve
+        v = self.fem._solver.solve(b[:-1])
+        v = np.append(v, 0)
+
+        # Determine e in ROIs
+        e = [0 for _ in len(self.roi)]
+        for i_roi, r in enumerate(self.roi):
+             e[i_roi] = r.calc_fields(v)
+
+        return e
 
         # determine QOIs in ROIs
 
@@ -587,31 +625,31 @@ class TESoptimize():
         #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
         #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
 
-    def solve(self, node_idx, I, v_norm, I_norm):
-        """
-
-        :param node_idx:
-        :param I:
-        :param v_norm:
-        :param I_norm:
-        :return:
-        """
-        # set RHS (in fem.py, check for speed)
-        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
-        # solve
-        v = self.fem.solve(b)
-
-        v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
-
-        v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
-        for k in range(len(I)):
-            vn = (v_elec[k] - np.mean(v_elec[k])) / np.std(v_mean)
-            In = (I[k] - np.mean(I[k])) / np.mean(I[k])
-
-            v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
-            I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
-
-        return v, v_elec, v_norm, I_norm
+    # def solve(self, node_idx, I, v_norm, I_norm):
+    #     """
+    #
+    #     :param node_idx:
+    #     :param I:
+    #     :param v_norm:
+    #     :param I_norm:
+    #     :return:
+    #     """
+    #     # set RHS (in fem.py, check for speed)
+    #     b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
+    #     # solve
+    #     v = self.fem.solve(b)
+    #
+    #     v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
+    #
+    #     v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
+    #     for k in range(len(I)):
+    #         vn = (v_elec[k] - np.mean(v_elec[k])) / np.std(v_mean)
+    #         In = (I[k] - np.mean(I[k])) / np.mean(I[k])
+    #
+    #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
+    #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
+    #
+    #     return v, v_elec, v_norm, I_norm
 
     def run(self, cpus=1, allow_multiple_runs=False, save_mat=True, return_n_max=1):
         """

@@ -759,14 +759,17 @@ class FEMSystem(object):
 
         Parameters:
         ---------------
-        electrodes: list
+        electrodes: list of np.ndarray [n_electrodes]
             list of the surface tags or nodes where the currents to be applied.
             WARNING: should NOT include the ground electrode
-        currents: list
+        currents: list of np.ndarray [n_electrodes]
             list of the currents in each surface
             WARNING: should NOT include the ground electrode
         input_type: 'tag' or 'node' (optional)
             Input can be either the tag of the electrode surface (default) or a list of nodes
+        areas: np.ndarray of float [N_nodes]
+            All nodes in the mesh
+
         Returns:
         -------------
         b: np.ndarray

@@ -788,7 +788,7 @@ class SimuList(object):
 
         excentricity_scale: float (optional)
             Scales the excentricity of conductivity tensors. Used in gPC simulations. Default: do not scale
-            excentricities
+            eccentricities
 
         Returns
         --------
