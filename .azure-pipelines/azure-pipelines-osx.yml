@@ -131,10 +131,10 @@ jobs:
 
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
-#  dependsOn:
-#    - Test
-#    - Examples
-  dependsOn: Build
+  dependsOn:
+    - Test
+    - Examples
+#  dependsOn: Build
   
   pool:
     vmImage: 'macOS-latest'
