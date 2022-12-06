@@ -7,6 +7,16 @@ if sys.platform == 'win32':
         os.path.join(SIMNIBSDIR, 'external', 'lib', 'win'),
         os.environ['PATH']
     ])
+elif sys.platform == 'linux':
+    os.environ['PATH'] = os.pathsep.join([
+        os.path.join(SIMNIBSDIR, 'external', 'lib', 'linux'),
+        os.environ['PATH']
+    ])
+elif sys.platform == 'darwin':
+    os.environ['PATH'] = os.pathsep.join([
+        os.path.join(SIMNIBSDIR, 'external', 'lib', 'osx'),
+        os.environ['PATH']
+    ])
 from ._version import __version__
 from .mesh_tools import *
 from .utils import transformations

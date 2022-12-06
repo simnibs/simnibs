@@ -4,7 +4,7 @@ variables:
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
 
   steps:
   - bash: |
@@ -25,7 +25,7 @@ jobs:
       pip install pytest-cov
       conda list
       pip list
-      pytest simnibs/tests \
+      pytest simnibs \
         --junit-xml=test-results.xml \
         --cov=simnibs --cov-report=xml
     displayName: Run Unit Tests
@@ -45,7 +45,7 @@ jobs:
 
 - job: MacOS
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-latest'
 
   steps:
   - bash: |
@@ -64,7 +64,7 @@ jobs:
 
   - bash: |
       source activate simnibs_env
-      pytest simnibs/tests --junit-xml=test-results.xml
+      pytest simnibs --junit-xml=test-results.xml
     displayName: Run Unit Tests
 
 
@@ -76,7 +76,7 @@ jobs:
 
 - job: Windows
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-2019'
 
   steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
@@ -93,7 +93,7 @@ jobs:
 
   - script: |
       call activate simnibs_env
-      pytest simnibs\tests --junit-xml=test-results.xml
+      pytest simnibs --junit-xml=test-results.xml
     displayName: Run Unit Tests
 
   - task: PublishTestResults@2

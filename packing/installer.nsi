@@ -85,9 +85,9 @@ Section "!${PRODUCT_NAME}" sec_app
   ${EndIf}
   DetailPrint "Installing the SimNIBS package..."
   ${If} ${Silent}
-    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --setup-links --no-extra-coils'
+    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --setup-links'
   ${Else}
-    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --setup-links --no-extra-coils'
+    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --setup-links'
   ${EndIf}
   Pop $0
   ${IfNot} $0 == 0

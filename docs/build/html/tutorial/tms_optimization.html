@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>TMS Optimization &#8212; SimNIBS 4.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -14,7 +14,6 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -97,7 +96,7 @@ solver uses approximately three times more memory than the standard solver.</p>
 <span class="c1"># Select output folder</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization/&#39;</span>
 <span class="c1"># Select the coil model</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="c1"># Select a target for the optimization</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">]</span>
 <span class="c1"># Optional: Use the MKL PARDISO solver</span>
@@ -120,7 +119,7 @@ solver uses approximately three times more memory than the standard solver.</p>
 <span class="c">% Select output folder</span><span class="w"></span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization/&#39;</span><span class="p">;</span><span class="w"></span>
 <span class="c">% Select the coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% Select a target for the optimization</span><span class="w"></span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span><span class="w"> </span><span class="mf">7.5</span><span class="p">,</span><span class="w"> </span><span class="mf">65.6</span><span class="p">];</span><span class="w"></span>
 <span class="c">% Optional: Use the MKL PARDISO solver</span><span class="w"></span>
@@ -154,7 +153,7 @@ refine the search by precisely specifying the search region, search angles and r
 <span class="c1"># Select output folder</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization_refined/&#39;</span>
 <span class="c1"># Select the coil model</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="c1"># Select a target for the optimization</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">,</span> <span class="mf">65.6</span><span class="p">]</span>
 <span class="c1"># Optional: Use the MKL PARDISO solver</span>
@@ -192,7 +191,7 @@ refine the search by precisely specifying the search region, search angles and r
 <span class="c">% Select output folder</span><span class="w"></span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization_refined/&#39;</span><span class="p">;</span><span class="w"></span>
 <span class="c">% Select the coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% Select a target for the optimization</span><span class="w"></span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">39.7</span><span class="p">,</span><span class="w"> </span><span class="mf">7.5</span><span class="p">,</span><span class="w"> </span><span class="mf">65.6</span><span class="p">];</span><span class="w"></span>
 <span class="c">% Optional: Use the MKL PARDISO solver</span><span class="w"></span>
@@ -239,7 +238,7 @@ refine the search by precisely specifying the search region, search angles and r
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tms_optimization_adm&#39;</span>
 <span class="c1"># Select the coil model</span>
 <span class="c1"># The ADM method requires a &#39;.ccd&#39; coil model</span>
-<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
+<span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="c1"># Select a target for the optimization</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span> <span class="o">-</span><span class="mi">21</span><span class="p">,</span> <span class="mi">58</span><span class="p">],</span> <span class="s1">&#39;m2m_ernie&#39;</span><span class="p">)</span>
 <span class="c1"># Use the ADM method</span>
@@ -258,7 +257,7 @@ refine the search by precisely specifying the search region, search angles and r
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization_adm&#39;</span><span class="p">;</span><span class="w"></span>
 <span class="c">% Select the coil model</span><span class="w"></span>
 <span class="c">% The ADM method requires a &#39;.ccd&#39; coil model</span><span class="w"></span>
-<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">tms_opt</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% Select a target for the optimization</span><span class="w"></span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">mni2subject_coords</span><span class="p">([</span><span class="o">-</span><span class="mi">37</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="w"> </span><span class="mi">58</span><span class="p">],</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% Use the ADM method</span><span class="w"></span>
@@ -383,7 +382,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

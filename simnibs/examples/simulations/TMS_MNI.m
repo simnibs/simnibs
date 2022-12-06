@@ -6,7 +6,7 @@ S.pathfem = 'tms_hand';  % Directory for the simulation
 
 % Define the TMS simulation
 S.poslist{1} = sim_struct('TMSLIST');
-S.poslist{1}.fnamecoil = fullfile('legacy','Magstim_70mm_Fig8.ccd');  % Choose a coil from the resources/coil_models folder
+S.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');  % Choose a coil from the resources/coil_models folder
 
 % Define the coil position
 % Place coil over the hand knob

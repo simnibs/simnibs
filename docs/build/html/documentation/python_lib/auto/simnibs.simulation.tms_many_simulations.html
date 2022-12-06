@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.simulation.tms_many_simulations &#8212; SimNIBS 4.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -14,7 +14,6 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -72,7 +71,7 @@ If set to None, will save the electric field in all tissues.
 Default: None</p></li>
 <li><p><strong>field</strong> (<em>str</em>) – Which field/s to save, any combination of E, D, J, v. E.g. ‘EDJ’. Default: ‘E’.
 Note: When post-processing is used the field can only be either ‘E’ or ‘J’</p></li>
-<li><p><strong>post_pro</strong> (<em>list</em><em> of </em><em>callables</em><em> (</em><em>optional</em><em>)</em>) – List of callables f_post = post_pro(f), where f is the requested field (or multiple field as a tuple of
+<li><p><strong>post_pro</strong> (<em>list of callables</em><em> (</em><em>optional</em><em>)</em>) – List of callables f_post = post_pro(f), where f is the requested field (or multiple field as a tuple of
 the ordering E,D,J,v) in the ROI and f_post is an Nx3 ndarray. The postprocessing result will be saved
 instead of the field/s.</p></li>
 <li><p><strong>solver_options</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – Options to be used by the solver. Default: Hypre solver</p></li>
@@ -186,7 +185,7 @@ instead of the field/s.</p></li>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

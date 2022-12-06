@@ -49,7 +49,7 @@ electrode2.thickness = 4  # 4 mm thickness
 
 # add a TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = os.path.join('legacy','Magstim_70mm_Fig8.ccd')  # Choose a coil model
+tms.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')  # Choose a coil model
 
 tms.cond[16].value = 2 # [S/m]
 tms.cond[16].name = 'custom_tissue'
