@@ -1149,7 +1149,10 @@ class TMSLIST(SimuList):
         cond = self.cond2elmdata()
         matsimnibs_list = [p.calc_matsimnibs(self.mesh) for p in self.pos]
         didt_list = [p.didt for p in self.pos]
-        fn_stl = self.fnamecoil.split('.')[0]+'.stl'
+        dirname = os.path.dirname(self.fnamecoil)
+        fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
+        fname = fname.split('.nii')[0]+'.stl'
+        fn_stl = os.path.join(dirname,fname)
         if not os.path.isfile(fn_stl):
             fn_stl = None
 

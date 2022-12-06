@@ -3,7 +3,6 @@
 ![SimNIBS Fronpage](docs/_static/gallery/simnibs_workflow.png)
 The main goal of SimNIBS is to calculate electric fields caused by Transcranial Electrical Stimulation (TES) and Transcranial Magnetic Stimulation (TMS).
  
-  
 The pipeline is divided in three parts:
 1. Automatic segmentation of MRI images and meshing to create individualized head models
 2. Calculation of electric fields through the Finite Element Method (FEM)
@@ -27,7 +26,6 @@ Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of
 We have included code or binaries from the following project to this repository:
 * [Gmsh](www.gmsh.info)
 * [meshfix](https://github.com/MarcoAttene/MeshFix-V2.1)
-* [SPM12](https://www.fil.ion.ucl.ac.uk/spm/software/spm12/)
 * [CAT12](http://www.neuro.uni-jena.de/cat/)
 * [PETSc](https://www.mcs.anl.gov/petsc/)
 * [HYPRE](https://github.com/hypre-space/hypre)
@@ -36,5 +34,6 @@ We have included code or binaries from the following project to this repository:
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
 * [PyPardiso](https://github.com/haasad/PyPardisoProject)
+
 
 For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file

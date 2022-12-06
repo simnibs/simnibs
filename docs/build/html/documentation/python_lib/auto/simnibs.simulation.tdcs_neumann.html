@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>simnibs.simulation.tdcs_neumann &#8212; SimNIBS 4.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
@@ -14,7 +14,6 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -58,8 +57,6 @@
 <span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tdcs_neumann</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">currents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">electrode_surface_tags</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs_neumann" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulates a tDCS electric potential using Neumann boundary conditions on the
 electrodes</p>
-<section id="parameters">
-<h2>Parameters:<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h2>
 <dl class="simple">
 <dt>mesh: simnibs.msh.mesh_io.Msh</dt><dd><p>Mesh file with geometry information</p>
 </dd>
@@ -70,14 +67,10 @@ electrodes</p>
 <dt>electrode_surface_tags: list</dt><dd><p>A list of the indices of the surfaces where the dirichlet BC is to be applied</p>
 </dd>
 </dl>
-</section>
-<section id="returns">
-<h2>Returns:<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h2>
 <dl class="simple">
 <dt>potential: simnibs.msh.mesh_io.NodeData</dt><dd><p>Total electric potential</p>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 </section>
@@ -184,7 +177,7 @@ electrodes</p>
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

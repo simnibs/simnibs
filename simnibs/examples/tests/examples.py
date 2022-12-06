@@ -188,9 +188,8 @@ class TestPythonErnie:
     def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         shutil.copy(
-            os.path.join(
-                os.path.dirname(simnibs.SIMNIBSDIR), 'docs',
-                'data', 'ID03_MOTOR_ICA.nii.gz'),
+            os.path.join(simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
@@ -285,9 +284,8 @@ class TestMatlabErnie:
     def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         shutil.copy(
-            os.path.join(
-                os.path.dirname(simnibs.SIMNIBSDIR), 'docs',
-                'data', 'ID03_MOTOR_ICA.nii.gz'),
+            os.path.join(simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')

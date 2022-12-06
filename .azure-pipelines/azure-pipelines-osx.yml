@@ -7,7 +7,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-latest'
     maxParallel: 4
 
   steps:
@@ -48,6 +48,9 @@ jobs:
       ALTOOL_PASSWORD: $(altool_password)
       ALTOOL_USER: $(altool_user)
     displayName: Notarize App
+#  - bash: |
+#      xcrun stapler staple "$(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg"
+#    displayName: Staple notarization ticket
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
@@ -58,10 +61,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-10.15:
-        vmImage: 'macOS-10.15'
       MacOSX-11:
         vmImage: 'macOS-11'
+      MacOSX-12:
+        vmImage: 'macOS-12'
 
   pool:
     vmImage: $(vmImage)
@@ -94,7 +97,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'macOS-10.15'
+    vmImage: 'macOS-latest'
     maxParallel: 4
 
   steps:
@@ -117,7 +120,7 @@ jobs:
   - bash: |
       installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
       cat ~/Applications/SimNIBS*/install.log
-      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/tests/examples/examples.py -v -s --junit-xml=test-results.xml
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/examples/tests/examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
  
   - task: PublishTestResults@2
@@ -131,7 +134,8 @@ jobs:
   dependsOn:
     - Test
     - Examples
-
+#  dependsOn: Build
+  
   pool:
     vmImage: 'macOS-latest'
 

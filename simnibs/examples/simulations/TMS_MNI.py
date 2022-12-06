@@ -10,7 +10,7 @@ S.pathfem = 'tms_hand'  # Directory for the simulation
 
 ## Define the TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = os.path.join('legacy','Magstim_70mm_Fig8.ccd')  # Choose a coil from the resources/coil_models folder
+tms.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')  # Choose a coil from the resources/coil_models folder
 
 # Define the coil position
 pos = tms.add_position()

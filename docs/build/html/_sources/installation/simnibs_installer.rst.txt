@@ -51,6 +51,7 @@ Testing the Installation
 '''''''''''''''''''''''''
 Start a new terminal window and type :code:`simnibs_gui`
 
+.. note:: The SimNIBS GUI fails on some linux distributions, in particular those with Wayland. Workaround: ld preloading of libstdc++.so.6 seems to help. Example: export LD_PRELOAD=/usr/lib/libstdc++.so.6 (path needs to be adjusted according to library path on local system)
 
 
 MacOS
@@ -70,19 +71,6 @@ Testing the Installation
 '''''''''''''''''''''''''
 Open Launchpad and search for :code:`SimNIBS GUI`
 
-
-Updating SimNIBS
------------------
-
-You can install the latest bugfix version of SimNIBS by starting a Command Prompt (Windows) or a Terminal (Linux and MacOS) window and typing
-
-.. code-block:: bash
-
-    update_simnibs
-
-\
-
-New feature versions require a new installation.
 
 Software Dependencies
 -----------------------

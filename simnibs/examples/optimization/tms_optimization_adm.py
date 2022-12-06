@@ -9,7 +9,7 @@ tms_opt.subpath = 'm2m_ernie'
 tms_opt.pathfem = 'tms_optimization_adm'
 # Select the coil model
 # The ADM method requires a '.ccd' coil model
-tms_opt.fnamecoil = os.path.join('legacy','Magstim_70mm_Fig8.ccd')
+tms_opt.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
 # Select a target for the optimization
 tms_opt.target = mni2subject_coords([-37, -21, 58], 'm2m_ernie')
 # Use the ADM method
