@@ -1706,7 +1706,7 @@ class TDCSLIST(SimuList):
 
         if el_surround is not None:
             C = el_surround
-        
+
         # get direction vector
         ydir = []
         if len(C.pos_ydir):
@@ -2779,13 +2779,10 @@ class TDCSLEADFIELD(LEADFIELD):
         )
 
         with h5py.File(fn_hdf5, 'a') as f:
-            f[dset].attrs['electrode_names'] = [el.name.encode()
-                                                for el in self.electrode]
+            f[dset].attrs['electrode_names'] = [el.name for el in self.electrode]
             f[dset].attrs['reference_electrode'] = self.electrode[0].name
-            f[dset].attrs['electrode_pos'] = [
-                el.centre for el in self.electrode]
-            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode() \
-                if self.eeg_cap is not None else 'none'
+            f[dset].attrs['electrode_pos'] = [el.centre for el in self.electrode]
+            f[dset].attrs['electrode_cap'] = self.eeg_cap or "none"
             f[dset].attrs['electrode_tags'] = electrode_surfaces
             f[dset].attrs['tissues'] = self.tissues
             f[dset].attrs['field'] = self.field
