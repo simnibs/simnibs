@@ -136,6 +136,8 @@ class ElectrodeArray():
         Electrode extensions in x-direction (rectangular electrodes)
     length_y : np.ndarray of float [n_ele_rect] or None
         Electrode extensions in y-direction (rectangular electrodes)
+    current : np.ndarray of float [n_ele]
+        Current through electrodes (in A)
 
     Attributes
     ----------
@@ -171,7 +173,7 @@ class ElectrodeArray():
         Angle between connection line electrodes <-> array center and principal direction axis of array (0, 1, 0)
     """
 
-    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None):
+    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None):
         self.channel_id = channel_id
         self.array_center = np.array([0, 0, 0])
         self.center = center
@@ -189,12 +191,16 @@ class ElectrodeArray():
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
 
-        assert center.shape[0] == len(radius), "Elements in 'center' doe not match 'radius'!"
-        assert center.shape[0] == len(length_x), "Elements in 'center' doe not match 'length_x'!"
-        assert center.shape[0] == len(length_y), "Elements in 'center' doe not match 'length_y'!"
-        assert len(radius) == len(length_x), "Elements in 'radius' doe not match 'length_x'!"
-        assert len(radius) == len(length_y), "Elements in 'radius' doe not match 'length_y'!"
-        assert len(length_x) == len(length_y), "Elements in 'length_x' doe not match 'length_y'!"
+        if current is None:
+            self.current = 1/self.n_ele * np.ones(self.n_ele)
+        else:
+            self.current = current
+
+        assert center.shape[0] == self.n_ele, "Number of elements in 'center' does not match number of electrodes!"
+        assert len(radius) == self.n_ele, "Number of elements in 'radius' does not match number of electrodes!"
+        assert len(length_x) == self.n_ele, "Number of elements in 'length_x' does not match number of electrodes!"
+        assert len(length_y) == self.n_ele, "Number of elements in 'length_y' does not match number of electrodes!"
+        assert len(self.current) == self.n_ele, "Number of elements in 'current' does not match number of electrodes!"
 
         for i_ele in range(self.n_ele):
             self.distance[i_ele] = np.linalg.norm(center[i_ele, :] - self.array_center)
@@ -226,11 +232,12 @@ class ElectrodeArray():
                 elif center[i_ele, 0] == 0 and center[i_ele, 1] == 0:
                     self.angle[i_ele] = 0
 
-            self.electrodes.append(Electrode(channel_id=channel_id[i_ele],
-                                             center=center[i_ele, :],
-                                             radius=radius[i_ele],
-                                             length_x=length_x[i_ele],
-                                             length_y=length_y[i_ele]))
+            self.electrodes.append(Electrode(channel_id=self.channel_id[i_ele],
+                                             center=self.center[i_ele, :],
+                                             radius=self.radius[i_ele],
+                                             length_x=self.length_x[i_ele],
+                                             length_y=self.length_y[i_ele],
+                                             current=self.current[i_ele]))
 
     def transform(self, transmat):
         """
@@ -306,6 +313,7 @@ class ElectrodeArray():
 
         plt.close()
 
+
 class ElectrodeArrayPair():
     """
     Symmetric pair of electrode arrays with n_x * n_y electrodes each.
@@ -327,6 +335,8 @@ class ElectrodeArrayPair():
         Extensions in x-direction of single rectangular electrodes in array
     length_y : np.ndarray of float [n_ele] or None
         Extensions in y-direction of single rectangular electrodes in array
+    current : list of np.ndarray of float [2] containing [n_ele] elements each
+
 
     Attributes
     ----------
@@ -340,12 +350,21 @@ class ElectrodeArrayPair():
         Two ElectrodeArray instances
     """
 
-    def __init__(self, center, radius=None, length_x=None, length_y=None):
+    def __init__(self, center, radius=None, length_x=None, length_y=None, current=None):
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
         self.center = center
         self.n_ele = len(center)
+        self.channel_id = [[i for _ in range(self.n_ele)] for i in range(2)]
+
+        if current is None:
+            self.current = [0, 0]
+            self.current[0] = np.array([1/self.n_ele for _ in range(self.n_ele)])
+            self.current[1] = np.array([-1/self.n_ele for _ in range(self.n_ele)])
+        else:
+            self.current[0] = current[0]
+            self.current[1] = current[1]
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
@@ -353,7 +372,8 @@ class ElectrodeArrayPair():
                                                 radius=self.radius,
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
-                                                channel_id=[i for _ in range(self.n_ele)]) for i in range(2)]
+                                                channel_id=self.channel_id[i],
+                                                current=self.current[i]) for i in range(2)]
 
     def update_geometry(self, center=None, radius=None, length_x=None, length_y=None):
         """
@@ -404,6 +424,8 @@ class CircularArray():
         Number of outer electrodes
     radius_outer : float
         Radius of outer electrodes, default: same radius as inner electrodes
+    current : np.ndarray of float [n_ele]
+        Current through electrodes (First entry is central electrode)
 
     Attributes
     ----------
@@ -416,16 +438,22 @@ class CircularArray():
     electrode_arrays : list of ElectrodeArray instances [1]
         One ElectrodeArray instance containing the Electrode instances
     """
-    def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None):
+    def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None, current=None):
         self.radius_inner = radius_inner
         self.distance = distance
         self.n_ele = n_outer + 1
         self.n_outer = n_outer
+        self.channel_id = [0] + [1] * n_outer
 
         if radius_outer is None:
             self.radius_outer = radius_inner
         else:
             self.radius_outer = radius_outer
+
+        if current is None:
+            self.current = np.hstack((1, 1/(self.n_ele-1) * np.ones(self.n_ele-1)))
+        else:
+            self.current = current
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(n_outer))
         self.center = np.array([[0., 0., 0.]])
@@ -443,11 +471,12 @@ class CircularArray():
             if np.isclose(self.center[-1, 1], 0):
                 self.center[-1, 1] = 0.
 
-        self.electrode_arrays = [ElectrodeArray(channel_id=[0] + [1] * n_outer,
+        self.electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
                                                 center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
-                                                length_y=self.length_y)]
+                                                length_y=self.length_y,
+                                                current=self.current)]
 
     def update_geometry(self, radius_inner=None, distance=None, n_outer=None,  radius_outer=None):
         """

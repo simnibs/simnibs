@@ -6,6 +6,7 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve
 import warnings
+warnings.filterwarnings("ignore")
 warnings.filterwarnings('ignore', 'The iteration is not making good progress')
 
 from ..mesh_tools import cgal
@@ -292,6 +293,7 @@ class Ellipsoid():
         -------
         coords_sphere : np.ndarray of float [n_points x 3]
             Spherical coordinates of given points [beta, lambda], in radiant.
+            (beta: [-np.pi/2, +np.pi/2], lambda: [-np.pi, np.pi]
         normal : np.ndarray of float [n_points x 3]
             Surface normal of given points (pointing outwards)
         """

@@ -528,7 +528,7 @@ class FEMSystem(object):
     def assemble_fem_matrix(self, store_G=False, surface_impedance=False):
         ''' Assembly of the l.h.s matrix A. !Only works with symmetric matrices!
         Based in the OptVS algorithm in Cuvelier et. al. 2016 '''
-        logger.info('Assembling FEM Matrx')
+        logger.info('Assembling FEM Matrix')
         start = time.time()
         msh = self.mesh
         cond = self.cond[msh.elm.elm_type == 4]
@@ -776,8 +776,8 @@ class FEMSystem(object):
             Right-hand-side of FEM system
 
         '''
-        if input_type == 'node':
-            electrodes = np.atleast_2d(electrodes)
+        #if input_type == 'node':
+        #    electrodes = np.atleast_2d(electrodes)
         assert len(electrodes) == len(currents)
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
 
@@ -800,15 +800,14 @@ class FEMSystem(object):
             b += self._tdcs_neumann_rhs_node(areas, nodes, c)
         return b
 
-
     def _tdcs_neumann_rhs_node(self, areas, nodes, current):
         ''' Assemble the Neumann RHS on a set of nodes
         '''
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         total_area = areas[nodes].sum()
         b[self.dof_map[nodes]] = current / total_area * areas[nodes]
-        return b
 
+        return b
 
     def calc_gradient(self, v):
         ''' Calculates gradients
