@@ -88,6 +88,8 @@ roi = simnibs.RegionOfInterest(points=points, con=con, msh=msh)
 # roi = None
 # plt.spy(roi.sF)
 
+min_electrode_distance = 1.
+weights = [1]
 optimizer_options = {"maxiter": 1000}
 
 # Initialize TESoptimize class
@@ -99,6 +101,8 @@ opt = simnibs.opt_struct.TESoptimize(msh=msh,
                                      plot=False,
                                      optimizer="direct",
                                      optimizer_options=optimizer_options,
+                                     min_electrode_distance=min_electrode_distance,
+                                     weights=weights,
                                      goal="mean")
 
 # pynibs.plot_surface(data=np.arange(len(opt.skin_surface.surf2msh_triangles)),

@@ -49,7 +49,9 @@ class Electrode():
     points_area : np.ndarray of float [n_points]
         Associated area of the points
     node_idx : np.ndarray of int [n_nodes]
-        Node indices assigned to electrode on subject skin surface
+        Node indices assigned to electrode on subject skin surface (refering to global mesh)
+    node_coords : np.ndarray of int [n_nodes x 3]
+        Node coordinates assigned to electrode on subject skin surface
     current : float, optional, default: None
         Current assigned to electrode
     voltage : float, optional, default: None
@@ -79,6 +81,7 @@ class Electrode():
         self.points = None
         self.points_area = None
         self.node_idx = None
+        self.node_coords = None
         self.posmat_norm = np.array([[1, 0, 0, center[0]],
                                      [0, 1, 0, center[1]],
                                      [0, 0, 1, center[2]],

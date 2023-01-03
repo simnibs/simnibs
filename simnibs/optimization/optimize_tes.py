@@ -58,8 +58,10 @@ class TESoptimize():
         Region of interest(s) the field is evaluated in.
     anisotropy_type : str
         Specify type of anisotropy for simulation ('scalar', 'vn' or 'mc')
-
-
+    weights : np.array of float [n_roi]
+        Weights for optimizer for ROI specific goal function weighting
+    min_electrode_distance : float, optional, default: None
+        Minimum electrode distance to ensure during optimization (in mm).
 
 
     plot : bool, optional, default: False
@@ -105,28 +107,32 @@ class TESoptimize():
     '''
 
     def __init__(self,
-                 msh=None,
-                 electrode=None,
-                 roi=None,
+                 msh,
+                 electrode,
+                 roi,
+                 skin_mask=None,
                  init_pos=None,
                  fn_eeg_cap=None,
                  solver_options=None,
                  optimizer_options=None,
+                 weights=None,
                  anisotropy_type=None,
+                 min_electrode_distance=None,
                  plot=False,
                  goal="mean",
                  optimizer="direct",
-                 max_total_current=2e-3,
-                 max_individual_current=1e-3,
-                 max_active_electrodes=None,
-                 output_folder=None,
-                 target=None,
-                 avoid=None):
+                 output_folder=None):
         """
         Constructor of TESOptimize class instance
         """
         if type(roi) is not list:
             roi = [roi]
+
+        # equal ROI weighting if None is provided
+        if weights is None:
+            weights = np.ones(len(roi))/len(roi)
+
+        assert len(weights)==len(roi), "Number of weights has to match the number ROIs"
 
         if type(init_pos) is str:
             init_pos = list(init_pos)
@@ -163,9 +169,9 @@ class TESoptimize():
         assert type(output_folder) is str, "Please provide an output folder to save optimization results in."
 
         self.electrode = electrode
-        self.max_total_current = max_total_current
-        self.max_individual_current = max_individual_current
-        self.max_active_electrodes = max_active_electrodes
+        # self.max_total_current = max_total_current
+        # self.max_individual_current = max_individual_current
+        # self.max_active_electrodes = max_active_electrodes
         self.roi = roi
         self.goal = goal
         self.optimizer = optimizer
@@ -177,6 +183,8 @@ class TESoptimize():
         self.output_folder = output_folder
         self.plot_folder = os.path.join(self.output_folder, "plots")
         self.plot = plot
+        self.weights = weights
+        self.min_electrode_distance = min_electrode_distance
         self.fn_results_hdf5 = os.path.join(self.output_folder, "opt.hdf5")
         self.ellipsoid = Ellipsoid()
         self.fn_eeg_cap = fn_eeg_cap
@@ -208,13 +216,22 @@ class TESoptimize():
         else:
             raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
 
+        # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
+        self.dirichlet_node = np.argmin(np.linalg.norm(
+            self.msh.nodes.node_coord - np.mean(self.msh.nodes.node_coord, axis=0), axis=1)) + 1
+
         # Calculate node areas for whole mesh
         self.msh_nodes_areas = self.msh.nodes_areas()
 
         # get subject specific filenames
         self.ff_templates = Templates()
         self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
-        self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask
+
+        # set skin mask of upper head
+        if skin_mask is None:
+            self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask
+        else:
+            self.fn_electrode_mask = skin_mask
 
         # relabel internal air
         self.msh_relabel = relabel_internal_air(m=self.msh,
@@ -265,22 +282,13 @@ class TESoptimize():
 
             self.electrode_pos[i][2] = 0.
 
-        if target is None:
-            self.target = []
-        else:
-            self.target = target
-        if avoid is None:
-            self.avoid = []
-        else:
-            self.avoid = avoid
-
         # prepare FEM
         logger.log(20, 'Preparing FEM')
         self.simulist = SimuList(mesh=self.msh)
         cond = self.simulist.cond2elmdata()
         self.fem = FEMSystem.tdcs_neumann(mesh=self.msh,
                                           cond=cond,
-                                          ground_electrode=self.msh.nodes.nr,
+                                          ground_electrode=self.dirichlet_node,
                                           solver_options=self.solver_options,
                                           input_type='node')
         self.fem.prepare_solver()
@@ -330,8 +338,6 @@ class TESoptimize():
                                         geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
                                         replace=True)
 
-        # gauge problem (find node in COG of head and move to end), modifies self.mesh
-        self.gauge_mesh()
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -524,6 +530,7 @@ class TESoptimize():
         # loop over electrodes and determine node indices
         i_ele = 0
         node_idx_dict = dict()
+        node_coords_list = [[] for _ in range(len(self.electrode.electrode_arrays))]
 
         for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
             for _electrode in _electrode_array.electrodes:
@@ -575,6 +582,11 @@ class TESoptimize():
                 # save node indices (refering to global mesh)
                 _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
 
+                # save node coords (refering to global mesh)
+                _electrode.node_coords = self.msh.nodes.node_coord[np.where(mask)[0]]
+
+                node_coords_list[i_array].append(_electrode.node_coords)
+
                 # group node indices of same channel IDs
                 if _electrode.channel_id in node_idx_dict.keys():
                     node_idx_dict[_electrode.channel_id] = np.append(node_idx_dict[_electrode.channel_id], _electrode.node_idx)
@@ -583,6 +595,25 @@ class TESoptimize():
 
                 i_ele += 1
 
+            # gather all electrode node coords of freely movable array
+            node_coords_list[i_array] = np.vstack(node_coords_list[i_array])
+
+        # check if electrode distance is sufficient
+        if self.min_electrode_distance is not None and self.min_electrode_distance > 0:
+            i_array_test_start = 1
+            # start with first array and test if all node coords are too close to other arrays
+            for i_array in range(len(self.electrode.electrode_arrays)):
+                for node_coord in node_coords_list[i_array]:
+                    for i_array_test in range(i_array_test_start, len(self.electrode.electrode_arrays)):
+                        # calculate euclidic distance between node coords
+                        min_dist = np.min(np.linalg.norm(node_coords_list[i_array_test] - node_coord, axis=1))
+                        # stop testing if an electrode is too close
+                        if min_dist < self.min_electrode_distance:
+                            return None
+
+                i_array_test_start += 1
+
+        print("done")
         if plot:
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject)
@@ -592,12 +623,6 @@ class TESoptimize():
 
         return node_idx_dict
 
-    def gauge_mesh(self):
-        """
-
-        :return:
-        """
-        pass
 
     def update_field(self, electrode_pos, plot=False):
         """
@@ -622,23 +647,30 @@ class TESoptimize():
         #print(f"Time: get_nodes_electrode: {stop-start}")
 
         if node_idx_dict is None:
-            print("Invalid electrode position!")
+            print("Invalid electrode position! (arrays are outside of valid region, too close or overlapping)")
             return None
 
-        # set RHS (in fem.py, check for speed)
+        # set RHS
         #start = time.time()
         b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[channel] for channel in node_idx_dict.keys()],
                                                currents=self.current,
                                                input_type='node',
                                                areas=self.msh_nodes_areas)
+        # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
+        b = np.delete(b, self.dirichlet_node-1)
+
         #stop = time.time()
         #print(f"Time: set RHS: {stop - start}")
 
         # solve
         #start = time.time()
         logger.disabled = True
-        v = self.fem._solver.solve(b[:-1])
-        v = np.append(v, 0)
+
+        # solve system
+        v = self.fem._solver.solve(b)
+
+        # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
+        v = np.insert(v, self.dirichlet_node-1, 0)
         logger.disabled = False
         #stop = time.time()
         #print(f"Time: solve: {stop - start}")
@@ -741,21 +773,26 @@ class TESoptimize():
         # update field (returns None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
-        # calculate goal function value
+        # calculate goal function value for every ROI
+        y = np.zeros(len(self.roi))
         if e is None:
-            y = 1.
+            y = np.ones(len(self.roi))
         else:
-            e = np.vstack(e).flatten()
             if self.goal == "mean":
-                y = -np.mean(e)
+                for i_roi in range(len(e)):
+                    y[i_roi] = -np.mean(e[i_roi])
             elif self.goal == "max":
-                y = -np.percentile(e, 99.9)
+                for i_roi in range(len(e)):
+                    y[i_roi] = -np.percentile(e[i_roi], 99.9)
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
-        print(f"Parameters: {parameters}, goal ({self.goal}): {y:.3f}")
+        # weight and sum the goal function values of the ROIs
+        y_weighted_sum = np.sum(y * self.weights)
 
-        return y
+        print(f"Parameters: {parameters}, goal ({self.goal}): {y_weighted_sum:.3f}")
+
+        return y_weighted_sum
 
     def optimize(self):
         """
@@ -827,6 +864,17 @@ class TESoptimize():
         eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
         np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords_jac)
 
+    def check_electrode_distance(self, node_idx_dict, min_electrode_distance):
+        """
+        Test if electrodes are too close to each other or overlapping
+        Parameters
+        ----------
+        node_idx_dict
+
+        Returns
+        -------
+
+        """
 
 def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, nfev, e, time, msh, electrode, goal):
     """
@@ -1045,6 +1093,8 @@ def create_new_connectivity_list_point_mask(points, con, point_mask):
         con_new[idx_where[0], idx_where[1]] = i
 
     return points_new, con_new
+
+
 
 # def get_element_intersect_line_surface(p, w, points, con, triangle_center=None, triangle_normals=None):
 #     """
