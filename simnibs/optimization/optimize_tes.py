@@ -1,9 +1,10 @@
-import copy
-import datetime
 import os
+import copy
 import time
 import copy
 import h5py
+import logging
+import datetime
 import numpy as np
 import nibabel as nib
 import scipy.ndimage.morphology as mrph
@@ -16,15 +17,12 @@ from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
 from ..simulation.sim_struct import ELECTRODE, SimuList
 from ..simulation.fem import FEMSystem
-from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
-# TODO: in sim_struct -> filefinder to get filenames of EEG cap for example
-# TODO: implement new tes fast optimize class
 # TODO: adapt matlab_tools/opt_struct.m and include new class
 # 1:1 Mapping der Elektroden -> von Neumann Kanal 1 -> Sink 1, Kanal 2 -> Sink 2
 # 1 Kanal -> mehrere sink elektroden -> fake Dirichlet -> Kanal 1 -> Sink 1,2,3 (zusammengeschaltet) gleiche Spannung
@@ -191,6 +189,9 @@ class TESoptimize():
         self.anisotropy_type = anisotropy_type
         init_pos_list = ["C3", "C4", "F3", "P4", "P3", "F4"]
 
+        # setup logger
+        self.logger = setup_logger(os.path.join(output_folder, "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
+
         # collect all electrode currents
         self.current = np.zeros(len(np.unique(self.electrode.channel_id)))
         for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
@@ -282,8 +283,11 @@ class TESoptimize():
 
             self.electrode_pos[i][2] = 0.
 
+        # log some infos
+        self.logger.log(25, "Test")
+
         # prepare FEM
-        logger.log(20, 'Preparing FEM')
+        self.logger.log(20, 'Preparing FEM')
         self.simulist = SimuList(mesh=self.msh)
         cond = self.simulist.cond2elmdata()
         self.fem = FEMSystem.tdcs_neumann(mesh=self.msh,
@@ -514,18 +518,18 @@ class TESoptimize():
                                                               surface=self.skin_surface)
 
         if len(ele_idx) != len(alpha):
-            return None
+            return "Electrode position: invalid (not all electrodes in valid skin region)"
 
-        i_ele = 0
-        ele_idx_rect = []
-        start_shifted = []
-
-        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            for _electrode in _electrode_array.electrodes:
-                if _electrode.type == "rectangular":
-                    ele_idx_rect.append(i_ele)
-                    start_shifted.append(start_shifted_[i_array])
-                i_ele += 1
+        # i_ele = 0
+        # ele_idx_rect = []
+        # start_shifted = []
+        #
+        # for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
+        #     for _electrode in _electrode_array.electrodes:
+        #         if _electrode.type == "rectangular":
+        #             ele_idx_rect.append(i_ele)
+        #             start_shifted.append(start_shifted_[i_array])
+        #         i_ele += 1
 
         # loop over electrodes and determine node indices
         i_ele = 0
@@ -536,15 +540,7 @@ class TESoptimize():
             for _electrode in _electrode_array.electrodes:
                 if _electrode.type == "spherical":
                     # mask with a sphere
-                    radius_list = np.linspace(0.90, 1.1, 5) * _electrode.radius
-                    mask_list = []
-                    area_list = np.zeros(len(radius_list))
-
-                    for i_r, r in enumerate(radius_list):
-                        mask_list.append(np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < r)
-                        area_list = np.sum(self.skin_surface.nodes_areas[mask_list[-1]])
-
-                    mask = mask_list[np.argmin(np.abs(area_list - _electrode.area))]
+                    mask = np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < _electrode.radius
 
                     # save position of electrode in subject space to posmat field
                     _electrode.posmat[:3, 3] = electrode_coords_subject[i_ele, :]
@@ -579,6 +575,10 @@ class TESoptimize():
                 # node areas
                 _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
 
+                # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
+                if _electrode.area_skin < 0.8 * _electrode.area:
+                    return "Electrode position: invalid (partly overlaps with invalid skin region)"
+
                 # save node indices (refering to global mesh)
                 _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
 
@@ -609,11 +609,10 @@ class TESoptimize():
                         min_dist = np.min(np.linalg.norm(node_coords_list[i_array_test] - node_coord, axis=1))
                         # stop testing if an electrode is too close
                         if min_dist < self.min_electrode_distance:
-                            return None
+                            return "Electrode position: invalid (minimal distance between electrodes too small)"
 
                 i_array_test_start += 1
 
-        print("done")
         if plot:
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject)
@@ -646,9 +645,10 @@ class TESoptimize():
         #stop = time.time()
         #print(f"Time: get_nodes_electrode: {stop-start}")
 
-        if node_idx_dict is None:
-            print("Invalid electrode position! (arrays are outside of valid region, too close or overlapping)")
+        if type(node_idx_dict) is str:
+            self.logger.log(20, node_idx_dict)
             return None
+        self.logger.log(20, "Electrode position: valid")
 
         # set RHS
         #start = time.time()
@@ -664,14 +664,14 @@ class TESoptimize():
 
         # solve
         #start = time.time()
-        logger.disabled = True
+        self.logger.disabled = True
 
         # solve system
         v = self.fem._solver.solve(b)
 
         # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
         v = np.insert(v, self.dirichlet_node-1, 0)
-        logger.disabled = False
+        self.logger.disabled = False
         #stop = time.time()
         #print(f"Time: solve: {stop - start}")
 
@@ -766,6 +766,8 @@ class TESoptimize():
         y : float
             Goal function value
         """
+        parameters_str = f"Parameters: {parameters}"
+        self.logger.log(20, parameters_str)
 
         # reformat parameters
         self.electrode_pos = [p for p in np.reshape(parameters, (self.n_ele_free, 3))]
@@ -790,7 +792,8 @@ class TESoptimize():
         # weight and sum the goal function values of the ROIs
         y_weighted_sum = np.sum(y * self.weights)
 
-        print(f"Parameters: {parameters}, goal ({self.goal}): {y_weighted_sum:.3f}")
+        self.logger.log(20, f"Goal ({self.goal}): {y_weighted_sum:.3f}")
+        self.logger.log(20, "-"*len(parameters_str))
 
         return y_weighted_sum
 
@@ -818,7 +821,7 @@ class TESoptimize():
             self.electrode_pos_opt = [p for p in np.reshape(result.x, (self.n_ele_free, 3))]
             fopt = result.fun
             nfev = result.nfev
-            print(f"Optimization finished! Best electrode position: {self.electrode_pos_opt}")
+            self.logger.log(20, f"Optimization finished! Best electrode position: {self.electrode_pos_opt}")
         else:
             raise NotImplementedError(f"Specified optimization method: '{self.optimizer}' not implemented.")
 
@@ -864,17 +867,6 @@ class TESoptimize():
         eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
         np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords_jac)
 
-    def check_electrode_distance(self, node_idx_dict, min_electrode_distance):
-        """
-        Test if electrodes are too close to each other or overlapping
-        Parameters
-        ----------
-        node_idx_dict
-
-        Returns
-        -------
-
-        """
 
 def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, nfev, e, time, msh, electrode, goal):
     """
@@ -1095,6 +1087,35 @@ def create_new_connectivity_list_point_mask(points, con, point_mask):
     return points_new, con_new
 
 
+def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(message)s',
+                 datefmt='%H:%M:%S'):
+    """
+    Parameters
+    ----------
+    logname : str
+        Filename of logfile
+    filemode : str, optional, default: 'w'
+        'a' append or 'w' overwrite existing logfile.
+    format : str, optional, default: '[ %(name)s ] %(levelname)s: %(message)s'
+        format of the output message.
+    datefmt : str, optional, default: '%H:%M:%S'
+        Format of the output time.
+
+    Returns
+    -------
+    logger : logger instance
+        Logger using loging module
+    """
+
+    logging.basicConfig(filename=logname,
+                        filemode=filemode,
+                        format=format,
+                        datefmt=datefmt,
+                        level=logging.DEBUG)
+
+    logger = logging.getLogger("simnibs")
+
+    return logger
 
 # def get_element_intersect_line_surface(p, w, points, con, triangle_center=None, triangle_normals=None):
 #     """
