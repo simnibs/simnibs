@@ -39,20 +39,35 @@ print("Initializing Electrode ...")
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
-center = np.array([[-30, 20, 0],
-                    [0, 20, 0],
-                    [30, 20, 0],
-                    [-30, 0, 0],
-                    [0, 0, 0],
-                    [30, 0, 0],
-                    [-30, -20, 0],
-                    [0, -20, 0],
-                    [30, -20, 0]])
-radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+# center = np.array([[-30, 20, 0],
+#                     [0, 20, 0],
+#                     [30, 20, 0],
+#                     [-30, 0, 0],
+#                     [0, 0, 0],
+#                     [30, 0, 0],
+#                     [-30, -20, 0],
+#                     [0, -20, 0],
+#                     [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+
+# create two 3 x 3 circular electrode array pairs (2 channels)
+########################################################################################################################
+center = np.array([[-30, 0, 0],
+                   [0, 0, 0],
+                   [30, 0, 0]])
+radius = np.array([7, 7, 7])
+length_x = np.array([0, 0, 0])
+length_y = np.array([0, 0, 0])
+
+electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+
+electrode = [electrode_1, electrode_2]
+electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
 #######################################################################################################################
@@ -72,7 +87,8 @@ electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folde
 # electrode.electrode_arrays[0].plot(fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # init_pos = ["C3"]
-init_pos = ["C3", "C4"]
+# init_pos = ["C3", "C4"]
+init_pos = None
 
 # load mesh
 msh = simnibs.read_msh(fn_mesh)

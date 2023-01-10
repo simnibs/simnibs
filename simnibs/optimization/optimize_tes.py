@@ -121,93 +121,34 @@ class TESoptimize():
                  optimizer="direct",
                  output_folder=None):
         """
-        Constructor of TESOptimize class instance
+        Constructor of TESoptimize class instance
         """
-        if type(roi) is not list:
-            roi = [roi]
-
-        # equal ROI weighting if None is provided
-        if weights is None:
-            weights = np.ones(len(roi))/len(roi)
-
-        assert len(weights)==len(roi), "Number of weights has to match the number ROIs"
-
-        if type(init_pos) is str:
-            init_pos = list(init_pos)
-
-        if type(init_pos) is np.ndarray:
-            init_pos = [init_pos]
-
-        if fn_eeg_cap is None:
-            fn_eeg_cap = 'EEG10-10_UI_Jurak_2007.csv'
-        else:
-            fn_eeg_cap = os.path.split(fn_eeg_cap)[1]
-
-        if anisotropy_type is None:
-            anisotropy_type = "scalar"
-
-        self.n_ele_free = len(electrode.electrode_arrays)
-
-        bounds = Bounds(lb=[-np.pi / 2, -np.pi, -np.pi] * self.n_ele_free,
-                        ub=[np.pi / 2, np.pi, np.pi] * self.n_ele_free)
-
-        # set standard options for optimizer
-        if optimizer == "direct":
-            self.optimizer_options = {"bounds": bounds,
-                                      "vol_tol": 1. / 3600000000. * 3 * self.n_ele_free,
-                                      "len_tol": 1. / 3600000000.,
-                                      "f_min_rtol": 1e-12,
-                                      "maxiter": 1000}
-
-        # insert user specific options
-        if optimizer_options is not None:
-            for key in optimizer_options:
-                self.optimizer_options[key] = optimizer_options[key]
-
+        # setup output folders, logging and IO
+        ################################################################################################################
         assert type(output_folder) is str, "Please provide an output folder to save optimization results in."
-
-        self.electrode = electrode
-        # self.max_total_current = max_total_current
-        # self.max_individual_current = max_individual_current
-        # self.max_active_electrodes = max_active_electrodes
-        self.roi = roi
-        self.goal = goal
-        self.optimizer = optimizer
-        self.init_pos = init_pos
-        self.electrode_pos = [np.zeros(3) for _ in range(self.n_ele_free)]  # beta, lambda, alpha for each array
-        self.electrode_pos_opt = None
-        self.init_pos_subject_coords = []
-        self.init_pos_ellipsoid_coords = []
         self.output_folder = output_folder
         self.plot_folder = os.path.join(self.output_folder, "plots")
         self.plot = plot
-        self.weights = weights
-        self.min_electrode_distance = min_electrode_distance
         self.fn_results_hdf5 = os.path.join(self.output_folder, "opt.hdf5")
-        self.ellipsoid = Ellipsoid()
-        self.fn_eeg_cap = fn_eeg_cap
-        self.anisotropy_type = anisotropy_type
-        init_pos_list = ["C3", "C4", "F3", "P4", "P3", "F4"]
-
-        # setup logger
-        self.logger = setup_logger(os.path.join(output_folder, "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
-
-        # collect all electrode currents
-        self.current = np.zeros(len(np.unique(self.electrode.channel_id)))
-        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            for _electrode in _electrode_array.electrodes:
-                self.current[_electrode.channel_id] += _electrode.current
-
-        if solver_options is None:
-            self.solver_options = "pardiso"
-        else:
-            self.solver_options = solver_options
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
 
         if not os.path.exists(self.plot_folder):
             os.makedirs(self.plot_folder)
+
+        # setup logger
+        self.logger = setup_logger(os.path.join(output_folder, "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
+        self.logger.log(20, "Setting up output folders, logging and IO ...")
+
+        # setup headmodel
+        ################################################################################################################
+        self.logger.log(20, "Setting up headmodel ...")
+
+        if fn_eeg_cap is None:
+            fn_eeg_cap = 'EEG10-20_Okamoto_2004.csv'  # 'EEG10-10_UI_Jurak_2007.csv'
+        else:
+            fn_eeg_cap = os.path.split(fn_eeg_cap)[1]
 
         # read mesh or store in self
         if type(msh) is str:
@@ -217,6 +158,10 @@ class TESoptimize():
         else:
             raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
 
+        # get subject specific filenames
+        self.ff_templates = Templates()
+        self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
+
         # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
         self.dirichlet_node = np.argmin(np.linalg.norm(
             self.msh.nodes.node_coord - np.mean(self.msh.nodes.node_coord, axis=0), axis=1)) + 1
@@ -224,9 +169,8 @@ class TESoptimize():
         # Calculate node areas for whole mesh
         self.msh_nodes_areas = self.msh.nodes_areas()
 
-        # get subject specific filenames
-        self.ff_templates = Templates()
-        self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
+        self.ellipsoid = Ellipsoid()
+        self.fn_eeg_cap = fn_eeg_cap
 
         # set skin mask of upper head
         if skin_mask is None:
@@ -253,38 +197,147 @@ class TESoptimize():
         # fit optimal ellipsoid to valid skin points
         self.ellipsoid.fit(points=self.skin_surface.nodes)
 
-        # set initial positions to electrode C3 (and C4) if nothing is provided
+        # setup ROI
+        ################################################################################################################
+        self.logger.log(20, "Setting up ROI ...")
+        if type(roi) is not list:
+            roi = [roi]
+
+        self.roi = roi
+        self.n_roi = len(roi)
+
+        # setup electrode
+        ################################################################################################################
+        self.logger.log(20, "Setting up electrodes ...")
+        if type(electrode) is not list:
+            electrode = [electrode]
+
+        self.electrode = electrode
+        self.electrode_pos_opt = None
+        self.min_electrode_distance = min_electrode_distance
+
+        # number of independent stimulation channels (on after another)
+        self.n_channel_stim = len(electrode)
+
+        # list containing the number of freely movable arrays for each channel [i_channel_stim]
+        self.n_ele_free = [len(ele.electrode_arrays) for ele in self.electrode]
+
+        # list containing beta, lambda, alpha for each freely movable array and for each stimulation channel
+        self.electrode_pos = [[np.zeros(3) for _ in range(n_ele_free)] for n_ele_free in self.n_ele_free]
+
+        # set initial positions
+        if self.n_channel_stim > 1 and type(init_pos) is str:
+            raise AssertionError("Please provide a list of initial positions for each stimulation channel"
+                                 "containing a list of initial positions for each freely movable array.")
+
+        if self.n_channel_stim == 1 and type(init_pos) is str:
+            init_pos = [[init_pos]]
+
+        if self.n_channel_stim == 1 and type(init_pos) is np.ndarray:
+            init_pos = [[init_pos]]
+
+        self.init_pos = init_pos
+        self.init_pos_subject_coords = [[] for _ in range(self.n_channel_stim)]
+
+        init_pos_list = [["C3", "C4", "F3", "P4"],          # init defaults for first i_channel_stim
+                         ["Fz", "Pz", "P3", "F4"]]          # init defaults for second i_channel_stim
+
+        # collect all electrode currents in list of np.array [i_channel_stim][i_channel_ele]
+        self.current = [np.zeros(len(np.unique(self.electrode[i_channel_stim].channel_id)))
+                        for i_channel_stim in range(self.n_channel_stim)]
+
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                for _electrode in _electrode_array.electrodes:
+                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.current
+
+        # set initial positions of electrodes if nothing is provided
+        assert self.n_channel_stim <= len(init_pos_list), "Please provide initial electrode positions."
+
         if init_pos is None:
-            if self.n_ele_free > len(init_pos_list):
-                raise NotImplementedError("Please specify initial coordinates or EEG electrode positions for each"
-                                          "freely movable electrode array (init_pos)!")
-            self.init_pos = [init_pos_list[i] for i in range(self.n_ele_free)]
+            self.init_pos = [0 for _ in range(self.n_channel_stim)]
+            for i_channel_stim in range(self.n_channel_stim):
+                if self.n_ele_free[i_channel_stim] > len(init_pos_list[i_channel_stim]):
+                    raise NotImplementedError("Please specify initial coordinates or EEG electrode positions for each"
+                                              "freely movable electrode array (init_pos)!")
+                self.init_pos[i_channel_stim] = [init_pos_list[i_channel_stim][i]
+                                                 for i in range(self.n_ele_free[i_channel_stim])]
 
         # get subject coordinates of initial positions
-        if type(self.init_pos[0]) is str:
-            for eeg_pos in self.init_pos:
-                tmp = ELECTRODE()
-                tmp.centre = eeg_pos
-                tmp.substitute_positions_from_cap(cap=self.ff_subject.get_eeg_cap(cap_name=self.fn_eeg_cap))
-                self.init_pos_subject_coords.append(tmp.centre)
+        for i_channel_stim in range(self.n_channel_stim):
+            # user provided EEG electrode position as str (e.g. "C3", ...)
+            if type(self.init_pos[i_channel_stim][0]) is str:
+                for eeg_pos in self.init_pos[i_channel_stim]:
+                    tmp = ELECTRODE()
+                    tmp.centre = eeg_pos
+                    tmp.substitute_positions_from_cap(cap=self.ff_subject.get_eeg_cap(cap_name=self.fn_eeg_cap))
+                    self.init_pos_subject_coords[i_channel_stim].append(tmp.centre)
+            # user provided coordinates in subject space as np.array
+            else:
+                self.init_pos_subject_coords[i_channel_stim] = self.init_pos[i_channel_stim]
+
+            # transform initial positions from subject to ellipsoid space
+            for i_ele_free, coords in enumerate(self.init_pos_subject_coords[i_channel_stim]):
+                # get closest point idx on subject surface
+                point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
+
+                # electrode positon in ellipsoid space
+                self.electrode_pos[i_channel_stim][i_ele_free][:2] = self.ellipsoid.cartesian2jacobi(
+                    coords=self.ellipsoid.ellipsoid2cartesian(
+                        coords=subject2ellipsoid(
+                            coords=self.skin_surface.nodes[point_idx, :],
+                            normals=self.skin_surface.nodes_normals[point_idx, :],
+                            ellipsoid=self.ellipsoid)))
+
+                # set initial orientation alpha to zero
+                self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
+
+        # setup optimization
+        ################################################################################################################
+        self.logger.log(20, "Setting up optimization algorithm ...")
+
+        # equal ROI weighting if None is provided
+        if weights is None:
+            weights = np.ones(len(self.roi)) / len(self.roi)
+
+        assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
+
+        self.goal = goal
+        self.optimizer = optimizer
+        self.weights = weights
+
+        # parameter bounds for optimizer
+        bounds = Bounds(lb=[-np.pi / 2, -np.pi, -np.pi] * np.sum(self.n_ele_free),
+                        ub=[np.pi / 2, np.pi, np.pi] * np.sum(self.n_ele_free))
+
+        # set standard options for optimizer
+        if self.optimizer == "direct":
+            self.optimizer_options = {"bounds": bounds,
+                                      "vol_tol": 1. / 3600000000. * 3 * np.sum(self.n_ele_free),
+                                      "len_tol": 1. / 3600000000.,
+                                      "f_min_rtol": 1e-12,
+                                      "maxiter": 1000}
+
+        # insert user specific options
+        if optimizer_options is not None:
+            for key in optimizer_options:
+                self.optimizer_options[key] = optimizer_options[key]
+
+        # self.max_total_current = max_total_current
+        # self.max_individual_current = max_individual_current
+        # self.max_active_electrodes = max_active_electrodes
+
+        # setup FEM
+        ################################################################################################################
+        if anisotropy_type is None:
+            anisotropy_type = "scalar"
+
+        self.anisotropy_type = anisotropy_type
+
+        if solver_options is None:
+            self.solver_options = "pardiso"
         else:
-            self.init_pos_subject_coords = self.init_pos
-
-        # transform initial positions from subject to ellipsoid space
-        for i, coords in enumerate(self.init_pos_subject_coords):
-            # get closest point idx on subject surface
-            point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
-            self.electrode_pos[i][:2] = self.ellipsoid.cartesian2jacobi(
-                coords=self.ellipsoid.ellipsoid2cartesian(
-                    coords=subject2ellipsoid(
-                        coords=self.skin_surface.nodes[point_idx, :],
-                        normals=self.skin_surface.nodes_normals[point_idx, :],
-                        ellipsoid=self.ellipsoid)))
-
-            self.electrode_pos[i][2] = 0.
-
-        # log some infos
-        self.logger.log(25, "Test")
+            self.solver_options = solver_options
 
         # prepare FEM
         self.logger.log(20, 'Preparing FEM')
@@ -297,9 +350,49 @@ class TESoptimize():
                                           input_type='node')
         self.fem.prepare_solver()
 
+        # log summary
+        ################################################################################################################
+        self.logger.log(25, f"="*100)
+        self.logger.log(25, f"headmodel:           {self.msh.fn}")
+        self.logger.log(25, f"n_roi:               {self.n_roi}")
+        self.logger.log(25, f"anisotropy type:     {self.anisotropy_type}")
+        self.logger.log(25, f"n_channel_stim:      {self.n_channel_stim}")
+        self.logger.log(25, f"fn_eeg_cap:          {self.fn_eeg_cap}")
+        self.logger.log(25, f"fn_electrode_mask:   {self.fn_electrode_mask}")
+        self.logger.log(25, f"FEM solver options:  {self.solver_options}")
+        self.logger.log(25, f"optimizer:           {self.optimizer}")
+        self.logger.log(25, f"goal:                {self.goal}")
+        self.logger.log(25, f"weights:             {self.weights}")
+        self.logger.log(25, f"output_folder:       {self.output_folder}")
+        self.logger.log(25, f"fn_results_hdf5:     {self.fn_results_hdf5}")
+
+        if self.optimizer_options is not None:
+            for key in self.optimizer_options:
+                if key != "bounds":
+                    self.logger.log(25, f"{key}:              {self.optimizer_options[key]}")
+
+
+        for i_channel_stim in range(self.n_channel_stim):
+            self.logger.log(25, f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})")
+            self.logger.log(25, f"---------------------------------------------")
+
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                self.logger.log(25, f"Electrode array [i_channel_stim][i_array]: [{i_channel_stim}][{i_array}]")
+                self.logger.log(25, f"\tn_ele: {_electrode_array.n_ele}")
+                self.logger.log(25, f"\tinit_pos: {self.init_pos[i_channel_stim][i_array]}")
+                # self.logger.log(25, f"\tcenter: {_electrode_array.center}")
+                # self.logger.log(25, f"\tradius: {_electrode_array.radius}")
+                # self.logger.log(25, f"\tlength_x: {_electrode_array.length_x}")
+                # self.logger.log(25, f"\tlength_y: {_electrode_array.length_y}")
+
+        self.logger.log(25, f"=" * 100)
+
         # perform optimization
+        ################################################################################################################
         self.optimize()
 
+        # temporary plot functions
+        ################################################################################################################
         if self.plot:
             import matplotlib
             matplotlib.use('Qt5Agg')
@@ -441,7 +534,7 @@ class TESoptimize():
 
         Parameters
         ----------
-        electrode_pos : list of np.ndarray of float [3] of length n_ele_free
+        electrode_pos : list of list of np.ndarray of float [3] of length [n_channel_stim][n_ele_free]
             Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
@@ -450,75 +543,78 @@ class TESoptimize():
 
         Returns
         -------
-        node_idx : list of np.ndarray of int [n_nodes] of length n_ele_free
-            List containing np.ndarrays for each free electrode array with skin node indices
+        node_idx_dict : list of dict
+            List [n_channel_stim] containing dicts with electrode channel IDs as keys and node indices.
         """
 
-        # collect all parameters
-        start = np.zeros((self.n_ele_free, 3))
-        a = np.zeros((self.n_ele_free, 3))
-        b = np.zeros((self.n_ele_free, 3))
-        cx = np.zeros((self.n_ele_free, 3))
-        cy = np.zeros((self.n_ele_free, 3))
-        n = np.zeros((self.n_ele_free, 3))
-        start_shifted_ = np.zeros((self.n_ele_free, 3))
-        distance = []
-        alpha = []
+        electrode_coords_subject = [0 for _ in range(self.n_channel_stim)]
 
-        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            start[i_array, :], n[i_array, :] = self.ellipsoid.jacobi2cartesian(
-                coords=electrode_pos[i_array][:2],
-                return_normal=True)
+        for i_channel_stim in range(self.n_channel_stim):
+            # collect all parameters
+            start = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            a = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            b = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            cx = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            cy = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            n = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            start_shifted_ = np.zeros((len(electrode_pos[i_channel_stim]), 3))
+            distance = []
+            alpha = []
 
-            c0, n[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_array][:2], return_normal=True)
-            a[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_array][0] - 1e-2, electrode_pos[i_array][1]])) - c0
-            b[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_array][0], electrode_pos[i_array][1] - 1e-2])) - c0
-            a[i_array, :] /= np.linalg.norm(a[i_array, :])
-            b[i_array, :] /= np.linalg.norm(b[i_array, :])
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                start[i_array, :], n[i_array, :] = self.ellipsoid.jacobi2cartesian(
+                    coords=electrode_pos[i_channel_stim][i_array][:2],
+                    return_normal=True)
 
-            start_shifted_[i_array, :] = c0 + (1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_array][2]) +
-                                                       (b[i_array, :]) * np.sin(electrode_pos[i_array][2])))
+                c0, n[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_channel_stim][i_array][:2], return_normal=True)
+                a[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_channel_stim][i_array][0] - 1e-2, electrode_pos[i_channel_stim][i_array][1]])) - c0
+                b[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_channel_stim][i_array][0], electrode_pos[i_channel_stim][i_array][1] - 1e-2])) - c0
+                a[i_array, :] /= np.linalg.norm(a[i_array, :])
+                b[i_array, :] /= np.linalg.norm(b[i_array, :])
 
-            cy[i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
-            cy[i_array, :] /= np.linalg.norm(cy[i_array, :])
-            cx[i_array, :] = np.cross(cy[i_array, :], -n[i_array, :])
-            cx[i_array, :] /= np.linalg.norm(cx[i_array, :])
+                start_shifted_[i_array, :] = c0 + (1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_channel_stim][i_array][2]) +
+                                                           (b[i_array, :]) * np.sin(electrode_pos[i_channel_stim][i_array][2])))
 
-            distance.append(_electrode_array.distance)
-            alpha.append(electrode_pos[i_array][2] + _electrode_array.angle)
-            # alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) +
-            #              _electrode_array.angle)
+                cy[i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
+                cy[i_array, :] /= np.linalg.norm(cy[i_array, :])
+                cx[i_array, :] = np.cross(cy[i_array, :], -n[i_array, :])
+                cx[i_array, :] /= np.linalg.norm(cx[i_array, :])
 
-        distance = np.array(distance).flatten()
-        alpha = np.array(alpha).flatten()
+                distance.append(_electrode_array.distance)
+                alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
+                # alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) +
+                #              _electrode_array.angle)
 
-        for i_a, _alpha in enumerate(alpha):
-            if _alpha > np.pi:
-                alpha[i_a] = _alpha - 2 * np.pi
-            elif _alpha < -np.pi:
-                alpha[i_a] = _alpha + 2 * np.pi
+            distance = np.array(distance).flatten()
+            alpha = np.array(alpha).flatten()
 
-        start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
-                           for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays)])
+            for i_a, _alpha in enumerate(alpha):
+                if _alpha > np.pi:
+                    alpha[i_a] = _alpha - 2 * np.pi
+                elif _alpha < -np.pi:
+                    alpha[i_a] = _alpha + 2 * np.pi
 
-        # determine electrode center on ellipsoid
-        electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
-                                                                            distance=distance,
-                                                                            alpha=alpha,
-                                                                            n_steps=400)
+            start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
+                               for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays)])
 
-        n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
+            # determine electrode center on ellipsoid
+            electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
+                                                                                distance=distance,
+                                                                                alpha=alpha,
+                                                                                n_steps=400)
 
-        # transform to ellipsoidal coordinates
-        electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
+            n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
 
-        # project coordinates to subject
-        ele_idx, electrode_coords_subject = ellipsoid2subject(coords=electrode_coords_eli_eli,
-                                                              ellipsoid=self.ellipsoid,
-                                                              surface=self.skin_surface)
+            # transform to ellipsoidal coordinates
+            electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
 
-        if len(ele_idx) != len(alpha):
-            return "Electrode position: invalid (not all electrodes in valid skin region)"
+            # project coordinates to subject
+            ele_idx, electrode_coords_subject[i_channel_stim] = ellipsoid2subject(coords=electrode_coords_eli_eli,
+                                                                                  ellipsoid=self.ellipsoid,
+                                                                                  surface=self.skin_surface)
+
+            if len(ele_idx) != len(alpha):
+                return "Electrode position: invalid (not all electrodes in valid skin region)"
 
         # i_ele = 0
         # ele_idx_rect = []
@@ -532,79 +628,82 @@ class TESoptimize():
         #         i_ele += 1
 
         # loop over electrodes and determine node indices
-        i_ele = 0
-        node_idx_dict = dict()
-        node_coords_list = [[] for _ in range(len(self.electrode.electrode_arrays))]
+        node_idx_dict = [dict() for _ in range(self.n_channel_stim)]
+        node_coords_list = [[] for _ in range(np.sum(self.n_ele_free))]
+        i_array_global = 0
 
-        for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-            for _electrode in _electrode_array.electrodes:
-                if _electrode.type == "spherical":
-                    # mask with a sphere
-                    mask = np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_ele, :], axis=1) < _electrode.radius
+        for i_channel_stim in range(self.n_channel_stim):
+            i_ele = 0
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                for _electrode in _electrode_array.electrodes:
+                    if _electrode.type == "spherical":
+                        # mask with a sphere
+                        mask = np.linalg.norm(self.skin_surface.nodes - electrode_coords_subject[i_channel_stim][i_ele, :], axis=1) < _electrode.radius
 
-                    # save position of electrode in subject space to posmat field
-                    _electrode.posmat[:3, 3] = electrode_coords_subject[i_ele, :]
+                        # save position of electrode in subject space to posmat field
+                        _electrode.posmat[:3, 3] = electrode_coords_subject[i_channel_stim][i_ele, :]
 
-                elif _electrode.type == "rectangular":
-                    cx_local = np.cross(n[i_ele, :], cy[i_array, :])
+                    elif _electrode.type == "rectangular":
+                        cx_local = np.cross(n[i_ele, :], cy[i_array, :])
 
-                    # rotate skin nodes to normalized electrode space
-                    rotmat = np.array([[cx_local[0], cy[i_array, 0], n[i_ele, 0]],
-                                       [cx_local[1], cy[i_array, 1], n[i_ele, 1]],
-                                       [cx_local[2], cy[i_array, 2], n[i_ele, 2]]])
-                    center = np.array([electrode_coords_subject[i_ele, 0],
-                                       electrode_coords_subject[i_ele, 1],
-                                       electrode_coords_subject[i_ele, 2]])
+                        # rotate skin nodes to normalized electrode space
+                        rotmat = np.array([[cx_local[0], cy[i_array, 0], n[i_ele, 0]],
+                                           [cx_local[1], cy[i_array, 1], n[i_ele, 1]],
+                                           [cx_local[2], cy[i_array, 2], n[i_ele, 2]]])
+                        center = np.array([electrode_coords_subject[i_channel_stim][i_ele, 0],
+                                           electrode_coords_subject[i_channel_stim][i_ele, 1],
+                                           electrode_coords_subject[i_channel_stim][i_ele, 2]])
 
-                    # save position of electrode in subject space to posmat field
-                    _electrode.posmat = np.vstack((np.hstack((rotmat, center[:, np.newaxis])), np.array([0, 0, 0, 1])))
+                        # save position of electrode in subject space to posmat field
+                        _electrode.posmat = np.vstack((np.hstack((rotmat, center[:, np.newaxis])), np.array([0, 0, 0, 1])))
 
-                    skin_nodes_rotated = (self.skin_surface.nodes - center) @ rotmat
+                        skin_nodes_rotated = (self.skin_surface.nodes - center) @ rotmat
 
-                    # mask with a box
-                    mask_x = np.logical_and(skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
-                                            skin_nodes_rotated[:, 0] < +_electrode.length_x / 2)
-                    mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
-                                            skin_nodes_rotated[:, 1] < +_electrode.length_y / 2)
-                    mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -20,
-                                            skin_nodes_rotated[:, 2] < +20)
-                    mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
-                else:
-                    raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
+                        # mask with a box
+                        mask_x = np.logical_and(skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
+                                                skin_nodes_rotated[:, 0] < +_electrode.length_x / 2)
+                        mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
+                                                skin_nodes_rotated[:, 1] < +_electrode.length_y / 2)
+                        mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -20,
+                                                skin_nodes_rotated[:, 2] < +20)
+                        mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
+                    else:
+                        raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
 
-                # node areas
-                _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
+                    # node areas
+                    _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
 
-                # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
-                if _electrode.area_skin < 0.8 * _electrode.area:
-                    return "Electrode position: invalid (partly overlaps with invalid skin region)"
+                    # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
+                    if _electrode.area_skin < 0.8 * _electrode.area:
+                        return "Electrode position: invalid (partly overlaps with invalid skin region)"
 
-                # save node indices (refering to global mesh)
-                _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
+                    # save node indices (refering to global mesh)
+                    _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
 
-                # save node coords (refering to global mesh)
-                _electrode.node_coords = self.msh.nodes.node_coord[np.where(mask)[0]]
+                    # save node coords (refering to global mesh)
+                    _electrode.node_coords = self.msh.nodes.node_coord[np.where(mask)[0]]
 
-                node_coords_list[i_array].append(_electrode.node_coords)
+                    node_coords_list[i_array_global].append(_electrode.node_coords)
 
-                # group node indices of same channel IDs
-                if _electrode.channel_id in node_idx_dict.keys():
-                    node_idx_dict[_electrode.channel_id] = np.append(node_idx_dict[_electrode.channel_id], _electrode.node_idx)
-                else:
-                    node_idx_dict[_electrode.channel_id] = _electrode.node_idx
+                    # group node indices of same channel IDs
+                    if _electrode.channel_id in node_idx_dict[i_channel_stim].keys():
+                        node_idx_dict[i_channel_stim][_electrode.channel_id] = np.append(node_idx_dict[i_channel_stim][_electrode.channel_id], _electrode.node_idx)
+                    else:
+                        node_idx_dict[i_channel_stim][_electrode.channel_id] = _electrode.node_idx
 
-                i_ele += 1
+                    i_ele += 1
 
-            # gather all electrode node coords of freely movable array
-            node_coords_list[i_array] = np.vstack(node_coords_list[i_array])
+                # gather all electrode node coords of freely movable arrays
+                node_coords_list[i_array_global] = np.vstack(node_coords_list[i_array_global])
+                i_array_global += 1
 
         # check if electrode distance is sufficient
         if self.min_electrode_distance is not None and self.min_electrode_distance > 0:
             i_array_test_start = 1
             # start with first array and test if all node coords are too close to other arrays
-            for i_array in range(len(self.electrode.electrode_arrays)):
-                for node_coord in node_coords_list[i_array]:
-                    for i_array_test in range(i_array_test_start, len(self.electrode.electrode_arrays)):
+            for i_array_global in range(np.sum(self.n_ele_free)):
+                for node_coord in node_coords_list[i_array_global]:
+                    for i_array_test in range(i_array_test_start, np.sum(self.n_ele_free)):
                         # calculate euclidic distance between node coords
                         min_dist = np.min(np.linalg.norm(node_coords_list[i_array_test] - node_coord, axis=1))
                         # stop testing if an electrode is too close
@@ -616,9 +715,12 @@ class TESoptimize():
         if plot:
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject)
-            node_idx_all = np.hstack([np.hstack(node_idx_dict[id]) for id in node_idx_dict.keys()])
-            points_nodes = self.msh.nodes.node_coord[node_idx_all, :]
-            np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), points_nodes)
+            for i_channel_stim in range(self.n_channel_stim):
+                node_idx_all = np.hstack([np.hstack(node_idx_dict[i_channel_stim][id])
+                                          for id in node_idx_dict[i_channel_stim].keys()])
+                points_nodes = self.msh.nodes.node_coord[node_idx_all, :]
+                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"),
+                           points_nodes)
 
         return node_idx_dict
 
@@ -635,75 +737,79 @@ class TESoptimize():
 
         Returns
         -------
-        e : np.ndarray of float [n_roi_ele] or list of np.ndarray of float [n_roi] with n_roi_elements each
-            Electric field in ROI(s). If multiple ROIs exist (in self.roi), a list is returned for each ROI
-            containing the e-field values as np.ndarrays.
+        e : list of list of np.ndarray [n_channel_stim, n_roi]
+            Electric field for different stimulations in ROI(s).
         """
-        # assign surface nodes to electrode positions
-        #start = time.time()
-        node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
-        #stop = time.time()
-        #print(f"Time: get_nodes_electrode: {stop-start}")
 
-        if type(node_idx_dict) is str:
-            self.logger.log(20, node_idx_dict)
-            return None
-        self.logger.log(20, "Electrode position: valid")
+        e = [[0 for _ in range(self.n_roi)] for _ in range(self.n_channel_stim)]
 
-        # set RHS
-        #start = time.time()
-        b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[channel] for channel in node_idx_dict.keys()],
-                                               currents=self.current,
-                                               input_type='node',
-                                               areas=self.msh_nodes_areas)
-        # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
-        b = np.delete(b, self.dirichlet_node-1)
+        # perform one electric field calculation for every stimulation condition (one at a time is on)
+        for i_channel_stim in range(self.n_channel_stim):
+            # assign surface nodes to electrode positions
+            #start = time.time()
+            node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
+            #stop = time.time()
+            #print(f"Time: get_nodes_electrode: {stop-start}")
 
-        #stop = time.time()
-        #print(f"Time: set RHS: {stop - start}")
+            if type(node_idx_dict[i_channel_stim]) is str:
+                self.logger.log(20, node_idx_dict)
+                return None
+            self.logger.log(20, "Electrode position: valid")
 
-        # solve
-        #start = time.time()
-        self.logger.disabled = True
+            # set RHS
+            #start = time.time()
+            b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
+                                                               for channel in node_idx_dict[i_channel_stim].keys()],
+                                                   currents=self.current,
+                                                   input_type='node',
+                                                   areas=self.msh_nodes_areas)
+            # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
+            b = np.delete(b, self.dirichlet_node-1)
 
-        # solve system
-        v = self.fem._solver.solve(b)
+            #stop = time.time()
+            #print(f"Time: set RHS: {stop - start}")
 
-        # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
-        v = np.insert(v, self.dirichlet_node-1, 0)
-        self.logger.disabled = False
-        #stop = time.time()
-        #print(f"Time: solve: {stop - start}")
+            # solve
+            #start = time.time()
+            self.logger.disabled = True
 
-        # TODO: @Axel do we need this here?: (it is done in fem.solve after calling solver._solve)
-        # if self.dirichlet is not None:
-        #     v, dof_map = self.dirichlet.apply_to_solution(v, dof_map)
-        # dof_map, v = dof_map.order_like(self.dof_map, array=v)
+            # solve system
+            v = self.fem._solver.solve(b)
 
-        # Determine e in ROIs
-        #start = time.time()
-        e = [0 for _ in range(len(self.roi))]
-        for i_roi, r in enumerate(self.roi):
-             e[i_roi] = r.calc_fields(v)
-        #stop = time.time()
-        #print(f"Time: calc fields: {stop - start}")
+            # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
+            v = np.insert(v, self.dirichlet_node-1, 0)
+            self.logger.disabled = False
+            #stop = time.time()
+            #print(f"Time: solve: {stop - start}")
 
-        # plot field
-        if plot:
-            for i, _e in enumerate(e):
-                import pynibs
-                if not os.path.exists(os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5")):
-                    pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                               points=self.roi[i].points,
-                                               con=self.roi[i].con,
-                                               replace=True,
-                                               hdf5_path='/mesh')
+            # TODO: @Axel do we need this here?: (it is done in fem.solve after calling solver._solve)
+            # if self.dirichlet is not None:
+            #     v, dof_map = self.dirichlet.apply_to_solution(v, dof_map)
+            # dof_map, v = dof_map.order_like(self.dof_map, array=v)
 
-                pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
-                                            data_names=["E_mag"],
-                                            data_hdf_fn_out=os.path.join(self.plot_folder, f"e_roi_{i}_data.hdf5"),
-                                            geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                            replace=True)
+            # Determine electric field in ROIs
+            #start = time.time()
+            for i_roi, r in enumerate(self.roi):
+                 e[i_channel_stim][i_roi] = r.calc_fields(v)
+            #stop = time.time()
+            #print(f"Time: calc fields: {stop - start}")
+
+            # plot field
+            if plot:
+                for i, _e in enumerate(e):
+                    import pynibs
+                    if not os.path.exists(os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5")):
+                        pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                   points=self.roi[i].points,
+                                                   con=self.roi[i].con,
+                                                   replace=True,
+                                                   hdf5_path='/mesh')
+
+                    pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
+                                                data_names=["E_mag"],
+                                                data_hdf_fn_out=os.path.join(self.plot_folder, f"e_roi_{i}_data.hdf5"),
+                                                geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                replace=True)
 
         return e
 
@@ -770,22 +876,32 @@ class TESoptimize():
         self.logger.log(20, parameters_str)
 
         # reformat parameters
-        self.electrode_pos = [p for p in np.reshape(parameters, (self.n_ele_free, 3))]
+        parameters_array = np.reshape(parameters, (np.sum(self.n_ele_free), 3))
+        self.electrode_pos = [[] for _ in range(self.n_channel_stim)]
 
-        # update field (returns None if position is not applicable)
+        i_para = 0
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                self.electrode_pos[i_channel_stim].append(parameters_array[i_para, :])
+                i_para += 1
+
+        # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
         # calculate goal function value for every ROI
-        y = np.zeros(len(self.roi))
+        y = np.zeros((self.n_channel_stim, self.n_roi))     # shape: [n_channel_stim x n_roi]
+
         if e is None:
-            y = np.ones(len(self.roi))
+            y = np.ones(self.n_roi)
         else:
             if self.goal == "mean":
-                for i_roi in range(len(e)):
-                    y[i_roi] = -np.mean(e[i_roi])
+                for i_channel_stim in range(self.n_channel_stim):
+                    for i_roi in range(self.n_roi):
+                        y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim, i_roi])
             elif self.goal == "max":
-                for i_roi in range(len(e)):
-                    y[i_roi] = -np.percentile(e[i_roi], 99.9)
+                for i_channel_stim in range(self.n_channel_stim):
+                    for i_roi in range(self.n_roi):
+                        y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim, i_roi], 99.9)
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
@@ -818,7 +934,7 @@ class TESoptimize():
                             len_tol=self.optimizer_options["len_tol"],
                             f_min_rtol=self.optimizer_options["f_min_rtol"],
                             maxiter=self.optimizer_options["maxiter"])
-            self.electrode_pos_opt = [p for p in np.reshape(result.x, (self.n_ele_free, 3))]
+            self.electrode_pos_opt = [p for p in np.reshape(result.x, (np.sum(self.n_ele_free), 3))]
             fopt = result.fun
             nfev = result.nfev
             self.logger.log(20, f"Optimization finished! Best electrode position: {self.electrode_pos_opt}")
