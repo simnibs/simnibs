@@ -113,7 +113,7 @@ Setting up a TMS Simulation
    :align: center
 
 \
-2. Click on *Browse* and select the *Magstim_70mm_Fig8.nii.gz* coil file in the *legacy* subfolder
+2. Click on *Browse* and select the *Magstim_70mm_Fig8.nii.gz* coil file in the *legacy_and_other* subfolder
 
 .. image:: ../images/tutorial_addcoil.png
    :align: center
