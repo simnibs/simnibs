@@ -44,14 +44,12 @@ if __name__ == '__main__':
     args = parse_args(sys.argv)
 
     montage = Path(args.montage).with_suffix(".csv")
-    info = Path(args.info)
-    trans = Path(args.trans)
 
     if args.format == 'mne':
         from simnibs.simulation.eeg_mne_tools import prepare_montage
-        prepare_montage(montage, info, trans)
+        prepare_montage(montage, args.info, args.trans)
     elif args.format == 'fieldtrip':
         from simnibs.simulation.eeg_fieldtrip_tools import prepare_montage
-        prepare_montage(montage, info, trans)
+        prepare_montage(montage, args.info, args.trans)
     else:
         raise ValueError(f'{args.format} is not a valid format.')
