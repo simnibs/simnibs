@@ -31,10 +31,49 @@ from ..utils.simnibs_logger import logger
 # TODO: handle 3 node interactions with 3 tissues by weighting them with two 2-node configurations
 # TODO: update conductivities in MATLAB: (matlab_tools/standard_cond.m) (index! +1)
 
-def standard_cond():
-    S = []
-    for i in range(11000):
-        S.append(sim_struct.COND())
+
+class Cond:
+    """ conductivity information
+    Conductivity information for simulations
+
+    Attributes:
+    ---------------------
+    name: str
+        Name of tissue
+    value: float
+        value of conductivity
+    descrip: str
+        description of conductivity
+    distribution_type: 'uniform', 'normal', 'beta' or None
+        type of distribution for gPC simulation
+    distribution_parameters: list of floats
+        if distribution_type is 'uniform': [min_value, max_value]
+        if distribution_type is 'normal': [mean, standard_deviation]
+        if distribution_type is 'beta': [p, q, min_value, max_value]
+    """
+
+    def __init__(self):
+        self.name = None  # e.g. WM, GM
+        self.value = 'nan'  # in S/m
+        self.descrip = ''
+        self._distribution_type = None
+        self.distribution_parameters = []
+
+    @classmethod
+    def multiple(cls, n):
+        obj = []
+        for i in range(n):
+            o = cls()
+            obj.append(o)
+        return obj
+
+
+def standard_cond(n=11000):
+    # S = []
+    # for i in range(11000):
+    #     S.append(sim_struct.COND())
+
+    S = Cond.multiple(n)
 
     # WM
     S[0].name = 'WM'

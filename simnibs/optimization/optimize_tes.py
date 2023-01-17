@@ -16,7 +16,7 @@ from ..mesh_tools import Msh
 from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
 from ..simulation.sim_struct import ELECTRODE, SimuList
-from ..simulation.fem import FEMSystem
+from ..simulation.fem import FEMSystem, get_dirichlet_node_index_cog
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
@@ -29,7 +29,8 @@ SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__fi
 
 
 class TESoptimize():
-    ''' Defines a TES optimization problem using a direct approach
+    """
+    Defines a TES optimization problem using a direct approach
 
     Parameters
     --------------
@@ -102,10 +103,10 @@ class TESoptimize():
         list of TDCSavoid objects defining regions to avoid
     open_in_gmsh: bool (optional)
         Whether to open the result in Gmsh after the calculations. Default: False
-    '''
+    """
 
     def __init__(self,
-                 msh,
+                 mesh,
                  electrode,
                  roi,
                  skin_mask=None,
@@ -151,23 +152,22 @@ class TESoptimize():
             fn_eeg_cap = os.path.split(fn_eeg_cap)[1]
 
         # read mesh or store in self
-        if type(msh) is str:
-            self.msh = mesh_io.read_msh(msh)
-        elif type(msh) == Msh:
-            self.msh = msh
+        if type(mesh) is str:
+            self.mesh = mesh_io.read_msh(mesh)
+        elif type(mesh) == Msh:
+            self.mesh = mesh
         else:
             raise TypeError("msh has to be either path to .msh file or SimNIBS mesh object.")
 
         # get subject specific filenames
         self.ff_templates = Templates()
-        self.ff_subject = SubjectFiles(fnamehead=self.msh.fn)
+        self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
 
         # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
-        self.dirichlet_node = np.argmin(np.linalg.norm(
-            self.msh.nodes.node_coord - np.mean(self.msh.nodes.node_coord, axis=0), axis=1)) + 1
+        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)
 
         # Calculate node areas for whole mesh
-        self.msh_nodes_areas = self.msh.nodes_areas()
+        self.mesh_nodes_areas = self.mesh.nodes_areas()
 
         self.ellipsoid = Ellipsoid()
         self.fn_eeg_cap = fn_eeg_cap
@@ -179,20 +179,20 @@ class TESoptimize():
             self.fn_electrode_mask = skin_mask
 
         # relabel internal air
-        self.msh_relabel = relabel_internal_air(m=self.msh,
-                                                subpath=os.path.split(self.msh.fn)[0],
+        self.mesh_relabel = relabel_internal_air(m=self.mesh,
+                                                subpath=os.path.split(self.mesh.fn)[0],
                                                 label_skin=1005,
                                                 label_new=1099,
                                                 label_internal_air=501)
 
         # create skin surface
-        self.skin_surface = surface.Surface(mesh=self.msh_relabel, labels=1005)
+        self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
 
         # determine point indices where the electrodes may be applied during optimization
-        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.msh_relabel)
+        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.mesh_relabel)
 
         # get mapping between skin_surface node indices and global mesh nodes
-        self.node_idx_msh = np.where(np.isin(self.msh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
+        self.node_idx_msh = np.where(np.isin(self.mesh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
 
         # fit optimal ellipsoid to valid skin points
         self.ellipsoid.fit(points=self.skin_surface.nodes)
@@ -341,9 +341,10 @@ class TESoptimize():
 
         # prepare FEM
         self.logger.log(20, 'Preparing FEM')
-        self.simulist = SimuList(mesh=self.msh)
+        self.simulist = SimuList(mesh=self.mesh)
+        self.simulist.anisotropy_type = self.anisotropy_type
         cond = self.simulist.cond2elmdata()
-        self.fem = FEMSystem.tdcs_neumann(mesh=self.msh,
+        self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
                                           cond=cond,
                                           ground_electrode=self.dirichlet_node,
                                           solver_options=self.solver_options,
@@ -353,7 +354,7 @@ class TESoptimize():
         # log summary
         ################################################################################################################
         self.logger.log(25, f"="*100)
-        self.logger.log(25, f"headmodel:           {self.msh.fn}")
+        self.logger.log(25, f"headmodel:           {self.mesh.fn}")
         self.logger.log(25, f"n_roi:               {self.n_roi}")
         self.logger.log(25, f"anisotropy type:     {self.anisotropy_type}")
         self.logger.log(25, f"n_channel_stim:      {self.n_channel_stim}")
@@ -434,7 +435,6 @@ class TESoptimize():
                                         data_hdf_fn_out=os.path.join(self.output_folder, "plots", "upper_head_region_data.hdf5"),
                                         geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
                                         replace=True)
-
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -681,7 +681,7 @@ class TESoptimize():
                     _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
 
                     # save node coords (refering to global mesh)
-                    _electrode.node_coords = self.msh.nodes.node_coord[np.where(mask)[0]]
+                    _electrode.node_coords = self.mesh.nodes.node_coord[np.where(mask)[0]]
 
                     node_coords_list[i_array_global].append(_electrode.node_coords)
 
@@ -718,12 +718,11 @@ class TESoptimize():
             for i_channel_stim in range(self.n_channel_stim):
                 node_idx_all = np.hstack([np.hstack(node_idx_dict[i_channel_stim][id])
                                           for id in node_idx_dict[i_channel_stim].keys()])
-                points_nodes = self.msh.nodes.node_coord[node_idx_all, :]
+                points_nodes = self.mesh.nodes.node_coord[node_idx_all, :]
                 np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"),
                            points_nodes)
 
         return node_idx_dict
-
 
     def update_field(self, electrode_pos, plot=False):
         """
@@ -743,14 +742,14 @@ class TESoptimize():
 
         e = [[0 for _ in range(self.n_roi)] for _ in range(self.n_channel_stim)]
 
+        # assign surface nodes to electrode positions
+        # start = time.time()
+        node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
+        # stop = time.time()
+        # print(f"Time: get_nodes_electrode: {stop-start}")
+
         # perform one electric field calculation for every stimulation condition (one at a time is on)
         for i_channel_stim in range(self.n_channel_stim):
-            # assign surface nodes to electrode positions
-            #start = time.time()
-            node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
-            #stop = time.time()
-            #print(f"Time: get_nodes_electrode: {stop-start}")
-
             if type(node_idx_dict[i_channel_stim]) is str:
                 self.logger.log(20, node_idx_dict)
                 return None
@@ -760,9 +759,9 @@ class TESoptimize():
             #start = time.time()
             b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
                                                                for channel in node_idx_dict[i_channel_stim].keys()],
-                                                   currents=self.current,
+                                                   currents=self.current[i_channel_stim],
                                                    input_type='node',
-                                                   areas=self.msh_nodes_areas)
+                                                   areas=self.mesh_nodes_areas)
             # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
             b = np.delete(b, self.dirichlet_node-1)
 
@@ -861,11 +860,6 @@ class TESoptimize():
         parameters : np.ndarray of float [n_free_arrays * 3]
             Electrodes positions in spherical coordinates (theta, phi, alpha) for each freely movable array.
             e.g.: np.array([theta_1, phi_1, alpha_1, theta_2, phi_2, alpha_2, ...])
-        goal : str, optional, default: "mean"
-            Goal function the electric field is optimized in regard of. The optimizer is looking for a
-            minimum. Small values are treated as better solutions (inversion needed in some cases!).
-            - mean: Negative mean electric field
-            - max: Negative maximum electric field (99.9th percentile for stability)
 
         Returns
         -------
@@ -958,7 +952,7 @@ class TESoptimize():
                                   nfev=nfev,
                                   e=e,
                                   time=t_optimize,
-                                  msh=self.msh,
+                                  msh=self.mesh,
                                   electrode=self.electrode,
                                   goal=self.goal)
 

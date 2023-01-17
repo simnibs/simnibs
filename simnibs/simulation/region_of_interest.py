@@ -105,7 +105,7 @@ class RegionOfInterest:
         self.gradient = gradient[self.idx]
         self.node_index_list = msh_cropped.elm.node_number_list[self.idx] - 1
 
-    def calc_fields(self, v, dadt=None):
+    def calc_fields(self, v, dadt=None, dataType=0):
         """
         Calculate electric field in ROI from v (and A)
 
@@ -115,7 +115,8 @@ class RegionOfInterest:
             Electric potential in each node in the whole head model
         dadt : np.ndarray of float, optional, default: None
             Magnetic vector potential in each node in the whole head model (for TMS)
-
+        dataType : int, optional, default: 0
+            Return magnitude of electric field (dataType = 0) otherwise return x, y, z components
         Returns
         -------
         e : np.ndarray of float
@@ -129,8 +130,9 @@ class RegionOfInterest:
             # TMS
             fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list]) - dadt[self.idx]
 
-        # calculate the magnitude of E
-        fields = np.linalg.norm(fields, axis=1, keepdims=True)
+        if dataType == 0:
+            # calculate the magnitude of E
+            fields = np.linalg.norm(fields, axis=1, keepdims=True)
 
         # interpolate to ROI
         e = self.sF @ fields

@@ -1766,3 +1766,30 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options
         v[i] = S.solve(b)
 
     return v
+
+
+def get_dirichlet_node_index_cog(mesh):
+    """
+    Get closest node to center of gravity of head model ensuring that it does not lie on a surface.
+    (indexing starting with 1)
+
+    Parameters
+    ----------
+    mesh : Msh object
+        Mesh object
+
+    Returns
+    -------
+    node_idx : int
+        Index of the node with node indexing starting with 1
+    """
+
+    # get list of node indices, which are closest to center of gravity of mesh
+    node_idx = np.argsort(np.linalg.norm(
+        mesh.nodes.node_coord - np.mean(mesh.nodes.node_coord, axis=0), axis=1))
+    node_idx_triangles = np.unique(mesh.elm.node_number_list[mesh.elm.triangles-1, :][:, :-1])
+
+    # test and return first node, which is not lying on a surface
+    for idx in node_idx:
+        if idx not in node_idx_triangles:
+            return idx + 1
