@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 import mne
 from mne.io.constants import FIFF
@@ -83,7 +83,9 @@ def make_source_morph(
 
 
 def setup_source_space(
-    m2m_dir: Union[Path, str], subsampling: int = None, morph_to_fsaverage: int = 5
+    m2m_dir: Union[Path, str],
+    subsampling: Union[int, None] = None,
+    morph_to_fsaverage: int = 5
 ):
     """Setup a source space for use with MNE-Python.
 
@@ -446,8 +448,8 @@ def make_forward(
     ), f"Source space should be in {FIFF.FIFFV_COORD_MRI} coordinate system"
 
     # Pick the EEG channels and check
-    picks = [info["ch_names"][i] for i in mne.pick_types(info, eeg=True)]
-    info.pick_channels(picks)
+    # picks = [info["ch_names"][i] for i in mne.pick_types(info, eeg=True)]
+    # info.pick_channels(picks)
     assert (
         info["ch_names"] == forward["ch_names"]
     ), f"Inconsistencies between channels in Info and leadfield {info['ch_names']} and {forward['ch_names']}"
@@ -458,8 +460,7 @@ def make_forward(
         )
 
     # fmt: off
-    _, _, _, _, _, eegnames, _, _, update_kwargs, _ \
-        = mne.forward._make_forward._prepare_for_forward(**kwargs)
+    sensors, _, _, update_kwargs, _ = mne.forward._make_forward._prepare_for_forward(**kwargs)
     # fmt: on
 
     # update_kwargs["info"]["command_line"] = ""
@@ -502,7 +503,7 @@ def make_forward(
         (forward["n_channels"], forward["n_sources"] * forward["n_orientations"])
     )
     # Transpose to (3*n_dipoles, n_sensors)
-    fwd = mne.forward._make_forward._to_forward_dict(fwd.T, eegnames)
+    fwd = mne.forward._make_forward._to_forward_dict(fwd.T, sensors["eeg"]["ch_names"])
     fwd.update(**update_kwargs)
 
     return fwd
