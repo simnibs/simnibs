@@ -36,12 +36,20 @@ def parse_args(argv):
             it does not exist, it will be created (default: %(default)s).""",
     )
 
+    mesh_electrodes = dict(
+        action="store_true",
+        help="""Model electrodes as rings with a diameter of 10 mm and a
+        thickness of 4 mm. Otherwise, electrodes are modeled as points
+        (default: %(default)s)."""
+    )
+
     parser = argparse.ArgumentParser(**program)
 
     clargs.subid.add_to(parser)
     clargs.subsampling.add_to(parser)
 
     parser.add_argument("montage", **montage)
+    parser.add_argument("-m", "--mesh_electrodes", **mesh_electrodes)
     parser.add_argument("-o", "--output_dir", **output_dir)
 
     return parser.parse_args(argv[1:])
@@ -54,5 +62,6 @@ if __name__ == "__main__":
     subid = m2m_dir.stem.lstrip("m2m_")
     fem_dir = Path(args.output_dir.format(subid=subid)).resolve()
     montage = Path(args.montage)
+    point_electrodes = not args.mesh_electrodes
 
-    compute_tdcs_leadfield(m2m_dir, fem_dir, montage, args.subsampling)
+    compute_tdcs_leadfield(m2m_dir, fem_dir, montage, args.subsampling, point_electrodes)

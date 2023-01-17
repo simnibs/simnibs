@@ -10,7 +10,6 @@ from typing import (
 import h5py
 import nibabel as nib
 import numpy as np
-import pyvista as pv
 import scipy.ndimage as ndi
 from scipy.optimize import least_squares
 from scipy.sparse import coo_matrix, csr_matrix
@@ -88,7 +87,8 @@ class FsAverage(object):
         ----------
         subdivision : int
             The FsAverage subdivision factor (default = 7 which is the full
-            resolution fsaverage template). Other available factors are 5 and 6.
+            resolution fsaverage template). Other available factors are 5 and
+            6.
 
         """
         mapper = {5: "fsaverage5", 6: "fsaverage6", 7: "fsaverage"}
@@ -953,6 +953,7 @@ def compute_tdcs_leadfield(
     fem_dir: Union[Path, str],
     fname_montage: Union[Path, str],
     subsampling: Union[int, None] = None,
+    point_electrodes: bool = True,
     init_kwargs: Union[Dict, None] = None,
     run_kwargs: Union[Dict, None] = None,
 ):
@@ -968,6 +969,9 @@ def compute_tdcs_leadfield(
     subsampling : int | None
         The subsampling to use. If the files do not exist, they are created
         (default = None).
+    point_electrodes : bool
+        Whether to model electrodes as points (defaults) or mesh them onto the
+        headmodel.
     init_kwargs : dict
         Kwargs used to update the initialization of `TDCSLEADFIELD`. Can be
         used to override default settings, e.g., by passing another list of
@@ -993,7 +997,8 @@ def compute_tdcs_leadfield(
     try:
         _ = [subfiles.get_surface(h, subsampling=subsampling) for h in HEMISPHERES]
     except FileNotFoundError:
-        _ = subsample_surfaces(m2m_dir, n_points=subsampling)
+        if subsampling:
+            _ = subsample_surfaces(m2m_dir, n_points=subsampling)
 
     # The paths should be strings otherwise errors might occur when writing the
     # .hdf5 file
@@ -1002,6 +1007,8 @@ def compute_tdcs_leadfield(
     lf.subpath = str(subfiles.subpath)
     lf.pathfem = str(fem_dir)
     lf.field = "E"
+    if point_electrodes:
+        lf.electrode = None
     # lf.solver_options = "pardiso"
     lf.eeg_cap = str(fname_montage)
     # Tissues to include results from. Default is 1006, which is the eyes,
@@ -1242,7 +1249,9 @@ def prepare_for_inverse(
 
 def _write_src_fwd_morph(src, forward, morph, fname_leadfield, subsampling, out_format):
     leadfield = Path(fname_leadfield)
-    stem = f"{leadfield.stem}_subsampling-{subsampling:d}-{{:s}}"
+    stem = leadfield.stem
+    stem += f"_subsampling-{subsampling:d}" if subsampling else ""
+    stem += "-{:s}"
     fname_fwd = leadfield.parent / stem.format("fwd")
     fname_morph = leadfield.parent / stem.format("morph")
     fname_src = leadfield.parent / stem.format("src")
