@@ -16,11 +16,10 @@ from_m = {k: 1 / v for k, v in to_m.items()}
 def prepare_montage(
     fname_montage: Union[Path, str],
     fname_info: Union[Path, str],
-    fname_trans: Union[Path, str],
+    fname_trans: Union[None, Path, str] = None,
 ):
 
     fname_info = Path(fname_info)
-    fname_trans = Path(fname_trans)
 
     info = loadmat(fname_info)["elec"][0]
     info = dict(zip(info.dtype.names, info[0]))
@@ -31,15 +30,17 @@ def prepare_montage(
     info["elecpos"] *= scale
     info["chanpos"] *= scale  # unused
 
-    if fname_trans.suffix == ".mat":
-        trans = loadmat(fname_trans)["trans"]
-    elif fname_trans.suffix == ".txt":
-        trans = np.loadtxt(fname_trans)
-    else:
-        raise ValueError("`fname_trans` must be either a MAT or a TXT file.")
+    if fname_trans:
+        fname_trans = Path(fname_trans)
+        if fname_trans.suffix == ".mat":
+            trans = loadmat(fname_trans)["trans"]
+        elif fname_trans.suffix == ".txt":
+            trans = np.loadtxt(fname_trans)
+        else:
+            raise ValueError("`fname_trans` must be either a MAT or a TXT file.")
 
-    info["elecpos"] = eeg.apply_trans(trans, info["elecpos"])
-    info["chanpos"] = eeg.apply_trans(trans, info["chanpos"])
+        info["elecpos"] = eeg.apply_trans(trans, info["elecpos"])
+        info["chanpos"] = eeg.apply_trans(trans, info["chanpos"])
 
     is_eeg = info["chantype"] == "eeg"
     montage = np.column_stack(

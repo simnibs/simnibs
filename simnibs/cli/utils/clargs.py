@@ -34,7 +34,6 @@ subsampling = CommandLineArgument(
     ["-s", "--subsampling"],
     dict(
         type=int,
-        default=10000,
         help="""Target number of sources in each hemisphere. Original
         surfaces are ~100,000 vertices (default: %(default)s).""",
     ),
@@ -98,9 +97,10 @@ info_fieldtrip = CommandLineArgument(
 )
 
 trans_fieldtrip = CommandLineArgument(
-    ["trans"],
+    ["-t", "--trans"],
     dict(
         type=str,
+        default=None,
         help="""
         Name of a MAT file containing the variable `trans` which is a 4x4
         affine transformation matrix mapping from the coordinate system of the
