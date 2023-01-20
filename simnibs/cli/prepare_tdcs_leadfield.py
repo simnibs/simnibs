@@ -42,6 +42,11 @@ def parse_args(argv):
         thickness of 4 mm. Otherwise, electrodes are modeled as points
         (default: %(default)s)."""
     )
+    pardiso = dict(
+        action="store_true",
+        help="""Use PARDISO for FEM calculations. Otherwise, PETSc will be
+        used.""",
+    )
 
     parser = argparse.ArgumentParser(**program)
 
@@ -51,6 +56,7 @@ def parse_args(argv):
     parser.add_argument("montage", **montage)
     parser.add_argument("-m", "--mesh_electrodes", **mesh_electrodes)
     parser.add_argument("-o", "--output_dir", **output_dir)
+    parser.add_argument("--pardiso", **pardiso)
 
     return parser.parse_args(argv[1:])
 
@@ -64,4 +70,15 @@ if __name__ == "__main__":
     montage = Path(args.montage)
     point_electrodes = not args.mesh_electrodes
 
-    compute_tdcs_leadfield(m2m_dir, fem_dir, montage, args.subsampling, point_electrodes)
+    init_kwargs = {}
+    if args.pardiso:
+        init_kwargs["solver_options"] = "pardiso"
+
+    compute_tdcs_leadfield(
+        m2m_dir,
+        fem_dir,
+        montage,
+        args.subsampling,
+        point_electrodes,
+        init_kwargs=init_kwargs
+    )
