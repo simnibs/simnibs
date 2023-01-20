@@ -119,7 +119,7 @@ def make_sourcemodel(src: Dict):
 
     # Construct a composite triangulation for both hemispheres
     nrs = {h: len(src[h]["points"]) for h in hemis}
-    tri_reindex = (0, nrs[hemis[1]])
+    tri_reindex = (0, nrs[hemis[0]])
     tri = np.concatenate([src[h]["tris"] + i for h, i in zip(hemis, tri_reindex)]) + 1
 
     # All sources are valid
