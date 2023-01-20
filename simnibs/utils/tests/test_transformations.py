@@ -722,10 +722,10 @@ def test_get_nearest_triangles_on_surface():
     surf = dict(points=points, tris=tris)
 
     test_points = np.array([
-        [-0.9, -0.9, 1],
-        [-0.9,  0.9, 1],
-        [ 0.9, -0.9, 1],
-        [ 0.9,  0.9, 1],
+        [-0.9, -0.9, 1.0],
+        [-0.9,  0.9, 1.0],
+        [ 0.9, -0.9, 1.0],
+        [ 0.9,  0.9, 1.0],
     ])
 
     # all
