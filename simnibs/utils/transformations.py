@@ -791,7 +791,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
              Default: None (positions will be projected on closest surface)
      distance: float or nx1 ndarray (optional)
          Distance (normal) to the surface to be enforced. Default: 0
-         Note: negative values will move the point inside, positive values 
+         Note: negative values will move the point inside, positive values
                outside the volume defined by the surface
 
      Returns
@@ -802,7 +802,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
     pts = np.array(pts)
     if pts.ndim == 1:
         pts = pts.reshape((1,len(pts)))
-    
+
     # get surface
     if surface_tags is not None:
         tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
@@ -810,7 +810,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
         tr_of_interest = mesh.elm.elm_type == 2
     tri_node_list = mesh.elm.node_number_list[tr_of_interest, :3] - 1
     tri_nodes = np.unique(tri_node_list)
-    
+
     old2new = np.zeros(tri_nodes[-1] + 1, dtype = 'int32')
     old2new[tri_nodes] = np.arange(len(tri_nodes))
     surf = {
@@ -820,23 +820,23 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
 
     # get indices of close-by surface nodes and their connected triangles
     pttris = _get_nearest_triangles_on_surface(pts, surf, n = 3)
-        
+
     # project points on triangles
     tris, _, projs, dists = _project_points_to_surface(pts, surf, pttris)
-    
+
     # ensure distance (optional)
     if not np.all(np.isclose(distance, 0)):
         distance = np.array(distance)
         if distance.ndim == 0:
             distance = distance.reshape(1)
-            
+
         tri_pts = surf['points'][surf['tris'][tris]]
         sideA = tri_pts[:, 1] - tri_pts[:, 0]
         sideB = tri_pts[:, 2] - tri_pts[:, 0]
         n = np.cross(sideA, sideB)
         n /= np.linalg.norm(n, axis=1)[:, None]
-        
-        projs += distance[:, None]*n                       
+
+        projs += distance[:, None]*n
 
     return projs
 
@@ -941,7 +941,7 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
     if transf_type == 'affine':
         coords_transf = coordinates_affine(coords, transf_def)
         if mesh:
-            coords_transf = project_points_on_surface(mesh, coords_transf, 
+            coords_transf = project_points_on_surface(mesh, coords_transf,
                                                       surface_tags = 1005,
                                                       distance=distances)
         vy_transf = vectors_affine(v_y, transf_def)
@@ -953,7 +953,7 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
         coords_transf, vz_transf = coordinates_nonlinear(coords, transf_def,
                                                          vectors=v_z)
         if mesh:
-            coords_transf = project_points_on_surface(mesh, coords_transf, 
+            coords_transf = project_points_on_surface(mesh, coords_transf,
                                                       surface_tags = 1005,
                                                       distance=distances)
     else:
@@ -1079,7 +1079,7 @@ def warp_coordinates(coordinates, m2m_folder,
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
 
-    mesh_in : mesh file, optional 
+    mesh_in : mesh file, optional
         scalp or head mesh, used to project electrodes onto scalp or ensure
         TMS coil distances from scalp; is used only for direction 'mni2subject'
         (standard: None; the head mesh file will then be automatically loaded,
@@ -1991,7 +1991,7 @@ def _get_nearest_triangles_on_surface(
     return the triangles to which these nodes belong.
 
     points : ndarray
-        Points for which we want to find the candidate triangles. Shape (n, d) 
+        Points for which we want to find the candidate triangles. Shape (n, d)
         where n is the number of points and d is the dimension.
     surf : dict
         Dictionary with keys points and tris corresponding to the nodes and
@@ -2016,12 +2016,12 @@ def _get_nearest_triangles_on_surface(
     surf_points = surf["points"] if subset is None else surf["points"][subset]
     tree = scipy.spatial.cKDTree(surf_points)
     _, ix = tree.query(points, n)
-    if subset:
+    if subset is not None:
         ix = subset[ix] # ensure ix indexes into surf['points']
-    pttris = _get_triangle_neighbors(surf["tris"], len(surf["points"]))[ix]        
+    pttris = _get_triangle_neighbors(surf["tris"], len(surf["points"]))[ix]
     if n > 1:
         pttris = list(map(lambda x: np.unique(np.concatenate(x)), pttris))
-    
+
     return (pttris, ix) if return_index else pttris
 
 
