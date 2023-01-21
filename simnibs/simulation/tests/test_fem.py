@@ -611,7 +611,7 @@ class TestLeadfield:
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('field', ['E', 'J'])
     @pytest.mark.parametrize('n_workers', [1, 2])
-    @pytest.mark.parametrize('input_type', ['tag', 'node'])
+    @pytest.mark.parametrize('input_type', ['tag', 'point'])
     def test_leadfield(self, input_type, n_workers, field, post_pro, cube_msh):
         if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows or MacOS'''
@@ -622,12 +622,11 @@ class TestLeadfield:
         cond = mesh_io.ElementData(cond, mesh=m)
         if input_type == 'tag':
             el = [1100, 1101, 1101]
-        elif input_type == 'node':
-            el = [
-                np.unique(m.elm[m.elm.tag1 == 1100, :3]),
-                np.unique(m.elm[m.elm.tag1 == 1101, :3]),
-                np.unique(m.elm[m.elm.tag1 == 1101, :3])
-             ]
+            current = 1.0
+        elif input_type == 'point':
+            el = [m.elm[m.elm.tag1 == i, :3][0] for i in [1100, 1101, 1101]]
+            current = 2*[[0.2, 0.3, 0.5]]
+
         fn_hdf5 = tempfile.NamedTemporaryFile(delete=False).name
         dataset = 'leadfield'
         if post_pro:
@@ -637,8 +636,9 @@ class TestLeadfield:
             post = None
 
         fem.tdcs_leadfield(
-            m, cond, el,
-            fn_hdf5, dataset, roi=[5],
+            m, cond, el, fn_hdf5, dataset,
+            current=current,
+            roi=[5],
             field=field,
             post_pro=post,
             n_workers=n_workers,
