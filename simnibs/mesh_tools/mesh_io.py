@@ -2386,6 +2386,40 @@ class Msh:
             return False
         return any_intersections
 
+    def get_outer_skin_points(self, tol: float = 1e-3):
+        """Return indices of points estimated to be on the outer skin surface
+        (i.e., not those inside nasal cavities, ear canals etc.). Outer points
+        are identified by looking for points which do not intersect the mesh in
+        the direction of its normal. This is not perfect but seems to do a
+        reasonable job of identifying the relevant points. These may then be
+        used for projecting electrodes onto the surface.
+
+        PARAMETERS
+        ----------
+        tol : float
+            Tolerance for avoiding self-intersections.
+
+        RETURNS
+        -------
+        indices : ndarray
+            Indices of the outer skin points.
+        """
+        assert tol > 0
+
+        skin_faces = self.elm[self.elm.tag1 == 1005, :3]
+        subset = np.unique(skin_faces-1)
+        m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
+
+        subset = subset if len(subset) < m.nodes.nr else slice(None)
+        n = m.nodes_normals().value[subset]
+        # Avoid self-intersections by moving each point slightly along the test
+        # direction
+        idx = np.unique(m.intersect_ray(m.nodes.node_coord[subset] + tol * n, n)[0][:, 0])
+        if isinstance(subset, slice):
+            return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
+        else:
+            return np.setdiff1d(subset, subset[idx], assume_unique=True)
+
     def get_AABBTree(self):
         """
         Build AABBTree for efficient intersection tests
@@ -4574,7 +4608,7 @@ class NodeData(Data):
         inv_affine = np.linalg.inv(affine)
         nd = np.hstack([msh_th.nodes.node_coord, np.ones((msh_th.nodes.nr, 1))])
         nd = inv_affine.dot(nd.T).T[:, :3]
-        
+
         #handle compartments
         if compartments is None:
             compartments = [[i,] for i in range(v.shape[1])]
@@ -4596,7 +4630,7 @@ class NodeData(Data):
             i = 0
             while i < n:
                 pool.apply_async(cython_msh.interp_grid_nodedata_max,args=(
-                   np.array(n_voxels, dtype=int), field, nd, 
+                   np.array(n_voxels, dtype=int), field, nd,
                    msh_th.elm.node_number_list[i:i+n_elm] - 1,
                    compartments,labelimage,maximage))
                 i += n_elm
@@ -4604,7 +4638,7 @@ class NodeData(Data):
             pool.join()
         else:
             cython_msh.interp_grid_nodedata_max(
-               np.array(n_voxels, dtype=int), field, nd, 
+               np.array(n_voxels, dtype=int), field, nd,
                msh_th.elm.node_number_list - 1,
                compartments,labelimage,maximage)
         del nd
