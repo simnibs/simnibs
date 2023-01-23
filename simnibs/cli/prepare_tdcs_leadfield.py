@@ -44,19 +44,19 @@ def parse_args(argv):
     )
     pardiso = dict(
         action="store_true",
-        help="""Use PARDISO for FEM calculations. Otherwise, PETSc will be
+        help="""Use PARDISO as solver for FEM calculations. Otherwise, PETSc will be
         used.""",
     )
 
     parser = argparse.ArgumentParser(**program)
 
     clargs.subid.add_to(parser)
-    clargs.subsampling.add_to(parser)
 
     parser.add_argument("montage", **montage)
-    parser.add_argument("-m", "--mesh_electrodes", **mesh_electrodes)
+    parser.add_argument("--mesh_electrodes", **mesh_electrodes)
     parser.add_argument("-o", "--output_dir", **output_dir)
     parser.add_argument("--pardiso", **pardiso)
+    clargs.subsampling.add_to(parser)
 
     return parser.parse_args(argv[1:])
 
