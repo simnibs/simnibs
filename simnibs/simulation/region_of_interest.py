@@ -4,16 +4,61 @@ import scipy.sparse as sparse
 from ..utils.simnibs_logger import logger
 
 
+def _get_local_distances(node_numbers, node_coordinates):
+    """
+    Get the distances between local node [0] and nodes [1], [2] and [3] in each element
+
+    Parameters
+    ----------
+    node_numbers : np.array of size [number_of_elements, 4]
+        Node number list (connectivity list of tetrahedra)
+    node_coordinates : np.array of size [3 x n_nodes]
+        Coordinates of the nodes (x, y, z)
+
+    Returns
+    -------
+    local_dist : np.array of size [number_of_elements, 3, 3]
+        Distances between local node [0] and nodes [1], [2] and [3] in each element
+    local_node_coords : np.array of size [number_of_elements, 3, 3]
+        Node coordinates
+    """
+
+    # get the local node coordinates in each element
+    # node_coordinates: (3, number_of_nodes)
+    # node_numbers: (number_of_elements, 4)
+    # local_node_coords: (3, number_of_elements, 4)
+    local_node_coords = node_coordinates[:, node_numbers - 1]
+
+    # get the distances between local node [0] and nodes [1], [2] and [3] in each element
+    # local_dist: (3, number_of_elements, 3)
+    local_dist = local_node_coords[:, :, 1:] - local_node_coords[:, :, [0]]
+
+    # out: (number_of_elements, 3, 3)
+    return np.moveaxis(local_dist, 0, -1), (local_node_coords[:, :, 0].T)[:, :, None]
+
+
 def _get_gradient(local_dist):
-    ''' Calculate the gradient of a function in each tetrahedra
-    The way it works: The operator has 2 parts
+    """
+Calculate the gradient of a function in each tetrahedra.
+
     local_dist * gradient = project_matrix
+
     project_matrix is a projection matrix
     project_matrix = [-1, 1, 0, 0]
-        [-1, 0, 1, 0]
-        [-1, 0, 0, 1]
-    And local_dist is the distances between local node [0] and nodes [1], [2] and [3] in each element
-    '''
+                     [-1, 0, 1, 0]
+                     [-1, 0, 0, 1]
+    and local_dist is the distances between local node [0] and nodes [1], [2] and [3] in each element.
+
+    Parameters
+    ----------
+    local_dist : np.array of size [n_elements, 3, 3]
+        Distances between local node [0] and nodes [1], [2] and [3] in each element (derived from get_local_distances)
+
+    Returns
+    -------
+    gradient : np.array of size [n_elements, 4, 3]
+        Gradient in each tetrahedra
+    """
 
     # define projection matrix
     project_matrix = np.hstack([-np.ones((3, 1)), np.eye(3)])
@@ -23,22 +68,6 @@ def _get_gradient(local_dist):
 
     # swapaxes
     return np.swapaxes(gradient, 1, 2)
-
-
-def _get_edge_lengths(mesh):
-    ''' get length of the tetrahedral edges '''
-
-    node_coordinates = mesh.nodes.node_coord.T
-    # get the local node coordinates in each element
-    # node_coordinates: (3, number_of_nodes), node_numbers: (number_of_elements, 4), local_node_coords: (3, number_of_elements, 4)
-    local_node_coords = node_coordinates[:, mesh.elm.node_number_list - 1]
-
-    # get the distances between local node [0] and nodes [1], [2] and [3] in each element
-    # local_dist: (3, number_of_elements, 3)
-    local_dist = local_node_coords[:, :, 1:] - local_node_coords[:, :, [0]]
-
-    # out: (number_of_elements, 3, 3)
-    return np.moveaxis(local_dist, 0, -1), (local_node_coords[:, :, 0].T)[:, :, None]
 
 
 class RegionOfInterest:
@@ -63,21 +92,21 @@ class RegionOfInterest:
         Coordinates of points in the ROI
     con : np.ndarray of float [n_ele x 3(4)], optional, default: None
         Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
-        be calculated in the nodes only.
+        be calculated in the provided points only.
     n_points : int
         Number of ROI points
-    gradient :
-        Gradient operator of the tetrahedral edges
-    node_idx_list :
-        Connectivity of whole head model
-    sF : sparse matrix
-
-    inside :
-
-    idx :
-
+    gradient : np.array of float [n_tet_mesh_required x 4 x 3]
+        Gradient operator of the tetrahedral edges.
+    node_index_list :  [n_tet_mesh_required x 4]
+        Connectivity list of the head model (only using the required tetrahedra)
+    sF : sparse matrix of float [n_points_ROI x n_tet_mesh_required ]
+        Sparse matrix for SPR interpolation.
+    inside : np.array of bool [n_points]
+        Indicator if points are lying inside model.
+    idx : np.array of int [n_tet_mesh_required]
+        Indices of tetrahedra, which are required for SPR
     """
-    def __init__(self, msh, points, con=None, gradient=None, out_fill=0):
+    def __init__(self, mesh, points, con=None, gradient=None, out_fill=0):
         """
         Initializes RegionOfInterest class instance
         """
@@ -88,22 +117,23 @@ class RegionOfInterest:
         self.sF = None
 
         # crop mesh that only tetrahedra are included
-        msh_cropped = msh.crop_mesh(elm_type=4)
+        mesh_cropped = mesh.crop_mesh(elm_type=4)
 
         # ensure that the nodes did not change
-        assert msh_cropped.nodes.nr == msh.nodes.nr
-        assert (msh_cropped.nodes.node_coord == msh.nodes.node_coord).all()
+        assert mesh_cropped.nodes.nr == mesh.nodes.nr
+        assert (mesh_cropped.nodes.node_coord == mesh.nodes.node_coord).all()
 
         # compute sF matrix
-        self._get_sF_matrix(msh_cropped, self.points, out_fill)
+        self._get_sF_matrix(mesh_cropped, self.points, out_fill)
 
         if not gradient:
-            # get the lengths of the tetrahedral edges
-            local_dist, _ = _get_edge_lengths(msh_cropped)
+            # get the lengths of the tetrahedral edges _get_local_distances(node_numbers, node_coordinates)
+            local_dist, _ = _get_local_distances(node_numbers=mesh_cropped.elm.node_number_list,
+                                                 node_coordinates=mesh_cropped.nodes.node_coord.T)
             # get gradient operator
             gradient = _get_gradient(local_dist)
         self.gradient = gradient[self.idx]
-        self.node_index_list = msh_cropped.elm.node_number_list[self.idx] - 1
+        self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
 
     def calc_fields(self, v, dadt=None, dataType=0):
         """
@@ -117,6 +147,7 @@ class RegionOfInterest:
             Magnetic vector potential in each node in the whole head model (for TMS)
         dataType : int, optional, default: 0
             Return magnitude of electric field (dataType = 0) otherwise return x, y, z components
+
         Returns
         -------
         e : np.ndarray of float
@@ -140,18 +171,25 @@ class RegionOfInterest:
         return e
 
     def _get_sF_matrix(self, msh, points, out_fill, tags=None):
-        """Create a sparse matrix for SPR interpolation from element data to arbitrary positions (here: the surface nodes)
-
-        Args:
-            msh (Msh object): loaded mesh
-            points (numpy array): the coordinates of the points that we want to interpolate (number_of_points, 3)
-            out_fill (number or None): Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value; otherwise assign to out_fill, for example 0)
-            tags (list or None, optional): The tissue type defines the selected volume in the loaded mesh. Defaults to None.
+        """
+        Create a sparse matrix for SPR interpolation from element data to arbitrary positions (here: the surface nodes)
 
         Sets the following object variables:
            sF       sparse.csr_matrix: (number_of_points, number_of_kept_tetrahedra)
            idx      index of the tetrahedra included in sF as columns
            inside   indices of the positions inside the mesh
+
+        Parameters
+        ----------
+        msh : Msh object
+            Loaded mesh.
+        points : np.array of float [n_points_ROI x 3]
+            The coordinates of the points that we want to interpolate.
+        out_fill : float or None
+            Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value;
+            otherwise assign to out_fill, for example 0)
+        tags : list or None, optional, default: None
+            The tissue type defines the selected volume in the loaded mesh. Defaults to None.
         """
 
         assert out_fill in [0, 1]
@@ -202,20 +240,27 @@ class RegionOfInterest:
         self.sF = sparse.csr_matrix(sF)
 
     def _get_sF_inside_tissues(self, msh, th, w, bar, n_points):
-        """  Create a sparse matrix to interpolate from element data to
-        arbitrary positions (here: the surface nodes) using superconvergent
-        patch recovery
+        """
+        Create a sparse matrix to interpolate from element data to arbitrary positions using the
+        superconvergent patch recovery (SPR) approach.
 
-        Args:
-            msh (Msh object): loaded mesh
-            th (numpy array): indices of the elements (start from 0) that contains the points
-            w (numpy array): indices of the points that are inside the mesh
-            bar (numpy array): barycentric coordinates
-            n_points (int): number of points
+        Parameters
+        ----------
+        msh : Msh object
+            Loaded mesh
+        th : np.array of int [n_points_ROI]
+            Indices of the elements in the global mesh (start from 0) that contains the ROI points.
+        w : np.array of int [n_points_ROI_in]
+            Indices of the points that are inside the mesh
+        bar : np.array of float [n_points_ROI x 4]
+            Barycentric coordinates of the ROI points of the tetrahedra nodes.
+        n_points : int
+            Number of RIU points
 
-        Returns:
-            sF (sparse matrix): the output sparse matrix
-
+        Returns
+        -------
+        sF : sparse matrix of float [n_points_ROI x n_tet_mesh]
+            Sparse matrix for interpolation
         """
 
         # initialize the sparse matrix
@@ -252,25 +297,27 @@ class RegionOfInterest:
         return sF
 
     def _elm2point_SPR(self, msh, bar, idx):
-        """Create the sparse matrix to interpolate from element data to arbitrary positions
-        (here: the surface nodes) using superconvergent patch recovery
+        """
+        Create the sparse matrix to interpolate from element data to arbitrary positions
+        using superconvergent patch recovery
 
-        Args:
-            msh (Msh object): loaded mesh
-            bar (numpy array): barycentric coordinates
-            idx (numpy array): indices of the elements (start from 0) that need to calculate SPR
+        Zienkiewicz, Olgierd Cecil, and Jian Zhong Zhu. "The superconvergent patch recovery and a posteriori error
+        estimates. Part 1: The recovery technique." International Journal for Numerical Methods in Engineering
+        33.7 (1992): 1331-1364.
 
-        Raises:
-            ValueError: msh has to contain volume data
+        Parameters
+        ----------
+        msh : Msh object
+            Loaded mesh
+        bar : np.array of float [n_points_ROI x 4]
+            Barycentric coordinates of the ROI points of the tetrahedra nodes.
+        idx : np.array of int [n_points_ROI]
+            Indices of the elements in mesh (start from 0) of ROI points that need to calculate SPR.
 
-        Returns:
-            sparse.csr_matrix: (bar.shape[0], msh.elm.nr)
-
-        References
-            Zienkiewicz, Olgierd Cecil, and Jian Zhong Zhu.
-            "The superconvergent patch recovery and a posteriori error
-            estimates. Part 1: The recovery technique." International Journal for
-            Numerical Methods in Engineering 33.7 (1992): 1331-1364.
+        Returns
+        -------
+        sF : sparse matrix (CSR) of float [bar.shape[0], n_tetrahedra_mesh]
+            Sparse matrix for interpolation
         """
 
         if len(msh.elm.tetrahedra) == 0:

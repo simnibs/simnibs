@@ -21,13 +21,11 @@ output_folder = "/data/pt_01756/studies/ttf"
 # output_folder = "/home/kporzig/tmp"
 
 fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/15484.08.msh"
-# fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/m2m_15484.08/15484.08.msh"
-# fn_mesh = "/home/kporzig/tmp/charm_beta_fine/m2m_15484.08/15484.08.msh"
+# fn_mesh = "/home/kporzig/tmp/charm_beta_coarse/m2m_15484.08/15484.08.msh"
 # fn_mesh = os.path.join(example_data_folder, 'sphere3.msh')
 
 fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
-# fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
-# fn_roi = "/home/kporzig/tmp/charm_beta_fine/roi/midlayer_m1s1pmd/geo.hdf5"
+# fn_roi = "/home/kporzig/tmp/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
 
 # location of example data
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
@@ -35,7 +33,7 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-# electrode = simnibs.CircularArray(radius_inner=7.5, distance=15, n_outer=4, radius_outer=5)
+electrode = simnibs.CircularArray(radius_inner=7.5, distance=15, n_outer=4, radius_outer=5)
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
@@ -56,18 +54,18 @@ print("Initializing Electrode ...")
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
 ########################################################################################################################
-center = np.array([[-30, 0, 0],
-                   [0, 0, 0],
-                   [30, 0, 0]])
-radius = np.array([7, 7, 7])
-length_x = np.array([0, 0, 0])
-length_y = np.array([0, 0, 0])
-
-electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-
-electrode = [electrode_1, electrode_2]
-electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+# center = np.array([[-30, 0, 0],
+#                    [0, 0, 0],
+#                    [30, 0, 0]])
+# radius = np.array([7, 7, 7])
+# length_x = np.array([0, 0, 0])
+# length_y = np.array([0, 0, 0])
+#
+# electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+#
+# electrode = [electrode_1, electrode_2]
+# electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
 #######################################################################################################################
@@ -91,7 +89,7 @@ electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_fo
 init_pos = None
 
 # load mesh
-msh = simnibs.read_msh(fn_mesh)
+mesh = simnibs.read_msh(fn_mesh)
 
 # load roi points
 with h5py.File(fn_roi, "r") as f:
@@ -100,7 +98,7 @@ with h5py.File(fn_roi, "r") as f:
 
 # create a region of interest
 print("Initializing ROI ...")
-roi = simnibs.RegionOfInterest(points=points, con=con, msh=msh)
+roi = simnibs.RegionOfInterest(points=points, con=con, mesh=mesh)
 # roi = None
 # plt.spy(roi.sF)
 
@@ -109,7 +107,7 @@ weights = [1]
 optimizer_options = {"maxiter": 1000}
 
 # Initialize TESoptimize class
-opt = simnibs.opt_struct.TESoptimize(msh=msh,
+opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      roi=roi,
                                      electrode=electrode,
                                      init_pos=init_pos,

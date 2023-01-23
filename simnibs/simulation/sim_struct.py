@@ -785,7 +785,6 @@ class SimuList(object):
         -----------
         mesh: simnibs.mesh_io.Msh (optional
             Mesh where the conductivities will be applied. Default: self.mesh
-
         excentricity_scale: float (optional)
             Scales the excentricity of conductivity tensors. Used in gPC simulations. Default: do not scale
             eccentricities

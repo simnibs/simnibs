@@ -22,7 +22,13 @@ with h5py.File(fn_roi, "r") as f:
     points = f["mesh/nodes/node_coord"][:]
     con = f["mesh/elm/triangle_number_list"][:]
 
-roi = simnibs.RegionOfInterest(points=points, con=con, msh=mesh)
+p1_tri = points[con[:, 0], :]
+p2_tri = points[con[:, 1], :]
+p3_tri = points[con[:, 2], :]
+
+triangles_center = 1.0 / 3 * (p1_tri + p2_tri + p3_tri)
+
+roi = simnibs.RegionOfInterest(points=triangles_center, mesh=mesh)
 
 # load coil positions (in simnibs space)
 print("Loading coil positions ...")
@@ -30,9 +36,9 @@ with h5py.File(fn_matsimnibs, "r") as f:
     matsimnibs = f["matsimnibs"][:]
 
 # initialize OnlineFEM
-onlinefem = simnibs.OnlineFEM(mesh=mesh, method="TMS", roi=roi, anisotropy_type=anisotropy_type,
+onlinefem = simnibs.OnlineFEM(mesh=mesh, method="TMS", roi=roi, anisotropy_type="scalar",
                               solver_options=solver_options, fn_results=fn_results, useElements=True,
-                              grid_spacing=None, order=1, fn_coil=fn_coil, didtmax=1, dataType=0)
+                              grid_spacing=0.5, zoom_order=2, order=1, fn_coil=fn_coil, dataType=0)
 
 e = onlinefem.update_field(matsimnibs=matsimnibs)
 

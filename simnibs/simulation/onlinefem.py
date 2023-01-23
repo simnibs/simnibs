@@ -1,6 +1,7 @@
 import os
 import time
 import h5py
+import copy
 import logging
 import numpy as np
 import nibabel as nib
@@ -9,12 +10,13 @@ from numpy.linalg import pinv
 from scipy import sparse
 from scipy.ndimage import zoom
 
-from .fem import FEMSystem, get_dirichlet_node_index_cog
+from .fem import FEMSystem, get_dirichlet_node_index_cog, DirichletBC, dofMap
 from .sim_struct import SimuList
-from .cond import standard_cond
 from ..mesh_tools import Msh, mesh_io, read_msh
 from ..utils.simnibs_logger import logger
+from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.utils_numba import map_coord_nn, map_coord_lin, sumf, bincount_nb
+from .region_of_interest import _get_gradient, _get_local_distances
 from simnibs.simulation import pardiso
 
 
@@ -24,18 +26,45 @@ class OnlineFEM:
 
     Parameters
     ----------
+    mesh : Msh object or str
+        Head mesh or path to it.
+    method : str
+        Specify simulation type ('TMS' or 'TES')
+    roi : RegionOfInterest object
+        Region of interest.
+    anisotropy_type : str
+        Type of anisotropy for simulation ('scalar', 'vn', 'mc')
+    solver_options : str
+        Options for theF EM solver (Node or "pardiso))
+    fn_results : str
+        Filename of results file the data is saved in
+    useElements : bool
+        True: interpolate the dadt field using positions (coordinates) of elements centroids
+        False: interpolate the dadt field using positions (coordinates) of nodes
+    grid_spacing : float, optional, default: None
+        Grid spacing/interval for A field interpolation
+    order : int, optional, default: 1
+        Interpolation order of magnetic vector potential of coil (0: nearest neighbor, 1: linear)
+    fn_coil : str
+        Path to coil file (.ccd or .nii)
+    didtmax : float, optional, default: 1e6
+        Scaling factor of magnetic vector potential (standard: 1 A/us -> 1e6)
+    dataType : int, optional, default: 0
+        Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
     """
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
-                 useElements=True, grid_spacing=None, order=1, fn_coil=None, didtmax=1,
+                 useElements=True, grid_spacing=None, zoom_order=1, order=1, fn_coil=None, didtmax=1e6,
                  dataType=0):
         """
         Constructor of the OnlineFEM class
         """
         self.grid_spacing = grid_spacing            # grid spacing/interval for A field interpolation
         self.order = order                          # the order of the dadt interpolation
+        self.zoom_order = zoom_order                # zoom order for dadt
         self.method = method                        # 'TES' or 'TMS'
         self.dataType = dataType                    # Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
-        self.anisotropy_type = anisotropy_type      # "scalar", "vn"
+        self.anisotropy_type = anisotropy_type      # 'scalar', 'dir', 'vn', 'mc'
+        self.A = None                               # stiffness matrix
         self.b = None                               # rhs
         self.v = None                               # electric potential
         self.solver = None                          # solver
@@ -43,6 +72,8 @@ class OnlineFEM:
         self.didtmax = didtmax                      # Maximum rate of change of coil current (A/us)
         self.roi = roi                              # list of ROI instances
         self.fn_results = fn_results                # name of output results file (.hdf5)
+        self.ff_templates = Templates()             # initialize file finder templates
+        self.force_integrals = None                 # precomputed force integrals for rhs
 
         if type(self.roi) is not list:
             self.roi = [self.roi]
@@ -70,9 +101,15 @@ class OnlineFEM:
             self.mesh = mesh
         else:
             raise TypeError("'mesh' parameter has to be either path to .msh file or SimNIBS mesh object.")
+        self.dof_map = dofMap(self.mesh.nodes.node_number)
+
+        # get subject specific filenames
+        self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
+        self.fn_tensor_nifti = self.ff_subject.tensor_file
 
         # get Dirichlet node index where V=0 (close to center of gravity of mesh but not on a surface)
         self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)
+        self.bc = DirichletBC(nodes=[self.dirichlet_node], values=[0])
 
         # For TMS we use only tetrahedra (elm_type=4). The triangles (elm_type=3) are removed.
         if self.method == "TMS":
@@ -88,6 +125,7 @@ class OnlineFEM:
             self.coil = Coil(filename=self.fn_coil,
                              grid_spacing=self.grid_spacing,
                              didtmax=self.didtmax,
+                             zoom_order=self.zoom_order,
                              logger=self.logger)
             self.logger.info(f'Loaded coil from file: {self.fn_coil}')
 
@@ -142,13 +180,14 @@ class OnlineFEM:
                 self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType)
 
                 # store results (overwrite if existing)
-                with h5py.File(self.fn_results, "a") as f:
-                    try:
-                        if f"{sim_idx_hdf5:04}" in f[f"e/roi_{i_roi}"].keys():
-                            del f[f"e/roi_{i_roi}/{sim_idx_hdf5:04}"]
-                    except KeyError:
-                        pass
-                    f.create_dataset(name=f"e/roi_{i_roi}/{sim_idx_hdf5:04}", data=self.e[i_sim][i_roi])
+                if self.fn_results:
+                    with h5py.File(self.fn_results, "a") as f:
+                        try:
+                            if f"{sim_idx_hdf5:04}" in f[f"e/roi_{i_roi}"].keys():
+                                del f[f"e/roi_{i_roi}/{sim_idx_hdf5:04}"]
+                        except KeyError:
+                            pass
+                        f.create_dataset(name=f"e/roi_{i_roi}/{sim_idx_hdf5:04}", data=self.e[i_sim][i_roi])
 
             sim_idx_hdf5 += 1
 
@@ -189,14 +228,41 @@ class OnlineFEM:
                                        a_field=self.coil.a_field,
                                        order=self.order,
                                        node_numbers=self.mesh.elm.node_number_list,
-                                       useElements=self.useElements)
+                                       useElements=self.useElements)*1e6
 
-            b = assemble_force_vector(force_integrals=self.force_integrals,
-                                      reshaped_node_numbers=self.reshaped_node_numbers,
-                                      dadt=self.dadt,
-                                      dirichlet_node=self.dirichlet_node)
+            # b = self.fem.assemble_tms_rhs(dadt=self.dadt)
+
+            if self.cond.ndim == 1:
+                b = assemble_force_vector(force_integrals=self.force_integrals,
+                                          reshaped_node_numbers=self.reshaped_node_numbers,
+                                          dadt=self.dadt,
+                                          dirichlet_node=self.dirichlet_node)
+            elif self.cond.ndim == 3:
+                # integrate in each node of each element, the value for repeated nodes will be summed
+                # together later
+                elm_node_integral = np.zeros((len(self.node_numbers), 4), dtype=np.float64)
+                if self.cond.ndim == 1:
+                    sigma_dadt = self.cond[:, None] * self.dadt
+                elif self.cond.ndim == 3:
+                    sigma_dadt = np.einsum('aij, aj -> ai', self.cond, self.dadt)
+                else:
+                    raise ValueError('Invalid cond array')
+
+                for i in range(4):
+                    elm_node_integral[:, i] = \
+                        -self.volume * (sigma_dadt * self.gradient[:, i, :]).sum(axis=1)
+
+                elm_node_integral *= 1e-6  # from m to mm
+
+                b = np.bincount(self.dof_map[self.node_numbers.reshape(-1)],
+                                elm_node_integral.reshape(-1))
+                # b = np.delete(b, self.dirichlet_node - 1)
+                # b = np.delete(b, 0)
         else:
             raise NotImplementedError("Simulation method not implemented yet. Method is either 'TMS' or 'TES'.")
+
+        # dof_map_copy = copy.deepcopy(self.dof_map)
+        # b, _ = self.bc.apply_to_rhs(self.solver._A, b, dof_map_copy)
 
         return b
 
@@ -207,7 +273,7 @@ class OnlineFEM:
         Parameters
         ----------
         b : np.array of float [n_nodes - 1]
-            Right hand side of equation system (without Dirichlet node)
+            Right hand side of equation system (with Dirichlet node)
 
         Returns
         -------
@@ -217,15 +283,22 @@ class OnlineFEM:
 
         logger.disabled = True
 
-        # solve system
-        x = self.solver.solve(b)
+        # remove dirichlet node
+        # dof_map = copy.deepcopy(self.dof_map)
+        # b_reduced, dof_map = self.bc.apply_to_rhs(self.A, b, dof_map)
+        b_reduced = np.delete(b, self.dirichlet_node-1)
 
-        # add Dirichlet node (v=0) to solution (Dirichlet node is defined with node indexing starting with 1)
-        v = np.insert(x, self.dirichlet_node - 1, 0)
+        # solve equation system
+        x = self.solver.solve(b_reduced)
+
+        # add Dirichlet node to solution
+        # x, dof_map = self.bc.apply_to_solution(x, dof_map)
+        # dof_map, v = dof_map.order_like(self.dof_map, array=x)
+        v = np.insert(x, self.dirichlet_node-1, 0)
 
         logger.disabled = False
 
-        return v
+        return np.squeeze(v)
 
     def _set_matrices_and_prepare_solver(self):
         """
@@ -233,7 +306,20 @@ class OnlineFEM:
         """
 
         if self.method == "TMS":
-            node_numbers = self.mesh.elm.node_number_list  # self.node_numbers
+            # prepare conductivity (scalar or anisotropic)
+            self.simulist = SimuList(mesh=self.mesh)
+            self.simulist.anisotropy_type = self.anisotropy_type
+            self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
+            self.cond = self.simulist.cond2elmdata()
+            self.cond = self.cond.value.squeeze()
+            if self.cond.ndim == 2:
+                self.cond = self.cond.reshape(-1, 3, 3)
+
+            # self.fem = FEMSystem.tms(mesh=self.mesh, cond=cond, solver_options=self.solver_options)
+            # self.fem.prepare_solver()
+            # self.solver = self.fem._solver
+
+            self.node_numbers = self.mesh.elm.node_number_list  # self.node_numbers
             useElements = self.useElements
             node_coordinates = self.mesh.nodes.node_coord.T
             tag1 = self.mesh.elm.tag1
@@ -243,32 +329,41 @@ class OnlineFEM:
 
             # get the coordinates of nodal points/element centers to prepare for the calculation of dadt.
             # Use self.coordinates to interpolate the field in calculate_dadt().
-            self.coordinates = get_coordinates(node_coordinates, node_numbers, useElements)
+            self.coordinates = get_coordinates(node_coordinates, self.node_numbers, useElements)
 
             # set the reshaped_node_numbers
-            self.reshaped_node_numbers = (node_numbers - 1).T.reshape(-1)
+            self.reshaped_node_numbers = (self.node_numbers - 1).T.reshape(-1)
 
             # get the distances between local node [0] and nodes [1], [2] and [3] in each element
-            local_dist, _ = get_local_distances(node_numbers, node_coordinates)
+            local_dist, _ = _get_local_distances(self.node_numbers, node_coordinates)
 
             # calculate the volume of a tetrahedron given the coordinates of its four nodal points
-            volume = np.abs(np.linalg.det(local_dist)) / 6.
+            self.volume = np.abs(np.linalg.det(local_dist)) / 6.
 
             # get gradient operator
-            self.gradient = get_gradient(local_dist)
+            self.gradient = _get_gradient(local_dist)
 
-            # get the conductivity values of each tetrahedra
+            # get the conductivity values of each tetrahedron
             # tag1 indexes starting from 1, the array cond_table indexes starting from 0
             # Use isotropic conductivities
-            conductivity = np.array([float(c.value) for c in standard_cond()])[tag1 - 1]
+            # conductivity = np.array([float(c.value) for c in standard_cond()])[tag1 - 1]
 
             # set the force integrals. We use the force integrals to assemble the right hand side force vector
-            self.force_integrals = get_force_integrals(volume, self.gradient, conductivity)
+            if self.cond.ndim == 1:
+                self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
 
             #  assemble the left hand side stiffness matrix
-            stiffmat = assemble_stiffness_matrix(volume, self.gradient, conductivity, node_numbers, number_of_nodes, self.dirichlet_node)
+            # (volume, gradient, conductivity, node_numbers, number_of_nodes, dirichlet_node
+            self.A = assemble_stiffness_matrix(volume=self.volume,
+                                               gradient=self.gradient,
+                                               conductivity=self.cond,
+                                               node_numbers=self.node_numbers,
+                                               number_of_nodes=number_of_nodes)
 
-            self.solver = pardiso.Solver(stiffmat)
+            self.A_reduced = copy.deepcopy(self.A)
+            dof_map_copy = copy.deepcopy(self.dof_map)
+            self.A_reduced, _ = self.bc.apply_to_matrix(self.A_reduced, dof_map_copy)
+            self.solver = pardiso.Solver(self.A_reduced)
 
         elif self.method == "TES":
             # Calculate node areas for whole mesh
@@ -277,6 +372,7 @@ class OnlineFEM:
             # prepare FEM
             self.simulist = SimuList(mesh=self.mesh)
             self.simulist.anisotropy_type = self.anisotropy_type
+            self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
             cond = self.simulist.cond2elmdata()
             self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
                                               cond=cond,
@@ -299,6 +395,8 @@ class Coil:
         Grid spacing/interval for A field interpolation
     didtmax : float
         Maximum rate of change of coil current (A/us)
+    zoom_order : int
+        The order of the spline interpolation. The order has to be in the range 0-5. zoom_order=1 for bilinear.
     logger : logger object
         Logger
 
@@ -310,19 +408,23 @@ class Coil:
         Magnetic vector potential (A_x, A_y, A_z)
 
     """
-    def __init__(self, filename, grid_spacing=None, didtmax=1, logger=None):
+    def __init__(self, filename, grid_spacing=None, didtmax=1e6, zoom_order=1, logger=None):
         """
         Constructor of Coil class
         """
 
-        self.a_field, self.a_affine = load_A_from_coil_file(coil_file=filename,
-                                                            grid_spacing=grid_spacing,
-                                                            logger=logger)
+        self.zoom_order = zoom_order
+        self.grid_spacing = grid_spacing
         self.didtmax = didtmax
         self.filename = filename
 
+        self.a_field, self.a_affine = load_A_from_coil_file(coil_file=self.filename,
+                                                            grid_spacing=self.grid_spacing,
+                                                            zoom_order=self.zoom_order,
+                                                            logger=logger)
 
-def load_A_from_coil_file(coil_file, grid_spacing, logger=None):
+
+def load_A_from_coil_file(coil_file, grid_spacing, zoom_order=1, logger=None):
     """
     Load coil file.
 
@@ -332,6 +434,8 @@ def load_A_from_coil_file(coil_file, grid_spacing, logger=None):
         Coil file (.ccd or .nii format)
     grid_spacing : float, optional, default: None
         Grid spacing/interval for A field interpolation
+    zoom_order : int
+        The order of the spline interpolation. The order has to be in the range 0-5. zoom_order=1 for bilinear.
     logger : logger object, optional, default: None
         Logger
 
@@ -353,24 +457,24 @@ def load_A_from_coil_file(coil_file, grid_spacing, logger=None):
         coil = nib.load(coil_file)
         A = np.moveaxis(np.asanyarray(coil.dataobj), -1, 0)
         affine = coil.affine
+
+        if logger is not None:
+            logger.debug('Load A from coil file: ' + coil_file)
     else:
         raise ValueError('Coil file must be a nifti file')
 
     if grid_spacing:
 
         # interpolate the A field and recalculate the affine matrix if grid_spacing is not an empty array (None)
-        start = time()
+        start = time.time()
 
         grid_spacing = np.array(grid_spacing, dtype='float64')
 
         # Linear interpolation on the A field.
-        A, affine, zoom_factor, zoom_order = zoom_a_field(A, affine, grid_spacing)
+        A, affine, zoom_factor, zoom_order = zoom_a_field(A, affine, grid_spacing, zoom_order)
 
         if logger is not None:
-            logger.info('Interpolate A field with zoom: {}s (zoom_factor = {}, zoom_order = {})'.format(time() - start, zoom_factor, zoom_order))
-
-    if logger is not None:
-        logger.debug('Load A from coil file: ' + coil_file)
+            logger.info('Interpolate A field with zoom: {}s (zoom_factor = {}, zoom_order = {})'.format(time.time() - start, zoom_factor, zoom_order))
 
     return np.asfortranarray(A), affine
 
@@ -443,7 +547,8 @@ def calculate_dadt(a_affine, matsimnibs, coordinates, a_field, order, node_numbe
 
     a_field : np.array of float [3 x N_x x N_y x N_z]
         Magnetic vector potential (A_x, A_y, A_z)
-    order :
+    order : int
+        Interpolation order (0 ... nearest neighbor, 1 ... linear)
 
     node_numbers : np.array of size [n_elements x 4]
         Node number list (connectivity list)
@@ -500,9 +605,8 @@ def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt, dirichle
     ----------
     force_integrals : np.array of float [4, number_of_elements, 3]
         Force_integrals for rhs calculation derived by volume * conductivity * gradient
-    reshaped_node_numbers :
-
-
+    reshaped_node_numbers : np.array of int [4 * n_elements + 1]
+        Flattened node number list (connectivity matrix)
     dadt: NodeData or ElementData
         dA/dt field at each node or element
     dirichlet_node : int
@@ -510,8 +614,8 @@ def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt, dirichle
 
     Returns
     -------
-    forcevec: np.array
-        Right-hand side
+    forcevec: np.array [n_nodes - 1]
+        Right-hand side (without the Dirichlet node)
     """
 
     # integrate in each node of each element, the value for repeated nodes will be summed
@@ -530,7 +634,7 @@ def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt, dirichle
     forcevec = np.bincount(reshaped_node_numbers, node_integrals.reshape(-1)).reshape(-1, 1)
 
     # Applies the dirichlet BC to the right hand side force_vector
-    forcevec = np.delete(forcevec, dirichlet_node-1)
+    # forcevec = np.delete(forcevec, dirichlet_node-1)
 
     return forcevec
 
@@ -578,7 +682,7 @@ def get_force_integrals(volume, gradient, conductivity):
     Parameters
     ----------
     volume : np.array of float [n_elements]
-        Volume of the tetrahedra
+        Volume of the tetrahedra in (mm³)
     gradient : np.array of size [n_elements, 4, 3]
         Gradient in each tetrahedra
     conductivity : np.array of float [n_elements]
@@ -594,7 +698,7 @@ def get_force_integrals(volume, gradient, conductivity):
         raise ValueError('Invalid conductivity array')
 
     # volume and conductivity are 1D array shape=(M,)
-    vol_cond = volume * conductivity * 1e-6 # 1e-6 is to convert 'mm' to 'm'
+    vol_cond = volume * conductivity * 1e-6  # 1e-6 is to convert 'mm' to 'm'
 
     # calculate the force_integrals = volume * conductivity * gradient, and rearrange the dimension to 4xMx3
     force_integrals = np.swapaxes(-vol_cond[:, None, None] * gradient, 0, 1)  # (4, number_of_elements, 3)
@@ -602,7 +706,7 @@ def get_force_integrals(volume, gradient, conductivity):
     return force_integrals
 
 
-def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, number_of_nodes, dirichlet_node):
+def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, number_of_nodes):
     """
     Assembly of the l.h.s stiffness matrix. Based in the OptVS algorithm in Cuvelier et. al. 2016.
 
@@ -621,8 +725,8 @@ def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, numb
         Node number list (connectivity list)
     number_of_nodes : int
         Number of nodes
-    dirichlet_node : int
-        Index of the Dirichlet node (defined with node indexing starting with 1)
+    bc : DirichletBC object
+        Dirichlet boundary condition object
 
     Returns
     -------
@@ -644,7 +748,15 @@ def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, numb
 
     # Simplify the integration using commutative law of dot product (elementary-wise product in this case
     # units == 'mm': * 1e6 from the gradient operator, 1e-9 from the volume
-    factor = (volume * conductivity * 1e-3)[:, None, None] * gradient
+    if conductivity.ndim == 1:
+        factor = (volume * conductivity * 1e-3)[:, None, None] * gradient
+    elif conductivity.ndim == 3:
+        factor = volume[:, None, None] * np.einsum('aij, ajk -> aik', gradient, conductivity) * 1e-3
+
+    # if cond.ndim == 1:
+    #     vGc = vols[:, None, None]*G*cond[:, None, None]
+    # elif cond.ndim == 3:
+    #     vGc = vols[:, None, None]*np.einsum('aij, ajk -> aik', G, cond)
 
     stiffmat = sparse.coo_matrix((number_of_nodes, number_of_nodes), dtype='float64')
 
@@ -660,8 +772,8 @@ def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, numb
     stiffmat = stiffmat.sorted_indices()
 
     # remove row and column for the dirichlet boundary condition
-    stiffmat = delete_row_csr(stiffmat, dirichlet_node-1)
-    stiffmat = delete_cols_csr(stiffmat, dirichlet_node-1)
+    # stiffmat = delete_row_csr(stiffmat, dirichlet_node-1)
+    # stiffmat = delete_cols_csr(stiffmat, dirichlet_node-1)
 
     return stiffmat
 
@@ -697,72 +809,6 @@ def get_coordinates(node_coordinates, node_numbers, useElements):
         coordinates = node_coordinates
 
     return coordinates
-
-
-def get_local_distances(node_numbers, node_coordinates):
-    """
-    Get the distances between local node [0] and nodes [1], [2] and [3] in each element
-
-    Parameters
-    ----------
-    node_numbers : np.array of size [number_of_elements, 4]
-        Node number list (connectivity list of tetrahedra)
-    node_coordinates : np.array of size [3 x n_nodes]
-        Coordinates of the nodes (x, y, z)
-
-    Returns
-    -------
-    local_dist : np.array of size [number_of_elements, 3, 3]
-        Distances between local node [0] and nodes [1], [2] and [3] in each element
-    local_node_coords : np.array of size [number_of_elements, 3, 3]
-        Node coordinates
-    """
-
-    # get the local node coordinates in each element
-    # node_coordinates: (3, number_of_nodes)
-    # node_numbers: (number_of_elements, 4)
-    # local_node_coords: (3, number_of_elements, 4)
-    local_node_coords = node_coordinates[:, node_numbers - 1]
-
-    # get the distances between local node [0] and nodes [1], [2] and [3] in each element
-    # local_dist: (3, number_of_elements, 3)
-    local_dist = local_node_coords[:, :, 1:] - local_node_coords[:, :, [0]]
-
-    # out: (number_of_elements, 3, 3)
-    return np.moveaxis(local_dist, 0, -1), (local_node_coords[:, :, 0].T)[:, :, None]
-
-
-def get_gradient(local_dist):
-    """
-    Calculate the gradient of a function in each tetrahedra.
-
-    local_dist * gradient = project_matrix
-
-    project_matrix is a projection matrix
-    project_matrix = [-1, 1, 0, 0]
-                     [-1, 0, 1, 0]
-                     [-1, 0, 0, 1]
-    and local_dist is the distances between local node [0] and nodes [1], [2] and [3] in each element.
-
-    Parameters
-    ----------
-    local_dist : np.array of size [n_elements, 3, 3]
-        Distances between local node [0] and nodes [1], [2] and [3] in each element (derived from get_local_distances)
-
-    Returns
-    -------
-    gradient : np.array of size [n_elements, 4, 3]
-        Gradient in each tetrahedra
-    """
-
-    # define projection matrix
-    project_matrix = np.hstack([-np.ones((3, 1)), np.eye(3)])
-
-    # solve local_dist * gradient = project_matrix.
-    gradient = np.linalg.solve(local_dist, project_matrix[None, :, :])
-
-    # swapaxes
-    return np.swapaxes(gradient, 1, 2)
 
 
 def remove_triangles_from_mesh(mesh):
@@ -866,7 +912,7 @@ def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(me
                         filemode=filemode,
                         format=format,
                         datefmt=datefmt,
-                        level=logging.DEBUG)
+                        level=logging.INFO)
 
     logger = logging.getLogger("simnibs")
 

@@ -325,13 +325,13 @@ class DirichletBC(object):
         A: scipy.sparse.csr
             Sparse matrix
         b: numpy array or None
-            Righ-hand side. if None, it will return None
+            Right-hand side. if None, it will return None
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b
         Returns:
         ------
         b: numpy array
-            Righ-hand side, modified
+            Right-hand side, modified
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
@@ -388,7 +388,6 @@ class DirichletBC(object):
         dof_map = dofMap(dof_map.inverse[stay])
         return A, dof_map
 
-
     def apply_to_vector(self, v, dof_map):
         ''' Apply to an lhs vector by just removing the entries
         '''
@@ -401,14 +400,14 @@ class DirichletBC(object):
         Parameters:
         -------
         x: numpy array
-            Righ-hand side
+            Right-hand side
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b
 
         Returns:
         ------
         x: numpy array
-            Righ-hand side, modified
+            Right-hand side, modified
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
@@ -895,7 +894,6 @@ class FEMSystem(object):
         return b
 
 
-
 def assemble_diagonal_mass_matrix(msh, units='mm'):
     ''' Assemble a Mass matrix by doing a first-order integration at the nodes
     Results in a diagonal matrix
@@ -953,8 +951,9 @@ def _gradient_operator(msh, volume_tag=None):
     G = np.transpose(G, (0, 2, 1))
     return G
 
+
 def _assemble_matrix(vols, G, th_nodes, cond, dof_map, units='mm'):
-    '''Based in the OptVS algorithm in Cuvelier et. al. 2016 '''
+    '''Based on the OptVS algorithm in Cuvelier et. al. 2016 '''
     A = sparse.csc_matrix((dof_map.nr, dof_map.nr), dtype=np.float64)
     if cond.ndim == 1:
         vGc = vols[:, None, None]*G*cond[:, None, None]
@@ -983,7 +982,7 @@ def _assemble_matrix(vols, G, th_nodes, cond, dof_map, units='mm'):
             dtype=np.float64)
 
     if units == 'mm':
-        A *= 1e-3  # * 1e6 from the gradiend operator, 1e-9 from the volume
+        A *= 1e-3  # * 1e6 from the gradient operator, * 1e-9 from the volume
 
     A.eliminate_zeros()
     return A

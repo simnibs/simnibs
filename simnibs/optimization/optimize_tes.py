@@ -17,6 +17,7 @@ from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
 from ..simulation.sim_struct import ELECTRODE, SimuList
 from ..simulation.fem import FEMSystem, get_dirichlet_node_index_cog
+from ..simulation.onlinefem import OnlineFEM
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
@@ -180,10 +181,10 @@ class TESoptimize():
 
         # relabel internal air
         self.mesh_relabel = relabel_internal_air(m=self.mesh,
-                                                subpath=os.path.split(self.mesh.fn)[0],
-                                                label_skin=1005,
-                                                label_new=1099,
-                                                label_internal_air=501)
+                                                 subpath=os.path.split(self.mesh.fn)[0],
+                                                 label_skin=1005,
+                                                 label_new=1099,
+                                                 label_internal_air=501)
 
         # create skin surface
         self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
@@ -332,35 +333,35 @@ class TESoptimize():
         if anisotropy_type is None:
             anisotropy_type = "scalar"
 
-        self.anisotropy_type = anisotropy_type
-
         if solver_options is None:
-            self.solver_options = "pardiso"
-        else:
-            self.solver_options = solver_options
+            solver_options = "pardiso"
 
         # prepare FEM
-        self.logger.log(20, 'Preparing FEM')
-        self.simulist = SimuList(mesh=self.mesh)
-        self.simulist.anisotropy_type = self.anisotropy_type
-        cond = self.simulist.cond2elmdata()
-        self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
-                                          cond=cond,
-                                          ground_electrode=self.dirichlet_node,
-                                          solver_options=self.solver_options,
-                                          input_type='node')
-        self.fem.prepare_solver()
+        self.ofem = OnlineFEM(mesh=self.mesh, method="TES", roi=self.roi, anisotropy_type=anisotropy_type,
+                              solver_options=solver_options, fn_results=self.fn_results_hdf5, useElements=True,
+                              dataType=0)
+
+        # self.logger.log(20, 'Preparing FEM')
+        # self.simulist = SimuList(mesh=self.mesh)
+        # self.simulist.anisotropy_type = self.anisotropy_type
+        # cond = self.simulist.cond2elmdata()
+        # self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
+        #                                   cond=cond,
+        #                                   ground_electrode=self.dirichlet_node,
+        #                                   solver_options=self.solver_options,
+        #                                   input_type='node')
+        # self.fem.prepare_solver()
 
         # log summary
         ################################################################################################################
         self.logger.log(25, f"="*100)
         self.logger.log(25, f"headmodel:           {self.mesh.fn}")
         self.logger.log(25, f"n_roi:               {self.n_roi}")
-        self.logger.log(25, f"anisotropy type:     {self.anisotropy_type}")
+        self.logger.log(25, f"anisotropy type:     {self.ofem.anisotropy_type}")
         self.logger.log(25, f"n_channel_stim:      {self.n_channel_stim}")
         self.logger.log(25, f"fn_eeg_cap:          {self.fn_eeg_cap}")
         self.logger.log(25, f"fn_electrode_mask:   {self.fn_electrode_mask}")
-        self.logger.log(25, f"FEM solver options:  {self.solver_options}")
+        self.logger.log(25, f"FEM solver options:  {self.ofem.solver_options}")
         self.logger.log(25, f"optimizer:           {self.optimizer}")
         self.logger.log(25, f"goal:                {self.goal}")
         self.logger.log(25, f"weights:             {self.weights}")
@@ -371,7 +372,6 @@ class TESoptimize():
             for key in self.optimizer_options:
                 if key != "bounds":
                     self.logger.log(25, f"{key}:              {self.optimizer_options[key]}")
-
 
         for i_channel_stim in range(self.n_channel_stim):
             self.logger.log(25, f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})")
@@ -730,13 +730,14 @@ class TESoptimize():
 
         Parameters
         ----------
-        electrode_pos : list of np.ndarray [3]
-            List containing a numpy arrays with electrodes positions in spherical coordinates (beta, lambda, alpha)
-            for each freely movable array.
+        electrode_pos : list of list of np.ndarray of float [3] of length [n_channel_stim][n_ele_free]
+            Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
+                      electrode array 1                        electrode array 2
+            [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
 
         Returns
         -------
-        e : list of list of np.ndarray [n_channel_stim, n_roi]
+        e : list of list of np.ndarray [n_channel_stim][n_roi]
             Electric field for different stimulations in ROI(s).
         """
 
@@ -756,29 +757,39 @@ class TESoptimize():
             self.logger.log(20, "Electrode position: valid")
 
             # set RHS
-            #start = time.time()
-            b = self.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
-                                                               for channel in node_idx_dict[i_channel_stim].keys()],
-                                                   currents=self.current[i_channel_stim],
-                                                   input_type='node',
-                                                   areas=self.mesh_nodes_areas)
-            # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
-            b = np.delete(b, self.dirichlet_node-1)
+            b = self.ofem.set_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
+                                              for channel in node_idx_dict[i_channel_stim].keys()],
+                                  currents=self.current[i_channel_stim])
 
-            #stop = time.time()
-            #print(f"Time: set RHS: {stop - start}")
-
-            # solve
             #start = time.time()
-            self.logger.disabled = True
+            # b = self.ofem.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
+            #                                                         for channel in node_idx_dict[i_channel_stim].keys()],
+            #                                             currents=self.current[i_channel_stim],
+            #                                             input_type='node',
+            #                                             areas=self.mesh_nodes_areas)
+
+
 
             # solve system
-            v = self.fem._solver.solve(b)
+            v = self.ofem.solve(b)
 
-            # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
-            v = np.insert(v, self.dirichlet_node-1, 0)
-            self.logger.disabled = False
+            # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
+            # b = np.delete(b, self.dirichlet_node-1)
+            #
             #stop = time.time()
+            #print(f"Time: set RHS: {stop - start}")
+            #
+            # solve
+            #start = time.time()
+            # self.logger.disabled = True
+            #
+            # # solve system
+            # v = self.fem._solver.solve(b)
+            #
+            # # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
+            # v = np.insert(v, self.dirichlet_node-1, 0)
+            # self.logger.disabled = False
+            # #stop = time.time()
             #print(f"Time: solve: {stop - start}")
 
             # TODO: @Axel do we need this here?: (it is done in fem.solve after calling solver._solve)
@@ -795,20 +806,21 @@ class TESoptimize():
 
             # plot field
             if plot:
-                for i, _e in enumerate(e):
-                    import pynibs
-                    if not os.path.exists(os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5")):
-                        pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                   points=self.roi[i].points,
-                                                   con=self.roi[i].con,
-                                                   replace=True,
-                                                   hdf5_path='/mesh')
+                for j in range(self.n_channel_stim):
+                    for i, _e in enumerate(e[j]):
+                        import pynibs
+                        if not os.path.exists(os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5")):
+                            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                       points=self.roi[i].points,
+                                                       con=self.roi[i].con,
+                                                       replace=True,
+                                                       hdf5_path='/mesh')
 
-                    pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
-                                                data_names=["E_mag"],
-                                                data_hdf_fn_out=os.path.join(self.plot_folder, f"e_roi_{i}_data.hdf5"),
-                                                geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                replace=True)
+                        pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
+                                                    data_names=["E_mag"],
+                                                    data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{j}_roi_{i}_data.hdf5"),
+                                                    geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                    replace=True)
 
         return e
 
@@ -857,9 +869,9 @@ class TESoptimize():
 
         Parameters
         ----------
-        parameters : np.ndarray of float [n_free_arrays * 3]
+        parameters : np.ndarray of float [n_channel_stim * n_free_arrays * 3]
             Electrodes positions in spherical coordinates (theta, phi, alpha) for each freely movable array.
-            e.g.: np.array([theta_1, phi_1, alpha_1, theta_2, phi_2, alpha_2, ...])
+            e.g.: np.array([theta_stim_1_1, phi_stim_1_1, alpha_stim_1_1, theta_stim_1_2, phi_stim_1_2, alpha_2, ...])
 
         Returns
         -------
@@ -891,11 +903,11 @@ class TESoptimize():
             if self.goal == "mean":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim, i_roi])
+                        y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
             elif self.goal == "max":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim, i_roi], 99.9)
+                        y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
@@ -919,7 +931,6 @@ class TESoptimize():
         """
         # run optimization
         ################################################################################################################
-
         start = time.time()
         if self.optimizer == "direct":
             result = direct(self.run,
@@ -928,7 +939,17 @@ class TESoptimize():
                             len_tol=self.optimizer_options["len_tol"],
                             f_min_rtol=self.optimizer_options["f_min_rtol"],
                             maxiter=self.optimizer_options["maxiter"])
-            self.electrode_pos_opt = [p for p in np.reshape(result.x, (np.sum(self.n_ele_free), 3))]
+
+            # reformat parameters
+            parameters_array = np.reshape(result.x, (np.sum(self.n_ele_free), 3))
+            self.electrode_pos_opt = [[] for _ in range(self.n_channel_stim)]
+
+            i_para = 0
+            for i_channel_stim in range(self.n_channel_stim):
+                for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                    self.electrode_pos_opt[i_channel_stim].append(parameters_array[i_para, :])
+                    i_para += 1
+
             fopt = result.fun
             nfev = result.nfev
             self.logger.log(20, f"Optimization finished! Best electrode position: {self.electrode_pos_opt}")
@@ -992,7 +1013,7 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         Dictionary containing the optimization setting.
     fopt : float
         Objective function value in optimum.
-    popt : list of np.ndarray of float [n_free_electrodes]
+    popt : list of list of np.ndarray of float [n_channel_stim][n_free_electrodes]
         List containing the optimal parameters for each freely movable electrode array
         [np.array([beta_1, lambda_1, alpha_1]), np.array([beta_2, lambda_2, alpha_2]), ...]
     nfev : int
@@ -1001,6 +1022,8 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         List of containing np.ndarrays of the electric fields in the ROIs
     time : float
         Runtime of optimization in s
+    electrode : list of ElectrodeArray objects [n_channel_stim]
+        List of ElectrodeArray objects for every stimulation
     goal : str
 
     """
@@ -1027,29 +1050,35 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         f.write(f"Simulation time: {str(datetime.timedelta(seconds=time))[:-7]}\n")
         f.write(f"headmodel: {msh.fn}\n")
         f.write(f"Goal: {goal}\n")
-        f.write(f"Number of ROIs: {len(e)}\n")
+        f.write(f"Number of Channels: {len(e)}\n")
+        f.write(f"Number of ROIs: {len(e[0])}\n")
         f.write(f"\n")
         f.write(f"Electrode coordinates:\n")
         f.write(f"===================================================================\n")
         f.write(f"Ellipsoid space (Jacobian coordinates):\n")
         f.write(f"---------------------------------------\n")
-        for i, p in enumerate(popt):
-            f.write(f"Array {i}:\n")
-            f.write(f"\tbeta:   {sep(p[0])}{p[0]:.3f}\n")
-            f.write(f"\tlambda: {sep(p[1])}{p[1]:.3f}\n")
-            f.write(f"\talpha:  {sep(p[2])}{p[2]:.3f}\n")
+
+        for i_stim in range(len(popt)):
+            f.write(f"Stimulation {i_stim}:\n")
+            for i, p in enumerate(popt[i_stim]):
+                f.write(f"Array {i}:\n")
+                f.write(f"\tbeta:   {sep(p[0])}{p[0]:.3f}\n")
+                f.write(f"\tlambda: {sep(p[1])}{p[1]:.3f}\n")
+                f.write(f"\talpha:  {sep(p[2])}{p[2]:.3f}\n")
         f.write(f"\n")
         f.write(f"Subject space (Cartesian coordinates):\n")
         f.write(f"--------------------------------------\n")
-        for i_array, _electrode_array in enumerate(electrode.electrode_arrays):
-            f.write(f"Array {i_array}:\n")
-            for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
-                f.write(f"\tElectrode {i_electrode} ({_electrode.type}):\n")
-                for i_row in range(4):
-                    f.write("\t\t" + sep(_electrode.posmat[i_row, 0]) + f"{_electrode.posmat[i_row, 0]:.3f}, " +
-                            sep(_electrode.posmat[i_row, 1]) + f"{_electrode.posmat[i_row, 1]:.3f}, " +
-                            sep(_electrode.posmat[i_row, 2]) + f"{_electrode.posmat[i_row, 2]:.3f}, " +
-                            sep(_electrode.posmat[i_row, 3]) + f"{_electrode.posmat[i_row, 3]:.3f}\n")
+        for i_stim in range(len(popt)):
+            f.write(f"Stimulation {i_stim}:\n")
+            for i_array, _electrode_array in enumerate(electrode[i_stim].electrode_arrays):
+                f.write(f"Array {i_array}:\n")
+                for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
+                    f.write(f"\tElectrode {i_electrode} ({_electrode.type}):\n")
+                    for i_row in range(4):
+                        f.write("\t\t" + sep(_electrode.posmat[i_row, 0]) + f"{_electrode.posmat[i_row, 0]:.3f}, " +
+                                sep(_electrode.posmat[i_row, 1]) + f"{_electrode.posmat[i_row, 1]:.3f}, " +
+                                sep(_electrode.posmat[i_row, 2]) + f"{_electrode.posmat[i_row, 2]:.3f}, " +
+                                sep(_electrode.posmat[i_row, 3]) + f"{_electrode.posmat[i_row, 3]:.3f}\n")
         f.write("\n")
         f.write("Optimization method:\n")
         f.write("===================================================================\n")
@@ -1073,6 +1102,8 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         # general info
         f.create_dataset(data=msh.fn, name="fnamehead")
         f.create_dataset(data=f"{d.year}-{d.month}-{d.day}, {d.hour}:{d.minute}:{d.second}", name="date")
+        f.create_dataset(data=len(e), name="n_channel")
+        f.create_dataset(data=len(e[0]), name="n_roi")
 
         # optimizer
         f.create_dataset(data=optimizer, name="optimizer/optimizer")
@@ -1089,29 +1120,49 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
                 f.create_dataset(data=optimizer_options[key], name=f"optimizer/optimizer_options/{key}")
 
         # electrodes
-        f.create_dataset(data=electrode.center, name=f"electrode/center")
-        f.create_dataset(data=electrode.radius, name=f"electrode/radius")
-        f.create_dataset(data=electrode.length_x, name=f"electrode/length_x")
-        f.create_dataset(data=electrode.length_y, name=f"electrode/length_y")
-        f.create_dataset(data=electrode.current, name=f"electrode/current")
+        for i_stim in range(len(electrode)):
+            f.create_dataset(data=electrode[i_stim].center, name=f"electrode/channel_{i_stim}/center")
+            f.create_dataset(data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius")
+            f.create_dataset(data=electrode[i_stim].length_x, name=f"electrode/channel_{i_stim}/length_x")
+            f.create_dataset(data=electrode[i_stim].length_y, name=f"electrode/channel_{i_stim}/length_y")
+            f.create_dataset(data=electrode[i_stim].current, name=f"electrode/channel_{i_stim}/current")
 
-        for i_array, _electrode_array in enumerate(electrode.electrode_arrays):
-            f.create_dataset(data=popt[i_array][0], name=f"electrode/popt/electrode_array_{i_array}/beta")
-            f.create_dataset(data=popt[i_array][1], name=f"electrode/popt/electrode_array_{i_array}/lambda")
-            f.create_dataset(data=popt[i_array][2], name=f"electrode/popt/electrode_array_{i_array}/alpha")
+            for i_array, _electrode_array in enumerate(electrode[i_stim].electrode_arrays):
+                f.create_dataset(data=popt[i_stim][i_array][0], name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/beta")
+                f.create_dataset(data=popt[i_stim][i_array][1], name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/lambda")
+                f.create_dataset(data=popt[i_stim][i_array][2], name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/alpha")
 
-            for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
-                f.create_dataset(data=_electrode.posmat, name=f"electrode/posmat/electrode_array_{i_array}/electrode_{i_electrode}/posmat")
+                for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
+                    f.create_dataset(data=_electrode.posmat, name=f"electrode/channel_{i_stim}/posmat/electrode_array_{i_array}/electrode_{i_electrode}/posmat")
 
         # electric field in ROIs
-        for i in range(len(e)):
-            f.create_dataset(data=e[i].flatten(), name=f"e/e_roi_{i}")
+        for i_stim in range(len(e)):
+            for i_roi in range(len(e[i_stim])):
+                f.create_dataset(data=e[i_stim][i_roi].flatten(), name=f"e/channel_{i_stim}/e_roi_{i_roi}")
 
 
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
-    ''' relabels skin in internal air cavities to something else;
-        relevant for charm meshes
-    '''
+    """
+    Relabels skin in internal air cavities to something else; relevant for charm meshes
+
+    Parameters
+    ----------
+    m : Msh object
+        Mesh object with internal air
+    subpath :
+        Path to subject m2m folder
+    label_skin : int
+        Original skin label
+    label_new : int
+        New skin label
+    label_internal_air : int
+        New label of internal air
+
+    Returns
+    -------
+    m : Msh object
+        Mesh with relabeled internal air
+    """
     subject_files = SubjectFiles(subpath=subpath)
 
     # relabel internal skin to some other label
