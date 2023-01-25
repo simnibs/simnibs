@@ -39,8 +39,7 @@ def parse_args(argv):
 
     return parser.parse_args(argv[1:])
 
-
-if __name__ == '__main__':
+def main():
     args = parse_args(sys.argv)
 
     montage = Path(args.montage).with_suffix(".csv")
@@ -53,3 +52,6 @@ if __name__ == '__main__':
         prepare_montage(montage, args.info, args.trans)
     else:
         raise ValueError(f'{args.format} is not a valid format.')
+
+if __name__ == '__main__':
+    main()

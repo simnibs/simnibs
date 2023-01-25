@@ -40,7 +40,7 @@ def parse_args(argv):
 
     return parser.parse_args(argv[1:])
 
-if __name__ == "__main__":
+def main():
     args = parse_args(sys.argv)
 
     kwargs = dict(
@@ -56,3 +56,6 @@ if __name__ == "__main__":
         kwargs["trans"] = args.trans
 
     prepare_for_inverse(**kwargs)
+
+if __name__ == "__main__":
+    main()

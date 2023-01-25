@@ -60,8 +60,7 @@ def parse_args(argv):
 
     return parser.parse_args(argv[1:])
 
-
-if __name__ == "__main__":
+def main():
     args = parse_args(sys.argv)
 
     m2m_dir = clargs.resolve_subject_id_path(args.subid)
@@ -82,3 +81,6 @@ if __name__ == "__main__":
         point_electrodes,
         init_kwargs=init_kwargs
     )
+
+if __name__ == "__main__":
+    main()
