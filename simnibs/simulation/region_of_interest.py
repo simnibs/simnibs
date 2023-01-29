@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sparse
 
 from ..utils.simnibs_logger import logger
+from ..utils.utils_numba import spmatmul, postp_mag, postp
 
 
 def _get_local_distances(node_numbers, node_coordinates):
@@ -156,17 +157,24 @@ class RegionOfInterest:
         # get the E field in all tetrahedra (v: (number_of_nodes, 1))
         if dadt is None:
             # TES
-            fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list])
+            if dataType == 0:
+                fields = postp_mag(self.gradient, v, np.zeros((len(v), 3)), self.node_index_list, self.idx) # dadt should be in elements
+            else:
+                fields = postp(self.gradient, v, np.zeros((len(v), 3)), self.node_index_list, self.idx)
+            # fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list])
         else:
             # TMS
-            fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list]) - dadt[self.idx]
+            if dataType == 0:
+                fields = postp_mag(self.gradient, v, dadt, self.node_index_list, self.idx)
+            else:
+                fields = postp(self.gradient, v, dadt, self.node_index_list, self.idx)
+            # fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list]) - dadt[self.idx]
 
-        if dataType == 0:
-            # calculate the magnitude of E
-            fields = np.linalg.norm(fields, axis=1, keepdims=True)
 
         # interpolate to ROI
-        e = self.sF @ fields
+        # e = self.sF @ fields
+        e = np.zeros((self.n_points, fields.shape[1]))
+        spmatmul(self.sF.data, self.sF.indptr, self.sF.indices, fields, e)
 
         return e
 

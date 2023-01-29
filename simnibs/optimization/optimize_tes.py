@@ -216,6 +216,7 @@ class TESoptimize():
         self.electrode = electrode
         self.electrode_pos_opt = None
         self.min_electrode_distance = min_electrode_distance
+        self.dirichlet_correction = False  # will be checked later if required
 
         # number of independent stimulation channels (on after another)
         self.n_channel_stim = len(electrode)
@@ -249,6 +250,9 @@ class TESoptimize():
 
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                if _electrode_array.dirichlet_correction:
+                    self.dirichlet_correction = True
+
                 for _electrode in _electrode_array.electrodes:
                     self.current[i_channel_stim][_electrode.channel_id] += _electrode.current
 
@@ -355,18 +359,19 @@ class TESoptimize():
         # log summary
         ################################################################################################################
         self.logger.log(25, f"="*100)
-        self.logger.log(25, f"headmodel:           {self.mesh.fn}")
-        self.logger.log(25, f"n_roi:               {self.n_roi}")
-        self.logger.log(25, f"anisotropy type:     {self.ofem.anisotropy_type}")
-        self.logger.log(25, f"n_channel_stim:      {self.n_channel_stim}")
-        self.logger.log(25, f"fn_eeg_cap:          {self.fn_eeg_cap}")
-        self.logger.log(25, f"fn_electrode_mask:   {self.fn_electrode_mask}")
-        self.logger.log(25, f"FEM solver options:  {self.ofem.solver_options}")
-        self.logger.log(25, f"optimizer:           {self.optimizer}")
-        self.logger.log(25, f"goal:                {self.goal}")
-        self.logger.log(25, f"weights:             {self.weights}")
-        self.logger.log(25, f"output_folder:       {self.output_folder}")
-        self.logger.log(25, f"fn_results_hdf5:     {self.fn_results_hdf5}")
+        self.logger.log(25, f"headmodel:             {self.mesh.fn}")
+        self.logger.log(25, f"n_roi:                 {self.n_roi}")
+        self.logger.log(25, f"anisotropy type:       {self.ofem.anisotropy_type}")
+        self.logger.log(25, f"n_channel_stim:        {self.n_channel_stim}")
+        self.logger.log(25, f"fn_eeg_cap:            {self.fn_eeg_cap}")
+        self.logger.log(25, f"fn_electrode_mask:     {self.fn_electrode_mask}")
+        self.logger.log(25, f"FEM solver options:    {self.ofem.solver_options}")
+        self.logger.log(25, f"dirichlet_correction:  {self.dirichlet_correction}")
+        self.logger.log(25, f"optimizer:             {self.optimizer}")
+        self.logger.log(25, f"goal:                  {self.goal}")
+        self.logger.log(25, f"weights:               {self.weights}")
+        self.logger.log(25, f"output_folder:         {self.output_folder}")
+        self.logger.log(25, f"fn_results_hdf5:       {self.fn_results_hdf5}")
 
         if self.optimizer_options is not None:
             for key in self.optimizer_options:
@@ -771,31 +776,13 @@ class TESoptimize():
 
 
             # solve system
-            v = self.ofem.solve(b)
-
-            # remove dirichlet node (v=0) from RHS (dirichlet node is defined with node indexing starting with 1)
-            # b = np.delete(b, self.dirichlet_node-1)
-            #
-            #stop = time.time()
-            #print(f"Time: set RHS: {stop - start}")
-            #
-            # solve
-            #start = time.time()
-            # self.logger.disabled = True
-            #
-            # # solve system
-            # v = self.fem._solver.solve(b)
-            #
-            # # add Dirichlet node (v=0) to solution (dirichlet node is defined with node indexing starting with 1)
-            # v = np.insert(v, self.dirichlet_node-1, 0)
-            # self.logger.disabled = False
-            # #stop = time.time()
-            #print(f"Time: solve: {stop - start}")
-
-            # TODO: @Axel do we need this here?: (it is done in fem.solve after calling solver._solve)
-            # if self.dirichlet is not None:
-            #     v, dof_map = self.dirichlet.apply_to_solution(v, dof_map)
-            # dof_map, v = dof_map.order_like(self.dof_map, array=v)
+            if self.dirichlet_correction:
+                v = self.ofem.solve_dirichlet_correction(b=b,
+                                                         electrodes=[node_idx_dict[i_channel_stim][channel]
+                                                                     for channel in node_idx_dict[i_channel_stim].keys()],
+                                                         currents=self.current[i_channel_stim])
+            else:
+                v = self.ofem.solve(b)
 
             # Determine electric field in ROIs
             #start = time.time()

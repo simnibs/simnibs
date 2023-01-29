@@ -194,6 +194,12 @@ class ElectrodeArray():
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
 
+        # apply Dirichlet correction step in fast TES calculations if some electrodes share the same channel
+        if self.n_ele != np.unique(self.channel_id):
+            self.dirichlet_correction = True
+        else:
+            self.dirichlet_correction = False
+
         if current is None:
             self.current = 1/self.n_ele * np.ones(self.n_ele)
         else:
@@ -330,25 +336,25 @@ class ElectrodeArrayPair():
 
     Parameters
     ----------
-    center : np.ndarray of float [n_ele x 3]
-        Center positions of electrodes in normalized x/y plane (z=0)
-    radius : np.ndarray of float [n_ele] or None
-        Radii of single circular electrodes in array (in mm)
-    length_x : np.ndarray of float [n_ele] or None
-        Extensions in x-direction of single rectangular electrodes in array
-    length_y : np.ndarray of float [n_ele] or None
-        Extensions in y-direction of single rectangular electrodes in array
-    current : list of np.ndarray of float [2] containing [n_ele] elements each
-
+    center : np.ndarray of float [n_ele/2 x 3]
+        Center positions of electrodes in normalized x/y plane (z=0). Array will be copied for second array.
+    radius : np.ndarray of float [n_ele/2] or None
+        Radii of single circular electrodes in array (in mm). Array will be copied for second array.
+    length_x : np.ndarray of float [n_ele/2] or None
+        Extensions in x-direction of single rectangular electrodes in array. Array will be copied for second array.
+    length_y : np.ndarray of float [n_ele/2] or None
+        Extensions in y-direction of single rectangular electrodes in array. Array will be copied for second array.
+    current : np.ndarray of float [n_ele] or None
+        Current through electrodes. Has to sum up to zero net current.
 
     Attributes
     ----------
     n_ele : int
-        Number of electrodes
-    center : np.ndarray of float [n_ele, 3]
-        Center of electrodes (in mm)
+        Total number of electrodes including all channels and arrays
+    center : np.ndarray of float [n_ele/2, 3]
+        Center of electrodes (in mm). Same for second array, so we save it only once.
     radius : list of float
-        Radii of electrodes (in mm)
+        Radii of electrodes (in mm). Same for second array, so we save it only once.
     electrode_arrays : list of ElectrodeArray instances [2]
         Two ElectrodeArray instances
     """
@@ -358,16 +364,27 @@ class ElectrodeArrayPair():
         self.length_x = length_x
         self.length_y = length_y
         self.center = center
-        self.n_ele = len(center)
-        self.channel_id = [[i for _ in range(self.n_ele)] for i in range(2)]
+        self.n_ele = len(center) * 2                                                        # total number of electrodes
+        self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
+        self.n_channel = np.unique(self.channel_id)
 
         if current is None:
-            self.current = [0, 0]
-            self.current[0] = np.array([1/self.n_ele for _ in range(self.n_ele)])
-            self.current[1] = np.array([-1/self.n_ele for _ in range(self.n_ele)])
+            self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
+                                      np.array([-1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))])))
         else:
-            self.current[0] = current[0]
-            self.current[1] = current[1]
+            self.current = current
+
+        if np.abs(np.sum(self.current)) > 1e-12:
+            raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
+
+        # number of electrodes per channel [n_channel]
+        self.n_ele_per_channel = [np.sum(self.channel_id == i) for i in np.unique(self.channel_id)]
+
+        # total current entering domain (read from first channel)
+        self.current_total = np.sum(self.current[self.channel_id == self.channel_id[0]])
+
+        # determine mean current of electrodes for each channel [n_channel]
+        self.current_mean = self.current_total / self.n_ele_per_channel
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
@@ -428,7 +445,8 @@ class CircularArray():
     radius_outer : float
         Radius of outer electrodes, default: same radius as inner electrodes
     current : np.ndarray of float [n_ele]
-        Current through electrodes (First entry is central electrode)
+        Current through electrodes (First entry is central electrode).
+        Has to sum up to zero net current.
 
     Attributes
     ----------
@@ -446,7 +464,8 @@ class CircularArray():
         self.distance = distance
         self.n_ele = n_outer + 1
         self.n_outer = n_outer
-        self.channel_id = [0] + [1] * n_outer
+        self.channel_id = np.array([0] + [1] * n_outer)
+        self.n_channel = np.unique(self.channel_id)
 
         if radius_outer is None:
             self.radius_outer = radius_inner
@@ -454,9 +473,21 @@ class CircularArray():
             self.radius_outer = radius_outer
 
         if current is None:
-            self.current = np.hstack((1, 1/(self.n_ele-1) * np.ones(self.n_ele-1)))
+            self.current = np.hstack((1, -1/(self.n_ele-1) * np.ones(self.n_ele-1)))
         else:
             self.current = current
+
+        if np.abs(np.sum(self.current)) > 1e-12:
+            raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
+
+        # number of electrodes per channel [n_channel]
+        self.n_ele_per_channel = [np.sum(self.channel_id == i) for i in np.unique(self.channel_id)]
+
+        # total current entering domain (read from center electrode)
+        self.current_total = self.current[0]
+
+        # determine mean current of electrodes for each channel [n_channel]
+        self.current_mean = self.current_total / self.n_ele_per_channel
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(n_outer))
         self.center = np.array([[0., 0., 0.]])
@@ -525,7 +556,7 @@ class CircularArray():
             self.center[-1, 0] = np.cos(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
             self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 
-        self.electrode_arrays = [ElectrodeArray(channel_id=[0] + [1] * self.n_outer,
+        self.electrode_arrays = [ElectrodeArray(channel_id=np.array([0] + [1] * self.n_outer),
                                                 center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
