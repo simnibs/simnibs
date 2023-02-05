@@ -206,7 +206,7 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
     d_position : ndarray
         dipole positions (Nx3).
     target_positions : ndarray
-        position for which to calculate the A field.
+        positions for which to calculate the A field.
     eps : float
         Precision. The default is 1e-3
     direct : bool
@@ -287,7 +287,7 @@ def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
     B *= -1e-7
     return B
 
-def A_biot_savart_path(lsegments, points, I=1.):
+def A_biot_savart_path(lsegments, points, dl=None, I=1.):
     '''
     Calculate A field naively (without FMM) from current path
 
@@ -297,6 +297,8 @@ def A_biot_savart_path(lsegments, points, I=1.):
         line segments, definition of M wire path as 3D points (3 x M).
     points : ndarray
         3D points where field is calculated (3 x N).
+    dl : ndarray, optional
+        direction vectors if not supplied determined by the line segments.
     I : float, optional
         Current strenth in A. The default is 1..
 
@@ -307,14 +309,16 @@ def A_biot_savart_path(lsegments, points, I=1.):
 
     '''
     r1 = np.sqrt(np.sum((points[:,:,None]-lsegments[:,None,:])**2,axis=0))
-    dl = np.zeros(lsegments.shape)
-    dl[:,:-1] = np.diff(lsegments,axis=1)
-    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
-    A = np.sum(dl[:,None,:]/r1[None],axis=2)
+    if dl is None:
+        dl = np.zeros(lsegments.shape)
+        dl[:,:-1] = np.diff(lsegments,axis=1)
+        dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+
+    A = np.sum(dl[:,None,:] / r1[None],axis=2)
     A *= I*1e-7
     return A
 
-def A_biot_savart_path_fmm(lsegments, points, I=1., eps=1e-3, direct='auto'):
+def A_biot_savart_path_fmm(lsegments, points, dl=None, I=1., eps=1e-3, direct='auto'):
     '''
     Calculate A field using FMM3D from current path
 
@@ -339,9 +343,12 @@ def A_biot_savart_path_fmm(lsegments, points, I=1., eps=1e-3, direct='auto'):
         A field at points (3 x N) in Tesla*meter.
 
     '''
-    dl = np.zeros(lsegments.shape)
-    dl[:,:-1] = np.diff(lsegments,axis=1)
-    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+
+    if dl is None:
+        dl = np.zeros(lsegments.shape)
+        dl[:,:-1] = np.diff(lsegments,axis=1)
+        dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+    
     if direct == 'auto':
         if dl.shape[1] >= 300:
             direct = False
