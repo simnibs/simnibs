@@ -688,6 +688,9 @@ class TESoptimize():
                     # save node coords (refering to global mesh)
                     _electrode.node_coords = self.mesh.nodes.node_coord[np.where(mask)[0]]
 
+                    # save number of nodes assigned to this electrode
+                    _electrode.n_nodes = len(_electrode.node_idx)
+
                     node_coords_list[i_array_global].append(_electrode.node_coords)
 
                     # group node indices of same channel IDs

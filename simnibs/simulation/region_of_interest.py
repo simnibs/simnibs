@@ -282,7 +282,7 @@ class RegionOfInterest:
             is_t = tag1_inside == t
 
             if np.any(is_t):
-                logger.debug('points inside volumn with tag1 = {}: {}'.format(t, np.sum(is_t)))
+                logger.debug('points inside volume with tag1 = {}: {}'.format(t, np.sum(is_t)))
 
                 # 'm_tag' contains only the tetrahedra with 'elm_number == th_with_t'
                 m_tag = msh.crop_mesh(tags=t)

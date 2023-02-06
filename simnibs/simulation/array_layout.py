@@ -82,6 +82,7 @@ class Electrode():
         self.points_area = None
         self.node_idx = None
         self.node_coords = None
+        self.n_nodes = None
         self.posmat_norm = np.array([[1, 0, 0, center[0]],
                                      [0, 1, 0, center[1]],
                                      [0, 0, 1, center[2]],

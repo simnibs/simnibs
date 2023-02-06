@@ -116,7 +116,7 @@ class OnlineFEM:
         self.fn_tensor_nifti = self.ff_subject.tensor_file
 
         # get Dirichlet node index where V=0 (close to center of gravity of mesh but not on a surface)
-        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)
+        self.dirichlet_node = mesh.nodes.nr  #  get_dirichlet_node_index_cog(mesh=self.mesh)
 
         # For TMS we use only tetrahedra (elm_type=4). The triangles (elm_type=3) are removed.
         if self.method == "TMS":
@@ -300,7 +300,7 @@ class OnlineFEM:
 
         Parameters
         ----------
-        v_ele : list of list of np.arrays of float [n_channel][n_ele][n_nodes]
+        v_nodes : list of list of np.arrays of float [n_channel][n_ele][n_nodes]
             Electric potential in electrode nodes for all channels
         currents_ele : list of np.ndarray [n_channel][n_ele]
             List of the currents in electrodes for each channel
@@ -315,8 +315,8 @@ class OnlineFEM:
         channel_id_unique = np.unique(channel_id)
 
         # average and weight potential with node area over electrodes and whole channel (separately)
-        v_mean_ele = []
-        v_mean_channel = []
+        v_mean_ele = []         # [n_channel][n_ele]
+        v_mean_channel = []     # [n_channel]
 
         for i, _channel_id in enumerate(channel_id_unique):
             channel_mask = _channel_id == channel_id
@@ -327,8 +327,8 @@ class OnlineFEM:
 
             ele_id_unique = np.unique(ele_id[channel_mask])
 
-            v_mean_ele[i] = []
-
+            # for this channel determine average potentials over electrodes
+            v_mean_ele.append([])
             for _ele_id in ele_id_unique:
                 ele_mask = _ele_id == ele_id
                 mask = ele_mask * channel_mask
@@ -341,10 +341,10 @@ class OnlineFEM:
         # calculate rel. difference of electrode potentials to average electrode potential
         for i_channel in range(self.electrode.n_channel):
             # calculate differences of electrode potentials to channel potential
-            v_ele_norm[i_channel] = (v_elec[i_channel] - np.mean(v_elec[i_channel])) / np.std(v_mean)
-            currents_ele_norm[i_channel] = (I[i_channel] - np.mean(I[i_channel])) / np.mean(I[i_channel])
+            v_ele_norm[i_channel] = (v_mean_ele[i_channel] - np.mean(v_mean_ele[i_channel])) / np.std(v_mean_channel[i_channel])
+            currents_ele_norm[i_channel] = (currents[i_channel] - np.mean(currents[i_channel])) / np.mean(currents[i_channel])
 
-        return v_norm, I_norm
+        return v_ele_norm, currents_ele_norm
 
     def solve_dirichlet_correction(self, b, electrodes, currents, channel_ids):
         """
@@ -371,11 +371,39 @@ class OnlineFEM:
         th_maxrelerr = 0.01
         maxiter = 40
 
+        # create arrays
+        # v_nodes   v_node_idx  channel_id  ele_id  node_area
+        # ---------------------------------------------------
+        # ...       4           0           0       ...
+        # ...       1           0           0       ...
+        # ...       15          0           1       ...
+        # ...       3           0           1       ...
+        # ...       9           1           0       ...
+        # ...       8           1           0       ...
+        # ...       22          1           0       ...
+        # ...       0           1           1       ...
+        # ...       10          1           1       ...
+        # ...       11          1           1       ...
+
+        channel_id = []
+        ele_id = []
+        v_node_idx = []
+        node_area = []
+        for i_channel in self.electrode.n_channel:
+            for i_ele in range(self.electrode.n_ele_per_channel[i_channel]):
+                channel_id.append(np.array([i_channel] * self.electrode.electrode_arrays[i_channel].electrodes[i_ele].n_nodes))
+                ele_id.append(np.array([i_ele] * self.electrode.electrode_arrays[i_channel].electrodes[i_ele].n_nodes))
+
+        channel_id = np.hstack(channel_id)[:, np.newaxis]
+        ele_id = np.hstack(ele_id)[:, np.newaxis]
+
+
+
         # Solve iteratively until maxrelerr is reached
         # Iteration: 0
-        I = [np.ones(N_elec[k]) * I_mean[k] for k in range(len(N_elec))]
         v = self.solve(b)
-        v_norm, I_norm = self.normalize_solution(v=v, I=I, electrodes=electrodes)
+        v_nodes = v[v_node_idx]
+        v_norm, I_norm = self.normalize_solution(v_nodes=v_nodes, channel_id=channel_id, ele_id=ele_id, node_area=node_area, currents=currents)
 
         j = 0
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(len(I))])
