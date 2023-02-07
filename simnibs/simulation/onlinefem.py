@@ -312,8 +312,16 @@ class OnlineFEM:
         ----------
         v_nodes : list of list of np.arrays of float [n_channel][n_ele][n_nodes]
             Electric potential in electrode nodes for all channels
-        currents_ele : list of np.ndarray [n_channel][n_ele]
-            List of the currents in electrodes for each channel
+        channel_id :
+
+        ele_id :
+
+        node_area :
+
+        currents :
+
+        electrode :
+
 
         Returns
         -------
@@ -345,13 +353,19 @@ class OnlineFEM:
                 v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / \
                                      np.sum(node_area[mask]))
 
+            v_mean_ele[i] = np.array(v_mean_ele[i])
+
         v_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
         currents_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
 
         # calculate rel. difference of electrode potentials to average electrode potential
         for i_channel in range(electrode.n_channel):
+            if len(v_mean_ele[i_channel]) == 1:
+                std_scale = np.std(v_mean_channel)
+            else:
+                std_scale = np.std(v_mean_channel)
             # calculate differences of electrode potentials to channel potential
-            v_ele_norm[i_channel] = (v_mean_ele[i_channel] - np.mean(v_mean_ele[i_channel])) / np.std(v_mean_channel[i_channel])
+            v_ele_norm[i_channel] = (v_mean_ele[i_channel] - np.mean(v_mean_ele[i_channel])) / std_scale
             currents_ele_norm[i_channel] = (currents[i_channel] - np.mean(currents[i_channel])) / np.mean(currents[i_channel])
 
         return v_ele_norm, currents_ele_norm
@@ -417,7 +431,7 @@ class OnlineFEM:
         v_nodes = v[v_node_idx]
 
         # read currents from electrode
-        I = [[0]*electrode.n_ele_per_channel[i_channel] for i_channel in range(n_channel)]
+        I = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
         ele_counter_channel = [0] * n_channel
         for _electrode_array in electrode.electrode_arrays:
             for _ele in _electrode_array.electrodes:
@@ -432,10 +446,16 @@ class OnlineFEM:
                                                  currents=I,
                                                  electrode=electrode)
 
+        for i_channel in range(n_channel):
+            v_norm[i_channel] = v_norm[i_channel][np.newaxis, :]
+            I_norm[i_channel] = I_norm[i_channel][np.newaxis, :]
+
         j = 0
-        maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(len(n_channel))])
+        maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
         while maxrelerr > th_maxrelerr:
+            print(f"iter: {j} error: {maxrelerr}")
             j += 1
+
             if j > maxiter:
                 print('warning: did not converge after ' + str(maxiter) + ' iterations')
                 j -= 1  # hack to make visualization happy
@@ -443,14 +463,22 @@ class OnlineFEM:
 
             if j == 1:
                 # It 1: make small step hopefully in the right direction
-                I = [-0.1 * np.sign(I_mean[i_channel]) * v_norm[i_channel][0] / np.max(np.abs(v_norm[i_channel][0]))
-                     for i_channel in range(n_channel)]
+                I = []
+                for i_channel in range(n_channel):
+                    if electrode.n_ele_per_channel[i_channel] == 1:
+                        I.append(np.array([I_mean[i_channel]]))
+                    else:
+                        I.append(-0.1 * np.sign(I_mean[i_channel]) * v_norm[i_channel][0, :] / np.max(np.abs(v_norm[i_channel][0, :])))
             else:
                 # It 2 ... use gradient descent
                 for i_channel in range(n_channel):
-                    denom = v_norm[i_channel][-1] - v_norm[i_channel][-2]
-                    denom += np.sign(denom) * maxrelerr / 15  # regularize: avoid too small denominators to gain stability
-                    I[i_channel] = I_norm[i_channel][-1] - (I_norm[i_channel][-1] - I_norm[i_channel][-2]) / denom * v_norm[i_channel][-1]
+                    if electrode.n_ele_per_channel[i_channel] == 1:
+                        I[i_channel] = I[i_channel]
+                    else:
+                        denom = (v_norm[i_channel][-1, :] - v_norm[i_channel][-2, :])
+                        # denom += np.sign(denom) * maxrelerr / 15  # regularize: avoid too small denominators to gain stability
+                        I[i_channel] = I_norm[i_channel][-1] - (I_norm[i_channel][-1, :] - I_norm[i_channel][-2, :]) / denom * v_norm[i_channel][-1, :]
+                        # I[i_channel] = I_norm[i_channel][-1] + (I_norm[i_channel][-1, :] - I_norm[i_channel][-2, :]) * denom / v_norm[i_channel][-1, :]
 
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
@@ -458,7 +486,7 @@ class OnlineFEM:
             # write currents in electrode
             ele_counter_channel = [0] * n_channel
             for _electrode_array in electrode.electrode_arrays:
-                for i_ele, _ele in _electrode_array.electrodes:
+                for _ele in _electrode_array.electrodes:
                     _ele.current = I[_ele.channel_id][ele_counter_channel[_ele.channel_id]]
                     ele_counter_channel[_ele.channel_id] += 1
 
@@ -479,13 +507,42 @@ class OnlineFEM:
 
             # append
             for i_channel in range(n_channel):
-                v_norm[i_channel] = np.append(v_norm[i_channel], _v_norm.reshape(1, len(_v_norm)), axis=0)
-                I_norm[i_channel] = np.append(I_norm[i_channel], _I_norm.reshape(1, len(_I_norm)), axis=0)
+                v_norm[i_channel] = np.vstack((v_norm[i_channel], _v_norm[i_channel][np.newaxis, :]))
+                I_norm[i_channel] = np.vstack((I_norm[i_channel], _I_norm[i_channel][np.newaxis, :]))
 
             # update error
-            maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(len(I))])
+            maxrelerr = np.max([np.max(np.abs(v_norm[i_channel][-1])) for i_channel in range(n_channel)])
+
+        import matplotlib.pyplot as plt
+        import matplotlib
+        matplotlib.use("Qt5Agg")
+
+        t = np.arange(j + 1)
+        for i_channel in range(n_channel):
+            v_normP = v_norm[i_channel]
+            I_normP = I_norm[i_channel]
+            I_normP = I_norm[i_channel]
+
+            fig, axs = plt.subplots(5, 1)
+            for i in range(electrode.n_ele_per_channel[i_channel]):
+                axs[0].plot(t, v_normP[:, i])
+                axs[1].plot(t, I_normP[:, i])
+            axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
+            axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+
+            axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+
+            axs[0].set_title('v_norm')
+            axs[1].set_title('I_norm')
+            axs[2].set_title('max and mean relative error of v_norm (log10)')
+
+            fig.tight_layout()
+            plt.show()
+
 
         return np.squeeze(v)
+
+
     def solve(self, b):
         """
         Solve system of equations Ax=b and add Dirichlet node (V=0) to solution.
