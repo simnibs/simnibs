@@ -248,10 +248,11 @@ class TESoptimize():
         self.current = [np.zeros(len(np.unique(self.electrode[i_channel_stim].channel_id)))
                         for i_channel_stim in range(self.n_channel_stim)]
 
+        self.dirichlet_correction = [False] * self.n_channel_stim
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                 if _electrode_array.dirichlet_correction:
-                    self.dirichlet_correction = True
+                    self.dirichlet_correction[i_channel_stim] = True
 
                 for _electrode in _electrode_array.electrodes:
                     self.current[i_channel_stim][_electrode.channel_id] += _electrode.current
@@ -341,8 +342,14 @@ class TESoptimize():
             solver_options = "pardiso"
 
         # prepare FEM
-        self.ofem = OnlineFEM(mesh=self.mesh, method="TES", roi=self.roi, anisotropy_type=anisotropy_type,
-                              solver_options=solver_options, fn_results=self.fn_results_hdf5, useElements=True,
+        self.ofem = OnlineFEM(mesh=self.mesh,
+                              electrode=electrode,
+                              method="TES",
+                              roi=self.roi,
+                              anisotropy_type=anisotropy_type,
+                              solver_options=solver_options,
+                              fn_results=self.fn_results_hdf5,
+                              useElements=True,
                               dataType=0)
 
         # self.logger.log(20, 'Preparing FEM')
@@ -535,7 +542,7 @@ class TESoptimize():
     def get_nodes_electrode(self, electrode_pos, plot=False):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
-        electrode_array.electrodes[i].points and electrode_array.electrodes[i].points_area
+        electrode_array.electrodes[i].nodes and electrode_array.electrodes[i].node_area
 
         Parameters
         ----------
@@ -676,7 +683,10 @@ class TESoptimize():
                         raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
 
                     # node areas
-                    _electrode.area_skin = np.sum(self.skin_surface.nodes_areas[mask])
+                    _electrode.node_area = self.skin_surface.nodes_areas[mask]
+
+                    # total effective area of all nodes
+                    _electrode.area_skin = np.sum(_electrode.node_area)
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
                     if _electrode.area_skin < 0.8 * _electrode.area:
@@ -765,9 +775,7 @@ class TESoptimize():
             self.logger.log(20, "Electrode position: valid")
 
             # set RHS
-            b = self.ofem.set_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
-                                              for channel in node_idx_dict[i_channel_stim].keys()],
-                                  currents=self.current[i_channel_stim])
+            b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
 
             #start = time.time()
             # b = self.ofem.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
@@ -779,11 +787,8 @@ class TESoptimize():
 
 
             # solve system
-            if self.dirichlet_correction:
-                v = self.ofem.solve_dirichlet_correction(b=b,
-                                                         electrodes=[node_idx_dict[i_channel_stim][channel]
-                                                                     for channel in node_idx_dict[i_channel_stim].keys()],
-                                                         currents=self.current[i_channel_stim])
+            if self.dirichlet_correction[i_channel_stim]:
+                v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
             else:
                 v = self.ofem.solve(b)
 

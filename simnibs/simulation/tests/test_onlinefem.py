@@ -3,16 +3,16 @@ import simnibs
 
 # Test OnlineFEM class with TMS
 ########################################################################################################################
-fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/15484.08.msh"
-# fn_mesh = "/home/kporzig/tmp/charm_beta_coarse/m2m_15484.08/15484.08.msh"
-fn_coil = "/data/pt_01756/coils/Magventure MCF-B65/Medtronic_MCF_B65_REF.nii.gz"
-# fn_coil = "/home/kporzig/tmp/Medtronic_MCF_B65_REF.nii.gz"
-fn_matsimnibs = "/data/pt_01756/probands/15484.08/exp/reg_isi_05/mesh_charm_beta_coarse/matsimnibs.hdf5"
-# fn_matsimnibs = "/home/kporzig/tmp/matsimnibs.hdf5"
-fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
-# fn_roi = "/home/kporzig/tmp/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
-fn_results = "/data/pt_01756/studies/ttf/OnlineFEM/results_TMS"
-# fn_results = "/home/kporzig/tmp/OnlineFEM/e_new_iso_nodes.hdf5"
+# fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/15484.08.msh"
+fn_mesh = "/home/kporzig/tmp/charm_beta_coarse/m2m_15484.08/15484.08.msh"
+# fn_coil = "/data/pt_01756/coils/Magventure MCF-B65/Medtronic_MCF_B65_REF.nii.gz"
+fn_coil = "/home/kporzig/tmp/Medtronic_MCF_B65_REF.nii.gz"
+# fn_matsimnibs = "/data/pt_01756/probands/15484.08/exp/reg_isi_05/mesh_charm_beta_coarse/matsimnibs.hdf5"
+fn_matsimnibs = "/home/kporzig/tmp/matsimnibs.hdf5"
+# fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
+fn_roi = "/home/kporzig/tmp/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
+# fn_results = "/data/pt_01756/studies/ttf/OnlineFEM/results_TMS"
+fn_results = "/home/kporzig/tmp/OnlineFEM/e_new_iso_nodes.hdf5"
 
 solver_options = "pardiso"
 anisotropy_type = "scalar"

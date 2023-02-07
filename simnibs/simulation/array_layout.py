@@ -44,12 +44,10 @@ class Electrode():
         Position matrix [4x4] of electrode in head coordinate system (in mm)
     area : float
         Electrode area (in mm²)
-    points : np.ndarray of float [n_points, 3]
-        Points of the mesh the electrode is located
-    points_area : np.ndarray of float [n_points]
+    node_area : np.ndarray of float [n_points]
         Associated area of the points
     node_idx : np.ndarray of int [n_nodes]
-        Node indices assigned to electrode on subject skin surface (refering to global mesh)
+        Node indices assigned to electrode on subject skin surface (referring to global mesh)
     node_coords : np.ndarray of int [n_nodes x 3]
         Node coordinates assigned to electrode on subject skin surface
     current : float, optional, default: None
@@ -78,8 +76,7 @@ class Electrode():
         self.current = current
         self.voltage = voltage
         self.transmat = None
-        self.points = None
-        self.points_area = None
+        self.node_area = None
         self.node_idx = None
         self.node_coords = None
         self.n_nodes = None
@@ -195,8 +192,8 @@ class ElectrodeArray():
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
 
-        # apply Dirichlet correction step in fast TES calculations if some electrodes share the same channel
-        if self.n_ele != np.unique(self.channel_id):
+        # apply Dirichlet correction step in fast TES calculations if electrodes share the same channel
+        if self.n_ele != len(np.unique(self.channel_id)):
             self.dirichlet_correction = True
         else:
             self.dirichlet_correction = False
@@ -466,7 +463,8 @@ class CircularArray():
         self.n_ele = n_outer + 1
         self.n_outer = n_outer
         self.channel_id = np.array([0] + [1] * n_outer)
-        self.n_channel = np.unique(self.channel_id)
+        self.n_channel = len(np.unique(self.channel_id))
+        self.dirichlet_correction = True
 
         if radius_outer is None:
             self.radius_outer = radius_inner

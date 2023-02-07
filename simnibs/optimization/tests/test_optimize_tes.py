@@ -33,24 +33,24 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-# electrode = simnibs.CircularArray(radius_inner=7.5, distance=15, n_outer=4, radius_outer=5)
+electrode = simnibs.CircularArray(radius_inner=6, distance=20, n_outer=4, radius_outer=5)
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
-center = np.array([[-30, 20, 0],
-                    [0, 20, 0],
-                    [30, 20, 0],
-                    [-30, 0, 0],
-                    [0, 0, 0],
-                    [30, 0, 0],
-                    [-30, -20, 0],
-                    [0, -20, 0],
-                    [30, -20, 0]])
-radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+# center = np.array([[-30, 20, 0],
+#                     [0, 20, 0],
+#                     [30, 20, 0],
+#                     [-30, 0, 0],
+#                     [0, 0, 0],
+#                     [30, 0, 0],
+#                     [-30, -20, 0],
+#                     [0, -20, 0],
+#                     [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
 ########################################################################################################################
