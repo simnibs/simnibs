@@ -292,9 +292,9 @@ class OnlineFEM:
                 #
                 # elm_node_integral *= 1e-6  # from m to mm
                 #
-                # b = np.bincount(self.node_numbers.reshape(-1), elm_node_integral.reshape(-1))
+                # b = np.bincount((self.node_numbers-1).reshape(-1), elm_node_integral.reshape(-1))
 
-                b = sumf3(v=self.volume, dadt=self.dadt, g=self.gradient, nn=self.node_numbers.reshape(-1), c=self.cond)
+                b = sumf3(v=self.volume, dadt=self.dadt, g=self.gradient, nn=(self.node_numbers-1).reshape(-1), c=self.cond)
 
         else:
             raise NotImplementedError("Simulation method not implemented yet. Method is either 'TMS' or 'TES'.")
@@ -388,7 +388,7 @@ class OnlineFEM:
             Corrected solution (including the Dirichlet node at the right position)
         """
         th_maxrelerr = 0.01
-        maxiter = 40
+        maxiter = 100
 
         # create arrays
         # v_nodes | v_node_idx | channel_id_nodes | ele_id_nodes | node_area
@@ -513,32 +513,31 @@ class OnlineFEM:
             # update error
             maxrelerr = np.max([np.max(np.abs(v_norm[i_channel][-1])) for i_channel in range(n_channel)])
 
-        import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use("Qt5Agg")
-
-        t = np.arange(j + 1)
-        for i_channel in range(n_channel):
-            v_normP = v_norm[i_channel]
-            I_normP = I_norm[i_channel]
-            I_normP = I_norm[i_channel]
-
-            fig, axs = plt.subplots(5, 1)
-            for i in range(electrode.n_ele_per_channel[i_channel]):
-                axs[0].plot(t, v_normP[:, i])
-                axs[1].plot(t, I_normP[:, i])
-            axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
-            axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-
-            axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-
-            axs[0].set_title('v_norm')
-            axs[1].set_title('I_norm')
-            axs[2].set_title('max and mean relative error of v_norm (log10)')
-
-            fig.tight_layout()
-            plt.show()
-
+        # import matplotlib.pyplot as plt
+        # import matplotlib
+        # matplotlib.use("Qt5Agg")
+        #
+        # t = np.arange(j + 1)
+        # for i_channel in range(n_channel):
+        #     v_normP = v_norm[i_channel]
+        #     I_normP = I_norm[i_channel]
+        #     I_normP = I_norm[i_channel]
+        #
+        #     fig, axs = plt.subplots(5, 1)
+        #     for i in range(electrode.n_ele_per_channel[i_channel]):
+        #         axs[0].plot(t, v_normP[:, i])
+        #         axs[1].plot(t, I_normP[:, i])
+        #     axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
+        #     axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+        #
+        #     axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+        #
+        #     axs[0].set_title('v_norm')
+        #     axs[1].set_title('I_norm')
+        #     axs[2].set_title('max and mean relative error of v_norm (log10)')
+        #
+        #     fig.tight_layout()
+        #     plt.show()
 
         return np.squeeze(v)
 

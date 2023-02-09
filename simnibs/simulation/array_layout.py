@@ -383,6 +383,7 @@ class ElectrodeArrayPair():
 
         # determine mean current of electrodes for each channel [n_channel]
         self.current_mean = self.current_total / self.n_ele_per_channel
+        self.current_mean[1] *= -1
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
@@ -487,6 +488,7 @@ class CircularArray():
 
         # determine mean current of electrodes for each channel [n_channel]
         self.current_mean = self.current_total / self.n_ele_per_channel
+        self.current_mean[1] *= -1
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(n_outer))
         self.center = np.array([[0., 0., 0.]])

@@ -40,7 +40,7 @@ def _get_local_distances(node_numbers, node_coordinates):
 
 def _get_gradient(local_dist):
     """
-Calculate the gradient of a function in each tetrahedra.
+    Calculate the gradient of a function in each tetrahedra.
 
     local_dist * gradient = project_matrix
 
