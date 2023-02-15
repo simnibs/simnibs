@@ -964,7 +964,7 @@ class TMSLIST(SimuList):
     Attributes
     ----------
     fnamecoil: str
-        Name of coil file.
+        Relative path of coil file.
     pos: list of simnibs.simulation.sim_struct.POSITION() structures
         Definition of coil positions.
     """

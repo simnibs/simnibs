@@ -46,7 +46,7 @@ Attributes
 
     .. code-block:: matlab
 
-       tmslist.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+       tmslist.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 
     \
 
@@ -102,7 +102,7 @@ Examples
     # add a TMSLIST to the SESSION
     tms = S.add_tmslist() 
     # Select the coil from those available in the ccd-coils subfolder
-    tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+    tms.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
     # Add a new position
     pos = tms.add_position()
     # Place the coil over C3
@@ -125,7 +125,7 @@ Examples
     % Add a TMSLIST to the SESSION
     S.poslist{1} = sim_struct('TMSLIST');
     % Select the coil from those available in the ccd-coils subfolder
-    S.poslist{1}.fnamecoil = 'Magstim_70mm_Fig8.nii.gz';
+    S.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
     % Place the coil over C3
     S.poslist{1}.pos(1).centre = 'C3';
     % Point the coil towards CP3

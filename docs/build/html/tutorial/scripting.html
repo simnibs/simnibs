@@ -150,7 +150,7 @@ To do it, we add a <a class="reference internal" href="../documentation/sim_stru
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize a list of TMS simulations</span>
 <span class="n">tmslist</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">()</span>
 <span class="c1"># Select coil</span>
-<span class="n">tmslist</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">)</span>
+<span class="n">tmslist</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -158,7 +158,7 @@ To do it, we add a <a class="reference internal" href="../documentation/sim_stru
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Initialize a list of TMS simulations</span><span class="w"></span>
 <span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="c">% Select coil</span><span class="w"></span>
-<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
 </li>

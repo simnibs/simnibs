@@ -1207,7 +1207,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
     fields: str or list of str
         Fields to be calculated for each position
     fn_coil: string
-        Name of coil file
+        Relative path of coil file
     matsimnibs_list: list
         List of "matsimnibs" matrices, one per position
     didt_list: list
@@ -1497,7 +1497,7 @@ def tms_many_simulations(
     cond: simnibs.msh.mesh_io.ElementData
         Conductivity field
     fn_coil: string
-        Name of coil file
+        Relative path of coil file
     matsimnibs_list: list
         List of "matsimnibs" matrices, one per position
     didt_list: list
