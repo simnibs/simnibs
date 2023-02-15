@@ -43,7 +43,7 @@ Attributes
 
       * Transforming positions from MNI space using the :code:`mni2subject_coords` Python
         and MATLAB functions
-      * Opening the :file:`m2m_{subID}/T1fs_conform.nii.gz` file in a NifTi reader and
+      * Opening the :file:`m2m_{subID}/T1fs_conform.nii.gz` file in a NIfTI reader and
         record the **world coordinates**.
       * Opening the :file:`tdcs_leadfield/{subID}_ROI.msh` file in *gmsh*, click in
         *Mesh* -> *Inspect* and click in the model

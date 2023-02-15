@@ -123,5 +123,5 @@ Simulation Options Window
 
   * **Interpolate to cortical surface**: Interpolates the fields along the middle gray matter layer obtained from FreeSurfer/CAT12 segmentations. Not available for head meshes generated with headreco and SPM12 only.
   * **Transform to fsaverage space**: Interpolates the field along the middle gray matter layer, and subsequently transforms the fields to FsAverage space. Not available for head meshes generated with only SPM
-  * **Interpolate to a nifti volume**: Interpolates the field to a NifTi file
+  * **Interpolate to a nifti volume**: Interpolates the field to a NIfTI file
   * **Transform to MNI space**: Interpolates the field to a grid, and subsequently transform it to MNI space.

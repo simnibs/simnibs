@@ -37,7 +37,7 @@ Attributes
 
   * **Description**: Name of coil file. Coil files come in two types
 
-    * *.nii.gz* files: NifTi files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (`Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_)
+    * *.nii.gz* files: NIfTI files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (`Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_)
     * *.ccd* files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (`Thielscher and Kammer, 2004 <https://doi.org/10.1016/j.clinph.2004.02.019>`_)
  
   * **Examples**: *Python/MATLAB*
