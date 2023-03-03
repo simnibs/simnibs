@@ -7,8 +7,8 @@ from simnibs.simulation.eeg import HEMISPHERES, FsAverage
 
 
 class FsAveragePlotter:
-    def __init__(self, subdivision: Union[int, str] = 7, surface: str = "inflated"):
-        self.fsavg = FsAverage(subdivision)
+    def __init__(self, resolution: int = 160, surface: str = "inflated"):
+        self.fsavg = FsAverage(resolution)
         self.brain = self.surface_as_multiblock(surface)
         if surface == "inflated":
             self.brain["lh"].points[:, 0] -= np.abs(self.brain["lh"].points[:, 0].max())

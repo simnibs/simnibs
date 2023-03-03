@@ -1580,13 +1580,6 @@ def subsample_surfaces(m2m_dir, n_points):
         triangulation, respectively. (hemi, 'central') also contains nn, the
         normals of the subsampled points (from the original surfaces).
 
-    NOTES
-    -----
-    The actual number of points in the subsampled surfaces may be less than the
-    requested number since sometimes multiple subsampled points may map to the
-    same point on the original surface in which case only one will be kept.
-    However, for consistency the filename will reflect the *requested* number
-    of points rather than the *actual* number of points.
     """
     logger.info(f'Downsampling brain surfaces to {n_points} points')
 

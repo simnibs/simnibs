@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union
 
 import mne
 from mne.io.constants import FIFF
@@ -13,14 +13,16 @@ from simnibs.simulation import eeg
 
 # mne.set_log_level("warning")
 
-
 # SOURCE SPACE
-
-from simnibs.simulation.eeg import HEMISPHERES
 
 HEMISPHERES_MNE = dict(
     lh=FIFF.FIFFV_MNE_SURF_LEFT_HEMI, rh=FIFF.FIFFV_MNE_SURF_RIGHT_HEMI
 )
+MNE_LANDMARKS = ("nasion", "lpa", "rpa")
+landmarks_mapper = {
+    "simnibs_to_mne": {"Nz": "nasion", "Iz": "inion", "LPA": "lpa", "RPA": "rpa"},
+    "mne_to_simnibs": {"nasion": "Nz", "inion": "Iz", "lpa": "LPA", "rpa": "RPA"},
+}
 
 
 def _get_src_sphere(src, subsampling=None):
@@ -29,19 +31,6 @@ def _get_src_sphere(src, subsampling=None):
         src = eeg.load_surface(sf, "sphere_reg", subsampling)
     assert isinstance(src, dict)
     return src
-
-
-# def _harmonize_source_spaces(src, src_ref):
-#     for s, sr in zip(src, src_ref):
-#         # assert s['subject_his_id'] == sr['subject_his_id']
-#         assert s["id"] == sr["id"]
-#         assert s["np"] == sr["np"]
-#         assert s["ntri"] == s["ntri"]
-#         s["vertno"] = sr["vertno"]
-#         s["inuse"] = sr["inuse"]
-#         s["nuse"] = sr["nuse"]
-#         s["use_tris"] = sr["use_tris"]
-#         s["nuse_tri"] = sr["nuse_tri"]
 
 
 def make_source_morph(
@@ -73,19 +62,13 @@ def make_source_morph(
     src_from_sphere = _get_src_sphere(src_from_sphere, subsampling)
     src_to_sphere = _get_src_sphere(src_to_sphere, subsampling)
     mmaps = eeg.make_morph_maps(src_from_sphere, src_to_sphere)
-
-    # src_from_sphere = make_source_spaces(src_from_sphere)
-    # src_to_sphere = make_source_spaces(src_to_sphere)
-    # _harmonize_source_spaces(src_from_sphere, src_from)
-    # _harmonize_source_spaces(src_to_sphere, src_to)
-
     return _make_source_morph(src_from, src_to, mmaps)
 
 
 def setup_source_space(
     m2m_dir: Union[Path, str],
     subsampling: Union[int, None] = None,
-    morph_to_fsaverage: int = 5
+    morph_to_fsaverage: Union[bool, int] = 10
 ):
     """Setup a source space for use with MNE-Python.
 
@@ -97,7 +80,8 @@ def setup_source_space(
         The subsampling to use (default = None).
     morph_to_fsaverage : bool | int
         Whether or not to create a mapping from subject space to the fsaverage
-        template (default = 5).
+        template (default = 10, which constructs a morph to the fsaverage 10k
+        model).
 
     RETURNS
     -------
@@ -130,7 +114,7 @@ def setup_source_space(
     return src_from, morph
 
 
-def make_source_spaces(surf: Dict, subject_id: str = None, coord_frame: str = "mri"):
+def make_source_spaces(surf: dict, subject_id: Union[None,str] = None, coord_frame: str = "mri"):
     """Create an MNE-Python source space object.
 
     PARAMETERS
@@ -158,11 +142,11 @@ def make_source_spaces(surf: Dict, subject_id: str = None, coord_frame: str = "m
 
 def make_source_space(
     points: np.ndarray,
-    tris: np.ndarray = None,
-    normals: np.ndarray = None,
+    tris: Union[None,np.ndarray] = None,
+    normals: Union[None,np.ndarray] = None,
     coord_frame: str = "mri",
-    surf_id: str = None,
-    subject_id: str = None,
+    surf_id: Union[None,str] = None,
+    subject_id: Union[None,str] = None,
 ):
     """Setup a dictionary of a single hemisphere for an MNE-Python source space
     object.
@@ -272,7 +256,7 @@ def _add_surface_info(src, tris, nn):
 def _make_source_morph(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
-    mmaps: Dict,
+    mmaps: dict,
     smooth: Union[None, int] = None,
     warn: bool = True,
 ):
@@ -325,7 +309,7 @@ def _make_source_morph(
 def compute_morph_matrix(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
-    mmaps: Dict,
+    mmaps: dict,
     smooth: Union[None, int] = None,
     warn: bool = True,
 ):
@@ -380,7 +364,7 @@ def compute_morph_matrix(
 
 
 def make_forward(
-    forward: Dict,
+    forward: dict,
     src: Union[Path, str, mne.SourceSpaces],
     info: Union[Path, str, mne.Info],
     trans: Union[Path, str, mne.Transform],
@@ -514,8 +498,8 @@ def prepare_montage(
     info: Union[Path, str, mne.Info],
     trans: Union[Path, str, mne.Transform],
 ):
-    """Prepare a montage file from MNE-Python objects. The electrode positions
-    in `info` are transformed from head to MRI coordinate system.
+    """Prepare a montage file from an MNE-Python objects. The electrode
+    positions in `info` are transformed from head to MRI coordinate system.
 
     PARAMETERS
     ----------
@@ -572,14 +556,6 @@ def prepare_montage(
                 f.write(line)
 
 
-MNE_LANDMARKS = ("nasion", "lpa", "rpa")
-
-landmarks_mapper = {
-    "simnibs_to_mne": {"Nz": "nasion", "Iz": "inion", "LPA": "lpa", "RPA": "rpa"},
-    "mne_to_simnibs": {"nasion": "Nz", "inion": "Iz", "lpa": "LPA", "rpa": "RPA"},
-}
-
-
 def simnibs_montage_to_mne_montage(montage, coord_frame="unknown"):
     valid_entries = {"Electrode", "ReferenceElectrode"}
     if len(montage.ch_names) > 0 and len(montage.ch_pos) > 0:
@@ -605,9 +581,9 @@ def simnibs_montage_to_mne_montage(montage, coord_frame="unknown"):
 
 def mne_montage_to_simnibs_montage(montage, name=None):
     d = montage.get_positions()
-    ch_names = np.array(list(d["ch_pos"].keys()))
-    ch_pos = np.array(list(d["ch_pos"].values())) * 1e3
-    ch_types = np.array(["Electrode"] * len(ch_names))
+    ch_names = list(d["ch_pos"].keys())
+    ch_pos = [p*1e3 for p in d["ch_pos"].values()]
+    ch_types = ["Electrode"] * len(ch_names)
     try:
         landmarks = {
             landmarks_mapper["mne_to_simnibs"][k]: 1e3 * d[k] for k in MNE_LANDMARKS
@@ -615,5 +591,4 @@ def mne_montage_to_simnibs_montage(montage, name=None):
     except TypeError:
         # at least one of nasion, lpa, or rpa is None
         landmarks = None
-
     return eeg.Montage(name, ch_names, ch_pos, ch_types, landmarks)

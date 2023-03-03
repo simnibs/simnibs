@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union
 
+from nibabel.affines import apply_affine
 import numpy as np
 from scipy.io import loadmat
 
@@ -18,7 +19,23 @@ def prepare_montage(
     fname_info: Union[Path, str],
     fname_trans: Union[None, Path, str] = None,
 ):
+    """Prepare SimNIBS montage file from a FieldTrip data structure containing
+    and `elec` field describing the electrode configuration.
 
+    PARAMETERS
+    ----------
+    fname_montage :
+        Name of the SimNIBS montage file to write.
+    fname_info :
+        Name of a MAT file containing the electrode information in the field
+        `elec`.
+    fname_trans :
+        Affine transformation matrix to apply to the electrode positions before
+        writing to `fname_montage`.
+
+    RETURNS
+    -------
+    """
     fname_info = Path(fname_info)
 
     info = loadmat(fname_info)["elec"][0]
@@ -39,8 +56,8 @@ def prepare_montage(
         else:
             raise ValueError("`fname_trans` must be either a MAT or a TXT file.")
 
-        info["elecpos"] = eeg.apply_trans(trans, info["elecpos"])
-        info["chanpos"] = eeg.apply_trans(trans, info["chanpos"])
+        info["elecpos"] = apply_affine(trans, info["elecpos"])
+        info["chanpos"] = apply_affine(trans, info["chanpos"])
 
     is_eeg = info["chantype"] == "eeg"
     montage = np.column_stack(
@@ -59,7 +76,7 @@ def prepare_montage(
 def setup_source_space(
     m2m_dir: Union[Path, str],
     subsampling: Union[None, int] = None,
-    morph_to_fsaverage: int = 5,
+    morph_to_fsaverage: int = 10,
 ):
     """Setup a source space for use with FieldTrip.
 
@@ -71,7 +88,8 @@ def setup_source_space(
         The subsampling to use (default = None).
     morph_to_fsaverage : int
         Whether or not to create a mapping from subject space to the fsaverage
-        template (default = 5).
+        template (default = 10, which constructs a morph to the fsaverage 10k
+        model).
 
     RETURNS
     -------
@@ -82,7 +100,7 @@ def setup_source_space(
         subject to fsaverage.
     """
 
-    subjectfiles = simnibs.utils.file_finder.SubjectFiles(subpath=m2m_dir)
+    subjectfiles = simnibs.utils.file_finder.SubjectFiles(subpath=str(m2m_dir))
     src_from, src_from_reg = eeg.load_subject_surfaces(subjectfiles, subsampling)
     src_from = make_sourcemodel(src_from)
 
@@ -96,7 +114,7 @@ def setup_source_space(
     return src_from, mmaps
 
 
-def make_sourcemodel(src: Dict):
+def make_sourcemodel(src: dict):
     """Create a dictionary with source model information which can be used with
     FieldTrip.
 
@@ -149,7 +167,7 @@ def make_sourcemodel(src: Dict):
 # FORWARD
 
 
-def make_forward(forward: Dict, src: Dict):
+def make_forward(forward: dict, src: dict):
     """Make a forward dictionary in a FieldTrip compatible format from a
     dictionary with forward information.
 
