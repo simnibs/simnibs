@@ -31,12 +31,7 @@ import numpy as np
 import scipy.ndimage
 import scipy.spatial
 from scipy.sparse import coo_matrix
-from typing import (
-    Dict,
-    List,
-    Union,
-)  # replace Dict/List with dict/list when using python >3.9
-
+from typing import Union
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
@@ -1766,8 +1761,8 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
 
 def _project_points_to_surface(
     points: np.ndarray,
-    surf: Dict,
-    pttris: Union[List, np.ndarray],
+    surf: dict,
+    pttris: Union[list, np.ndarray],
     return_all: bool = False,
 ):
     """Project each point in `points` to the closest point on the surface
@@ -1982,7 +1977,7 @@ def _project_points_to_surface(
 
 def _get_nearest_triangles_on_surface(
     points: np.ndarray,
-    surf: Dict,
+    surf: dict,
     n: int = 1,
     subset = None,
     return_index: bool = False
