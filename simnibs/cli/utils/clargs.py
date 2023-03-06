@@ -43,15 +43,15 @@ fsaverage = CommandLineArgument(
     ["--fsaverage"],
     dict(
         type=int,
-        default=5,
-        choices=[5, 6, 7],
+        default=10,
+        choices=[10, 40, 160],
         help="""
-        Which fsaverage subdivision to morph to. The number of vertices per
-        hemisphere for each subdivision factor is as follows:
-            fsaverage5 (10,242),
-            fsaverage6 (40,962), and
-            fsaverage7 (163,842).
-        fsaverage7 is the default (full resolution) fsaverage template.
+        The resolution of the fsaverage template to morph to. The number
+        denotes the (approximate) number of vertices per hemisphere such that
+            10  ->  10,242 (fsaverage 5)
+            40  ->  40,962 (fsaverage 6)
+            160 -> 163,842 (fsaverage 7, full resolution)
+        The default is 10.
         """,
     ),
 )

@@ -3,7 +3,7 @@ from typing import Union
 
 import h5py
 import numpy as np
-from scipy.sparse import coo_matrix, csr_matrix
+from scipy.sparse import csr_matrix
 
 import simnibs
 from simnibs.segmentation.brain_surface import subsample_surfaces
@@ -297,7 +297,7 @@ def prepare_for_inverse(
     out_format: str,
     info: Union[None, Path, str] = None,
     trans: Union[None, Path, str] = None,
-    morph_to_fsaverage: int = 5,
+    morph_to_fsaverage: Union[None, int] = 10,
     apply_average_proj=True,
     write: bool = False,
 ):
@@ -322,11 +322,14 @@ def prepare_for_inverse(
     trans : str | path-like | mne.Transform
         Filename or instance of mne.Transform (only used [and mandatory] when
         output_format = 'mne') (default = None).
-    morph_to_fsaverage : int {5,6,7}
-        Create a source morph object to fsaverage. Choose from {5, 6, 7} to
-        morph to fsaverage5/6/7 (n = 10,242/40,962/163,842 vertices pe
-        hemisphere) where 7 is the standard (full resolution) fsaverage
-         template (default = 5). Use None to omit morph.
+    morph_to_fsaverage : None | int {10, 40, 160}
+        Create a source morph object to fsaverage of the specified resolution.
+        The number denotes the (approximate) number of vertices per hemisphere
+        such that
+            10  ->  10,242 (fsaverage 5)
+            40  ->  40,962 (fsaverage 6)
+            160 -> 163,842 (fsaverage 7, full resolution)
+        The default is 10. Use None to omit morph.
     apply_average_proj : bool
 
     write : bool

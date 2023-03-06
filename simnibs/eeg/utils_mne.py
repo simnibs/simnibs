@@ -67,8 +67,8 @@ def make_source_morph(
 
 def setup_source_space(
     m2m_dir: Union[Path, str],
-    subsampling: Union[int, None] = None,
-    morph_to_fsaverage: Union[bool, int] = 10
+    subsampling: Union[None, int] = None,
+    morph_to_fsaverage: Union[None, int] = 10
 ):
     """Setup a source space for use with MNE-Python.
 
@@ -76,9 +76,9 @@ def setup_source_space(
     ----------
     m2m_dir : Path-like
         The `m2m` directory containing the segmentation and head model results.
-    subsampling : int
+    subsampling : None | int
         The subsampling to use (default = None).
-    morph_to_fsaverage : bool | int
+    morph_to_fsaverage : None | int
         Whether or not to create a mapping from subject space to the fsaverage
         template (default = 10, which constructs a morph to the fsaverage 10k
         model).
@@ -87,7 +87,7 @@ def setup_source_space(
     -------
     src_from : mne.SourceSpaces
         The source space object.
-    morph : mne.SourceMorph
+    morph : mne.SourceMorph | None
         The source morph object.
     """
     subjectfiles = SubjectFiles(subpath=str(m2m_dir))

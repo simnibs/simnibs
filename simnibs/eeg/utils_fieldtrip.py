@@ -76,7 +76,7 @@ def prepare_montage(
 def setup_source_space(
     m2m_dir: Union[Path, str],
     subsampling: Union[None, int] = None,
-    morph_to_fsaverage: int = 10,
+    morph_to_fsaverage: Union[None, int] = 10,
 ):
     """Setup a source space for use with FieldTrip.
 
@@ -84,9 +84,9 @@ def setup_source_space(
     ----------
     m2m_dir : Path-like
         The directory containing the segmentation and head model results.
-    subsampling : int
+    subsampling : None | int
         The subsampling to use (default = None).
-    morph_to_fsaverage : int
+    morph_to_fsaverage : None | int
         Whether or not to create a mapping from subject space to the fsaverage
         template (default = 10, which constructs a morph to the fsaverage 10k
         model).
@@ -95,7 +95,7 @@ def setup_source_space(
     -------
     src_from : dict
         Dictionary with the source model information.
-    mmaps : dict
+    mmaps : dict | None
         Dictionary with scipy.sparse.csr_matrix describing the morph from
         subject to fsaverage.
     """

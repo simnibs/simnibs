@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 from simnibs.cli.utils import clargs, clpars
-from simnibs.simulation.eeg import prepare_for_inverse
+from simnibs.eeg.forward import prepare_for_inverse
 
 def parse_args(argv):
 

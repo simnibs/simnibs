@@ -4,21 +4,29 @@ import sys
 
 from simnibs.cli.utils import clargs
 
-from simnibs.simulation.eeg import compute_tdcs_leadfield
+from simnibs.eeg.forward import compute_tdcs_leadfield
 
 
 def parse_args(argv):
 
     program = dict(
         description="""
-            Convenience function to run a TDCS simulation..
-            This will compute the electric field and the central gray matter
-            surface. Electrodes are modeled as circular with diameter of 10 mm
-            and a thickness of 4 mm. Default conductivities will be used.
+            Convenience function to run a TDCS leadfield simulation which forms
+            the basis for the EEG forward solution computed by SimNIBS.
+
+            This will compute the electric field and interpolate it to the
+            central gray matter surface. By default, electrodes are modelled as
+            points (projected onto the skin surface). Alternatively, electrodes
+            can be modelled as circular with diameter of 10 mm and a thickness
+            of 4 mm and meshed onto the head model. Default conductivities will
+            be used.
 
             For more control, use the python function
-                simnibs.simulation.eeg.compute_tdcs_leadfield_for_eeg
+
+                simnibs.eeg.forward.compute_tdcs_leadfield
+
             or define the simulation from scratch using
+
                 simnibs.simulation.sim_struct.TDCSLEADFIELD.
             """,
     )

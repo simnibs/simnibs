@@ -1339,11 +1339,12 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
         Name of hdf5 where simulations will be saved
     dataset: str
         Name of dataset where data is to be saved
-    current: float | iterable (optional)
-        If iterable, it specifies the current to use in each simulation (i.e.,
-        number of electrodes minus one---the reference is set to zero). If
-        float, it specifies the current to use in each simulation (default:
-        1.0 A).
+    current: float | iterable
+        Specifies the current (in ampere) to use in each simulation. If float,
+        this current will be used in all simulations. If iterable (where the
+        length of the iterable is number of electrodes minus one as the
+        reference is set to zero), it explicitly specifies the current in each
+        simulation. (Default = 1).
     roi: list or None (optional)
         Regions of interest where the fields is to be saved.
         If set to None, will save the electric field in all tissues.
