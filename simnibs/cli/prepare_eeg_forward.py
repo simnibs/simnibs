@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 from simnibs.cli.utils import clargs, clpars
-from simnibs.eeg.forward import prepare_for_inverse
+from simnibs.eeg.forward import make_forward
 
 def parse_args(argv):
 
@@ -55,7 +55,7 @@ def main():
         kwargs["info"] = args.info
         kwargs["trans"] = args.trans
 
-    prepare_for_inverse(**kwargs)
+    make_forward(**kwargs)
 
 if __name__ == "__main__":
     main()

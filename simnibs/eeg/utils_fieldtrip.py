@@ -6,7 +6,8 @@ import numpy as np
 from scipy.io import loadmat
 
 import simnibs
-from simnibs.simulation import eeg
+import simnibs.eeg.forward
+import simnibs.eeg.utils
 
 # EEG MONTAGE
 
@@ -101,14 +102,14 @@ def setup_source_space(
     """
 
     subjectfiles = simnibs.utils.file_finder.SubjectFiles(subpath=str(m2m_dir))
-    src_from, src_from_reg = eeg.load_subject_surfaces(subjectfiles, subsampling)
+    src_from, src_from_reg = simnibs.eeg.utils.load_subject_surfaces(subjectfiles, subsampling)
     src_from = make_sourcemodel(src_from)
 
     if morph_to_fsaverage:
-        fsavg = eeg.FsAverage(morph_to_fsaverage)
+        fsavg = simnibs.eeg.utils.FsAverage(morph_to_fsaverage)
         fsavg_sphere = fsavg.get_surface("sphere")
 
-        mmaps = eeg.make_morph_maps(src_from_reg, fsavg_sphere)
+        mmaps = simnibs.eeg.forward.make_morph_maps(src_from_reg, fsavg_sphere)
     else:
         mmaps = None
     return src_from, mmaps

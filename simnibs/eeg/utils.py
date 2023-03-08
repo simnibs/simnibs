@@ -1,8 +1,5 @@
 from pathlib import Path
-from typing import (
-    Iterable,
-    Union,
-)
+from typing import Iterable, Union
 
 import nibabel as nib
 from nibabel.affines import apply_affine
@@ -29,8 +26,7 @@ ANNOT = {
     "Yeo2011_17Networks_N1000",
 }
 # LABEL = set((""))
-VALID_FSAVERAGE_RESOLUTIONS = {10, 40, 160}
-ALLOWED_EEG_EXPORT_FORMATS = {"mne", "fieldtrip"}
+FSAVERAGE_RESOLUTIONS = {10, 40, 160}
 
 class FsAverage:
     def __init__(self, resolution: int = 160):
@@ -47,15 +43,15 @@ class FsAverage:
         ----------
         resolution : int
             The FsAverage resolution factor. Available resolutions are
-            160, 40, 10 denoting the approximate number of thousands of
+            10, 40, 160 denoting the approximate number of thousands of
             vertices per hemisphere, e.g., 160 has ~160,000 vertices per
             hemisphere and correspondings to the default `fsaverage` template
             (default = 160).
         """
-        if resolution in VALID_FSAVERAGE_RESOLUTIONS:
+        if resolution in FSAVERAGE_RESOLUTIONS:
             self.name = f"fsaverage{resolution:d}k"
         else:
-            raise ValueError(f"{resolution} is not a valid resolution for FsAverage. Please choose from {VALID_FSAVERAGE_RESOLUTIONS}")
+            raise ValueError(f"{resolution} is not a valid resolution for FsAverage. Please choose from {FSAVERAGE_RESOLUTIONS}")
 
         self.path = (
             Path(simnibs.SIMNIBSDIR)
@@ -116,17 +112,12 @@ class Montage:
         ch_types: Union[None, list[str], tuple[str], str] = None,
         landmarks: Union[None, dict] = None,
         headpoints: Union[None, list, tuple, np.ndarray] = None,
-        from_file: Union[None, Path, str] = None,
     ):
         """
-        montage = Montage(from_file="easycap-m10")
-        # montage = make_standard_montage("easycap-m10")
+        montage = Montage.from_filename("easycap_BC_TMS64_X21")
+        # montage = Montage( ... )
         montage.add_landmarks()
-
         """
-        if isinstance(from_file, (Path, str)):
-            self = make_montage(from_file)
-            return
         self.name = name
         self.ch_names = [] if ch_names is None else ch_names
         self.ch_pos = np.array([]).reshape(0, 3) if ch_pos is None else np.array(ch_pos)
@@ -147,7 +138,11 @@ class Montage:
 
     def add_landmarks(self, name="Fiducials"):
         """The name of the file to read fiducials from..."""
-        self.landmarks = load_landmarks(name)
+        ch_types, ch_pos, ch_names = read_montage(
+            simnibs.utils.file_finder.get_landmarks(name)
+        )
+        assert all(i == "Fiducial" for i in ch_types)
+        self.landmarks = dict(zip(ch_names, ch_pos))
 
     def get_landmark_names(self):
         return list(self.landmarks.keys())
@@ -237,6 +232,28 @@ class Montage:
                 np.savetxt(f, arr, **kw)
 
 
+    @classmethod
+    def from_filename(cls, filename: Union[Path, str]):
+        """Construct montage from a filename. If `filename` is not one of the
+        standard montages included in SimNIBS, it is assumed to be the full
+        path to a CSV file defining an EEG montage in the same format as those
+        included in simnibs.
+        """
+        ch_types, ch_pos, ch_names = read_montage(
+            simnibs.utils.file_finder.get_montage(filename)
+        )
+        lm = ch_types == "Fiducial"
+        if any(lm):
+            landmarks = dict(zip(ch_names[lm], ch_pos[lm]))
+            not_fids = ~lm
+            ch_types = ch_types[not_fids]
+            ch_pos = ch_pos[not_fids]
+            ch_names = ch_names[not_fids]
+        else:
+            landmarks = None
+        assert all(np.isin(ch_types, ("Electrode", "ReferenceElectrode")))
+        return cls(filename, ch_names, ch_pos, ch_types, landmarks)
+
 
 def read_montage(fname: Union[Path, str]):
     ch_types, x, y, z, ch_names = np.genfromtxt(
@@ -245,37 +262,6 @@ def read_montage(fname: Union[Path, str]):
     if not isinstance(ch_names.dtype, str):
         ch_names = ch_names.astype(str)
     return ch_types, np.column_stack((x, y, z)), ch_names
-
-
-def load_landmarks(name: Union[Path, str]):
-    ch_types, ch_pos, ch_names = read_montage(
-        simnibs.utils.file_finder.get_landmarks(name)
-    )
-    assert all(i == "Fiducial" for i in ch_types)
-    return dict(zip(ch_names, ch_pos))
-
-
-def make_montage(name: Union[Path, str]):
-    """Load an EEG montage.
-
-    If `name` is not one of the standard montages included with SimNIBS, it is
-    assumed to be the filename of a CSV file defining an EEG montage in the
-    same format as those included in simnibs.
-    """
-    ch_types, ch_pos, ch_names = read_montage(
-        simnibs.utils.file_finder.get_montage(name)
-    )
-    lm = ch_types == "Fiducial"
-    if any(lm):
-        landmarks = dict(zip(ch_names[lm], ch_pos[lm]))
-        not_fids = ~lm
-        ch_types = ch_types[not_fids]
-        ch_pos = ch_pos[not_fids]
-        ch_names = ch_names[not_fids]
-    else:
-        landmarks = None
-    assert all(np.isin(ch_types, ("Electrode", "ReferenceElectrode")))
-    return Montage(name, ch_names, ch_pos, ch_types, landmarks)
 
 
 def load_surface(
@@ -518,15 +504,15 @@ def fit_matched_points_generic(
 
     tgt_pts: ndarray
 
-    rotate: bool = True
+    rotate: bool
 
-    translate: bool = True
+    translate: bool
 
-    scale: bool = False
+    scale: bool
 
-    init_params: =None
+    init_params: bool
 
-    return_trans: bool = True
+    return_trans: bool
 
 
     RETURNS

@@ -1,9 +1,7 @@
-from typing import Union
-
 import numpy as np
 import pyvista as pv
 
-from simnibs.simulation.eeg import HEMISPHERES, FsAverage
+from simnibs.eeg.utils import HEMISPHERES, FsAverage
 
 
 class FsAveragePlotter:

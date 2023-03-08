@@ -6,16 +6,17 @@ import numpy as np
 from scipy.sparse import csr_matrix
 
 import simnibs
+import simnibs.eeg.utils
 from simnibs.segmentation.brain_surface import subsample_surfaces
 from simnibs.utils.file_finder import SubjectFiles
 
 HEMISPHERES = ("lh", "rh")
 
-ALLOWED_EEG_EXPORT_FORMATS = {"mne", "fieldtrip"}
+EEG_EXPORT_FORMATS = {"mne", "fieldtrip"}
 
 # MORPH MAPS
 
-def make_morph_map(points: np.ndarray, surf: dict, n: int = 1):
+def make_morph_map(points: np.ndarray, surf: dict, n: int = 2):
     """Create a morph map which allows morphing of values from the nodes in
     `surf` to `points` by linear interpolation. A morph map is a sparse matrix
     with dimensions (n_points, n_nodes) where each row has exactly three
@@ -29,10 +30,11 @@ def make_morph_map(points: np.ndarray, surf: dict, n: int = 1):
     points : ndarray
         The target points (i.e., the points we interpolate to).
     surf : dict
-        The source points (i.e., the nodes we interpolate from) and the source triangulation.
+        The source points (i.e., the nodes we interpolate from) and the source
+        triangulation.
     n : int
-        Number of nearest neighbors of each point in points to consider on surf
-        (default = 1).
+        Number of nearest neighbors of each point in points to consider on
+        surf.
 
     RETURNS
     -------
@@ -65,15 +67,15 @@ def make_morph_map(points: np.ndarray, surf: dict, n: int = 1):
     return csr_matrix((weights.ravel(), (rows, cols)), shape=(n_points, len(rr_)))
 
 
-def make_morph_maps(src_from: dict, src_to: dict, n: int = 1):
+def make_morph_maps(src_from: dict, src_to: dict, n: int = 2):
     """Create morph maps for left and right hemispheres.
 
     PARAMETERS
     ----------
     src_from : dict
         Dictionary with keys 'lh' and 'rh' each being a dictionary with keys
-        'points' (points) and 'tris' (triangulation) corresponding to the spherical
-        registration files (e.g., [l/r]h.sphere.reg.gii).
+        'points' (points) and 'tris' (triangulation) corresponding to the
+        spherical registration files (e.g., [l/r]h.sphere.reg.gii).
     src_to : dict
         Like `src_from`.
 
@@ -99,7 +101,7 @@ def compute_tdcs_leadfield(
     run_kwargs: Union[dict, None] = None,
 ):
     """Convenience function for running a TDCS simulation. The result can be
-    converted to an EEG forward solution using `prepare_for_inverse`.
+    converted to an EEG forward solution using `make_forward`.
 
     PARAMETERS
     ----------
@@ -190,7 +192,7 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
 
     PARAMETERS
     ----------
-    fwd_name : str | path-like
+    fwd_name : str | Path
         Path to the hdf5 file containing the leadfield.
     apply_average_proj : bool
         Apply a column-wise average reference to the leadfield matrix (default
@@ -291,14 +293,14 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
     # return forward
 
 
-def prepare_for_inverse(
+def make_forward(
     m2m_dir: Union[Path, str],
     fname_leadfield: Union[Path, str],
     out_format: str,
     info: Union[None, Path, str] = None,
     trans: Union[None, Path, str] = None,
     morph_to_fsaverage: Union[None, int] = 10,
-    apply_average_proj=True,
+    apply_average_proj = True,
     write: bool = False,
 ):
     """Create a source space object, a source morph object (to the fsaverage
@@ -308,18 +310,18 @@ def prepare_for_inverse(
 
     PARAMETERS
     ----------
-    m2m_dir : Path-like
+    m2m_dir : Path | str
         The directory containing the segmentation and head model results. Used
         to create the source space object.
-    fname_leadfield : str
+    fname_leadfield : Path | str
         Filename of the leadfield simulation to convert.
     output_format : str
         The output format of the source, morph, and forward objects. Supported
         formats are `mne` (MNE-Python) and `fieldtrip` (FieldTrip).
-    info : str | path-like | mne.Info
+    info : Path | str | mne.Info
         Filename or instance of mne.Info (only used [and mandatory] when
         output_format = 'mne') (default = None).
-    trans : str | path-like | mne.Transform
+    trans : Path | str | mne.Transform
         Filename or instance of mne.Transform (only used [and mandatory] when
         output_format = 'mne') (default = None).
     morph_to_fsaverage : None | int {10, 40, 160}
@@ -355,7 +357,7 @@ def prepare_for_inverse(
     and use the desired software package for source analysis. We also provide
     a mapping from subject-space to the fsaverage template for group analysis.
     """
-    assert out_format in ALLOWED_EEG_EXPORT_FORMATS
+    assert out_format in EEG_EXPORT_FORMATS
 
     forward = prepare_forward(fname_leadfield, apply_average_proj)
     subsampling = forward["subsampling"]
@@ -416,302 +418,6 @@ def _write_src_fwd_morph(src, forward, morph, fname_leadfield, subsampling, out_
         if morph:
             scipy.io.savemat(fname_morph.with_suffix(".mat"), dict(morph=morph))
         scipy.io.savemat(fname_src.with_suffix(".mat"), dict(src=src))
-
-
-
-# def get_triangle_neighbors(tris: np.ndarray, nr: Union[int, None] = None):
-#     """For each point get its neighboring triangles (i.e., the triangles to
-#     which it belongs).
-
-#     PARAMETERS
-#     ----------
-#     tris : ndarray
-#         Array describing a triangulation with size (n, 3) where n is the number
-#         of triangles.
-#     nr : int
-#         Number of points. If None, it is inferred from `tris` as tris.max()+1
-#         (default = None).
-
-#     RETURNS
-#     -------
-#     pttris : ndarray
-#         Array of arrays where pttris[i] are the neighboring triangles of the
-#         ith point.
-#     """
-#     n_tris, n_dims = tris.shape
-#     nr = tris.max() + 1 if nr is None else nr
-
-#     rows = tris.ravel()
-#     cols = np.repeat(np.arange(n_tris), n_dims)
-#     data = np.ones_like(rows)
-#     csr = coo_matrix((data, (rows, cols)), shape=(nr, n_tris)).tocsr()
-#     return np.array(np.split(csr.indices, csr.indptr[1:-1]), dtype=object)
-
-
-# def sliced_argmin(x: np.ndarray, indptr: np.ndarray):
-#     """Perform argmin on slices of x.
-
-#     PARAMETERS
-#     ----------
-#     x : 1-d array
-#         The array to perform argmin on.
-#     indptr : 1-d array-like
-#         The indices of the slices. The ith slice is indptr[i]:indptr[i+1].
-
-#     RETURNS
-#     -------
-#     res : 1-d array
-#         The indices (into x!) corresponding to the minimum values in each
-#         chunk.
-#     """
-#     assert x.ndim == 1
-#     return np.array([x[i:j].argmin() + i for i, j in zip(indptr[:-1], indptr[1:])])
-
-
-# def project_points_to_surface(
-#     points: np.ndarray,
-#     surf: Dict,
-#     pttris: Union[List, np.ndarray],
-#     return_all: bool = False,
-# ):
-#     """Project each point in `points` to the closest point on the surface
-#     described by `surf` restricted to the triangles in `pttris`.
-
-#     PARAMETERS
-#     ----------
-#     points : ndarray
-#         Array with shape (n, d) where n is the number of points are d is the
-#         dimension.
-#     surf : dict
-#         Dictionary with keys 'points' and 'tris' describing the surface mesh on
-#         which the points are to be projected.
-#     pttris : ndarray | list
-#         If a ragged/nested array, the ith entry contains the triangles against
-#         which the ith point will be tested.
-#     return_all : bool
-#         Whether to return all projection results (i.e., the projection of a
-#         point on each of the triangles which it was tested against) or only the
-#         projection on the closest triangle.
-
-#     RETURNS
-#     -------
-#     tris : ndarray
-#         The index of the triangle onto which a point was projected.
-#     weights : ndarray
-#         The linear interpolation weights resulting in the projection of a point
-#         onto a particular triangle.
-#     projs :
-#         The coordinates of the projection of a point on a triangle.
-#     dists :
-#         The distance of a point to its projection on a triangle.
-
-#     NOTES
-#     -----
-#     The cost function to be minimized is the squared distance between a point
-#     P and a triangle T
-
-#         Q(s,t) = |P - T(s,t)|**2 =
-#                = a*s**2 + 2*b*s*t + c*t**2 + 2*d*s + 2*e*t + f
-
-#     The gradient
-
-#         Q'(s,t) = 2(a*s + b*t + d, b*s + c*t + e)
-
-#     is set equal to (0,0) to find (s,t).
-
-#     REFERENCES
-#     ----------
-#     https://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
-
-#     """
-
-#     npttris = list(map(len, pttris))
-#     pttris = np.concatenate(pttris)
-
-#     m = surf["points"][surf["tris"]]
-#     v0 = m[:, 0]  # Origin of the triangle
-#     e0 = m[:, 1] - v0  # s coordinate axis
-#     e1 = m[:, 2] - v0  # t coordinate axis
-
-#     # Vector from point to triangle origin (if reverse, the negative
-#     # determinant must be used)
-#     rep_points = np.repeat(points, npttris, axis=0)
-#     w = v0[pttris] - rep_points
-
-#     a = np.sum(e0 ** 2, 1)[pttris]
-#     b = np.sum(e0 * e1, 1)[pttris]
-#     c = np.sum(e1 ** 2, 1)[pttris]
-#     d = np.sum(e0[pttris] * w, 1)
-#     e = np.sum(e1[pttris] * w, 1)
-#     # f = np.sum(w**2, 1)
-
-#     # s,t are so far unnormalized!
-#     s = b * e - c * d
-#     t = b * d - a * e
-#     det = a * c - b ** 2
-
-#     # Project points (s,t) to the closest points on the triangle (s',t')
-#     sp, tp = np.zeros_like(s), np.zeros_like(t)
-
-#     # We do not need to check a point against all edges/interior of a triangle.
-#     #
-#     #          t
-#     #     \ R2|
-#     #      \  |
-#     #       \ |
-#     #        \|
-#     #         \
-#     #         |\
-#     #         | \
-#     #     R3  |  \  R1
-#     #         |R0 \
-#     #    _____|____\______ s
-#     #         |     \
-#     #     R4  | R5   \  R6
-#     #
-#     # The code below is equivalent to the following if/else structure
-#     #
-#     # if s + t <= 1:
-#     #     if s < 0:
-#     #         if t < 0:
-#     #             region 4
-#     #         else:
-#     #             region 3
-#     #     elif t < 0:
-#     #         region 5
-#     #     else:
-#     #         region 0
-#     # else:
-#     #     if s < 0:
-#     #         region 2
-#     #     elif t < 0
-#     #         region 6
-#     #     else:
-#     #         region 1
-
-#     # Conditions
-#     st_l1 = s + t <= det
-#     s_l0 = s < 0
-#     t_l0 = t < 0
-
-#     # Region 0 (inside triangle)
-#     i = np.flatnonzero(st_l1 & ~s_l0 & ~t_l0)
-#     deti = det[i]
-#     sp[i] = s[i] / deti
-#     tp[i] = t[i] / deti
-
-#     # Region 1
-#     # The idea is to substitute the constraints on s and t into F(s,t) and
-#     # solve, e.g., here we are in region 1 and have Q(s,t) = Q(s,1-s) = F(s)
-#     # since in this case, for a point to be on the triangle, s+t must be 1
-#     # meaning that t = 1-s.
-#     i = np.flatnonzero(~st_l1 & ~s_l0 & ~t_l0)
-#     aa, bb, cc, dd, ee = a[i], b[i], c[i], d[i], e[i]
-#     numer = cc + ee - (bb + dd)
-#     denom = aa - 2 * bb + cc
-#     sp[i] = np.clip(numer / denom, 0, 1)
-#     tp[i] = 1 - sp[i]
-
-#     # Region 2
-#     i = np.flatnonzero(~st_l1 & s_l0)  # ~t_l0
-#     aa, bb, cc, dd, ee = a[i], b[i], c[i], d[i], e[i]
-#     tmp0 = bb + dd
-#     tmp1 = cc + ee
-#     j = tmp1 > tmp0
-#     j_ = ~j
-#     k, k_ = i[j], i[j_]
-#     numer = tmp1[j] - tmp0[j]
-#     denom = aa[j] - 2 * bb[j] + cc[j]
-#     sp[k] = np.clip(numer / denom, 0, 1)
-#     tp[k] = 1 - sp[k]
-#     sp[k_] = 0
-#     tp[k_] = np.clip(-ee[j_] / cc[j_], 0, 1)
-
-#     # Region 3
-#     i = np.flatnonzero(st_l1 & s_l0 & ~t_l0)
-#     cc, ee = c[i], e[i]
-#     sp[i] = 0
-#     tp[i] = np.clip(-ee / cc, 0, 1)
-
-#     # Region 4
-#     i = np.flatnonzero(st_l1 & s_l0 & t_l0)
-#     aa, cc, dd, ee = a[i], c[i], d[i], e[i]
-#     j = dd < 0
-#     j_ = ~j
-#     k, k_ = i[j], i[j_]
-#     sp[k] = np.clip(-dd[j] / aa[j], 0, 1)
-#     tp[k] = 0
-#     sp[k_] = 0
-#     tp[k_] = np.clip(-ee[j_] / cc[j_], 0, 1)
-
-#     # Region 5
-#     i = np.flatnonzero(st_l1 & ~s_l0 & t_l0)
-#     aa, dd = a[i], d[i]
-#     tp[i] = 0
-#     sp[i] = np.clip(-dd / aa, 0, 1)
-
-#     # Region 6
-#     i = np.flatnonzero(~st_l1 & t_l0)  # ~s_l0
-#     aa, bb, cc, dd, ee = a[i], b[i], c[i], d[i], e[i]
-#     tmp0 = bb + ee
-#     tmp1 = aa + dd
-#     j = tmp1 > tmp0
-#     j_ = ~j
-#     k, k_ = i[j], i[j_]
-#     numer = tmp1[j] - tmp0[j]
-#     denom = aa[j] - 2 * bb[j] + cc[j]
-#     tp[k] = np.clip(numer / denom, 0, 1)
-#     sp[k] = 1 - tp[k]
-#     tp[k_] = 0
-#     sp[k_] = np.clip(-dd[j_] / aa[j_], 0, 1)
-
-#     # Distance from original point to its projection on the triangle
-#     projs = v0[pttris] + sp[:, None] * e0[pttris] + tp[:, None] * e1[pttris]
-#     dists = np.linalg.norm(rep_points - projs, axis=1)
-#     weights = np.column_stack((1 - sp - tp, sp, tp))
-
-#     if return_all:
-#         tris = pttris
-#     else:
-#         # Find the closest projection
-#         indptr = [0] + np.cumsum(npttris).tolist()
-#         i = sliced_argmin(dists, indptr)
-#         tris = pttris[i]
-#         weights = weights[i]
-#         projs = projs[i]
-#         dists = dists[i]
-
-#     return tris, weights, projs, dists
-
-
-# def get_nearest_triangles_on_surface(
-#     points: np.ndarray, surf: dict, n: int = 1, subset=None
-# ):
-#     """For each point in `points` get the `n` nearest nodes on `surf` and
-#     return the triangles to which these nodes belong.
-
-#     subset :
-#         use only a subset of the vertices in surf. should be *indices* not a
-#         boolean mask.
-
-#     RETURNS
-#     -------
-#     pttris : list
-#         Point to triangle mapping.
-#     """
-#     assert isinstance(n, int) and n >= 1
-
-#     surf_points = surf["points"] if subset is None else surf["points"][subset]
-#     tree = cKDTree(surf_points)
-#     _, ix = tree.query(points, n)
-
-#     pttris = get_triangle_neighbors(surf["tris"], len(surf["points"]))
-#     pttris = pttris[ix] if subset is None else pttris[subset[ix]]
-#     if n > 1:
-#         pttris = list(map(lambda x: np.unique(np.concatenate(x)), pttris))
-
-#     return pttris
-
 
 
 # def project_points_to_surface_example():

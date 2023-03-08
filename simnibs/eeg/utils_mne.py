@@ -9,7 +9,9 @@ import scipy.sparse
 from simnibs.mesh_tools import mesh_io
 from simnibs.utils.file_finder import SubjectFiles
 from simnibs.utils.simnibs_logger import logger
-from simnibs.simulation import eeg
+import simnibs.eeg.forward
+import simnibs.eeg.utils
+
 
 # mne.set_log_level("warning")
 
@@ -28,7 +30,7 @@ landmarks_mapper = {
 def _get_src_sphere(src, subsampling=None):
     if isinstance(src, (Path, str)):
         sf = SubjectFiles(subpath=str(src))
-        src = eeg.load_surface(sf, "sphere_reg", subsampling)
+        src = simnibs.eeg.utils.load_surface(sf, "sphere_reg", subsampling)
     assert isinstance(src, dict)
     return src
 
@@ -61,7 +63,7 @@ def make_source_morph(
     """
     src_from_sphere = _get_src_sphere(src_from_sphere, subsampling)
     src_to_sphere = _get_src_sphere(src_to_sphere, subsampling)
-    mmaps = eeg.make_morph_maps(src_from_sphere, src_to_sphere)
+    mmaps = simnibs.eeg.forward.make_morph_maps(src_from_sphere, src_to_sphere)
     return _make_source_morph(src_from, src_to, mmaps)
 
 
@@ -92,12 +94,12 @@ def setup_source_space(
     """
     subjectfiles = SubjectFiles(subpath=str(m2m_dir))
     # src_from, src_from_sphere = eeg.load_subject_surfaces(subjectfiles, subsampling)
-    src_from = eeg.load_surface(subjectfiles, "central", subsampling)
+    src_from = simnibs.eeg.utils.load_surface(subjectfiles, "central", subsampling)
     src_from = make_source_spaces(src_from, subjectfiles.subid)
 
     # Make source morph
     if morph_to_fsaverage:
-        fsavg = eeg.FsAverage(morph_to_fsaverage)
+        fsavg = simnibs.eeg.utils.FsAverage(morph_to_fsaverage)
         fsavg_sphere = fsavg.get_surface("sphere")
         src_fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
 
@@ -591,4 +593,4 @@ def mne_montage_to_simnibs_montage(montage, name=None):
     except TypeError:
         # at least one of nasion, lpa, or rpa is None
         landmarks = None
-    return eeg.Montage(name, ch_names, ch_pos, ch_types, landmarks)
+    return simnibs.eeg.utils.Montage(name, ch_names, ch_pos, ch_types, landmarks)
