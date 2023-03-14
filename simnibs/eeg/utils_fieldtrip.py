@@ -6,8 +6,10 @@ import numpy as np
 from scipy.io import loadmat
 
 import simnibs
-import simnibs.eeg.forward
-import simnibs.eeg.utils
+from simnibs.utils.file_finder import SubjectFiles
+from simnibs.utils.transformations import make_cross_subject_morph
+
+from simnibs.mesh_tools.mesh_io import read_normals, read_surfaces
 
 # EEG MONTAGE
 
@@ -101,29 +103,36 @@ def setup_source_space(
         subject to fsaverage.
     """
 
-    subjectfiles = simnibs.utils.file_finder.SubjectFiles(subpath=str(m2m_dir))
-    src_from, src_from_reg = simnibs.eeg.utils.load_subject_surfaces(subjectfiles, subsampling)
-    src_from = make_sourcemodel(src_from)
+    subjectfiles = SubjectFiles(subpath=str(m2m_dir))
+    src_from = read_surfaces(subjectfiles, "central", subsampling)
+    # add normals from original surface
+    normals = read_normals(subjectfiles, subsampling) if subsampling else None
+    src_from = make_sourcemodel(src_from, normals)
 
     if morph_to_fsaverage:
-        fsavg = simnibs.eeg.utils.FsAverage(morph_to_fsaverage)
-        fsavg_sphere = fsavg.get_surface("sphere")
+        # src_from_reg = read_surfaces(subjectfiles, "sphere_reg", subsampling)
+        # src_to_sphere = read_reference_surfaces("sphere", morph_to_fsaverage)
+        # mmaps = make_morph_maps(src_from_reg, src_to_sphere)
 
-        mmaps = simnibs.eeg.forward.make_morph_maps(src_from_reg, fsavg_sphere)
+        morphs = make_cross_subject_morph(
+            subjectfiles, "fsaverage", subsampling, morph_to_fsaverage
+        )
+        mmaps = {h: v.morph_mat for h, v in morphs.items()}
     else:
         mmaps = None
     return src_from, mmaps
 
 
-def make_sourcemodel(src: dict):
+def make_sourcemodel(src: dict, normals=None):
     """Create a dictionary with source model information which can be used with
     FieldTrip.
 
     PARAMETERS
     ----------
     src : dict
-        Dictionary with entries `lh` and `rh` each being a dictionary with keys
-        `points`, `tris`, and possibly `normals`.
+        Dictionary with entries `lh` and `rh` each being a
+    normals : dict
+
 
     RETURNS
     -------
@@ -134,19 +143,18 @@ def make_sourcemodel(src: dict):
     hemi2fieldtrip = dict(lh="CORTEX_LEFT", rh="CORTEX_RIGHT")
     assert all(h in src for h in hemis)
 
-    pos = np.concatenate([src[h]["points"] for h in hemis])
-
     # Construct a composite triangulation for both hemispheres
-    nrs = {h: len(src[h]["points"]) for h in hemis}
-    tri_reindex = (0, nrs[hemis[0]])
-    tri = np.concatenate([src[h]["tris"] + i for h, i in zip(hemis, tri_reindex)]) + 1
+    cortex = src["lh"].join_mesh(src["rh"])
+    pos = cortex.nodes.node_coord
+    # Msh class already uses 1-indexing (!) so no need to modify
+    tri = cortex.elm.node_number_list[:, :3]
 
     # All sources are valid
-    inside = np.ones(sum(nrs.values()), dtype=bool)[:, None]
+    inside = np.ones(cortex.nodes.nr, dtype=bool)[:, None]
 
     # ft_read_headshape outputs this structure
     brainstructure = np.concatenate(
-        [np.full(nrs[h], i) for i, h in enumerate(hemis, start=1)]
+        [np.full(src[h].nodes.nr, i) for i, h in enumerate(hemis, start=1)]
     )
     brainstructurelabel = np.stack([hemi2fieldtrip[h] for h in hemis]).astype(object)
 
@@ -159,7 +167,7 @@ def make_sourcemodel(src: dict):
         brainstructurelabel=brainstructurelabel,
     )
 
-    if all("normals" in src[h] for h in hemis):
+    if normals:
         sourcemodel["normals"] = np.concatenate([src[h]["normals"] for h in hemis])
 
     return sourcemodel
@@ -176,7 +184,7 @@ def make_forward(forward: dict, src: dict):
     ----------
     forward : dict
         Dictionary with forward solution information (as returned by
-        `prepare_leadfield_for_eeg`).
+        `eeg.forward.prepare_forward`).
     src : dict
         Dictionary with source space information (as returned by
         `setup_source_space`).

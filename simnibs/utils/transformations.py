@@ -20,7 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
+from pathlib import Path
 import warnings
 import os
 from functools import partial
@@ -30,7 +30,7 @@ import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 from typing import Union
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
@@ -1444,6 +1444,142 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
         )
 
     return resampled, new_affine, original_res
+
+
+def normalize(v: np.ndarray, axis: int = 0, inplace=False):
+    """Normalize a particular axis of `v` avoiding RuntimeWarning due to
+    division by zero.
+
+    PARAMETERS
+    ----------
+    v : ndarray
+        Array with vectors in rows.
+    axis:
+        The axis to normalize, e.g., axis=0 will normalize rows.
+
+    RETURNS
+    -------
+    v (normalized)
+    """
+
+    assert v.ndim == 2
+    assert axis >= 0 and axis <= 1
+    norm_axis = 1-axis
+    size = np.linalg.norm(v, axis=norm_axis, keepdims=True)
+    if inplace:
+        np.divide(v, size, where=size != 0, out=v)
+    else:
+        return np.divide(v, size, where=size != 0)
+
+
+class SurfaceMorph:
+    """
+    Computes a mapping between surfaces defined on a sphere.
+    """
+
+    def __init__(self, method = "linear", n: int = 2):
+        assert method in {"nearest", "linear"}
+        self.method = method
+        self.n = n
+
+    def fit(self, surf_from, surf_to):
+        """Create a morph map which allows morphing of values from the nodes in
+        `surf_from` to `surf_to` by nearest neighbor or linear interpolation.
+
+        For linear interpolation, a morph map is a sparse matrix with
+        dimensions (n_points_surf_to, n_points_surf_from) where each row has
+        exactly three entries that sum to one. It is created by projecting each
+        point in `surf_to` onto closest triangle in `surf_from` and determining
+        the barycentric coordinates.
+
+        Testing all points against all triangles is expensive and inefficient,
+        thus we compute an approximation by finding, for each point in
+        `surf_to`, the `self.n` nearest nodes on `surf_from` and the triangles
+        to which these points belong. We then test only against these triangles.
+
+        PARAMETERS
+        ----------
+        surf_from :
+            The source mesh (i.e., the mesh to interpolate *from*).
+        surf_to :
+            The target mesh (i.e., the mesh to interpolate *to*).
+        """
+        # Ensure on unit sphere
+        points_from = normalize(surf_from.nodes.node_coord, 0)
+        points_to = normalize(surf_to.nodes.node_coord, 0)
+        n_from = len(points_from)
+        n_to = len(points_to)
+
+        if self.method == "nearest":
+            # in_v = np.copy(in_surf.nodes.node_coord)
+            # in_v /= np.average(np.linalg.norm(in_v, axis=1))
+            # kdtree = scipy.spatial.cKDTree(in_v)
+
+            # out_v = np.copy(out_surf.nodes.node_coord)
+            # # Normalize the radius of the output sphere
+            # out_v /= np.average(np.linalg.norm(out_v, axis=1))
+            # _, closest = kdtree.query(out_v)
+            kdtree = scipy.spatial.cKDTree(points_from)
+            # self.morph_mat = kdtree.query(points_to)[1]
+            rows = np.arange(n_to)
+            cols = kdtree.query(points_to)[1]
+            weights = np.ones(n_to)
+
+        elif self.method == "linear":
+            # Find the triangle (in surf) to which each point in points
+            # projects and get the associated weights
+            # n_points, d_points = points_to.shape
+            surf_ = dict(points=points_from, tris=surf_from.elm.node_number_list[:,:3]-1)
+            pttris = _get_nearest_triangles_on_surface(points_to, surf_, self.n)
+            tris, weights, _, _ = _project_points_to_surface(
+                points_to,
+                surf_,
+                pttris
+            )
+            rows = np.repeat(np.arange(n_to), points_to.shape[1])
+            cols = surf_["tris"][tris].ravel()
+            weights = weights.ravel()
+        else:
+            raise ValueError
+
+        self.morph_mat = csr_matrix((weights, (rows, cols)), shape=(n_to, n_from))
+
+
+    def transform(self, values):
+        return self.morph_mat @ values
+
+
+def make_cross_subject_morph(
+        subject_from: Union[Path, str, SubjectFiles],
+        subject_to: Union[Path, str, SubjectFiles],
+        subsampling_from: Union[None, int] = None,
+        subsampling_to: Union[None, int] = None,
+        surface_morph_kwargs: Union[dict, None] = None
+    ):
+    """
+    subject_from, subject_to : 
+        Special subject name is 'fsaverage'.
+    subsampling_from, subsampling_to :
+        Special subsampling for 'fsaverage' is 10, 40 and None.
+
+    """
+    from simnibs.mesh_tools.mesh_io import read_reference_surfaces, read_surfaces
+
+    surface_morph_kwargs = surface_morph_kwargs or {}
+    surfs = []
+    for subject, subsampling in zip((subject_from, subject_to), (subsampling_from, subsampling_to)):
+        if subject == "fsaverage":
+            surfaces = read_reference_surfaces("sphere", subsampling)
+        else:
+            subject_files = subject if isinstance(subject, SubjectFiles) else SubjectFiles(subpath=str(subject))
+            surfaces = read_surfaces(subject_files, "sphere_reg", subsampling)
+        surfs.append(surfaces)
+    morphs = {}
+    for hemi in surfaces:
+        morph = SurfaceMorph(**surface_morph_kwargs)
+        morph.fit(surfs[0][hemi], surfs[1][hemi])
+        morphs[hemi] = morph
+    return morphs
 
 
 def _surf2surf(field, in_surf, out_surf, kdtree=None):

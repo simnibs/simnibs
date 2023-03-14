@@ -30,6 +30,7 @@ import hashlib
 import tempfile
 import subprocess
 import threading
+from typing import Union
 from functools import partial
 
 import numpy as np
@@ -44,7 +45,7 @@ import h5py
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import path2bin
+from ..utils.file_finder import get_reference_surf, path2bin, SubjectFiles
 from . import cython_msh
 from . import cgal
 
@@ -6513,3 +6514,44 @@ class _GetitemTester():
 
     def __getitem__(self, index):
         return _getitem_one_indexed(self.array, index)
+
+
+def read_surfaces(
+    sub_files: SubjectFiles, surf: str, subsampling: Union[int, None] = None
+):
+    """Load subject-specific surfaces.
+
+    PARARMETERS
+    -----------
+    sub_files : simnibs.utils.file_finder.SubjectFiles
+        SubjectFiles object.
+    surf : str
+        The surface type to load (e.g., 'central').
+    subsampling : int | None
+        The subsampling to load (default = None).
+    """
+
+    # When a leadfield simulation is run, the hemisphere surfaces are appended
+    # according to the order in SubjectFiles.regions, hence we load them in the
+    # same way here to ensure that the order is the same.
+    return {
+        h: read_gifti_surface(sub_files.get_surface(h, surf, subsampling))
+        for h in sub_files.regions
+    }
+
+
+def read_reference_surfaces(surf: str, resolution: Union[int, None] = None):
+    HEMISPHERES = ("lh", "rh")
+    return {
+        h: read_gifti_surface(get_reference_surf(h, surf, resolution))
+        for h in HEMISPHERES
+    }
+
+
+def read_normals(sub_files: SubjectFiles, subsampling: Union[int, None] = None):
+    normals = {}
+    for hemi in sub_files.regions:
+        fname = sub_files.get_surface(hemi, "central", subsampling)
+        fname_nn = "".join((fname.rstrip("gii"), "normals.txt"))
+        normals[hemi] = np.loadtxt(fname_nn)
+    return normals

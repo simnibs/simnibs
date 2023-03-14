@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 from typing import Union
 
@@ -8,10 +9,13 @@ import scipy.sparse
 
 from simnibs.mesh_tools import mesh_io
 from simnibs.utils.file_finder import SubjectFiles
+from simnibs.utils.transformations import make_cross_subject_morph, normalize
 from simnibs.utils.simnibs_logger import logger
-import simnibs.eeg.forward
-import simnibs.eeg.utils
+from simnibs.utils import csv_reader
 
+assert (
+    int(mne.__version__.split(".")[0]) >= 1
+), f"Requires MNE version 1 or above (installed version is {mne.__version__})"
 
 # mne.set_log_level("warning")
 
@@ -27,50 +31,70 @@ landmarks_mapper = {
 }
 
 
-def _get_src_sphere(src, subsampling=None):
-    if isinstance(src, (Path, str)):
-        sf = SubjectFiles(subpath=str(src))
-        src = simnibs.eeg.utils.load_surface(sf, "sphere_reg", subsampling)
-    assert isinstance(src, dict)
-    return src
+# def _get_src_sphere(src, subsampling=None):
+#     if isinstance(src, (Path, str)):
+#         sf = SubjectFiles(subpath=str(src))
+#         src = simnibs.eeg.utils.load_surface(sf, "sphere_reg", subsampling)
+#     assert isinstance(src, dict)
+#     return src
 
 
-def make_source_morph(
-    src_from, src_to, src_from_sphere, src_to_sphere, subsampling=None
-):
-    """
-    The spherical registrations are used to create the morphing matrices for
-    each hemisphere.
-    The source spaces are used to determine which sources are valid (in use).
-    The morphing matrices will be smoothed so as to compensate for any unused
-    source positions such that all valid sources in `src_to` will be covered.
+# def make_source_morph(
+#     src_from, src_to, src_from_sphere, src_to_sphere
+# ):
+#     """
+#     The spherical registrations are used to create the morphing matrices for
+#     each hemisphere.
+#     The source spaces are used to determine which sources are valid (in use).
+#     The morphing matrices will be smoothed so as to compensate for any unused
+#     source positions such that all valid sources in `src_to` will be covered.
 
-    PARAMETERS
-    ----------
-    src_from : mne.SourceSpaces
-        Contains information about which positions are used.
-    src_to : mne.SourceSpaces
-        Contains information about which positions are used.
-    src_from_sphere : Path | str | dict
-        Path to m2m directory or a dict with `points` and `tris` describing
-        the spherical registration surface.
-    src_to_sphere : Path | str | dict
-        See `src_from_sphere`.
+#     PARAMETERS
+#     ----------
+#     src_from : mne.SourceSpaces
+#         Contains information about which positions are used.
+#     src_to : mne.SourceSpaces
+#         Contains information about which positions are used.
+#     src_from_sphere : Path | str | dict
+#         Dict with `points` and `tris` describing
+#         the spherical registration surface.
+#     src_to_sphere : Path | str | dict
+#         See `src_from_sphere`.
 
-    RETURNS
-    -------
-    SourceMorph object.
-    """
-    src_from_sphere = _get_src_sphere(src_from_sphere, subsampling)
-    src_to_sphere = _get_src_sphere(src_to_sphere, subsampling)
-    mmaps = simnibs.eeg.forward.make_morph_maps(src_from_sphere, src_to_sphere)
-    return _make_source_morph(src_from, src_to, mmaps)
+#     RETURNS
+#     -------
+#     SourceMorph object.
+#     """
+#     mmaps = make_morph_maps(src_from_sphere, src_to_sphere)
+#     return _make_source_morph(src_from, src_to, mmaps)
+
+
+def _msh_to_dict(d):
+    """Extract information from Msh classes and reindex to zero."""
+    return {
+        h: dict(points=v.nodes.node_coord, tris=v.elm.node_number_list[:, :3] - 1)
+        for h, v in d.items()
+    }
+
+
+def extract_to_dict(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        out = func(*args, **kwargs)
+        out = _msh_to_dict(out)
+        return out
+
+    return wrapper
+
+
+read_surfaces = extract_to_dict(mesh_io.read_surfaces)
+read_reference_surfaces = extract_to_dict(mesh_io.read_reference_surfaces)
 
 
 def setup_source_space(
     m2m_dir: Union[Path, str],
     subsampling: Union[None, int] = None,
-    morph_to_fsaverage: Union[None, int] = 10
+    morph_to_fsaverage: Union[None, int] = 10,
 ):
     """Setup a source space for use with MNE-Python.
 
@@ -93,30 +117,37 @@ def setup_source_space(
         The source morph object.
     """
     subjectfiles = SubjectFiles(subpath=str(m2m_dir))
-    # src_from, src_from_sphere = eeg.load_subject_surfaces(subjectfiles, subsampling)
-    src_from = simnibs.eeg.utils.load_surface(subjectfiles, "central", subsampling)
+    src_from = read_surfaces(subjectfiles, "central", subsampling)
+    # add normals from original surface
+    normals = mesh_io.read_normals(subjectfiles, subsampling) if subsampling else None
+    for h in src_from:
+        src_from[h]["normals"] = normals[h]
     src_from = make_source_spaces(src_from, subjectfiles.subid)
 
     # Make source morph
     if morph_to_fsaverage:
-        fsavg = simnibs.eeg.utils.FsAverage(morph_to_fsaverage)
-        fsavg_sphere = fsavg.get_surface("sphere")
-        src_fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
+        subid_to = f"fsaverage ({morph_to_fsaverage}k)"
+        # src_from_sphere = read_surfaces(subjectfiles, "sphere_reg", subsampling)
+        # src_to_sphere = read_reference_surfaces("sphere", morph_to_average)
+        src_to = read_reference_surfaces("central", morph_to_fsaverage)
+        src_to = make_source_spaces(src_to, subid_to)
 
-        morph = make_source_morph(
-            src_from, src_fsavg_sphere, m2m_dir, fsavg_sphere, subsampling
+        # mmaps = make_morph_maps(src_from_sphere, src_to_sphere)
+        # morph = make_source_morph(src_from, src_to, mmaps)
+
+        morphs = make_cross_subject_morph(
+            subjectfiles, "fsaverage", subsampling, morph_to_fsaverage
         )
-
-        # mmaps = eeg.make_morph_maps(src_from_sphere, fsavg_sphere)
-        # src_from_sphere = make_source_spaces(src_from_sphere, subjectfiles.subid)
-        # fsavg_sphere = make_source_spaces(fsavg_sphere, fsavg.name)
-        # morph = _make_source_morph(src_from_sphere, fsavg_sphere, mmaps)
+        mmaps = {h: v.morph_mat for h, v in morphs.items()}
+        morph = make_source_morph(src_from, src_to, mmaps)
     else:
         morph = None
     return src_from, morph
 
 
-def make_source_spaces(surf: dict, subject_id: Union[None,str] = None, coord_frame: str = "mri"):
+def make_source_spaces(
+    surf: dict, subject_id: Union[None, str] = None, coord_frame: str = "mri"
+):
     """Create an MNE-Python source space object.
 
     PARAMETERS
@@ -144,11 +175,11 @@ def make_source_spaces(surf: dict, subject_id: Union[None,str] = None, coord_fra
 
 def make_source_space(
     points: np.ndarray,
-    tris: Union[None,np.ndarray] = None,
-    normals: Union[None,np.ndarray] = None,
+    tris: Union[None, np.ndarray] = None,
+    normals: Union[None, np.ndarray] = None,
     coord_frame: str = "mri",
-    surf_id: Union[None,str] = None,
-    subject_id: Union[None,str] = None,
+    surf_id: Union[None, str] = None,
+    subject_id: Union[None, str] = None,
 ):
     """Setup a dictionary of a single hemisphere for an MNE-Python source space
     object.
@@ -249,13 +280,13 @@ def _add_surface_info(src, tris, nn):
             .value
         )
     else:
-        src["nn"] = eeg.normalize_vectors(nn)
+        src["nn"] = normalize(nn)
 
 
 # SOURCE SPACE MORPHING
 
 
-def _make_source_morph(
+def make_source_morph(
     src_from: mne.SourceSpaces,
     src_to: mne.SourceSpaces,
     mmaps: dict,
@@ -535,14 +566,10 @@ def prepare_montage(
         for ch in info["chs"]
     }
 
-    with open(fname, "w") as f:
-        # f.write("Type,X,Y,Z,ElectrodeName\n")
-        for ch_name, ch_pos in electrodes.items():
-            # There should be no space after ","!
-            line = ",".join(["Electrode", *map(str, ch_pos), ch_name]) + "\n"
-            f.write(line)
+    ch_types = ["Electrode"] * len(electrodes)
+    ch_pos = list(electrodes.values())
+    ch_names = list(electrodes.keys())
 
-    fid_pos = mne.viz._3d._fiducial_coords(info["dig"])
     if fid_pos.size > 0:
         fid_pos = 1e3 * mne.transforms.apply_trans(trans, fid_pos)
         mapper = {
@@ -552,10 +579,42 @@ def prepare_montage(
             FIFF.FIFFV_POINT_INION: "Iz",
         }
         fid_names = [mapper[i] for i in mne.viz._3d.FIDUCIAL_ORDER]
-        with open(fname, "a") as f:
-            for n, p in zip(fid_names, fid_pos):
-                line = ",".join(["Fiducial", *map(str, p), n]) + "\n"
-                f.write(line)
+
+        ch_types += ["Fiducial"] * fid_pos.size
+        ch_pos += fid_pos.tolist()
+        ch_names += fid_names
+
+    csv_reader.write_csv_positions(
+        fname,
+        ch_types,
+        ch_pos,
+        None,
+        ch_names,
+        None,
+        None,
+    )
+
+    # with open(fname, "w") as f:
+    #     # f.write("Type,X,Y,Z,ElectrodeName\n")
+    #     for ch_name, ch_pos in electrodes.items():
+    #         # There should be no space after ","!
+    #         line = ",".join(["Electrode", *map(str, ch_pos), ch_name]) + "\n"
+    #         f.write(line)
+
+    # fid_pos = mne.viz._3d._fiducial_coords(info["dig"])
+    # if fid_pos.size > 0:
+    #     fid_pos = 1e3 * mne.transforms.apply_trans(trans, fid_pos)
+    #     mapper = {
+    #         FIFF.FIFFV_POINT_LPA: "LPA",
+    #         FIFF.FIFFV_POINT_NASION: "Nz",
+    #         FIFF.FIFFV_POINT_RPA: "RPA",
+    #         FIFF.FIFFV_POINT_INION: "Iz",
+    #     }
+    #     fid_names = [mapper[i] for i in mne.viz._3d.FIDUCIAL_ORDER]
+    #     with open(fname, "a") as f:
+    #         for n, p in zip(fid_names, fid_pos):
+    #             line = ",".join(["Fiducial", *map(str, p), n]) + "\n"
+    #             f.write(line)
 
 
 def simnibs_montage_to_mne_montage(montage, coord_frame="unknown"):
@@ -584,7 +643,7 @@ def simnibs_montage_to_mne_montage(montage, coord_frame="unknown"):
 def mne_montage_to_simnibs_montage(montage, name=None):
     d = montage.get_positions()
     ch_names = list(d["ch_pos"].keys())
-    ch_pos = [p*1e3 for p in d["ch_pos"].values()]
+    ch_pos = [p * 1e3 for p in d["ch_pos"].values()]
     ch_types = ["Electrode"] * len(ch_names)
     try:
         landmarks = {

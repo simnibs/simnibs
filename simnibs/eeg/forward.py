@@ -3,7 +3,6 @@ from typing import Union
 
 import h5py
 import numpy as np
-from scipy.sparse import csr_matrix
 
 import simnibs
 import simnibs.eeg.utils
@@ -16,79 +15,86 @@ EEG_EXPORT_FORMATS = {"mne", "fieldtrip"}
 
 # MORPH MAPS
 
-def make_morph_map(points: np.ndarray, surf: dict, n: int = 2):
-    """Create a morph map which allows morphing of values from the nodes in
-    `surf` to `points` by linear interpolation. A morph map is a sparse matrix
-    with dimensions (n_points, n_nodes) where each row has exactly three
-    entries that sum to one. It is created by projecting each point in points
-    onto closest triangle in tris_from and determining the coefficients of each
-    point. Hence, it provides a linear interpolation from surface nodes to
-    points.
+# def make_morph_map(points: np.ndarray, surf: dict, n: int = 2):
+#     """Create a morph map which allows morphing of values from the nodes in
+#     `surf` to `points` by linear interpolation. A morph map is a sparse matrix
+#     with dimensions (n_points, n_nodes) where each row has exactly three
+#     entries that sum to one. It is created by projecting each point in points
+#     onto closest triangle in tris_from and determining the coefficients of each
+#     point. Hence, it provides a linear interpolation from surface nodes to
+#     points.
 
-    PARAMETERS
-    ----------
-    points : ndarray
-        The target points (i.e., the points we interpolate to).
-    surf : dict
-        The source points (i.e., the nodes we interpolate from) and the source
-        triangulation.
-    n : int
-        Number of nearest neighbors of each point in points to consider on
-        surf.
+#     PARAMETERS
+#     ----------
+#     points : ndarray
+#         The target points (i.e., the points we interpolate to).
+#     surf : dict
+#         The source points (i.e., the nodes we interpolate from) and the source
+#         triangulation.
+#     n : int
+#         Number of nearest neighbors of each point in points to consider on
+#         surf.
 
-    RETURNS
-    -------
-    mmap : scipy.sparse.csr_matrix
-        The morph map.
+#     RETURNS
+#     -------
+#     mmap : scipy.sparse.csr_matrix
+#         The morph map.
 
-    NOTES
-    -----
-    Testing all points against all triangles is expensive and inefficient, thus
-    we compute an approximation by finding, for each point in `points`, the `n`
-    nearest nodes on `surf` and the triangles to which these points belong.
-    We then test only against these triangles.
-    """
+#     NOTES
+#     -----
+#     Testing all points against all triangles is expensive and inefficient, thus
+#     we compute an approximation by finding, for each point in `points`, the `n`
+#     nearest nodes on `surf` and the triangles to which these points belong.
+#     We then test only against these triangles.
+#     """
 
-    # Ensure on unit sphere
-    rr_ = simnibs.eeg.utils.normalize_vectors(surf["points"])
-    points_ = simnibs.eeg.utils.normalize_vectors(points)
-    n_points, d_points = points_.shape
+#     # Ensure on unit sphere
+#     rr_ = simnibs.eeg.utils.normalize_vectors(surf["points"])
+#     points_ = simnibs.eeg.utils.normalize_vectors(points)
+#     n_points, d_points = points_.shape
 
-    surf_ = dict(points=rr_, tris=surf["tris"])
+#     surf_ = dict(points=rr_, tris=surf["tris"])
 
-    pttris = simnibs.transformations._get_nearest_triangles_on_surface(points_, surf_, n)
+#     pttris = simnibs.transformations._get_nearest_triangles_on_surface(points_, surf_, n)
 
-    # Find the triangle (in surf) to which each point in points projects and
-    # get the associated weights
-    tris, weights, _, _ = simnibs.transformations._project_points_to_surface(points_, surf_, pttris)
+#     # Find the triangle (in surf) to which each point in points projects and
+#     # get the associated weights
+#     tris, weights, _, _ = simnibs.transformations._project_points_to_surface(points_, surf_, pttris)
 
-    rows = np.repeat(np.arange(n_points), d_points)
-    cols = surf_["tris"][tris].ravel()
-    return csr_matrix((weights.ravel(), (rows, cols)), shape=(n_points, len(rr_)))
+#     rows = np.repeat(np.arange(n_points), d_points)
+#     cols = surf_["tris"][tris].ravel()
+#     return csr_matrix((weights.ravel(), (rows, cols)), shape=(n_points, len(rr_)))
 
 
-def make_morph_maps(src_from: dict, src_to: dict, n: int = 2):
-    """Create morph maps for left and right hemispheres.
+# def make_morph_maps(src_from: dict, src_to: dict, n: int = 2):
+#     """Create morph maps for left and right hemispheres.
 
-    PARAMETERS
-    ----------
-    src_from : dict
-        Dictionary with keys 'lh' and 'rh' each being a dictionary with keys
-        'points' (points) and 'tris' (triangulation) corresponding to the
-        spherical registration files (e.g., [l/r]h.sphere.reg.gii).
-    src_to : dict
-        Like `src_from`.
+#     PARAMETERS
+#     ----------
+#     src_from : dict
+#         Dictionary with keys 'lh' and 'rh'
+#         ...
+#         corresponding to the
+#         spherical registration files (e.g., [l/r]h.sphere.reg.gii).
+#     src_to : dict
+#         Like `src_from`.
 
-    RETURNS
-    -------
-    mmaps : dict
-        Dictionary of scipy.sparse.csr_matrix corresponding to the morph map
-        for left and right hemispheres.
-    """
-    return {
-        hemi: make_morph_map(src_to[hemi]["points"], src_from[hemi], n)
-        for hemi in HEMISPHERES
-    }
+#     RETURNS
+#     -------
+#     mmaps : dict
+#         Dictionary of scipy.sparse.csr_matrix corresponding to the morph map
+#         for left and right hemispheres.
+#     """
+#     morph = simnibs.transformations.SurfaceMorph("linear", n)
+#     morph_maps = {}
+#     for hemi in HEMISPHERES:
+#         morph.fit(src_to[hemi], src_from[hemi])
+#         morph_maps[hemi] = morph.morph_mat
+#     return morph_maps
+#     # return {
+#     #     hemi: make_morph_map(src_to[hemi]["points"], src_from[hemi], n)
+#     #     for hemi in HEMISPHERES
+#     # }
 
 
 def compute_tdcs_leadfield(
@@ -300,7 +306,7 @@ def make_forward(
     info: Union[None, Path, str] = None,
     trans: Union[None, Path, str] = None,
     morph_to_fsaverage: Union[None, int] = 10,
-    apply_average_proj = True,
+    apply_average_proj=True,
     write: bool = False,
 ):
     """Create a source space object, a source morph object (to the fsaverage
@@ -452,5 +458,3 @@ def _write_src_fwd_morph(src, forward, morph, fname_leadfield, subsampling, out_
 #     ax.grid(True, alpha=0.2)
 
 #     fig.show()
-
-
