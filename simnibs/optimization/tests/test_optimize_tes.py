@@ -10,6 +10,7 @@ import os
 import h5py
 import pynibs
 import simnibs
+import nibabel
 import numpy as np
 import matplotlib.pyplot as pltPowd9Twy
 
@@ -33,23 +34,23 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=6, distance=20, n_outer=4, radius_outer=5)
+# electrode = simnibs.CircularArray(radius_inner=6, distance=20, n_outer=4, radius_outer=5)
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
-# center = np.array([[-30, 20, 0],
-#                     [0, 20, 0],
-#                     [30, 20, 0],
-#                     [-30, 0, 0],
-#                     [0, 0, 0],
-#                     [30, 0, 0],
-#                     [-30, -20, 0],
-#                     [0, -20, 0],
-#                     [30, -20, 0]])
-# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+center = np.array([[-30, 20, 0],
+                    [0, 20, 0],
+                    [30, 20, 0],
+                    [-30, 0, 0],
+                    [0, 0, 0],
+                    [30, 0, 0],
+                    [-30, -20, 0],
+                    [0, -20, 0],
+                    [30, -20, 0]])
+radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
 # electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
@@ -97,6 +98,14 @@ with h5py.File(fn_roi, "r") as f:
     points = f["mesh/nodes/node_coord"][:]
     con = f["mesh/elm/triangle_number_list"][:]
 
+# lh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/lh.central.gii")
+# rh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/rh.central.gii")
+# lh_points, lh_con = lh.agg_data()
+# rh_points, rh_con = rh.agg_data()
+# points = np.vstack((lh_points, rh_points))
+# con = np.vstack((lh_con, rh_con + lh_points.shape[0]))
+# tri_center = np.average(points[con, ], axis=1)
+
 # create a region of interest
 print("Initializing ROI ...")
 roi = simnibs.RegionOfInterest(points=points, con=con, mesh=mesh)
@@ -113,7 +122,7 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      electrode=electrode,
                                      init_pos=init_pos,
                                      output_folder=output_folder,
-                                     plot=False,
+                                     plot=True,
                                      optimizer="direct",
                                      optimizer_options=optimizer_options,
                                      min_electrode_distance=min_electrode_distance,

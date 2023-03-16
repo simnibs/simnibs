@@ -1,14 +1,20 @@
 import copy
 import numpy as np
+from .current_estimator import CurrentEstimator
 
 
 class Electrode():
-    """ Electrode class. Contains a single electrode. ElectrodeArrays are built from Electrode instances
+    """
+    Electrode class.
+    Contains a single circular or rectangular electrode.
+    ElectrodeArrays are built from Electrode instances.
 
     Parameters
     ----------
     channel_id : int
         Channel identifier, indicates connected electrodes (same identifier)
+    ele_id : int
+        Unique electrode identifier in whole setup
     center : np.ndarray of float [3]
         Center of electrode (in mm)
     radius : float, optional, default: None
@@ -58,7 +64,7 @@ class Electrode():
         Type of electrode ("spherical", "rectangular")
     """
 
-    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None, voltage=None):
+    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None, voltage=None):
         if radius is None:
             radius = 0
 
@@ -69,11 +75,14 @@ class Electrode():
             length_y = 0
 
         self.channel_id = channel_id
+        self.ele_id = ele_id
         self.center = center
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
         self.current = current
+        self.current_init = current
+        self.current_sign = np.sign(self.current_init)
         self.voltage = voltage
         self.transmat = None
         self.node_area = None
@@ -100,6 +109,9 @@ class Electrode():
             self.area = length_x * length_y
             self.type = "rectangular"
 
+        # initialize current estimator for fake Dirichlet BC
+        self.current_estimator = CurrentEstimator(electrode=self)
+
     def transform(self, transmat):
         """
         Transforms the electrode position matrix self.posmat_norm by the given 4x4 transformation matrix
@@ -112,6 +124,20 @@ class Electrode():
         """
         self.transmat = transmat
         self.posmat = self.posmat_norm @ transmat
+
+    def estimate_currents(self, electrode_pos):
+        """
+        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
+        Writes current in self.current.
+
+        Parameters
+        ----------
+        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
+            Positions and orientations of ElectrodeArrayPair or CircularArray
+        """
+        if self.current_estimator.current is None:
+            return
+        self.current = self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
 
 
 class ElectrodeArray():
@@ -129,6 +155,8 @@ class ElectrodeArray():
     channel_id : np.ndarray of int [n_ele]
         Channel identifiers, indicates connected electrodes (same identifier), in case of mixed definitions (circular
         and rectangular), the IDs of the circular electrodes are coming first followed by the rectangular ones.
+    ele_id : np.ndarray of int [n_ele]
+        Unique electrode identifier of whole setup
     center : np.ndarray of float [n_ele, 3]
         Center coordinates (x,y,z) of electrodes in normalized space (in mm)
     radius : np.ndarray of float [n_ele_circ] or None
@@ -172,10 +200,13 @@ class ElectrodeArray():
         Euclidean distances of electrodes to array center (0, 0, 0)
     angle : np.ndarray of float [n_ele]
         Angle between connection line electrodes <-> array center and principal direction axis of array (0, 1, 0)
+    electrode_pos : np.ndarray of float [3]
+        Position and orientation of electrode array in ellipsoidal coordinates [beta, lambda, alpha]
     """
 
-    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None):
+    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
         self.channel_id = channel_id
+        self.ele_id = ele_id
         self.array_center = np.array([0, 0, 0])
         self.center = center
         self.radius = radius
@@ -191,6 +222,7 @@ class ElectrodeArray():
                                      [0, 0, 0, 1]])
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
+        self.electrode_pos = None
 
         # apply Dirichlet correction step in fast TES calculations if electrodes share the same channel
         if self.n_ele != len(np.unique(self.channel_id)):
@@ -240,6 +272,7 @@ class ElectrodeArray():
                     self.angle[i_ele] = 0
 
             self.electrodes.append(Electrode(channel_id=self.channel_id[i_ele],
+                                             ele_id=self.ele_id[i_ele],
                                              center=self.center[i_ele, :],
                                              radius=self.radius[i_ele],
                                              length_x=self.length_x[i_ele],
@@ -301,7 +334,7 @@ class ElectrodeArray():
 
             ax.add_artist(obj)
             plt.annotate(f"Ch: {cha}", xy=cen[:2], xytext=(-12, 0), va='center',
-            xycoords = 'data', textcoords = 'offset points')
+            xycoords='data', textcoords='offset points')
 
         # plt.tight_layout()
         plt.grid()
@@ -364,7 +397,12 @@ class ElectrodeArrayPair():
         self.center = center
         self.n_ele = len(center) * 2                                                        # total number of electrodes
         self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
-        self.n_channel = np.unique(self.channel_id)
+        self.channel_id_unique = np.unique(self.channel_id)
+        self.n_channel = len(self.channel_id_unique)
+        self.ele_id = np.arange(self.n_ele)
+
+        if len(self.channel_id) != len(self.channel_id_unique):
+            self.dirichlet_correction = True
 
         if current is None:
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
@@ -391,8 +429,9 @@ class ElectrodeArrayPair():
                                                 radius=self.radius,
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
-                                                channel_id=self.channel_id[i],
-                                                current=self.current[i]) for i in range(2)]
+                                                channel_id=self.channel_id[self.channel_id == self.channel_id_unique[i]],
+                                                ele_id=self.ele_id[self.channel_id == self.channel_id_unique[i]],
+                                                current=self.current[self.channel_id == self.channel_id_unique[i]]) for i in range(2)]
 
     def update_geometry(self, center=None, radius=None, length_x=None, length_y=None):
         """
@@ -425,7 +464,9 @@ class ElectrodeArrayPair():
                                                 radius=self.radius,
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
-                                                channel_id=[i for _ in range(self.n_ele)]) for i in range(2)]
+                                                channel_id=self.channel_id[self.channel_id == self.channel_id_unique[i]],
+                                                ele_id=self.ele_id[self.channel_id == self.channel_id_unique[i]],
+                                                current=self.current[self.channel_id == self.channel_id_unique[i]]) for i in range(2)]
 
 
 class CircularArray():
@@ -464,8 +505,10 @@ class CircularArray():
         self.n_ele = n_outer + 1
         self.n_outer = n_outer
         self.channel_id = np.array([0] + [1] * n_outer)
-        self.n_channel = len(np.unique(self.channel_id))
+        self.channel_id_unique = np.unique(self.channel_id)
+        self.n_channel = len(self.channel_id_unique)
         self.dirichlet_correction = True
+        self.ele_id = np.arange(self.n_ele)
 
         if radius_outer is None:
             self.radius_outer = radius_inner
@@ -506,7 +549,9 @@ class CircularArray():
             if np.isclose(self.center[-1, 1], 0):
                 self.center[-1, 1] = 0.
 
+        # initialize freely movable electrode arrays
         self.electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
+                                                ele_id=self.ele_id,
                                                 center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
@@ -558,7 +603,10 @@ class CircularArray():
             self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 
         self.electrode_arrays = [ElectrodeArray(channel_id=np.array([0] + [1] * self.n_outer),
+                                                ele_id=self.ele_id,
                                                 center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
-                                                length_y=self.length_y)]
+                                                length_y=self.length_y,
+                                                current=self.current)]
+

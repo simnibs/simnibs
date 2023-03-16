@@ -106,6 +106,8 @@ class RegionOfInterest:
         Indicator if points are lying inside model.
     idx : np.array of int [n_tet_mesh_required]
         Indices of tetrahedra, which are required for SPR
+    n_tet_mesh : int
+        Number of tetrahedra in the whole head mesh
     """
     def __init__(self, mesh, points, con=None, gradient=None, out_fill=0):
         """
@@ -123,6 +125,8 @@ class RegionOfInterest:
         # ensure that the nodes did not change
         assert mesh_cropped.nodes.nr == mesh.nodes.nr
         assert (mesh_cropped.nodes.node_coord == mesh.nodes.node_coord).all()
+
+        self.n_tet_mesh = mesh_cropped.elm.node_number_list.shape[0]
 
         # compute sF matrix
         self._get_sF_matrix(mesh_cropped, self.points, out_fill)
@@ -158,10 +162,14 @@ class RegionOfInterest:
         if dadt is None:
             # TES
             if dataType == 0:
-                fields = postp_mag(self.gradient, v, np.zeros((len(v), 3)), self.node_index_list, self.idx) # dadt should be in elements
+                fields = postp_mag(self.gradient, v, np.zeros((self.n_tet_mesh, 3)), self.node_index_list, self.idx) # dadt should be in elements
             else:
-                fields = postp(self.gradient, v, np.zeros((len(v), 3)), self.node_index_list, self.idx)
+                fields = postp(self.gradient, v, np.zeros((self.n_tet_mesh, 3)), self.node_index_list, self.idx)
+
             # fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list])
+            # if dataType == 0:
+            #     fields = np.linalg.norm(fields, axis=1)
+
         else:
             # TMS
             if dataType == 0:

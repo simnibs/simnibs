@@ -4,7 +4,7 @@ import multiprocessing.pool
 from _functools import partial
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from scipy.integrate import solve_ivp
-from scipy.optimize import fsolve
+from scipy.optimize import fsolve, minimize
 import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings('ignore', 'The iteration is not making good progress')
@@ -269,6 +269,34 @@ class Ellipsoid():
 
         return coords_eli
 
+    def cartesian2jacobi_system(self, x, coords):
+        """
+
+        :param x:
+        :return:
+        """
+        beta = x[0]
+        lam = x[1]
+
+        # B = self.E_x2 * np.cos(beta)**2 + self.E_e2 * np.sin(beta)**2
+        # L = self.E_x2 - self.E_e2 * np.cos(lam)**2
+        #
+        # f1 = self.radii[0] / self.E_x * np.sqrt(B) * np.cos(lam) - coords[0]
+        # f2 = self.radii[1] * np.cos(beta) * np.sin(lam) - coords[1]
+        # f3 = self.radii[2] / self.E_x * np.sin(beta) * np.sqrt(L) - coords[2]
+
+        v = self.radii[0] / np.sqrt(
+            1 - self.e_x2 * np.sin(beta) ** 2 - self.e_e2 * np.cos(beta) ** 2 * np.sin(lam) ** 2)
+
+        # cartesian coordinates in normalized space
+        f1 = v * np.cos(beta) * np.cos(lam) - coords[0]
+        f2 = v * (1 - self.e_e2) * np.cos(beta) * np.sin(lam) - coords[1]
+        f3 = v * (1 - self.e_x2) * np.sin(beta) - coords[2]
+
+        f = np.sqrt(f1**2 + f2**2 + f3**2)
+
+        return f
+
     def cartesian2jacobi(self, coords: np.ndarray, norm=False,  return_norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
         """
         Transforms cartesian coordinates on ellipsoid to spherical coordinates in Jacobi form and optionally
@@ -305,8 +333,34 @@ class Ellipsoid():
             coords = self.rot_org2norm(coords=coords)
 
         # calculate beta and lambda from normalized coordinates
-        beta = np.arctan((1-self.e_e2)/(1-self.e_x2) * coords[:, 2] / np.sqrt((1-self.e_e2)**2 * coords[:, 0]**2 + coords[:, 1]**2))
-        lam = np.arctan(1/(1-self.e_e2) * coords[:, 1] / coords[:, 0])
+        # beta = np.arctan((1-self.e_e2)/(1-self.e_x2) * coords[:, 2] / np.sqrt((1-self.e_e2)**2 * coords[:, 0]**2 + coords[:, 1]**2))
+        # lam = np.arctan(1/(1-self.e_e2) * coords[:, 1] / coords[:, 0])
+
+        # c0 = self.radii2[0] * self.radii2[1] + self.radii2[0]*self.radii2[2] + self.radii2[1]*self.radii2[2] \
+        #      - (self.radii2[1] + self.radii2[2]) * coords[:, 0] \
+        #      - (self.radii2[0] + self.radii2[2]) * coords[:, 1] \
+        #      - (self.radii2[0] + self.radii2[1]) * coords[:, 2]
+        # c1 = coords[:, 0]**2 + coords[:, 1]**2 + coords[:, 2]**2 - (self.radii2[0] + self.radii2[1] + self.radii2[2])
+        # if np.isnan(np.sqrt(c1**2 - 4 * c0)):
+        #     t2 = -c1 / 2.
+        # else:
+        #     t2 = (-c1 + np.sqrt(c1**2 - 4 * c0)) / 2.
+        # t1 = c0 / t2
+        # beta = np.arctan(np.sqrt((t1-self.radii2[2])/(self.radii2[1]-t1)))
+        # lam = np.arctan(np.sqrt((t2-self.radii2[1])/(self.radii2[0]-t2)))
+
+        beta = np.zeros(coords.shape[0])
+        lam = np.zeros(coords.shape[0])
+
+        for i, _coords in enumerate(coords):
+            res = minimize(self.cartesian2jacobi_system, (0, 0),
+                           method='Nelder-Mead',
+                           bounds=((-np.pi/2, np.pi/2), (-np.pi, np.pi)),
+                           args=_coords)
+
+            beta[i] = res.x[0]
+            lam[i] = res.x[1]
+
         coords_jacobi = np.hstack((beta[:, np.newaxis], lam[:, np.newaxis]))
 
         if return_normal:
@@ -655,15 +709,14 @@ class Ellipsoid():
             start = self.rot_org2norm(coords=start)
             # start = (self.rotmat.T @ (start - self.center).T).T
 
-        start_jacobi = self.cartesian2jacobi(coords=start, norm=True).flatten()
+        start_jacobi = self.cartesian2jacobi(coords=start, norm=norm).flatten()
 
-        # t1 = lambda beta: self.radii2[1]*np.sin(beta)**2 + self.radii2[2]*np.cos(beta)**2                   # eq. (13)
-        # t2 = lambda lam: self.radii2[0]*np.sin(lam)**2 + self.radii2[1]*np.cos(lam)**2                      # eq. (14)
-        # L = lambda lam: t2(lam) - self.radii2[2]                                                            # eq. (67)
-        # F = lambda lam, beta: t2(lam) - t1(beta)                                                            # eq. (68)
-        #
-        # B = lambda beta: self.E_x2/self.E_y2 * (self.radii2[1] - t1(beta)) + \
-        #                  self.E_e2/self.E_y2 * (t1(beta) - self.radii2[2])                                  # eq. (66)
+        t1 = lambda beta: self.radii2[1]*np.sin(beta)**2 + self.radii2[2]*np.cos(beta)**2                   # eq. (13)
+        t2 = lambda lam: self.radii2[0]*np.sin(lam)**2 + self.radii2[1]*np.cos(lam)**2                      # eq. (14)
+        L = lambda lam: t2(lam) - self.radii2[2]                                                            # eq. (67)
+        F = lambda lam, beta: t2(lam) - t1(beta)                                                            # eq. (68)
+        B = lambda beta: self.E_x2/self.E_y2 * (self.radii2[1] - t1(beta)) + \
+                         self.E_e2/self.E_y2 * (t1(beta) - self.radii2[2])                                  # eq. (66)
 
         # Initial conditions
         ################################################################################################################
@@ -676,11 +729,11 @@ class Ellipsoid():
 
         # Calculate Neumann boundary conditions
         H0 = self.H(start)
-        # H0_sqrt = np.sqrt(H0)
+        H0_sqrt = np.sqrt(H0)
         G0 = self.G(beta0, lambda0)
 
         # normal vector to start point on ellipsoid, eq. (58)
-        _, n = self.cartesian2ellipsoid(coords=start, return_normal=True)
+        _, n = self.cartesian2ellipsoid(coords=start, norm=norm, return_norm=True, return_normal=True)
         n = n.flatten()
         # n = np.zeros(3)
         # n[0] = x0 / H0_sqrt

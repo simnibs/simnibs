@@ -84,26 +84,6 @@ class TESoptimize():
         Areas of nodes
     node_idx_msh : np.ndarray of int [n_nodes_skin]
         Indices of skin surface nodes in global msh
-
-
-
-    max_total_current: float (optional)
-        Maximum current across all electrodes (in Amperes). Default: 2e-3
-    max_individual_current: float
-        Maximum current for any single electrode (in Amperes). Default: 1e-3
-    max_active_electrodes: int
-        Maximum number of active electrodes. Default: no maximum
-
-
-
-    name: str
-        Name for the optimization problem. Defaults tp 'optimization'
-    target: list of TDCStarget objects
-        list of TDCStarget objects defining the targets of the optimization
-    avoid: list of TDCSavoid objects (optional)
-        list of TDCSavoid objects defining regions to avoid
-    open_in_gmsh: bool (optional)
-        Whether to open the result in Gmsh after the calculations. Default: False
     """
 
     def __init__(self,
@@ -542,7 +522,8 @@ class TESoptimize():
     def get_nodes_electrode(self, electrode_pos, plot=False):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
-        electrode_array.electrodes[i].nodes and electrode_array.electrodes[i].node_area
+        electrode_array.electrodes[i].nodes and electrode_array.electrodes[i].node_area.
+        Estimate optimal electrode currents based on previous simulations.
 
         Parameters
         ----------
@@ -626,7 +607,8 @@ class TESoptimize():
                                                                                   surface=self.skin_surface)
 
             if len(ele_idx) != len(alpha):
-                return "Electrode position: invalid (not all electrodes in valid skin region)"
+                # return "Electrode position: invalid (not all electrodes in valid skin region)"
+                print("Electrode position: invalid (not all electrodes in valid skin region)")
 
         # i_ele = 0
         # ele_idx_rect = []
@@ -693,10 +675,10 @@ class TESoptimize():
                         return "Electrode position: invalid (partly overlaps with invalid skin region)"
 
                     # save node indices (refering to global mesh)
-                    _electrode.node_idx = self.node_idx_msh[np.where(mask)[0]]
+                    _electrode.node_idx = self.node_idx_msh[mask]
 
                     # save node coords (refering to global mesh)
-                    _electrode.node_coords = self.mesh.nodes.node_coord[np.where(mask)[0]]
+                    _electrode.node_coords = self.skin_surface.nodes[mask]
 
                     # save number of nodes assigned to this electrode
                     _electrode.n_nodes = len(_electrode.node_idx)
@@ -732,13 +714,49 @@ class TESoptimize():
 
         if plot:
             # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject)
+            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject[0])
+            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), node_coords_list[0])
+            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.node_idx_msh])
+            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.electrode[0].electrode_arrays[0].electrodes[0].node_idx])
             for i_channel_stim in range(self.n_channel_stim):
                 node_idx_all = np.hstack([np.hstack(node_idx_dict[i_channel_stim][id])
                                           for id in node_idx_dict[i_channel_stim].keys()])
                 points_nodes = self.mesh.nodes.node_coord[node_idx_all, :]
                 np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"),
                            points_nodes)
+
+        # save electrode_pos in ElectrodeArray instances
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
+
+        # estimate optimal electrode currents based on previous simulations
+        # current_pos = 0
+        # current_neg = 0
+        # for i_channel_stim in range(self.n_channel_stim):
+        #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+        #         for _electrode in _electrode_array.electrodes:
+        #             _electrode.estimate_currents(electrode_pos[i_channel_stim])
+        #
+        #             # sum up current for scaling
+        #             # estimator does not know about real total current and has to be corrected
+        #             if _electrode.current < 0:
+        #                 current_neg += _electrode.current
+        #             else:
+        #                 current_pos += _electrode.current
+        #
+        # scale current to match total current
+        # current_temp = []
+        # for i_channel_stim in range(self.n_channel_stim):
+        #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+        #         for _electrode in _electrode_array.electrodes:
+        #             if _electrode.current < 0:
+        #                 _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
+        #             else:
+        #                 _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
+        #             current_temp.append(_electrode.current)
+
+        # self.logger.log(20, f'Estimating currents: { *current_temp, }')
 
         return node_idx_dict
 
@@ -761,7 +779,7 @@ class TESoptimize():
 
         e = [[0 for _ in range(self.n_roi)] for _ in range(self.n_channel_stim)]
 
-        # assign surface nodes to electrode positions
+        # assign surface nodes to electrode positions and estimate optimal currents
         # start = time.time()
         node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
         # stop = time.time()
@@ -777,15 +795,6 @@ class TESoptimize():
             # set RHS
             b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
 
-            #start = time.time()
-            # b = self.ofem.fem.assemble_tdcs_neumann_rhs(electrodes=[node_idx_dict[i_channel_stim][channel]
-            #                                                         for channel in node_idx_dict[i_channel_stim].keys()],
-            #                                             currents=self.current[i_channel_stim],
-            #                                             input_type='node',
-            #                                             areas=self.mesh_nodes_areas)
-
-
-
             # solve system
             if self.dirichlet_correction[i_channel_stim]:
                 v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
@@ -795,7 +804,11 @@ class TESoptimize():
             # Determine electric field in ROIs
             #start = time.time()
             for i_roi, r in enumerate(self.roi):
-                 e[i_channel_stim][i_roi] = r.calc_fields(v)
+                if v is None:
+                    e[i_channel_stim][i_roi] = None
+                    self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
+                else:
+                    e[i_channel_stim][i_roi] = r.calc_fields(v)
             #stop = time.time()
             #print(f"Time: calc fields: {stop - start}")
 
@@ -803,19 +816,20 @@ class TESoptimize():
             if plot:
                 for j in range(self.n_channel_stim):
                     for i, _e in enumerate(e[j]):
-                        import pynibs
-                        if not os.path.exists(os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5")):
+                        if _e is not None:
+                            import pynibs
+
                             pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
                                                        points=self.roi[i].points,
                                                        con=self.roi[i].con,
                                                        replace=True,
                                                        hdf5_path='/mesh')
 
-                        pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
-                                                    data_names=["E_mag"],
-                                                    data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{j}_roi_{i}_data.hdf5"),
-                                                    geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                    replace=True)
+                            pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
+                                                        data_names=["E_mag"],
+                                                        data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{j}_roi_{i}_data.hdf5"),
+                                                        geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                        replace=True)
 
         return e
 
@@ -898,11 +912,17 @@ class TESoptimize():
             if self.goal == "mean":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
+                        if e[i_channel_stim] is None:
+                            y[i_channel_stim, i_roi] = 1
+                        else:
+                            y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
             elif self.goal == "max":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
+                        if e[i_channel_stim] is None:
+                            y[i_channel_stim, i_roi] = 1
+                        else:
+                            y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
