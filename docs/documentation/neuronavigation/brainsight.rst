@@ -7,7 +7,7 @@ This module provides import and export functions for the `Brainsight <https://ww
 SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
 Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.
 
-The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. Both are exported in a single `.txt` file. In addition, several coordinate systems can be chosen during export. Only `NIfTI:Aligned` is supported in the SimNIBS import.
+The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. `Targets` represent planned locations for stimulation, and `Samples` represent the actual locations that were stimulated. Both are exported in a single `.txt` file. In addition, several coordinate systems are supported for export and import.
 
 
 How to use 
@@ -15,11 +15,13 @@ How to use
 
 Exporting from Brainsight
 #########################
-Choose `NIfTI:Aligned` coordinate systems while exporting the coil data.
+With Brainsight 2.5.2 and earlier, choose the `NIfTI:Aligned` coordinate system when exporting.
+
+With Brainsight 2.5.3 and later, choose the `NIfTI:Q:xxx` coordinate system when exporting. (The `XXX` will be a string version of the `intent code <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_, and will be one of: `Aligned`, `Scanner`, `MNI-152`, `Talairach`, or `Other-Template`.)
 
 Importing to SimNIBS
 ####################
-:code:`simnibs.brainsight.read(fn)` reads exported coil position information files from Brainsight and returns two :code:`simnibs.TMSLIST()` objects: One for `Targets` and one for `Samples`. The conversion of the different coil axes definitions is performed automatically.
+:code:`simnibs.brainsight.read(fn)` reads Brainsight .txt files and returns two :code:`simnibs.TMSLIST()` objects: One for `Targets` and one for `Samples`. The conversion of the different coil axes definitions is performed automatically.
 
 
 ..  code-block:: python
@@ -51,7 +53,7 @@ Exporting from SimNIBS
     tmslist = sim_struct.TMSLIST()
     tmslist.add_position()
     # ... define (multiple) positions ...
-    brainsight().write(tmlist, fn)
+    brainsight().write(tmslist, fn)
 
     ### export from POSITION
     pos = sim_struct.POSITION()
