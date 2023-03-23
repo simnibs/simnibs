@@ -1,4 +1,5 @@
 import os
+import meshio
 import tempfile
 import numpy as np
 import scipy.sparse
@@ -60,26 +61,37 @@ def improve_mesh(fn_in_msh, fn_out_msh=None, dihedral_angle_limit=5, element_siz
     element_size : float, optional, default: 0.1
         Target element size of refined regions (in mm)
     """
-    # convert gmsh (.msh) file to MEDIT format (.mesh)
     with tempfile.TemporaryDirectory() as tmpdir:
-        fn_mesh = os.path.splitext(fn_in_msh)
+        # MEDIT files are created just temporary
+        fn_in_mesh_medit = os.path.join(tmpdir, os.path.split(os.path.splitext(fn_in_msh)[0] + ".mesh")[1])
+        fn_out_mesh_medit = os.path.splitext(fn_in_mesh_medit)[0] + "_improved.mesh"
 
-    # determine dihedral angles
+        if fn_out_msh is None:
+            fn_out_msh = fn_in_msh
 
-    # find elements with low angles
+        # convert gmsh (.msh) file to MEDIT format (.mesh)
+        _m = meshio.read(fn_in_msh)
+        _m.write(fn_in_mesh_medit)
+        del _m
 
-    # start remeshing
-    ret = cgal.improve_mesh_quality(fn_mesh.encode())
+        # start remeshing (CGAL)
+        ret = cgal.improve_mesh_quality(fn_in_mesh_medit.encode(),
+                                        fn_out_mesh_medit.encode(),
+                                        dihedral_angle_limit,
+                                        element_size)
 
-    if ret != 0:
-        raise MeshingError('There was an error while re-meshing during after care')
+        if ret != 0:
+            raise MeshingError('There was an error while re-meshing during after care')
 
-    mesh = mesh_io.read_medit(fn_mesh)
-    # In concurrent meshing there might be some spurious nodes
-    used_nodes = np.unique(mesh.elm[:])[1:]
-    mesh = mesh.crop_mesh(nodes=used_nodes)
+        # read MEDIT (.mesh) file
+        mesh = mesh_io.read_medit(fn_out_mesh_medit)
 
-    return mesh
+        # In concurrent meshing there might be some spurious nodes
+        used_nodes = np.unique(mesh.elm[:])[1:]
+        mesh = mesh.crop_mesh(nodes=used_nodes)
+
+        # write improved mesh in gmsh (.msh) format
+        mesh.write(fn_out_msh)
 
 
 def _mesh_image(image, voxel_dims, facet_angle,
@@ -1304,7 +1316,7 @@ def create_mesh(label_img, affine,
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
                 hierarchy=None, smooth_steps=5, skin_care=20, 
-                sizing_field=None, DEBUG_FN=None):
+                sizing_field=None, DEBUG_FN=None, improve_mesh_quality=True):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1373,6 +1385,8 @@ def create_mesh(label_img, affine,
         Sizing field to control the element sizes. Its shape has to be the same
         as label_img.shape. Zeros will be replaced by values from the 
         standard sizing field. Default: None
+    improve_mesh_quality: bool (optional)
+        Improve element quality of final mesh
 
     Returns
     -------
@@ -1539,11 +1553,13 @@ def create_mesh(label_img, affine,
         logger.info('Extra Skin Care')
         m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
 
-    # after care (remove bad elements resulting from smoothing etc.)
-    # after_care = True
-    # if after_care:
-    #     logger.info('After Care')
-    #     after_care(dihedral_angle_threshold=15)
+    # improve mesh quality (remesh elements with low quality resulting from despiking)
+    if improve_mesh_quality > 0:
+        logger.info('Improving Mesh Quality')
+        improve_mesh(fn_in_msh=m.fn,
+                     fn_out_msh=m.fn,
+                     dihedral_angle_limit=5,
+                     element_size=0.1)
 
     logger.info(
         'Time to post-process mesh: ' +
