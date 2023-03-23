@@ -5,6 +5,15 @@
 #include <CGAL/Labeled_mesh_domain_3.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Image_3.h>
+#include <CGAL/tetrahedral_remeshing.h>
+#include <CGAL/IO/File_avizo.h>
+#include <CGAL/IO/File_tetgen.h>
+#include <CGAL/IO/File_medit.h>
+#include <CGAL/tags.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Tetrahedral_remeshing/Remeshing_triangulation_3.h>
+#include <CGAL/tetrahedral_remeshing.h>
+#include <CGAL/Mesh_3/min_dihedral_angle.h>
 
 #ifdef CGAL_CONCURRENT_MESH_3
 #include "tbb/task_arena.h"
@@ -32,6 +41,11 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_img> C3t3_img;
 typedef CGAL::Mesh_criteria_3<Tr_img> Mesh_criteria_img;
 typedef Mesh_criteria_img::Facet_criteria    Facet_criteria_img;
 typedef Mesh_criteria_img::Cell_criteria     Cell_criteria_img;
+
+// Triangulation for Remeshing
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Tetrahedral_remeshing::Remeshing_triangulation_3<K> Remeshing_triangulation;
+
 // To avoid verbose function and named parameters call
 using namespace CGAL::parameters;
 
@@ -83,7 +97,7 @@ int _mesh_image(
   std::cout << "Perturb \n";
   CGAL::perturb_mesh_3(c3t3, domain);
   std::cout << "Exude \n";
-  CGAL::exude_mesh_3(c3t3);
+  CGAL::exude_mesh_3(c3t3,0,0);
   std::cout << "Exude done\n";
 
   // Output
@@ -167,7 +181,16 @@ int _mesh_image_sizing_field(
   // Mesh generation
   std::cout << "Began meshing \n";
   C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
- 
+
+  // Triangulation_3 tr_converted = CGAL::convert_to_triangulation_3(std::move(c3t3));
+
+  std::ofstream medit_file_c3t3_after_mesh("/data/pt_01756/probands/ernie/mesh/charm_lloyd_true_iter_10_removespikes_true/m2m_ernie/tmp/mesh_c3t3_medit_after_mesh.mesh");
+  CGAL::IO::write_MEDIT(
+    medit_file_c3t3_after_mesh,
+    c3t3,
+    CGAL::parameters::all_cells(true).all_vertices(true).rebind_labels(false).show_patches(false)
+  );
+
   std::cout << "Lloyd \n";
   // Run Lloyd optimization using single core as it often fails in parallel
   // https://github.com/CGAL/cgal/issues/4566
@@ -186,14 +209,100 @@ int _mesh_image_sizing_field(
   #else
     if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
   #endif
+
+  std::ofstream medit_file_c3t3_after_lloyd("/data/pt_01756/probands/ernie/mesh/charm_lloyd_true_iter_10_removespikes_true/m2m_ernie/tmp/mesh_c3t3_medit_after_lloyd.mesh");
+  CGAL::IO::write_MEDIT(
+    medit_file_c3t3_after_lloyd,
+    c3t3,
+    CGAL::parameters::all_cells(true).all_vertices(true).rebind_labels(false).show_patches(false)
+  );
+
   std::cout << "Perturb \n";
   CGAL::perturb_mesh_3(c3t3, domain);
+
+  std::ofstream medit_file_c3t3_after_perturb("/data/pt_01756/probands/ernie/mesh/charm_lloyd_true_iter_10_removespikes_true/m2m_ernie/tmp/mesh_c3t3_medit_after_perturb.mesh");
+    CGAL::IO::write_MEDIT(
+    medit_file_c3t3_after_perturb,
+    c3t3,
+    CGAL::parameters::all_cells(true).all_vertices(true).rebind_labels(false).show_patches(false)
+  );
+
   std::cout << "Exude \n";
-  CGAL::exude_mesh_3(c3t3);
-  
+  CGAL::exude_mesh_3(c3t3,0,0);
 
   // Output
+  std::ofstream medit_file_after_exude("/data/pt_01756/probands/ernie/mesh/charm_lloyd_true_iter_10_removespikes_true/m2m_ernie/tmp/mesh_c3t3_after_exude.mesh");
+  CGAL::IO::write_MEDIT(
+    medit_file_after_exude,
+    c3t3,
+    CGAL::parameters::all_cells(true).all_vertices(true).rebind_labels(false).show_patches(false)
+  );
+
   std::ofstream medit_file(fn_out);
-  c3t3.output_to_medit(medit_file);
+  CGAL::IO::write_MEDIT(
+    medit_file,
+    c3t3,
+    CGAL::parameters::all_cells(true).all_vertices(true).rebind_labels(false).show_patches(false)
+  );
+
+  return EXIT_SUCCESS;
+}
+
+
+template<typename Tr>
+struct DihedralAngleChecker
+{
+private:
+  using Cell_handle = typename Tr::Cell_handle;
+  const double m_lower_angle_bound;
+  const Tr m_tr;
+public:
+  using key_type = Cell_handle;
+  using value_type = bool;
+  using reference = bool;
+  using category = boost::read_write_property_map_tag;
+  DihedralAngleChecker(const double& lower_angle_bound, const Tr& tr)
+    : m_lower_angle_bound(lower_angle_bound), m_tr(tr)
+  {}
+  friend value_type get(const DihedralAngleChecker& map,
+                        const key_type& c)
+  {
+    auto p0 = c->vertex(0);
+    auto p1 = c->vertex(1);
+    auto p2 = c->vertex(2);
+    auto p3 = c->vertex(3);
+
+    double min_dih_angle = CGAL::Tetrahedral_remeshing::min_dihedral_angle(map.m_tr,p0,p1,p2,p3);
+
+    return min_dih_angle < map.m_lower_angle_bound;
+  }
+  friend void put(DihedralAngleChecker&,
+                  const key_type&,
+                  const value_type)
+  {
+    ; //nothing to do : subdomain indices are updated in remeshing
+  }
+};
+
+int _improve_mesh_quality(
+  char *fn_in, char *fn_out,
+  float dihedral_angle_limit, float element_size
+  )
+{
+  Remeshing_triangulation tr;
+
+  // read input mesh
+  std::ifstream is(fn_in, std::ios_base::in);
+  bool success = CGAL::IO::read_MEDIT(is, tr);
+
+  // run remeshing
+  CGAL::tetrahedral_isotropic_remeshing(tr, element_size,
+      CGAL::parameters::cell_is_selected_map(
+        DihedralAngleChecker<Remeshing_triangulation>(dihedral_angle_limit,tr)));
+
+  // write output mesh
+  std::ofstream os(fn_out);
+  CGAL::IO::write_MEDIT(os, tr);
+
   return EXIT_SUCCESS;
 }

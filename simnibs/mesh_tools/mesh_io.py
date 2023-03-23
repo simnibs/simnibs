@@ -2750,7 +2750,6 @@ class Msh:
         * will not add triangles to "air" tetrahedra (having label -1)
         '''
 
-
         assert np.all(self.elm.elm_type==4)
 
         if hierarchy is None: hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
@@ -6328,13 +6327,15 @@ def read_medit(fn):
         Mesh class
     '''
     with open(fn, 'r') as f:
+        n_vertices = 0
         if not f.readline().startswith('MeshVersionFormatted'):
             raise IOError('invalid mesh format')
         if f.readline().strip() != 'Dimension 3':
             raise IOError('Can only read 3D meshes')
-        if f.readline().strip() != 'Vertices':
+        if f.readline().strip() not in ['Vertices', '# CGAL::Mesh_complex_3_in_triangulation_3']:
             raise IOError('invalid mesh format')
-        n_vertices = int(f.readline().strip())
+        if f.readline().strip() == 'Vertices':
+            n_vertices = int(f.readline().strip())
         assert n_vertices > 0
         vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)

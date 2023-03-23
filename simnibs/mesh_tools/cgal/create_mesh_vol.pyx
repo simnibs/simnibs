@@ -20,6 +20,8 @@ cdef extern from "_mesh_volumes.cpp" nogil:
         float *facet_size, float *facet_distance,
         float cell_radius_edge_ratio, float *cell_size,
         bool optimize)
+    int _improve_mesh_quality(
+        char *fn_in, char *fn_out, float dihedral_angle_limit, float element_size)
 
 
 def mesh_image(fn_image, fn_out, float facet_angle, float facet_size,
@@ -61,4 +63,10 @@ def mesh_image_sizing_field(
     )
     return ret
 
+def improve_mesh_quality(
+    fn_in, fn_out, float dihedral_angle_limit, float element_size):
 
+    ret = _improve_mesh_quality(
+        fn_in, fn_out, dihedral_angle_limit, element_size
+    )
+    return ret

@@ -45,6 +45,43 @@ def _write_inr(image, voxel_dims, fn_out):
         f.write(image.tobytes(order='F'))
 
 
+def improve_mesh(fn_in_msh, fn_out_msh=None, dihedral_angle_limit=5, element_size=0.1):
+    """
+    Improves element quality of given .msh
+
+    Parameters
+    ----------
+    fn_in_msh : str
+        Path to input .msh (gmsh) file
+    fn_out_msh : str, optional, default: None
+        Path to output .msh (gmsh) file. If None, input file will be overwritten.
+    dihedral_angle_limit : float, optional, default: 5
+        Lower bound of dihedral angle (in degree)
+    element_size : float, optional, default: 0.1
+        Target element size of refined regions (in mm)
+    """
+    # convert gmsh (.msh) file to MEDIT format (.mesh)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fn_mesh = os.path.splitext(fn_in_msh)
+
+    # determine dihedral angles
+
+    # find elements with low angles
+
+    # start remeshing
+    ret = cgal.improve_mesh_quality(fn_mesh.encode())
+
+    if ret != 0:
+        raise MeshingError('There was an error while re-meshing during after care')
+
+    mesh = mesh_io.read_medit(fn_mesh)
+    # In concurrent meshing there might be some spurious nodes
+    used_nodes = np.unique(mesh.elm[:])[1:]
+    mesh = mesh.crop_mesh(nodes=used_nodes)
+
+    return mesh
+
+
 def _mesh_image(image, voxel_dims, facet_angle,
                 facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
@@ -72,7 +109,11 @@ def _mesh_image(image, voxel_dims, facet_angle,
         if ret != 0:
             raise MeshingError('There was an error while meshing the image')
 
+        # print("!!! SAVING MESH FILE IN TMP FOLDER !!!")
+        # import shutil
+        # shutil.copyfile(fn_mesh, "/data/pt_01756/probands/ernie/mesh/charm_lloyd_true_iter_10_removespikes_true/m2m_ernie/tmp/mesh.mesh")
         mesh = mesh_io.read_medit(fn_mesh)
+
     # In concurrent meshing there might be some spurious nodes
     used_nodes = np.unique(mesh.elm[:])[1:]
     mesh = mesh.crop_mesh(nodes=used_nodes)
@@ -1496,7 +1537,13 @@ def create_mesh(label_img, affine,
 
     if skin_care > 0:
         logger.info('Extra Skin Care')
-        m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
+        m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
+
+    # after care (remove bad elements resulting from smoothing etc.)
+    # after_care = True
+    # if after_care:
+    #     logger.info('After Care')
+    #     after_care(dihedral_angle_threshold=15)
 
     logger.info(
         'Time to post-process mesh: ' +
