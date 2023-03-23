@@ -74,12 +74,10 @@ class Ellipsoid():
     def G(self, beta, lam):
         return np.sqrt(1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
 
-
         # H = lambda coords: coords[0] ** 2 + coords[1] ** 2 / (1 - self.e_e2) ** 2 + coords[2] / (
         #             1 - self.e_x2) ** 2  # eq. (43)
         # G = lambda beta, lam: np.sqrt(
         #     1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
-
 
     @property
     def radii(self):

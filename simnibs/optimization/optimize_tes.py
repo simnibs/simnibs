@@ -21,6 +21,7 @@ from ..simulation.onlinefem import OnlineFEM
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
+from ..utils.TI_utils import get_maxTI, get_dirTI
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
@@ -101,7 +102,8 @@ class TESoptimize():
                  plot=False,
                  goal="mean",
                  optimizer="direct",
-                 output_folder=None):
+                 output_folder=None,
+                 goal_dir=None):
         """
         Constructor of TESoptimize class instance
         """
@@ -289,6 +291,7 @@ class TESoptimize():
         assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
 
         self.goal = goal
+        self.goal_dir = goal_dir
         self.optimizer = optimizer
         self.weights = weights
 
@@ -909,6 +912,7 @@ class TESoptimize():
         if e is None:
             y = np.ones(self.n_roi)
         else:
+            # mean electric field in the roi
             if self.goal == "mean":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
@@ -916,6 +920,8 @@ class TESoptimize():
                             y[i_channel_stim, i_roi] = 1
                         else:
                             y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
+
+            # max electric field in the roi (percentile)
             elif self.goal == "max":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
@@ -923,8 +929,31 @@ class TESoptimize():
                             y[i_channel_stim, i_roi] = 1
                         else:
                             y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
+
+            # mean of max envelope for TI fields
+            elif self.goal == "mean_max_TI":
+                for i_roi in range(self.n_roi):
+                    # gather fields with different frequencies
+                    for i_channel_stim in range(self.n_channel_stim):
+                        if e[i_channel_stim] is None:
+                            y[i_channel_stim, i_roi] = 1
+                    y[0, i_roi] = np.mean(get_maxTI(E1_org=e[0, i_roi], E2_org=e[1, i_roi]))
+                    y[1, i_roi] = y[0, i_roi]
+
+            # mean of max envelope for TI fields in given direction
+            elif self.goal == "mean_max_TI":
+                for i_roi in range(self.n_roi):
+                    # gather fields with different frequencies
+                    for i_channel_stim in range(self.n_channel_stim):
+                        if e[i_channel_stim] is None:
+                            y[i_channel_stim, i_roi] = 1
+                    y[0, i_roi] = np.mean(get_dirTI(E1=e[0, i_roi], E2=e[1, i_roi], dirvec_org=self.goal_dir))
+                    y[1, i_roi] = y[0, i_roi]
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
+
+        # average over all stimulations (channel_stim)
+        y = np.mean(y, axis=0)
 
         # weight and sum the goal function values of the ROIs
         y_weighted_sum = np.sum(y * self.weights)
