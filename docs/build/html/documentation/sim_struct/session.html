@@ -157,7 +157,7 @@ It contains information about the head mesh, the simulations to be performed, th
 <ul class="simple">
 <li><p><strong>map_to_vol</strong>: <em>bool, optional</em></p>
 <ul>
-<li><p><strong>Description</strong>: Whether to map the fields to a NifTi volume. The NifTI volume will in the same space as the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file.</p></li>
+<li><p><strong>Description</strong>: Whether to map the fields to a NIfTI volume. The NifTI volume will in the same space as the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/T1fs_conform.nii.gz</span></code> file.</p></li>
 <li><p><strong>Default</strong>: False</p></li>
 <li><p><strong>Reference</strong>: <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a></p></li>
 </ul>
@@ -184,7 +184,7 @@ It contains information about the head mesh, the simulations to be performed, th
 </li>
 <li><p><strong>fname_tensor</strong>:<em>string (Python)/character array (MATLAB), optional</em></p>
 <ul>
-<li><p><strong>Description</strong>: Name of NifTi file with conductivity tensors</p></li>
+<li><p><strong>Description</strong>: Name of NIfTI file with conductivity tensors</p></li>
 <li><p><strong>Default</strong>: Automatically finds the file <code class="file docutils literal notranslate"><span class="pre">d2c_</span><em><span class="pre">subID</span></em><span class="pre">/dti_results_T1space/DTI_conf_tensor.nii.gz</span></code> based on <strong>fnamehead</strong>.</p></li>
 <li><p><strong>Note</strong>: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.</p></li>
 </ul>

@@ -41,7 +41,7 @@ class Templates:
     atlases_surfaces: str
         Path to the directory with the atlases surfaces (dir)
     mni_volume: str
-        Path to the NifTi volume with the MNI template (T1, 1mm) (.nii.gz)
+        Path to the NIfTI volume with the MNI template (T1, 1mm) (.nii.gz)
     freesurfer_templates: str
         Path to the folder with FreeSurfer templates (dir)
     simnibs_logo: str
@@ -210,7 +210,7 @@ class SubjectFiles:
         The subject ID (eg: ernie)
 
     tensor_file: str
-        Path to the NifTi file with the tensor conductivity information (.nii.gz)
+        Path to the NIfTI file with the tensor conductivity information (.nii.gz)
 
     eeg_cap_folder: str
         Path to the folder with EEG caps (dir)

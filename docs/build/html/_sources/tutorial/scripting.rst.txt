@@ -123,7 +123,7 @@ To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and se
      # Initialize a list of TMS simulations
      tmslist = s.add_tmslist()
      # Select coil
-     tmslist.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.nii.gz')
+     tmslist.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
 
 
 * *MATLAB*
@@ -133,7 +133,7 @@ To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and se
     % Initialize a list of TMS simulations
     s.poslist{1} = sim_struct('TMSLIST');
     % Select coil
-    s.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.nii.gz');
+    s.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 
 Now we need to set a position for our coil. Suppose we want to place it over C1, pointing
 posteriorly. You can do it by

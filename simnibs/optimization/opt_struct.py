@@ -111,7 +111,7 @@ class TMSoptimize():
         self.pathfem = 'tms_optimization/'
         self.fname_tensor = None
         self.mesh = None
-        # Name of coil file
+        # Relative path of coil file
         self.fnamecoil = None
         # Conductivity stuff
         self.cond = cond.standard_cond()
