@@ -37,7 +37,7 @@ Attributes
 
   * **Description**: Name of coil file. Coil files come in two types
 
-    * *.nii.gz* files: NifTi files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (`Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_)
+    * *.nii.gz* files: NIfTI files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (`Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_)
     * *.ccd* files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (`Thielscher and Kammer, 2004 <https://doi.org/10.1016/j.clinph.2004.02.019>`_)
  
   * **Examples**: *Python/MATLAB*
@@ -46,7 +46,7 @@ Attributes
 
     .. code-block:: matlab
 
-       tmslist.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+       tmslist.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 
     \
 
@@ -102,7 +102,7 @@ Examples
     # add a TMSLIST to the SESSION
     tms = S.add_tmslist() 
     # Select the coil from those available in the ccd-coils subfolder
-    tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+    tms.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
     # Add a new position
     pos = tms.add_position()
     # Place the coil over C3
@@ -125,7 +125,7 @@ Examples
     % Add a TMSLIST to the SESSION
     S.poslist{1} = sim_struct('TMSLIST');
     % Select the coil from those available in the ccd-coils subfolder
-    S.poslist{1}.fnamecoil = 'Magstim_70mm_Fig8.nii.gz';
+    S.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
     % Place the coil over C3
     S.poslist{1}.pos(1).centre = 'C3';
     % Point the coil towards CP3

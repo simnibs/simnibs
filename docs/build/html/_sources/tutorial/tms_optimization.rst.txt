@@ -97,7 +97,7 @@ To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file an
 
 .. code-block:: python
 
-  tms_opt.fnamecoil = 'Magstim_70mm_Fig8.ccd'
+  tms_opt.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
   tms_opt.method = 'ADM'
 
 \
