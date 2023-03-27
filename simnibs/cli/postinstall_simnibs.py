@@ -175,7 +175,7 @@ def setup_gmsh_options(force=False, silent=False):
             copy = True
         else:
             copy = _get_input(
-                'Found a gmsh configuration file, do you whish to overwite it?',
+                'Found a gmsh configuration file, do you wish to overwite it?',
                 silent)
 
     if copy:

@@ -12,7 +12,7 @@ s.pathfem = 'tutorial/'
 # Initialize a list of TMS simulations
 tmslist = s.add_tmslist()
 # Select coil
-tmslist.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+tmslist.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
 
 
 ''' First coil position '''
