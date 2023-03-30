@@ -295,7 +295,7 @@ class Ellipsoid():
 
         return f
 
-    def cartesian2jacobi(self, coords: np.ndarray, norm=False,  return_norm=False, return_normal=False) -> (np.ndarray,  np.ndarray):
+    def cartesian2jacobi(self, coords: np.ndarray, norm=False,  return_norm=False, return_normal=False) -> (np.ndarray, np.ndarray):
         """
         Transforms cartesian coordinates on ellipsoid to spherical coordinates in Jacobi form and optionally
         returns the surface normals.
@@ -351,7 +351,7 @@ class Ellipsoid():
         lam = np.zeros(coords.shape[0])
 
         for i, _coords in enumerate(coords):
-            res = minimize(self.cartesian2jacobi_system, (0, 0),
+            res = minimize(self.cartesian2jacobi_system, (0.1, 0.1),
                            method='Nelder-Mead',
                            bounds=((-np.pi/2, np.pi/2), (-np.pi, np.pi)),
                            args=_coords)

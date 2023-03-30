@@ -38,6 +38,31 @@ print("Initializing Electrode ...")
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
+# center = np.array([[-30, 20, 0],
+#                     [0, 20, 0],
+#                     [30, 20, 0],
+#                     [-30, 0, 0],
+#                     [0, 0, 0],
+#                     [30, 0, 0],
+#                     [-30, -20, 0],
+#                     [0, -20, 0],
+#                     [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# constrain_electrode_locations = True
+# overlap_factor = 1.
+# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+
+# create two 3 x 3 circular electrode array pairs (2 channels)
+########################################################################################################################
+# center = np.array([[-30, 0, 0],
+#                    [0, 0, 0],
+#                    [30, 0, 0]])
+# radius = np.array([7, 7, 7])
+# length_x = np.array([0, 0, 0])
+# length_y = np.array([0, 0, 0])
 center = np.array([[-30, 20, 0],
                     [0, 20, 0],
                     [30, 20, 0],
@@ -50,23 +75,13 @@ center = np.array([[-30, 20, 0],
 radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
 length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
 
-# create two 3 x 3 circular electrode array pairs (2 channels)
-########################################################################################################################
-# TODO: define proper bounds for all 4 arrays
-# center = np.array([[-30, 0, 0],
-#                    [0, 0, 0],
-#                    [30, 0, 0]])
-# radius = np.array([7, 7, 7])
-# length_x = np.array([0, 0, 0])
-# length_y = np.array([0, 0, 0])
-#
-# electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-# electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-#
-# electrode = [electrode_1, electrode_2]
+electrode = [electrode_1, electrode_2]
+constrain_electrode_locations = True
+overlap_factor = 1.
+
 # electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
@@ -114,7 +129,13 @@ roi = simnibs.RegionOfInterest(points=points, con=con, mesh=mesh)
 
 min_electrode_distance = 1.
 weights = [1]
-optimizer_options = {"maxiter": 1000}
+optimizer_options = {"maxiter": 1000,
+                     "disp": True,
+                     "recombination": 0.3,              # differential evolution
+                     "mutation": (0.01, 0.1),           # differential evolution
+                     "popsize": 15,                     # differential evolution
+                     "tol": 0.5,
+                     "locally_biased": False}           # DIRECT
 
 # Initialize TESoptimize class
 opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
@@ -123,11 +144,14 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      init_pos=init_pos,
                                      output_folder=output_folder,
                                      plot=True,
-                                     optimizer="direct",
+                                     optimizer="shgo",  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
                                      optimizer_options=optimizer_options,
                                      min_electrode_distance=min_electrode_distance,
                                      weights=weights,
-                                     goal="mean")
+                                     goal="mean",
+                                     constrain_electrode_locations=constrain_electrode_locations,
+                                     overlap_factor=overlap_factor,
+                                     optimize_init_vals=False)
 
 # pynibs.plot_surface(data=np.arange(len(opt.skin_surface.surf2msh_triangles)),
 #                     con=opt.mesh.elm.node_number_list[opt.skin_surface.surf2msh_triangles, :3],

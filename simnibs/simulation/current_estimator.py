@@ -87,6 +87,10 @@ class CurrentEstimator():
                 self.electrode_pos = self.electrode_pos[np.newaxis, :]
 
         else:
+            # do not add training data, which is already included
+            if np.hstack(electrode_pos).tolist() in self.electrode_pos.tolist():
+                return
+
             self.electrode_pos = np.vstack((self.electrode_pos, np.hstack(electrode_pos)))
 
         # reshape and append passed electrode currents to set of all electrode currents [n_train x n_ele]
@@ -274,12 +278,14 @@ def get_estimate_gaussian_process(x, x_train, y_train, lengthscale=None, varianc
             # compute v
             # v = np.linalg.solve(L, Ks)
 
+            # alpha
+            alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train[:, i]))
+
         except np.linalg.LinAlgError:
-            print("Warning: Cholesky decomposition of K* matrix did not converge ... using Moore-Penrose pseudo inverse.")
+            # print("Warning: Cholesky decomposition of K* matrix did not converge ... using Moore-Penrose pseudo inverse.")
             # v = np.linalg.pinv(K) @ Ks
 
-        # alpha
-        alpha = np.linalg.solve(L.T, np.linalg.solve(L, y_train[:, i]))
+            alpha = np.linalg.pinv(K) @ y_train[:, i]
 
         # compute the mean function
         y[i] = Ks.T @ alpha

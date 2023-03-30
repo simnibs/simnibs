@@ -1046,7 +1046,7 @@ class Msh:
             list of element indices that are of interest
 
         k: (optional) int
-            number of nearest neighbourt to return
+            number of nearest neighbours to return
 
         Returns
         -------------------------------

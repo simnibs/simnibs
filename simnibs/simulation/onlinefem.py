@@ -354,7 +354,7 @@ class OnlineFEM:
 
             v_mean_ele[i] = np.array(v_mean_ele[i])
 
-        print(f"v_mean_ele: {v_mean_ele}")
+        # print(f"v_mean_ele: {v_mean_ele}")
 
         v_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
         currents_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
@@ -598,11 +598,11 @@ class OnlineFEM:
         j = 0
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
         while maxrelerr > th_maxrelerr:
-            print(f"iter: {j} current: {I}, error: {maxrelerr}")
+            # print(f"iter: {j} current: {I}, error: {maxrelerr}")
             j += 1
 
             if j > maxiter:
-                print('warning: did not converge after ' + str(maxiter) + ' iterations')
+                # print('warning: did not converge after ' + str(maxiter) + ' iterations')
                 return None
 
             if j == 1:
@@ -673,7 +673,7 @@ class OnlineFEM:
                                                          current=I[_ele.channel_id][ele_counter_channel[_ele.channel_id]])
                 ele_counter_channel[_ele.channel_id] += 1
 
-        self.logger.log(20, f"Optimal currents: { *I, }")
+        # self.logger.log(20, f"Optimal currents: { *I, }")
 
         # reset to original currents
         for _electrode_array in electrode.electrode_arrays:

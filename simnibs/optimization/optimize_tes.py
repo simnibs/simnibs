@@ -1,5 +1,5 @@
 import os
-import copy
+import csv
 import time
 import copy
 import h5py
@@ -10,13 +10,13 @@ import nibabel as nib
 import scipy.ndimage.morphology as mrph
 
 from numpy.linalg import eig
-from scipy.optimize import direct, Bounds
+from scipy.optimize import direct, Bounds, minimize, differential_evolution, shgo, basinhopping
 
 from ..mesh_tools import Msh
 from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
-from ..simulation.sim_struct import ELECTRODE, SimuList
-from ..simulation.fem import FEMSystem, get_dirichlet_node_index_cog
+from ..simulation.sim_struct import ELECTRODE
+from ..simulation.fem import get_dirichlet_node_index_cog
 from ..simulation.onlinefem import OnlineFEM
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
@@ -63,16 +63,21 @@ class TESoptimize():
         Weights for optimizer for ROI specific goal function weighting
     min_electrode_distance : float, optional, default: None
         Minimum electrode distance to ensure during optimization (in mm).
-
-
+    constrain_electrode_locations : bool, optional, default: False
+        Constrains the possible locations of freely movable electrode arrays. Recommended for TTF optimizations,
+        where two pairs of large electrode arrays are optimized. If True, parameter bounds for the optimization
+        will be specified restricting the array locations to be frontal, parietal or occipital.
+    overlap_factor : float, optional, default: 1
+        Factor of overlap of allowed lambda regions to place electrodes. (1 corresponds to neatless regions,
+        <1 regions have a gap in between, >1 regions are overlapping)
     plot : bool, optional, default: False
         Plot configurations in output folder for visualization and control
-    name: str (optional)
-        Name of optimization problem. Default: optimization
-    target: list of TDCStarget objects (optional)
-        Targets for the optimization. Default: no target
-    avoid: list of TDCSavoid objects
-        list of TDCSavoid objects defining regions to avoid
+    polish : bool, optional, default: True
+        If True (default), then scipy.optimize.minimize with the L-BFGS-B method is used to polish the best
+        population member at the end, which can improve the minimization.
+    optimize_init_vals : bool, optional, default: True
+        If True, find initial values for optimization, guaranteeing a valid solution. If False, initial values
+        are the center between bounds.
 
     Attributes
     --------------
@@ -103,7 +108,11 @@ class TESoptimize():
                  goal="mean",
                  optimizer="direct",
                  output_folder=None,
-                 goal_dir=None):
+                 goal_dir=None,
+                 constrain_electrode_locations=False,
+                 overlap_factor=1.,
+                 polish=True,
+                 optimize_init_vals=True):
         """
         Constructor of TESoptimize class instance
         """
@@ -180,6 +189,28 @@ class TESoptimize():
         # fit optimal ellipsoid to valid skin points
         self.ellipsoid.fit(points=self.skin_surface.nodes)
 
+        # plot skin surface and ellipsoid
+        if self.plot:
+            import pynibs
+            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
+                                       points=self.skin_surface.nodes,
+                                       con=self.skin_surface.tr_nodes,
+                                       replace=True,
+                                       hdf5_path='/mesh')
+
+            pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
+                                        data_names=["domain"],
+                                        data_hdf_fn_out=os.path.join(self.plot_folder, f"skin_surface_data.hdf5"),
+                                        geo_hdf_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
+                                        replace=True)
+
+            # save fitted ellipsoid
+            beta = np.linspace(-np.pi / 2, np.pi / 2, 180)
+            lam = np.linspace(0, 2 * np.pi, 360)
+            coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
+            eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
+            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords_jac)
+
         # setup ROI
         ################################################################################################################
         self.logger.log(20, "Setting up ROI ...")
@@ -223,8 +254,8 @@ class TESoptimize():
         self.init_pos = init_pos
         self.init_pos_subject_coords = [[] for _ in range(self.n_channel_stim)]
 
-        init_pos_list = [["C3", "C4", "F3", "P4"],          # init defaults for first i_channel_stim
-                         ["Fz", "Pz", "P3", "F4"]]          # init defaults for second i_channel_stim
+        init_pos_list = [["Fz", "Pz", "P3", "F4"],          # init defaults for first i_channel_stim
+                         ["C3", "C4", "F3", "P4"]]          # init defaults for second i_channel_stim
 
         # collect all electrode currents in list of np.array [i_channel_stim][i_channel_ele]
         self.current = [np.zeros(len(np.unique(self.electrode[i_channel_stim].channel_id)))
@@ -269,7 +300,7 @@ class TESoptimize():
                 # get closest point idx on subject surface
                 point_idx = np.argmin(np.linalg.norm(coords-self.skin_surface.nodes, axis=1))
 
-                # electrode positon in ellipsoid space
+                # electrode positon in ellipsoid space (jacobi coordinates)
                 self.electrode_pos[i_channel_stim][i_ele_free][:2] = self.ellipsoid.cartesian2jacobi(
                     coords=self.ellipsoid.ellipsoid2cartesian(
                         coords=subject2ellipsoid(
@@ -287,6 +318,8 @@ class TESoptimize():
         # equal ROI weighting if None is provided
         if weights is None:
             weights = np.ones(len(self.roi)) / len(self.roi)
+        elif type(weights) is list:
+            weights = np.array(weights)
 
         assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
 
@@ -294,27 +327,39 @@ class TESoptimize():
         self.goal_dir = goal_dir
         self.optimizer = optimizer
         self.weights = weights
+        self.constrain_electrode_locations = constrain_electrode_locations
+        self.overlap_factor = overlap_factor
+        self.polish = polish
+        self.n_test = 0         # number of tries to place the electrodes
+        self.n_sim = 0          # number of final simulations carried out (only valid electrode positions)
 
-        # parameter bounds for optimizer
-        bounds = Bounds(lb=[-np.pi / 2, -np.pi, -np.pi] * np.sum(self.n_ele_free),
-                        ub=[np.pi / 2, np.pi, np.pi] * np.sum(self.n_ele_free))
+        # direct and shgo optimizer do not take init vals
+        if self.optimizer in ["direct", "shgo"]:
+            optimize_init_vals = False
 
-        # set standard options for optimizer
-        if self.optimizer == "direct":
-            self.optimizer_options = {"bounds": bounds,
-                                      "vol_tol": 1. / 3600000000. * 3 * np.sum(self.n_ele_free),
-                                      "len_tol": 1. / 3600000000.,
-                                      "f_min_rtol": 1e-12,
-                                      "maxiter": 1000}
+        self.optimize_init_vals = optimize_init_vals
+
+        # parameter bounds for optimizer (constrain if desired)
+        bounds = self.get_bounds(constrain_electrode_locations=self.constrain_electrode_locations,
+                                 overlap_factor=self.overlap_factor)
+
+        # determine initial values
+        x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
+
+        # set default options for optimizer
+        self.optimizer_options = {"bounds": bounds,
+                                  "init_vals": x0,  # np.vstack(self.electrode_pos).flatten()
+                                  "vol_tol": 1. / 3600000000. * 3 * np.sum(self.n_ele_free),
+                                  "len_tol": 1. / 3600000000.,
+                                  "f_min_rtol": 1e-12,
+                                  "maxiter": 1000,
+                                  "polish": True,
+                                  "locally_biased": False}
 
         # insert user specific options
         if optimizer_options is not None:
             for key in optimizer_options:
                 self.optimizer_options[key] = optimizer_options[key]
-
-        # self.max_total_current = max_total_current
-        # self.max_individual_current = max_individual_current
-        # self.max_active_electrodes = max_active_electrodes
 
         # setup FEM
         ################################################################################################################
@@ -334,17 +379,6 @@ class TESoptimize():
                               fn_results=self.fn_results_hdf5,
                               useElements=True,
                               dataType=0)
-
-        # self.logger.log(20, 'Preparing FEM')
-        # self.simulist = SimuList(mesh=self.mesh)
-        # self.simulist.anisotropy_type = self.anisotropy_type
-        # cond = self.simulist.cond2elmdata()
-        # self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
-        #                                   cond=cond,
-        #                                   ground_electrode=self.dirichlet_node,
-        #                                   solver_options=self.solver_options,
-        #                                   input_type='node')
-        # self.fem.prepare_solver()
 
         # log summary
         ################################################################################################################
@@ -387,49 +421,171 @@ class TESoptimize():
         ################################################################################################################
         self.optimize()
 
-        # temporary plot functions
-        ################################################################################################################
-        if self.plot:
-            import matplotlib
-            matplotlib.use('Qt5Agg')
-            import matplotlib.pyplot as plt
+        # electrode_pos = [[np.array([-0.21225543,  0.14401322, -3.05493964]), np.array([-0.2482948, 1.66236642, -1.48075733])],
+        #                  [np.array([-1.04681472, 0.62264809, -0.06796936]), np.array([0.85645771, 1.43684206, -0.00773725])]]
+        # e = self.update_field(electrode_pos=electrode_pos, plot=True)
+        # [ simnibs ] INFO: Parameters: [-0.21225543  0.14401322 -3.05493964 -0.2482948   1.66236642 -1.48075733 -1.04681472  0.62264809 -0.06796936  0.85645771  1.43684206 -0.00773725]
+        # [ simnibs ] INFO: Estimating currents of stimulation 0: (0.0, 0.0, 0.12051773071289062, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.12220001220703125, 0.0, 0.0, 0.0, -0.019851482435619627, 0.0, -0.07761788368225098, 0.0)
+        # [ simnibs ] INFO: Estimating currents of stimulation 1: (0.11847917831688637, 0.10205585810662043, 0.18510512041192317, 0.07177279905536332, 0.03736780629148301, 0.09764569561343939, 0.1518507335462148, 0.12578081993191015, 0.13907461813690158, -0.16377729797121154, -0.09851322539416962, -0.14040936353053235, -0.100976651058587, -0.029797118784232312, -0.056387432755079736, -0.19469673013190936, -0.11646987335707898, -0.12396050312600249)
+        # [ simnibs ] INFO: Electrode position: valid
+        # [ simnibs ] INFO: Optimal currents: (array([0.16835061, 0.10058386, 0.13082818, 0.1072788 , 0.03278245, 0.06961378, 0.17407796, 0.09264965, 0.12383471]),
+        #                                      array([-0.19609596, -0.11945876, -0.16265822, -0.08106761, -0.02747652,-0.07248354, -0.14166594, -0.07919212, -0.11990133]))
+        # [ simnibs ] INFO: Electrode position: valid
+        # [ simnibs ] INFO: Optimal currents: (array([0.12111591, 0.09868274, 0.172026  , 0.07449228, 0.03757545,
+        #        0.09033746, 0.13916304, 0.11004092, 0.15656621]), array([-0.14121622, -0.10259622, -0.1378883 , -0.09802952, -0.03359152,
+        #        -0.06644434, -0.18630877, -0.10328476, -0.13064036]))
+        # [ simnibs ] INFO: Goal (mean): -202.014
 
-            theta = np.linspace(0, np.pi, 180)
-            phi = np.linspace(0, 2 * np.pi, 360)
+    def get_bounds(self, constrain_electrode_locations, overlap_factor=1.):
+        """
+        Get boundaries of freely movable electrode arrays for optimizer.
 
-            beta = np.linspace(-np.pi/2, np.pi/2, 180)
-            lam = np.linspace(0, 2 * np.pi, 360)
+        Parameters
+        ----------
+        constrain_electrode_locations : bool
+            Constrains the possible locations of freely movable electrode arrays. Recommended for TTF optimizations,
+            where two pairs of large electrode arrays are optimized. If True, parameter bounds for the optimization
+            will be specified restricting the array locations to be frontal, parietal or occipital.
+        overlap_factor : float, optional, default: 1.
+            Factor of overlap of allowed lambda regions to place electrodes. (1 corresponds to neatless regions,
+            <1 regions have a gap in between, >1 regions are overlapping)
 
-            coords_sphere = np.array(np.meshgrid(theta, phi)).T.reshape(-1, 2)
-            coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
-            eli_coords = self.ellipsoid.ellipsoid2cartesian(coords=coords_sphere, return_normal=False)
-            eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
-            # eli_coords_rot = (self.ellipsoid.rotmat.T @ (eli_coords - self.ellipsoid.center).T).T
-            # coords_sphere_test = self.ellipsoid.cartesian2ellipsoid(coords=eli_coords)
-            # np.isclose(coords_sphere, coords_sphere_test)
-            # fig = plt.figure()
-            # ax = fig.add_subplot(projection='3d')
-            # ax.scatter(eli_coords[:, 0], eli_coords[:, 1], eli_coords[:, 2])
-            # ax.scatter(eli_coords_rot[:, 0], eli_coords_rot[:, 1], eli_coords_rot[:, 2])
+        Returns
+        -------
+        bounds : scipy.optimize.Bounds instance [n_ele_free]
+            Boundaries of freely movable electrode arrays tuple of length [n_ele_free] with lower bounds (lb) and
+            upper bounds (ub) of beta, lambda, alpha.
+        """
 
-            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords)
-            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_jacobian.txt"), eli_coords_jac)
-            # np.savetxt(os.path.join("/data/pt_01756/studies/ttf/fitted_ellipsoid.txt"), eli_coords)
-            # np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid_rot.txt"), eli_coords_rot)
+        if constrain_electrode_locations:
+            # read fiducials from subject data
+            fn_fiducials = os.path.join(self.ff_subject.eeg_cap_folder, "Fiducials.csv")
+            with open(fn_fiducials, newline='') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if "Fiducial" in row and "Nz" in row:
+                        # Nz (Nasion), Iz (Inion), LPHA (left ear), RPA (right ear)
+                        Nz = np.array([row[1], row[2], row[3]]).astype(float)
 
-            import pynibs
-            # write hdf5 _geo files for visualization in paraview
-            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
-                                       points=self.skin_surface.nodes,
-                                       con=self.skin_surface.tr_nodes,
-                                       replace=True,
-                                       hdf5_path='/mesh')
+            # project nasion to skin surface and determine normal vector
+            con_skin = self.mesh.elm.node_number_list[self.mesh.elm.tag1==1005, ][:, :3]-1
+            tri_skin_center = np.mean(self.mesh.nodes.node_coord[con_skin, ], axis=1)
+            idx_min = np.argmin(np.linalg.norm(tri_skin_center - Nz, axis=1))
+            p1_tri = self.mesh.nodes.node_coord[con_skin[:, 0], :]
+            p2_tri = self.mesh.nodes.node_coord[con_skin[:, 1], :]
+            p3_tri = self.mesh.nodes.node_coord[con_skin[:, 2], :]
+            tri_normal = np.cross(p2_tri - p1_tri, p3_tri - p1_tri)
+            tri_normal /= np.linalg.norm(tri_normal, axis=1)[:, np.newaxis]
+            Nz_normal = tri_normal[idx_min]
 
-            pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
-                                        data_names=["domain"],
-                                        data_hdf_fn_out=os.path.join(self.output_folder, "plots", "upper_head_region_data.hdf5"),
-                                        geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
-                                        replace=True)
+            # project nasion from skin surface to ellipsoid
+            Nz_eli = subject2ellipsoid(coords=Nz, normals=Nz_normal, ellipsoid=self.ellipsoid)
+            Nz_cart = self.ellipsoid.ellipsoid2cartesian(coords=Nz_eli, norm=False)
+            Nz_jacobi = self.ellipsoid.cartesian2jacobi(coords=Nz_cart, norm=False)
+
+            if Nz_jacobi[0, 1] + np.pi / 2 > np.pi:
+                lambda_sign = -1
+            else:
+                lambda_sign = 1
+            beta_min = np.array([-np.pi / 4, -np.pi / 4, -np.pi / 2, np.pi / 4])
+            beta_max = np.array([ np.pi / 4,  np.pi / 4, -np.pi / 4, np.pi / 2])
+            lambda_min = np.array([Nz_jacobi[0, 1],             Nz_jacobi[0, 1] + lambda_sign*(np.pi / 2 + np.pi/16),  -np.pi,  -np.pi])
+            lambda_max = np.array([Nz_jacobi[0, 1] + lambda_sign*(np.pi / 2 + np.pi/16), Nz_jacobi[0, 1] + lambda_sign*3*np.pi / 2,   np.pi,   np.pi])
+            alpha_min = -np.pi * np.ones(np.sum(self.n_ele_free))
+            alpha_max =  np.pi * np.ones(np.sum(self.n_ele_free))
+
+            # rearrange reg_lam_center such that electrode array pairs for stim on opposite sites are coming next
+            # to each other in order
+            lb = np.ravel([beta_min, lambda_min, alpha_min], 'F')
+            ub = np.ravel([beta_max, lambda_max, alpha_max], 'F')
+
+            # sort bounds (min, max)
+            lbub = np.sort(np.vstack((lb, ub)), axis=0)
+            lb = lbub[0, :]
+            ub = lbub[1, :]
+
+            # write txt files with some points for visualization
+            beta_region_0 = np.linspace(lb[0], ub[0], 100)
+            beta_region_1 = np.linspace(lb[3], ub[3], 100)
+            beta_region_2 = np.linspace(lb[6], ub[6], 100)
+            beta_region_3 = np.linspace(lb[9], ub[9], 100)
+            lam_region_0 = np.linspace(lb[1], ub[1], 100)
+            lam_region_1 = np.linspace(lb[4], ub[4], 100)
+            lam_region_2 = np.linspace(lb[7], ub[7], 100)
+            lam_region_3 = np.linspace(lb[10], ub[10], 100)
+
+            coords_region_0_jac = np.array(np.meshgrid(beta_region_0, lam_region_0)).T.reshape(-1, 2)
+            coords_region_1_jac = np.array(np.meshgrid(beta_region_1, lam_region_1)).T.reshape(-1, 2)
+            coords_region_2_jac = np.array(np.meshgrid(beta_region_2, lam_region_2)).T.reshape(-1, 2)
+            coords_region_3_jac = np.array(np.meshgrid(beta_region_3, lam_region_3)).T.reshape(-1, 2)
+
+            coords_region_0 = self.ellipsoid.jacobi2cartesian(coords=coords_region_0_jac, return_normal=False)
+            coords_region_1 = self.ellipsoid.jacobi2cartesian(coords=coords_region_1_jac, return_normal=False)
+            coords_region_2 = self.ellipsoid.jacobi2cartesian(coords=coords_region_2_jac, return_normal=False)
+            coords_region_3 = self.ellipsoid.jacobi2cartesian(coords=coords_region_3_jac, return_normal=False)
+
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_0.txt"), coords_region_0)
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_1.txt"), coords_region_1)
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_3.txt"), coords_region_2)
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_4.txt"), coords_region_3)
+
+        else:
+            # beta, lambda, alpha
+            # order: [stim_1_array_1, stim_1_array_2, stim_2_array_1, stim_2_array_2, ... ]
+            lb = np.array([-np.pi / 2, -np.pi, -np.pi] * np.sum(self.n_ele_free))
+            ub = np.array([np.pi / 2, np.pi, np.pi] * np.sum(self.n_ele_free))
+
+        bounds = Bounds(lb=lb, ub=ub)
+
+        return bounds
+
+    def get_init_vals(self, bounds, optimize=True):
+        """
+        Determine initial values for optimization, guaranteeing a valid solution.
+
+        Parameters
+        ----------
+        bounds : Bounds instance
+            Lower and upper bounds of optimization problem
+        optimize : bool, optional, default: True
+            If True, find initial values for optimization, guaranteeing a valid solution. If False, initial values
+            are the center between bounds.
+
+        Returns
+        -------
+        x0 : ndarray of float [n_para]
+            Initial values
+        """
+
+        if optimize:
+            self.logger.log(20, "Finding optimal initial values for optimization")
+            n_max = 1000
+            n_para = len(bounds.lb)
+
+            # make a list of possible parameter combinations within bounds
+            para_test_grid = np.random.rand(1000, n_para)
+            para_test_grid = para_test_grid * (bounds.ub - bounds.lb) + bounds.lb
+
+            for i in range(n_max):
+                # reformat parameters
+                parameters_array = np.reshape(para_test_grid[i, :], (np.sum(self.n_ele_free), 3))
+                electrode_pos = [[] for _ in range(self.n_channel_stim)]
+
+                i_para = 0
+                for i_channel_stim in range(self.n_channel_stim):
+                    for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                        electrode_pos[i_channel_stim].append(parameters_array[i_para, :])
+                        i_para += 1
+
+                # test position
+                node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=False)
+                valid = np.array([type(n) is not str for n in node_idx_dict]).all()
+                self.logger.log(20, f"Testing position #{i + 1}: {para_test_grid[i, :]} -> {valid}")
+
+                if valid:
+                    return para_test_grid[i, :]
+
+        return np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
 
     def valid_skin_region(self, skin_surface, mesh):
         """
@@ -610,8 +766,7 @@ class TESoptimize():
                                                                                   surface=self.skin_surface)
 
             if len(ele_idx) != len(alpha):
-                # return "Electrode position: invalid (not all electrodes in valid skin region)"
-                print("Electrode position: invalid (not all electrodes in valid skin region)")
+                return "Electrode position: invalid (not all electrodes in valid skin region)"
 
         # i_ele = 0
         # ele_idx_rect = []
@@ -734,13 +889,15 @@ class TESoptimize():
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
         # estimate optimal electrode currents based on previous simulations
-        # current_pos = 0
-        # current_neg = 0
         # for i_channel_stim in range(self.n_channel_stim):
+        #     current_temp = []
+        #     current_pos = 0
+        #     current_neg = 0
+        #
         #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
         #         for _electrode in _electrode_array.electrodes:
         #             _electrode.estimate_currents(electrode_pos[i_channel_stim])
-        #
+        #             current_temp.append(_electrode.current)
         #             # sum up current for scaling
         #             # estimator does not know about real total current and has to be corrected
         #             if _electrode.current < 0:
@@ -748,18 +905,17 @@ class TESoptimize():
         #             else:
         #                 current_pos += _electrode.current
         #
-        # scale current to match total current
-        # current_temp = []
-        # for i_channel_stim in range(self.n_channel_stim):
+        #     # scale current to match total current
+        #     current_temp_scaled = []
         #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
         #         for _electrode in _electrode_array.electrodes:
         #             if _electrode.current < 0:
         #                 _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
         #             else:
         #                 _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
-        #             current_temp.append(_electrode.current)
-
-        # self.logger.log(20, f'Estimating currents: { *current_temp, }')
+        #             current_temp_scaled.append(_electrode.current)
+        #
+        #     self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp, }')
 
         return node_idx_dict
 
@@ -817,22 +973,20 @@ class TESoptimize():
 
             # plot field
             if plot:
-                for j in range(self.n_channel_stim):
-                    for i, _e in enumerate(e[j]):
-                        if _e is not None:
-                            import pynibs
+                for i, _e in enumerate(e[i_channel_stim]):
+                    if _e is not None:
+                        import pynibs
+                        pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                   points=self.roi[i].points,
+                                                   con=self.roi[i].con,
+                                                   replace=True,
+                                                   hdf5_path='/mesh')
 
-                            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                       points=self.roi[i].points,
-                                                       con=self.roi[i].con,
-                                                       replace=True,
-                                                       hdf5_path='/mesh')
-
-                            pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
-                                                        data_names=["E_mag"],
-                                                        data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{j}_roi_{i}_data.hdf5"),
-                                                        geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                        replace=True)
+                        pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
+                                                    data_names=["E_mag"],
+                                                    data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i}_data.hdf5"),
+                                                    geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
+                                                    replace=True)
 
         return e
 
@@ -890,6 +1044,7 @@ class TESoptimize():
         y : float
             Goal function value
         """
+        self.n_test += 1
         parameters_str = f"Parameters: {parameters}"
         self.logger.log(20, parameters_str)
 
@@ -910,14 +1065,16 @@ class TESoptimize():
         y = np.zeros((self.n_channel_stim, self.n_roi))     # shape: [n_channel_stim x n_roi]
 
         if e is None:
-            y = np.ones(self.n_roi)
+            self.logger.log(20, f"Goal ({self.goal}): 1.0")
+            return 1.0
         else:
             # mean electric field in the roi
             if self.goal == "mean":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        if e[i_channel_stim] is None:
-                            y[i_channel_stim, i_roi] = 1
+                        if e[i_channel_stim][i_roi] is None:
+                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                            return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
 
@@ -925,8 +1082,9 @@ class TESoptimize():
             elif self.goal == "max":
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_roi in range(self.n_roi):
-                        if e[i_channel_stim] is None:
-                            y[i_channel_stim, i_roi] = 1
+                        if e[i_channel_stim][i_roi] is None:
+                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                            return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
 
@@ -935,8 +1093,9 @@ class TESoptimize():
                 for i_roi in range(self.n_roi):
                     # gather fields with different frequencies
                     for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim] is None:
-                            y[i_channel_stim, i_roi] = 1
+                        if e[i_channel_stim][i_roi] is None:
+                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                            return 1.0
                     y[0, i_roi] = np.mean(get_maxTI(E1_org=e[0, i_roi], E2_org=e[1, i_roi]))
                     y[1, i_roi] = y[0, i_roi]
 
@@ -945,8 +1104,9 @@ class TESoptimize():
                 for i_roi in range(self.n_roi):
                     # gather fields with different frequencies
                     for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim] is None:
-                            y[i_channel_stim, i_roi] = 1
+                        if e[i_channel_stim][i_roi] is None:
+                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                            return 1.0
                     y[0, i_roi] = np.mean(get_dirTI(E1=e[0, i_roi], E2=e[1, i_roi], dirvec_org=self.goal_dir))
                     y[1, i_roi] = y[0, i_roi]
             else:
@@ -957,8 +1117,9 @@ class TESoptimize():
 
         # weight and sum the goal function values of the ROIs
         y_weighted_sum = np.sum(y * self.weights)
+        self.n_sim += 1
 
-        self.logger.log(20, f"Goal ({self.goal}): {y_weighted_sum:.3f}")
+        self.logger.log(20, f"Goal ({self.goal}): {y_weighted_sum:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
         self.logger.log(20, "-"*len(parameters_str))
 
         return y_weighted_sum
@@ -982,23 +1143,64 @@ class TESoptimize():
                             vol_tol=self.optimizer_options["vol_tol"],
                             len_tol=self.optimizer_options["len_tol"],
                             f_min_rtol=self.optimizer_options["f_min_rtol"],
-                            maxiter=self.optimizer_options["maxiter"])
+                            maxiter=self.optimizer_options["maxiter"],
+                            locally_biased=self.optimizer_options["locally_biased"])
 
-            # reformat parameters
-            parameters_array = np.reshape(result.x, (np.sum(self.n_ele_free), 3))
-            self.electrode_pos_opt = [[] for _ in range(self.n_channel_stim)]
+        elif self.optimizer == "Nelder-Mead":
+            result = minimize(self.run, self.optimizer_options["init_vals"],
+                              method='Nelder-Mead',
+                              bounds=self.optimizer_options["bounds"],
+                              options={"disp": self.optimizer_options["disp"]})
 
-            i_para = 0
-            for i_channel_stim in range(self.n_channel_stim):
-                for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                    self.electrode_pos_opt[i_channel_stim].append(parameters_array[i_para, :])
-                    i_para += 1
+        elif self.optimizer == "differential_evolution":
+            result = differential_evolution(self.run,
+                                            x0=self.optimizer_options["init_vals"],
+                                            strategy='best1bin',
+                                            recombination=self.optimizer_options["recombination"],
+                                            mutation=self.optimizer_options["mutation"],
+                                            tol=self.optimizer_options["tol"],
+                                            maxiter=self.optimizer_options["maxiter"],
+                                            popsize=self.optimizer_options["popsize"],
+                                            bounds=self.optimizer_options["bounds"],
+                                            disp=self.optimizer_options["disp"],
+                                            polish=False)  # we will decide if to polish afterwards
 
-            fopt = result.fun
-            nfev = result.nfev
-            self.logger.log(20, f"Optimization finished! Best electrode position: {self.electrode_pos_opt}")
+        elif self.optimizer == "shgo":
+            result = shgo(self.run,
+                          bounds=self.optimizer_options["bounds"],
+                          options={"disp": self.optimizer_options["disp"]})
+
+        elif self.optimizer == "basinhopping":
+            result = basinhopping(self.run,
+                                  x0=self.optimizer_options["init_vals"],
+                                  disp=self.optimizer_options["disp"])
         else:
             raise NotImplementedError(f"Specified optimization method: '{self.optimizer}' not implemented.")
+
+        self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
+
+        # polish optimization
+        ################################################################################################################
+        if self.polish:
+            self.logger.log(20, f"Polishing optimization results!")
+            result = minimize(self.run,
+                              x0=result.x,
+                              method='L-BFGS-B',
+                              bounds=self.optimizer_options["bounds"])
+            self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
+
+        # reformat parameters
+        parameters_array = np.reshape(result.x, (np.sum(self.n_ele_free), 3))
+        self.electrode_pos_opt = [[] for _ in range(self.n_channel_stim)]
+
+        i_para = 0
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                self.electrode_pos_opt[i_channel_stim].append(parameters_array[i_para, :])
+                i_para += 1
+
+        fopt = result.fun
+        nfev = result.nfev
 
         stop = time.time()
         t_optimize = stop - start
@@ -1019,31 +1221,13 @@ class TESoptimize():
                                   time=t_optimize,
                                   msh=self.mesh,
                                   electrode=self.electrode,
-                                  goal=self.goal)
-
-        # plot skin surface
-        import pynibs
-        pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
-                                   points=self.skin_surface.nodes,
-                                   con=self.skin_surface.tr_nodes,
-                                   replace=True,
-                                   hdf5_path='/mesh')
-
-        pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
-                                    data_names=["domain"],
-                                    data_hdf_fn_out=os.path.join(self.plot_folder, f"skin_surface_data.hdf5"),
-                                    geo_hdf_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
-                                    replace=True)
-
-        # save fitted ellipsoid
-        beta = np.linspace(-np.pi / 2, np.pi / 2, 180)
-        lam = np.linspace(0, 2 * np.pi, 360)
-        coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
-        eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
-        np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords_jac)
+                                  goal=self.goal,
+                                  n_test=self.n_test,
+                                  n_sim=self.n_sim)
 
 
-def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, nfev, e, time, msh, electrode, goal):
+def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, nfev, e, time, msh, electrode, goal,
+                              n_test=None, n_sim=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
 
@@ -1069,7 +1253,11 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
     electrode : list of ElectrodeArray objects [n_channel_stim]
         List of ElectrodeArray objects for every stimulation
     goal : str
-
+        Goal function definition
+    n_test : int, optional, default: None
+        Number of runs to place the electrodes
+    n_sim : int, optional, default: None
+        Number of actual FEM simulations (for valid electrode placements only)
     """
 
     def sep(x):
@@ -1140,6 +1328,12 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         f.write(f"nfev: {nfev}\n")
         f.write(f"fopt: {fopt}\n")
 
+        if n_sim is not None:
+            f.write(f"n_sim: {n_sim}\n")
+
+        if n_test is not None:
+            f.write(f"n_test: {n_test}\n")
+
     # save optimization settings and results in <fname>.hdf5 file
     ####################################################################################################################
     with h5py.File(fname_hdf5, "w") as f:
@@ -1155,6 +1349,12 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         f.create_dataset(data=nfev, name="optimizer/nfev")
         f.create_dataset(data=time, name="optimizer/time")
         f.create_dataset(data=goal, name="optimizer/goal")
+
+        if n_sim is not None:
+            f.create_dataset(data=n_sim, name="optimizer/n_sim")
+
+        if n_test is not None:
+            f.create_dataset(data=n_test, name="optimizer/n_test")
 
         for key in optimizer_options:
             if type(optimizer_options[key]) is Bounds:
