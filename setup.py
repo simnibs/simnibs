@@ -81,22 +81,27 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 '''
 
 # Information for CGAL download
-CGAL_version = '5.4'
+# CGAL_version = '5.4'
+CGAL_version = '5.6'
 CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
-CGAL_url = (
-    f'https://github.com/CGAL/cgal/releases/download/'
-    #f'releases/CGAL-{CGAL_version}/'
-    f'v{CGAL_version}/'
-    f'CGAL-{CGAL_version}-library.zip'
-)
+# CGAL_url = (
+#     f'https://github.com/CGAL/cgal/releases/download/'
+#     #f'releases/CGAL-{CGAL_version}/'
+#     f'v{CGAL_version}/'
+#     f'CGAL-{CGAL_version}-library.zip'
+# )
+CGAL_url = ("https://github.com/CGAL/cgal/archive/refs/heads/master.zip")
+
 cgal_mesh_macros = [
     ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
     ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
     ('CGAL_CONCURRENT_MESH_3', None),
     ('CGAL_EIGEN3_ENABLED', None),
     ('CGAL_USE_ZLIB', 1),
-    ('CGAL_LINKED_WITH_TBB', None)
+    ('CGAL_LINKED_WITH_TBB', None),
+    ('CGAL_DIR', os.path.abspath(f'CGAL-{CGAL_version}/git'))
 ]
+
 
 # Information for eigen library
 # I don't download it because gitlab does not allow it
@@ -418,7 +423,7 @@ class build_ext_(build_ext):
             )
         )
         if self.force or changed_meshing:
-            download_and_extract(CGAL_url)
+            # download_and_extract(CGAL_url)
             install_lib(tbb_url, tbb_path, tbb_libs)
         # Compile
         build_ext.run(self)

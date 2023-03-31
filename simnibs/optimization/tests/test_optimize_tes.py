@@ -34,7 +34,20 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-# electrode = simnibs.CircularArray(radius_inner=6, distance=20, n_outer=4, radius_outer=5)
+electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10)
+constrain_electrode_locations = False
+overlap_factor = 1.
+
+# create 1 x 1 standard TES montage
+########################################################################################################################
+# center = np.array([[0, 0, 0]])
+# radius = np.array([0])
+# length_x = np.array([40])
+# length_y = np.array([40])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# constrain_electrode_locations = False
+# overlap_factor = 1.
+# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
@@ -63,24 +76,24 @@ print("Initializing Electrode ...")
 # radius = np.array([7, 7, 7])
 # length_x = np.array([0, 0, 0])
 # length_y = np.array([0, 0, 0])
-center = np.array([[-30, 20, 0],
-                    [0, 20, 0],
-                    [30, 20, 0],
-                    [-30, 0, 0],
-                    [0, 0, 0],
-                    [30, 0, 0],
-                    [-30, -20, 0],
-                    [0, -20, 0],
-                    [30, -20, 0]])
-radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-
-electrode = [electrode_1, electrode_2]
-constrain_electrode_locations = True
-overlap_factor = 1.
+# center = np.array([[-30, 20, 0],
+#                     [0, 20, 0],
+#                     [30, 20, 0],
+#                     [-30, 0, 0],
+#                     [0, 0, 0],
+#                     [30, 0, 0],
+#                     [-30, -20, 0],
+#                     [0, -20, 0],
+#                     [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+# electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+#
+# electrode = [electrode_1, electrode_2]
+# constrain_electrode_locations = True
+# overlap_factor = 1.
 
 # electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
@@ -127,7 +140,7 @@ roi = simnibs.RegionOfInterest(points=points, con=con, mesh=mesh)
 # roi = None
 # plt.spy(roi.sF)
 
-min_electrode_distance = 1.
+min_electrode_distance = 10
 weights = [1]
 optimizer_options = {"maxiter": 1000,
                      "disp": True,
@@ -144,14 +157,14 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      init_pos=init_pos,
                                      output_folder=output_folder,
                                      plot=True,
-                                     optimizer="shgo",  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
+                                     optimizer="differential_evolution",  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
                                      optimizer_options=optimizer_options,
                                      min_electrode_distance=min_electrode_distance,
                                      weights=weights,
                                      goal="mean",
                                      constrain_electrode_locations=constrain_electrode_locations,
                                      overlap_factor=overlap_factor,
-                                     optimize_init_vals=False)
+                                     optimize_init_vals=True)
 
 # pynibs.plot_surface(data=np.arange(len(opt.skin_surface.surf2msh_triangles)),
 #                     con=opt.mesh.elm.node_number_list[opt.skin_surface.surf2msh_triangles, :3],

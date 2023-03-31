@@ -403,6 +403,8 @@ class ElectrodeArrayPair():
 
         if len(self.channel_id) != len(self.channel_id_unique):
             self.dirichlet_correction = True
+        else:
+            self.dirichlet_correction = False
 
         if current is None:
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),

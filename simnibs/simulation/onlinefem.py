@@ -107,7 +107,10 @@ class OnlineFEM:
             self.solver_options = solver_options
 
         # creating logger
-        self.logger = setup_logger(os.path.join(os.path.split(fn_results)[0], "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
+        if fn_results is not None:
+            self.logger = setup_logger(os.path.join(os.path.split(fn_results)[0], "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
+        else:
+            self.logger = None
 
         # read mesh or store in self
         if type(mesh) is str:
@@ -142,7 +145,9 @@ class OnlineFEM:
                                  logger=self.logger)
                 # scale field to make it more appropriate for matrix solve
                 self.coil.a_field *= 1e9
-                self.logger.info(f'Loaded coil from file: {self.fn_coil}')
+
+                if self.logger:
+                    self.logger.info(f'Loaded coil from file: {self.fn_coil}')
 
         # prepare electrode for TES
         ################################################################################################################
@@ -208,7 +213,8 @@ class OnlineFEM:
             for i_roi, r in enumerate(self.roi):
                 if self.v is None:
                     self.e[i_sim][i_roi] = None
-                    self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
+                    if self.logger is not None:
+                        self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
                 else:
                     self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType)
 
@@ -230,7 +236,8 @@ class OnlineFEM:
 
             stop = time.time()
 
-            self.logger.info(f"Finished simulation #{i_sim + 1}/{n_sim} (time: {(stop-start):.3f}s).")
+            if self.logger is not None:
+                self.logger.info(f"Finished simulation #{i_sim + 1}/{n_sim} (time: {(stop-start):.3f}s).")
 
         return self.e
 

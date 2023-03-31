@@ -949,7 +949,7 @@ class TESoptimize():
             if type(node_idx_dict[i_channel_stim]) is str:
                 self.logger.log(20, node_idx_dict)
                 return None
-            self.logger.log(20, "Electrode position: valid")
+            self.logger.log(20, f"Electrode position for stimulation {i_channel_stim}: valid")
 
             # set RHS
             b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
@@ -989,45 +989,6 @@ class TESoptimize():
                                                     replace=True)
 
         return e
-
-        # determine QOIs in ROIs
-
-        # if normalize:
-        #     v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
-        #
-        #     v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
-        #     for k in range(len(I)):
-        #         vn = (v_elec[k] - np.mean(v_elec[k])) / np.std(v_mean)
-        #         In = (I[k] - np.mean(I[k])) / np.mean(I[k])
-        #
-        #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
-        #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
-
-    # def solve(self, node_idx, I, v_norm, I_norm):
-    #     """
-    #
-    #     :param node_idx:
-    #     :param I:
-    #     :param v_norm:
-    #     :param I_norm:
-    #     :return:
-    #     """
-    #     # set RHS (in fem.py, check for speed)
-    #     b = self.fem.assemble_tdcs_neumann_rhs(electrodes=node_idx, currents=TODO, input_type='node', areas=TODO)
-    #     # solve
-    #     v = self.fem.solve(b)
-    #
-    #     v_elec = [v[self.array_layout_node_idx[k] - 1] for k in range(len(I))]
-    #
-    #     v_mean = [np.mean(v_elec[k]) for k in range(len(I))]
-    #     for k in range(len(I)):
-    #         vn = (v_elec[k] - np.mean(v_elec[k])) / np.std(v_mean)
-    #         In = (I[k] - np.mean(I[k])) / np.mean(I[k])
-    #
-    #         v_norm[k] = np.append(v_norm[k], vn.reshape(1, len(vn)), axis=0)
-    #         I_norm[k] = np.append(I_norm[k], In.reshape(1, len(In)), axis=0)
-    #
-    #     return v, v_elec, v_norm, I_norm
 
     def run(self, parameters):
         """
@@ -1186,7 +1147,9 @@ class TESoptimize():
             result = minimize(self.run,
                               x0=result.x,
                               method='L-BFGS-B',
-                              bounds=self.optimizer_options["bounds"])
+                              bounds=self.optimizer_options["bounds"],
+                              jac='2-point',
+                              options={"finite_diff_rel_step": 0.01})
             self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
 
         # reformat parameters
