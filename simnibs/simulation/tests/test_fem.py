@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 from unittest.mock import patch
@@ -67,6 +68,21 @@ def rdm(a, b):
 
 def mag(a, b):
     return np.abs(np.log(np.linalg.norm(a) / np.linalg.norm(b)))
+
+
+def cube_msh_all_nodes_at_tag(m, tag):
+    return np.unique(m.elm[m.elm.tag1 == tag, :3])
+
+def cube_msh_center_node_at_tag(m, tag):
+    index = np.unique(m.elm[m.elm.tag1 == tag,:3])
+    a = np.linalg.norm(m.nodes[index]-m.nodes.node_coord.mean(0), axis=1).argmin()
+    return index[a]
+
+def cube_msh_center_tri_nodes_at_tag(m, tag):
+    index = m.elm[m.elm.tag1 == tag,:3]
+    mesh = m.nodes[index]
+    center_tri = np.linalg.norm(mesh.mean(1)-mesh.mean((0,1)), axis=1).argmin()
+    return index[center_tri]
 
 
 class TestCalcJ:
@@ -295,8 +311,8 @@ class TestFEMSystem:
 
     def test_set_up_tms(self, tms_sphere):
         m, cond, dAdt, E_analytical = tms_sphere
-        S = fem.FEMSystem.tms(m, cond)
-        b = S.assemble_tms_rhs(dAdt)
+        S = fem.TMSFEM(m, cond)
+        b = S.assemble_rhs(dAdt)
         x = spalg.spsolve(S.A, b)
         v = mesh_io.NodeData(x, 'FEM', mesh=m)
         E = -v.gradient().value * 1e3 - dAdt.node_data2elm_data().value
@@ -364,8 +380,8 @@ class TestFEMSystem:
 
     def test_solve_petsc(self, tms_sphere):
         m, cond, dAdt, E_analytical = tms_sphere
-        S = fem.FEMSystem.tms(m, cond)
-        b = S.assemble_tms_rhs(dAdt)
+        S = fem.TMSFEM(m, cond)
+        b = S.assemble_rhs(dAdt)
         x = S.solve(b)
         v = mesh_io.NodeData(x, 'FEM', mesh=m)
         E = -v.gradient().value * 1e3 - dAdt.node_data2elm_data().value
@@ -386,7 +402,7 @@ class TestFEMSystem:
         cond = mesh_io.ElementData(cond)
         el_tags = [1100, 1101]
         potentials = [1, -1]
-        S = fem.FEMSystem.tdcs(m, cond, el_tags, potentials)
+        S = fem.TDCSFEMDirichlet(m, cond, el_tags, potentials)
         x = S.solve()
         sol = m.nodes.node_coord[:, 1]/50.
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
@@ -394,15 +410,15 @@ class TestFEMSystem:
         assert rdm(sol, x.T) < .1
         assert np.abs(mag(x, sol)) < np.log(1.1)
 
-    def test_solve_assemble_neumann_petsc(self, cube_msh):
+    def test_solve_assemble_neumann_tag(self, cube_msh):
         m = cube_msh
         cond = np.ones(m.elm.nr)
         cond[m.elm.tag1 > 5] = 25
         cond = mesh_io.ElementData(cond)
         el_tags = [1100, 1101]
         currents = [1, -1]
-        S = fem.FEMSystem.tdcs_neumann(m, cond, el_tags[0])
-        b = S.assemble_tdcs_neumann_rhs(el_tags[1:], currents[1:])
+        S = fem.TDCSFEMNeumann(m, cond, el_tags[0])
+        b = S.assemble_rhs(el_tags[1:], currents[1:])
         x = S.solve(b)
         sol = (m.nodes.node_coord[:, 1] - 50) / 10
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
@@ -410,16 +426,28 @@ class TestFEMSystem:
         assert rdm(sol, x.T) < .1
         assert np.abs(mag(x, sol)) < np.log(1.5)
 
-    def test_solve_assemble_neumann_nodes(self, cube_msh):
+    @pytest.mark.parametrize('current_type', ["float", "list"])
+    def test_solve_assemble_neumann_nodes(self, current_type, cube_msh):
         m = cube_msh
         cond = np.ones(m.elm.nr)
         cond[m.elm.tag1 > 5] = 25
         cond = mesh_io.ElementData(cond)
-        currents = [1, -1]
-        nodes_top = np.unique(m.elm[m.elm.tag1 == 1100, :3])
-        nodes_bottom = np.unique(m.elm[m.elm.tag1 == 1101, :3])
-        S = fem.FEMSystem.tdcs_neumann(m, cond, nodes_top, input_type='node')
-        b = S.assemble_tdcs_neumann_rhs(nodes_bottom, currents[1:], input_type='node')
+
+        nodes_top = cube_msh_all_nodes_at_tag(m, 1100)
+        nodes_bottom = cube_msh_all_nodes_at_tag(m, 1101)
+
+        if current_type == "float":
+            currents = [1, -1]
+            weigh_by_area=True
+        elif current_type == "list":
+            # this is similar to "float" except that we weigh each node equally
+            # whereas they are weighted by area in the other condition
+            currents = [np.ones_like(nodes_top)/nodes_top.size, -np.ones_like(nodes_bottom)/nodes_bottom.size]
+            weigh_by_area=False
+        else:
+            raise ValueError
+        S = fem.TDCSFEMNeumann(m, cond, nodes_top, input_type="nodes", weigh_by_area=weigh_by_area)
+        b = S.assemble_rhs(nodes_bottom, currents[1:])
         x = S.solve(b)
         sol = (m.nodes.node_coord[:, 1] - 50) / 10
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
@@ -437,8 +465,8 @@ class TestFEMSystem:
         cond = mesh_io.ElementData(cond.reshape(-1, 9))
         el_tags = [1100, 1101]
         currents = [1, -1]
-        S = fem.FEMSystem.tdcs_neumann(m, cond, el_tags[0])
-        b = S.assemble_tdcs_neumann_rhs(el_tags[1:], currents[1:])
+        S = fem.TDCSFEMNeumann(m, cond, el_tags[0])
+        b = S.assemble_rhs(el_tags[1:], currents[1:])
         x = S.solve(b)
         sol = (m.nodes.node_coord[:, 1] - 50) / 10
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
@@ -450,7 +478,7 @@ class TestFEMSystem:
         m = cube_msh
         cond = np.ones(m.elm.nr)
         cond = mesh_io.ElementData(cond)
-        S = fem.FEMSystem.tdcs_neumann(m, cond, 1100)
+        S = fem.TDCSFEMNeumann(m, cond, 1100)
 
         z = m.nodes.node_coord[:, 0]
         assert np.allclose(S.calc_gradient(z), [1, 0, 0])
@@ -490,6 +518,7 @@ class TestTDCS:
 
     def test_tdcs_petsc_3_el(self, cube_msh):
         m = cube_msh
+        areas = m.nodes_areas()
         cond = np.ones(m.elm.nr)
         cond[m.elm.tag1 > 5] = 1e3
         cond = mesh_io.ElementData(cond)
@@ -611,11 +640,12 @@ class TestLeadfield:
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('field', ['E', 'J'])
     @pytest.mark.parametrize('n_workers', [1, 2])
-    @pytest.mark.parametrize('input_type', ['tag', 'point'])
+    @pytest.mark.parametrize('input_type', ['tag', 'nodes'])
     def test_leadfield(self, input_type, n_workers, field, post_pro, cube_msh):
         if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows or MacOS'''
             return
+
         m = cube_msh
         cond = np.ones(m.elm.nr)
         cond[m.elm.tag1 > 5] = 1e3
@@ -623,9 +653,26 @@ class TestLeadfield:
         if input_type == 'tag':
             el = [1100, 1101, 1101]
             current = 1.0
-        elif input_type == 'point':
-            el = [m.elm[m.elm.tag1 == i, :3][0] for i in [1100, 1101, 1101]]
-            current = 2*[[0.2, 0.3, 0.5]]
+            weigh_by_area = True
+        elif input_type == 'nodes':
+            # Multiple (three) nodes per electrode, explicit current input, no
+            # area weighting (nodes of center triangle)
+            el = [cube_msh_center_tri_nodes_at_tag(m, i) for i in [1100, 1101]]
+            el.append(el[-1])
+            current = 2*[[0.3, 0.3, 0.4]]
+            weigh_by_area = False
+
+            # Single node per electrode (center node)
+            # el = [cube_msh_center_node_at_tag(m, i) for i in [1100, 1101]]
+            # el.append(el[-1])
+            # current = 1.
+            # weigh_by_area = False
+
+            # Multiple (all) nodes per electrode, single current
+            # el = [cube_msh_all_nodes_at_tag(m, i) for i in [1100, 1101]]
+            # el.append(el[-1])
+            # current = 1.
+            # weigh_by_area = True
 
         fn_hdf5 = tempfile.NamedTemporaryFile(delete=False).name
         dataset = 'leadfield'
@@ -642,7 +689,8 @@ class TestLeadfield:
             field=field,
             post_pro=post,
             n_workers=n_workers,
-            input_type=input_type
+            input_type=input_type,
+            weigh_by_area = weigh_by_area,
         )
 
         if not post_pro:
@@ -702,9 +750,11 @@ class TestTMSMany:
         os.remove(fn_hdf5)
 
 class TestDipole:
+    # st. venant fails with dipole [80,0,0], [1,0,0]!
+    @pytest.mark.parametrize('source_model', ["partial integration"])#, "st. venant"])
     @pytest.mark.parametrize('pos_target', [[50, 0, 0], [80, 0, 0]])
     @pytest.mark.parametrize('dipole_direction', [[0, 1, 0], [1, 0, 0]])
-    def test_single_dipole(self, dipole_direction, pos_target, sphere3_msh):
+    def test_single_dipole(self, source_model, dipole_direction, pos_target, sphere3_msh):
         bar = sphere3_msh.elements_baricenters()[sphere3_msh.elm.tetrahedra]
         dipole_th = np.argmin(np.linalg.norm(pos_target - bar, axis=1))
         dipole_pos = bar[dipole_th]
@@ -719,13 +769,44 @@ class TestDipole:
 
         cond = 2 * np.ones(sphere3_msh.elm.nr)
         cond[sphere3_msh.elm.tag1 == 4] = 0.1
-        numerical_v = fem.electric_dipole(sphere3_msh, cond, pos_target, dipole_direction)
+        numerical_v = fem.electric_dipole(
+            sphere3_msh, cond, pos_target, dipole_direction, source_model,
+        )
         numerical_v = numerical_v[0, surface_nodes - 1]
 
         analytical_v -= np.average(analytical_v)
         numerical_v -= np.average(numerical_v)
         assert rdm(analytical_v, numerical_v) < 0.2
         assert mag(analytical_v, numerical_v) < 0.15
+
+    def test_single_dipole_units(self, sphere3_msh):
+        """Test unit specification."""
+        source_model = "partial integration"
+        dip_pos = np.array([50, 0, 0], dtype=float)
+        dip_mom = np.array([0, 1, 0], dtype=float) # always interpreted as m!
+
+        surface_nodes = np.unique(sphere3_msh.elm[sphere3_msh.elm.tag1 == 1005, :3])
+
+        cond = 2 * np.ones(sphere3_msh.elm.nr)
+        cond[sphere3_msh.elm.tag1 == 4] = 0.1
+
+        # mesh and dip_pos in mm
+        v_mm = fem.electric_dipole(
+            sphere3_msh, cond, dip_pos, dip_mom, source_model, units="mm"
+        )
+        v_mm = v_mm[0, surface_nodes - 1]
+
+        # mesh and dip_pos in m
+        dip_pos *= 1e-3
+        sphere3_msh_m = copy.deepcopy(sphere3_msh)
+        sphere3_msh_m.nodes.node_coord *= 1e-3
+
+        v_m = fem.electric_dipole(
+            sphere3_msh_m, cond, dip_pos, dip_mom, source_model, units="m"
+        )
+        v_m = v_m[0, surface_nodes - 1]
+
+        np.testing.assert_allclose(v_mm, v_m)
 
     def test_many_dipoles(self, sphere3_msh):
         positions = [[60, 0, 0], [0, 80, 0]]
@@ -750,7 +831,7 @@ class TestDipole:
         cond = 2 * np.ones(sphere3_msh.elm.nr)
         cond[sphere3_msh.elm.tag1 == 4] = 0.1
         numerical_v = fem.electric_dipole(
-            sphere3_msh, cond, dipole_pos, moments
+            sphere3_msh, cond, dipole_pos, moments, "partial integration"
         )[:, surface_nodes - 1]
 
         for a_v, n_v in zip(analytical_v, numerical_v):

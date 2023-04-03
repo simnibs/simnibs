@@ -2651,6 +2651,7 @@ class TDCSLEADFIELD(LEADFIELD):
             scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
             input_type = 'tag'
             current = 1.0
+            weigh_by_area = True
         else:
             # Current is injected at the nodes of the triangle on which an
             # electrode is projected weighted by the resulting barycentric
@@ -2670,7 +2671,8 @@ class TDCSLEADFIELD(LEADFIELD):
             )
             electrode_surfaces = surf["tris"][tris] + 1 # back to 1 indexing...
             current = weights[1:]
-            input_type = "point"
+            input_type = "nodes"
+            weigh_by_area = False
 
             # For debugging
 
@@ -2700,12 +2702,12 @@ class TDCSLEADFIELD(LEADFIELD):
             if isinstance(self.interpolation, str):
                 if self.interpolation == 'middle gm':
                     sub_files = SubjectFiles(self.fnamehead, self.subpath)
-                    for hemi in sub_files.regions:
+                    for hemi in sub_files.hemispheres:
                         interp_to.append(
                             mesh_io.read(
                                 sub_files.get_surface(
-                                    hemi,
                                     'central',
+                                    hemi,
                                     self.interpolation_subsampling)
                                     )
                         )
@@ -2789,7 +2791,8 @@ class TDCSLEADFIELD(LEADFIELD):
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
             n_workers=cpus,
-            input_type=input_type
+            input_type=input_type,
+            weigh_by_area=weigh_by_area,
         )
 
         with h5py.File(fn_hdf5, 'a') as f:
