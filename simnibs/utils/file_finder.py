@@ -415,17 +415,22 @@ class SubjectFiles:
         if not self.subpath:
             self.subpath = ""
 
-        self.tensor_file = os.path.join(self.subpath, "DTI_coregT1_tensor.nii.gz")
+        # top level
 
-        self.eeg_cap_folder = os.path.join(self.subpath, "eeg_positions")
-        self.eeg_cap_1010 = self.get_eeg_cap()
-
-        self.segmentation_folder = os.path.join(self.subpath, "segmentation")
-        self.surface_folder = os.path.join(self.subpath, "surfaces")
-        self.label_prep_folder = os.path.join(self.subpath, "label_prep")
-
-        # Stuff for volume transformations
         self.reference_volume = os.path.join(self.subpath, "T1.nii.gz")
+        self.T2_reg = os.path.join(self.subpath, "T2_reg.nii.gz")
+
+        self.settings = os.path.join(self.subpath, "settings.ini")
+        self.charm_log = os.path.join(self.subpath, "charm_log.html")
+        self.summary_report = os.path.join(self.subpath, "charm_report.html")
+        # self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
+
+        self.final_labels = os.path.join(self.subpath, "final_tissues.nii.gz")
+        self.tensor_file = os.path.join(self.subpath, "DTI_coregT1_tensor.nii.gz")
+        self.ref_fs = True  # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
+
+        # transformations
+
         self.mni_transf_folder = os.path.join(self.subpath, "toMNI")
 
         self.mni2conf_nonl = os.path.join(
@@ -450,15 +455,10 @@ class SubjectFiles:
         if os.path.isfile(self.mni2conf_12dof + ".mat"):
             self.mni2conf_12dof += ".mat"
 
-        self.hemispheres = HEMISPHERES
+        # segmentation
 
-        self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
-        self.surfaces = {s: {h: self.get_surface(s, h) for h in self.hemispheres} for s in self._standard_surfaces}
+        self.segmentation_folder = os.path.join(self.subpath, "segmentation")
 
-        self._standard_morph_data = ("thickness", )
-        self.morph_data = {d: {h: self.get_morph_data(d, h) for h in self.hemispheres} for d in self._standard_morph_data}
-
-        self.T2_reg = os.path.join(self.subpath, "T2_reg.nii.gz")
         self.T1_denoised = os.path.join(self.segmentation_folder, "T1_denoised.nii.gz")
         self.T2_reg_denoised = os.path.join(
             self.segmentation_folder, "T2_reg_denoised.nii.gz"
@@ -470,10 +470,14 @@ class SubjectFiles:
             self.segmentation_folder, "T2_bias_corrected.nii.gz"
         )
         self.labeling = os.path.join(self.segmentation_folder, "labeling.nii.gz")
-        self.final_labels = os.path.join(self.subpath, "final_tissues.nii.gz")
         self.template_coregistered = os.path.join(
             self.segmentation_folder, "template_coregistered.mgz"
         )
+
+        # labels
+
+        self.label_prep_folder = os.path.join(self.subpath, "label_prep")
+
         self.T1_upsampled = os.path.join(self.label_prep_folder, "T1_upsampled.nii.gz")
         self.T2_upsampled = os.path.join(self.label_prep_folder, "T2_upsampled.nii.gz")
         self.tissue_labeling_upsampled = os.path.join(
@@ -483,17 +487,31 @@ class SubjectFiles:
             self.label_prep_folder, "before_morpho.nii.gz"
         )
         self.upper_mask = os.path.join(self.label_prep_folder, "upper_part.nii.gz")
-        self.settings = os.path.join(self.subpath, "settings.ini")
+
+        # surfaces
+
+        self.surface_folder = os.path.join(self.subpath, "surfaces")
+
         self.cereb_mask = os.path.join(self.surface_folder, "cereb_mask.nii.gz")
         self.norm_image = os.path.join(self.surface_folder, "norm_image.nii.gz")
         self.subcortical_mask = os.path.join(
             self.surface_folder, "subcortical_mask.nii.gz"
         )
         self.hemi_mask = os.path.join(self.surface_folder, "hemi_mask.nii.gz")
-        self.charm_log = os.path.join(self.subpath, "charm_log.html")
-        self.summary_report = os.path.join(self.subpath, "charm_report.html")
-        # self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
-        self.ref_fs = True  # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
+
+        self.hemispheres = HEMISPHERES
+
+        self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
+        self.surfaces = {s: {h: self.get_surface(s, h) for h in self.hemispheres} for s in self._standard_surfaces}
+
+        self._standard_morph_data = ("thickness", )
+        self.morph_data = {d: {h: self.get_morph_data(d, h) for h in self.hemispheres} for d in self._standard_morph_data}
+
+        # eeg
+
+        self.eeg_cap_folder = os.path.join(self.subpath, "eeg_positions")
+        self.eeg_cap_1010 = self.get_eeg_cap()
+
 
     def get_eeg_cap(self, cap_name: str = "EEG10-10_UI_Jurak_2007.csv") -> str:
         """Gets the name of an EEG cap for this subject
