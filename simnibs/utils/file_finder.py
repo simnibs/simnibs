@@ -22,11 +22,10 @@ from typing import Union
 import sys
 import os
 import re
-import glob
-import collections
+from collections import namedtuple
 from pathlib import Path
 import numpy as np
-
+import nibabel
 from .. import SIMNIBSDIR
 
 __all__ = [
@@ -37,8 +36,14 @@ __all__ = [
     "coil_models",
 ]
 
-HEMISPHERES = {"lh", "rh"}
-VALID_HEMI = HEMISPHERES.union({"both"})
+# This defines hemisphere names as well as their order!
+HEMISPHERES = ["lh", "rh"]
+
+# map input resolution to fsaverage name
+fs_surfaces = ["central", "sphere"]
+fs_resolutions = [None, 10, 40, 160]
+fs_resolutions_names = ["", "10k", "40k", ""]
+fs_res_mapper = dict(zip(fs_resolutions, fs_resolutions_names))
 
 
 class Templates:
@@ -64,21 +69,32 @@ class Templates:
     """
 
     def __init__(self):
+        self.fsaverage_resolutions = fs_resolutions
+
         self._resources = os.path.join(SIMNIBSDIR, "resources")
 
-        # atlases in fsaverage space
-        self.atlases_surfaces = os.path.join(
-            self._resources, "templates", "fsaverage_atlases"
-        )
+        for res in self.fsaverage_resolutions:
+            if res is None:
+                continue
+            resstr = fs_res_mapper[res]
+            # path to fsaverage surfaces
+            setattr(
+                self,
+                f"freesurfer_templates{resstr}",
+                os.path.join(self._resources, "templates", f"fsaverage{resstr}_surf"),
+            )
+            # atlases in fsaverage space
+            setattr(
+                self,
+                f"atlases_surfaces{resstr}",
+                os.path.join(
+                    self._resources, "templates", f"fsaverage{resstr}_atlases"
+                ),
+            )
 
         # MNI
         self.mni_volume = os.path.join(
             self._resources, "templates", "MNI152_T1_1mm.nii.gz"
-        )
-
-        # path to fsaverage surfaces
-        self.freesurfer_templates = os.path.join(
-            self._resources, "templates", "fsaverage_surf"
         )
 
         # SimNIBS logo
@@ -116,7 +132,7 @@ class Templates:
         if not f.exists():
             raise FileNotFoundError
         return f
-    
+
 
 templates = Templates()
 coil_models = os.path.join(SIMNIBSDIR, "resources", "coil_models")
@@ -186,7 +202,9 @@ def get_atlas(atlas_name, hemi="both"):
         raise ValueError("Invalid hemisphere name")
 
 
-def get_reference_surf(region, surf_type="central", resolution: Union[None, int] = None):
+def get_reference_surf(
+    surf_type, region, resolution: Union[None, int] = None
+):
     """Gets the file name of a reference surface
 
     Parameters
@@ -206,12 +224,9 @@ def get_reference_surf(region, surf_type="central", resolution: Union[None, int]
     FileNotFoundError if the specified reference surface is not found
 
     """
-    mapper = {10: "10k", 40: "40k", 160: "", None: ""}
+    assert resolution in fs_resolutions, f"{resolution} is not a valid fsaverage resolution; please choose one of {fs_resolutions}"
     fn_surf = os.path.join(
-        SIMNIBSDIR,
-        "resources",
-        "templates",
-        f"fsaverage{mapper[resolution]}_surf",
+        getattr(templates, f"freesurfer_templates{fs_res_mapper[resolution]}"),
         f"{region}.{surf_type}.freesurfer.gii",
     )
     if os.path.isfile(fn_surf):
@@ -287,22 +302,18 @@ class SubjectFiles:
         Reference FreeSurfer space file (.nii.gz)
         Now always set to True, so that a standard header is added, which seems to work
 
-    central_surfaces: list
-        List of SurfaceFile objects which containts 2 fields:
-            fn: name of surface file (.gii format)
-            region: 'lh', 'rh', 'lc' or 'rc'
+    hemispheres: list
+        Hemisphere names.
 
-    central_surfaces: list
-        Same as above but for the pial surfaces
+    surfaces: dict
+        Dictionary of 'standard' surfaces which are present after running
+        CHARM. Each entry is a dict with hemispheres as keys pointing to the
+        corresponding surface file.
 
-    sphere_reg_surfaces: list
-        Same as above but for the spherical registration files
-
-    thickness: list
-        Cortical thicknesses are stored also as SurfaceFile
-
-    regions: list
-        list of region names (e.g. 'lh', 'rh') where all surfaces above are present
+    morph_data: dict
+        Dictionary of 'standard' morphometry data which os present after
+        running CHARM. Each entry is a dict with hemispheres as keys pointing
+        to the corresponding morph file.
 
     T1: str
         T1 image after applying transformations
@@ -439,48 +450,13 @@ class SubjectFiles:
         if os.path.isfile(self.mni2conf_12dof + ".mat"):
             self.mni2conf_12dof += ".mat"
 
-        # Stuff for surface transformations
-        # Organize the files in 3 separate lists
-        SurfaceFile = collections.namedtuple(
-            "SurfaceFile", ["fn", "region", "subsampling"]
-        )
-        # Look for all .gii files in surface_folder
-        surfaces = glob.glob(os.path.join(self.surface_folder, "*.gii"))
+        self.hemispheres = HEMISPHERES
 
-        self.sphere_reg_surfaces = []
-        # self.sphere_surfaces = []
-        self.central_surfaces = []
-        self.pial_surfaces = []
-        for fn in surfaces:
-            s = os.path.basename(fn)
-            region = s[:2]
-            if ".sphere.reg" in s:
-                # Assumes that the filename is
-                # hemi.sphere.reg[.subsampling].gii
-                subsampling = _get_subsampling(s.split(".")[3:])
-                self.sphere_reg_surfaces.append(SurfaceFile(fn, region, subsampling))
-            elif ".pial." in s:
-                # Assumes that the filename is hemi.pial[.subsampling].gii
-                subsampling = _get_subsampling(s.split(".")[2:])
-                self.pial_surfaces.append(SurfaceFile(fn, region, subsampling))
-            elif ".central." in s:
-                # Assumes that the filename is hemi.central[.subsampling].gii
-                subsampling = _get_subsampling(s.split(".")[2:])
-                self.central_surfaces.append(SurfaceFile(fn, region, subsampling))
+        self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
+        self.surfaces = {s: {h: self.get_surface(s, h) for h in self.hemispheres} for s in self._standard_surfaces}
 
-        surfaces = glob.glob(os.path.join(self.surface_folder, "*.thickness"))
-        self.thickness = []
-        for fn in surfaces:
-            s = os.path.basename(fn)
-            region = s[:2]
-            self.thickness.append(SurfaceFile(fn, region, None))
-
-        self.regions = sorted(
-            set([s.region for s in self.sphere_reg_surfaces])
-            &
-            # set([s.region for s in self.pial_surfaces]) &
-            set([s.region for s in self.central_surfaces])
-        )
+        self._standard_morph_data = ("thickness", )
+        self.morph_data = {d: {h: self.get_morph_data(d, h) for h in self.hemispheres} for d in self._standard_morph_data}
 
         self.T2_reg = os.path.join(self.subpath, "T2_reg.nii.gz")
         self.T1_denoised = os.path.join(self.segmentation_folder, "T1_denoised.nii.gz")
@@ -539,136 +515,19 @@ class SubjectFiles:
         """
         return os.path.join(self.eeg_cap_folder, cap_name)
 
-    def get_surface(self, region, surf_type="central", subsampling=None):
-        """Gets the filename of a subject CAT12 surface
-
-        Parameters
-        -----------
-        region: 'lh', 'rh', 'lc' or 'rc'
-            Name of the region of interest
-        surf_type: 'central', 'sphere_reg', 'pial', 'thickness' (optional)
-            Surface type. Default: central
-        subsampling : int | None
-            The subsampling of the surface. None corresponds to the original
-            (full resolution) surface (default = None).
-
-        Returns
-        --------
-        fn_surf: str
-            Name of surface file
-
-        Raises
-        -------
-        FileNotFoundError if the specified reference surface is not found
-
-        """
-        if surf_type == "central":
-            for s in self.central_surfaces:
-                if s.region == region and s.subsampling == subsampling:
-                    return s.fn
-        elif surf_type == "sphere_reg":
-            for s in self.sphere_reg_surfaces:
-                if s.region == region and s.subsampling == subsampling:
-                    return s.fn
-        elif surf_type == "pial":
-            for s in self.pial_surfaces:
-                if s.region == region and s.subsampling == subsampling:
-                    return s.fn
-        elif surf_type == "thickness":
-            for s in self.thickness:
-                if s.region == region and s.subsampling == subsampling:
-                    return s.fn
-        else:
-            raise ValueError("invalid surf_type")
-        raise FileNotFoundError("Could not find surface")
-
-    #### START: new get surface methods ####
-    #### Remove "v2v2_" if keep
-    # def v2v2_get_surface_file(self, surf, subsampling=None, hemi="both"):
-    #     """Get surface files, e.g., central, pial, sphere, sphere.reg
-    #     """
-    #     subsampling, hemi = self._parse_surface_args(subsampling, hemi)
-    #     return {h: Path(self.surface_folder) / subsampling / f"{h}.{surf}.gii" for h in hemi}
-
-    # def v2v2_get_morph_data_file(self, data, subsampling=None, hemi="both"):
-    #     """Get morphometry data files, e.g., thickness.
-    #     """
-    #     subsampling, hemi = self._parse_surface_args(subsampling, hemi)
-    #     return {h: Path(self.surface_folder) / subsampling / f"{h}.{data}" for h in hemi}
-
-    def v2v2_get_surface(self, hemi, surf, subsampling=None):
+    def get_surface(self, surface, hemi, subsampling=None):
         """Get surface files, e.g., central, pial, sphere, sphere.reg"""
-        subsampling = _parse_subsampling(subsampling)
-        return Path(self.surface_folder) / subsampling / f"{hemi}.{surf}.gii"
+        subsampling = self._parse_subsampling(subsampling)
+        return Path(self.surface_folder) / subsampling / f"{hemi}.{surface}.gii"
 
-    def v2v2_get_morph_data(self, hemi, data, subsampling=None):
+    def get_morph_data(self, data, hemi, subsampling=None):
         """Get morphometry data files, e.g., thickness."""
-        subsampling = _parse_subsampling(subsampling)
+        subsampling = self._parse_subsampling(subsampling)
         return Path(self.surface_folder) / subsampling / f"{hemi}.{data}"
 
-    # def v2v2_read_surface(self, surf, subsampling=None, hemi="both"):
-    #     return {h: self.v2v2_read_gifti_to_dict(f) for h, f in self.v2v2_get_surface_file(surf, subsampling, hemi).items()}
-
-    # def v2v2_read_morph_data(self, data, subsampling=None, hemi="both"):
-    #     return {h: nibabel.freesurfer.read_morph_data(f) for h, f in self.v2v2_get_morph_data_file(data, subsampling, hemi).items()}
-
-    # def v2v2_write_surface(self, surf_dict, surf, subsampling=None):
-    #     hemi = list(surf_dict.keys())
-    #     hemi = "both" if len(hemi) == 2 else hemi[0]
-    #     files = self.v2v2_get_surface_file(surf, subsampling, hemi)
-    #     for h in surf_dict:
-    #         if not files[h].parent.exists():
-    #             files[h].parent.mkdir()
-    #         self.v2v2_write_dict_to_gifti(files[h], surf_dict[h])
-
-    # def v2v2_write_morph_data(self, data_dict, data, subsampling=None):
-    #     hemi = list(data_dict.keys())
-    #     hemi = "both" if len(hemi) == 2 else hemi[0]
-    #     files = self.v2v2_get_morph_data_file(data, subsampling, hemi)
-    #     for h in data_dict:
-    #         nibabel.freesurfer.write_morph_data(files[h], data_dict[h])
-
-    # @staticmethod
-    # def v2v2_write_dict_to_gifti(filename, surf):
-    #     darrays = (
-    #         nibabel.gifti.gifti.GiftiDataArray(surf['points'], 'pointset'),
-    #         nibabel.gifti.gifti.GiftiDataArray(surf['tris'], 'triangle')
-    #     )
-    #     gii = nibabel.GiftiImage(darrays=darrays)
-    #     gii.to_filename(filename)
-
-    # @staticmethod
-    # def v2v2_read_gifti_to_dict(filename):
-    #     gii = nibabel.load(filename)
-    #     return dict(
-    #         points=gii.agg_data("pointset"), tris=gii.agg_data("triangle")
-    #     )
-
-    # @staticmethod
-    # def _parse_surface_args(subsampling, hemi):
-    #     assert hemi in VALID_HEMI, f"Invalid hemisphere argument. Please choose one of {VALID_HEMI}."
-    #     hemi = HEMISPHERES if hemi == 'both' else [hemi]
-    #     subsampling = "" if subsampling is None else str(subsampling)
-    #     return subsampling, hemi
-    #### END: new get surface methods ####
-
-
-def _parse_subsampling(subsampling):
-    return f"subsampling_{subsampling:d}" if subsampling else ""
-
-
-def _get_subsampling(parts):
-    """Get subsampling if `parts` is of the format (subsampling, gii)."""
-    if len(parts) == 2:
-        # If parts[0] cannot be interpreted as an int we will get an error
-        # here. In that case, assume no subsampling has been performed.
-        try:
-            subsampling = int(parts[0])
-        except ValueError:
-            subsampling = None
-    else:
-        subsampling = None
-    return subsampling
+    @staticmethod
+    def _parse_subsampling(subsampling: Union[None, int]) -> str:
+        return str(subsampling) if subsampling else ""
 
 
 def path2bin(program):
