@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+from scipy.spatial import cKDTree
 
 from ... import SIMNIBSDIR
 from ...mesh_tools import mesh_io
@@ -642,39 +643,59 @@ class TestResample:
         assert np.allclose(new_affine[:3, 3], 0.5)
         assert np.allclose(new_affine[3, :], [0, 0, 0, 1])
 
-def test_surf2surf(sphere3_msh):
-    in_surf = sphere3_msh.crop_mesh(1005)
-    in_nodes = in_surf.nodes.node_coord
-    in_nodes /= np.average(np.linalg.norm(in_nodes, axis=1))
-    field = in_nodes[:, 0]
-    out_surf = sphere3_msh.crop_mesh(1004)
-    out_nodes = out_surf.nodes.node_coord
-    out_nodes /= np.average(np.linalg.norm(out_nodes, axis=1))
-    out_field, _ = transformations._surf2surf(field, in_surf, out_surf)
-    assert np.allclose(out_field, out_nodes[:, 0], atol=1e-1)
+
+def test_surfacemorph(sphere3_msh):
+    rng = np.random.default_rng(0)
+
+    # Generate surface to morph values from
+    from_surf = sphere3_msh.crop_mesh(1005)
+    transformations.normalize(from_surf.nodes.node_coord, axis=1, inplace=True)
+
+    # smooth field; add 2 to avoid high *relative* errors
+    values = from_surf.nodes.node_coord[:,0] + 2
+
+    # Generate points to morph values to
+    weights = rng.uniform(size=(from_surf.elm.nr, 3))
+    weights /= weights.sum(1, keepdims=True)
+    from_tris = from_surf.elm.node_number_list[:,:3]-1
+    to_points = np.sum(from_surf.nodes.node_coord[from_tris] * weights[...,None], 1)
+    to_points *= 1.05 # so not exactly on `from_surf`
+    n = to_points.shape[0]
+    # the triangles of the surface being morphed *to* are unused so just
+    # generate some random ones
+    to_surf = mesh_io.Msh(
+        mesh_io.Nodes(to_points),
+        mesh_io.Elements(rng.integers(1, n, (2*n-4, 3)))
+    )
+    morph = transformations.SurfaceMorph(from_surf, to_surf, "nearest")
+    field_est = morph.transform(values)
+    _, closest = cKDTree(from_surf.nodes.node_coord).query(to_points)
+    np.testing.assert_allclose(values[closest], field_est)
+
+    morph = transformations.SurfaceMorph(from_surf, to_surf, "linear")
+    field_est = morph.transform(values)
+    # `values` are [1; 3] so atol of 1e-4 is OK
+    np.testing.assert_allclose(np.sum(values[from_tris] * weights, 1), field_est, atol=1e-4)
+
 
 def test_get_triangle_neighbors():
     """Triangulate an array of points and test neighbors like
-
-    Points
-
-    (coords)       (indices)
-
-     1    .  .  .   2  5  9
-     0    .  .  .   1  4  7
-    -1    .  .  .   0  3  6
-
-         -1  0  1
-
-    Triangle indices
-
-    | 3 /  \ 7 |
-    |  /    \  |
-    | / 2  6 \ |
-    | \ 1  5 / |
-    |  \    /  |
-    | 0 \  / 4 |
     """
+
+    # Points
+    # (coords)       (indices)
+    #  1    .  .  .   2  5  9
+    #  0    .  .  .   1  4  7
+    # -1    .  .  .   0  3  6
+    #      -1  0  1
+
+    # Triangle indices
+    # | 3 /  \ 7 |
+    # |  /    \  |
+    # | / 2  6 \ |
+    # | \ 1  5 / |
+    # |  \    /  |
+    # | 0 \  / 4 |
     tris = np.array(
         [
             [0, 3, 1],
