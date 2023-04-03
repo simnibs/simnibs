@@ -45,7 +45,7 @@ import h5py
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import get_reference_surf, path2bin, SubjectFiles
+from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
 from . import cython_msh
 from . import cgal
 
@@ -6516,8 +6516,8 @@ class _GetitemTester():
         return _getitem_one_indexed(self.array, index)
 
 
-def read_surfaces(
-    sub_files: SubjectFiles, surf: str, subsampling: Union[int, None] = None
+def load_subject_surfaces(
+    sub_files: SubjectFiles, surface: str, subsampling: Union[int, None] = None
 ):
     """Load subject-specific surfaces.
 
@@ -6530,28 +6530,24 @@ def read_surfaces(
     subsampling : int | None
         The subsampling to load (default = None).
     """
-
     # When a leadfield simulation is run, the hemisphere surfaces are appended
-    # according to the order in SubjectFiles.regions, hence we load them in the
-    # same way here to ensure that the order is the same.
+    # according to the order in SubjectFiles.hemispheres, hence we load them in
+    # the same way here to ensure that the order is the same.
     return {
-        h: read_gifti_surface(sub_files.get_surface(h, surf, subsampling))
-        for h in sub_files.regions
+        h: read_gifti_surface(sub_files.get_surface(surface, h, subsampling))
+        for h in sub_files.hemispheres
     }
 
-
-def read_reference_surfaces(surf: str, resolution: Union[int, None] = None):
-    HEMISPHERES = ("lh", "rh")
+def load_subject_morph_data(
+    sub_files: SubjectFiles, data: str, subsampling: Union[int, None] = None,
+):
     return {
-        h: read_gifti_surface(get_reference_surf(h, surf, resolution))
+        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(data, h, subsampling))
+        for h in sub_files.hemispheres
+    }
+
+def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
+    return {
+        h: read_gifti_surface(get_reference_surf(surface, h, resolution))
         for h in HEMISPHERES
     }
-
-
-def read_normals(sub_files: SubjectFiles, subsampling: Union[int, None] = None):
-    normals = {}
-    for hemi in sub_files.regions:
-        fname = sub_files.get_surface(hemi, "central", subsampling)
-        fname_nn = "".join((fname.rstrip("gii"), "normals.txt"))
-        normals[hemi] = np.loadtxt(fname_nn)
-    return normals
