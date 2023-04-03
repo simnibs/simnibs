@@ -1591,7 +1591,10 @@ def subsample_surfaces(m2m_dir, n_points: int) -> dict:
         for name, data in v.field.items():
             filename = m2m.get_morph_data(name, h, n_points)
             filename = filename.with_suffix(f"{filename.suffix}.csv")
-            np.savetxt(filename, data.value, delimiter=",")
+            if name == "index":
+                np.savetxt(filename, data.value, "%i", ",")
+            else:
+                np.savetxt(filename, data.value, delimiter=",")
 
     # apply subsampling to all standard surfaces and morph data
     for s in m2m._standard_surfaces:
