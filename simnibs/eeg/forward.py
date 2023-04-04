@@ -9,92 +9,7 @@ import simnibs.eeg.utils
 from simnibs.segmentation.brain_surface import subsample_surfaces
 from simnibs.utils.file_finder import SubjectFiles
 
-HEMISPHERES = ("lh", "rh")
-
 EEG_EXPORT_FORMATS = {"mne", "fieldtrip"}
-
-# MORPH MAPS
-
-# def make_morph_map(points: np.ndarray, surf: dict, n: int = 2):
-#     """Create a morph map which allows morphing of values from the nodes in
-#     `surf` to `points` by linear interpolation. A morph map is a sparse matrix
-#     with dimensions (n_points, n_nodes) where each row has exactly three
-#     entries that sum to one. It is created by projecting each point in points
-#     onto closest triangle in tris_from and determining the coefficients of each
-#     point. Hence, it provides a linear interpolation from surface nodes to
-#     points.
-
-#     PARAMETERS
-#     ----------
-#     points : ndarray
-#         The target points (i.e., the points we interpolate to).
-#     surf : dict
-#         The source points (i.e., the nodes we interpolate from) and the source
-#         triangulation.
-#     n : int
-#         Number of nearest neighbors of each point in points to consider on
-#         surf.
-
-#     RETURNS
-#     -------
-#     mmap : scipy.sparse.csr_matrix
-#         The morph map.
-
-#     NOTES
-#     -----
-#     Testing all points against all triangles is expensive and inefficient, thus
-#     we compute an approximation by finding, for each point in `points`, the `n`
-#     nearest nodes on `surf` and the triangles to which these points belong.
-#     We then test only against these triangles.
-#     """
-
-#     # Ensure on unit sphere
-#     rr_ = simnibs.eeg.utils.normalize_vectors(surf["points"])
-#     points_ = simnibs.eeg.utils.normalize_vectors(points)
-#     n_points, d_points = points_.shape
-
-#     surf_ = dict(points=rr_, tris=surf["tris"])
-
-#     pttris = simnibs.transformations._get_nearest_triangles_on_surface(points_, surf_, n)
-
-#     # Find the triangle (in surf) to which each point in points projects and
-#     # get the associated weights
-#     tris, weights, _, _ = simnibs.transformations._project_points_to_surface(points_, surf_, pttris)
-
-#     rows = np.repeat(np.arange(n_points), d_points)
-#     cols = surf_["tris"][tris].ravel()
-#     return csr_matrix((weights.ravel(), (rows, cols)), shape=(n_points, len(rr_)))
-
-
-# def make_morph_maps(src_from: dict, src_to: dict, n: int = 2):
-#     """Create morph maps for left and right hemispheres.
-
-#     PARAMETERS
-#     ----------
-#     src_from : dict
-#         Dictionary with keys 'lh' and 'rh'
-#         ...
-#         corresponding to the
-#         spherical registration files (e.g., [l/r]h.sphere.reg.gii).
-#     src_to : dict
-#         Like `src_from`.
-
-#     RETURNS
-#     -------
-#     mmaps : dict
-#         Dictionary of scipy.sparse.csr_matrix corresponding to the morph map
-#         for left and right hemispheres.
-#     """
-#     morph = simnibs.transformations.SurfaceMorph("linear", n)
-#     morph_maps = {}
-#     for hemi in HEMISPHERES:
-#         morph.fit(src_to[hemi], src_from[hemi])
-#         morph_maps[hemi] = morph.morph_mat
-#     return morph_maps
-#     # return {
-#     #     hemi: make_morph_map(src_to[hemi]["points"], src_from[hemi], n)
-#     #     for hemi in HEMISPHERES
-#     # }
 
 
 def compute_tdcs_leadfield(
@@ -140,25 +55,20 @@ def compute_tdcs_leadfield(
         run_kwargs = dict(save_mat=False, cpus=1)
     assert isinstance(run_kwargs, dict)
 
-    subfiles = SubjectFiles(subpath=str(m2m_dir))
+    m2m = SubjectFiles(subpath=str(m2m_dir))
 
-    # Subsampling
-    try:
-        _ = [subfiles.get_surface(h, subsampling=subsampling) for h in HEMISPHERES]
-    except FileNotFoundError:
-        if subsampling:
-            _ = subsample_surfaces(m2m_dir, n_points=subsampling)
+    if subsampling and not all(m2m.get_surface("central", h, subsampling=subsampling).exists() for h in m2m.hemispheres):
+        _ = subsample_surfaces(m2m_dir, n_points=subsampling)
 
     # The paths should be strings otherwise errors might occur when writing the
     # .hdf5 file
     lf = simnibs.simulation.sim_struct.TDCSLEADFIELD()
-    lf.fnamehead = str(subfiles.fnamehead)
-    lf.subpath = str(subfiles.subpath)
+    lf.fnamehead = str(m2m.fnamehead)
+    lf.subpath = str(m2m.subpath)
     lf.pathfem = str(fem_dir)
     lf.field = "E"
     if point_electrodes:
         lf.electrode = None
-    # lf.solver_options = "pardiso"
     lf.eeg_cap = str(fname_montage)
     # Tissues to include results from. Default is 1006, which is the eyes,
     # however, we do not want field estimates here, we only want to interpolate
@@ -187,10 +97,10 @@ def compute_tdcs_leadfield(
 
 
 def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True):
-    """Read a file (.hdf5) containing a leadfield of class TDCS_LEADFIELD and
-    prepare it for use with EEG. The leadfield has the reference electrode
-    reinserted and is rereferenced to an average reference. The source space is
-    unravelled to left and right hemispheres.
+    """Read a file (.hdf5) containing a leadfield of class TDCSLEADFIELD and
+    prepare it for use with EEG. If `apply_average_proj`, the reference
+    electrode is reinserted and an average reference is applied. The source
+    space is unravelled to left and right hemispheres.
 
     Currently only supports leadfields which were interpolated to the central
     gray matter surface (exclusively, i.e., the leadfield was not read out in
@@ -239,7 +149,7 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
 
         interp_subsampling = lf.attrs["interpolation_subsampling"]
         interp_subsampling = (
-            None if interp_subsampling == "None" else interp_subsampling
+            None if interp_subsampling == "None" else int(interp_subsampling)
         )
 
         # Get channel info
@@ -277,26 +187,7 @@ def prepare_forward(fwd_name: Union[Path, str], apply_average_proj: bool = True)
         n_sources=nsrc,
         n_orientations=nori,
         subsampling=interp_subsampling
-        # interp_ids = interp_ids,
     )
-
-    # # Source space
-    # points = np.vsplit(points, [point_start_idx[1]])
-    # tris = np.vsplit(tris, [tris_start_idx[1]])
-    # tris[1] -= point_start_idx[1] # fix indexing
-
-    # src = dict()
-    # for i, p, t in zip(interp_ids, points, tris):
-    #     src[i] = dict(points=p, tris=t, nr=len(p))
-
-    # # Normals
-    # if interp_subsampling is not None and m2m_dir is not None:
-    #     sf = SubjectFiles(subpath=m2m_dir)
-    #     for i in interp_ids:
-    #         src[i]['n'] = np.loadtxt(sf.get_surface(i, 'central',
-    #                                                  interp_subsampling))
-
-    # return forward
 
 
 def make_forward(
@@ -424,37 +315,3 @@ def _write_src_fwd_morph(src, forward, morph, fname_leadfield, subsampling, out_
         if morph:
             scipy.io.savemat(fname_morph.with_suffix(".mat"), dict(morph=morph))
         scipy.io.savemat(fname_src.with_suffix(".mat"), dict(src=src))
-
-
-# def project_points_to_surface_example():
-#     """Visualize a projection of random points on two triangles in 2D."""
-#     import matplotlib.pyplot as plt
-#     import matplotlib.patches as mp
-#     import matplotlib.lines as ml
-
-#     mpts = np.array([[1, 1], [2, 2], [-2, 3], [0, -1]], dtype=np.float64)
-#     mtris = np.array([[0, 1, 2], [0, 3, 2]])
-#     m = mpts[mtris]
-
-#     n = 10
-#     points = (np.random.random((2 * n)).reshape(n, 2) - 0.5) * 8
-#     surf = dict(points=mpts, tris=mtris)
-#     pttris = np.repeat(np.array([0, 1]), n).reshape(2, n).T
-
-#     tris, weights, projs, dists = project_points_to_surface(points, surf, pttris)
-
-#     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-#     for t in m:
-#         ax.add_patch(mp.Polygon(t[:, :2], alpha=0.3, edgecolor="k"))
-#     for i in range(n):
-#         ax.add_artist(
-#             ml.Line2D([points[i, 0], projs[i, 0]], [points[i, 1], projs[i, 1]])
-#         )
-#         ax.add_patch(mp.Circle(points[i], dists[i], alpha=0.5, ec="k", fc="none"))
-#     ax.scatter(*points.T, color="r")
-#     ax.scatter(*projs.T, color="g")
-#     ax.set_xlim((-4, 4))
-#     ax.set_ylim((-4, 4))
-#     ax.grid(True, alpha=0.2)
-
-#     fig.show()

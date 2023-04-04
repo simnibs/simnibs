@@ -132,7 +132,7 @@ class Montage:
             ch_names += list(self.landmarks.keys())
 
         csv_reader.write_csv_positions(
-            filename, ch_types, ch_pos, None, ch_names, None, None
+            filename, ch_types, np.array(ch_pos), ch_names,
         )
 
     @classmethod
