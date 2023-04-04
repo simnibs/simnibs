@@ -31,12 +31,20 @@ fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/roi/midlayer_m
 # location of example data
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
 
+optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
+optimize_init_vals = True
+goal = "mean_max_TI"  # "mean"
+dataType = 1
+constrain_electrode_locations = False
+overlap_factor = 1.
+polish = True
+
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10)
-constrain_electrode_locations = False
-overlap_factor = 1.
+# electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10)
+# constrain_electrode_locations = False
+# overlap_factor = 1.
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
@@ -45,8 +53,21 @@ overlap_factor = 1.
 # length_x = np.array([40])
 # length_y = np.array([40])
 # electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-# constrain_electrode_locations = False
-# overlap_factor = 1.
+
+# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+
+# create 2 channel of 1 x 1 standard TES montage (Temporal interference)
+########################################################################################################################
+center = np.array([[0, 0, 0]])
+radius = np.array([0])
+length_x = np.array([40])
+length_y = np.array([40])
+
+electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
+
+electrode = [electrode_1, electrode_2]
+
 # electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 circular electrode array pair
@@ -64,8 +85,6 @@ overlap_factor = 1.
 # length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
-# constrain_electrode_locations = True
-# overlap_factor = 1.
 # electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
@@ -92,9 +111,6 @@ overlap_factor = 1.
 # electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y)
 #
 # electrode = [electrode_1, electrode_2]
-# constrain_electrode_locations = True
-# overlap_factor = 1.
-
 # electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
@@ -157,14 +173,16 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      init_pos=init_pos,
                                      output_folder=output_folder,
                                      plot=True,
-                                     optimizer="differential_evolution",  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
+                                     optimizer=optimizer,
                                      optimizer_options=optimizer_options,
                                      min_electrode_distance=min_electrode_distance,
                                      weights=weights,
-                                     goal="mean",
+                                     goal=goal,  # mean"
                                      constrain_electrode_locations=constrain_electrode_locations,
                                      overlap_factor=overlap_factor,
-                                     optimize_init_vals=True)
+                                     optimize_init_vals=optimize_init_vals,
+                                     dataType=dataType,
+                                     polish=polish)
 
 # pynibs.plot_surface(data=np.arange(len(opt.skin_surface.surf2msh_triangles)),
 #                     con=opt.mesh.elm.node_number_list[opt.skin_surface.surf2msh_triangles, :3],

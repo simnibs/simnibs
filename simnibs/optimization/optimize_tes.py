@@ -78,6 +78,9 @@ class TESoptimize():
     optimize_init_vals : bool, optional, default: True
         If True, find initial values for optimization, guaranteeing a valid solution. If False, initial values
         are the center between bounds.
+    dataType : int, optional, default: 0
+        0: e-field magnitude
+        1: e-field vector
 
     Attributes
     --------------
@@ -112,7 +115,8 @@ class TESoptimize():
                  constrain_electrode_locations=False,
                  overlap_factor=1.,
                  polish=True,
-                 optimize_init_vals=True):
+                 optimize_init_vals=True,
+                 dataType=0):
         """
         Constructor of TESoptimize class instance
         """
@@ -333,6 +337,10 @@ class TESoptimize():
         self.n_test = 0         # number of tries to place the electrodes
         self.n_sim = 0          # number of final simulations carried out (only valid electrode positions)
 
+        # ensure that we will use vector e-field for TI goal functions
+        if self.goal in ["mean_max_TI", "mean_max_TI_dir"]:
+            dataType = 1
+
         # direct and shgo optimizer do not take init vals
         if self.optimizer in ["direct", "shgo"]:
             optimize_init_vals = False
@@ -363,6 +371,8 @@ class TESoptimize():
 
         # setup FEM
         ################################################################################################################
+        self.dataType = dataType
+
         if anisotropy_type is None:
             anisotropy_type = "scalar"
 
@@ -378,7 +388,7 @@ class TESoptimize():
                               solver_options=solver_options,
                               fn_results=self.fn_results_hdf5,
                               useElements=True,
-                              dataType=0)
+                              dataType=self.dataType)
 
         # log summary
         ################################################################################################################
@@ -421,20 +431,6 @@ class TESoptimize():
         ################################################################################################################
         self.optimize()
 
-        # electrode_pos = [[np.array([-0.21225543,  0.14401322, -3.05493964]), np.array([-0.2482948, 1.66236642, -1.48075733])],
-        #                  [np.array([-1.04681472, 0.62264809, -0.06796936]), np.array([0.85645771, 1.43684206, -0.00773725])]]
-        # e = self.update_field(electrode_pos=electrode_pos, plot=True)
-        # [ simnibs ] INFO: Parameters: [-0.21225543  0.14401322 -3.05493964 -0.2482948   1.66236642 -1.48075733 -1.04681472  0.62264809 -0.06796936  0.85645771  1.43684206 -0.00773725]
-        # [ simnibs ] INFO: Estimating currents of stimulation 0: (0.0, 0.0, 0.12051773071289062, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.12220001220703125, 0.0, 0.0, 0.0, -0.019851482435619627, 0.0, -0.07761788368225098, 0.0)
-        # [ simnibs ] INFO: Estimating currents of stimulation 1: (0.11847917831688637, 0.10205585810662043, 0.18510512041192317, 0.07177279905536332, 0.03736780629148301, 0.09764569561343939, 0.1518507335462148, 0.12578081993191015, 0.13907461813690158, -0.16377729797121154, -0.09851322539416962, -0.14040936353053235, -0.100976651058587, -0.029797118784232312, -0.056387432755079736, -0.19469673013190936, -0.11646987335707898, -0.12396050312600249)
-        # [ simnibs ] INFO: Electrode position: valid
-        # [ simnibs ] INFO: Optimal currents: (array([0.16835061, 0.10058386, 0.13082818, 0.1072788 , 0.03278245, 0.06961378, 0.17407796, 0.09264965, 0.12383471]),
-        #                                      array([-0.19609596, -0.11945876, -0.16265822, -0.08106761, -0.02747652,-0.07248354, -0.14166594, -0.07919212, -0.11990133]))
-        # [ simnibs ] INFO: Electrode position: valid
-        # [ simnibs ] INFO: Optimal currents: (array([0.12111591, 0.09868274, 0.172026  , 0.07449228, 0.03757545,
-        #        0.09033746, 0.13916304, 0.11004092, 0.15656621]), array([-0.14121622, -0.10259622, -0.1378883 , -0.09802952, -0.03359152,
-        #        -0.06644434, -0.18630877, -0.10328476, -0.13064036]))
-        # [ simnibs ] INFO: Goal (mean): -202.014
 
     def get_bounds(self, constrain_electrode_locations, overlap_factor=1.):
         """
@@ -700,25 +696,27 @@ class TESoptimize():
         """
 
         electrode_coords_subject = [0 for _ in range(self.n_channel_stim)]
+        n = []
+        cx = []
+        cy = []
 
         for i_channel_stim in range(self.n_channel_stim):
             # collect all parameters
             start = np.zeros((self.n_ele_free[i_channel_stim], 3))
             a = np.zeros((self.n_ele_free[i_channel_stim], 3))
             b = np.zeros((self.n_ele_free[i_channel_stim], 3))
-            cx = np.zeros((self.n_ele_free[i_channel_stim], 3))
-            cy = np.zeros((self.n_ele_free[i_channel_stim], 3))
-            n = np.zeros((self.n_ele_free[i_channel_stim], 3))
+            cx.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
+            cy.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
+            # n.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
+            n_tmp = np.zeros((self.n_ele_free[i_channel_stim], 3))
             start_shifted_ = np.zeros((len(electrode_pos[i_channel_stim]), 3))
             distance = []
             alpha = []
 
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                start[i_array, :], n[i_array, :] = self.ellipsoid.jacobi2cartesian(
-                    coords=electrode_pos[i_channel_stim][i_array][:2],
-                    return_normal=True)
+                start[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_channel_stim][i_array][:2])
 
-                c0, n[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_channel_stim][i_array][:2], return_normal=True)
+                c0, n_tmp[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=electrode_pos[i_channel_stim][i_array][:2], return_normal=True)
                 a[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_channel_stim][i_array][0] - 1e-2, electrode_pos[i_channel_stim][i_array][1]])) - c0
                 b[i_array, :] = self.ellipsoid.jacobi2cartesian(coords=np.array([electrode_pos[i_channel_stim][i_array][0], electrode_pos[i_channel_stim][i_array][1] - 1e-2])) - c0
                 a[i_array, :] /= np.linalg.norm(a[i_array, :])
@@ -727,10 +725,10 @@ class TESoptimize():
                 start_shifted_[i_array, :] = c0 + (1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_channel_stim][i_array][2]) +
                                                            (b[i_array, :]) * np.sin(electrode_pos[i_channel_stim][i_array][2])))
 
-                cy[i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
-                cy[i_array, :] /= np.linalg.norm(cy[i_array, :])
-                cx[i_array, :] = np.cross(cy[i_array, :], -n[i_array, :])
-                cx[i_array, :] /= np.linalg.norm(cx[i_array, :])
+                cy[i_channel_stim][i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
+                cy[i_channel_stim][i_array, :] /= np.linalg.norm(cy[i_channel_stim][i_array, :])
+                cx[i_channel_stim][i_array, :] = np.cross(cy[i_channel_stim][i_array, :], -n_tmp[i_array, :])
+                cx[i_channel_stim][i_array, :] /= np.linalg.norm(cx[i_channel_stim][i_array, :])
 
                 distance.append(_electrode_array.distance)
                 alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
@@ -750,12 +748,15 @@ class TESoptimize():
                                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays)])
 
             # determine electrode center on ellipsoid
-            electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
-                                                                                distance=distance,
-                                                                                alpha=alpha,
-                                                                                n_steps=400)
+            if not (distance == 0.).all():
+                electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
+                                                                                    distance=distance,
+                                                                                    alpha=alpha,
+                                                                                    n_steps=400)
+            else:
+                electrode_coords_eli_cart = start
 
-            n = self.ellipsoid.get_normal(coords=electrode_coords_eli_cart)
+            n.append(self.ellipsoid.get_normal(coords=electrode_coords_eli_cart))
 
             # transform to ellipsoidal coordinates
             electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
@@ -767,6 +768,7 @@ class TESoptimize():
 
             if len(ele_idx) != len(alpha):
                 return "Electrode position: invalid (not all electrodes in valid skin region)"
+                # print("Electrode position: invalid (not all electrodes in valid skin region)")
 
         # i_ele = 0
         # ele_idx_rect = []
@@ -796,12 +798,12 @@ class TESoptimize():
                         _electrode.posmat[:3, 3] = electrode_coords_subject[i_channel_stim][i_ele, :]
 
                     elif _electrode.type == "rectangular":
-                        cx_local = np.cross(n[i_ele, :], cy[i_array, :])
+                        cx_local = np.cross(n[i_channel_stim][i_ele, :], cy[i_channel_stim][i_array, :])
 
                         # rotate skin nodes to normalized electrode space
-                        rotmat = np.array([[cx_local[0], cy[i_array, 0], n[i_ele, 0]],
-                                           [cx_local[1], cy[i_array, 1], n[i_ele, 1]],
-                                           [cx_local[2], cy[i_array, 2], n[i_ele, 2]]])
+                        rotmat = np.array([[cx_local[0], cy[i_channel_stim][i_array, 0], n[i_channel_stim][i_ele, 0]],
+                                           [cx_local[1], cy[i_channel_stim][i_array, 1], n[i_channel_stim][i_ele, 1]],
+                                           [cx_local[2], cy[i_channel_stim][i_array, 2], n[i_channel_stim][i_ele, 2]]])
                         center = np.array([electrode_coords_subject[i_channel_stim][i_ele, 0],
                                            electrode_coords_subject[i_channel_stim][i_ele, 1],
                                            electrode_coords_subject[i_channel_stim][i_ele, 2]])
@@ -816,8 +818,8 @@ class TESoptimize():
                                                 skin_nodes_rotated[:, 0] < +_electrode.length_x / 2)
                         mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
                                                 skin_nodes_rotated[:, 1] < +_electrode.length_y / 2)
-                        mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -20,
-                                                skin_nodes_rotated[:, 2] < +20)
+                        mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -30,
+                                                skin_nodes_rotated[:, 2] < +30)
                         mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
                     else:
                         raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
@@ -830,6 +832,7 @@ class TESoptimize():
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
                     if _electrode.area_skin < 0.8 * _electrode.area:
+                        # print("Electrode position: invalid (partly overlaps with invalid skin region)")
                         return "Electrode position: invalid (partly overlaps with invalid skin region)"
 
                     # save node indices (refering to global mesh)
@@ -862,10 +865,11 @@ class TESoptimize():
             for i_array_global in range(np.sum(self.n_ele_free)):
                 for node_coord in node_coords_list[i_array_global]:
                     for i_array_test in range(i_array_test_start, np.sum(self.n_ele_free)):
-                        # calculate euclidic distance between node coords
+                        # calculate euclidean distance between node coords
                         min_dist = np.min(np.linalg.norm(node_coords_list[i_array_test] - node_coord, axis=1))
                         # stop testing if an electrode is too close
                         if min_dist < self.min_electrode_distance:
+                            # print("Electrode position: invalid (minimal distance between electrodes too small)")
                             return "Electrode position: invalid (minimal distance between electrodes too small)"
 
                 i_array_test_start += 1
@@ -929,6 +933,8 @@ class TESoptimize():
             Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
+        plot : bool, optional, default: False
+            Save data to plot e-field and electrode positions
 
         Returns
         -------
@@ -967,7 +973,7 @@ class TESoptimize():
                     e[i_channel_stim][i_roi] = None
                     self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
                 else:
-                    e[i_channel_stim][i_roi] = r.calc_fields(v)
+                    e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType)
             #stop = time.time()
             #print(f"Time: calc fields: {stop - start}")
 
@@ -1057,18 +1063,18 @@ class TESoptimize():
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
-                    y[0, i_roi] = np.mean(get_maxTI(E1_org=e[0, i_roi], E2_org=e[1, i_roi]))
+                    y[0, i_roi] = -np.mean(get_maxTI(E1_org=e[0][i_roi], E2_org=e[1][i_roi]))
                     y[1, i_roi] = y[0, i_roi]
 
             # mean of max envelope for TI fields in given direction
-            elif self.goal == "mean_max_TI":
+            elif self.goal == "mean_max_TI_dir":
                 for i_roi in range(self.n_roi):
                     # gather fields with different frequencies
                     for i_channel_stim in range(self.n_channel_stim):
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
-                    y[0, i_roi] = np.mean(get_dirTI(E1=e[0, i_roi], E2=e[1, i_roi], dirvec_org=self.goal_dir))
+                    y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
                     y[1, i_roi] = y[0, i_roi]
             else:
                 raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
@@ -1139,6 +1145,7 @@ class TESoptimize():
             raise NotImplementedError(f"Specified optimization method: '{self.optimizer}' not implemented.")
 
         self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
+        fopt_before_polish = result.fun
 
         # polish optimization
         ################################################################################################################
@@ -1178,6 +1185,7 @@ class TESoptimize():
                                   optimizer=self.optimizer,
                                   optimizer_options=self.optimizer_options,
                                   fopt=fopt,
+                                  fopt_before_polish=fopt_before_polish,
                                   popt=self.electrode_pos_opt,
                                   nfev=nfev,
                                   e=e,
@@ -1189,7 +1197,7 @@ class TESoptimize():
                                   n_sim=self.n_sim)
 
 
-def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, nfev, e, time, msh, electrode, goal,
+def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh, electrode, goal,
                               n_test=None, n_sim=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
@@ -1290,6 +1298,7 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
             f.write("None\n")
         f.write(f"nfev: {nfev}\n")
         f.write(f"fopt: {fopt}\n")
+        f.write(f"fopt_before_polish: {fopt_before_polish}\n")
 
         if n_sim is not None:
             f.write(f"n_sim: {n_sim}\n")
@@ -1309,6 +1318,7 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, popt, n
         # optimizer
         f.create_dataset(data=optimizer, name="optimizer/optimizer")
         f.create_dataset(data=fopt, name="optimizer/fopt")
+        f.create_dataset(data=fopt_before_polish, name="optimizer/fopt_before_polish")
         f.create_dataset(data=nfev, name="optimizer/nfev")
         f.create_dataset(data=time, name="optimizer/time")
         f.create_dataset(data=goal, name="optimizer/goal")
