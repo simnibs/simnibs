@@ -27,6 +27,10 @@ class Electrode():
         Current assigned to electrode
     voltage : float, optional, default: None
         Voltage assigned to electrode
+    current_estimator_method : str, optional, default: "linear"
+        Method to estimate the electrode currents:
+        - "GP": Gaussian process
+        - "linear": linear regression
 
     Attributes
     ----------
@@ -64,7 +68,8 @@ class Electrode():
         Type of electrode ("spherical", "rectangular")
     """
 
-    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None, voltage=None):
+    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None, voltage=None,
+                 current_estimator_method="linear"):
         if radius is None:
             radius = 0
 
@@ -110,7 +115,7 @@ class Electrode():
             self.type = "rectangular"
 
         # initialize current estimator for fake Dirichlet BC
-        self.current_estimator = CurrentEstimator(electrode=self)
+        self.current_estimator = CurrentEstimator(method=current_estimator_method)
 
     def transform(self, transmat):
         """
@@ -204,7 +209,8 @@ class ElectrodeArray():
         Position and orientation of electrode array in ellipsoidal coordinates [beta, lambda, alpha]
     """
 
-    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
+    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None,
+                 current_estimator_method="linear"):
         self.channel_id = channel_id
         self.ele_id = ele_id
         self.array_center = np.array([0, 0, 0])
@@ -377,6 +383,10 @@ class ElectrodeArrayPair():
         Extensions in y-direction of single rectangular electrodes in array. Array will be copied for second array.
     current : np.ndarray of float [n_ele] or None
         Current through electrodes. Has to sum up to zero net current.
+    current_estimator_method : str, optional, default: "linear"
+        Method to estimate the electrode currents:
+        - "GP": Gaussian process
+        - "linear": linear regression
 
     Attributes
     ----------
@@ -390,7 +400,8 @@ class ElectrodeArrayPair():
         Two ElectrodeArray instances
     """
 
-    def __init__(self, center, radius=None, length_x=None, length_y=None, current=None):
+    def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
+                 current_estimator_method="linear"):
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
@@ -405,6 +416,11 @@ class ElectrodeArrayPair():
             self.dirichlet_correction = True
         else:
             self.dirichlet_correction = False
+
+        if current_estimator_method == "linear":
+            self.optimize_all_currents_at_once = True
+        else:
+            self.optimize_all_currents_at_once = False
 
         if current is None:
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
@@ -424,6 +440,9 @@ class ElectrodeArrayPair():
         # determine mean current of electrodes for each channel [n_channel]
         self.current_mean = self.current_total / self.n_ele_per_channel
         self.current_mean[1] *= -1
+
+        # initialize current estimator for fake Dirichlet BC
+        self.current_estimator = CurrentEstimator(method=current_estimator_method)
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
@@ -470,6 +489,20 @@ class ElectrodeArrayPair():
                                                 ele_id=self.ele_id[self.channel_id == self.channel_id_unique[i]],
                                                 current=self.current[self.channel_id == self.channel_id_unique[i]]) for i in range(2)]
 
+    def estimate_currents(self, electrode_pos):
+        """
+        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
+        Writes current in self.current.
+
+        Parameters
+        ----------
+        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
+            Positions and orientations of ElectrodeArrayPair or CircularArray
+        """
+        if self.current_estimator.current is None:
+            return
+        return self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
+
 
 class CircularArray():
     """
@@ -489,6 +522,10 @@ class CircularArray():
     current : np.ndarray of float [n_ele]
         Current through electrodes (First entry is central electrode).
         Has to sum up to zero net current.
+    current_estimator_method : str, optional, default: "linear"
+        Method to estimate the electrode currents:
+        - "GP": Gaussian process
+        - "linear": linear regression
 
     Attributes
     ----------
@@ -501,7 +538,8 @@ class CircularArray():
     electrode_arrays : list of ElectrodeArray instances [1]
         One ElectrodeArray instance containing the Electrode instances
     """
-    def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None, current=None):
+    def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None, current=None,
+                 current_estimator_method="linear"):
         self.radius_inner = radius_inner
         self.distance = distance
         self.n_ele = n_outer + 1
@@ -511,6 +549,11 @@ class CircularArray():
         self.n_channel = len(self.channel_id_unique)
         self.dirichlet_correction = True
         self.ele_id = np.arange(self.n_ele)
+
+        if current_estimator_method == "linear":
+            self.optimize_all_currents_at_once = True
+        else:
+            self.optimize_all_currents_at_once = False
 
         if radius_outer is None:
             self.radius_outer = radius_inner
@@ -550,6 +593,9 @@ class CircularArray():
 
             if np.isclose(self.center[-1, 1], 0):
                 self.center[-1, 1] = 0.
+
+        # initialize current estimator for fake Dirichlet BC
+        self.current_estimator = CurrentEstimator(method=current_estimator_method)
 
         # initialize freely movable electrode arrays
         self.electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
@@ -611,4 +657,18 @@ class CircularArray():
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
                                                 current=self.current)]
+
+    def estimate_currents(self, electrode_pos):
+        """
+        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
+        Writes current in self.current.
+
+        Parameters
+        ----------
+        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
+            Positions and orientations of ElectrodeArrayPair or CircularArray
+        """
+        if self.current_estimator.current is None:
+            return
+        return self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
 

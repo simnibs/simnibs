@@ -42,20 +42,14 @@ class OnlineFEM:
     useElements : bool
         True: interpolate the dadt field using positions (coordinates) of elements centroids
         False: interpolate the dadt field using positions (coordinates) of nodes
-    grid_spacing : float, optional, default: None
-        Grid spacing/interval for A field interpolation
-    order : int, optional, default: 1
-        Interpolation order of magnetic vector potential of coil (0: nearest neighbor, 1: linear)
     fn_coil : str
         Path to coil file (.ccd or .nii)
-    didtmax : float, optional, default: 1e6
-        Scaling factor of magnetic vector potential (standard: 1 A/us -> 1e6)
     dataType : int, optional, default: 0
         Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
-    coil :
-
-    electrode :
-
+    coil : Coil instance
+        TMS coil
+    electrode : ElectrodeArrayPair or CircularArray instance
+        TES electrode
     """
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None):
@@ -74,11 +68,9 @@ class OnlineFEM:
         self.fn_results = fn_results                # name of output results file (.hdf5)
         self.ff_templates = Templates()             # initialize file finder templates
         self.force_integrals = None                 # precomputed force integrals for rhs
-        self.currents_guess = None                  # guess of electrode currents to accelerate further iterations
         self.coil = coil                            # TMS coil
         self.electrode = electrode                  # TES electrode
-        self.amplitude = 1
-        self.scale = 1
+        self.n_iter_dirichlet_correction = 0        # number of iterations required for dirichlet correction
 
         if self.electrode is not None:
             if type(electrode) is list:
@@ -87,6 +79,7 @@ class OnlineFEM:
                     self.dirichlet_correction.append(_electrode.dirichlet_correction)
             else:
                 self.dirichlet_correction = [electrode.dirichlet_correction]
+
         else:
             self.dirichlet_correction = False
 
@@ -378,142 +371,6 @@ class OnlineFEM:
 
         return v_ele_norm, currents_ele_norm
 
-    def optimize_currents(self, x, electrode, v_node_idx, channel_id_nodes, ele_id_nodes, node_area, signs):
-        """
-
-        :return:
-        """
-        channel_id_unique = np.unique(channel_id_nodes)
-        n_channel = len(channel_id_unique)
-
-        # write currents in electrode
-        ele_counter = 0
-        for _electrode_array in electrode.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                _ele.current = x[ele_counter]
-                ele_counter += 1
-
-        # set rhs
-        b = self.set_rhs(electrode=electrode)
-
-        # solve
-        self.v = self.solve(b)
-        v_nodes = self.v[v_node_idx]
-
-        # extract and average voltages of channels and electrodes
-        # average and weight potential with node area over electrodes and whole channel (separately)
-        v_mean_ele = []  # [n_channel][n_ele]
-        v_mean_channel = []  # [n_channel]
-        v_var_channel = np.zeros(len(channel_id_unique))   # [n_channel]
-
-        for i, _channel_id in enumerate(channel_id_unique):
-            channel_mask = _channel_id == channel_id_nodes
-
-            # average area weighted potential over whole channel
-            v_mean_channel.append(np.sum(node_area[channel_mask] * v_nodes[channel_mask]) / \
-                                  np.sum(node_area[channel_mask]))
-
-            ele_id_unique = np.unique(ele_id_nodes[channel_mask])
-
-            # for this channel determine average potentials over electrodes
-            v_mean_ele.append([])
-            for _ele_id in ele_id_unique:
-                ele_mask = _ele_id == ele_id_nodes
-                mask = ele_mask * channel_mask
-                v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / \
-                                     np.sum(node_area[mask]))
-
-            v_mean_ele[i] = np.array(v_mean_ele[i])
-            v_var_channel[i] = np.var(v_mean_ele[i])
-
-        # evaluate goal function (variance of channel voltages over electrodes)
-        var_v = np.linalg.norm(v_var_channel)
-
-        print(x,var_v)
-
-        return var_v
-
-    def current_constraint(self, x, electrode, v_node_idx, channel_id_nodes, ele_id_nodes, node_area, signs):
-        current_pos_mask = np.where(signs > 0)[0]
-        current_neg_mask = np.where(signs < 0)[0]
-
-        c = np.abs(np.sum(x[current_pos_mask]) - electrode.current_total) + \
-            np.abs(np.sum(np.abs(x[current_neg_mask])) - electrode.current_total) + \
-            np.abs(np.sum(x))
-
-        # c = np.sum(np.abs(x)) - 2*electrode.current_total
-
-        return c
-
-    # def solve_dirichlet_correction(self, b, electrode):
-    #     """
-    #
-    #     :param electrode:
-    #     :return:
-    #     """
-    #     # create arrays
-    #     # v_nodes | v_node_idx | channel_id_nodes | ele_id_nodes | node_area
-    #     # ------------------------------------------------------------------
-    #     #   ...         4               0                 0           ...
-    #     #   ...         1               0                 0           ...
-    #     #   ...         15              0                 1           ...
-    #     #   ...         3               0                 1           ...
-    #     #   ...         9               1                 0           ...
-    #     #   ...         8               1                 0           ...
-    #     #   ...         22              1                 0           ...
-    #     #   ...         0               1                 1           ...
-    #     #   ...         10              1                 1           ...
-    #     #   ...         11              1                 1           ...
-    #
-    #     n_channel = electrode.n_channel
-    #     channel_id_nodes = []
-    #     ele_id_nodes = []
-    #     v_node_idx = []
-    #     node_area = []
-    #
-    #     for _electrode_array in electrode.electrode_arrays:
-    #         for i_ele, _ele in enumerate(_electrode_array.electrodes):
-    #             channel_id_nodes.append(np.array([_ele.channel_id] * _ele.n_nodes))
-    #             ele_id_nodes.append(np.array([i_ele] * _ele.n_nodes))
-    #             node_area.append(_ele.node_area)
-    #             v_node_idx.append(_ele.node_idx)
-    #
-    #     channel_id_nodes = np.hstack(channel_id_nodes)
-    #     ele_id_nodes = np.hstack(ele_id_nodes)
-    #     node_area = np.hstack(node_area)
-    #     v_node_idx = np.hstack(v_node_idx)
-    #
-    #     # set initial values and bounds
-    #     x0 = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
-    #     bounds = [[] for i_channel in range(n_channel)]
-    #
-    #     ele_counter_channel = [0] * n_channel
-    #     for _electrode_array in electrode.electrode_arrays:
-    #         for _ele in _electrode_array.electrodes:
-    #             x0[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current_init
-    #             bounds[_ele.channel_id].append(np.sort(
-    #                 [_ele.current_init * 0.1,
-    #                  np.sign(electrode.current_mean[_ele.channel_id]) * electrode.current_total]))
-    #             ele_counter_channel[_ele.channel_id] += 1
-    #     bounds = sum(bounds, [])
-    #     x0 = np.hstack(x0).flatten()
-    #     signs = np.sign(x0)
-    #     self.logger.log(20, f"Starting current optimization with x0: {x0}")
-    #
-    #     # setup optimization algorithm
-    #     res = minimize(self.optimize_currents,
-    #                    x0=x0,
-    #                    bounds=bounds,
-    #                    args=(electrode, v_node_idx, channel_id_nodes, ele_id_nodes, node_area, signs),
-    #                    method="trust-constr",  #"SLSQP",
-    #                    constraints={"fun": self.current_constraint, "type": "eq", "args": (electrode, v_node_idx, channel_id_nodes, ele_id_nodes, node_area, signs)},
-    #                    jac=None, hess=None, hessp=None, tol=None, callback=None, options={"gtol": 1e-5, "xtol":1e-5})
-    #     if res.success:
-    #         self.logger.log(20, f"Optimized currents: {res.x}")
-    #         return self.v
-    #     else:
-    #         return None
-
     def solve_dirichlet_correction(self, b, electrode):
         """
         Solve system of equations Ax=b and corrects input currents such that the electrodes with the same channel ID
@@ -579,8 +436,8 @@ class OnlineFEM:
                 I[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current
                 I_sign[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current_sign
                 bounds[_ele.channel_id].append(np.sort(
-                                    [_ele.current * 0.1,
-                                     np.sign(electrode.current_mean[_ele.channel_id]) * electrode.current_total]))
+                    [_ele.current * 0.1,
+                     np.sign(electrode.current_mean[_ele.channel_id]) * electrode.current_total]))
                 ele_counter_channel[_ele.channel_id] += 1
 
         # Solve iteratively until maxrelerr is reached
@@ -664,6 +521,9 @@ class OnlineFEM:
             # update error
             maxrelerr = np.max([np.max(np.abs(v_norm[i_channel][-1])) for i_channel in range(n_channel)])
 
+        # final number of iterations to determine optimal currents
+        self.n_iter_dirichlet_correction = j
+
         # test if signs are correct otherwise restart
         if not np.array([(np.sign(I[i_channel]) == I_sign[i_channel]).all() for i_channel in range(n_channel)]).all():
             print(f"Final currents have wrong signs!")
@@ -674,11 +534,15 @@ class OnlineFEM:
         electrode_pos = [_electrode_array.electrode_pos for _electrode_array in electrode.electrode_arrays]
         ele_counter_channel = [0] * n_channel
 
-        for _electrode_array in electrode.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                _ele.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
-                                                         current=I[_ele.channel_id][ele_counter_channel[_ele.channel_id]])
-                ele_counter_channel[_ele.channel_id] += 1
+        if electrode.optimize_all_currents_at_once:
+            electrode.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
+                                                          current=np.hstack(I))
+        else:
+            for _electrode_array in electrode.electrode_arrays:
+                for _ele in _electrode_array.electrodes:
+                    _ele.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
+                                                             current=I[_ele.channel_id][ele_counter_channel[_ele.channel_id]])
+                    ele_counter_channel[_ele.channel_id] += 1
 
         # self.logger.log(20, f"Optimal currents: { *I, }")
 

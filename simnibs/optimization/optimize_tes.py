@@ -39,12 +39,6 @@ class TESoptimize():
     electrode : Electrode Object
         Electrode object containing ElectrodeArray instances
         (see /simulation/array_layout.py for pre-implemented examples)
-    max_total_current: float (optional)
-        Maximum current across all electrodes (in Amperes). Default: 2e-3
-    max_individual_current: float (optional)
-        Maximum current for any single electrode (in Amperes). Default: 1e-3
-    max_active_electrodes: int (optional)
-        Maximum number of active electrodes. Default: no maximum
     init_pos : str or list of str or list of str and np.ndarray of float [3]
         Initial positions of movable Electrode arrays (for each movable array)
     fn_eeg_cap : str, optional, default: 'EEG10-10_UI_Jurak_2007.csv'
@@ -81,6 +75,14 @@ class TESoptimize():
     dataType : int, optional, default: 0
         0: e-field magnitude
         1: e-field vector
+    optimizer : str, optional, default: "differential_evolution"
+        Optimization algorithm
+    goal : str, optional, default: "mean"
+        Goal function definition:
+        - "mean": average electric field magnitude in ROI
+        - "max": 99.9 percentile of electric field magnitude in ROI
+        - "mean_max_TI": average maximum envelope of e-field (temporal interference)
+        - "mean_max_TI_dir": average maximum envelope of e-field in certain direction (temporal interference)
 
     Attributes
     --------------
@@ -109,7 +111,7 @@ class TESoptimize():
                  min_electrode_distance=None,
                  plot=False,
                  goal="mean",
-                 optimizer="direct",
+                 optimizer="differential_evolution",
                  output_folder=None,
                  goal_dir=None,
                  constrain_electrode_locations=False,
@@ -237,6 +239,9 @@ class TESoptimize():
 
         # number of independent stimulation channels (on after another)
         self.n_channel_stim = len(electrode)
+
+        # initialize lists with number of dirichlet correction iterations for convergence analysis
+        self.n_iter_dirichlet_correction = [[] for _ in range(self.n_channel_stim)]
 
         # list containing the number of freely movable arrays for each channel [i_channel_stim]
         self.n_ele_free = [len(ele.electrode_arrays) for ele in self.electrode]
@@ -431,7 +436,6 @@ class TESoptimize():
         ################################################################################################################
         self.optimize()
 
-
     def get_bounds(self, constrain_electrode_locations, overlap_factor=1.):
         """
         Get boundaries of freely movable electrode arrays for optimizer.
@@ -554,7 +558,7 @@ class TESoptimize():
         """
 
         if optimize:
-            self.logger.log(20, "Finding optimal initial values for optimization")
+            self.logger.log(20, "Finding valid initial values for optimization")
             n_max = 1000
             n_para = len(bounds.lb)
 
@@ -893,33 +897,47 @@ class TESoptimize():
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
         # estimate optimal electrode currents based on previous simulations
-        # for i_channel_stim in range(self.n_channel_stim):
-        #     current_temp = []
-        #     current_pos = 0
-        #     current_neg = 0
-        #
-        #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-        #         for _electrode in _electrode_array.electrodes:
-        #             _electrode.estimate_currents(electrode_pos[i_channel_stim])
-        #             current_temp.append(_electrode.current)
-        #             # sum up current for scaling
-        #             # estimator does not know about real total current and has to be corrected
-        #             if _electrode.current < 0:
-        #                 current_neg += _electrode.current
-        #             else:
-        #                 current_pos += _electrode.current
-        #
-        #     # scale current to match total current
-        #     current_temp_scaled = []
-        #     for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-        #         for _electrode in _electrode_array.electrodes:
-        #             if _electrode.current < 0:
-        #                 _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
-        #             else:
-        #                 _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
-        #             current_temp_scaled.append(_electrode.current)
-        #
-        #     self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp, }')
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].current_estimator.method is not None:
+                current_temp = []
+                current_pos = 0
+                current_neg = 0
+
+                if self.electrode[i_channel_stim].optimize_all_currents_at_once:
+                    currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
+                    i_ele_global = 0
+
+                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                    for _electrode in _electrode_array.electrodes:
+                        if self.electrode[i_channel_stim].optimize_all_currents_at_once:
+                            if currents_estimate is not None:
+                                _electrode.current = currents_estimate[i_ele_global]
+                            else:
+                                _electrode.current = _electrode.current_init
+                            i_ele_global += 1
+                        else:
+                            _electrode.estimate_currents(electrode_pos[i_channel_stim])
+                            if _electrode.current is None:
+                                _electrode.current = _electrode.current_init
+                        current_temp.append(_electrode.current)
+                        # sum up current for scaling
+                        # estimator does not know about real total current and has to be corrected
+                        if _electrode.current < 0:
+                            current_neg += _electrode.current
+                        else:
+                            current_pos += _electrode.current
+
+                # scale current to match total current
+                current_temp_scaled = []
+                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                    for _electrode in _electrode_array.electrodes:
+                        if _electrode.current < 0:
+                            _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
+                        else:
+                            _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
+                        current_temp_scaled.append(_electrode.current)
+
+                self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp, }')
 
         return node_idx_dict
 
@@ -963,6 +981,8 @@ class TESoptimize():
             # solve system
             if self.dirichlet_correction[i_channel_stim]:
                 v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
+                # store number of dirichlet iterations for convergence analysis
+                self.n_iter_dirichlet_correction[i_channel_stim].append(self.ofem.n_iter_dirichlet_correction)
             else:
                 v = self.ofem.solve(b)
 
@@ -979,20 +999,34 @@ class TESoptimize():
 
             # plot field
             if plot:
-                for i, _e in enumerate(e[i_channel_stim]):
+                for i_roi, _e in enumerate(e[i_channel_stim]):
                     if _e is not None:
-                        import pynibs
-                        pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                   points=self.roi[i].points,
-                                                   con=self.roi[i].con,
-                                                   replace=True,
-                                                   hdf5_path='/mesh')
+                        # if we have a connectivity (surface):
+                        if self.roi[i_roi].con is not None:
+                            # nodes -> elm center
+                            if _e.shape[1] == 1:
+                                data = np.mean(_e.flatten()[self.roi[i_roi].con], axis=1)
+                            else:
+                                data = np.zeros((self.roi[i_roi].con.shape[0], _e.shape[1]))
+                                for j in range(_e.shape[1]):
+                                    data[:, j] = np.mean(_e[:, j][self.roi[i_roi].con], axis=1)
 
-                        pynibs.write_data_hdf5_surf(data=[np.mean(_e.flatten()[self.roi[i].con], axis=1)],
-                                                    data_names=["E_mag"],
-                                                    data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i}_data.hdf5"),
-                                                    geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i}_geo.hdf5"),
-                                                    replace=True)
+                            import pynibs
+                            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                       points=self.roi[i_roi].points,
+                                                       con=self.roi[i_roi].con,
+                                                       replace=True,
+                                                       hdf5_path='/mesh')
+
+                            pynibs.write_data_hdf5_surf(data=[data],
+                                                        data_names=["E"],
+                                                        data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
+                                                        geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                        replace=True)
+                        else:
+                            # if we just have points and data:
+                            np.savetxt(os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.txt"),
+                                       np.hstack((self.roi[i_roi].points, _e)))
 
         return e
 
@@ -1194,11 +1228,12 @@ class TESoptimize():
                                   electrode=self.electrode,
                                   goal=self.goal,
                                   n_test=self.n_test,
-                                  n_sim=self.n_sim)
+                                  n_sim=self.n_sim,
+                                  n_iter_dirichlet_correction=self.n_iter_dirichlet_correction)
 
 
 def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh, electrode, goal,
-                              n_test=None, n_sim=None):
+                              n_test=None, n_sim=None, n_iter_dirichlet_correction=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
 
@@ -1229,6 +1264,9 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         Number of runs to place the electrodes
     n_sim : int, optional, default: None
         Number of actual FEM simulations (for valid electrode placements only)
+    n_iter_dirichlet_correction : list of int [n_channel_stim][n_iter], optional, default: None
+        Number of iterations required to determine optimal currents in case of dirichlet correction
+        for each call of "solve_dirichlet_correction"
     """
 
     def sep(x):
@@ -1322,6 +1360,10 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         f.create_dataset(data=nfev, name="optimizer/nfev")
         f.create_dataset(data=time, name="optimizer/time")
         f.create_dataset(data=goal, name="optimizer/goal")
+
+        if n_iter_dirichlet_correction is not None:
+            for i_channel_stim, n_iter in enumerate(n_iter_dirichlet_correction):
+                f.create_dataset(data=n_iter, name=f"optimizer/n_iter_dirichlet_correction/channel_{i_channel_stim}")
 
         if n_sim is not None:
             f.create_dataset(data=n_sim, name="optimizer/n_sim")

@@ -48,7 +48,7 @@ class Surface():
 
         # @var tr_nodes
         # The nodes in each triangle
-        self. tr_nodes = []
+        self.tr_nodes = []
 
         # @var tr_normals
         # the triangle normals

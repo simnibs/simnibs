@@ -1,13 +1,14 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
+from sklearn.linear_model import LinearRegression
 
 
 class CurrentEstimator():
     """
     CurrentEstimator class to track TES electrode currents for faster estimation of fake Dirichlet boundary conditions
     """
-    def __init__(self, electrode, electrode_pos=None, current=None, method="GP"):
+    def __init__(self, electrode_pos=None, current=None, method="linear"):
         """
         Constructor for CurrentEstimator class instance
 
@@ -19,9 +20,10 @@ class CurrentEstimator():
             Positions and orientations of ElectrodeArrayPair or CircularArray
         current : list of np.ndarray of float [n_array_free][n_pos x 3]
             Optimal currents corresponding to electrode positions
-        method : str
+        method : str, optional, default: "linear"
             Method to estimate the electrode currents:
             - "GP": Gaussian process
+            - "linear": linear regression
 
         Attributes
         ----------
@@ -35,8 +37,7 @@ class CurrentEstimator():
             Method to estimate the electrode currents:
             - "GP": Gaussian process
         """
-        self.electrode = electrode              # CircularArray or ElectrodeArrayPair
-        self.method = method                    # "GP" (Gaussian process)
+        self.method = method                    # "GP" (Gaussian process) "linear" (sklearn.linear_model.LinearRegression)
 
         # reshape electrode_pos from list to nparray [n_train x n_ele]
         if electrode_pos is not None:
@@ -81,7 +82,7 @@ class CurrentEstimator():
 
         # reshape and append passed electrode position to set of all electrode positions [n_train x n_ele]
         if self.electrode_pos is None:
-            self.electrode_pos = np.hstack(electrode_pos)
+            self.electrode_pos = np.hstack(electrode_pos)[np.newaxis, :]
 
             if self.electrode_pos.ndim == 1:
                 self.electrode_pos = self.electrode_pos[np.newaxis, :]
@@ -95,7 +96,7 @@ class CurrentEstimator():
 
         # reshape and append passed electrode currents to set of all electrode currents [n_train x n_ele]
         if self.current is None:
-            self.current = np.hstack(current)
+            self.current = np.hstack(current)[np.newaxis, :]
         else:
             self.current = np.vstack((self.current, np.hstack(current)))
 
@@ -123,6 +124,13 @@ class CurrentEstimator():
             current = get_estimate_gaussian_process(x=electrode_pos,
                                                     x_train=self.electrode_pos,
                                                     y_train=self.current)
+        elif self.method == "linear":
+            if self.electrode_pos.shape[0] > 1:
+                current = get_estimate_linear_regression(x=electrode_pos,
+                                                         x_train=self.electrode_pos,
+                                                         y_train=self.current)
+            else:
+                return None
         else:
             raise NotImplementedError(f"Specified current estimation method '{self.method}' not implemented.")
 
@@ -227,6 +235,34 @@ def squared_exponential_kernel(x, y, lengthscale, variance):
     sqdist = cdist(x, y, 'sqeuclidean')
     k = variance * np.exp(-0.5 * sqdist * (1/lengthscale**2))
     return k
+
+
+def get_estimate_linear_regression(x, x_train, y_train):
+    """
+    Determine coordinates at highest variance determined by Gaussian Process Regression
+
+    Parameters
+    ----------
+    x : ndarray of float [n_para]
+        Query point
+    x_train : ndarray of float [n_train x n_para]
+        Set of training points (parameters)
+    y_train : ndarray of float [n_train x n_para]
+        Set of training points (solutions)
+
+    Returns
+    -------
+    y : ndarray of float
+        Estimate
+    """
+
+    reg = LinearRegression().fit(x_train, y_train)
+
+    # reg.score(x_train, y_train)
+    # reg.coef_
+    # reg.intercept_
+
+    return reg.predict(x)
 
 
 def get_estimate_gaussian_process(x, x_train, y_train, lengthscale=None, variance=None):
