@@ -1,7 +1,9 @@
+import pygpc
 import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
 from sklearn.linear_model import LinearRegression
+from collections import OrderedDict
 
 
 class CurrentEstimator():
@@ -37,17 +39,31 @@ class CurrentEstimator():
             Method to estimate the electrode currents:
             - "GP": Gaussian process
         """
-        self.method = method                    # "GP" (Gaussian process) "linear" (sklearn.linear_model.LinearRegression)
+        self.method = method   # "GP" (Gaussian process) "linear" (sklearn.linear_model.LinearRegression) "gpc" (pygpc)
+
+        self.gpc_grid = None
+        self.gpc_coeffs = None
+        self.gpc_session = None
+        self.gpc_algorithm = None
+        self.gpc_order_list = None
+        self.gpc_parameters = None
+        self.gpc_n_coeffs_list = None
 
         # reshape electrode_pos from list to nparray [n_train x n_ele]
         if electrode_pos is not None:
             self.electrode_pos = np.hstack(electrode_pos)
+
+            if self.electrode_pos.ndim == 1:
+                self.electrode_pos = self.electrode_pos[np.newaxis, :]
         else:
             self.electrode_pos = None
 
         # reshape currents from list to nparray [n_train x n_ele]
         if current is not None:
             self.current = np.hstack(current)
+
+            if self.current.ndim == 1:
+                self.current = self.current[np.newaxis, :]
         else:
             self.current = None
 
@@ -82,7 +98,7 @@ class CurrentEstimator():
 
         # reshape and append passed electrode position to set of all electrode positions [n_train x n_ele]
         if self.electrode_pos is None:
-            self.electrode_pos = np.hstack(electrode_pos)[np.newaxis, :]
+            self.electrode_pos = np.hstack(electrode_pos)
 
             if self.electrode_pos.ndim == 1:
                 self.electrode_pos = self.electrode_pos[np.newaxis, :]
@@ -96,9 +112,35 @@ class CurrentEstimator():
 
         # reshape and append passed electrode currents to set of all electrode currents [n_train x n_ele]
         if self.current is None:
-            self.current = np.hstack(current)[np.newaxis, :]
+            self.current = np.hstack(current)
+
+            if self.current.ndim == 1:
+                self.current = self.current[np.newaxis, :]
+
         else:
             self.current = np.vstack((self.current, np.hstack(current)))
+
+        # determine list of approximation orders and associated number of gpc coefficients
+        if self.method == "gpc":
+            if self.gpc_grid is None:
+                self.gpc_grid = pygpc.RandomGrid(parameters_random=self.gpc_parameters, coords=self.electrode_pos)
+            else:
+                if electrode_pos.ndim == 1:
+                    electrode_pos = electrode_pos[np.newaxis, :]
+                self.gpc_grid.extend_random_grid(coords=electrode_pos)
+
+            if self.gpc_n_coeffs_list is None:
+                self.gpc_order_list = np.arange(5) + 1
+                self.gpc_n_coeffs_list = np.zeros(len(self.gpc_order_list)).astype(int)
+                dim = self.electrode_pos.shape[1]
+
+                for i_order, order in enumerate(self.gpc_order_list):
+                    self.gpc_n_coeffs_list[i_order] = pygpc.get_num_coeffs_sparse(order_dim_max=[order] * dim,
+                                                                                  order_glob_max=order,
+                                                                                  order_inter_max=2,
+                                                                                  dim=dim,
+                                                                                  order_inter_current=None,
+                                                                                  order_glob_max_norm=1)
 
     def estimate_current(self, electrode_pos):
         """
@@ -131,10 +173,91 @@ class CurrentEstimator():
                                                          y_train=self.current)
             else:
                 return None
+
+        elif self.method == "gpc":
+            current = self.get_estimate_gpc(x=electrode_pos,
+                                            x_train=self.electrode_pos,
+                                            y_train=self.current)
+            if current is None:
+                return None
+
         else:
             raise NotImplementedError(f"Specified current estimation method '{self.method}' not implemented.")
 
         return current[0]
+
+    def set_gpc_parameters(self, lb, ub):
+        """
+        Sets gpc parameters in self.gpc_parameters
+
+        Parameters
+        ----------
+        lb : np.array of float [n_para]
+            Lower bounds of parameters
+        ub : np.array of float [n_para]
+            Upper bounds of parameters
+        """
+        self.gpc_parameters = OrderedDict()
+        for i in range(len(lb)):
+            self.gpc_parameters[str(i)] = pygpc.Beta(pdf_shape=[1, 1], pdf_limits=[lb[i], ub[i]])
+
+    def get_estimate_gpc(self, x, x_train, y_train):
+        """
+        Determine coordinates at highest variance determined by gpc.
+
+        Parameters
+        ----------
+        x : ndarray of float [n_para]
+            Query point
+        x_train : ndarray of float [n_train x n_para]
+            Set of training points (parameters)
+        y_train : ndarray of float [n_train x n_para]
+            Set of training points (solutions)
+
+        Returns
+        -------
+        y : ndarray of float
+            Estimate
+        """
+        # select order based on number of samples
+        idx_order = np.where(self.gpc_grid.n_grid >= (2*self.gpc_n_coeffs_list))[0]
+
+        if len(idx_order) > 0:
+            order = self.gpc_order_list[idx_order[-1]]
+        else:
+            return None
+
+        options = dict()
+        options["method"] = "reg"
+        options["solver"] = "Moore-Penrose"
+        options["settings"] = None
+        options["order"] = [order] * self.electrode_pos.shape[1]
+        options["order_max"] = order
+        options["interaction_order"] = 2
+        options["error_type"] = None
+        options["n_samples_validation"] = None
+        options["fn_results"] = None
+        options["save_session_format"] = ".pkl"
+        options["backend"] = "omp"
+        options["verbose"] = False
+
+        # define algorithm
+        self.gpc_algorithm = pygpc.Static_IO(parameters=self.gpc_parameters,
+                                             options=options,
+                                             grid=self.gpc_grid,
+                                             results=y_train)
+
+        # initialize gPC Session
+        self.gpc_session = pygpc.Session(algorithm=self.gpc_algorithm)
+
+        # run gPC algorithm
+        self.gpc_session, self.gpc_coeffs, _ = self.gpc_session.run()
+
+        # approximate current
+        x_norm = self.gpc_grid.get_normalized_coordinates(coords=x)
+        current = self.gpc_session.gpc[0].get_approximation(coeffs=self.gpc_coeffs, x=x_norm)
+
+        return current
 
 
 def get_parameters_gaussian_process(Xtrain, ytrain):
@@ -237,9 +360,12 @@ def squared_exponential_kernel(x, y, lengthscale, variance):
     return k
 
 
+
+
+
 def get_estimate_linear_regression(x, x_train, y_train):
     """
-    Determine coordinates at highest variance determined by Gaussian Process Regression
+    Determine coordinates at highest variance determined by linear regression.
 
     Parameters
     ----------

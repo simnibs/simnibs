@@ -31,6 +31,7 @@ class Electrode():
         Method to estimate the electrode currents:
         - "GP": Gaussian process
         - "linear": linear regression
+        - "gpc": generalized polynomial chaos
 
     Attributes
     ----------
@@ -387,6 +388,7 @@ class ElectrodeArrayPair():
         Method to estimate the electrode currents:
         - "GP": Gaussian process
         - "linear": linear regression
+        - "gpc": generalized polynomial chaos
 
     Attributes
     ----------
@@ -417,7 +419,7 @@ class ElectrodeArrayPair():
         else:
             self.dirichlet_correction = False
 
-        if current_estimator_method == "linear":
+        if current_estimator_method in ["linear", "gpc"]:
             self.optimize_all_currents_at_once = True
         else:
             self.optimize_all_currents_at_once = False
@@ -526,6 +528,7 @@ class CircularArray():
         Method to estimate the electrode currents:
         - "GP": Gaussian process
         - "linear": linear regression
+        - "gpc": generalized polynomial chaos
 
     Attributes
     ----------
@@ -550,7 +553,7 @@ class CircularArray():
         self.dirichlet_correction = True
         self.ele_id = np.arange(self.n_ele)
 
-        if current_estimator_method == "linear":
+        if current_estimator_method in ["linear", "gpc"]:
             self.optimize_all_currents_at_once = True
         else:
             self.optimize_all_currents_at_once = False

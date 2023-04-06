@@ -356,6 +356,11 @@ class TESoptimize():
         bounds = self.get_bounds(constrain_electrode_locations=self.constrain_electrode_locations,
                                  overlap_factor=self.overlap_factor)
 
+        # define parameters
+        for i_channel_stim in range(self.n_channel_stim):
+            if electrode[i_channel_stim].current_estimator.method == "gpc":
+                self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(lb=bounds.lb, ub=bounds.ub)
+
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
 
