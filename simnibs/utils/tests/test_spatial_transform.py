@@ -98,22 +98,6 @@ def test_translation(params, affines):
         )
 
 
-def test_matrix_from_params():
-    ...
-
-
-def test_quaternion_real_part():
-    ...
-
-
-def test_quaternion_to_rotation():
-    ...
-
-
-def test_quaternion_to_euler_angles():
-    ...
-
-
 @pytest.mark.parametrize("scale", [False, True])
 def fit_matched_points_analytical(scale, src_pts, match_params):
     """Recover true transformation matrix."""
