@@ -12,11 +12,11 @@ import pynibs
 import simnibs
 import nibabel
 import numpy as np
-import matplotlib.pyplot as pltPowd9Twy
+import matplotlib.pyplot as plt
 
 import matplotlib
 
-matplotlib.use("Qt5Agg")
+# matplotlib.use("Qt5Agg")
 
 output_folder = "/data/pt_01756/studies/ttf"
 # output_folder = "/home/kporzig/tmp"
@@ -46,8 +46,8 @@ current_estimator_method = "gpc"
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
-                                  current_estimator_method=current_estimator_method)
+# electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
+#                                   current_estimator_method=current_estimator_method)
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
@@ -74,20 +74,20 @@ electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radiu
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
-# center = np.array([[-30, 20, 0],
-#                     [0, 20, 0],
-#                     [30, 20, 0],
-#                     [-30, 0, 0],
-#                     [0, 0, 0],
-#                     [30, 0, 0],
-#                     [-30, -20, 0],
-#                     [0, -20, 0],
-#                     [30, -20, 0]])
-# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                        current_estimator_method=current_estimator_method)
+center = np.array([[-30, 20, 0],
+                     [0, 20, 0],
+                     [30, 20, 0],
+                     [-30, 0, 0],
+                     [0, 0, 0],
+                     [30, 0, 0],
+                     [-30, -20, 0],
+                     [0, -20, 0],
+                     [30, -20, 0]])
+radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+                                        current_estimator_method=current_estimator_method)
 # electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
@@ -114,7 +114,7 @@ electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radiu
 #                                          current_estimator_method=current_estimator_method)
 # electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
 #                                          current_estimator_method=current_estimator_method)
-#
+
 # electrode = [electrode_1, electrode_2]
 # electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 

@@ -356,10 +356,14 @@ class TESoptimize():
         bounds = self.get_bounds(constrain_electrode_locations=self.constrain_electrode_locations,
                                  overlap_factor=self.overlap_factor)
 
-        # define parameters
-        for i_channel_stim in range(self.n_channel_stim):
-            if electrode[i_channel_stim].current_estimator.method == "gpc":
-                self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(lb=bounds.lb, ub=bounds.ub)
+        # define gpc parameters for current estimator
+        if self.electrode[i_channel_stim].current_estimator.method == "gpc":
+            n_max = 0
+            for i_channel_stim in range(self.n_channel_stim):
+                self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
+                    lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
+                    ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
+            n_max += self.n_ele_free[i_channel_stim]*3
 
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
@@ -915,14 +919,14 @@ class TESoptimize():
                 for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                     for _electrode in _electrode_array.electrodes:
                         if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                            if currents_estimate is not None:
+                            if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.current_sign):
                                 _electrode.current = currents_estimate[i_ele_global]
                             else:
                                 _electrode.current = _electrode.current_init
                             i_ele_global += 1
                         else:
                             _electrode.estimate_currents(electrode_pos[i_channel_stim])
-                            if _electrode.current is None:
+                            if _electrode.current is None or (np.sign(currents_estimate[i_ele_global])!=_electrode.current_sign):
                                 _electrode.current = _electrode.current_init
                         current_temp.append(_electrode.current)
                         # sum up current for scaling
@@ -942,7 +946,7 @@ class TESoptimize():
                             _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
                         current_temp_scaled.append(_electrode.current)
 
-                self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp, }')
+                self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp_scaled, }')
 
         return node_idx_dict
 

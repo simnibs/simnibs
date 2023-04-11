@@ -130,7 +130,7 @@ class CurrentEstimator():
                 self.gpc_grid.extend_random_grid(coords=electrode_pos)
 
             if self.gpc_n_coeffs_list is None:
-                self.gpc_order_list = np.arange(5) + 1
+                self.gpc_order_list = np.arange(11) + 1
                 self.gpc_n_coeffs_list = np.zeros(len(self.gpc_order_list)).astype(int)
                 dim = self.electrode_pos.shape[1]
 
