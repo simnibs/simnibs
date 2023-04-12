@@ -39,7 +39,7 @@ overlap_factor = 1.
 polish = False
 locally_biased = True
 init_pos = None
-current_estimator_method = "linear"
+current_estimator_method = "gpc"
 # init_pos = ["C3"]
 # init_pos = ["C3", "C4"]
 

@@ -320,6 +320,13 @@ class TESoptimize():
                 # set initial orientation alpha to zero
                 self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
 
+        # plot electrodes
+        if self.plot:
+            for i_channel_stim in range(self.n_channel_stim):
+                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                    _electrode_array.plot(show=False, fn_plot=os.path.join(
+                        output_folder, "plots", f"electrode_stim_{i_channel_stim}_array_{i_array}.png"))
+
         # setup optimization
         ################################################################################################################
         self.logger.log(20, "Setting up optimization algorithm ...")
