@@ -607,6 +607,8 @@ class TESoptimize():
         mesh : Msh object
             Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
         """
+        nodes_all = copy.deepcopy(skin_surface.nodes)
+        tr_nodes_all = copy.deepcopy(skin_surface.tr_nodes)
         # load mask of valid electrode positions (in MNI space)
         mask_img = nib.load(self.fn_electrode_mask)
         mask_img_data = mask_img.get_fdata()
@@ -676,6 +678,17 @@ class TESoptimize():
             points=skin_surface.nodes,
             con=skin_surface.tr_nodes,
             point_mask=point_domain == domain_idx_main)
+
+        # update masks
+        skin_surface.mask_valid_nodes = np.zeros(nodes_all.shape[0]).astype(bool)
+        for i_p, p in enumerate(nodes_all):
+            if p in skin_surface.nodes:
+                skin_surface.mask_valid_nodes[i_p] = True
+
+        skin_surface.mask_valid_tr = np.zeros(tr_nodes_all.shape[0]).astype(bool)
+        for i_t, t in enumerate(tr_nodes_all):
+            if t in skin_surface.tr_nodes:
+                skin_surface.mask_valid_tr[i_t] = True
 
         skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
         skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
