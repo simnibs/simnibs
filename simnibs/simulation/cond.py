@@ -125,6 +125,21 @@ def standard_cond(n=11000):
     S[9].value = 0.16
     S[9].descrip = 'Muscle (from Gabriel et al, 2009)'
 
+    # Burrholes
+    S[18].name = 'Burrholes'
+    S[18].value = 1.654
+    S[18].descrip = 'Burrholes (CSF)'
+
+    # Muscle
+    S[19].name = 'Resection Cavities'
+    S[19].value = 1.654
+    S[19].descrip = 'Resection Cavities (CSF)'
+
+    # Residual Tumor
+    S[24].name = 'Residual Tumor'
+    S[24].value = 1.654
+    S[24].descrip = 'Residual Tumor (CSF)'
+
     # Rubber
     S[99].name = 'Electrode_rubber'
     S[99].value = 29.4
