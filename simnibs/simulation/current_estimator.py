@@ -219,39 +219,41 @@ class CurrentEstimator():
         y : ndarray of float
             Estimate
         """
-        # select order based on number of samples
-        idx_order = np.where(self.gpc_grid.n_grid >= (2*self.gpc_n_coeffs_list))[0]
+        # update gpc only every 20 iterations
+        if self.gpc_session is None or not(self.gpc_grid.n_grid % 20):
+            # select order based on number of samples
+            idx_order = np.where(self.gpc_grid.n_grid >= (2 * self.gpc_n_coeffs_list))[0]
 
-        if len(idx_order) > 0:
-            order = self.gpc_order_list[idx_order[-1]]
-        else:
-            return None
+            if len(idx_order) > 0:
+                order = self.gpc_order_list[idx_order[-1]]
+            else:
+                return None
 
-        options = dict()
-        options["method"] = "reg"
-        options["solver"] = "Moore-Penrose"
-        options["settings"] = None
-        options["order"] = [order] * self.electrode_pos.shape[1]
-        options["order_max"] = order
-        options["interaction_order"] = 2
-        options["error_type"] = None
-        options["n_samples_validation"] = None
-        options["fn_results"] = None
-        options["save_session_format"] = ".pkl"
-        options["backend"] = "omp"
-        options["verbose"] = False
+            options = dict()
+            options["method"] = "reg"
+            options["solver"] = "Moore-Penrose"
+            options["settings"] = None
+            options["order"] = [order] * self.electrode_pos.shape[1]
+            options["order_max"] = order
+            options["interaction_order"] = 2
+            options["error_type"] = None
+            options["n_samples_validation"] = None
+            options["fn_results"] = None
+            options["save_session_format"] = ".pkl"
+            options["backend"] = "omp"
+            options["verbose"] = False
 
-        # define algorithm
-        self.gpc_algorithm = pygpc.Static_IO(parameters=self.gpc_parameters,
-                                             options=options,
-                                             grid=self.gpc_grid,
-                                             results=y_train)
+            # define algorithm
+            self.gpc_algorithm = pygpc.Static_IO(parameters=self.gpc_parameters,
+                                                 options=options,
+                                                 grid=self.gpc_grid,
+                                                 results=y_train)
 
-        # initialize gPC Session
-        self.gpc_session = pygpc.Session(algorithm=self.gpc_algorithm)
+            # initialize gPC Session
+            self.gpc_session = pygpc.Session(algorithm=self.gpc_algorithm)
 
-        # run gPC algorithm
-        self.gpc_session, self.gpc_coeffs, _ = self.gpc_session.run()
+            # run gPC algorithm
+            self.gpc_session, self.gpc_coeffs, _ = self.gpc_session.run()
 
         # approximate current
         x_norm = self.gpc_grid.get_normalized_coordinates(coords=x)
