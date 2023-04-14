@@ -39,7 +39,7 @@ Attributes
 
     * *.nii.gz* files: NifTi files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (`Madsen et al., 2015 <https://doi.org/10.1016/j.brs.2015.07.035>`_)
     * *.ccd* files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (`Thielscher and Kammer, 2004 <https://doi.org/10.1016/j.clinph.2004.02.019>`_)
- 
+
   * **Examples**: *Python/MATLAB*
 
     Select the SimNIBS model for the Magstim 70mm figure-of-eight coil
@@ -62,7 +62,7 @@ Attributes
   * **Examples**: See the :ref:`documentation for the POSITION strucure <position_doc>`.
 
 * **cond**: *list/array of COND structures (Python/MATLAB), optional*
-   
+
   :ref:`Follow this link <cond_attribute_doc>`.
 
 * **anisotropy_type**: *'scalar', 'vn', 'dir' or 'mc', optional*
@@ -100,7 +100,7 @@ Examples
     # Select the head mesh
     S.fnamehead = 'ernie.msh'
     # add a TMSLIST to the SESSION
-    tms = S.add_tmslist() 
+    tms = S.add_tmslist()
     # Select the coil from those available in the ccd-coils subfolder
     tms.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
     # Add a new position
