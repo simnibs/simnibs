@@ -37,6 +37,7 @@
       ~Msh.gamma_metric
       ~Msh.gaussian_curvature
       ~Msh.get_AABBTree
+      ~Msh.get_outer_skin_points
       ~Msh.interp_matrix
       ~Msh.intersect_ray
       ~Msh.intersect_segment

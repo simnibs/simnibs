@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>add_tissues_to_upsampled &#8212; SimNIBS 4.0.0 documentation</title>
+    <title>add_tissues_to_upsampled &#8212; SimNIBS 4.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
@@ -64,32 +64,30 @@
 <a class="reference internal image-reference" href="../../_images/custom_mask1.jpg"><img alt="../../_images/custom_mask1.jpg" class="align-center" src="../../_images/custom_mask1.jpg" style="width: 386.0px; height: 364.0px;" /></a>
 <p></p>
 <ol class="arabic simple" start="2">
-<li><p>Move the nifti file into the m2m-folder of the “Ernie” example data set.</p></li>
-<li><p>Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
+<li><p>Move the nifti file into the m2m-folder of the “Ernie” example data set (i.e., <cite>m2m_ernie</cite>).</p></li>
+<li><p>Open a terminal and go to <cite>m2m_ernie</cite> in the example data set.</p></li>
 <li><p>Make a copy of the <em>tissue_labeling_upsampled.nii.gz</em> (e.g., tissue_labeling_upsampled_orig.nii.gz) that is found in the sub-folder <em>label_prep</em>.</p></li>
 <li><p>Run</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>add_tissues_to_upsampled -i simnibs.nii.gz -t ./label_prep/tissue_labeling_upsampled.nii.gz -o ./label_prep/tissue_labeling_upsampled.nii.gz --offset <span class="m">50</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="6">
-<li><p>The new <em>tissue_labeling_uspsampled.nii.gz</em> file will include the extra labels from label number 51 to label number 57. That is, the offset value is added to the label values inside the extra tissue volume.</p></li>
-</ol>
+<p>The new <em>tissue_labeling_upsampled.nii.gz</em> file will include the extra labels from label number 51 to label number 57. That is, the offset value is added to the label values inside the extra tissue volume.</p>
 <a class="reference internal image-reference" href="../../_images/custom_mask2.jpg"><img alt="../../_images/custom_mask2.jpg" class="align-center" src="../../_images/custom_mask2.jpg" style="width: 387.0px; height: 368.0px;" /></a>
 <p></p>
-<ol class="arabic simple" start="7">
+<ol class="arabic simple" start="6">
 <li><p>Now recreate the head model by running</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> ..
 charm ernie --mesh
 </pre></div>
 </div>
-<ol class="arabic simple" start="8">
+<ol class="arabic simple" start="7">
 <li><p>The updated head mesh can be checked by visualizing it in gmsh:</p></li>
 </ol>
 <a class="reference internal image-reference" href="../../_images/custom_mask3.jpg"><img alt="../../_images/custom_mask3.jpg" class="align-center" src="../../_images/custom_mask3.jpg" style="width: 472.8px; height: 420.0px;" /></a>
 <p></p>
-<ol class="arabic simple" start="9">
+<ol class="arabic simple" start="8">
 <li><p>Run simulations: We have to define the conductivities of the new tissue labels:</p></li>
 </ol>
 <ul>

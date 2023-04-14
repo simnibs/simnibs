@@ -15,14 +15,14 @@ Usage example
 .. image:: ../../images/custom_mask1.jpg
    :align: center
    :scale: 50 %
-   
+
 \
 
-2. Move the nifti file into the m2m-folder of the "Ernie" example data set.
+2. Move the nifti file into the m2m-folder of the "Ernie" example data set (i.e., `m2m_ernie`).
 
-3. Open a terminal and go to the directory of the “Ernie” example data set.
+3. Open a terminal and go to `m2m_ernie` in the example data set.
 
-4. Make a copy of the *tissue_labeling_upsampled.nii.gz* (e.g., tissue_labeling_upsampled_orig.nii.gz) that is found in the sub-folder *label_prep*. 
+4. Make a copy of the *tissue_labeling_upsampled.nii.gz* (e.g., tissue_labeling_upsampled_orig.nii.gz) that is found in the sub-folder *label_prep*.
 
 5. Run
 
@@ -31,42 +31,42 @@ Usage example
   add_tissues_to_upsampled -i simnibs.nii.gz -t ./label_prep/tissue_labeling_upsampled.nii.gz -o ./label_prep/tissue_labeling_upsampled.nii.gz --offset 50
 
 
-6. The new *tissue_labeling_uspsampled.nii.gz* file will include the extra labels from label number 51 to label number 57. That is, the offset value is added to the label values inside the extra tissue volume.
+The new *tissue_labeling_upsampled.nii.gz* file will include the extra labels from label number 51 to label number 57. That is, the offset value is added to the label values inside the extra tissue volume.
 
 .. image:: ../../images/custom_mask2.jpg
    :align: center
    :scale: 50 %
-   
+
 \
 
-7. Now recreate the head model by running
+6. Now recreate the head model by running
 
 .. code-block:: bash
 
 	cd ..
 	charm ernie --mesh
-	
-8. The updated head mesh can be checked by visualizing it in gmsh:
+
+7. The updated head mesh can be checked by visualizing it in gmsh:
 
 .. image:: ../../images/custom_mask3.jpg
    :align: center
    :scale: 40 %
-   
+
 \
 
-9. Run simulations: We have to define the conductivities of the new tissue labels:
+8. Run simulations: We have to define the conductivities of the new tissue labels:
 
 * *Python*
 
   .. code-block:: python
-  
+
 	from simnibs import sim_struct, run_simnibs
 
 	S = sim_struct.SESSION()
 	S.subpath = 'm2m_ernie'
 	S.pathfem = 'simu'
 	S.fields = 'eEjJ'  # save e-field and current density
-		
+
 	# add a TDCS simulation
 	tdcs = S.add_tdcslist()
 	tdcs.currents = [0.001, -0.001]  # Current flow though each channel (A)
@@ -99,7 +99,7 @@ Usage example
 
 	electrode2 = tdcs.add_electrode()
 	electrode2.channelnr = 2
-	electrode2.centre = 'FC6' 
+	electrode2.centre = 'FC6'
 	electrode2.shape = 'ellipse'
 	electrode2.dimensions = [50, 50]
 	electrode2.thickness = 4
@@ -111,7 +111,7 @@ Usage example
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
 	S = sim_struct('SESSION');
 	S.subpath = 'm2m_ernie';
 	S.pathfem = 'simu';
@@ -137,7 +137,7 @@ Usage example
 	S.poslist{1}.cond(56).name = 'B';
 	S.poslist{1}.cond(57).value = 10; % in S/m
 	S.poslist{1}.cond(57).name = 'S2';
-	
+
 	% define first electrode
 	S.poslist{1}.electrode(1).channelnr = 1;
 	S.poslist{1}.electrode(1).centre = 'FC5';
@@ -154,7 +154,7 @@ Usage example
 
 	% Run simulation
 	run_simnibs(S)
-	
+
 The simulation results with the new tissues:
 
 .. image:: ../../images/custom_mask4.jpg
