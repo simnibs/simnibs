@@ -158,7 +158,8 @@ def _estimate_parameters(
     gmm_parameters,
     visualizer,
     user_optimization_options=None,
-    user_model_specifications=None
+    user_model_specifications=None,
+    gmm_params_path=None,
 ):
 
     ds_targets = segment_settings["downsampling_targets"]
@@ -229,7 +230,7 @@ def _estimate_parameters(
             % (multiResolutionLevel, item["numberOfIterations"], item["perVoxelCost"])
         )
 
-    return samsegment.saveParametersAndInput()
+    return samsegment.saveParametersAndInput(gmm_params_path)
 
 
 def _post_process_segmentation(
@@ -249,7 +250,7 @@ def _post_process_segmentation(
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
         corrected_input = nib.load(bias_corrected)
         resampled_input, new_affine, orig_res = resample_vol(
-            corrected_input.get_data(), corrected_input.affine, 0.5, order=1
+            corrected_input.get_fdata(), corrected_input.affine, 0.5, order=1
         )
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
         nib.save(upsampled, upsampled_image_names[input_number])
@@ -864,10 +865,10 @@ def _open_sulci(
     return label_img
 
 
-def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template, 
+def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
                             fn_affine, tms_settings, n_dil=40):
     """
-    Cut away neck of tissue_labeling_upsampled.nii.gz and 
+    Cut away neck of tissue_labeling_upsampled.nii.gz and
     combine some of the labels. Overwrites the original file.
     Used to create meshes optimized for TMS.
 
@@ -892,11 +893,11 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
     label_image  = nib.load(fn_tissue_labeling_upsampled)
     label_buffer = np.round(label_image.get_fdata()).astype( np.uint16 )  # Cast to uint16, otherwise meshing complains
     label_affine = label_image.affine
-    
+
     mni_image  = nib.load(fn_mni_template)
     mni_buffer = np.ones(mni_image.shape, dtype=bool)
     mni_affine = mni_image.affine
-    
+
     trafo = loadmat(fn_affine)['worldToWorldTransformMatrix']
 
     upperhead = volumetric_affine((mni_buffer, mni_affine),
@@ -906,24 +907,24 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
                                   intorder=0)
     upperhead = mrph.binary_dilation(upperhead, iterations=n_dil)
     label_buffer[~upperhead] = 0
-    
+
     # combine labels
     logger.info("Combining labels")
     for idx_old, idx_new in zip(tms_settings["old_label"], tms_settings["new_label"]):
         logger.debug("  old label: %d, new label: %d " % (idx_old, idx_new))
         label_buffer[label_buffer == idx_old] = idx_new
-  
+
     label_image = nib.Nifti1Image(label_buffer, label_affine)
     nib.save(label_image, fn_tissue_labeling_upsampled)
-    
- 
+
+
 # def _downsample_surface(m, n_nodes):
 #     """
 #         downsample a surface using meshfix
 
 #     Parameters
 #     ----------
-#     m : simnibs.Msh 
+#     m : simnibs.Msh
 #         surface
 #     n_nodes : int
 #         target number of nodes.
@@ -932,18 +933,18 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
 #     -------
 #     mout : simnibs.Msh
 #         downsampled surface
-        
+
 #     NOTE: this is a primitive wrapper around meshfix, tag1 and tag2 of the
-#     returned mesh will be set to 1, meshes with multiple surfaces are not 
+#     returned mesh will be set to 1, meshes with multiple surfaces are not
 #     supported
 #     """
 #     with tempfile.NamedTemporaryFile(suffix=".off") as f:
 #         mesh_fn = f.name
 #     write_off(m, mesh_fn)
-#     cmd = [file_finder.path2bin("meshfix"), mesh_fn, 
+#     cmd = [file_finder.path2bin("meshfix"), mesh_fn,
 #            "-u", "2", "--vertices", str(n_nodes), "-o", mesh_fn]
 #     spawn_process(cmd, lvl=logging.DEBUG)
-    
+
 #     mout = read_off(mesh_fn)
 #     os.remove(mesh_fn)
 #     if os.path.isfile("meshfix_log.txt"):

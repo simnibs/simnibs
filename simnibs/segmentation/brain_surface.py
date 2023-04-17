@@ -1436,7 +1436,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     # map thickness data on final surface
     CS = mesh_io.read_gifti_surface(Pcentral)
     Vthk=nib.load(fname_thkimg)
-    nd = mesh_io.NodeData.from_data_grid(CS, Vthk.get_data(), Vthk.affine, 'thickness')
+    nd = mesh_io.NodeData.from_data_grid(CS, Vthk.get_fdata(), Vthk.affine, 'thickness')
     mesh_io.write_curv(Pthick, nd.value, nd.nr)
 
     if debug:
@@ -1444,7 +1444,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
         thickness=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
         # Yppt sampled on the final surface should be distributed sharply around 0.5
         Vpp = nib.load(fname_ppimg)
-        nd = mesh_io.NodeData.from_data_grid(CS, Vpp.get_data(), Vpp.affine, 'pp')
+        nd = mesh_io.NodeData.from_data_grid(CS, Vpp.get_fdata(), Vpp.affine, 'pp')
         pponsurf=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
 
         CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,4)

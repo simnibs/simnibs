@@ -50,6 +50,7 @@ def run(
     force_forms=False,
     options_str=None,
     debug=False,
+    save_gmm_params=False
 ):
     """charm pipeline
 
@@ -88,6 +89,7 @@ def run(
         filename of alternative settings-file (default = None)
     options_str : str
         string of command line options to add to logging (default = None)
+
     RETURNS
     ----------
         None
@@ -222,6 +224,7 @@ def run(
             segment_settings,
             gmm_parameters,
             visualizer,
+            gmm_params_path=sub_files.segmentation_folder if debug else None
         )
 
         # Okay now the parameters have been estimated, and we can segment the
