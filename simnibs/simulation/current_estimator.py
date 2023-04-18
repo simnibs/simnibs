@@ -10,7 +10,7 @@ class CurrentEstimator():
     """
     CurrentEstimator class to track TES electrode currents for faster estimation of fake Dirichlet boundary conditions
     """
-    def __init__(self, electrode_pos=None, current=None, method="linear"):
+    def __init__(self, electrode_pos=None, current=None, method="gpc"):
         """
         Constructor for CurrentEstimator class instance
 
@@ -22,10 +22,11 @@ class CurrentEstimator():
             Positions and orientations of ElectrodeArrayPair or CircularArray
         current : list of np.ndarray of float [n_array_free][n_pos x 3]
             Optimal currents corresponding to electrode positions
-        method : str, optional, default: "linear"
+        method : str, optional, default: "gpc"
             Method to estimate the electrode currents:
             - "GP": Gaussian process
             - "linear": linear regression
+            - "gpc": generalized polynomial chaos
 
         Attributes
         ----------
@@ -38,6 +39,8 @@ class CurrentEstimator():
         self.method : str
             Method to estimate the electrode currents:
             - "GP": Gaussian process
+            - "linear": linear regression
+            - "gpc": generalized polynomial chaos
         """
         self.method = method   # "GP" (Gaussian process) "linear" (sklearn.linear_model.LinearRegression) "gpc" (pygpc)
 

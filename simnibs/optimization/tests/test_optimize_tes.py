@@ -34,12 +34,13 @@ optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_e
 optimize_init_vals = True
 goal = "mean"  # "mean" "mean_max_TI"
 dataType = 0
-constrain_electrode_locations = True
+constrain_electrode_locations = False
 overlap_factor = 1.
 polish = False
 locally_biased = True
 init_pos = None
 current_estimator_method = "gpc"
+detailed_dirichlet_correction = True
 # init_pos = ["C3"]
 # init_pos = ["C3", "C4"]
 
@@ -51,12 +52,12 @@ print("Initializing Electrode ...")
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
-# center = np.array([[0, 0, 0]])
-# radius = np.array([0])
-# length_x = np.array([40])
-# length_y = np.array([40])
-# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
-# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+center = np.array([[0, 0, 0]])
+radius = np.array([0])
+length_x = np.array([40])
+length_y = np.array([40])
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method,
+                                       detailed_dirichlet_correction=detailed_dirichlet_correction)
 
 # create 2 channel of 1 x 1 standard TES montage (Temporal interference)
 ########################################################################################################################
@@ -69,8 +70,6 @@ print("Initializing Electrode ...")
 # electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
 #
 # electrode = [electrode_1, electrode_2]
-
-# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
@@ -87,8 +86,7 @@ print("Initializing Electrode ...")
 # length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                         current_estimator_method=current_estimator_method)
-# electrode.electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+#                                        current_estimator_method=current_estimator_method)
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
 ########################################################################################################################
@@ -98,25 +96,24 @@ print("Initializing Electrode ...")
 # radius = np.array([7, 7, 7])
 # length_x = np.array([0, 0, 0])
 # length_y = np.array([0, 0, 0])
-center = np.array([[-30, 20, 0],
-                    [0, 20, 0],
-                    [30, 20, 0],
-                    [-30, 0, 0],
-                    [0, 0, 0],
-                    [30, 0, 0],
-                    [-30, -20, 0],
-                    [0, -20, 0],
-                    [30, -20, 0]])
-radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-                                         current_estimator_method=current_estimator_method)
-electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-                                         current_estimator_method=current_estimator_method)
-
-electrode = [electrode_1, electrode_2]
-# electrode[0].electrode_arrays[0].plot(show=False, fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
+# center = np.array([[-30, 20, 0],
+#                     [0, 20, 0],
+#                     [30, 20, 0],
+#                     [-30, 0, 0],
+#                     [0, 0, 0],
+#                     [30, 0, 0],
+#                     [-30, -20, 0],
+#                     [0, -20, 0],
+#                     [30, -20, 0]])
+# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+# electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+#                                          current_estimator_method=current_estimator_method)
+# electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+#                                          current_estimator_method=current_estimator_method)
+#
+# electrode = [electrode_1, electrode_2]
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
 #######################################################################################################################
@@ -133,7 +130,6 @@ electrode = [electrode_1, electrode_2]
 #length_x = np.array([20, 20, 20, 0, 0, 0, 20, 20, 20])
 #length_y = np.array([20, 20, 20, 0, 0, 0, 20, 20, 20])
 #electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
-# electrode.electrode_arrays[0].plot(fn_plot=os.path.join(output_folder, "plots", "electrode.png"))
 
 # load mesh
 mesh = simnibs.read_msh(fn_mesh)

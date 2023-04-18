@@ -273,7 +273,7 @@ class TESoptimize():
         self.dirichlet_correction = [False] * self.n_channel_stim
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                if _electrode_array.dirichlet_correction:
+                if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].detailed_dirichlet_correction:
                     self.dirichlet_correction[i_channel_stim] = True
 
                 for _electrode in _electrode_array.electrodes:
@@ -414,24 +414,25 @@ class TESoptimize():
         # log summary
         ################################################################################################################
         self.logger.log(25, f"="*100)
-        self.logger.log(25, f"headmodel:             {self.mesh.fn}")
-        self.logger.log(25, f"n_roi:                 {self.n_roi}")
-        self.logger.log(25, f"anisotropy type:       {self.ofem.anisotropy_type}")
-        self.logger.log(25, f"n_channel_stim:        {self.n_channel_stim}")
-        self.logger.log(25, f"fn_eeg_cap:            {self.fn_eeg_cap}")
-        self.logger.log(25, f"fn_electrode_mask:     {self.fn_electrode_mask}")
-        self.logger.log(25, f"FEM solver options:    {self.ofem.solver_options}")
-        self.logger.log(25, f"dirichlet_correction:  {self.dirichlet_correction}")
-        self.logger.log(25, f"optimizer:             {self.optimizer}")
-        self.logger.log(25, f"goal:                  {self.goal}")
-        self.logger.log(25, f"weights:               {self.weights}")
-        self.logger.log(25, f"output_folder:         {self.output_folder}")
-        self.logger.log(25, f"fn_results_hdf5:       {self.fn_results_hdf5}")
+        self.logger.log(25, f"headmodel:                        {self.mesh.fn}")
+        self.logger.log(25, f"n_roi:                            {self.n_roi}")
+        self.logger.log(25, f"anisotropy type:                  {self.ofem.anisotropy_type}")
+        self.logger.log(25, f"n_channel_stim:                   {self.n_channel_stim}")
+        self.logger.log(25, f"fn_eeg_cap:                       {self.fn_eeg_cap}")
+        self.logger.log(25, f"fn_electrode_mask:                {self.fn_electrode_mask}")
+        self.logger.log(25, f"FEM solver options:               {self.ofem.solver_options}")
+        self.logger.log(25, f"dirichlet_correction:             {self.dirichlet_correction}")
+        self.logger.log(25, f"detailed_dirichlet_correction:    {self.detailed_dirichlet_correction}")
+        self.logger.log(25, f"optimizer:                        {self.optimizer}")
+        self.logger.log(25, f"goal:                             {self.goal}")
+        self.logger.log(25, f"weights:                          {self.weights}")
+        self.logger.log(25, f"output_folder:                    {self.output_folder}")
+        self.logger.log(25, f"fn_results_hdf5:                  {self.fn_results_hdf5}")
 
         if self.optimizer_options is not None:
             for key in self.optimizer_options:
                 if key != "bounds":
-                    self.logger.log(25, f"{key}:              {self.optimizer_options[key]}")
+                    self.logger.log(25, f"{key}:                {self.optimizer_options[key]}")
 
         for i_channel_stim in range(self.n_channel_stim):
             self.logger.log(25, f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})")
@@ -619,6 +620,14 @@ class TESoptimize():
         # load mask of valid electrode positions (in MNI space)
         mask_img = nib.load(self.fn_electrode_mask)
         mask_img_data = mask_img.get_fdata()
+
+        # add a certain distance to mask out closer to the eyes
+        for i_border in range(mask_img_data.shape[0]):
+            if mask_img_data[:, :, i_border].all():
+                break
+
+        additional_distance = 20
+        mask_img_data[:, :, (i_border-additional_distance):i_border] = 1
 
         # transform skin surface points to MNI space
         skin_nodes_mni_ras = subject2mni_coords(coordinates=skin_surface.nodes,
@@ -864,7 +873,7 @@ class TESoptimize():
                     _electrode.area_skin = np.sum(_electrode.node_area)
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
-                    if _electrode.area_skin < 0.8 * _electrode.area:
+                    if _electrode.area_skin < 0.9 * _electrode.area:
                         # print("Electrode position: invalid (partly overlaps with invalid skin region)")
                         return "Electrode position: invalid (partly overlaps with invalid skin region)"
 

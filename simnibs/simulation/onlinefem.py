@@ -319,8 +319,8 @@ class OnlineFEM:
 
         currents :
 
-        electrode :
-
+        electrode : CircularArray or ElectrodeArrayPair instance
+            Electrode
 
         Returns
         -------
@@ -344,27 +344,36 @@ class OnlineFEM:
 
             ele_id_unique = np.unique(ele_id[channel_mask])
 
-            # for this channel determine average potentials over electrodes
             v_mean_ele.append([])
-            for _ele_id in ele_id_unique:
-                ele_mask = _ele_id == ele_id
-                mask = ele_mask * channel_mask
-                v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / \
-                                     np.sum(node_area[mask]))
+            if electrode.detailed_dirichlet_correction[0]:
+                # do not average voltages over electrode for detailed Dirichlet correction for this channel
+                v_mean_ele[i].append(v_nodes[channel_mask])
+            else:
+                # determine average potentials over electrodes for this channel
+                for _ele_id in ele_id_unique:
+                    ele_mask = _ele_id == ele_id
+                    mask = ele_mask * channel_mask
+                    v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / \
+                                         np.sum(node_area[mask]))
 
-            v_mean_ele[i] = np.array(v_mean_ele[i])
+                v_mean_ele[i] = np.array(v_mean_ele[i])
 
         # print(f"v_mean_ele: {v_mean_ele}")
 
-        v_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
-        currents_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
+        if electrode.detailed_dirichlet_correction[0]:
+            n_nodes_total_per_channel = np.zeros(len(channel_id_unique))
+            for i_channel, _channel_id in enumerate(channel_id_unique):
+                n_nodes_total_per_channel[i_channel] = np.sum(channel_id == _channel_id)
+            v_ele_norm = [np.zeros(n_nodes_total_per_channel[i_channel]) for i_channel in range(len(channel_id_unique))]
+            currents_ele_norm = [np.zeros(n_nodes_total_per_channel[i_channel]) for i_channel in range(len(channel_id_unique))]
+        else:
+            v_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
+            currents_ele_norm = [np.zeros(electrode.n_ele_per_channel[i]) for i in range(electrode.n_channel)]
 
         # calculate rel. difference of electrode potentials to average electrode potential
         for i_channel in range(electrode.n_channel):
-            if len(v_mean_ele[i_channel]) == 1:
-                std_scale = np.std(v_mean_channel)
-            else:
-                std_scale = np.std(v_mean_channel)
+            std_scale = np.std(v_mean_channel)
+
             # calculate differences of electrode potentials to channel potential
             v_ele_norm[i_channel] = (v_mean_ele[i_channel] - np.mean(v_mean_ele[i_channel])) / std_scale
             currents_ele_norm[i_channel] = (currents[i_channel] - np.mean(currents[i_channel])) / np.mean(currents[i_channel])
@@ -380,8 +389,8 @@ class OnlineFEM:
         ----------
         b : np.array of float [n_nodes]
             Right hand side of equation system (with Dirichlet node)
-        electrode :
-
+        electrode : CircularArray or ElectrodeArrayPair instance
+            Electrode
 
         Returns
         -------
@@ -391,7 +400,7 @@ class OnlineFEM:
         th_maxrelerr = 0.01
         maxiter = 40
 
-        # create arrays
+        # create nodal arrays
         # v_nodes | v_node_idx | channel_id_nodes | ele_id_nodes | node_area
         # ------------------------------------------------------------------
         #   ...         4               0                 0           ...
@@ -406,52 +415,102 @@ class OnlineFEM:
         #   ...         11              1                 1           ...
 
         n_channel = electrode.n_channel
-        channel_id_nodes = []
-        ele_id_nodes = []
-        v_node_idx = []
-        node_area = []
-
-        for _electrode_array in electrode.electrode_arrays:
-            for i_ele, _ele in enumerate(_electrode_array.electrodes):
-                channel_id_nodes.append(np.array([_ele.channel_id] * _ele.n_nodes))
-                ele_id_nodes.append(np.array([i_ele] * _ele.n_nodes))
-                node_area.append(_ele.node_area)
-                v_node_idx.append(_ele.node_idx)
-
-        channel_id_nodes = np.hstack(channel_id_nodes)
-        ele_id_nodes = np.hstack(ele_id_nodes)
-        node_area = np.hstack(node_area)
-        v_node_idx = np.hstack(v_node_idx)
+        # channel_id_nodes = []
+        # ele_id_nodes = []
+        # v_node_idx = []
+        # node_area = []
+        # for _electrode_array in electrode.electrode_arrays:
+        #     for i_ele, _ele in enumerate(_electrode_array.electrodes):
+        #         channel_id_nodes.append(np.array([_ele.channel_id] * _ele.n_nodes))
+        #         ele_id_nodes.append(np.array([i_ele] * _ele.n_nodes))
+        #         node_area.append(_ele.node_area)
+        #         v_node_idx.append(_ele.node_idx)
+        #
+        # channel_id_nodes = np.hstack(channel_id_nodes)
+        # ele_id_nodes = np.hstack(ele_id_nodes)
+        # node_area = np.hstack(node_area)
+        # v_node_idx = np.hstack(v_node_idx)
+        #
+        # channel_id_nodes = electrode.node_channel_id
+        # ele_id_nodes = electrode.node_ele_id
+        # node_area = electrode.node_area
+        # v_node_idx = electrode.node_idx
 
         # mean current over electrodes [n_channel]
         I_mean = electrode.current_mean
 
         # read currents from electrode
-        I = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
-        I_sign = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
-        bounds = [[] for i_channel in range(n_channel)]
-        ele_counter_channel = [0] * n_channel
-        for _electrode_array in electrode.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                I[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current
-                I_sign[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current_sign
-                bounds[_ele.channel_id].append(np.sort(
-                    [_ele.current * 0.1,
-                     np.sign(electrode.current_mean[_ele.channel_id]) * electrode.current_total]))
-                ele_counter_channel[_ele.channel_id] += 1
+        I = [[] for _ in range(n_channel)]
+        I_sign = [[] for _ in range(n_channel)]
+
+        for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
+            if electrode.detailed_dirichlet_correction:
+                # take nodal current
+                I[i_channel] = electrode.node_current[electrode.node_channel_id == _channel_id]
+                I_sign[i_channel] = electrode.node_current_sign[electrode.node_channel_id == _channel_id]
+            else:
+                # take total electrode current (sum nodal current up)
+                for _ele_id in np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id]):
+                    mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id * _ele_id)
+                    I[i_channel].append(np.sum(electrode.node_current[mask]))
+                    I_sign[i_channel].append(np.sum(electrode.node_current_sign[mask]))
+                I[i_channel] = np.hstack(I[i_channel])
+                I_sign[i_channel] = np.hstack(I_sign[i_channel])
+
+        # for _electrode_array in electrode.electrode_arrays:
+        #     for _ele in _electrode_array.electrodes:
+        #
+        #             # read nodal currents
+        #             I[_ele.channel_id].append(_ele.node_current)
+        #             I_sign[_ele.channel_id].append(_ele.node_current_sign)
+        #         else:
+        #             # read electrode currents
+        #             I[_ele.channel_id].append(_ele.ele_current)
+        #             I_sign[_ele.channel_id].append(_ele.ele_current_sign)
+        #
+        # if electrode.detailed_dirichlet_correction:
+        #     for i, _I in enumerate(I):
+        #         I[i] = np.hstack(_I)
+        #         I_sign[i] = np.hstack(_I)
+
+        # # read currents from electrode
+        # if electrode.detailed_dirichlet_correction[0]:
+        #     n_nodes_total_per_channel = np.zeros(n_channel)
+        #     for i_channel, _channel_id in enumerate(np.unique(electrode.node_channel_id)):
+        #         n_nodes_total_per_channel[i_channel] = np.sum(electrode.node_channel_id == _channel_id)
+        #     I = [np.zeros(n_nodes_total_per_channel[i_channel]) for i_channel in range(n_channel)]
+        #     I_sign = [np.zeros(n_nodes_total_per_channel[i_channel]) for i_channel in range(n_channel)]
+        #
+        #     ele_counter_channel = [0] * n_channel
+        #     for _electrode_array in electrode.electrode_arrays:
+        #         for _ele in _electrode_array.electrodes:
+        #             I[_ele.channel_id][ele_counter_channel[_ele.channel_id]:(ele_counter_channel[_ele.channel_id]+_ele.n_nodes)] = _ele.current
+        #             I_sign[_ele.channel_id][ele_counter_channel[_ele.channel_id]:(ele_counter_channel[_ele.channel_id]+_ele.n_nodes)] = _ele.current_sign
+        #             ele_counter_channel[_ele.channel_id] += _ele.n_nodes
+        #
+        # else:
+        #     I = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
+        #     I_sign = [np.zeros(electrode.n_ele_per_channel[i_channel]) for i_channel in range(n_channel)]
+        #
+        #     ele_counter_channel = [0] * n_channel
+        #     for _electrode_array in electrode.electrode_arrays:
+        #         for _ele in _electrode_array.electrodes:
+        #             I[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current
+        #             I_sign[_ele.channel_id][ele_counter_channel[_ele.channel_id]] = _ele.current_sign
+        #             ele_counter_channel[_ele.channel_id] += 1
 
         # Solve iteratively until maxrelerr is reached
         # Iteration: 0
 
         # solve
         v = self.solve(b)
-        v_nodes = v[v_node_idx]
+        v_nodes = v[electrode.node_idx]
 
         # v_norm: [n_channel][n_ele], I_norm: [n_channel][n_ele]
         v_norm, I_norm = self.normalize_solution(v_nodes=v_nodes,
-                                                 channel_id=channel_id_nodes,
-                                                 ele_id=ele_id_nodes,
-                                                 node_area=node_area,
+                                                 channel_id=electrode.node_channel_id,
+                                                 ele_id=electrode.node_ele_id,
+                                                 node_area=electrode.node_area,
                                                  currents=I,
                                                  electrode=electrode)
 
@@ -463,6 +522,7 @@ class OnlineFEM:
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
         while maxrelerr > th_maxrelerr:
             # print(f"iter: {j} current: {I}, error: {maxrelerr}")
+            print(f"iter: {j}, error: {maxrelerr}")
             j += 1
 
             if j > maxiter:
@@ -491,25 +551,44 @@ class OnlineFEM:
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
 
-            # write currents in electrode
-            ele_counter_channel = [0] * n_channel
-            for _electrode_array in electrode.electrode_arrays:
-                for _ele in _electrode_array.electrodes:
-                    _ele.current = I[_ele.channel_id][ele_counter_channel[_ele.channel_id]]
-                    ele_counter_channel[_ele.channel_id] += 1
+            # write currents in electrodes
+            for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
+                if electrode.detailed_dirichlet_correction:
+                    # write nodal current
+                    electrode.node_current[electrode.node_channel_id == _channel_id] = I[i_channel]
+                else:
+                    # calculate nodal current from total electrode current
+                    for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id])):
+                        mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id * _ele_id)
+                        electrode.node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(electrode.node_area[mask])
+
+            # update electrodes from node arrays
+            electrode.update_electrodes_from_node_arrays()
+
+            # if electrode.detailed_dirichlet_correction:
+            #     I_array = np.hstack(I)
+            #     for _array_id in np.unique(electrode.node_array_id):
+            #         for _ele_id in np.unique(electrode.node_ele_id):
+            #
+            # else:
+            #     ele_counter_channel = [0] * n_channel
+            #     for _electrode_array in electrode.electrode_arrays:
+            #         for _ele in _electrode_array.electrodes:
+            #             _ele.ele_current = I[_ele.channel_id][ele_counter_channel[_ele.channel_id]]
+            #             ele_counter_channel[_ele.channel_id] += 1
 
             # update rhs
             b = self.set_rhs(electrode=electrode)
 
             # solve
             v = self.solve(b)
-            v_nodes = v[v_node_idx]
+            v_nodes = v[electrode.node_idx]
 
             # normalize
             _v_norm, _I_norm = self.normalize_solution(v_nodes=v_nodes,
-                                                       channel_id=channel_id_nodes,
-                                                       ele_id=ele_id_nodes,
-                                                       node_area=node_area,
+                                                       channel_id=electrode.node_channel_id,
+                                                       ele_id=electrode.node_ele_id,
+                                                       node_area=electrode.node_area,
                                                        currents=I,
                                                        electrode=electrode)
 
@@ -524,7 +603,7 @@ class OnlineFEM:
         # final number of iterations to determine optimal currents
         self.n_iter_dirichlet_correction = j
 
-        # test if signs are correct otherwise restart
+        # test if signs are correct return no solution
         if not np.array([(np.sign(I[i_channel]) == I_sign[i_channel]).all() for i_channel in range(n_channel)]).all():
             print(f"Final currents have wrong signs!")
             print(f"I: { *I, }")
@@ -551,31 +630,35 @@ class OnlineFEM:
             for _ele in _electrode_array.electrodes:
                 _ele.current = _ele.current_init
 
-        # import matplotlib.pyplot as plt
-        # import matplotlib
-        # matplotlib.use("Qt5Agg")
-        #
-        # t = np.arange(j + 1)
-        # for i_channel in range(n_channel):
-        #     v_normP = v_norm[i_channel]
-        #     I_normP = I_norm[i_channel]
-        #     I_normP = I_norm[i_channel]
-        #
-        #     fig, axs = plt.subplots(5, 1)
-        #     for i in range(electrode.n_ele_per_channel[i_channel]):
-        #         axs[0].plot(t, v_normP[:, i])
-        #         axs[1].plot(t, I_normP[:, i])
-        #     axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
-        #     axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-        #
-        #     axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-        #
-        #     axs[0].set_title('v_norm')
-        #     axs[1].set_title('I_norm')
-        #     axs[2].set_title('max and mean relative error of v_norm (log10)')
-        #
-        #     fig.tight_layout()
-        #     plt.show()
+        # extract node_coords and optimal currents
+        for _electrode_array in electrode.electrode_arrays:
+            for _ele in _electrode_array.electrodes:
+
+        # plot results
+        import matplotlib.pyplot as plt
+        import matplotlib
+        matplotlib.use("Qt5Agg")
+
+        t = np.arange(j + 1)
+        for i_channel in range(n_channel):
+            v_normP = v_norm[i_channel]
+            I_normP = I_norm[i_channel]
+
+            fig, axs = plt.subplots(5, 1)
+            for i in range(electrode.n_ele_per_channel[i_channel]):
+                axs[0].plot(t, v_normP[:, i])
+                axs[1].plot(t, I_normP[:, i])
+            axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
+            axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+
+            axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+
+            axs[0].set_title('v_norm')
+            axs[1].set_title('I_norm')
+            axs[2].set_title('max and mean relative error of v_norm (log10)')
+
+            fig.tight_layout()
+            plt.show()
 
         return np.squeeze(v)
 
