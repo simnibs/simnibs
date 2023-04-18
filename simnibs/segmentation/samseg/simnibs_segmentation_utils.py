@@ -81,10 +81,10 @@ def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                         means, variances, mixtureWeights,
                         FreeSurferLabels, bg_label,
                         csf_tissues, csf_factor)
-        
+
     writeImage(output_name_segmentation,
                segmentation, cropping, exampleImage)
-    
+
     if cat_structure_options is not None and cat_images is not None:
         for inds, name in enumerate(cat_images):
             writeImage(name, cat_norm_scan_masks[inds], cropping, exampleImage)
@@ -219,7 +219,7 @@ def saveWarpField(template_name, warp_to_mni,
     imageFileNames = parameters_and_inputs['imageFileNames']
     image = nib.load(imageFileNames[0])
     imageToWorldTransformMatrix = image.affine
-    image_buffer = image.get_data()
+    image_buffer = image.get_fdata()
     # Transform the node positions
     nodePositionsInWorldSpace = (imageToWorldTransformMatrix @
                                  np.pad(nodePositions,
@@ -386,7 +386,7 @@ def _calculateSegmentationLoop(biasCorrectedImageBuffers,
             higher_values = nonNormalized > maxValues
             maxValues[higher_values] = nonNormalized[higher_values]
             maxIndices[higher_values] = FreeSurferLabels[structureNumber]
-            
+
 
     if cat_opts is not None:
         cat_scan_and_masks = _prep_scans_and_masks([wm_probs, gm_probs,
@@ -440,7 +440,7 @@ def _prep_scans_and_masks(tissue_prob_list, normalizer, maxInds,
     # # Make boolean
     # mask_parahippo = mask_parahippo > 0
 
-    # Create left/right mask by interpolating the cereb mask into the background 
+    # Create left/right mask by interpolating the cereb mask into the background
     mask = 2*(mask_cereb == 1) + 2*(mask_cereb == 3) + 1*(mask_cereb == 2) + 1*(mask_cereb == 4)
     # cat_vbdist takes in a voxel size as well, need to probably use that too
     _, _, mask_hemi = cat_vbdist(mask)
