@@ -947,28 +947,51 @@ class TESoptimize():
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
         # estimate optimal electrode currents based on previous simulations
-        for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].current_estimator.method is not None:
+        if self.electrode[i_channel_stim].current_estimator is not None:
+            for i_channel_stim in range(self.n_channel_stim):
                 current_temp = []
                 current_pos = 0
                 current_neg = 0
 
-                if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                    currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
-                    i_ele_global = 0
+                # estimate optimal currents electrode wise
+                currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
+                i_ele_global = 0
+
+                if currents_estimate is not None:
+                    for _channel_id in self.electrode[i_channel_stim].current_estimator.channel_id:
+                        for _ele_id in self.electrode[i_channel_stim].current_estimator.ele_id:
+                            mask_estimator = (self.electrode[i_channel_stim].current_estimator.ele_id == _ele_id) * \
+                                   (self.electrode[i_channel_stim].current_estimator.channel_id == _channel_id)
+                            mask_nodes_array = (self.electrode[i_channel_stim].node_channel_id == _channel_id) * \
+                                               (self.electrode[i_channel_stim].node_ele_id == _ele_id)
+
+                            if np.sign(currents_estimate[mask_estimator]) == \
+                                    self.electrode[i_channel_stim].node_current_sign[mask_nodes_array][0]:
+                                self.electrode[i_channel_stim].node_current[mask_nodes_array] = \
+                                    currents_estimate[mask_estimator] * \
+                                    self.electrode[i_channel_stim].node_area[mask_nodes_array] / \
+                                    np.sum(self.electrode[i_channel_stim].node_area[mask_nodes_array])
+
+                    self.electrode[i_channel_stim].update_electrode_from_node_arrays()
+
+
+
+
+
+
+                ele_id_unique_channel = np.unique(
+                    self.electrode[i_channel_stim].node_ele_id[
+                        self.electrode[i_channel_stim].node_channel_id == _channel_id])
+
 
                 for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                     for _electrode in _electrode_array.electrodes:
-                        if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                            if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.ele_current_sign):
-                                _electrode.ele_current = currents_estimate[i_ele_global]
-                            else:
-                                _electrode.ele_current = _electrode.ele_current_init
-                            i_ele_global += 1
+                        if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.ele_current_sign):
+                            _electrode.ele_current = currents_estimate[i_ele_global]
                         else:
-                            _electrode.estimate_currents(electrode_pos[i_channel_stim])
-                            if _electrode.ele_current is None or (np.sign(currents_estimate[i_ele_global])!=_electrode.ele_current_sign):
-                                _electrode.ele_current = _electrode.ele_current_init
+                            _electrode.ele_current = _electrode.ele_current_init
+                        i_ele_global += 1
+
                         current_temp.append(_electrode.ele_current)
                         # sum up current for scaling
                         # estimator does not know about real total current and has to be corrected

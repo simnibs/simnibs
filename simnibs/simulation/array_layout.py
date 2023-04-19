@@ -513,7 +513,6 @@ class ElectrodeArrayPair():
         Current through electrodes. Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
         Method to estimate the electrode currents:
-        - "GP": Gaussian process
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
     dirichlet_correction_detailed : bool, optional, default: False
@@ -561,11 +560,6 @@ class ElectrodeArrayPair():
             self.dirichlet_correction = True
         else:
             self.dirichlet_correction = False
-
-        if current_estimator_method in ["linear", "gpc"]:
-            self.optimize_all_currents_at_once = True
-        else:
-            self.optimize_all_currents_at_once = False
 
         if current is None:
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
@@ -754,7 +748,6 @@ class CircularArray():
         Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
         Method to estimate the electrode currents:
-        - "GP": Gaussian process
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
     dirichlet_correction_detailed : bool, optional, default: False
@@ -796,11 +789,6 @@ class CircularArray():
         self.node_voltage = None
         self.node_voltage_sign = None
         self.node_area = None
-
-        if current_estimator_method in ["linear", "gpc"]:
-            self.optimize_all_currents_at_once = True
-        else:
-            self.optimize_all_currents_at_once = False
 
         if radius_outer is None:
             self.radius_outer = radius_inner
