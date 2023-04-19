@@ -400,7 +400,11 @@ class OnlineFEM:
         v : np.array of float [n_nodes]
             Corrected solution (including the Dirichlet node at the right position)
         """
-        th_maxrelerr = 0.01
+        if electrode.dirichlet_correction_detailed:
+            th_maxrelerr = 0.01
+        else:
+            th_maxrelerr = 0.01
+
         maxiter = 100
 
         # create nodal arrays
@@ -524,12 +528,11 @@ class OnlineFEM:
         j = 0
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
         while maxrelerr > th_maxrelerr:
-            # print(f"iter: {j} current: {I}, error: {maxrelerr}")
             print(f"iter: {j}, error: {maxrelerr}")
             j += 1
 
             if j > maxiter:
-                # print('warning: did not converge after ' + str(maxiter) + ' iterations')
+                print('warning: did not converge after ' + str(maxiter) + ' iterations')
                 return None
 
             if j == 1:
@@ -537,7 +540,6 @@ class OnlineFEM:
                 I = []
                 for i_channel in range(n_channel):
                     if len(I_norm[i_channel][-1, :]) == 1:
-                    # if electrode.n_ele_per_channel[i_channel] == 1:
                         I.append(np.array([I_mean[i_channel]]))
                     else:
                         I.append(-0.1 * np.sign(I_mean[i_channel]) * v_norm[i_channel][0, :] / np.max(np.abs(v_norm[i_channel][0, :])))
@@ -546,7 +548,6 @@ class OnlineFEM:
                 # It 2 ... use gradient descent
                 for i_channel in range(n_channel):
                     if len(I_norm[i_channel][-1, :]) == 1:
-                    # if electrode.n_ele_per_channel[i_channel] == 1:
                         I[i_channel] = I[i_channel]
                     else:
                         denom = (v_norm[i_channel][-1, :] - v_norm[i_channel][-2, :])
@@ -556,7 +557,7 @@ class OnlineFEM:
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
 
-            # # ensure correct sign I_sign[i_channel]
+            # # ensure correct sign
             # I = [np.abs(I[i_channel]) * I_sign[i_channel] for i_channel in range(n_channel)]
 
             # write currents in electrodes
@@ -610,6 +611,9 @@ class OnlineFEM:
 
         # final number of iterations to determine optimal currents
         self.n_iter_dirichlet_correction = j
+
+        # ensure correct sign
+        I = [np.abs(I[i_channel]) * I_sign[i_channel] for i_channel in range(n_channel)]
 
         # test if signs are correct return no solution
         if not np.array([(np.sign(I[i_channel]) == I_sign[i_channel]).all() for i_channel in range(n_channel)]).all():

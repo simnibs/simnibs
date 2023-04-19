@@ -889,7 +889,7 @@ class TESoptimize():
                         # print("Electrode position: invalid (partly overlaps with invalid skin region)")
                         return "Electrode position: invalid (partly overlaps with invalid skin region)"
 
-                    # save node indices (refering to global mesh)
+                    # save node indices (referring to global mesh)
                     _electrode.node_idx = self.node_idx_msh[mask]
 
                     # save node coords (refering to global mesh)

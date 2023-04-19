@@ -47,18 +47,19 @@ dirichlet_correction_detailed = True
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
-                                  current_estimator_method=current_estimator_method)
+# electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
+#                                   current_estimator_method=current_estimator_method,
+#                                   dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
-# center = np.array([[0, 0, 0]])
-# radius = np.array([0])
-# length_x = np.array([40])
-# length_y = np.array([40])
-# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                        current_estimator_method=current_estimator_method,
-#                                        dirichlet_correction_detailed=dirichlet_correction_detailed)
+center = np.array([[0, 0, 0]])
+radius = np.array([0])
+length_x = np.array([40])
+length_y = np.array([40])
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+                                       current_estimator_method=current_estimator_method,
+                                       dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 2 channel of 1 x 1 standard TES montage (Temporal interference)
 ########################################################################################################################
