@@ -70,6 +70,16 @@ class Electrode():
                  ele_current=None, ele_voltage=None,
                  node_current=None, node_voltage=None, node_area=None, node_idx=None, node_coords=None):
 
+        if (ele_voltage is not None and ele_current is not None) or \
+                (node_voltage is not None and node_current is not None):
+            raise AssertionError("Define either voltage or current to electrode.")
+
+        if ele_current is not None and node_current is not None:
+            raise AssertionError("Define current either node wise or electrode wise")
+
+        if ele_voltage is not None and node_voltage is not None:
+            raise AssertionError("Define voltage either node wise or electrode wise")
+
         # geometrical properties
         ################################################################################################################
         if radius is None:
@@ -111,11 +121,11 @@ class Electrode():
         # source across whole electrode
         ################################################################################################################
         # current
-        self._ele_current = ele_current
+        self.ele_current = ele_current
         self.ele_current_init = ele_current
 
         if self.ele_current is not None:
-            self.ele_current_sign = np.sign(self.ele_current_init)
+            self.ele_current_sign = np.sign(self.ele_current)
         else:
             self.ele_current_sign = None
 
@@ -126,7 +136,7 @@ class Electrode():
         if self.ele_voltage is not None:
             self.ele_voltage_sign = np.sign(self.ele_voltage)
         else:
-            self.ele_current_sign = None
+            self.ele_voltage_sign = None
 
         # source for individual nodes
         ################################################################################################################
@@ -136,26 +146,24 @@ class Electrode():
                                  "electrode on the node level")
 
         # current
-        self.node_current = node_current
-        self.node_current_init = node_current
-
-        if self.node_current is not None:
-            self.node_current_sign = np.sign(self.node_current)
+        if node_current is not None:
+            self.node_current_sign = np.sign(node_current)
+            self.node_current = node_current
+            self.node_current_init = node_current
         else:
             self.node_current_sign = None
+            self.node_current = None
+            self.node_current_init = None
 
         # voltage
-        self.node_voltage = node_voltage
-        self.node_voltage_init = None
-
-        if self.node_voltage is not None:
-            self.node_voltage_sign = np.sign(self.node_voltage)
+        if node_voltage is not None:
+            self.node_voltage_sign = np.sign(node_voltage)
+            self.node_voltage = node_voltage
+            self.node_voltage_init = node_voltage
         else:
             self.node_voltage_sign = None
-
-        if (self.ele_voltage is not None and self.ele_current is not None) or \
-                (self.node_voltage is not None and self.node_current is not None):
-            raise AssertionError("Define either voltage or current to electrode.")
+            self.node_voltage = None
+            self.node_voltage_init = None
 
     @property
     def ele_current(self):
@@ -175,13 +183,16 @@ class Electrode():
 
     @node_current.setter
     def node_current(self, value):
-        assert len(value) == self.n_nodes, "Number of node currents does not match total number of nodes!"
+        if value is not None:
+            assert len(value) == self.n_nodes, "Number of node currents does not match total number of nodes!"
 
-        self._node_current = value
+            self._node_current = value
 
-        # set ele current according to the node area
-        if self.node_area is not None:
-            self._ele_current = np.sum(value * self.node_area / self.node_area_total)
+            # set ele current according to the node area
+            if self.node_area is not None:
+                self._ele_current = np.sum(value * self.node_area / self.node_area_total)
+        else:
+            self._node_current = None
 
     @property
     def ele_voltage(self):
@@ -201,13 +212,16 @@ class Electrode():
 
     @node_voltage.setter
     def node_voltage(self, value):
-        assert len(value) == self.n_nodes, "Number of node voltages does not match total number of nodes!"
+        if value is not None:
+            assert len(value) == self.n_nodes, "Number of node voltages does not match total number of nodes!"
 
-        self._node_voltage = value
+            self._node_voltage = value
 
-        # also set ele voltage (average voltage over all nodes)
-        if self.node_area is not None:
-            self._ele_voltage = np.sum(value * self.node_area / self.node_area_total)
+            # also set ele voltage (average voltage over all nodes)
+            if self.node_area is not None:
+                self._ele_voltage = np.sum(value * self.node_area / self.node_area_total)
+        else:
+            self._node_voltage = None
 
     @property
     def node_area(self):
@@ -324,8 +338,7 @@ class ElectrodeArray():
         Position and orientation of electrode array in ellipsoidal coordinates [beta, lambda, alpha]
     """
 
-    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None,
-                 current_estimator_method="linear"):
+    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
         self.channel_id = channel_id
         self.ele_id = ele_id
         self.array_center = np.array([0, 0, 0])
@@ -398,7 +411,7 @@ class ElectrodeArray():
                                              radius=self.radius[i_ele],
                                              length_x=self.length_x[i_ele],
                                              length_y=self.length_y[i_ele],
-                                             current=self.current[i_ele]))
+                                             ele_current=self.current[i_ele]))
 
     def transform(self, transmat):
         """
@@ -503,7 +516,7 @@ class ElectrodeArrayPair():
         - "GP": Gaussian process
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
-    detailed_dirichlet_correction : bool, optional, default: False
+    dirichlet_correction_detailed : bool, optional, default: False
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
 
@@ -520,7 +533,7 @@ class ElectrodeArrayPair():
     """
 
     def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
-                 current_estimator_method="gpc", detailed_dirichlet_correction=False):
+                 current_estimator_method="gpc", dirichlet_correction_detailed=False):
         self.radius = radius
         self.length_x = length_x
         self.length_y = length_y
@@ -529,7 +542,7 @@ class ElectrodeArrayPair():
         self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
-        self.detailed_dirichlet_correction = detailed_dirichlet_correction
+        self.dirichlet_correction_detailed = dirichlet_correction_detailed
         self.ele_id = np.arange(self.n_ele)
 
         # global nodal arrays (set by compile_node_arrays)
@@ -539,7 +552,9 @@ class ElectrodeArrayPair():
         self.node_coords = None
         self.node_idx = None
         self.node_current = None
+        self.node_current_sign = None
         self.node_voltage = None
+        self.node_voltage_sign = None
         self.node_area = None
 
         if len(self.channel_id) != len(self.channel_id_unique):
@@ -642,7 +657,7 @@ class ElectrodeArrayPair():
     def compile_node_arrays(self):
         """
         Gathers all information from the nodes of the electrode arrays and the containing electrodes
-        and collect them in global arrays (inverse of update_electrode_from_node_arrays)
+        and collect them in global arrays
         """
         self.node_channel_id = []
         self.node_array_id = []
@@ -650,7 +665,9 @@ class ElectrodeArrayPair():
         self.node_coords = []
         self.node_idx = []
         self.node_current = []
+        self.node_current_sign = []
         self.node_voltage = []
+        self.node_voltage_sign = []
         self.node_area = []
 
         for i_array, _electrode_array in enumerate(self.electrode_arrays):
@@ -662,8 +679,11 @@ class ElectrodeArrayPair():
                     self.node_coords = None
                     self.node_idx = None
                     self.node_current = None
+                    self.node_current_sign = None
                     self.node_voltage = None
+                    self.node_voltage_sign = None
                     self.node_area = None
+                    return
 
                 self.node_channel_id.append(_ele.channel_id * np.ones(_ele.n_nodes))
                 self.node_array_id.append(i_array * np.ones(_ele.n_nodes))
@@ -674,6 +694,16 @@ class ElectrodeArrayPair():
                 self.node_voltage.append(_ele.node_voltage)
                 self.node_area.append(_ele.node_area)
 
+                if _ele.ele_voltage_sign is not None:
+                    self.node_voltage_sign.append(_ele.ele_voltage_sign * np.ones(_ele.n_nodes))
+                else:
+                    self.node_voltage_sign = None
+
+                if _ele.ele_current_sign is not None:
+                    self.node_current_sign.append(_ele.ele_current_sign * np.ones(_ele.n_nodes))
+                else:
+                    self.node_current_sign = None
+
         self.node_channel_id = np.hstack(self.node_channel_id)
         self.node_array_id = np.hstack(self.node_array_id)
         self.node_ele_id = np.hstack(self.node_ele_id)
@@ -682,6 +712,12 @@ class ElectrodeArrayPair():
         self.node_current = np.hstack(self.node_current)
         self.node_voltage = np.hstack(self.node_voltage)
         self.node_area = np.hstack(self.node_area)
+
+        if self.node_voltage_sign is not None:
+            self.node_voltage_sign = np.hstack(self.node_voltage_sign)
+
+        if self.node_current_sign is not None:
+            self.node_current_sign = np.hstack(self.node_current_sign)
 
     def update_electrode_from_node_arrays(self):
         """
@@ -721,7 +757,7 @@ class CircularArray():
         - "GP": Gaussian process
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
-    detailed_dirichlet_correction : bool, optional, default: False
+    dirichlet_correction_detailed : bool, optional, default: False
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
 
@@ -737,7 +773,7 @@ class CircularArray():
         One ElectrodeArray instance containing the Electrode instances
     """
     def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None, current=None,
-                 current_estimator_method="gpc", detailed_dirichlet_correction=False):
+                 current_estimator_method="gpc", dirichlet_correction_detailed=False):
         self.radius_inner = radius_inner
         self.distance = distance
         self.n_ele = n_outer + 1
@@ -746,7 +782,7 @@ class CircularArray():
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
         self.dirichlet_correction = True
-        self.detailed_dirichlet_correction = detailed_dirichlet_correction
+        self.dirichlet_correction_detailed = dirichlet_correction_detailed
         self.ele_id = np.arange(self.n_ele)
 
         # global nodal arrays (set by compile_node_arrays)
@@ -756,7 +792,9 @@ class CircularArray():
         self.node_coords = None
         self.node_idx = None
         self.node_current = None
+        self.node_current_sign = None
         self.node_voltage = None
+        self.node_voltage_sign = None
         self.node_area = None
 
         if current_estimator_method in ["linear", "gpc"]:
@@ -817,6 +855,9 @@ class CircularArray():
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
                                                 current=self.current)]
+
+        # compile node arrays
+        self.compile_node_arrays()
 
     def update_geometry(self, radius_inner=None, distance=None, n_outer=None,  radius_outer=None):
         """
@@ -895,7 +936,9 @@ class CircularArray():
         self.node_coords = []
         self.node_idx = []
         self.node_current = []
+        self.node_current_sign = []
         self.node_voltage = []
+        self.node_voltage_sign = []
         self.node_area = []
 
         for i_array, _electrode_array in enumerate(self.electrode_arrays):
@@ -907,8 +950,11 @@ class CircularArray():
                     self.node_coords = None
                     self.node_idx = None
                     self.node_current = None
+                    self.node_current_sign = None
                     self.node_voltage = None
+                    self.node_voltage_sign = None
                     self.node_area = None
+                    return
 
                 self.node_channel_id.append(_ele.channel_id * np.ones(_ele.n_nodes))
                 self.node_array_id.append(i_array * np.ones(_ele.n_nodes))
@@ -919,6 +965,16 @@ class CircularArray():
                 self.node_voltage.append(_ele.node_voltage)
                 self.node_area.append(_ele.node_area)
 
+                if _ele.ele_voltage_sign is not None:
+                    self.node_voltage_sign.append(_ele.ele_voltage_sign * np.ones(_ele.n_nodes))
+                else:
+                    self.node_voltage_sign = None
+
+                if _ele.ele_current_sign is not None:
+                    self.node_current_sign.append(_ele.ele_current_sign * np.ones(_ele.n_nodes))
+                else:
+                    self.node_current_sign = None
+
         self.node_channel_id = np.hstack(self.node_channel_id)
         self.node_array_id = np.hstack(self.node_array_id)
         self.node_ele_id = np.hstack(self.node_ele_id)
@@ -927,6 +983,12 @@ class CircularArray():
         self.node_current = np.hstack(self.node_current)
         self.node_voltage = np.hstack(self.node_voltage)
         self.node_area = np.hstack(self.node_area)
+
+        if self.node_voltage_sign is not None:
+            self.node_voltage_sign = np.hstack(self.node_voltage_sign)
+
+        if self.node_current_sign is not None:
+            self.node_current_sign = np.hstack(self.node_current_sign)
 
     def update_electrode_from_node_arrays(self):
         """

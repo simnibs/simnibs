@@ -75,13 +75,21 @@ class OnlineFEM:
         if self.electrode is not None:
             if type(electrode) is list:
                 self.dirichlet_correction = []
+                self.dirichlet_correction_detailed = []
+                
                 for _electrode in electrode:
                     self.dirichlet_correction.append(_electrode.dirichlet_correction)
+                    self.dirichlet_correction_detailed.append(_electrode.dirichlet_correction_detailed)
             else:
                 self.dirichlet_correction = [electrode.dirichlet_correction]
+                self.dirichlet_correction_detailed = [electrode.dirichlet_correction_detailed]
 
         else:
             self.dirichlet_correction = False
+            self.dirichlet_correction_detailed = False
+
+        self.dirichlet_correction = np.array(self.dirichlet_correction).any()
+        self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
 
         if type(self.roi) is not list:
             self.roi = [self.roi]
@@ -195,7 +203,7 @@ class OnlineFEM:
 
             # solve for potential
             ############################################################################################################
-            if self.method == "TES" and self.dirichlet_correction[i_sim]:
+            if self.method == "TES" and self.dirichlet_correction:
                 self.v = self.solve_dirichlet_correction(b=self.b,
                                                          electrode=self.electrode[i_sim])
             else:
@@ -256,8 +264,11 @@ class OnlineFEM:
             currents = []
             for _electrode_array in electrode.electrode_arrays:
                 for _ele in _electrode_array.electrodes:
+                    if _ele.node_current is not None:
+                        currents.append(_ele.node_current)
+                    else:
+                        currents.append(_ele.ele_current)
                     electrodes.append(_ele.node_idx + 1)
-                    currents.append(_ele.current)
 
             b = self.fem.assemble_tdcs_neumann_rhs(electrodes=electrodes,       # list of node indices of electrodes
                                                    currents=currents,           # list of electrode currents
@@ -345,7 +356,7 @@ class OnlineFEM:
             ele_id_unique = np.unique(ele_id[channel_mask])
 
             v_mean_ele.append([])
-            if electrode.detailed_dirichlet_correction[0]:
+            if electrode.dirichlet_correction_detailed:
                 # do not average voltages over electrode for detailed Dirichlet correction for this channel
                 v_mean_ele[i].append(v_nodes[channel_mask])
             else:
@@ -360,7 +371,7 @@ class OnlineFEM:
 
         # print(f"v_mean_ele: {v_mean_ele}")
 
-        if electrode.detailed_dirichlet_correction[0]:
+        if electrode.dirichlet_correction_detailed:
             n_nodes_total_per_channel = np.zeros(len(channel_id_unique))
             for i_channel, _channel_id in enumerate(channel_id_unique):
                 n_nodes_total_per_channel[i_channel] = np.sum(channel_id == _channel_id)
@@ -444,7 +455,7 @@ class OnlineFEM:
         I_sign = [[] for _ in range(n_channel)]
 
         for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
-            if electrode.detailed_dirichlet_correction:
+            if electrode.dirichlet_correction_detailed:
                 # take nodal current
                 I[i_channel] = electrode.node_current[electrode.node_channel_id == _channel_id]
                 I_sign[i_channel] = electrode.node_current_sign[electrode.node_channel_id == _channel_id]
@@ -468,13 +479,13 @@ class OnlineFEM:
         #             I[_ele.channel_id].append(_ele.ele_current)
         #             I_sign[_ele.channel_id].append(_ele.ele_current_sign)
         #
-        # if electrode.detailed_dirichlet_correction:
+        # if electrode.dirichlet_correction_detailed:
         #     for i, _I in enumerate(I):
         #         I[i] = np.hstack(_I)
         #         I_sign[i] = np.hstack(_I)
 
         # # read currents from electrode
-        # if electrode.detailed_dirichlet_correction[0]:
+        # if electrode.dirichlet_correction_detailed[0]:
         #     n_nodes_total_per_channel = np.zeros(n_channel)
         #     for i_channel, _channel_id in enumerate(np.unique(electrode.node_channel_id)):
         #         n_nodes_total_per_channel[i_channel] = np.sum(electrode.node_channel_id == _channel_id)
@@ -553,7 +564,7 @@ class OnlineFEM:
 
             # write currents in electrodes
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
-                if electrode.detailed_dirichlet_correction:
+                if electrode.dirichlet_correction_detailed:
                     # write nodal current
                     electrode.node_current[electrode.node_channel_id == _channel_id] = I[i_channel]
                 else:
@@ -565,7 +576,7 @@ class OnlineFEM:
             # update electrodes from node arrays
             electrode.update_electrodes_from_node_arrays()
 
-            # if electrode.detailed_dirichlet_correction:
+            # if electrode.dirichlet_correction_detailed:
             #     I_array = np.hstack(I)
             #     for _array_id in np.unique(electrode.node_array_id):
             #         for _ele_id in np.unique(electrode.node_ele_id):
@@ -628,13 +639,10 @@ class OnlineFEM:
         # reset to original currents
         for _electrode_array in electrode.electrode_arrays:
             for _ele in _electrode_array.electrodes:
-                _ele.current = _ele.current_init
+                _ele.ele_current = _ele.ele_current_init
 
-        # extract node_coords and optimal currents
-        for _electrode_array in electrode.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
+        np.savetxt("/data/pt_01756/studies/ttf/plots/node_coords_subject_test.txt", np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
 
-        # plot results
         import matplotlib.pyplot as plt
         import matplotlib
         matplotlib.use("Qt5Agg")

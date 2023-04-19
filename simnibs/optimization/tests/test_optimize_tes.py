@@ -40,7 +40,7 @@ polish = False
 locally_biased = True
 init_pos = None
 current_estimator_method = "gpc"
-detailed_dirichlet_correction = True
+dirichlet_correction_detailed = True
 # init_pos = ["C3"]
 # init_pos = ["C3", "C4"]
 
@@ -56,8 +56,9 @@ center = np.array([[0, 0, 0]])
 radius = np.array([0])
 length_x = np.array([40])
 length_y = np.array([40])
-electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method,
-                                       detailed_dirichlet_correction=detailed_dirichlet_correction)
+electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+                                       current_estimator_method=current_estimator_method,
+                                       dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 2 channel of 1 x 1 standard TES montage (Temporal interference)
 ########################################################################################################################

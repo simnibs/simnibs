@@ -236,6 +236,7 @@ class TESoptimize():
         self.electrode_pos_opt = None
         self.min_electrode_distance = min_electrode_distance
         self.dirichlet_correction = False  # will be checked later if required
+        self.dirichlet_correction_detailed = False  # will be checked later if required
 
         # number of independent stimulation channels (on after another)
         self.n_channel_stim = len(electrode)
@@ -271,14 +272,21 @@ class TESoptimize():
                         for i_channel_stim in range(self.n_channel_stim)]
 
         self.dirichlet_correction = [False] * self.n_channel_stim
+        self.dirichlet_correction_detailed = [False] * self.n_channel_stim
+        
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].detailed_dirichlet_correction:
+                if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].dirichlet_correction_detailed:
                     self.dirichlet_correction[i_channel_stim] = True
+                    if self.electrode[i_channel_stim].dirichlet_correction_detailed:
+                        self.dirichlet_correction_detailed[i_channel_stim] = True
 
                 for _electrode in _electrode_array.electrodes:
-                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.current
+                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.ele_current
 
+        self.dirichlet_correction = np.array(self.dirichlet_correction).any()
+        self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
+        
         # set initial positions of electrodes if nothing is provided
         assert self.n_channel_stim <= len(init_pos_list), "Please provide initial electrode positions."
 
@@ -319,6 +327,10 @@ class TESoptimize():
 
                 # set initial orientation alpha to zero
                 self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
+
+        # compile node arrays
+        for _electrode in self.electrode:
+            _electrode.compile_node_arrays()
 
         # plot electrodes
         if self.plot:
@@ -422,7 +434,7 @@ class TESoptimize():
         self.logger.log(25, f"fn_electrode_mask:                {self.fn_electrode_mask}")
         self.logger.log(25, f"FEM solver options:               {self.ofem.solver_options}")
         self.logger.log(25, f"dirichlet_correction:             {self.dirichlet_correction}")
-        self.logger.log(25, f"detailed_dirichlet_correction:    {self.detailed_dirichlet_correction}")
+        self.logger.log(25, f"dirichlet_correction_detailed:    {self.dirichlet_correction_detailed}")
         self.logger.log(25, f"optimizer:                        {self.optimizer}")
         self.logger.log(25, f"goal:                             {self.goal}")
         self.logger.log(25, f"weights:                          {self.weights}")
@@ -948,34 +960,38 @@ class TESoptimize():
                 for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                     for _electrode in _electrode_array.electrodes:
                         if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                            if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.current_sign):
-                                _electrode.current = currents_estimate[i_ele_global]
+                            if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.ele_current_sign):
+                                _electrode.ele_current = currents_estimate[i_ele_global]
                             else:
-                                _electrode.current = _electrode.current_init
+                                _electrode.ele_current = _electrode.ele_current_init
                             i_ele_global += 1
                         else:
                             _electrode.estimate_currents(electrode_pos[i_channel_stim])
-                            if _electrode.current is None or (np.sign(currents_estimate[i_ele_global])!=_electrode.current_sign):
-                                _electrode.current = _electrode.current_init
-                        current_temp.append(_electrode.current)
+                            if _electrode.ele_current is None or (np.sign(currents_estimate[i_ele_global])!=_electrode.ele_current_sign):
+                                _electrode.ele_current = _electrode.ele_current_init
+                        current_temp.append(_electrode.ele_current)
                         # sum up current for scaling
                         # estimator does not know about real total current and has to be corrected
-                        if _electrode.current < 0:
-                            current_neg += _electrode.current
+                        if _electrode.ele_current < 0:
+                            current_neg += _electrode.ele_current
                         else:
-                            current_pos += _electrode.current
+                            current_pos += _electrode.ele_current
 
                 # scale current to match total current
                 current_temp_scaled = []
                 for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                     for _electrode in _electrode_array.electrodes:
-                        if _electrode.current < 0:
-                            _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
+                        if _electrode.ele_current < 0:
+                            _electrode.ele_current = _electrode.ele_current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
                         else:
-                            _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
-                        current_temp_scaled.append(_electrode.current)
+                            _electrode.ele_current = _electrode.ele_current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
+                        current_temp_scaled.append(_electrode.ele_current)
 
                 self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp_scaled, }')
+
+        # compile node arrays
+        for i_channel_stim in range(self.n_channel_stim):
+            self.electrode[i_channel_stim].compile_node_arrays()
 
         return node_idx_dict
 
@@ -1017,7 +1033,7 @@ class TESoptimize():
             b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
 
             # solve system
-            if self.dirichlet_correction[i_channel_stim]:
+            if self.dirichlet_correction:
                 v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
                 # store number of dirichlet iterations for convergence analysis
                 self.n_iter_dirichlet_correction[i_channel_stim].append(self.ofem.n_iter_dirichlet_correction)
