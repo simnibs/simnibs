@@ -376,13 +376,13 @@ class TESoptimize():
                                  overlap_factor=self.overlap_factor)
 
         # define gpc parameters for current estimator
-        if self.electrode[i_channel_stim].current_estimator.method == "gpc":
+        if self.electrode[0].current_estimator.method == "gpc":
             n_max = 0
             for i_channel_stim in range(self.n_channel_stim):
                 self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
                     lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
                     ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
-            n_max += self.n_ele_free[i_channel_stim]*3
+                n_max += self.n_ele_free[i_channel_stim]*3
 
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
@@ -928,93 +928,37 @@ class TESoptimize():
 
                 i_array_test_start += 1
 
-        if plot:
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject[0])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), node_coords_list[0])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.node_idx_msh])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.electrode[0].electrode_arrays[0].electrodes[0].node_idx])
-            for i_channel_stim in range(self.n_channel_stim):
-                node_idx_all = np.hstack([np.hstack(node_idx_dict[i_channel_stim][id])
-                                          for id in node_idx_dict[i_channel_stim].keys()])
-                points_nodes = self.mesh.nodes.node_coord[node_idx_all, :]
-                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"),
-                           points_nodes)
-
         # save electrode_pos in ElectrodeArray instances
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
         # estimate optimal electrode currents based on previous simulations
-        if self.electrode[i_channel_stim].current_estimator is not None:
-            for i_channel_stim in range(self.n_channel_stim):
-                current_temp = []
-                current_pos = 0
-                current_neg = 0
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].current_estimator is not None:
 
                 # estimate optimal currents electrode wise
                 currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
-                i_ele_global = 0
 
+                # write currents in electrodes
                 if currents_estimate is not None:
-                    for _channel_id in self.electrode[i_channel_stim].current_estimator.channel_id:
-                        for _ele_id in self.electrode[i_channel_stim].current_estimator.ele_id:
-                            mask_estimator = (self.electrode[i_channel_stim].current_estimator.ele_id == _ele_id) * \
-                                   (self.electrode[i_channel_stim].current_estimator.channel_id == _channel_id)
-                            mask_nodes_array = (self.electrode[i_channel_stim].node_channel_id == _channel_id) * \
-                                               (self.electrode[i_channel_stim].node_ele_id == _ele_id)
-
-                            if np.sign(currents_estimate[mask_estimator]) == \
-                                    self.electrode[i_channel_stim].node_current_sign[mask_nodes_array][0]:
-                                self.electrode[i_channel_stim].node_current[mask_nodes_array] = \
-                                    currents_estimate[mask_estimator] * \
-                                    self.electrode[i_channel_stim].node_area[mask_nodes_array] / \
-                                    np.sum(self.electrode[i_channel_stim].node_area[mask_nodes_array])
-
-                    self.electrode[i_channel_stim].update_electrode_from_node_arrays()
-
-
-
-
-
-
-                ele_id_unique_channel = np.unique(
-                    self.electrode[i_channel_stim].node_ele_id[
-                        self.electrode[i_channel_stim].node_channel_id == _channel_id])
-
-
-                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                    for _electrode in _electrode_array.electrodes:
-                        if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.ele_current_sign):
-                            _electrode.ele_current = currents_estimate[i_ele_global]
-                        else:
-                            _electrode.ele_current = _electrode.ele_current_init
-                        i_ele_global += 1
-
-                        current_temp.append(_electrode.ele_current)
-                        # sum up current for scaling
-                        # estimator does not know about real total current and has to be corrected
-                        if _electrode.ele_current < 0:
-                            current_neg += _electrode.ele_current
-                        else:
-                            current_pos += _electrode.ele_current
-
-                # scale current to match total current
-                current_temp_scaled = []
-                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                    for _electrode in _electrode_array.electrodes:
-                        if _electrode.ele_current < 0:
-                            _electrode.ele_current = _electrode.ele_current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
-                        else:
-                            _electrode.ele_current = _electrode.ele_current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
-                        current_temp_scaled.append(_electrode.ele_current)
-
-                self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp_scaled, }')
+                    currents_estimate = currents_estimate.flatten()
+                    for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                        for _ele in _electrode_array.electrodes:
+                            mask_estimator = (self.electrode[i_channel_stim].current_estimator.ele_id == _ele.ele_id) * \
+                                             (self.electrode[
+                                                  i_channel_stim].current_estimator.channel_id == _ele.channel_id)
+                            _ele.ele_current = currents_estimate[mask_estimator]
 
         # compile node arrays
         for i_channel_stim in range(self.n_channel_stim):
             self.electrode[i_channel_stim].compile_node_arrays()
+
+        # plot electrode nodes with associated current
+        if plot:
+            for i_channel_stim in range(self.n_channel_stim):
+                data = np.hstack((self.electrode[i_channel_stim].node_coords, self.electrode[i_channel_stim].node_current[:, np.newaxis]))
+                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"), data)
 
         return node_idx_dict
 

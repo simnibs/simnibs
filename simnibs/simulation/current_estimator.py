@@ -197,7 +197,18 @@ class CurrentEstimator():
         else:
             raise NotImplementedError(f"Specified current estimation method '{self.method}' not implemented.")
 
-        return current[0]
+        # check for valid sign
+        if not (np.sign(current) == self.current_sign).all():
+            return None
+
+        # normalize currents to total current
+        for i in range(current.shape[0]):
+            mask_neg = current[i, :] < 0
+            mask_pos = current[i, :] > 0
+            current[i, current[i, :] < 0] = current[i, mask_neg] / np.abs(np.sum(current[i, mask_neg])) * self.current_total
+            current[i, current[i, :] > 0] = current[i, mask_pos] / np.abs(np.sum(current[i, mask_pos])) * self.current_total
+
+        return current
 
     def set_gpc_parameters(self, lb, ub):
         """

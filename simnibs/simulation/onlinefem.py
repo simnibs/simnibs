@@ -355,19 +355,18 @@ class OnlineFEM:
 
             ele_id_unique = np.unique(ele_id[channel_mask])
 
-            v_mean_ele.append([])
             if electrode.dirichlet_correction_detailed:
                 # do not average voltages over electrode for detailed Dirichlet correction for this channel
-                v_mean_ele[i].append(v_nodes[channel_mask])
+                v_mean_ele.append(v_nodes[channel_mask])
             else:
                 # determine average potentials over electrodes for this channel
+                v_mean_ele.append([])
                 for _ele_id in ele_id_unique:
                     ele_mask = _ele_id == ele_id
                     mask = ele_mask * channel_mask
-                    v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / \
-                                         np.sum(node_area[mask]))
+                    v_mean_ele[i].append(np.sum(node_area[mask] * v_nodes[mask]) / np.sum(node_area[mask]))
 
-                v_mean_ele[i] = np.array(v_mean_ele[i])
+                v_mean_ele[i] = np.hstack(v_mean_ele[i])
 
         # print(f"v_mean_ele: {v_mean_ele}")
 
@@ -402,7 +401,7 @@ class OnlineFEM:
             Corrected solution (including the Dirichlet node at the right position)
         """
         th_maxrelerr = 0.01
-        maxiter = 40
+        maxiter = 100
 
         # create nodal arrays
         # v_nodes | v_node_idx | channel_id_nodes | ele_id_nodes | node_area
@@ -455,9 +454,9 @@ class OnlineFEM:
             else:
                 # take total electrode current (sum nodal current up)
                 for _ele_id in np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id]):
-                    mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id * _ele_id)
+                    mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
                     I[i_channel].append(np.sum(electrode.node_current[mask]))
-                    I_sign[i_channel].append(np.sum(electrode.node_current_sign[mask]))
+                    I_sign[i_channel].append(electrode.node_current_sign[mask][0])
                 I[i_channel] = np.hstack(I[i_channel])
                 I_sign[i_channel] = np.hstack(I_sign[i_channel])
 
@@ -537,7 +536,8 @@ class OnlineFEM:
                 # It 1: make small step hopefully in the right direction
                 I = []
                 for i_channel in range(n_channel):
-                    if electrode.n_ele_per_channel[i_channel] == 1:
+                    if len(I_norm[i_channel][-1, :]) == 1:
+                    # if electrode.n_ele_per_channel[i_channel] == 1:
                         I.append(np.array([I_mean[i_channel]]))
                     else:
                         I.append(-0.1 * np.sign(I_mean[i_channel]) * v_norm[i_channel][0, :] / np.max(np.abs(v_norm[i_channel][0, :])))
@@ -545,7 +545,8 @@ class OnlineFEM:
             else:
                 # It 2 ... use gradient descent
                 for i_channel in range(n_channel):
-                    if electrode.n_ele_per_channel[i_channel] == 1:
+                    if len(I_norm[i_channel][-1, :]) == 1:
+                    # if electrode.n_ele_per_channel[i_channel] == 1:
                         I[i_channel] = I[i_channel]
                     else:
                         denom = (v_norm[i_channel][-1, :] - v_norm[i_channel][-2, :])
@@ -555,6 +556,9 @@ class OnlineFEM:
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
 
+            # # ensure correct sign I_sign[i_channel]
+            # I = [np.abs(I[i_channel]) * I_sign[i_channel] for i_channel in range(n_channel)]
+
             # write currents in electrodes
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
                 if electrode.dirichlet_correction_detailed:
@@ -563,11 +567,11 @@ class OnlineFEM:
                 else:
                     # calculate nodal current from total electrode current
                     for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id])):
-                        mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id * _ele_id)
+                        mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
                         electrode.node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(electrode.node_area[mask])
 
             # update electrodes from node arrays
-            electrode.update_electrodes_from_node_arrays()
+            electrode.update_electrode_from_node_arrays()
 
             # if electrode.dirichlet_correction_detailed:
             #     I_array = np.hstack(I)
@@ -622,7 +626,7 @@ class OnlineFEM:
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
                 I_ele.append([])
                 for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id])):
-                    mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id * _ele_id)
+                    mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
                     I_ele.append(np.sum(electrode.node_current[mask] * electrode.node_area[mask] / np.sum(electrode.node_area[mask])))
 
             electrode.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
@@ -635,32 +639,32 @@ class OnlineFEM:
             for _ele in _electrode_array.electrodes:
                 _ele.ele_current = _ele.ele_current_init
 
-        np.savetxt("/data/pt_01756/studies/ttf/plots/node_coords_subject_test.txt", np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
-
-        import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use("Qt5Agg")
-
-        t = np.arange(j + 1)
-        for i_channel in range(n_channel):
-            v_normP = v_norm[i_channel]
-            I_normP = I_norm[i_channel]
-
-            fig, axs = plt.subplots(5, 1)
-            for i in range(electrode.n_ele_per_channel[i_channel]):
-                axs[0].plot(t, v_normP[:, i])
-                axs[1].plot(t, I_normP[:, i])
-            axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
-            axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-
-            axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-
-            axs[0].set_title('v_norm')
-            axs[1].set_title('I_norm')
-            axs[2].set_title('max and mean relative error of v_norm (log10)')
-
-            fig.tight_layout()
-            plt.show()
+        # np.savetxt("/data/pt_01756/studies/ttf/plots/electrode_coords_nodes_subject_0_opt.txt", np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
+        #
+        # import matplotlib.pyplot as plt
+        # import matplotlib
+        # matplotlib.use("Qt5Agg")
+        #
+        # t = np.arange(j + 1)
+        # for i_channel in range(n_channel):
+        #     v_normP = v_norm[i_channel]
+        #     I_normP = I_norm[i_channel]
+        #
+        #     fig, axs = plt.subplots(5, 1)
+        #     for i in range(electrode.n_ele_per_channel[i_channel]):
+        #         axs[0].plot(t, v_normP[:, i])
+        #         axs[1].plot(t, I_normP[:, i])
+        #     axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
+        #     axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+        #
+        #     axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
+        #
+        #     axs[0].set_title('v_norm')
+        #     axs[1].set_title('I_norm')
+        #     axs[2].set_title('max and mean relative error of v_norm (log10)')
+        #
+        #     fig.tight_layout()
+        #     plt.show()
 
         return np.squeeze(v)
 
