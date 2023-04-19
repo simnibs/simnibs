@@ -2537,7 +2537,7 @@ class Msh:
     def fields_summary(self, roi=None, fields=None,
                        percentiles=(99.9, 99, 95),
                        focality_cutoffs=(75, 50)):
-        ''' Creates a text summaty of the field
+        ''' Creates a text summary of the field
 
         Parameters
         ------------
@@ -3419,7 +3419,7 @@ class Data(object):
         return focality
 
     def summary(self, percentiles=(99.9, 99, 95), focality_cutoffs=(75, 50), units=None):
-        ''' Creates a text summaty of the field
+        ''' Creates a text summary of the field
 
         Parameters
         ------------

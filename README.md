@@ -18,6 +18,15 @@ The pipeline is divided in three parts:
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.
 Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions on how to download and install SimNIBS.
 
+## Installation for development
+
+After cloning the repository:
+
+```
+conda env create -f environment_.yml -n <name_of_my_environment>
+conda activate <name_of_my_environment>
+python setup.py develop
+```
 
 ## Authors
 Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.

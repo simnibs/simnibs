@@ -149,3 +149,5 @@ miniconda3/
 *.xdy
 *.tdo
 !simnibs/external/bin/osx/fmm3dpy-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl
+CGAL-5.4/*
+tbb/*
