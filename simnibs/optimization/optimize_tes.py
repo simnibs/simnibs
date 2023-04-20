@@ -118,7 +118,7 @@ class TESoptimize():
                  overlap_factor=1.,
                  polish=True,
                  optimize_init_vals=True,
-                 dataType=0):
+                 dataType=None):
         """
         Constructor of TESoptimize class instance
         """
@@ -184,10 +184,33 @@ class TESoptimize():
                                                  label_internal_air=501)
 
         # create skin surface
-        self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
+        skin_surface_initial = surface.Surface(mesh=self.mesh_relabel, labels=1005)
 
         # determine point indices where the electrodes may be applied during optimization
-        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.mesh_relabel)
+        # at first make an initial registration
+        skin_surface_initial = self.valid_skin_region(skin_surface=skin_surface_initial,
+                                                      mesh=self.mesh_relabel,
+                                                      additional_distance=0)
+
+        # measure distance between nasion and anterior part of mask
+        self.fn_fiducials = os.path.join(self.ff_subject.eeg_cap_folder, "Fiducials.csv")
+
+        # read fiducials from subject data
+        with open(self.fn_fiducials, newline='') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if "Fiducial" in row and "Nz" in row:
+                    # Nz (Nasion), Iz (Inion), LPHA (left ear), RPA (right ear)
+                    Nz = np.array([row[1], row[2], row[3]]).astype(float)
+
+        # distance from nasion to upper eyebrow is 25 mm (std 5 mm), here we take 30 and determine the add. distance
+        additional_distance = int(np.round(np.min(np.linalg.norm(skin_surface_initial.nodes-Nz, axis=1)) - 30))
+
+        # make final skin surface including some additional distance
+        self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
+        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface,
+                                                   mesh=self.mesh_relabel,
+                                                   additional_distance=additional_distance)
 
         # get mapping between skin_surface node indices and global mesh nodes
         self.node_idx_msh = np.where(np.isin(self.mesh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
@@ -349,7 +372,15 @@ class TESoptimize():
         elif type(weights) is list:
             weights = np.array(weights)
 
+        if type(goal) is not list:
+            goal = [goal]
+
+        if type(dataType) is not list:
+            dataType = [dataType]
+
+        assert len(goal) == len(roi), "Please provide a goal function for each ROI."
         assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
+        assert len(dataType) == len(self.roi), "Please provide the dataType 0 (magnitude), 1 (vector) for each goal function"
 
         self.goal = goal
         self.goal_dir = goal_dir
@@ -362,8 +393,12 @@ class TESoptimize():
         self.n_sim = 0          # number of final simulations carried out (only valid electrode positions)
 
         # ensure that we will use vector e-field for TI goal functions
-        if self.goal in ["mean_max_TI", "mean_max_TI_dir"]:
-            dataType = 1
+        for i, _dataType in enumerate(dataType):
+            if _dataType is None:
+                if self.goal[i] in ["mean_max_TI", "mean_max_TI_dir"]:
+                    dataType[i] = 1
+                else:
+                    dataType[i] = 0
 
         # direct and shgo optimizer do not take init vals
         if self.optimizer in ["direct", "shgo"]:
@@ -616,7 +651,7 @@ class TESoptimize():
 
         return np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
 
-    def valid_skin_region(self, skin_surface, mesh):
+    def valid_skin_region(self, skin_surface, mesh, additional_distance=0.):
         """
         Determine the nodes of the scalp surface where the electrode can be applied (not ears and face etc.)
 
@@ -626,6 +661,8 @@ class TESoptimize():
             Surface of the mesh (mesh_tools/surface.py)
         mesh : Msh object
             Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
+        additional_distance : float, optional, default: 0
+            Additional distance in anterior part to put between original MNI template registration
         """
         nodes_all = copy.deepcopy(skin_surface.nodes)
         tr_nodes_all = copy.deepcopy(skin_surface.tr_nodes)
@@ -638,7 +675,6 @@ class TESoptimize():
             if mask_img_data[:, :, i_border].all():
                 break
 
-        additional_distance = 20
         mask_img_data[:, :, (i_border-additional_distance):i_border] = 1
 
         # transform skin surface points to MNI space
@@ -1076,45 +1112,37 @@ class TESoptimize():
             self.logger.log(20, f"Goal ({self.goal}): 1.0")
             return 1.0
         else:
-            # mean electric field in the roi
-            if self.goal == "mean":
+            for i_roi in range(self.n_roi):
                 for i_channel_stim in range(self.n_channel_stim):
-                    for i_roi in range(self.n_roi):
+                    # mean electric field in the roi
+                    if self.goal[i_roi] == "mean":
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
 
-            # max electric field in the roi (percentile)
-            elif self.goal == "max":
-                for i_channel_stim in range(self.n_channel_stim):
-                    for i_roi in range(self.n_roi):
+                    # max electric field in the roi (percentile)
+                    elif self.goal[i_roi] == "max":
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
 
-            # mean of max envelope for TI fields
-            elif self.goal == "mean_max_TI":
-                for i_roi in range(self.n_roi):
-                    # gather fields with different frequencies
-                    for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
+                # mean of max envelope for TI fields
+                if self.goal[i_roi] == "mean_max_TI":
+                    if e[0][i_roi] is None or e[1][i_roi] is None:
+                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                        return 1.0
                     y[0, i_roi] = -np.mean(get_maxTI(E1_org=e[0][i_roi], E2_org=e[1][i_roi]))
                     y[1, i_roi] = y[0, i_roi]
 
-            # mean of max envelope for TI fields in given direction
-            elif self.goal == "mean_max_TI_dir":
-                for i_roi in range(self.n_roi):
-                    # gather fields with different frequencies
-                    for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
+                # mean of max envelope for TI fields in given direction
+                elif self.goal[i_roi] == "mean_max_TI_dir":
+                    if e[0][i_roi] is None or e[1][i_roi] is None:
+                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                        return 1.0
                     y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
                     y[1, i_roi] = y[0, i_roi]
             else:

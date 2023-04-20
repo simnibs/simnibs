@@ -31,8 +31,8 @@ class OnlineFEM:
         Head mesh or path to it.
     method : str
         Specify simulation type ('TMS' or 'TES')
-    roi : RegionOfInterest object
-        Region of interest.
+    roi : list of RegionOfInterest object [n_roi]
+        Region of interests.
     anisotropy_type : str
         Type of anisotropy for simulation ('scalar', 'vn', 'mc')
     solver_options : str
@@ -44,8 +44,8 @@ class OnlineFEM:
         False: interpolate the dadt field using positions (coordinates) of nodes
     fn_coil : str
         Path to coil file (.ccd or .nii)
-    dataType : int, optional, default: 0
-        Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
+    dataType : list of int [n_roi], optional, default: 0
+        Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez. Defined for each ROI.
     coil : Coil instance
         TMS coil
     electrode : ElectrodeArrayPair or CircularArray instance
@@ -217,7 +217,7 @@ class OnlineFEM:
                     if self.logger is not None:
                         self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
                 else:
-                    self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType)
+                    self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType[i_roi])
 
                 if self.method == "TMS":
                     self.e[i_sim][i_roi] *= didt * 1e-9
@@ -476,7 +476,7 @@ class OnlineFEM:
         j = 0
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
         while maxrelerr > th_maxrelerr:
-            print(f"iter: {j}, error: {maxrelerr}")
+            print(f"iter: {j:03}, error: {maxrelerr:.3f}")
             j += 1
 
             if j > maxiter:

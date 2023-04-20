@@ -32,34 +32,35 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 
 optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
 optimize_init_vals = True
-goal = "mean"  # "mean" "mean_max_TI"
-dataType = 0
+goal = ["mean", "mean"]  # "mean" "mean_max_TI"
+dataType = [0, 0]
+weights = [0.5, 0.5]
 constrain_electrode_locations = False
 overlap_factor = 1.
 polish = False
 locally_biased = True
 init_pos = None
 current_estimator_method = "gpc"
-dirichlet_correction_detailed = True
+dirichlet_correction_detailed = False
 # init_pos = ["C3"]
 # init_pos = ["C3", "C4"]
 
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-# electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
-#                                   current_estimator_method=current_estimator_method,
-#                                   dirichlet_correction_detailed=dirichlet_correction_detailed)
+electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
+                                  current_estimator_method=current_estimator_method,
+                                  dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
-center = np.array([[0, 0, 0]])
-radius = np.array([0])
-length_x = np.array([40])
-length_y = np.array([40])
-electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-                                       current_estimator_method=current_estimator_method,
-                                       dirichlet_correction_detailed=dirichlet_correction_detailed)
+# center = np.array([[0, 0, 0]])
+# radius = np.array([0])
+# length_x = np.array([40])
+# length_y = np.array([40])
+# electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+#                                        current_estimator_method=current_estimator_method,
+#                                        dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 2 channel of 1 x 1 standard TES montage (Temporal interference)
 ########################################################################################################################
@@ -138,23 +139,27 @@ mesh = simnibs.read_msh(fn_mesh)
 
 # load roi points
 with h5py.File(fn_roi, "r") as f:
-    points = f["mesh/nodes/node_coord"][:]
-    con = f["mesh/elm/triangle_number_list"][:]
+    points_1 = f["mesh/nodes/node_coord"][:]
+    con_1 = f["mesh/elm/triangle_number_list"][:]
 
-# lh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/lh.central.gii")
-# rh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/rh.central.gii")
-# lh_points, lh_con = lh.agg_data()
-# rh_points, rh_con = rh.agg_data()
-# points = np.vstack((lh_points, rh_points))
-# con = np.vstack((lh_con, rh_con + lh_points.shape[0]))
+lh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/lh.central.gii")
+rh = nibabel.load("/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/surf/rh.central.gii")
+lh_points, lh_con = lh.agg_data()
+rh_points, rh_con = rh.agg_data()
+points_2 = np.vstack((lh_points, rh_points))
+con_2 = np.vstack((lh_con, rh_con + lh_points.shape[0]))
 # tri_center = np.average(points[con, ], axis=1)
 
 # create a region of interest
-print("Initializing ROI ...")
-roi = simnibs.RegionOfInterest(points=points, con=con, mesh=mesh)
+print("Initializing ROI #1 ...")
+roi_1 = simnibs.RegionOfInterest(points=points_1, con=con_1, mesh=mesh)
+
+print("Initializing ROI #2 ...")
+roi_2 = simnibs.RegionOfInterest(points=points_2, con=con_2, mesh=mesh)
+
+roi = [roi_1, roi_2]
 
 min_electrode_distance = 10
-weights = [1]
 optimizer_options = {"maxiter": 1000,
                      "disp": True,
                      "recombination": 0.3,              # differential evolution
