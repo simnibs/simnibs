@@ -446,6 +446,30 @@ class DirichletBC(object):
         return cls(nodes, values)
 
 
+def set_ground_at_nodes(mesh, nodes=None):
+    """Set a Dirichlet boundary condition with a value of 0 at the specified
+    nodes. If `nodes` is None, the single lowest node in the mesh (smallest z
+    coordinate) is used. In the case of TMS and direct approach this is used to
+    ensure uniqueness of the solution.
+
+    Add a dirichlet BC to the single lowest node to make the problem SPD.
+
+    Parameters
+    ----------
+    nodes : int | list | ndarray
+        The nodes to use as ground.
+
+    Returns
+    -------
+    bc : DirichletBC
+        The Dirichlet boundary condition object.
+    """
+    if nodes is None:
+        nodes = mesh.nodes.node_number[mesh.nodes.node_coord[:, 2].argmin()]
+    nodes = np.atleast_1d(nodes)
+    return DirichletBC(nodes, np.zeros_like(nodes, dtype=float))
+
+
 class FEMSystem(object):
     ''' Class defining the equation system to be used in FEM calculations
 
@@ -531,15 +555,16 @@ class FEMSystem(object):
         return self._dof_map
 
     def assemble_fem_matrix(self, store_G=False):
-        '''Assembly of the l.h.s matrix A. !Only works with symmetric matrices!
+        ''' Assembly of the l.h.s matrix A. !Only works with symmetric matrices!
         Based in the OptVS algorithm in Cuvelier et. al. 2016 '''
-        logger.info('Assembling FEM Matrx')
+        logger.info('Assembling FEM Matrix')
         start = time.time()
         msh = self.mesh
         cond = self.cond[msh.elm.elm_type == 4]
         th_nodes = msh.elm.node_number_list[msh.elm.elm_type == 4]
         G = _gradient_operator(msh)
-        if store_G: self._G = G  # stores the operator in case we need it later (TMS)
+        if store_G:
+            self._G = G  # stores the operator in case we need it later (TMS)
         vols = _vol(msh)
         dof_map = self.dof_map
         self._A = _assemble_matrix(vols, G, th_nodes, cond, dof_map,
@@ -612,203 +637,6 @@ class FEMSystem(object):
 
         return np.squeeze(x)
 
-    @classmethod
-    def tms(cls, mesh, cond, solver_options=None):
-        '''Sets up a TMS problem
-
-        Parameters
-        ----------
-        mesh: simnibs.mesh_io.msh.Msh
-            Mesh structure
-        cond: ndarray or simnibs.mesh_io.msh.ElementData
-            Conductivity of each element
-        solver_options: str
-            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
-
-        Returns
-        -------
-        S: FEMSystem
-            FEMSystem structure with a ".solve()" command
-        '''
-        # Add a dirichlet BC to the single lowest node to make the problem SPD
-        lowest_node = mesh.nodes.node_number[mesh.nodes.node_coord[:, 2].argmin()]
-        bc = DirichletBC([lowest_node], [0])
-        S = cls(mesh, cond, dirichlet=bc, store_G=True, solver_options=solver_options)
-        return S
-
-    def assemble_tms_rhs(self, dadt):
-        ''' Assembles the right hand side for TMS.
-
-        Parameters
-        ----------
-        dadt: NodeData or ElementData
-            dA/dt field at each node or element
-
-        Returns
-        -------
-        b: np.array
-            Right-hand side
-        '''
-
-        msh = self.mesh
-        cond = self.cond[msh.elm.elm_type == 4]
-        if isinstance(dadt, mesh_io.NodeData):
-            dadt = dadt.node_data2elm_data()
-        dadt = dadt.value
-        dadt = dadt[msh.elm.elm_type == 4]
-        if self._G is None:
-            G = _gradient_operator(msh)
-        else:
-            G = self._G
-        vols = _vol(msh)
-        th_nodes = msh.elm.node_number_list[msh.elm.elm_type == 4]
-        # integrate in each node of each element, the value for repeated nodes will be summed
-        # together later
-        elm_node_integral = np.zeros((len(th_nodes), 4), dtype=np.float64)
-        if cond.ndim == 1:
-            sigma_dadt = cond[:, None] * dadt
-        elif cond.ndim == 3:
-            sigma_dadt = np.einsum('aij, aj -> ai', cond, dadt)
-        else:
-            raise ValueError('Invalid cond array')
-
-        for i in range(4):
-            elm_node_integral[:, i] = \
-                    -vols * (sigma_dadt * G[:, i, :]).sum(axis=1)
-
-        if self.units == 'mm':
-            elm_node_integral *= 1e-6
-
-        b = np.bincount(self.dof_map[th_nodes.reshape(-1)],
-                        elm_node_integral.reshape(-1))
-        #self.b = np.atleast_2d(self.b).T
-        return b
-
-    @classmethod
-    def tdcs(cls, mesh, cond, electrode_tags, potentials, solver_options=None):
-        '''Sets up a tDCS problem using Dirichled boundary conditions
-
-        Parameters
-        ----------
-        mesh: simnibs.mesh_io.msh.Msh
-            Mesh structure
-        cond: ndarray or simnibs.mesh_io.msh.ElementData
-            Conductivity of each element
-        electrode_tags: list
-            list of the surfaces where the dirichlet BC is to be applied
-        potentials: list
-            list of the potentials each surface is to be set
-        solver_options: str
-            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
-
-        Returns
-        -------
-        S: FEMSystem
-            FEMSystem structure with a ".solve()" command
-        '''
-        assert len(electrode_tags) == len(potentials)
-        bcs = []
-        for t, p in zip(electrode_tags, potentials):
-            elements_in_surface = (mesh.elm.tag1 == t) * (mesh.elm.elm_type == 2)
-            if np.sum(elements_in_surface) == 0:
-                raise ValueError('Did not find any surface with tag: {0}'.format(t))
-            n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
-            bcs.append(DirichletBC(n, p * np.ones_like(n, dtype=float)))
-        bc = DirichletBC.join(bcs)
-
-        return cls(mesh, cond, dirichlet=bc, solver_options=solver_options)
-
-    @classmethod
-    def tdcs_neumann(cls, mesh, cond, ground_electrode, solver_options=None, input_type='tag'):
-        '''Sets up a tDCS problem using Dirichlet boundary conditions in the ground
-        electrode and Neumann BC in the others
-
-        Parameters
-        ----------
-        mesh: simnibs.mesh_io.msh.Msh
-            Mesh structure
-        cond: ndarray or simnibs.mesh_io.msh.ElementData
-            Conductivity of each element
-        ground_electrode: int
-            Tag of the ground electrode surface
-        solver_options: str (optional)
-            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
-        input_type: 'tag' or 'node' (optional)
-            Input can be either the tag of the electrode surface (default) or a list of nodes
-
-        Returns
-        -------
-        S: FEMSystem
-            FEMSystem structure with a ".solve()" command
-        '''
-        # The first surface is set to a DirichletBC
-        if input_type == 'tag':
-            # Find the nodes in the tag
-            elements_in_surface = (
-                (mesh.elm.tag1 == ground_electrode) *
-                (mesh.elm.elm_type == 2)
-            )
-            if np.sum(elements_in_surface) == 0:
-                raise ValueError(
-                    'Did not find any surface with tag: {0}'.format(ground_electrode))
-            n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
-        elif input_type == 'node':
-            n = np.atleast_1d(ground_electrode)
-        else:
-            ValueError('Invalid value for input_type')
-        bcs = DirichletBC(n, np.zeros_like(n, dtype=float))
-        S = cls(mesh, cond, dirichlet=bcs, solver_options=solver_options)
-        return S
-
-    def assemble_tdcs_neumann_rhs(self, electrodes, currents, input_type='tag'):
-        ''' Assemble the RHS for a tDCS simulation with Neumann boundary conditions
-
-        Parameters
-        ----------
-        electrodes: list
-            list of the surface tags or nodes where the currents to be applied.
-            WARNING: should NOT include the ground electrode
-        currents: list
-            list of the currents in each surface
-            WARNING: should NOT include the ground electrode
-        input_type: 'tag' or 'node' (optional)
-            Input can be either the tag of the electrode surface (default) or a list of nodes
-
-        Returns
-        -------
-        b: np.ndarray
-            Right-hand-side of FEM system
-
-        '''
-        if input_type == 'node':
-            electrodes = np.atleast_2d(electrodes)
-        assert len(electrodes) == len(currents)
-        b = np.zeros(self.dof_map.nr, dtype=np.float64)
-        areas = self.mesh.nodes_areas()
-        for e, c in zip(electrodes, currents):
-            if input_type == 'tag':
-                # Find the nodes in the tag
-                nodes = np.unique(
-                    self.mesh.elm[
-                        (self.mesh.elm.tag1 == e) *
-                        (self.mesh.elm.elm_type == 2),
-                        :3
-                    ])
-            elif input_type == 'node':
-                nodes = e
-            else:
-                raise ValueError('Invalid value for input_type')
-            b += self._tdcs_neumann_rhs_node(areas, nodes, c)
-        return b
-
-    def _tdcs_neumann_rhs_node(self, areas, nodes, current):
-        ''' Assemble the Neumann RHS on a set of nodes
-        '''
-        b = np.zeros(self.dof_map.nr, dtype=np.float64)
-        total_area = areas[nodes].sum()
-        b[self.dof_map[nodes]] = current / total_area * areas[nodes]
-        return b
-
 
     def calc_gradient(self, v):
         ''' Calculates gradients
@@ -836,9 +664,253 @@ class FEMSystem(object):
         elif v.ndim == 2:
             return grad.reshape(-1, 3, v.shape[1])
 
-    @classmethod
-    def electric_dipole(cls, mesh, cond, solver_options=None):
-        '''Sets up an electric dipole simulation using the partial integration method
+
+# Classes for specific types of FEM systems
+
+class TMSFEM(FEMSystem):
+    def __init__(
+            self,
+            mesh,
+            cond,
+            solver_options=None,
+            units='mm',
+            store_G=True
+        ):
+        '''Set up a TMS problem.
+
+        Parameters
+        ----------
+        mesh: simnibs.mesh_io.msh.Msh
+            Mesh structure.
+        cond: ndarray or simnibs.mesh_io.msh.ElementData
+            Conductivity of each element.
+        solver_options: str
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+        '''
+        dirichlet_bc = set_ground_at_nodes(mesh)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+
+    def assemble_rhs(self, dadt):
+        '''Assemble the right-hand side for a TMS simulation.
+
+        Parameters
+        ----------
+        dadt: NodeData or ElementData
+            dA/dt field at each node or element
+
+        Returns
+        -------
+        b: np.array
+            Right-hand side
+
+        References
+        ----------
+        Gomez, Luis J., Moritz Dannhauer, and Angel V. Peterchev. "Fast
+            computational optimization of TMS coil placement for individualized
+            electric field targeting." bioRxiv (2020).
+        '''
+        msh = self.mesh
+        cond = self.cond[msh.elm.elm_type == 4]
+        if isinstance(dadt, mesh_io.NodeData):
+            dadt = dadt.node_data2elm_data()
+        dadt = dadt.value
+        dadt = dadt[msh.elm.elm_type == 4]
+        G = _gradient_operator(msh) if self._G is None else self._G
+        vols = _vol(msh)
+        th_nodes = msh.elm.node_number_list[msh.elm.elm_type == 4]
+        # integrate in each node of each element, the value for repeated nodes will be summed
+        # together later
+        elm_node_integral = np.zeros((len(th_nodes), 4), dtype=np.float64)
+        if cond.ndim == 1:
+            sigma_dadt = cond[:, None] * dadt
+        elif cond.ndim == 3:
+            sigma_dadt = np.einsum('aij, aj -> ai', cond, dadt)
+        else:
+            raise ValueError('Invalid cond array')
+
+        for i in range(4):
+            elm_node_integral[:, i] = \
+                        -vols * (sigma_dadt * G[:, i, :]).sum(axis=1)
+
+        if self.units == 'mm':
+            elm_node_integral *= 1e-6
+
+        b = np.bincount(self.dof_map[th_nodes.reshape(-1)],
+                        elm_node_integral.reshape(-1))
+        #self.b = np.atleast_2d(self.b).T
+        return b
+
+
+class TDCSFEMDirichlet(FEMSystem):
+    def __init__(
+            self,
+            mesh,
+            cond,
+            electrodes,
+            potentials,
+            # input_type="tag", # currently only supports "tag"!
+            solver_options=None,
+            units='mm',
+            store_G=False,
+        ):
+        '''Set up a TDCS problem using Dirichlet boundary conditions in all
+        electrodes.
+
+        Parameters
+        ----------
+        mesh: simnibs.mesh_io.msh.Msh
+            Mesh structure.
+        cond: ndarray or simnibs.mesh_io.msh.ElementData
+            Conductivity of each element.
+        electrode_tags: list
+            list of the surfaces where the dirichlet BC is to be applied.
+        potentials: list
+            list of the potentials each surface is to be set.
+        solver_options: str
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+        '''
+        self.electrodes = electrodes
+        self.potentials = potentials
+        # self.input_type = input_type
+
+        dirichlet_bc = self._init_dirichlet_bcs(mesh)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+
+    def _init_dirichlet_bcs(self, mesh):
+        """Set Dirichlet boundary conditions on all electrodes."""
+
+        assert len(self.electrodes) == len(self.potentials)
+        bcs = []
+        for t, p in zip(self.electrodes, self.potentials):
+            elements_in_surface = (mesh.elm.tag1 == t) * (mesh.elm.elm_type == 2)
+            if np.sum(elements_in_surface) == 0:
+                raise ValueError('Did not find any surface with tag: {0}'.format(t))
+            n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
+            bcs.append(DirichletBC(n, p * np.ones_like(n, dtype=float)))
+        return DirichletBC.join(bcs)
+
+
+class TDCSFEMNeumann(FEMSystem):
+    def __init__(
+            self,
+            mesh,
+            cond,
+            ground_electrode,
+            input_type="tag",
+            weigh_by_area=True,
+            solver_options=None,
+            units='mm',
+            store_G=False,
+        ):
+        '''Set up a TDCS problem using Dirichlet boundary conditions in the
+        ground electrode and Neumann boundary conditions in the other
+        electrodes.
+
+        Parameters
+        ----------
+        mesh: simnibs.mesh_io.msh.Msh
+            Mesh structure
+        cond: ndarray or simnibs.mesh_io.msh.ElementData
+            Conductivity of each element
+        ground_electrode: int
+            Tag of the ground electrode surface
+        solver_options: str (optional)
+            Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+        input_type: 'tag' or "nodes" (optional)
+            Input can be either the tag of the electrode surface (default) or a
+            list of nodes
+        '''
+        assert input_type in {"tag", "nodes"}
+
+        self.ground_electrode = ground_electrode
+        self.input_type = input_type
+        if input_type == "tag" and not weigh_by_area:
+            warnings.warn("Parameters `weigh_by_area=False` and `input_type='tag' are incompatible. Forcing weigh_by_area=True!")
+        self.weigh_by_area = weigh_by_area | (input_type == "tag")
+        self.areas = mesh.nodes_areas() if self.weigh_by_area else None
+
+        dirichlet_bc = self._init_dirichlet_bc(mesh)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+
+    def _init_dirichlet_bc(self, mesh):
+        """Set Dirichlet boundary condition on the ground electrode only."""
+
+        # The first surface is set to a DirichletBC
+        if self.input_type == 'tag':
+            # Find the nodes in the tag
+            elements_in_surface = (
+                (mesh.elm.tag1 == self.ground_electrode) *
+                (mesh.elm.elm_type == 2)
+            )
+            if np.sum(elements_in_surface) == 0:
+                raise ValueError(
+                    'Did not find any surface with tag: {0}'.format(self.ground_electrode))
+            n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
+        elif self.input_type == "nodes":
+            n = np.atleast_1d(self.ground_electrode)
+        else:
+            raise ValueError('Invalid value for `input_type`')
+        return set_ground_at_nodes(mesh, n)
+
+    def assemble_rhs(self, electrodes, currents):
+        '''Assemble the right-hand side for a TDCS simulation with Neumann
+        boundary conditions.
+
+        Parameters
+        ----------
+        electrodes: list
+            list of the surface tags or nodes where the currents to be applied.
+            WARNING: should NOT include the ground electrode
+        currents: list
+            list of the currents in each surface
+            WARNING: should NOT include the ground electrode
+
+        Returns
+        -------
+        b: np.ndarray
+            Right-hand-side of FEM system
+        '''
+        if self.input_type == "nodes":
+            electrodes = np.atleast_2d(electrodes)
+        assert len(electrodes) == len(currents)
+        b = np.zeros(self.dof_map.nr, dtype=np.float64)
+        for e, c in zip(electrodes, currents):
+            if self.input_type == 'tag':
+                # Find the nodes in the tag
+                nodes = np.unique(
+                    self.mesh.elm[
+                        (self.mesh.elm.tag1 == e) *
+                        (self.mesh.elm.elm_type == 2),
+                        :3
+                    ])
+            elif self.input_type == "nodes":
+                nodes = e
+            else:
+                raise ValueError('Invalid value for `input_type`')
+            b += self._rhs_node(nodes, c)
+        return b
+
+    def _rhs_node(self, nodes, current):
+        '''Assemble the Neumann RHS on a set of nodes.'''
+        b = np.zeros(self.dof_map.nr, dtype=np.float64)
+        ix = self.dof_map[nodes]
+        b[ix] = current
+        if self.weigh_by_area: # self.areas is not None
+            b[ix] *= self.areas[nodes] / self.areas[nodes].sum()
+        return b
+
+
+class DipoleFEM(FEMSystem):
+    def __init__(
+            self,
+            mesh,
+            cond,
+            solver_options=None,
+            units='mm',
+            store_G=True,
+        ):
+        '''Set up an electric dipole simulation using the selected source
+        model (i.e., the "direct" approach).
 
         Parameters
         ----------
@@ -848,53 +920,188 @@ class FEMSystem(object):
             Conductivity of each element
         solver_options: str (optional)
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
-
-        Returns
-        -------
-        S: FEMSystem
-            FEMSystem structure with a ".solve()" command
-
-        References
-        -----------
-        Weinstein, David, Leonid Zhukov, and Chris Johnson. "Lead-field bases for
-        electroencephalography source imaging." Annals of biomedical engineering 28.9
-        (2000): 1059-1065.
         '''
-        return cls.tms(mesh, cond, solver_options=solver_options)
+        dirichlet_bc = set_ground_at_nodes(mesh)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
 
-    def assemble_electric_dipole_rhs(self, primary_j):
-        ''' Defines the right-hand side of the equation using the partial integration
-        method.
+    # def assemble_rhs(self, primary_j, source_model):
+    def assemble_rhs(self, dip_pos, dip_mom, source_model):
+        '''Assemble the right-hand side of the system equation using the
+        specified source model. Supported source models
+
+        * Partial Integration
+            Sources are placed on nodes of the tetrahedron in which a dipole
+            resides.
+            Loads are calculated by computing the similarity of the dipole
+            moment with the gradient in a particular element and weighing each
+            node accordingly (*integrating* the contributions from each dot
+            product). (Node positions are related to the basis vectors of the
+            element, e.g., e1=v1-v0, which are related to the gradients.)
+
+            This is insensitive to the position of a dipole within a given
+            volume element!
+
+        * St. Venant
+            Sources are placed on the node closest to the dipole as well as
+            first degree neighbors. A linear system of equations is solved
+            such that the sum of the monopolar moments is 0, the dipole moment
+            is equal to the specified moment, and the squared dipole moment is
+            zero as well. Thus, there are 7 equations with n unknowns where n
+            is the number of nodes on which loads are placed.
 
         Parameters
         ----------
-        primary_j: nx3 ElementData
-            Primary current sources (J_p)
+        dip_pos: ndarray (n, 3)
+            Dipole positions.
+        dip_mom: ndarray (n, 3)
+            Dipole moments in ampere-meter (Am). In case one wants to supply a
+            dipole moment matching a particular (primary) current density, J,
+            instead, use the following relationship between the dipole moment,
+            p, and J, to calculate the proper value of p.
+                p = int J dV
+                p = J*V_i
+                J = p/V_i
+            Here V_i is the volume of the ith element.
+        source_model: str
+            Select `partial integration` or `st. venant`.
 
         Returns
         -------
-        b: numpy array
-            Right-hand side for the
+        b: ndarray
+            Right-hand side.
 
         References
-        -----------
-        Weinstein, David, Leonid Zhukov, and Chris Johnson. "Lead-field bases for
-        electroencephalography source imaging." Annals of biomedical engineering 28.9
-        (2000): 1059-1065.
-
-        Gomez, Luis J., Moritz Dannhauer, and Angel V. Peterchev. "Fast computational
-        optimization of TMS coil placement for individualized electric field targeting." bioRxiv
-        (2020).
+        ----------
+        Weinstein, David, Leonid Zhukov, and Chris Johnson. "Lead-field bases
+            for electroencephalography source imaging." Annals of biomedical
+            engineering 28.9 (2000): 1059-1065.
         '''
-        # The RHS is basically the same as the TMS one, but with the conductiviy is
-        # already incorporated in dipole_vectors
-        _original_cond = np.copy(self.cond)
-        self._cond = np.ones(self.mesh.elm.nr)
-        b = self.assemble_tms_rhs(primary_j)
-        b *= -1
-        self._cond = _original_cond
-        return b
+        dip_pos = np.atleast_2d(dip_pos).astype(float)
+        dip_mom = np.atleast_2d(dip_mom).astype(float)
+        assert dip_pos.shape == dip_mom.shape, "`dip_pos` and `dip_mom` must have the same dimensions"
+        n_dip = dip_pos.shape[0]
 
+        if self.units == "mm":
+            dip_mom *= 1e3 # Am to Amm
+
+        if source_model == "partial integration":
+            # This is very similar to the TMS case. Guilherme's original
+            # comment was
+            #   The RHS is basically the same as the TMS one, but with the
+            #   conductiviy is already incorporated in dipole_vectors
+
+            # find element containing each source
+            tetra_idx = self.mesh.find_tetrahedron_with_points(dip_pos, False)
+
+            # convert 1 to 0 indexing!
+            tetra_idx -= 1
+            tetra_idx = np.atleast_1d(tetra_idx)
+            nodes_idx = self.mesh.elm.node_number_list[tetra_idx]-1
+
+            n_nodes_idx = list(map(len, nodes_idx))
+            rows = np.concatenate(nodes_idx)
+            cols = np.concatenate([i*np.ones(n_nodes_idx[i], dtype=int) for i in range(n_dip)], dtype=int)
+
+            grad_op = _gradient_operator(self.mesh) if self._G is None else self._G
+            # grad_op is only computed for tetrahedra so reindex `tetra_idx`
+            reindexer = np.zeros(self.mesh.elm.nr, int)
+            reindexer[self.mesh.elm.tetrahedra-1] = np.arange(len(self.mesh.elm.tetrahedra))
+            tetra_idx = reindexer[tetra_idx]
+
+            # compute the integrals
+            data = np.ravel(grad_op[tetra_idx] @ dip_mom[..., None])
+            b = sparse.csc_matrix((data, (rows, cols)), shape=(self.mesh.nodes.nr, n_dip))
+        elif source_model == "st. venant":
+            raise NotImplementedError("St. Venant implementation has not been validated yet...")
+            # find closest mesh node to each source position
+            _, src_idx = self.mesh.nodes.find_closest_node(dip_pos, return_index=True)
+            # find all elements of closest nodes and keep only tetrahedra and
+            # reindex to 0
+            element_idx = [
+                np.intersect1d(
+                    self.mesh.elm.find_all_elements_with_node(i), self.mesh.elm.tetrahedra,
+                    assume_unique=True,
+                )-1 for i in src_idx
+            ]
+            # find all unique nodes of those elements
+            node_indices = [np.unique(self.mesh.elm.node_number_list[e]-1) for e in element_idx]
+
+            b = compute_st_venant_loads(dip_pos, dip_mom, node_indices, self.mesh.nodes.node_coord)
+        else:
+            raise ValueError
+
+        return np.array(b.todense()).squeeze()
+
+
+def compute_st_venant_loads(dip_pos, dip_mom, dip_node_indices, vertices):
+    """Compute the loads for the St. Venant source model.
+
+    Parameters
+    ----------
+    dip_pos : ndarray (n, 3)
+        Dipole positions.
+    dip_mom : ndarray (n, 3)
+        Dipole moments.
+    dip_node_indices : list (n, ) of ndarray (m, 3)
+        Indices of the nodes surrounding each dipole (i.e., all nodes
+        connected to the closest node of each dipole).
+
+    Returns
+    -------
+    b : scipy.sparse.csc_matrix
+        Sparse matrix of shape (len(vertices), len(dip_pos)) containing the RHS
+        corresponding to each dipole in columns.
+    """
+    # constants
+    aref = 20
+    lambda_ = 1e-5
+    r = 1
+
+    ntotal = sum(map(len, dip_node_indices))
+    rows = np.concatenate(dip_node_indices)
+    cols = np.concatenate([i*np.ones(len(dip_node_indices[i]), dtype=int) for i in range(len(dip_node_indices))], dtype=int)
+    data = np.zeros(ntotal)
+    for i, (vert, d, ni) in enumerate(zip(dip_pos, dip_mom, dip_node_indices)):
+        nn = len(ni)
+
+        # vector from vertex to neighboring vertices
+        v = vertices[ni] - np.atleast_2d(vert)
+        v /= aref
+
+        # system matrix
+
+        # in fieldtrip the order is 1, x, x**2, 1, y, y**2, 1, z, z**2 like
+        #
+        #   X = np.ones((9, nn))
+        #   X[1::3] = v.T
+        #   X[2::3] = v.T**2
+        #
+        # not sure why they use 9 rows as we only have 7 eqs.
+
+        # in simnibs the order is 1 x y z x**2 y**2 z**2
+        X = np.ones((7, nn))
+        X[1:4] = v.T
+        X[4:] = v.T**2
+
+        # moments (RHS)
+
+        # in fieldtrip
+        #   t = np.zeros(9)
+        #   t[1::3] = d / aref
+
+        t = np.zeros(7)
+        t[1:4] = d/aref
+
+        # 3*nn x nn
+        W = np.zeros((3 * nn, nn))
+        W[:nn] = np.diag(v[:,0])**r
+        W[nn:2*nn] = np.diag(v[:,1])**r
+        W[2*nn:] = np.diag(v[:,2])**r
+
+        # Calculate the loads, q
+        q = np.linalg.solve(X.T @ X + lambda_ * W.T @ W, X.T @ t)
+        data[cols==i] = q
+    return sparse.csc_matrix((data, (rows, cols)), shape=(vertices.shape[0], dip_pos.shape[0]))
 
 
 def assemble_diagonal_mass_matrix(msh, units='mm'):
@@ -908,8 +1115,8 @@ def assemble_diagonal_mass_matrix(msh, units='mm'):
     units: {'m' or 'mm'}
         Units where the mesh is defined. The matrix will be scaled accordingly
 
-    Result
-    ------
+    Returns
+    -------
     M: scipy.sparse.csc_matrix:
         Diagonal matrix
     '''
@@ -931,7 +1138,6 @@ def assemble_diagonal_mass_matrix(msh, units='mm'):
         M *= 1e-9
 
     return M
-
 
 
 def _gradient_operator(msh, volume_tag=None):
@@ -988,7 +1194,6 @@ def _assemble_matrix(vols, G, th_nodes, cond, dof_map, units='mm'):
 
     A.eliminate_zeros()
     return A
-
 
 
 def grad_matrix(msh, G=None, split=False):
@@ -1063,18 +1268,19 @@ def _vol(msh, volume_tag=None):
 
 def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
          solver_options=None):
-    ''' Simulates a tDCS electric potential
+    ''' Simulates a tDCS electric potential.
 
     Parameters
     ----------
     mesh: simnibs.msh.mesh_io.Msh
-        Mesh file with geometry information
+        Mesh file with geometry information.
     cond: simnibs.msh.mesh_io.ElementData
-        An ElementData field with conductivity information
+        An ElementData field with conductivity information.
     currents: list or ndarray
-        A list of currents going though each electrode
+        A list of currents going though each electrode.
     electrode_surface_tags: list
-        A list of the indices of the surfaces where the dirichlet BC is to be applied
+        A list of the indices of the surfaces where the dirichlet BC is to be
+        applied.
 
     Returns
     -------
@@ -1118,9 +1324,10 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
 def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_options):
     logger.info('Simulating electrode pair {0} - {1}'.format(
         ref_electrode, el_surf))
-    S = FEMSystem.tdcs(mesh, cond, [ref_electrode, el_surf], [0., 1.],
-                       solver_options=solver_options)
-    v = S.solve()
+
+    s = TDCSFEMDirichlet(mesh, cond,  [ref_electrode, el_surf], [0., 1.], solver_options)
+    v = s.solve()
+
     v = mesh_io.NodeData(v, name='v', mesh=mesh)
     flux = np.array([
         _calc_flux_electrodes(v, cond,
@@ -1184,7 +1391,7 @@ def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[5, 1005], units='mm'):
 
 
 def tms_dadt(mesh, cond, dAdt, solver_options=None):
-    ''' Simulates a TMS electric potential from a dA/dt field
+    ''' Simulates a TMS electric potential from a dA/dt field.
 
     Parameters
     ----------
@@ -1200,18 +1407,16 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
     v:  simnibs.msh.mesh_io.NodeData
         NodeData instance with potential at the nodes
     '''
-    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
-    b = S.assemble_tms_rhs(dAdt)
-    v = S.solve(b)
-    v = mesh_io.NodeData(v, name='v', mesh=mesh)
-    return v
+    s = TMSFEM(mesh, cond, solver_options)
+    b = s.assemble_rhs(dAdt)
+    v = s.solve(b)
+    return mesh_io.NodeData(v, name='v', mesh=mesh)
 
 
 def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
              output_names, geo_names=None, solver_options=None, n_workers=1,
              fn_stl=None):
-    ''' Simulates TMS fields using a coil + matsimnibs + dIdt definition
-
+    '''Simulates TMS fields using a coil + matsimnibs + dIdt definition.
 
     Parameters
     ----------
@@ -1250,7 +1455,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
     if geo_names is None:
         geo_names = [None for i in range(n_sims)]
 
-    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
+    S = TMSFEM(mesh, cond, solver_options)
     if n_workers == 1:
         _set_up_global_solver(S)
         for matsimnibs, didt, fn_out, fn_geo in zip(
@@ -1288,8 +1493,9 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
     dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt,
                                fn_geo=fn_geo, fn_stl=fn_stl)
     logger.info(f'{time.time() - start:.2f}s to calculate dA/dt')
-    b = tms_global_solver.assemble_tms_rhs(dAdt)
+    b = tms_global_solver.assemble_rhs(dAdt)
     v = tms_global_solver.solve(b)
+
     v = mesh_io.NodeData(v, name='v', mesh=mesh)
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
@@ -1302,8 +1508,8 @@ def _finalize_global_solver():
 
 
 def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
-    ''' Simulates a tDCS electric potential using Neumann boundary conditions on the
-    electrodes
+    '''Simulates a tDCS electric potential using Neumann boundary conditions on
+    the electrodes.
 
     Parameters
     ----------
@@ -1324,19 +1530,18 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     assert len(electrode_surface_tags) == len(currents),\
         'Please define one current per electrode'
     assert np.isclose(np.sum(currents), 0.), 'Sum of currents must be zero'
-
-    S = FEMSystem.tdcs_neumann(mesh, cond, electrode_surface_tags[0])
-    b = S.assemble_tdcs_neumann_rhs(electrode_surface_tags[1:], currents[1:])
+    S = TDCSFEMNeumann(mesh, cond, electrode_surface_tags[0])
+    b = S.assemble_rhs(electrode_surface_tags[1:], currents[1:])
     v = S.solve(b)
-    v = mesh_io.NodeData(v, name='v', mesh=mesh)
-    return v
+    return mesh_io.NodeData(v, name='v', mesh=mesh)
 
 
 def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
                    current=1., roi=None, post_pro=None, field='E',
-                   solver_options=None, n_workers=1, input_type='tag'):
-    ''' Simulates tDCS fields using Neumann boundary conditions and writes the output
-    Electric fields to an HDF5 file
+                   solver_options=None, n_workers=1, input_type='tag',
+                   weigh_by_area=True):
+    '''Simulates tDCS fields using Neumann boundary conditions and writes the
+    output electric fields to an HDF5 file.
 
     Parameters
     ----------
@@ -1345,14 +1550,20 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
     cond: simnibs.msh.mesh_io.ElementData
         An ElementData field with conductivity information
     electrode_surface: list
-        A list of the tag of the electrode surfaces (if input_type='tag')
-        or of nodes (if input_type='node'). The first will be used as a reference
+        If `input_type` is "tag", then this is a list of the tags of the
+        electrode surfaces. If `input_type` is "nodes", then this is a list
+        (or list of lists) of nodes. The first electrode is used as a
+        reference.
     fn_hdf5: str
         Name of hdf5 where simulations will be saved
     dataset: str
         Name of dataset where data is to be saved
-    current: float (optional)
-        Current to use in each simulation. Default: 1 A
+    current: float | iterable
+        Specifies the current (in ampere) to use in each simulation. If float,
+        this current will be used in all simulations. If iterable (where the
+        length of the iterable is number of electrodes minus one as the
+        reference is set to zero), it explicitly specifies the current in each
+        simulation. (Default = 1).
     roi: list or None (optional)
         Regions of interest where the fields is to be saved.
         If set to None, will save the electric field in all tissues.
@@ -1367,22 +1578,62 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
         Options to be used by the solver. Default: Hypre solver
     n_workers: int
         Number of workers to use
-    input_type: 'tag'  or 'node' (optional)
-        Wether electrode_surface refers to surface tags (default) or nodes.
+    input_type: 'tag'  or "nodes" (optional)
+        Whether electrode_surface refers to surface tags (default) or nodes.
+    weigh_by_area: bool
+        Weigh current by node area. If `input_type == "tag"` this is ignored
+        and area weighting is implied.
 
     Returns
     -------
-    Writes the field resulting from each simulation to a dataset called
-    fn_dataset in an hdf5 file called fn_hdf5
+    None
+        Writes the field resulting from each simulation to a dataset called
+        fn_dataset in an hdf5 file called fn_hdf5.
+
+    Notes
+    -----
+    Possible combinations/uses of `electrode_surface` and `current` when
+    `input_type="nodes"`.
+
+    (1) One node per electrode (weigh_by_area has no effect)
+
+        tdcs_leadfield(..., el=[1,2,3,4], current=1., input_type="nodes", ...)
+        tdcs_leadfield(..., el=[1,2,3,4], current=[1.,2.,1.], input_type="nodes", ...)
+
+    (2) Several nodes per electrode
+
+    Set same current for all electrodes (or one value per electrode) and weigh
+    according to area so that the total current per electrode is equal to the
+    input current
+
+        tdcs_leadfield(..., el=[[1,2,3],[4,5,6],[7,8,9]], current=1., input_type="nodes", ...)
+        tdcs_leadfield(..., el=[[1,2,3],[4,5,6],[7,8,9]], current=[1., 2.], input_type="nodes", ...)
+
+    Set the weighting eplicitly by specifying the current per node for all
+    electrodes (disable weigh_by_area)
+
+        tdcs_leadfield(...,
+            el = [[1,2,3],[4,5,6],[7,8,9]],
+            current = [[0.1,0.2,0.7],[0.2,0.3,0.5]],
+            input_type = "nodes",
+            weigh_by_area = False,
+        ...)
+
     '''
-    if field != 'E' and field != 'J':
-        raise ValueError("Field shoud be either 'E' or 'J'")
+    if field not in ('E', 'J'):
+        raise ValueError(f"Field shoud be either 'E' or 'J' (got {field})")
+
     # Construct system and gradient matrix
-    S = FEMSystem.tdcs_neumann(
-        mesh, cond, electrode_surface[0],
-        solver_options=solver_options,
-        input_type=input_type
+    S = TDCSFEMNeumann(
+        mesh,
+        cond,
+        electrode_surface[0],
+        input_type,
+        weigh_by_area,
+        solver_options,
     )
+
+    logger.info("Computing gradient matrix")
     D = grad_matrix(mesh, split=True)
     n_out = mesh.elm.nr
     # Separate out the part of the gradiend that is in the ROI
@@ -1405,18 +1656,24 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             dtype=float, compression="gzip")
 
     n_sims = len(electrode_surface) - 1
+    currents = [current]*n_sims if isinstance(current, float) else current
+    assert len(currents) == n_sims, f"Number of currents ({len(currents)}) do not correspond to the number of simulations ({n_sims})"
+
     # Run simulations (sequential)
     if n_workers == 1:
-        for i, el_tag in enumerate(electrode_surface[1:]):
+        for i, (el_tag, current) in enumerate(zip(electrode_surface[1:], currents)):
             logger.info('Running Simulation {0} out of {1}'.format(
                 i+1, n_sims))
-            b = S.assemble_tdcs_neumann_rhs([el_tag], [current], input_type=input_type)
+            b = S.assemble_rhs([el_tag], [current])
             v = S.solve(b)
+
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             if field == 'E':
                 out_field = E
             elif field == 'J':
                 out_field = calc_J(E, cond)
+            else:
+                raise ValueError
             if post_pro is not None:
                 out_field = post_pro(out_field)
             with h5py.File(fn_hdf5, 'a') as f:
@@ -1430,12 +1687,11 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
                                   initializer=_set_up_tdcs_global_solver,
                                   initargs=(S, n_sims, D, post_pro, cond, field)) as pool:
             sims = []
-            for i, el_tag in enumerate(electrode_surface[1:]):
+            for i, (el_tag, current) in enumerate(zip(electrode_surface[1:], currents)):
                 sims.append(
                     pool.apply_async(
                         _run_tdcs_leadfield,
-                        (i, [el_tag], [current],
-                         fn_hdf5, dataset, input_type)))
+                        (i, [el_tag], [current], fn_hdf5, dataset)))
             [s.get() for s in sims]
             pool.close()
             pool.join()
@@ -1457,7 +1713,7 @@ def _set_up_tdcs_global_solver(S, n, D, post_pro, cond, field):
     tdcs_global_field = field
 
 
-def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type):
+def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset):
     global tdcs_global_solver
     global tdcs_global_nsims
     global tdcs_global_grad_matrix
@@ -1466,12 +1722,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type):
     global tdcs_global_field
     logger.info('Running Simulation {0} out of {1}'.format(
         i+1, tdcs_global_nsims))
-    # RHS
-    b = tdcs_global_solver.assemble_tdcs_neumann_rhs(
-        el_tags, currents,
-        input_type=input_type
-    )
-    # Simulate
+    b = tdcs_global_solver.assemble_rhs(el_tags, currents)
     v = tdcs_global_solver.solve(b)
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tdcs_global_grad_matrix]).T * 1e3
@@ -1479,6 +1730,8 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type):
         out_field = E
     elif tdcs_global_field == 'J':
         out_field = calc_J(E, tdcs_global_cond)
+    else:
+        raise ValueError
 
     if tdcs_global_post_pro is not None:
         out_field = tdcs_global_post_pro(out_field)
@@ -1504,7 +1757,7 @@ def tms_many_simulations(
     mesh, cond, fn_coil, matsimnibs_list, didt_list,
     fn_hdf5, dataset, roi=None, field='E', post_pro=None,
     solver_options=None, n_workers=1):
-    ''' Function for running a large amount of TMS simulations
+    ''' Function for running a large amount of TMS simulations.
 
     Parameters
     ----------
@@ -1544,7 +1797,7 @@ def tms_many_simulations(
     if len(matsimnibs_list) != len(didt_list):
         raise ValueError("matsimnibs_list and didt_list should have the same length")
     D = grad_matrix(mesh, split=True)
-    S = FEMSystem.tms(mesh, cond, solver_options=solver_options)
+    S = TMSFEM(mesh, cond, solver_options)
     n_out = mesh.elm.nr
     # Separate out the part of the gradient that is in the ROI
     if roi is not None:
@@ -1580,7 +1833,8 @@ def tms_many_simulations(
             logger.info(
                 f'Running Simulation {i+1} out of {n_sims}')
             dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
-            b = S.assemble_tms_rhs(dAdt)
+            # b = S.assemble_tms_rhs(dAdt)
+            b = S.assemble_rhs(dAdt)
             v = S.solve(b)
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             dAdt = dAdt[roi]
@@ -1664,7 +1918,7 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
         tms_many_global_fn_coil,
         matsimnibs, didt
     )
-    b = tms_many_global_solver.assemble_tms_rhs(dAdt)
+    b = tms_many_global_solver.assemble_rhs(dAdt)
     # Simulate
     v = tms_many_global_solver.solve(b)
     # Calculate E and postprocessing
@@ -1716,7 +1970,8 @@ def _finalize_tms_many_simulations_global_solver():
     del tms_many_global_roi
 ### Finished function to run many TMS simulations in parallel ####
 
-def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options=None):
+def electric_dipole(mesh, cond, dipole_positions, dipole_moments, source_model,
+                    solver_options=None, units="mm"):
     ''' Electric dipole simulations using the partial integration method
 
     Parameters
@@ -1728,7 +1983,9 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options
     dipole_positions: Nx3 ndarray
         Positions of the dipoles. Each dipole will be a separate simulation
     dipole_moments: Nx3 ndarray
-        Moment of each dipole
+        Moment of each dipole in ampere-meter (Am).
+    source_model: str
+        Source model to use (partial integration, st. venant).
     solver_options: str (optional)
         Options for the sparse solver. Default: CG + AMG
 
@@ -1740,29 +1997,13 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options
 
     dipole_positions = np.atleast_2d(dipole_positions)
     dipole_moments = np.atleast_2d(dipole_moments)
+
     assert dipole_positions.shape[1] == 3, 'dipole_positions should be in Nx3 format!'
-    assert dipole_positions.shape[1] == 3, 'dipole_moments should be in Nx3 format!'
+    assert dipole_moments.shape[1] == 3, 'dipole_moments should be in Nx3 format!'
     if dipole_positions.shape[0] != dipole_moments.shape[0]:
         raise ValueError('Different number of entries for '
                          'dipole_positions and dipole_moments')
 
-    vol = mesh.elements_volumes_and_areas()
-    _, dipole_th = mesh.find_closest_element(
-        dipole_positions,
-        return_index=True,
-        elements_of_interest=mesh.elm.tetrahedra
-    )
-    S = FEMSystem.electric_dipole(mesh, cond, solver_options=solver_options)
-    n_dipoles = len(dipole_th)
-    v = np.zeros((n_dipoles, mesh.nodes.nr), dtype=float)
-    for i, dp, dm in zip(range(n_dipoles), dipole_th, dipole_moments):
-        # Relationship between primary current J and dipole vector p
-        # p = \int J dV
-        # p = J*V_i
-        # J = p/V_i
-        primary_j = mesh_io.ElementData(np.zeros((mesh.elm.nr, 3)))
-        primary_j[dp] = dm/(vol[dp] * 1e-9)
-        b = S.assemble_electric_dipole_rhs(primary_j)
-        v[i] = S.solve(b)
-
-    return v
+    S = DipoleFEM(mesh, cond, solver_options, units)
+    b = S.assemble_rhs(dipole_positions, dipole_moments, source_model)
+    return np.atleast_2d(S.solve(b).T)

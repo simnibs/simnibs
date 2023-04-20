@@ -54,7 +54,7 @@
 <h1>simnibs.simulation.electric_dipole<a class="headerlink" href="#simnibs-simulation-electric-dipole" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.electric_dipole">
-<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">electric_dipole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole_positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole_moments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.electric_dipole" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">electric_dipole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole_positions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dipole_moments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mm'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.electric_dipole" title="Permalink to this definition">¶</a></dt>
 <dd><p>Electric dipole simulations using the partial integration method</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -62,7 +62,8 @@
 <li><p><strong>mesh</strong> (<em>simnibs.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
 <li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
 <li><p><strong>dipole_positions</strong> (<em>Nx3 ndarray</em>) – Positions of the dipoles. Each dipole will be a separate simulation</p></li>
-<li><p><strong>dipole_moments</strong> (<em>Nx3 ndarray</em>) – Moment of each dipole</p></li>
+<li><p><strong>dipole_moments</strong> (<em>Nx3 ndarray</em>) – Moment of each dipole in ampere-meter (Am).</p></li>
+<li><p><strong>source_model</strong> (<em>str</em>) – Source model to use (partial integration, st. venant).</p></li>
 <li><p><strong>solver_options</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – Options for the sparse solver. Default: CG + AMG</p></li>
 </ul>
 </dd>

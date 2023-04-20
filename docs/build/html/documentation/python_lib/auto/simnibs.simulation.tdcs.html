@@ -55,14 +55,15 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.tdcs">
 <span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tdcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">currents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">electrode_surface_tags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulates a tDCS electric potential</p>
+<dd><p>Simulates a tDCS electric potential.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
-<li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
-<li><p><strong>currents</strong> (<em>list</em><em> or </em><em>ndarray</em>) – A list of currents going though each electrode</p></li>
-<li><p><strong>electrode_surface_tags</strong> (<em>list</em>) – A list of the indices of the surfaces where the dirichlet BC is to be applied</p></li>
+<li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information.</p></li>
+<li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information.</p></li>
+<li><p><strong>currents</strong> (<em>list</em><em> or </em><em>ndarray</em>) – A list of currents going though each electrode.</p></li>
+<li><p><strong>electrode_surface_tags</strong> (<em>list</em>) – A list of the indices of the surfaces where the dirichlet BC is to be
+applied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
