@@ -761,7 +761,6 @@ class TESoptimize():
             b = np.zeros((self.n_ele_free[i_channel_stim], 3))
             cx.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
             cy.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
-            # n.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
             n_tmp = np.zeros((self.n_ele_free[i_channel_stim], 3))
             start_shifted_ = np.zeros((len(electrode_pos[i_channel_stim]), 3))
             distance = []
@@ -786,8 +785,6 @@ class TESoptimize():
 
                 distance.append(_electrode_array.distance)
                 alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
-                # alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) +
-                #              _electrode_array.angle)
 
             distance = np.array(distance).flatten()
             alpha = np.array(alpha).flatten()
@@ -823,17 +820,6 @@ class TESoptimize():
             if len(ele_idx) != len(alpha):
                 return "Electrode position: invalid (not all electrodes in valid skin region)"
                 # print("Electrode position: invalid (not all electrodes in valid skin region)")
-
-        # i_ele = 0
-        # ele_idx_rect = []
-        # start_shifted = []
-        #
-        # for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-        #     for _electrode in _electrode_array.electrodes:
-        #         if _electrode.type == "rectangular":
-        #             ele_idx_rect.append(i_ele)
-        #             start_shifted.append(start_shifted_[i_array])
-        #         i_ele += 1
 
         # loop over electrodes and determine node indices
         node_idx_dict = [dict() for _ in range(self.n_channel_stim)]

@@ -574,7 +574,7 @@ class ElectrodeArrayPair():
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
 
         # number of electrodes per channel [n_channel]
-        self.n_ele_per_channel = [np.sum(self.channel_id == i) for i in np.unique(self.channel_id)]
+        self.n_ele_per_channel = np.array([np.sum(self.channel_id == i) for i in np.unique(self.channel_id)])
 
         # total current entering domain (read from first channel)
         self.current_total = np.sum(self.current[self.channel_id == self.channel_id[0]])
@@ -583,8 +583,11 @@ class ElectrodeArrayPair():
         self.current_mean = self.current_total / self.n_ele_per_channel
         self.current_mean[1] *= -1
 
+        # total current of each channel (here we only have 2)
+        self.current_channel = np.array([self.current_total, -self.current_total])
+
         # initialize current estimator for fake Dirichlet BC
-        if current_estimator_method is None or current_estimator_method == "":
+        if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
             self.current_estimator = None
         else:
             self.current_estimator = CurrentEstimator(method=current_estimator_method,
@@ -819,7 +822,7 @@ class CircularArray():
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
 
         # number of electrodes per channel [n_channel]
-        self.n_ele_per_channel = [np.sum(self.channel_id == i) for i in np.unique(self.channel_id)]
+        self.n_ele_per_channel =  np.array([np.sum(self.channel_id == i) for i in np.unique(self.channel_id)])
 
         # total current entering domain (read from center electrode)
         self.current_total = self.current[0]
@@ -827,6 +830,9 @@ class CircularArray():
         # determine mean current of electrodes for each channel [n_channel]
         self.current_mean = self.current_total / self.n_ele_per_channel
         self.current_mean[1] *= -1
+
+        # total current of each channel (here we only have 2)
+        self.current_channel = np.array([self.current_total, -self.current_total])
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(n_outer))
         self.center = np.array([[0., 0., 0.]])
@@ -845,7 +851,7 @@ class CircularArray():
                 self.center[-1, 1] = 0.
 
         # initialize current estimator for fake Dirichlet BC
-        if current_estimator_method is None or current_estimator_method == "":
+        if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
             self.current_estimator = None
         else:
             self.current_estimator = CurrentEstimator(method=current_estimator_method,
