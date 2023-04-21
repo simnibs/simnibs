@@ -3,6 +3,7 @@ import csv
 import time
 import copy
 import h5py
+import types
 import logging
 import datetime
 import numpy as np
@@ -22,6 +23,7 @@ from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ..utils.TI_utils import get_maxTI, get_dirTI
+from ..utils.measures import AUC, integral_focality
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
@@ -77,12 +79,14 @@ class TESoptimize():
         1: e-field vector
     optimizer : str, optional, default: "differential_evolution"
         Optimization algorithm
-    goal : str, optional, default: "mean"
-        Goal function definition:
+    goal : list of str [n_roi], or FunctionType, optional, default: ["mean"]
+        Implemented or user provided goal functions:
         - "mean": average electric field magnitude in ROI
         - "max": 99.9 percentile of electric field magnitude in ROI
         - "mean_max_TI": average maximum envelope of e-field (temporal interference)
         - "mean_max_TI_dir": average maximum envelope of e-field in certain direction (temporal interference)
+        - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float
+          [n_channel_stim][n_roi] containing np.array with e-field
 
     Attributes
     --------------
@@ -378,9 +382,11 @@ class TESoptimize():
         if type(dataType) is not list:
             dataType = [dataType]
 
-        assert len(goal) == len(roi), "Please provide a goal function for each ROI."
-        assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
         assert len(dataType) == len(self.roi), "Please provide the dataType 0 (magnitude), 1 (vector) for each goal function"
+
+        if not (isinstance(goal[0], types.FunctionType) and len(goal) == 1):
+            assert len(goal) == len(roi), "Please provide a goal function for each ROI."
+            assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
 
         self.goal = goal
         self.goal_dir = goal_dir
@@ -392,13 +398,18 @@ class TESoptimize():
         self.n_test = 0         # number of tries to place the electrodes
         self.n_sim = 0          # number of final simulations carried out (only valid electrode positions)
 
+        # track goal fun value (in ROI 0) and focality measures for later analysis
+        self.goal_fun_value = [[] for _ in range(self.n_channel_stim)]
+        self.AUC = [[] for _ in range(self.n_channel_stim)]
+        self.integral_focality = [[] for _ in range(self.n_channel_stim)]
+
         # ensure that we will use vector e-field for TI goal functions
         for i, _dataType in enumerate(dataType):
-            if _dataType is None:
-                if self.goal[i] in ["mean_max_TI", "mean_max_TI_dir"]:
-                    dataType[i] = 1
-                else:
-                    dataType[i] = 0
+
+            if self.goal[i] in ["mean_max_TI", "mean_max_TI_dir"]:
+                dataType[i] = 1
+            else:
+                dataType[i] = 0
 
         # direct and shgo optimizer do not take init vals
         if self.optimizer in ["direct", "shgo"]:
@@ -411,13 +422,14 @@ class TESoptimize():
                                  overlap_factor=self.overlap_factor)
 
         # define gpc parameters for current estimator
-        if self.electrode[0].current_estimator.method == "gpc":
-            n_max = 0
-            for i_channel_stim in range(self.n_channel_stim):
-                self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
-                    lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
-                    ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
-                n_max += self.n_ele_free[i_channel_stim]*3
+        if self.electrode[0].current_estimator is not None:
+            if self.electrode[0].current_estimator.method == "gpc":
+                n_max = 0
+                for i_channel_stim in range(self.n_channel_stim):
+                    self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
+                        lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
+                        ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
+                    n_max += self.n_ele_free[i_channel_stim]*3
 
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
@@ -1036,7 +1048,7 @@ class TESoptimize():
                     e[i_channel_stim][i_roi] = None
                     self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
                 else:
-                    e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType)
+                    e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType[i_roi])
             #stop = time.time()
             #print(f"Time: calc fields: {stop - start}")
 
@@ -1105,12 +1117,51 @@ class TESoptimize():
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
+        # compute goal function value
+        goal_fun_value = self.compute_goal(e)
+
+        self.n_sim += 1
+
+        self.logger.log(20, f"Goal ({self.goal}): {goal_fun_value:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
+        self.logger.log(20, "-"*len(parameters_str))
+
+        return goal_fun_value
+
+    def compute_goal(self, e):
+        """
+        Computes goal function value from electric field.
+
+        Parameters
+        ----------
+        e: list of list of np.ndarrays of float [n_channel_stim][n_roi][n_roi_nodes]
+            Electric fields from simulated simulation conditions and ROIs. Containing arrays can contain e-field
+            magnitude (dataType=0) or e-field vectors (dataType=1).
+            Examples:
+            - standard TES montages with 2 electrodes have n_channel_stim=1 (only one simulation is performed)
+            - TES center surround montages have also n_channel_stim=1 because only one simulation has to be performed
+            - TTF montages with two pairs of electrode arrays, i.e. 2x2 arrays with 9 electrodes each have
+              n_channel_stim=2 because the channels have to be computed separately.
+            - TI montages have also n_channel_stim=2 because the two superimposed fields have to be computed
+              separately.
+
+        Returns
+        -------
+        goal_fun_value : float
+            Accumulated goal function value. The average is taken over all stimulation conditions and the weighted
+            average is taken according to self.weights over the different goal functions of the ROIs.
+        """
         # calculate goal function value for every ROI
-        y = np.zeros((self.n_channel_stim, self.n_roi))     # shape: [n_channel_stim x n_roi]
+        y = np.zeros((self.n_channel_stim, self.n_roi))  # shape: [n_channel_stim x n_roi]
 
         if e is None:
             self.logger.log(20, f"Goal ({self.goal}): 1.0")
             return 1.0
+
+        # user provided goal function
+        elif isinstance(self.goal[0], types.FunctionType):
+            y_weighted_sum = self.goal[0](e)
+
+        # implemented goal functions
         else:
             for i_roi in range(self.n_roi):
                 for i_channel_stim in range(self.n_channel_stim):
@@ -1145,18 +1196,28 @@ class TESoptimize():
                         return 1.0
                     y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
                     y[1, i_roi] = y[0, i_roi]
-            else:
-                raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
-        # average over all stimulations (channel_stim)
-        y = np.mean(y, axis=0)
+            # track focality measures and goal function values
+            for i_channel_stim in range(self.n_channel_stim):
+                # compute integral focality
+                self.integral_focality[i_channel_stim].append(
+                    integral_focality(e1=e[i_channel_stim][0],
+                                      e2=e[i_channel_stim][1],
+                                      v1=self.roi[0].vol,
+                                      v2=self.roi[1].vol))
 
-        # weight and sum the goal function values of the ROIs
-        y_weighted_sum = np.sum(y * self.weights)
-        self.n_sim += 1
+                # compute auc
+                self.AUC[i_channel_stim].append(AUC(e1=e[0][0],
+                                                    e2=e[0][1]))
 
-        self.logger.log(20, f"Goal ({self.goal}): {y_weighted_sum:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
-        self.logger.log(20, "-"*len(parameters_str))
+                # goal fun value in roi 0
+                self.goal_fun_value[i_channel_stim].append(np.mean(y[i_channel_stim, 0]))
+
+            # average over all stimulations (channel_stim)
+            y = np.mean(y, axis=0)
+
+            # weight and sum the goal function values of the ROIs
+            y_weighted_sum = np.sum(y * self.weights)
 
         return y_weighted_sum
 
@@ -1264,11 +1325,15 @@ class TESoptimize():
                                   goal=self.goal,
                                   n_test=self.n_test,
                                   n_sim=self.n_sim,
-                                  n_iter_dirichlet_correction=self.n_iter_dirichlet_correction)
+                                  n_iter_dirichlet_correction=self.n_iter_dirichlet_correction,
+                                  goal_fun_value=self.goal_fun_value,
+                                  AUC=self.AUC,
+                                  integral_focality=self.integral_focality)
 
 
-def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh, electrode, goal,
-                              n_test=None, n_sim=None, n_iter_dirichlet_correction=None):
+def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh,
+                              electrode, goal, n_test=None, n_sim=None, n_iter_dirichlet_correction=None,
+                              goal_fun_value=None, AUC=None, integral_focality=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
 
@@ -1302,6 +1367,12 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
     n_iter_dirichlet_correction : list of int [n_channel_stim][n_iter], optional, default: None
         Number of iterations required to determine optimal currents in case of dirichlet correction
         for each call of "solve_dirichlet_correction"
+    goal_fun_value : list of list of float [n_channel_stim][n_opt_runs]
+        Goal function values of all stimulation conditions during optimization of ROI 0
+    AUC : list of list of float [n_channel_stim][n_opt_runs]
+        Area under curve focality measure for all stimulation conditions.
+    integral_focality : list of list of float [n_channel_stim][n_opt_runs]
+        Integral focality measure for all stimulation conditions.
     """
 
     def sep(x):
@@ -1395,6 +1466,15 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         f.create_dataset(data=nfev, name="optimizer/nfev")
         f.create_dataset(data=time, name="optimizer/time")
         f.create_dataset(data=goal, name="optimizer/goal")
+
+        if goal_fun_value is not None:
+            f.create_dataset(data=np.array(goal_fun_value), name="optimizer/goal_fun_value")
+
+        if AUC is not None:
+            f.create_dataset(data=np.array(AUC), name="optimizer/AUC")
+
+        if integral_focality is not None:
+            f.create_dataset(data=np.array(integral_focality), name="optimizer/integral_focality")
 
         if n_iter_dirichlet_correction is not None:
             for i_channel_stim, n_iter in enumerate(n_iter_dirichlet_correction):
