@@ -211,7 +211,7 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
         Precision. The default is 1e-3
     direct : bool
         Set to true to force using direct (naive) approach or False to force use of FMM.
-        If set to auto direct method is used for less than 300 dipoles which appears to be faster i these cases.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster in these cases.
         The default is 'auto'
 
     Returns
@@ -460,10 +460,6 @@ def _calculate_dadt_tcd(msh, coil, coil_matrix, didt, eps=1e-3, parameters=None)
     pos = msh.nodes[:] * 1e-3
     A = tcd_utils.get_Afield(coil, pos.T, affine=coil_matrix, dIdt=didt, eps=eps,
                              parameters=parameters)
-    print('test1')
-    print(parameters)
-    print(parameters is None)
-    print('test1')
     msh_stl = tcd_utils.get_coil_msh(coil, parameters=parameters, affine=np.identity(4))
     return mesh_io.NodeData(A), msh_stl
 
@@ -614,14 +610,16 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
     elif isinstance(coil_file, dict) or coil_file.endswith('.tcd'):
         dadt, msh_stl = _calculate_dadt_tcd(msh, coil_file,
                                             coil_matrix, didt)
-        idx = (msh.elm.elm_type == 2) & ((msh.elm.tag1 == 1005) |
-                                         (msh.elm.tag1 == 5))
-        msh_skin = msh.crop_mesh(elements=msh.elm.elm_number[idx])
-        msh_stl = _transform_coil_surface(msh_stl,
-                                          coil_matrix, msh_skin, add_logo)
-        mesh_io.write_geo_triangles(msh_stl.elm[:, :3] - 1, msh_stl.nodes[:],
-                                    'coil.geo', values=msh_stl.elm.tag1,
-                                    name='coil_casing', mode='ba')
+        if fn_geo is not None:
+            idx = (msh.elm.elm_type == 2) & ((msh.elm.tag1 == 1005) |
+                                             (msh.elm.tag1 == 5))
+            msh_skin = msh.crop_mesh(elements=msh.elm.elm_number[idx])
+            msh_stl = _transform_coil_surface(msh_stl,
+                                              coil_matrix, msh_skin, add_logo)
+            mesh_io.write_geo_triangles(msh_stl.elm[:, :3] - 1,
+                                        msh_stl.nodes[:],
+                                        fn_geo, values=msh_stl.elm.tag1,
+                                        name='coil_casing', mode='ba')
     elif coil_file.endswith('.ccd'):
         if FMM3D:
             dadt = _calculate_dadt_ccd_FMM(

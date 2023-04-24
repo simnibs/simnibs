@@ -1087,6 +1087,14 @@ class TMSLIST(SimuList):
                 self.pos.append(p)
 
     def resolve_fnamecoil(self):
+        # workaround for tcd file
+        if isinstance(self.fnamecoil, dict):
+            from simnibs.simulation import tcd_utils
+            import tempfile
+            fn = tempfile.NamedTemporaryFile(suffix='.tcd').name
+            tcd_utils.write_tcd(self.fnamecoil, fn)
+            self.fnamecoil = fn
+
         try:
             fnamecoil = os.path.expanduser(self.fnamecoil)
         except TypeError:

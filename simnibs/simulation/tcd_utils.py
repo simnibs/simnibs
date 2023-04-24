@@ -31,6 +31,29 @@ def read_tcd(fn):
     return coil
 
 
+def write_tcd(coildict, fname):
+    coil = coildict.copy()
+    for i, cElm in enumerate(coil['elementList']):
+        if isinstance(coil['elementList'][i]['points'],np.ndarray):
+            coil['elementList'][i]['points'] = cElm['points'].tolist()
+        if isinstance(coil['elementList'][i]['values'],np.ndarray):
+            coil['elementList'][i]['values'] = cElm['values'].tolist()
+        for k in coil['coilModel'][i].keys():
+            try:
+                coil['coilModel'][i][k] = coil['coilModel'][i][k].tolist()
+            except:
+                pass
+
+    for j, deform in enumerate(coil['deformationList']):
+        for k in deform.keys():
+            if isinstance(deform[k], np.ndarray):
+                coil['deformationList'][j][k] = deform[k].tolist()
+
+    json_tcd = json.dumps(coil)
+    with open(fname, 'w') as fid:
+        fid.write(json_tcd)
+
+
 def rot2p(p1, p2, a, unit='deg', affine=None):
     p1 = np.asanyarray(p1, dtype='float64')
     p2 = np.asanyarray(p2, dtype='float64')
@@ -135,19 +158,14 @@ def get_params(coil):
 
 def transform_coil(coil, parameters,
                    fieldnames=['points', 'minDistancePoints']):
+    parameters = np.asanyarray(parameters)
     for j, cElm in enumerate(coil['elementList']):
-        if parameters is None:
-            R = combine_transforms(coil['deformationList'],
-                                   0,
-                                   idx=cElm['deformations'])
-        else:
-            R = combine_transforms(coil['deformationList'],
-                                   parameters[cElm['deformations']],
-                                   idx=cElm['deformations'])
+        R = combine_transforms(coil['deformationList'],
+                               parameters[cElm['deformations']],
+                               idx=cElm['deformations'])
         cElm['points'] = transform_points(cElm['points'], R)
         if 'values' in cElm:
             cElm['values'] = transform_vectors(cElm['values'], R)
-
         if 'coilModel' in coil and len(coil['coilModel']) > j:
             for k, f in enumerate(fieldnames):
                 if f in coil['coilModel'][j]:
@@ -157,7 +175,7 @@ def transform_coil(coil, parameters,
 
 def get_Afield(coil, positions, parameters=None, affine=None, dIdt=1.0, eps=1e-3):
     # positions in SI units (meters)
-    # coil positions are converted to meters *1e-3
+    # coil wire positions are converted to meters *1e-3
     points = []
     values = []
     if affine is None:
@@ -187,20 +205,19 @@ def get_Afield(coil, positions, parameters=None, affine=None, dIdt=1.0, eps=1e-3
     for i, p in enumerate(points):
         # dipole case
         if coil['elementList'][i]['type'] == 1:
-            A += coil_numpy.A_from_dipoles(values[k], p*1e-3, positions.T,
-                                           eps=eps)
+            A += dIdt * coil_numpy.A_from_dipoles(values[k], p*1e-3,
+                                                  positions.T, eps=eps)
             k += 1
         # line integral with directions
         elif coil['elementList'][i]['type'] == 2:
             A += coil_numpy.A_biot_savart_path_fmm(p.T*1e-3,
-                                                   positions, values[k].T,
-                                                   eps=eps).T
+                                                   positions, values[k].T*1e-3,
+                                                   eps=eps, I=dIdt).T
             k += 1
         # line integral without directions
         elif coil['elementList'][i]['type'] == 3:
             A += coil_numpy.A_biot_savart_path_fmm(p.T*1e-3, positions,
-                                                   eps=eps).T
-    A *= dIdt
+                                                   eps=eps, I=dIdt).T
     return A
 
 
