@@ -454,13 +454,17 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
 
 
 def _calculate_dadt_tcd(msh, coil, coil_matrix, didt, eps=1e-3, parameters=None):
-    import tcd_utils
+    from simnibs.simulation import tcd_utils
     if not isinstance(coil, dict):
         coil = tcd_utils.read_tcd(coil)
     pos = msh.nodes[:] * 1e-3
-    A = tcd_utils.get_Afield(coil, pos, affine=coil_matrix, dIdt=didt, eps=eps,
+    A = tcd_utils.get_Afield(coil, pos.T, affine=coil_matrix, dIdt=didt, eps=eps,
                              parameters=parameters)
-    msh_stl = tcd_utils.get_coil_msh(coil, parameters=parameters)
+    print('test1')
+    print(parameters)
+    print(parameters is None)
+    print('test1')
+    msh_stl = tcd_utils.get_coil_msh(coil, parameters=parameters, affine=np.identity(4))
     return mesh_io.NodeData(A), msh_stl
 
 
@@ -616,9 +620,8 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
         msh_stl = _transform_coil_surface(msh_stl,
                                           coil_matrix, msh_skin, add_logo)
         mesh_io.write_geo_triangles(msh_stl.elm[:, :3] - 1, msh_stl.nodes[:],
-                                    fn_geo, values=msh_stl.elm.tag1,
+                                    'coil.geo', values=msh_stl.elm.tag1,
                                     name='coil_casing', mode='ba')
-
     elif coil_file.endswith('.ccd'):
         if FMM3D:
             dadt = _calculate_dadt_ccd_FMM(

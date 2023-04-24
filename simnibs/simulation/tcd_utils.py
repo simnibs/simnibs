@@ -104,6 +104,9 @@ def get_all_transforms(coil, parameters):
 def get_model_points(coil, parameters,
                      fieldnames=['points', 'minDistancePoints'],
                      affine=None, collapse=True):
+    
+    if parameters is None:
+        parameters = np.zeros(len(coil['deformationList']))
     parameters = np.asanyarray(parameters)
     points = []
     for k, f in enumerate(fieldnames):
@@ -133,9 +136,14 @@ def get_params(coil):
 def transform_coil(coil, parameters,
                    fieldnames=['points', 'minDistancePoints']):
     for j, cElm in enumerate(coil['elementList']):
-        R = combine_transforms(coil['deformationList'],
-                               parameters[cElm['deformations']],
-                               idx=cElm['deformations'])
+        if parameters is None:
+            R = combine_transforms(coil['deformationList'],
+                                   0,
+                                   idx=cElm['deformations'])
+        else:
+            R = combine_transforms(coil['deformationList'],
+                                   parameters[cElm['deformations']],
+                                   idx=cElm['deformations'])
         cElm['points'] = transform_points(cElm['points'], R)
         if 'values' in cElm:
             cElm['values'] = transform_vectors(cElm['values'], R)
@@ -303,7 +311,10 @@ def get_coil_msh(coil, affine, parameters=None, filename=None):
     coilmsh = simnibs.mesh_tools.mesh_io.Msh()
     for i, cm in enumerate(coil['coilModel']):
         coilmsh = coilmsh.join_mesh(
-            simnibs.mesh_tools.mesh_io.Msh(points[i], cm['cells'] + 1))
+            simnibs.mesh_tools.mesh_io.Msh(
+                nodes=simnibs.mesh_tools.mesh_io.Nodes(points[i]),
+                elements=simnibs.mesh_tools.mesh_io.Elements(
+                triangles=cm['cells'] + 1)))
     if filename is not None:
         simnibs.mesh_tools.mesh_io.write_stl(coilmsh, filename)
     return coilmsh
