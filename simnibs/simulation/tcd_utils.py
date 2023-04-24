@@ -192,14 +192,14 @@ def get_Afield(coil, positions, parameters=None, affine=None, dIdt=1.0, eps=1e-3
             k += 1
         # line integral with directions
         elif coil['elementList'][i]['type'] == 2:
-            A += coil_numpy.A_biot_savart_path_fmm(p*1e-3,
-                                                   positions, values[k],
-                                                   eps=eps)
+            A += coil_numpy.A_biot_savart_path_fmm(p.T*1e-3,
+                                                   positions, values[k].T,
+                                                   eps=eps).T
             k += 1
         # line integral without directions
         elif coil['elementList'][i]['type'] == 3:
-            A += coil_numpy.A_biot_savart_path_fmm(p*1e-3, positions,
-                                                   eps=eps)
+            A += coil_numpy.A_biot_savart_path_fmm(p.T*1e-3, positions,
+                                                   eps=eps).T
     A *= dIdt
     return A
 
