@@ -106,13 +106,17 @@ MANUAL EDITING:
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
     parser.add_argument('--forceqform', action='store_true', default=False,
-                        help="""Force sform and qform to be the same.""")
+                        help="""Replace sform with qform.""")
+    parser.add_argument('--forcesform', action='store_true', default=False,
+                        help="""Replace qform with sform. Note: strips shears.""")
     parser.add_argument('--usetransform',  help="""Transformation matrix used
                         instead of doing affine registration of the MNI
                         template to the subject MRI, i.e., it takes the MNI
                         template *to* subject space. Supplied as a path to a
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
+    parser.add_argument('--debug', action='store_true', default=False,
+        help="""Write results from intermediate steps to disk.""")
     args=parser.parse_args(argv)
 
     # subID is required, otherwise print help and exit (-v and -h handled by parser)
@@ -170,8 +174,8 @@ def main():
         # run all steps except meshing as usual        
         charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                        args.segment, args.surfaces, False, args.usesettings, args.noneck,
-                       args.inittransform, args.usetransform, args.forceqform,
-                       " ".join(sys.argv[1:]))
+                       args.inittransform, args.usetransform, args.forceqform, args.forcesform,
+                       " ".join(sys.argv[1:]), args.debug)
         
     if args.segment:
         # update label image: cut neck and combine labels
@@ -203,8 +207,8 @@ def main():
     if args.mesh:
         charm_main.run(subject_dir, None, None, False, False,
                        False, False, True, args.usesettings, False,
-                       None, None, False,
-                       " ".join(sys.argv[1:]))
+                       None, None, False, False,
+                       " ".join(sys.argv[1:]), False)
 
 
 if __name__ == '__main__':
