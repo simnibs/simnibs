@@ -1210,7 +1210,7 @@ def warp_coordinates(coordinates, m2m_folder,
     # Write CSV
     if out_name is not None:
         write_csv_positions(
-            out_name, type_, transformed_coords, transformed_extra, name, extra_cols, header)
+            out_name, type_, transformed_coords, name, transformed_extra, extra_cols, header)
         if out_geo is not None:
             csv_to_geo(out_name, out_geo)
 
