@@ -688,6 +688,7 @@ def _check_q_and_s_form(scan, force_qform=False, force_sform=False):
         elif force_sform:
             # Note set_qform will strip shears silently per nibabel documentation
             scan.set_qform(scan.get_sform())
+            scan.set_sform(scan.get_qform())
 
     return scan
 
