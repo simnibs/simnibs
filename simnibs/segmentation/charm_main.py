@@ -103,7 +103,7 @@ def run(
     sub_files = file_finder.SubjectFiles(subpath=subject_dir)
 
     if force_qform and force_sform:
-
+        raise ValueError("Can't force both q- and s-forms, please use only one of the flags.")
 
     _setup_logger(sub_files.charm_log)
     logger.info(f"simnibs version {__version__}")
@@ -681,8 +681,8 @@ def _prepare_t2(T1, T2, registerT2, T2_reg, force_qform, force_sform):
 
 def _check_q_and_s_form(scan, force_qform=False, force_sform=False):
     if not np.array_equal(scan.get_qform(), scan.get_sform()):
-        if not (force_qform and force_sform):
-            raise ValueError("The qform and sform of do not match. Please run charm with the --forceqform (preferred) or --forcesform option")
+        if not (force_qform or force_sform):
+            raise ValueError("The qform and sform do not match. Please run charm with the --forceqform (preferred) or --forcesform option")
         elif force_qform:
             scan.set_sform(scan.get_qform())
         elif force_sform:
