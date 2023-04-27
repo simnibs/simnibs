@@ -3824,7 +3824,33 @@ class ElementData(Data):
                                          np.repeat(baricenters[:, i], 4) *
                                          np.repeat(value[:, j], 4))
 
-        a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        try:
+            a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        except np.linalg.LinAlgError:
+            # The mesh probably contains "duplicate" nodes
+            # TODO fix the mesh instead - then this shouldn't be necessary
+            used_nodes = uq_in[uq_in != -1]-1
+            the_nodes = msh.nodes.node_coord[used_nodes]
+
+            S = np.linalg.svd(A[uq_in != -1], compute_uv=False)
+            to_interp = S[:, 1:].sum(1) < 1e-6
+            to_compute = ~to_interp
+            tree = scipy.spatial.cKDTree(the_nodes[to_compute])
+            di, ix = tree.query(the_nodes[to_interp])
+
+            warnings.warn(
+                ("NumPy raised a `LinAlgError` interpolating to certain nodes "
+                 f"(mean coordinate {the_nodes[to_interp].mean(0)}, "
+                 f"standard deviation {the_nodes[to_interp].std(0)}). "
+                 f"Using nearest neighbor interpolation at {to_interp.sum()} "
+                 f"nodes (maximum distance is {di.max():.5f})."
+                )
+            )
+
+            a = np.zeros(b[uq_in != -1].shape)
+            a[to_compute] = np.linalg.solve(A[uq_in != -1][to_compute], b[uq_in != -1][to_compute])
+            a[to_interp] = a[to_compute][ix]
+
         p = np.hstack([np.ones((np.sum(uq_in != -1), 1)), msh.nodes[uq_in[uq_in != -1]]])
         f = np.einsum('ij, ijk -> ik', p, a)
         nd[uq_in[uq_in != -1]] = f
