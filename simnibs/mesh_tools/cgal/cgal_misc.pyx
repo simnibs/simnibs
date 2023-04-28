@@ -23,6 +23,8 @@ cdef extern from "_cgal_intersect.cpp" nogil:
             float* pts, int n_points)
         vector[int] _points_inside(
             float* pts, int n_points)
+        vector[float] _min_sqdist(
+            float* pts, int n_points)
 
 cdef class pyAABBTree:
     cdef TreeC *thisptr
@@ -65,6 +67,12 @@ cdef class pyAABBTree:
         cdef np.ndarray[float] pts = np.ascontiguousarray(points, dtype=np.float32).reshape(-1)
         cdef vector[int] out
         out = self.thisptr._points_inside(&pts[0], len(points))
+        return out
+    
+    def min_sqdist(self, points):
+        cdef np.ndarray[float] pts = np.ascontiguousarray(points, dtype=np.float32).reshape(-1)
+        cdef vector[float] out
+        out = self.thisptr._min_sqdist(&pts[0], len(points))
         return out
 
 

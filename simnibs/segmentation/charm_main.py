@@ -47,7 +47,8 @@ def run(
     noneck=False,
     init_transform=None,
     use_transform=None,
-    force_forms=False,
+    force_qform=False,
+    force_sform=False,
     options_str=None,
     debug=False,
 ):
@@ -88,6 +89,7 @@ def run(
         filename of alternative settings-file (default = None)
     options_str : str
         string of command line options to add to logging (default = None)
+
     RETURNS
     ----------
         None
@@ -99,6 +101,9 @@ def run(
     if not os.path.exists(subject_dir):
         os.mkdir(subject_dir)
     sub_files = file_finder.SubjectFiles(subpath=subject_dir)
+
+    if force_qform and force_sform:
+        raise ValueError("Can't force both q- and s-forms, please use only one of the flags.")
 
     _setup_logger(sub_files.charm_log)
     logger.info(f"simnibs version {__version__}")
@@ -117,8 +122,8 @@ def run(
     if use_transform:
         use_transform = _read_transform(use_transform)
 
-    _prepare_t1(T1, sub_files.reference_volume, force_forms)
-    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg, force_forms)
+    _prepare_t1(T1, sub_files.reference_volume, force_qform, force_sform)
+    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg, force_qform, force_sform)
 
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
@@ -222,6 +227,7 @@ def run(
             segment_settings,
             gmm_parameters,
             visualizer,
+            gmm_params_path=sub_files.segmentation_folder if debug else None
         )
 
         # Okay now the parameters have been estimated, and we can segment the
@@ -380,9 +386,9 @@ def run(
                 # GM central surfaces
                 m = Msh()
                 if "lh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("lh")))
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("central", "lh")))
                 if "rh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("rh")))
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("central", "rh")))
                     # fill in GM and save updated mask
                 if m.nodes.nr > 0:
                     label_img = charm_utils._fillin_gm_layer(
@@ -406,7 +412,7 @@ def run(
                 m = Msh()
                 if "lh" in pial:
                     m2 = read_gifti_surface(
-                        sub_files.get_surface("lh", surf_type="pial")
+                        sub_files.get_surface("pial", "lh")
                     )
                     # remove self-intersections using meshfix
                     with tempfile.NamedTemporaryFile(suffix=".off") as f:
@@ -421,7 +427,7 @@ def run(
                         os.remove("meshfix_log.txt")
                 if "rh" in pial:
                     m2 = read_gifti_surface(
-                        sub_files.get_surface("rh", surf_type="pial")
+                        sub_files.get_surface("pial", "rh")
                     )
                     # remove self-intersections using meshfix
                     with tempfile.NamedTemporaryFile(suffix=".off") as f:
@@ -621,20 +627,28 @@ def _read_settings_and_copy(usesettings, fn_settingslog):
     return settings
 
 
-def _prepare_t1(T1, reference_volume, force_forms):
+def _prepare_t1(T1, reference_volume, force_qform, force_sform):
     # copy T1 (as nii.gz) if supplied
     if T1:
         if os.path.exists(T1):
             # Cast to float32 and save
             T1_tmp = nib.load(T1)
-            T1_tmp = _check_q_and_s_form(T1_tmp, force_forms)
+            T1_tmp = _check_q_and_s_form(T1_tmp, force_qform, force_sform)
+
+            # Check for singleton dimensions and squeeze those out
+            # Note: do this after the s-g-form check so affine is correct
+            if (np.array(T1_tmp.shape) == 1).any():
+                data_tmp = np.squeeze(T1_tmp.get_fdata())
+                T1_tmp = nib.Nifti1Image(data_tmp, T1_tmp.affine)
+
             T1_tmp.set_data_dtype(np.float32)
+
             nib.save(T1_tmp, reference_volume)
         else:
             raise FileNotFoundError(f"Could not find input T1 file: {T1}")
 
 
-def _prepare_t2(T1, T2, registerT2, T2_reg, force_forms):
+def _prepare_t2(T1, T2, registerT2, T2_reg, force_qform, force_sform):
     if T2:
         T2_exists = os.path.exists(T2)
         if registerT2:
@@ -642,25 +656,40 @@ def _prepare_t2(T1, T2, registerT2, T2_reg, force_forms):
                 # Abuse the T2_reg filename to save a temporary
                 # file in case the q and sform need to be fixed
                 T2_tmp = nib.load(T2)
-                T2_tmp = _check_q_and_s_form(T2_tmp, force_forms)
-                nib.save(T2_tmp, T2_reg)
+                T2_tmp = _check_q_and_s_form(T2_tmp, force_qform, force_sform)
+
+                if (np.array(T2_tmp.shape) == 1).any():
+                    data_tmp = np.squeeze(T2_tmp.get_fdata())
+                    T2_tmp = nib.Nifti1Image(data_tmp, T2_tmp.affine)
+
+                    nib.save(T2_tmp, T2_reg)
                 charm_utils._registerT1T2(T1, T2_reg, T2_reg)
             else:
                 raise FileNotFoundError(f"Could not find input T2 file: {T2}")
         else:
             if T2_exists:
                 T2_tmp = nib.load(T2)
-                T2_tmp = _check_q_and_s_form(T2_tmp, force_forms)
+                T2_tmp = _check_q_and_s_form(T2_tmp, force_qform, force_sform)
+
+                if (np.array(T2_tmp.shape) == 1).any():
+                    data_tmp = np.squeeze(T2_tmp.get_fdata())
+                    T2_tmp = nib.Nifti1Image(data_tmp, T2_tmp.affine)
+
                 T2_tmp.set_data_dtype(np.float32)
                 nib.save(T2_tmp, T2_reg)
 
 
-def _check_q_and_s_form(scan, force_forms=False):
+def _check_q_and_s_form(scan, force_qform=False, force_sform=False):
     if not np.array_equal(scan.get_qform(), scan.get_sform()):
-        if not force_forms:
-            raise ValueError("The qform and sform of do not match. Please run charm with the --forceqform option")
-        else:
+        if not (force_qform or force_sform):
+            raise ValueError("The qform and sform do not match. Please run charm with the --forceqform (preferred) or --forcesform option")
+        elif force_qform:
             scan.set_sform(scan.get_qform())
+        elif force_sform:
+            # Note set_qform will strip shears silently per nibabel documentation
+            scan.set_qform(scan.get_sform())
+            scan.set_sform(scan.get_qform())
+
     return scan
 
 

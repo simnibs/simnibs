@@ -20,7 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
+from pathlib import Path
 import warnings
 import os
 from functools import partial
@@ -30,13 +30,8 @@ import nibabel as nib
 import numpy as np
 import scipy.ndimage
 import scipy.spatial
-from scipy.sparse import coo_matrix
-from typing import (
-    Dict,
-    List,
-    Union,
-)  # replace Dict/List with dict/list when using python >3.9
-
+from scipy.sparse import coo_matrix, csr_matrix
+from typing import Union
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
@@ -791,7 +786,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
              Default: None (positions will be projected on closest surface)
      distance: float or nx1 ndarray (optional)
          Distance (normal) to the surface to be enforced. Default: 0
-         Note: negative values will move the point inside, positive values 
+         Note: negative values will move the point inside, positive values
                outside the volume defined by the surface
 
      Returns
@@ -802,7 +797,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
     pts = np.array(pts)
     if pts.ndim == 1:
         pts = pts.reshape((1,len(pts)))
-    
+
     # get surface
     if surface_tags is not None:
         tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
@@ -810,7 +805,7 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
         tr_of_interest = mesh.elm.elm_type == 2
     tri_node_list = mesh.elm.node_number_list[tr_of_interest, :3] - 1
     tri_nodes = np.unique(tri_node_list)
-    
+
     old2new = np.zeros(tri_nodes[-1] + 1, dtype = 'int32')
     old2new[tri_nodes] = np.arange(len(tri_nodes))
     surf = {
@@ -820,23 +815,23 @@ def project_points_on_surface(mesh, pts, surface_tags = None, distance = 0.):
 
     # get indices of close-by surface nodes and their connected triangles
     pttris = _get_nearest_triangles_on_surface(pts, surf, n = 3)
-        
+
     # project points on triangles
     tris, _, projs, dists = _project_points_to_surface(pts, surf, pttris)
-    
+
     # ensure distance (optional)
     if not np.all(np.isclose(distance, 0)):
         distance = np.array(distance)
         if distance.ndim == 0:
             distance = distance.reshape(1)
-            
+
         tri_pts = surf['points'][surf['tris'][tris]]
         sideA = tri_pts[:, 1] - tri_pts[:, 0]
         sideB = tri_pts[:, 2] - tri_pts[:, 0]
         n = np.cross(sideA, sideB)
         n /= np.linalg.norm(n, axis=1)[:, None]
-        
-        projs += distance[:, None]*n                       
+
+        projs += distance[:, None]*n
 
     return projs
 
@@ -941,7 +936,7 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
     if transf_type == 'affine':
         coords_transf = coordinates_affine(coords, transf_def)
         if mesh:
-            coords_transf = project_points_on_surface(mesh, coords_transf, 
+            coords_transf = project_points_on_surface(mesh, coords_transf,
                                                       surface_tags = 1005,
                                                       distance=distances)
         vy_transf = vectors_affine(v_y, transf_def)
@@ -953,7 +948,7 @@ def transform_tms_positions(coords, v_y, v_z, transf_type, transf_def,
         coords_transf, vz_transf = coordinates_nonlinear(coords, transf_def,
                                                          vectors=v_z)
         if mesh:
-            coords_transf = project_points_on_surface(mesh, coords_transf, 
+            coords_transf = project_points_on_surface(mesh, coords_transf,
                                                       surface_tags = 1005,
                                                       distance=distances)
     else:
@@ -1079,7 +1074,7 @@ def warp_coordinates(coordinates, m2m_folder,
     out_geo: str
         Writes out a geo file for visualization. Only works when out_name is also set
 
-    mesh_in : mesh file, optional 
+    mesh_in : mesh file, optional
         scalp or head mesh, used to project electrodes onto scalp or ensure
         TMS coil distances from scalp; is used only for direction 'mni2subject'
         (standard: None; the head mesh file will then be automatically loaded,
@@ -1215,7 +1210,7 @@ def warp_coordinates(coordinates, m2m_folder,
     # Write CSV
     if out_name is not None:
         write_csv_positions(
-            out_name, type_, transformed_coords, transformed_extra, name, extra_cols, header)
+            out_name, type_, transformed_coords, name, transformed_extra, extra_cols, header)
         if out_geo is not None:
             csv_to_geo(out_name, out_geo)
 
@@ -1451,25 +1446,154 @@ def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
     return resampled, new_affine, original_res
 
 
-def _surf2surf(field, in_surf, out_surf, kdtree=None):
-    ''' Interpolates the field defined in in_vertices to the field defined in
-    out_vertices using nearest neighbour '''
-    if kdtree is None:
-        # Normalize the radius of the input sphere
-        in_v = np.copy(in_surf.nodes.node_coord)
-        in_v /= np.average(np.linalg.norm(in_v, axis=1))
-        kdtree = scipy.spatial.cKDTree(in_v)
-    out_v = np.copy(out_surf.nodes.node_coord)
-    # Normalize the radius of the output sphere
-    out_v /= np.average(np.linalg.norm(out_v, axis=1))
-    _, closest = kdtree.query(out_v)
-    return field[closest], kdtree
+def normalize(arr: np.ndarray, axis=None, inplace: bool = False):
+    """Normalize along a particular axis (or axes) of `v` avoiding
+    RuntimeWarning due to division by zero.
+
+    PARAMETERS
+    ----------
+    v : ndarray
+        Array to nomalize.
+    axis:
+        The axis to normalize along, e.g., `axis=1` will normalize rows).
+        Like axis argument of numpy.linalg.norm.
+
+    RETURNS
+    -------
+    v (normalized)
+    """
+    size = np.linalg.norm(arr, axis=axis, keepdims=True)
+    if inplace:
+        np.divide(arr, size, where=size != 0, out=arr)
+    else:
+        return np.divide(arr, size, where=size != 0)
 
 
-def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
-                            depth=0.5, quantities=['magn', 'normal', 'tangent', 'angle'],
-                            fields=None, open_in_gmsh=False, f_geo=None):
-    ''' Interpolates the vector fieds in the middle gray matter surface
+class SurfaceMorph:
+    """
+    Computes a mapping between surfaces defined on a sphere.
+    """
+
+    def __init__(self, surf_from, surf_to, method="linear", n: int = 2):
+        assert method in {"nearest", "linear"}
+        self.method = method
+        self.n = n
+
+        self._fit(surf_from, surf_to)
+
+    def _fit(self, surf_from, surf_to):
+        """Create a morph map which allows morphing of values from the nodes in
+        `surf_from` to `surf_to` by nearest neighbor or linear interpolation.
+
+        A morph map is a sparse matrix with
+        dimensions (n_points_surf_to, n_points_surf_from) where each row has
+        exactly three entries that sum to one. It is created by projecting each
+        point in `surf_to` onto closest triangle in `surf_from` and determining
+        the barycentric coordinates.
+
+        Testing all points against all triangles is expensive and inefficient,
+        thus we compute an approximation by finding, for each point in
+        `surf_to`, the `self.n` nearest nodes on `surf_from` and the triangles
+        to which these points belong. We then test only against these triangles.
+
+        PARAMETERS
+        ----------
+        surf_from :
+            The source mesh (i.e., the mesh to interpolate *from*).
+        surf_to :
+            The target mesh (i.e., the mesh to interpolate *to*).
+        """
+        # Ensure on unit sphere
+        points_from = normalize(surf_from.nodes.node_coord, axis=1)
+        points_to = normalize(surf_to.nodes.node_coord, axis=1)
+        n_from = len(points_from)
+        n_to = len(points_to)
+
+        if self.method == "nearest":
+            # in_v = np.copy(in_surf.nodes.node_coord)
+            # in_v /= np.average(np.linalg.norm(in_v, axis=1))
+            # kdtree = scipy.spatial.cKDTree(in_v)
+
+            # out_v = np.copy(out_surf.nodes.node_coord)
+            # # Normalize the radius of the output sphere
+            # out_v /= np.average(np.linalg.norm(out_v, axis=1))
+            # _, closest = kdtree.query(out_v)
+            kdtree = scipy.spatial.cKDTree(points_from)
+            # self.morph_mat = kdtree.query(points_to)[1]
+            rows = np.arange(n_to)
+            cols = kdtree.query(points_to)[1]
+            weights = np.ones(n_to)
+
+        elif self.method == "linear":
+            # Find the triangle (in surf) to which each point in points
+            # projects and get the associated weights
+            # n_points, d_points = points_to.shape
+            surf_ = dict(
+                points=points_from, tris=surf_from.elm.node_number_list[:, :3] - 1
+            )
+            pttris = _get_nearest_triangles_on_surface(points_to, surf_, self.n)
+            tris, weights, _, _ = _project_points_to_surface(points_to, surf_, pttris)
+            rows = np.repeat(np.arange(n_to), points_to.shape[1])
+            cols = surf_["tris"][tris].ravel()
+            weights = weights.ravel()
+        else:
+            raise ValueError
+
+        self.morph_mat = csr_matrix((weights, (rows, cols)), shape=(n_to, n_from))
+
+    def transform(self, values):
+        return self.morph_mat @ values
+
+
+def make_cross_subject_morph(
+    subject_from: Union[Path, str, SubjectFiles],
+    subject_to: Union[Path, str, SubjectFiles],
+    subsampling_from: Union[None, int] = None,
+    subsampling_to: Union[None, int] = None,
+    surface_morph_kwargs: Union[dict, None] = None,
+):
+    """
+    subject_from, subject_to :
+        Special subject name is 'fsaverage'.
+    subsampling_from, subsampling_to :
+        Special subsampling for 'fsaverage' is 10, 40 and None.
+
+    """
+    from simnibs.mesh_tools.mesh_io import (
+        load_reference_surfaces,
+        load_subject_surfaces,
+    )
+
+    surface_morph_kwargs = surface_morph_kwargs or {}
+    surfs = []
+    for subject, subsampling in zip(
+        (subject_from, subject_to), (subsampling_from, subsampling_to)
+    ):
+        if subject == "fsaverage":
+            surfaces = load_reference_surfaces("sphere", subsampling)
+        else:
+            subject_files = (
+                subject
+                if isinstance(subject, SubjectFiles)
+                else SubjectFiles(subpath=str(subject))
+            )
+            surfaces = load_subject_surfaces(subject_files, "sphere.reg", subsampling)
+        surfs.append(surfaces)
+    return {h: SurfaceMorph(surfs[0][h], surfs[1][h], **surface_morph_kwargs) for h in surfaces}
+
+
+def middle_gm_interpolation(
+    mesh_fn,
+    m2m_folder,
+    out_folder,
+    out_fsaverage=None,
+    depth=0.5,
+    quantities=["magn", "normal", "tangent", "angle"],
+    fields=None,
+    open_in_gmsh=False,
+    f_geo=None,
+):
+    """Interpolates the vector fieds in the middle gray matter surface
 
     Parameters
     -----------
@@ -1493,35 +1617,36 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
         If true, opens a Gmsh window with the interpolated fields
     f_geo: str
         String with file name to geo file that accompanies the mesh
-    '''
+    """
     from ..mesh_tools import mesh_io
+
     m2m_folder = os.path.abspath(os.path.normpath(m2m_folder))
     subject_files = SubjectFiles(subpath=m2m_folder)
-    if depth < 0. or depth > 1.:
-        raise ValueError('Invalid depth value. Should be between 0 and 1')
+    if depth < 0.0 or depth > 1.0:
+        raise ValueError("Invalid depth value. Should be between 0 and 1")
 
-    if any([q not in ['magn', 'normal', 'tangent', 'angle'] for q in quantities]):
-        raise ValueError('Invalid quanty in {0}'.format(quantities))
+    if any([q not in ["magn", "normal", "tangent", "angle"] for q in quantities]):
+        raise ValueError("Invalid quanty in {0}".format(quantities))
 
     def calc_quantities(nd, quantities):
         d = dict.fromkeys(quantities)
         for q in quantities:
-            if q == 'magn':
+            if q == "magn":
                 d[q] = nd.norm()
-            elif q == 'normal':
+            elif q == "normal":
                 d[q] = nd.normal()
                 d[q].value *= -1
-            elif q == 'tangent':
+            elif q == "tangent":
                 d[q] = nd.tangent()
-            elif q == 'angle':
+            elif q == "angle":
                 d[q] = nd.angle()
             else:
-                raise ValueError('Invalid quantity: {0}'.format(q))
+                raise ValueError("Invalid quantity: {0}".format(q))
         return d
 
     m = mesh_io.read_msh(mesh_fn)
     _, sim_name = os.path.split(mesh_fn)
-    sim_name = '.' + os.path.splitext(sim_name)[0]
+    sim_name = "." + os.path.splitext(sim_name)[0]
 
     # Crop out WM, GM, and CSF. We add WM and CSF to make the mesh convex.
     m = m.crop_mesh(tags=[1, 2, 3])
@@ -1540,80 +1665,64 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
 
     names_subj = []
     names_fsavg = []
-    # Loading surfaces and Kdtree caching
-    middle_surf = {}
-    reg_surf = {}
-    ref_surf = {}
-    avg_surf = {}
-    kdtree = {}
-    for hemi in subject_files.regions:
-        middle_surf[hemi] = mesh_io.read_gifti_surface(
-            subject_files.get_surface(hemi, 'central')
-        )
-        reg_surf[hemi] = mesh_io.read_gifti_surface(
-            subject_files.get_surface(hemi, 'sphere_reg')
-        )
-        if out_fsaverage is not None:
-            ref_surf[hemi] = mesh_io.read_gifti_surface(
-                get_reference_surf(hemi, 'sphere')
-            )
-            avg_surf[hemi] = mesh_io.read_gifti_surface(
-                get_reference_surf(hemi, 'central')
-            )
 
+    middle_surf = mesh_io.load_subject_surfaces(subject_files, "central")
+    reg_surf = mesh_io.load_subject_surfaces(subject_files, "sphere.reg")
+
+    ref_surf = mesh_io.load_reference_surfaces("sphere")
+    avg_surf = mesh_io.load_reference_surfaces("central")
+
+    for hemi in subject_files.hemispheres:
         mesh_io.write_freesurfer_surface(
             middle_surf[hemi],
-            os.path.join(out_folder, hemi + '.central'),
-            subject_files.ref_fs
+            os.path.join(out_folder, hemi + ".central"),
+            subject_files.ref_fs,
         )
-        kdtree[hemi] = None
+
+    if out_fsaverage is not None:
+        # Intersubject interpolators
+        morph = {
+            h: SurfaceMorph(reg_surf[h], ref_surf[h]) for h in subject_files.hemispheres
+        }
 
     h = []
     for name, data in m.field.items():
-        for hemi in subject_files.regions:
+        for hemi in subject_files.hemispheres:
             if fields is None or name in fields:
                 # Interpolate to middle gm
                 interpolated = data.interpolate_to_surface(
-                    middle_surf[hemi], th_indices=th_indices)
+                    middle_surf[hemi], th_indices=th_indices
+                )
 
                 # For vector quantities, calculate quantities (normal, magn, ...)
                 if data.nr_comp == 3:
                     q = calc_quantities(interpolated, quantities)
                     for q_name, q_data in q.items():
                         out_subj = os.path.join(
-                            out_folder, hemi + sim_name + '.central.' + name + '.' + q_name)
+                            out_folder,
+                            hemi + sim_name + ".central." + name + "." + q_name,
+                        )
                         mesh_io.write_curv(
-                            out_subj,
-                            q_data.value,
-                            middle_surf[hemi].elm.nr
+                            out_subj, q_data.value, middle_surf[hemi].elm.nr
                         )
                         names_subj.append(out_subj)
-                        middle_surf[hemi].add_node_field(
-                            q_data, name + '_' + q_name)
+                        middle_surf[hemi].add_node_field(q_data, f"{name}_{q_name}")
                         h.append(hemi)
                         # Interpolate to fsavg
                         if out_fsaverage is not None:
-                            q_transformed, kdtree[hemi] = _surf2surf(
-                                q_data.value,
-                                reg_surf[hemi],
-                                ref_surf[hemi],
-                                kdtree[hemi]
-                            )
+                            q_transformed = morph[hemi].transform(q_data.value)
                             out_avg = os.path.join(
                                 out_fsaverage,
-                                hemi + sim_name + '.fsavg.'
-                                + name + '.' + q_name
+                                hemi + sim_name + ".fsavg." + name + "." + q_name,
                             )
                             mesh_io.write_curv(
-                                out_avg,
-                                q_transformed,
-                                ref_surf[hemi].elm.nr
+                                out_avg, q_transformed, ref_surf[hemi].elm.nr
                             )
                             avg_surf[hemi].add_node_field(
-                                q_transformed, name + '_' + q_name)
+                                q_transformed, f"{name}_{q_name}"
+                            )
                             names_fsavg.append(out_avg)
 
-                # For scalar quantities
                 elif data.nr_comp == 1:
                     field_name = name[-1]
                     q_name = name[:-1]
@@ -1622,26 +1731,22 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
                         pass
                     else:
                         out_subj = os.path.join(
-                            out_folder, hemi + sim_name + '.central.' + name
+                            out_folder, hemi + sim_name + ".central." + name
                         )
                         mesh_io.write_curv(
                             out_subj,
                             interpolated.value.squeeze(),
-                            middle_surf[hemi].elm.nr
+                            middle_surf[hemi].elm.nr,
                         )
                         names_subj.append(out_subj)
                         h.append(hemi)
                         middle_surf[hemi].add_node_field(interpolated, name)
                         if out_fsaverage is not None:
-                            f_transformed, kdtree[hemi] = _surf2surf(
-                                interpolated.value.squeeze(),
-                                reg_surf[hemi],
-                                ref_surf[hemi],
-                                kdtree[hemi]
+                            f_transformed = morph[hemi].transform(
+                                interpolated.value.squeeze()
                             )
                             out_avg = os.path.join(
-                                out_fsaverage,
-                                hemi + sim_name + '.fsavg.' + name
+                                out_fsaverage, hemi + sim_name + ".fsavg." + name
                             )
                             mesh_io.write_curv(
                                 out_avg, f_transformed, ref_surf[hemi].elm.nr
@@ -1655,22 +1760,22 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
     # screw up the atlases
 
     def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
-        mesh = surfs['lh'].join_mesh(surfs['rh'])
+        mesh = surfs["lh"].join_mesh(surfs["rh"])
         mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
         mesh.nodedata = []
         mesh.elmdata = []
-        for k in surfs['lh'].field.keys():
+        for k in surfs["lh"].field.keys():
             mesh.add_node_field(
-                np.append(surfs['lh'].field[k].value,
-                          surfs['rh'].field[k].value), k)
+                np.append(surfs["lh"].field[k].value, surfs["rh"].field[k].value), k
+            )
         mesh_io.write_msh(mesh, fn_out)
 
         # write .opt-file
-        v = mesh.view(visible_fields=list(surfs['lh'].field.keys())[0])
+        v = mesh.view(visible_fields=list(surfs["lh"].field.keys())[0])
         if f_geo is not None:
             if not os.path.exists(f_geo):
-                raise FileNotFoundError(f'Could not find file: {f_geo}')
+                raise FileNotFoundError(f"Could not find file: {f_geo}")
             v.add_merge(f_geo, append_views_from_geo=True)
         v.write_opt(fn_out)
 
@@ -1679,17 +1784,20 @@ def middle_gm_interpolation(mesh_fn, m2m_folder, out_folder, out_fsaverage=None,
 
     join_and_write(
         middle_surf,
-        os.path.join(out_folder, sim_name[1:] + '_central.msh'),
-        open_in_gmsh, f_geo)
+        os.path.join(out_folder, sim_name[1:] + "_central.msh"),
+        open_in_gmsh,
+        f_geo,
+    )
     if out_fsaverage:
         join_and_write(
             avg_surf,
-            os.path.join(out_fsaverage, sim_name[1:] + '_fsavg.msh'),
-            open_in_gmsh)
+            os.path.join(out_fsaverage, sim_name[1:] + "_fsavg.msh"),
+            open_in_gmsh,
+        )
 
 
-def subject_atlas(atlas_name, m2m_dir, hemi='both'):
-    ''' Loads a brain atlas based of the FreeSurfer fsaverage template
+def subject_atlas(atlas_name, m2m_dir, hemi="both"):
+    """Loads a brain atlas based of the FreeSurfer fsaverage template
 
     Parameters
     -----------
@@ -1723,24 +1831,25 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
     ---------
     atlas: dict
         Dictionary where atlas['region'] = roi
-    '''
-    from ..mesh_tools.mesh_io import read_msh, read_gifti_surface
-    if atlas_name not in ['a2009s', 'DK40', 'HCP_MMP1']:
-        raise ValueError('Invalid atlas name')
+    """
+    from ..mesh_tools.mesh_io import read_gifti_surface
+
+    if atlas_name not in ["a2009s", "DK40", "HCP_MMP1"]:
+        raise ValueError("Invalid atlas name")
 
     subject_files = SubjectFiles(subpath=m2m_dir)
 
-    if hemi in ['lh', 'rh']:
+    if hemi in ["lh", "rh"]:
         fn_atlas = os.path.join(
-            templates.atlases_surfaces,
-            f'{hemi}.aparc_{atlas_name}.freesurfer.annot'
+            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.freesurfer.annot"
         )
         labels, _, names = nib.freesurfer.io.read_annot(fn_atlas)
-        labels_sub, _ = _surf2surf(
-            labels,
-            read_gifti_surface(get_reference_surf(hemi, 'sphere')),
-            read_gifti_surface(subject_files.get_surface(hemi, 'sphere_reg'))
+        morph = SurfaceMorph(
+            read_gifti_surface(get_reference_surf("sphere", hemi)),
+            read_gifti_surface(subject_files.surfaces["sphere.reg"][hemi]),
+            method="nearest",  # we are interpolating labels
         )
+        labels_sub = morph.transform(labels)
         atlas = {}
         for l, name in enumerate(names):
             atlas[name.decode()] = labels_sub == l
@@ -1748,26 +1857,26 @@ def subject_atlas(atlas_name, m2m_dir, hemi='both'):
         return atlas
 
     # If both hemispheres
-    elif hemi == 'both':
-        atlas_lh = subject_atlas(atlas_name, m2m_dir, 'lh')
-        atlas_rh = subject_atlas(atlas_name, m2m_dir, 'rh')
+    elif hemi == "both":
+        atlas_lh = subject_atlas(atlas_name, m2m_dir, "lh")
+        atlas_rh = subject_atlas(atlas_name, m2m_dir, "rh")
         atlas = {}
         pad_rh = np.zeros_like(list(atlas_rh.values())[0])
         pad_lh = np.zeros_like(list(atlas_lh.values())[0])
         for name, mask in atlas_lh.items():
-            atlas[f'lh.{name}'] = np.append(mask, pad_rh)  # pad after
+            atlas[f"lh.{name}"] = np.append(mask, pad_rh)  # pad after
         for name, mask in atlas_rh.items():
-            atlas[f'rh.{name}'] = np.append(pad_lh, mask)  # pad after
+            atlas[f"rh.{name}"] = np.append(pad_lh, mask)  # pad after
 
         return atlas
     else:
-        raise ValueError('Invalid hemisphere name')
+        raise ValueError("Invalid hemisphere name")
 
 
 def _project_points_to_surface(
     points: np.ndarray,
-    surf: Dict,
-    pttris: Union[List, np.ndarray],
+    surf: dict,
+    pttris: Union[list, np.ndarray],
     return_all: bool = False,
 ):
     """Project each point in `points` to the closest point on the surface
@@ -1834,9 +1943,9 @@ def _project_points_to_surface(
     rep_points = np.repeat(points, npttris, axis=0)
     w = v0[pttris] - rep_points
 
-    a = np.sum(e0 ** 2, 1)[pttris]
+    a = np.sum(e0**2, 1)[pttris]
     b = np.sum(e0 * e1, 1)[pttris]
-    c = np.sum(e1 ** 2, 1)[pttris]
+    c = np.sum(e1**2, 1)[pttris]
     d = np.sum(e0[pttris] * w, 1)
     e = np.sum(e1[pttris] * w, 1)
     # f = np.sum(w**2, 1)
@@ -1844,7 +1953,7 @@ def _project_points_to_surface(
     # s,t are so far unnormalized!
     s = b * e - c * d
     t = b * d - a * e
-    det = a * c - b ** 2
+    det = a * c - b**2
 
     # Project points (s,t) to the closest points on the triangle (s',t')
     sp, tp = np.zeros_like(s), np.zeros_like(t)
@@ -1981,17 +2090,13 @@ def _project_points_to_surface(
 
 
 def _get_nearest_triangles_on_surface(
-    points: np.ndarray,
-    surf: Dict,
-    n: int = 1,
-    subset = None,
-    return_index: bool = False
+    points: np.ndarray, surf: dict, n: int = 1, subset=None, return_index: bool = False
 ):
     """For each point in `points` get the `n` nearest nodes on `surf` and
     return the triangles to which these nodes belong.
 
     points : ndarray
-        Points for which we want to find the candidate triangles. Shape (n, d) 
+        Points for which we want to find the candidate triangles. Shape (n, d)
         where n is the number of points and d is the dimension.
     surf : dict
         Dictionary with keys points and tris corresponding to the nodes and
@@ -2016,16 +2121,16 @@ def _get_nearest_triangles_on_surface(
     surf_points = surf["points"] if subset is None else surf["points"][subset]
     tree = scipy.spatial.cKDTree(surf_points)
     _, ix = tree.query(points, n)
-    if subset:
-        ix = subset[ix] # ensure ix indexes into surf['points']
-    pttris = _get_triangle_neighbors(surf["tris"], len(surf["points"]))[ix]        
+    if subset is not None:
+        ix = subset[ix]  # ensure ix indexes into surf['points']
+    pttris = _get_triangle_neighbors(surf["tris"], len(surf["points"]))[ix]
     if n > 1:
         pttris = list(map(lambda x: np.unique(np.concatenate(x)), pttris))
-    
+
     return (pttris, ix) if return_index else pttris
 
 
-def _get_triangle_neighbors(tris: np.ndarray, nr: Union[int,None] = None):
+def _get_triangle_neighbors(tris: np.ndarray, nr: Union[int, None] = None):
     """For each point get its neighboring triangles (i.e., the triangles to
     which it belongs).
 

@@ -102,7 +102,9 @@ MANUAL EDITING:
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
     parser.add_argument('--forceqform', action='store_true', default=False,
-                        help="""Force sform and qform to be the same.""")
+                        help="""Replace sform with qform.""")
+    parser.add_argument('--forcesform', action='store_true', default=False,
+                        help="""Replace qform with sform. Note: strips shears.""")
     parser.add_argument('--usetransform',  help="""Transformation matrix used
                         instead of doing affine registration of the MNI
                         template to the subject MRI, i.e., it takes the MNI
@@ -164,7 +166,7 @@ def main():
 
     charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                    args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
-                   args.inittransform, args.usetransform, args.forceqform,
+                   args.inittransform, args.usetransform, args.forceqform, args.forcesform,
                    " ".join(sys.argv[1:]), args.debug)
 
 

@@ -11,7 +11,7 @@ A SimNIBS installation takes about 3 GB disk space.
 
 Windows
 -------
-1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
+1. `Download the SimNIBS installer <https://github.com/simnibs/simnibs/releases/latest>`_
 
 2. Double click the :file:`simnibs_installer_windows.exe` file. If a security warning shows up, click on *More info -> Run anyway*
 
@@ -28,7 +28,7 @@ Look for a shortcut called :code:`SimNIBS GUI` in your Start Menu
 
 Linux
 -----
-1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
+1. `Download the SimNIBS installer <https://github.com/simnibs/simnibs/releases/latest>`_
 
 
 2. Run in a terminal 
@@ -56,7 +56,7 @@ Start a new terminal window and type :code:`simnibs_gui`
 
 MacOS
 ------
-1. `Download the SimNIBS installer <https://simnibs.drcmr.dk/userregistration2>`_
+1. `Download the SimNIBS installer <https://github.com/simnibs/simnibs/releases/latest>`_
 
 2. Double click the :file:`simnibs_installer_macos.pkg` file.
 

@@ -371,10 +371,10 @@ def check_segmentation(fn_subject):
     from matplotlib.colors import ListedColormap
     files = simnibs.SubjectFiles(fn_subject + '.msh')
     T1 = nib.load(files.T1)
-    masks = nib.load(files.final_contr).get_data()
+    masks = nib.load(files.final_contr).get_fdata()
     lines = np.linalg.norm(np.gradient(masks), axis=0) > 0
     print(lines.shape)
-    viewer = NiftiViewer(T1.get_data(), T1.affine)
+    viewer = NiftiViewer(T1.get_fdata(), T1.affine)
     cmap = pl.cm.jet
     my_cmap = cmap(np.arange(cmap.N))
     my_cmap[:,-1] = np.linspace(0, 1, cmap.N)

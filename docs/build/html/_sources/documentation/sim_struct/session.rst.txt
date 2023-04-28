@@ -24,38 +24,38 @@ Initialization
 
      s = sim_struct('SESSION');
 
-  \ 
+  \
 
 Attributes
 ----------
 
 * **fnamehead**: *string (Python)/character array (MATLAB)*
 
-  * **Desctiption** Name of head mesh file (:file:`{subID}.msh` file)
+  * **Description** Name of head mesh file (given that you are in the `m2m_ernie` folder then :file:`{subID}.msh` file)
   * **Example**: *Python/MATLAB*
 
   .. code-block:: matlab
 
      s.fnamehead = 'ernie.msh'
 
-  \ 
+  \
 
 * **pathfem**: *string (Python)/character array (MATLAB)*
 
-  * **Desctiption** Name of output folder
+  * **Description** Name of output folder
   * **Example**: *Python/MATLAB*
 
   .. code-block:: matlab
 
      s.pathfem = 'simulation_outputs/'
 
-  \ 
+  \
 
 
 * **fields**: *string (Python)/character array (MATLAB), optional*
 
   * **Description**: Fields to be output. Any combination of
-     
+
     * 'v' for voltage (in V)
     * 'e'/'E' for electric field magnitude/vector (in V/m)
     * 'j'/'J' for current density magnitude/vector (int A/m2).
@@ -67,7 +67,7 @@ Attributes
 
      s.fields = 'eEjJ'
 
-  \ 
+  \
 
 .. _session_poslist:
 
@@ -85,7 +85,7 @@ Attributes
 
 * **map_to_surf**: *bool, optional*
 
-  * **Description**: Whether to map the fields to the middle gray matter surface. 
+  * **Description**: Whether to map the fields to the middle gray matter surface.
   * **Default**: False
   * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
@@ -117,8 +117,8 @@ Attributes
 
 * **tissues_in_niftis**: *list of tissue indices, or str ('all'), optional*
 
-  * **Description**: List of the tissues for which the data will be interpolated to the niftis. To get fields everywhere, set to 'all'.  
-  * **Default**: 2 (i.e. gray matter)  
+  * **Description**: List of the tissues for which the data will be interpolated to the niftis. To get fields everywhere, set to 'all'.
+  * **Default**: 2 (i.e. gray matter)
 
 * **subpath**: *string (Python)/character array (MATLAB), optional*
 

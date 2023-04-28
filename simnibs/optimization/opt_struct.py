@@ -176,11 +176,11 @@ class TMSoptimize():
         sub_files = SubjectFiles(self.fnamehead, self.subpath)
         self.fnamehead = sub_files.fnamehead
         self.subpath = sub_files.subpath
-        
+
         self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
         if not os.path.isfile(self.fnamehead):
             raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
-            
+
         if not os.path.isdir(self.subpath):
             logger.warning('Cannot locate subjects m2m folder')
             logger.warning('some postprocessing options might fail')
@@ -445,7 +445,7 @@ class TMSoptimize():
         v.write_opt(fn_out)
         if self.open_in_gmsh:
             mesh_io.open_in_gmsh(fn_out, True)
-        
+
         logger.info('\n' + self.summary(pos_matrices[np.argmax(E_roi)]))
 
         # return optimum coil position(s)
@@ -511,7 +511,7 @@ class TMSoptimize():
             direction /= np.linalg.norm(direction)
 
         def postprocessing(E, target_region, volumes, direction):
-            if direction is None: 
+            if direction is None:
                 return np.average(
                     np.linalg.norm(E[target_region - 1], axis=1),
                     weights=volumes,
@@ -543,7 +543,7 @@ class TMSoptimize():
 
         if not keep_hdf5:
             os.remove(fn_hdf5)
-            
+
         return E_roi
 
     def _ADM_optimize(self, cond_field, target_region):
@@ -569,17 +569,26 @@ class TMSoptimize():
         ccd_file = np.loadtxt(self.fnamecoil, skiprows=2)
         dipoles, moments = ccd_file[:, 0:3], ccd_file[:, 3:]
         # Run dipole simulations
-        S = fem.FEMSystem.electric_dipole(
-            self.mesh, cond_field,
-            solver_options=self.solver_options
-        )
-
+        S = fem.DipoleFEM(self.mesh, cond_field, self.solver_options)
         vols = self.mesh.elements_volumes_and_areas()
 
         def calc_dipole_J(dipole_dir):
             Jp = mesh_io.ElementData(np.zeros((self.mesh.elm.nr, 3), dtype=float))
             Jp[target_region] = dipole_dir
-            b = S.assemble_electric_dipole_rhs(Jp)
+
+            dip_pos = baricenters[target_region]
+            # `dip_dir` is the desired current density in the target region,
+            # therefore; weigh the dipole moments such that the current density
+            # is equal to this in all elements
+            # (factor 1e-9 converts mm3 to m3)
+            b = S.assemble_rhs(
+                dip_pos,
+                np.atleast_2d(dipole_dir) * 1e-9*np.atleast_1d(vols[target_region])[:, None],
+                "partial integration",
+            )
+            if b.ndim == 2:
+                b = b.sum(1)
+
             v = mesh_io.NodeData(S.solve(b), mesh=self.mesh)
             m = fem.calc_fields(v, 'J', cond=cond_field)
             J = m.field['J'][:] + Jp[:]
@@ -593,7 +602,7 @@ class TMSoptimize():
             del S
             gc.collect()
             logger.info('Running ADM')
-            # Notice that there is an uknown scale factor
+            # Notice that there is an unknown scale factor
             # as we need to know the pulse angular frequency
             # \Omega and amplitude A
             E_roi = ADMlib.ADMmag(
@@ -1200,7 +1209,7 @@ class TDCSoptimize():
                     elec_tags = f[self.leadfield_path].attrs['electrode_tags']
             else:
                 raise ValueError('Please define the electrode tags')
-        
+
         # If not, use point electrodes
         if mesh_elec is None and elec_positions is None:
             if self.leadfield_hdf is not None:
@@ -1278,7 +1287,7 @@ class TDCSoptimize():
         ---------
         results: simnibs.msh.mesh_io.Msh
             Mesh file
-        ''' 
+        '''
         target_fields = [t.as_field('target_{0}'.format(i+1)) for i, t in
                          enumerate(self.target)]
         weight_fields = [t.as_field('avoid_{0}'.format(i+1)) for i, t in
@@ -1299,7 +1308,7 @@ class TDCSoptimize():
 
     def write_currents_csv(self, currents, fn_csv, electrode_names=None):
         ''' Writes the currents and the corresponding electrode names to a CSV file
-        
+
         Parameters
         ------------
         currents: N_elec x 1 ndarray
@@ -1522,7 +1531,7 @@ class TDCStarget:
     @classmethod
     def read_mat_struct(cls, mat):
         '''Reads a .mat structure
-        
+
         Parameters
         -----------
         mat: dict
@@ -1601,7 +1610,7 @@ class TDCStarget:
         directions = _find_directions(self.mesh, self.lf_type,
                                       self.directions, indexes,
                                       mapping)
-        
+
         return indexes-1, directions
 
 
@@ -1656,8 +1665,8 @@ class TDCStarget:
         return field_type(field, name, mesh=self.mesh)
 
     def mean_intensity(self, field):
-        ''' Calculates the mean intensity of the given field in this target 
-        
+        ''' Calculates the mean intensity of the given field in this target
+
         Parameters
         -----------
         field: Nx3 NodeData or ElementData
@@ -1964,8 +1973,8 @@ class TDCSDistributedOptimize():
 
     Ruffini et al. "Optimization of multifocal transcranial current
     stimulation for weighted cortical pattern targeting from realistic modeling of
-    electric fields", NeuroImage, 2014 
-    
+    electric fields", NeuroImage, 2014
+
     And the algorithm from
 
     Saturnino et al. "Accessibility of cortical regions to focal TES:
@@ -2245,11 +2254,11 @@ class TDCSDistributedOptimize():
 
     def _target_distribution(self):
         ''' Gets the y and W fields, by interpolating the target_image
-        
+
         Based on Eq. 1 from
         Ruffini et al. "Optimization of multifocal transcranial current
         stimulation for weighted cortical pattern targeting from realistic modeling of
-        electric fields", NeuroImage, 2014 
+        electric fields", NeuroImage, 2014
         '''
         assert self.mesh is not None, 'Please set a mesh'
         assert self.min_img_value >= 0, 'min_img_value must be >= 0'
@@ -2265,7 +2274,7 @@ class TDCSDistributedOptimize():
         if vol.ndim != 3:
             raise ValueError('Target image has to be 3D')
         vol[np.isnan(vol)] = 0.0
-        
+
         # if in MNI space, tranfrom coordinates
         if self.mni_space:
             if self.subpath is None:
@@ -2281,7 +2290,7 @@ class TDCSDistributedOptimize():
         elif self.lf_type == 'element':
             field = mesh_io.ElementData.from_data_grid(self.mesh, vol, affine)
         field = np.float64(field[:])
-        
+
         # setting values in eyes to zero
         if np.any(self.mesh.elm.tag1 == 1006):
             logger.info('setting target values in eyes to zero')
@@ -2291,7 +2300,7 @@ class TDCSDistributedOptimize():
                 field[eye_nodes-1] = 0.0 # node indices in mesh are 1-based
             elif self.lf_type == 'element':
                 field[self.mesh.elm.tag1 == 1006] = 0.0
-                        
+
         if self.mni_space:
             self.mesh.nodes.node_coord = orig_nodes
 
@@ -2347,7 +2356,7 @@ class TDCSDistributedOptimize():
         ---------
         results: simnibs.msh.mesh_io.Msh
             Mesh file
-        ''' 
+        '''
         e_field = self.field(currents)
         e_magn_field = e_field.norm()
         normals = self.normal_directions()

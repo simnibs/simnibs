@@ -11,9 +11,10 @@ class TestTemplates:
     def test_find(self):
         templates = file_finder.templates
         for k, fn in templates.__dict__.items():
-            is_file = os.path.isfile(fn)
-            is_dir = os.path.isdir(fn)
-            assert is_file or is_dir
+            if k not in ("fsaverage_resolutions", ):
+                is_file = os.path.isfile(fn)
+                is_dir = os.path.isdir(fn)
+                assert is_file or is_dir
 
 @pytest.mark.parametrize('atlas_name', ['a2009s', 'DK40', 'HCP_MMP1'])
 @pytest.mark.parametrize('hemi', ['lh', 'rh', 'both'])
@@ -46,14 +47,21 @@ def test_get_atlas(atlas_name, hemi):
             if name.startswith('rh'):
                 assert not np.any(mask[:163842])
 
-@pytest.mark.parametrize('region', ['lh', 'rh', 'lc', 'rc'])
-@pytest.mark.parametrize('surf_type', ['central', 'sphere', 'inflated'])
-def test_get_reference_surf(region, surf_type):
-    if (region in ['lc', 'rc']) and surf_type == 'inflated':
+@pytest.mark.parametrize('surf_type', file_finder.fs_surfaces + ["spheree"])
+@pytest.mark.parametrize('region', file_finder.HEMISPHERES + ["lhh"])
+@pytest.mark.parametrize('resolution', file_finder.fs_resolutions + [20])
+def test_get_reference_surf(surf_type, region, resolution):
+    if resolution not in file_finder.fs_resolutions:
+        with pytest.raises(AssertionError):
+            file_finder.get_reference_surf(surf_type, region, resolution)
+    elif (
+        region not in file_finder.HEMISPHERES
+        or surf_type not in file_finder.fs_surfaces
+    ):
         with pytest.raises(FileNotFoundError):
-            file_finder.get_reference_surf(region, surf_type)
+            file_finder.get_reference_surf(surf_type, region, resolution)
     else:
-        file_finder.get_reference_surf(region, surf_type)
+        file_finder.get_reference_surf(surf_type, region, resolution)
 
 
 class TestSubjectFiles:
@@ -95,106 +103,72 @@ class TestSubjectFiles:
 
     def test_surfaces(self):
         with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
-            surface_folder = Path(file_finder.SubjectFiles(subpath=tmpdir).surface_folder)
-            surface_folder.mkdir(parents=True)
-            regions = ['lc', 'lh', 'rh']
-            surf_types = ('central', 'sphere_reg')
-            surf_to_name = dict(central='central', sphere_reg='sphere.reg')
-            subsamplings = (None, 10000)
-            fnames = {}
-            for region in regions:
-                for surf_type in surf_types:
-                    for subsampling in subsamplings:
-                        fileparts = [region, surf_to_name[surf_type]]
-                        if subsampling is not None:
-                            fileparts.append(str(subsampling))
-                        fileparts.append('gii')
-                        filename = '.'.join(fileparts)
-                        fn = surface_folder / filename
-                        fn.touch()
-                        fnames[(region, surf_type, subsampling)] = str(fn)
+            m2m = file_finder.SubjectFiles(subpath=tmpdir)
+            surface_folder = Path(m2m.surface_folder)
 
-            # Needs to be reinitialized
-            s = file_finder.SubjectFiles(subpath=tmpdir)
-            assert s.regions == regions
-            for region in regions:
-                for surf_type in surf_types:
-                    for subsampling in subsamplings:
-                        assert s.get_surface(region, surf_type, subsampling) \
-                               == fnames[region, surf_type, subsampling]
+            for s in ("central", "pial", "sphere", "sphere.reg"):
+                for h in ("lh", "rh"):
+                    assert m2m.surfaces[s][h] == surface_folder / f"{h}.{s}.gii"
 
-            with pytest.raises(FileNotFoundError):
-                s.get_surface('rc', 'central')
-                s.get_surface('rc', 'sphere_reg')
-                s.get_surface('lh', 'central', 20000)
+            # surface_folder = Path(file_finder.SubjectFiles(subpath=tmpdir).surface_folder)
+            # surface_folder.mkdir(parents=True)
+            # regions = ['lc', 'lh', 'rh']
+            # surf_types = ('central', 'sphere_reg')
+            # surf_to_name = dict(central='central', sphere_reg='sphere.reg')
+            # subsamplings = (None, 10000)
+            # fnames = {}
+            # for region in regions:
+            #     for surf_type in surf_types:
+            #         for subsampling in subsamplings:
+            #             fileparts = [region, surf_to_name[surf_type]]
+            #             if subsampling is not None:
+            #                 fileparts.append(str(subsampling))
+            #             fileparts.append('gii')
+            #             filename = '.'.join(fileparts)
+            #             fn = surface_folder / filename
+            #             fn.touch()
+            #             fnames[(region, surf_type, subsampling)] = str(fn)
 
-    def test_v2v2_get_surface_and_morph_files(self):
-        """Check that the """
-        m2m_dir = "/path/to/m2m_subid"
-        sf = file_finder.SubjectFiles(subpath=m2m_dir)
+            # # Needs to be reinitialized
+            # s = file_finder.SubjectFiles(subpath=tmpdir)
+            # assert s.regions == regions
+            # for region in regions:
+            #     for surf_type in surf_types:
+            #         for subsampling in subsamplings:
+            #             assert s.get_surface(region, surf_type, subsampling) \
+            #                    == fnames[region, surf_type, subsampling]
 
-        # surface
-        surf = "mysurf"
-        subsamp = 12345
+            # with pytest.raises(FileNotFoundError):
+            #     s.get_surface('rc', 'central')
+            #     s.get_surface('rc', 'sphere_reg')
+            #     s.get_surface('lh', 'central', 20000)
 
-        res = sf.v2v2_get_surface_file(surf)
-        assert res["lh"] == Path(f"{m2m_dir}/surfaces/lh.{surf}.gii")
-        assert res["rh"] == Path(f"{m2m_dir}/surfaces/rh.{surf}.gii")
 
-        res = sf.v2v2_get_surface_file(surf, subsamp)
-        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{surf}.gii")
-        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{surf}.gii")
+    @pytest.mark.parametrize('surface', ["central", "layer0"])
+    @pytest.mark.parametrize('hemi', ["lh", "rh"])
+    @pytest.mark.parametrize('subsampling', [None, 12345])
+    def test_get_surface(self, surface, hemi, subsampling):
+        print(f"surface: {surface}")
+        print(f"hemi: {hemi}")
+        print(f"subsampling: {subsampling}")
+        m2m = file_finder.SubjectFiles(subpath="/path/to/m2m_subid")
+        surface_dir = Path(m2m.surface_folder)
 
-        res = sf.v2v2_get_surface_file(surf, subsamp, "lh")
-        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{surf}.gii")
-        with pytest.raises(KeyError):
-            res["rh"]
+        p = m2m.get_surface(surface, hemi, subsampling)
+        if subsampling is None:
+            assert p == surface_dir / f"{hemi}.{surface}.gii"
+        else:
+            assert p == surface_dir / str(subsampling) / f"{hemi}.{surface}.gii"
 
-        # morph data
-        data = "mydata"
-        subsamp = 10000
+    @pytest.mark.parametrize('morph_data', ["thickness", "curv"])
+    @pytest.mark.parametrize('hemi', ["lh", "rh"])
+    @pytest.mark.parametrize('subsampling', [None, 12345])
+    def test_get_morph_data(self, morph_data, hemi, subsampling):
+        m2m = file_finder.SubjectFiles(subpath="/path/to/m2m_subid")
+        surface_dir = Path(m2m.surface_folder)
 
-        res = sf.v2v2_get_morph_data_file(data)
-        assert res["lh"] == Path(f"{m2m_dir}/surfaces/lh.{data}")
-        assert res["rh"] == Path(f"{m2m_dir}/surfaces/rh.{data}")
-
-        res = sf.v2v2_get_morph_data_file(data, subsamp)
-        assert res["lh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/lh.{data}")
-        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{data}")
-
-        res = sf.v2v2_get_morph_data_file(data, subsamp, "rh")
-        with pytest.raises(KeyError):
-            res["lh"]
-        assert res["rh"] == Path(f"{m2m_dir}/surfaces/{subsamp}/rh.{data}")
-
-    def test_v2v2_read_write_files(self):
-        """Write a few files, read them again, and check equality."""
-        rng = np.random.default_rng()
-
-        # surface
-        surf_hemi = dict(
-            points=rng.uniform(0, 10, size=(10,3)),
-            tris=rng.integers(0, 10, size=(16,3))
-        )
-        surf_dict = dict(lh=surf_hemi, rh=surf_hemi)
-        surf_name = "mysurf"
-
-        # data
-        d = rng.uniform(0,10,size=10)
-        data_dict = dict(lh=d, rh=d)
-        data_name = "mydata"
-
-        with tempfile.TemporaryDirectory(prefix='m2m_') as tmpdir:
-
-            sf = file_finder.SubjectFiles(subpath=tmpdir)
-
-            sf.v2v2_write_surface(surf_dict, surf_name)
-            surf_read = sf.v2v2_read_surface(surf_name)
-            for hemi in surf_dict:
-                for field in surf_dict[hemi]:
-                    np.testing.assert_allclose(surf_dict[hemi][field], surf_read[hemi][field])
-
-            sf.v2v2_write_morph_data(data_dict, data_name)
-            data_read = sf.v2v2_read_morph_data(data_name)
-            for hemi in surf_dict:
-                np.testing.assert_allclose(data_dict[hemi], data_read[hemi])
+        p = m2m.get_morph_data(morph_data, hemi, subsampling)
+        if subsampling is None:
+            assert p == surface_dir / f"{hemi}.{morph_data}"
+        else:
+            assert p == surface_dir / str(subsampling) / f"{hemi}.{morph_data}"

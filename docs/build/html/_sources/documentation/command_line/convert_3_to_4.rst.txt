@@ -27,9 +27,10 @@ Further notes
 
 * Type :code:`convert_3_to_4 -h` gives the help information
 * When only the directory of the old head model is provided, the new folder will be named m2m_<subID_old>_v4
-* Using the conversion function in python scripts is feasible by 
+* Using the conversion function in python scripts is feasible by
+
 .. code-block:: python
-  
+
   from simnibs.cli.convert_3_to_4 import convert_old_new
   convert_old_new('m2m_<subID_old>', 'm2m_<subID_new>')
 

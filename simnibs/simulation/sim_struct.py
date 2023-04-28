@@ -1706,7 +1706,7 @@ class TDCSLIST(SimuList):
 
         if el_surround is not None:
             C = el_surround
-        
+
         # get direction vector
         ydir = []
         if len(C.pos_ydir):
@@ -2650,22 +2650,38 @@ class TDCSLEADFIELD(LEADFIELD):
             scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
             scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
             input_type = 'tag'
+            current = 1.0
+            weigh_by_area = True
         else:
-            # Find the closest surface node
+            # Current is injected at the nodes of the triangle on which an
+            # electrode is projected weighted by the resulting barycentric
+            # coordinates
+            logger.info("Using point electrodes")
             w_elec = self.mesh
-            out_nodes = np.unique(self.mesh.elm.get_outside_faces())
-            out_nodes_kdt = scipy.spatial.cKDTree(self.mesh.nodes[out_nodes])
-            electrode_surfaces = []
-            for el in self.electrode:
-                _, idx = out_nodes_kdt.query(el.centre)
-                electrode_surfaces.append(out_nodes[idx])
-                # Update the position of the electrode
-                el.centre = self.mesh.nodes[electrode_surfaces[-1]]
-            mesh_io.write_geo_spheres(
-                [el.centre for el in self.electrode],
-                fn_el[:-4] + '.geo'
+            skin_faces = w_elec.elm[w_elec.elm.tag1 == 1005, :3]-1
+            subset = w_elec.get_outer_skin_points()
+
+            pts = np.array([e.centre for e in self.electrode])
+            surf = dict(points=w_elec.nodes.node_coord, tris=skin_faces)
+            pttris = transformations._get_nearest_triangles_on_surface(pts, surf, 3, subset)
+            tris, weights, projs, _ = transformations._project_points_to_surface(
+                pts,
+                surf,
+                pttris
             )
-            input_type = 'node'
+            electrode_surfaces = surf["tris"][tris] + 1 # back to 1 indexing...
+            current = weights[1:]
+            input_type = "nodes"
+            weigh_by_area = False
+
+            # For debugging
+
+            # data = np.zeros(w_elec.nodes.nr)
+            # data[subset] = 1
+            # w_elec.nodedata.append(mesh_io.NodeData(data, "subset"))
+            # w_elec.write(self.fnamehead[:-4] + "_skin_outer_annot.msh")
+            mesh_io.write_geo_spheres(pts, fn_el[:-4] + '.geo')
+            mesh_io.write_geo_spheres(projs, fn_el[:-4] + '_proj.geo')
 
         # Write roi, scalp and electrode surfaces hdf5
         # We add WM and CSF to make the mesh convex.
@@ -2686,12 +2702,12 @@ class TDCSLEADFIELD(LEADFIELD):
             if isinstance(self.interpolation, str):
                 if self.interpolation == 'middle gm':
                     sub_files = SubjectFiles(self.fnamehead, self.subpath)
-                    for hemi in sub_files.regions:
+                    for hemi in sub_files.hemispheres:
                         interp_to.append(
                             mesh_io.read(
                                 sub_files.get_surface(
-                                    hemi,
                                     'central',
+                                    hemi,
                                     self.interpolation_subsampling)
                                     )
                         )
@@ -2766,26 +2782,24 @@ class TDCSLEADFIELD(LEADFIELD):
 
         # Run Leadfield
         dset = 'mesh_leadfield/leadfields/tdcs_leadfield'
-        logger.info('Running Leadfield')
 
+        logger.info('Running Leadfield')
         c = SimuList.cond2elmdata(self, w_elec)
         fem.tdcs_leadfield(
             w_elec, c, electrode_surfaces, fn_hdf5, dset,
-            current=1., roi=roi,
+            current=current, roi=roi,
             post_pro=post_pro, field=self.field,
             solver_options=self.solver_options,
             n_workers=cpus,
-            input_type=input_type
+            input_type=input_type,
+            weigh_by_area=weigh_by_area,
         )
 
         with h5py.File(fn_hdf5, 'a') as f:
-            f[dset].attrs['electrode_names'] = [el.name.encode()
-                                                for el in self.electrode]
+            f[dset].attrs['electrode_names'] = [el.name for el in self.electrode]
             f[dset].attrs['reference_electrode'] = self.electrode[0].name
-            f[dset].attrs['electrode_pos'] = [
-                el.centre for el in self.electrode]
-            f[dset].attrs['electrode_cap'] = self.eeg_cap.encode() \
-                if self.eeg_cap is not None else 'none'
+            f[dset].attrs['electrode_pos'] = [el.centre for el in self.electrode]
+            f[dset].attrs['electrode_cap'] = self.eeg_cap or "none"
             f[dset].attrs['electrode_tags'] = electrode_surfaces
             f[dset].attrs['tissues'] = self.tissues
             f[dset].attrs['field'] = self.field

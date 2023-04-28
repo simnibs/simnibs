@@ -74,7 +74,7 @@ class TestCSV:
         extra_cols = [['a2'], ['b2']]
         extra = [None, None]
         f = tempfile.NamedTemporaryFile(delete=False)
-        csv_reader.write_csv_positions(f.name, type_, coordinates, extra, name, extra_cols, header)
+        csv_reader.write_csv_positions(f.name, type_, coordinates, name, extra, extra_cols, header)
         with open(f.name, 'r') as f:
             assert f.readline().strip() == 'type,x,y,z,extra1,extra2'
             assert f.readline().strip() == 'Generic,1.0,2.0,3.0,a1,a2'
@@ -91,10 +91,25 @@ class TestCSV:
         extra = [None, np.array([9, 8, 7], dtype=float), None]
 
         f = tempfile.NamedTemporaryFile(delete=False)
-        csv_reader.write_csv_positions(f.name, type_, coordinates, extra, name, extra_cols, header)
+        csv_reader.write_csv_positions(f.name, type_, coordinates, name, extra, extra_cols, header)
         with open(f.name, 'r') as f:
             assert f.readline().strip() == 'Fiducial,1.0,2.0,3.0,fiducial,a2'
             assert f.readline().strip() == 'Electrode,1.2,2.4,3.6,9.0,8.0,7.0,electrode,b2,b3'
+            assert f.readline().strip() == 'ReferenceElectrode,1.2,2.4,7.1'
+
+
+    def test_write_csv_electrode_simple(self):
+        "Test without extra, extra_cols, and header."
+        type_ = ['Fiducial', 'Electrode', 'ReferenceElectrode']
+        coordinates = np.array([[1, 2, 3],
+                                [1.2, 2.4, 3.6],
+                                [1.2, 2.4, 7.1]])
+        name = ['fiducial', 'electrode', None]
+        f = tempfile.NamedTemporaryFile(delete=False)
+        csv_reader.write_csv_positions(f.name, type_, coordinates, name)
+        with open(f.name, 'r') as f:
+            assert f.readline().strip() == 'Fiducial,1.0,2.0,3.0,fiducial'
+            assert f.readline().strip() == 'Electrode,1.2,2.4,3.6,electrode'
             assert f.readline().strip() == 'ReferenceElectrode,1.2,2.4,7.1'
 
 
@@ -109,7 +124,7 @@ class TestCSV:
         extra = [None, None, np.array([4., 5., 6., 7., 8., 9., 10], dtype=float)]
 
         f = tempfile.NamedTemporaryFile(delete=False)
-        csv_reader.write_csv_positions(f.name, type_, coordinates, extra, name, extra_cols, header)
+        csv_reader.write_csv_positions(f.name, type_, coordinates, name, extra, extra_cols, header)
         with open(f.name, 'r') as f:
             assert f.readline().strip() == 'Fiducial,1.0,2.0,3.0,fiducial,a2'
             assert f.readline().strip() == 'ReferenceElectrode,1.2,2.4,7.1'

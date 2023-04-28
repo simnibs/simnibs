@@ -30,6 +30,7 @@ import hashlib
 import tempfile
 import subprocess
 import threading
+from typing import Union
 from functools import partial
 
 import numpy as np
@@ -44,7 +45,7 @@ import h5py
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import path2bin
+from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
 from . import cython_msh
 from . import cgal
 
@@ -2386,6 +2387,40 @@ class Msh:
             return False
         return any_intersections
 
+    def get_outer_skin_points(self, tol: float = 1e-3):
+        """Return indices of points estimated to be on the outer skin surface
+        (i.e., not those inside nasal cavities, ear canals etc.). Outer points
+        are identified by looking for points which do not intersect the mesh in
+        the direction of its normal. This is not perfect but seems to do a
+        reasonable job of identifying the relevant points. These may then be
+        used for projecting electrodes onto the surface.
+
+        PARAMETERS
+        ----------
+        tol : float
+            Tolerance for avoiding self-intersections.
+
+        RETURNS
+        -------
+        indices : ndarray
+            Indices of the outer skin points.
+        """
+        assert tol > 0
+
+        skin_faces = self.elm[self.elm.tag1 == 1005, :3]
+        subset = np.unique(skin_faces-1)
+        m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
+
+        subset = subset if len(subset) < m.nodes.nr else slice(None)
+        n = m.nodes_normals().value[subset]
+        # Avoid self-intersections by moving each point slightly along the test
+        # direction
+        idx = np.unique(m.intersect_ray(m.nodes.node_coord[subset] + tol * n, n)[0][:, 0])
+        if isinstance(subset, slice):
+            return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
+        else:
+            return np.setdiff1d(subset, subset[idx], assume_unique=True)
+
     def get_AABBTree(self):
         """
         Build AABBTree for efficient intersection tests
@@ -3789,7 +3824,33 @@ class ElementData(Data):
                                          np.repeat(baricenters[:, i], 4) *
                                          np.repeat(value[:, j], 4))
 
-        a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        try:
+            a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        except np.linalg.LinAlgError:
+            # The mesh probably contains "duplicate" nodes
+            # TODO fix the mesh instead - then this shouldn't be necessary
+            used_nodes = uq_in[uq_in != -1]-1
+            the_nodes = msh.nodes.node_coord[used_nodes]
+
+            S = np.linalg.svd(A[uq_in != -1], compute_uv=False)
+            to_interp = S[:, 1:].sum(1) < 1e-6
+            to_compute = ~to_interp
+            tree = scipy.spatial.cKDTree(the_nodes[to_compute])
+            di, ix = tree.query(the_nodes[to_interp])
+
+            warnings.warn(
+                ("NumPy raised a `LinAlgError` interpolating to certain nodes "
+                 f"(mean coordinate {the_nodes[to_interp].mean(0)}, "
+                 f"standard deviation {the_nodes[to_interp].std(0)}). "
+                 f"Using nearest neighbor interpolation at {to_interp.sum()} "
+                 f"nodes (maximum distance is {di.max():.5f})."
+                )
+            )
+
+            a = np.zeros(b[uq_in != -1].shape)
+            a[to_compute] = np.linalg.solve(A[uq_in != -1][to_compute], b[uq_in != -1][to_compute])
+            a[to_interp] = a[to_compute][ix]
+
         p = np.hstack([np.ones((np.sum(uq_in != -1), 1)), msh.nodes[uq_in[uq_in != -1]]])
         f = np.einsum('ij, ijk -> ik', p, a)
         nd[uq_in[uq_in != -1]] = f
@@ -4574,7 +4635,7 @@ class NodeData(Data):
         inv_affine = np.linalg.inv(affine)
         nd = np.hstack([msh_th.nodes.node_coord, np.ones((msh_th.nodes.nr, 1))])
         nd = inv_affine.dot(nd.T).T[:, :3]
-        
+
         #handle compartments
         if compartments is None:
             compartments = [[i,] for i in range(v.shape[1])]
@@ -4596,7 +4657,7 @@ class NodeData(Data):
             i = 0
             while i < n:
                 pool.apply_async(cython_msh.interp_grid_nodedata_max,args=(
-                   np.array(n_voxels, dtype=int), field, nd, 
+                   np.array(n_voxels, dtype=int), field, nd,
                    msh_th.elm.node_number_list[i:i+n_elm] - 1,
                    compartments,labelimage,maximage))
                 i += n_elm
@@ -4604,7 +4665,7 @@ class NodeData(Data):
             pool.join()
         else:
             cython_msh.interp_grid_nodedata_max(
-               np.array(n_voxels, dtype=int), field, nd, 
+               np.array(n_voxels, dtype=int), field, nd,
                msh_th.elm.node_number_list - 1,
                compartments,labelimage,maximage)
         del nd
@@ -6479,3 +6540,40 @@ class _GetitemTester():
 
     def __getitem__(self, index):
         return _getitem_one_indexed(self.array, index)
+
+
+def load_subject_surfaces(
+    sub_files: SubjectFiles, surface: str, subsampling: Union[int, None] = None
+):
+    """Load subject-specific surfaces.
+
+    PARARMETERS
+    -----------
+    sub_files : simnibs.utils.file_finder.SubjectFiles
+        SubjectFiles object.
+    surf : str
+        The surface type to load (e.g., 'central').
+    subsampling : int | None
+        The subsampling to load (default = None).
+    """
+    # When a leadfield simulation is run, the hemisphere surfaces are appended
+    # according to the order in SubjectFiles.hemispheres, hence we load them in
+    # the same way here to ensure that the order is the same.
+    return {
+        h: read_gifti_surface(sub_files.get_surface(surface, h, subsampling))
+        for h in sub_files.hemispheres
+    }
+
+def load_subject_morph_data(
+    sub_files: SubjectFiles, data: str, subsampling: Union[int, None] = None,
+):
+    return {
+        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(data, h, subsampling))
+        for h in sub_files.hemispheres
+    }
+
+def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
+    return {
+        h: read_gifti_surface(get_reference_surf(surface, h, resolution))
+        for h in HEMISPHERES
+    }
