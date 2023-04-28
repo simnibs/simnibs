@@ -4,17 +4,15 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>TMSoptimize &#8212; SimNIBS 4.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Neuronavigation Data Import/Export" href="../neuronavigation/neuronavigation.html" />
@@ -64,7 +62,7 @@
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <p></p>
@@ -79,7 +77,7 @@
 <li><p><strong>Desctiption</strong>: Name of head mesh file (<code class="file docutils literal notranslate"><em><span class="pre">subID</span></em><span class="pre">.msh</span></code> file)</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ernie.msh&#39;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ernie.msh&#39;</span>
 </pre></div>
 </div>
 <p></p>
@@ -89,7 +87,7 @@
 <li><p><strong>Desctiption</strong>: Name of output folder</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization/&#39;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tms_optimization/&#39;</span>
 </pre></div>
 </div>
 <p></p>
@@ -104,7 +102,7 @@
 <li><p><strong>Desctiption</strong>: Position of optimization target. Please see <a class="reference internal" href="../coordinates.html#coords-doc"><span class="std std-ref">Coordinates in SimNIBS</span></a> for more information and how to obtain coordinates in SimNIBS</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">20.7</span><span class="p">,</span><span class="w"> </span><span class="mf">83.4</span><span class="p">];</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">43.4</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">20.7</span><span class="p">,</span><span class="w"> </span><span class="mf">83.4</span><span class="p">];</span>
 </pre></div>
 </div>
 <p></p>
@@ -114,7 +112,7 @@
 <li><p><strong>Desctiption</strong>: Direction of the electric field to be optimized. If <code class="code docutils literal notranslate"><span class="pre">None</span></code> (Python) or <code class="code docutils literal notranslate"><span class="pre">[]</span></code> (MATLAB), will optimize the elctric field magnitude. Default: optimize field magnitude</p></li>
 <li><p><strong>Example</strong>: <em>Python/MATLAB</em></p></li>
 </ul>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target_direction</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="p">.</span><span class="n">target_direction</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 </div>
 <p></p>
@@ -326,8 +324,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="../../_sources/documentation/opt_struct/tmsoptimize.rst.txt"

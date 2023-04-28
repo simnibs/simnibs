@@ -4,17 +4,15 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
     <title>ELECTRODE &#8212; SimNIBS 4.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="POSITION" href="position.html" />
@@ -66,9 +64,9 @@
 <p></p>
 </li>
 <li><p><strong>MATLAB</strong></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">electrode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
+<span class="n">electrode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
 </pre></div>
 </div>
 <p></p>
@@ -176,29 +174,29 @@
 <li><p><strong>Description</strong>: number of the channel this electrode is connected to. Corresponds to an entry in the <strong>currents</strong> attribute of the <strong>TDCSLIST</strong> structure</p></li>
 <li><p><strong>Example</strong>: <em>MATLAB</em></p>
 <p>Set the first electrode as an anode and the second as a cathode, 1mA current.</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">];</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">];</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
 <p>Set the one electrode as an anode and the 4 other as cathodes. Connect each cathode to a different channel with a current of 0.25mA</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">];</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">5</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.25e-3</span><span class="p">];</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">5</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
 <p>Instead, connect all cathodes to a single channel. This way, a total current of 1mA will flow through the cathodes, but it will not be equally distributed.</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">]</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
-<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">5</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tdcslist</span><span class="p">.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">]</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">tdcslist</span><span class="p">.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">5</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
 </pre></div>
 </div>
 <p></p>
@@ -238,12 +236,12 @@
 </li>
 <li><p><em>MATLAB</em></p>
 <p>Create an electrode based on points sampled from the head surface</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">definition</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;conf&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">vertices</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="k">...</span><span class="w"></span>
-<span class="w">  </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">72.4</span><span class="p">,</span><span class="w"> </span><span class="mf">81.7</span><span class="p">;</span><span class="k">...</span><span class="w"></span>
-<span class="w">  </span><span class="mf">57.6</span><span class="p">,</span><span class="w"> </span><span class="mf">45.0</span><span class="p">,</span><span class="w"> </span><span class="mf">66.8</span><span class="p">;</span><span class="k">...</span><span class="w"></span>
-<span class="w">  </span><span class="mf">58.7</span><span class="p">,</span><span class="w"> </span><span class="mf">64.5</span><span class="p">,</span><span class="w"> </span><span class="mf">25.8</span><span class="p">;</span><span class="k">...</span><span class="w"></span>
-<span class="w">  </span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">90.21</span><span class="p">,</span><span class="w"> </span><span class="mf">38.4</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">definition</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;conf&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">vertices</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="k">...</span>
+<span class="w">  </span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">72.4</span><span class="p">,</span><span class="w"> </span><span class="mf">81.7</span><span class="p">;</span><span class="k">...</span>
+<span class="w">  </span><span class="mf">57.6</span><span class="p">,</span><span class="w"> </span><span class="mf">45.0</span><span class="p">,</span><span class="w"> </span><span class="mf">66.8</span><span class="p">;</span><span class="k">...</span>
+<span class="w">  </span><span class="mf">58.7</span><span class="p">,</span><span class="w"> </span><span class="mf">64.5</span><span class="p">,</span><span class="w"> </span><span class="mf">25.8</span><span class="p">;</span><span class="k">...</span>
+<span class="w">  </span><span class="o">-</span><span class="mf">0.8</span><span class="p">,</span><span class="w"> </span><span class="mf">90.21</span><span class="p">,</span><span class="w"> </span><span class="mf">38.4</span><span class="p">]</span>
 </pre></div>
 </div>
 <p></p>
@@ -286,13 +284,13 @@
 <ul>
 <li><p><em>MATLAB</em></p>
 <p>Same as the above</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">80</span><span class="p">,</span><span class="w"> </span><span class="mi">80</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">80</span><span class="p">,</span><span class="w"> </span><span class="mi">80</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span>
 </pre></div>
 </div>
 </li>
@@ -324,13 +322,13 @@
 <ul>
 <li><p><em>MATLAB</em></p>
 <p>Same as the above</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">25</span><span class="p">];</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">plug</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">25</span><span class="p">];</span>
 </pre></div>
 </div>
 </li>
@@ -347,11 +345,11 @@
 <ul>
 <li><p>Define a rectangular electrode of dimensions 50x70mm, placed at AF4 and pointing laterally, composed of a saline layer of 4mm and a rubber layer of 2mm.</p>
 <p><em>Python/MATLAB</em></p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;AF4&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;F6&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">]</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;AF4&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;F6&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">]</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]</span>
 </pre></div>
 </div>
 <p></p>
@@ -372,14 +370,14 @@
 <p></p>
 </li>
 <li><p><em>MATLAB</em></p>
-<div class="highlight-MATLAB notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">80</span><span class="w"> </span><span class="mi">80</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">60</span><span class="w"> </span><span class="mi">60</span><span class="p">];</span><span class="w"></span>
+<div class="highlight-MATLAB notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">80</span><span class="w"> </span><span class="mi">80</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;ELECTRODE&#39;</span><span class="p">);</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">holes</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">60</span><span class="w"> </span><span class="mi">60</span><span class="p">];</span>
 </pre></div>
 </div>
 <p></p>
@@ -388,12 +386,12 @@
 </li>
 <li><p>Define a 50x50x2mm silicone rubber electrode placed in the middle of a 60x70x10mm sponge soaked in saline solution. Place the electrode over C6 pointing anteriorly</p>
 <p><em>Python/MATLAB</em></p>
-<div class="highlight-MATLAB notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">]</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">]</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions_sponge</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">60</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">]</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C6&#39;</span><span class="w"></span>
-<span class="n">electrode</span><span class="p">.</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;FC6&#39;</span><span class="w"></span>
+<div class="highlight-MATLAB notranslate"><div class="highlight"><pre><span></span><span class="n">electrode</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">]</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">]</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">dimensions_sponge</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">60</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">]</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C6&#39;</span>
+<span class="n">electrode</span><span class="p">.</span><span class="n">pos_ydir</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;FC6&#39;</span>
 </pre></div>
 </div>
 <p></p>
@@ -504,8 +502,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="../../_sources/documentation/sim_struct/electrode.rst.txt"
