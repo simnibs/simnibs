@@ -6574,6 +6574,6 @@ def load_subject_morph_data(
 
 def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     return {
-        h: read_gifti_surface(get_reference_surf(surface, h, resolution))
+        h: read_gifti_surface(get_reference_surf(h, surface, resolution))
         for h in HEMISPHERES
     }

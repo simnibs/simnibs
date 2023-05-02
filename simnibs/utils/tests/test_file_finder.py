@@ -53,15 +53,15 @@ def test_get_atlas(atlas_name, hemi):
 def test_get_reference_surf(surf_type, region, resolution):
     if resolution not in file_finder.fs_resolutions:
         with pytest.raises(AssertionError):
-            file_finder.get_reference_surf(surf_type, region, resolution)
+            file_finder.get_reference_surf(region, surf_type, resolution)
     elif (
         region not in file_finder.HEMISPHERES
         or surf_type not in file_finder.fs_surfaces
     ):
         with pytest.raises(FileNotFoundError):
-            file_finder.get_reference_surf(surf_type, region, resolution)
+            file_finder.get_reference_surf(region, surf_type, resolution)
     else:
-        file_finder.get_reference_surf(surf_type, region, resolution)
+        file_finder.get_reference_surf(region, surf_type, resolution)
 
 
 class TestSubjectFiles:

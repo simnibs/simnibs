@@ -203,7 +203,7 @@ def get_atlas(atlas_name, hemi="both"):
 
 
 def get_reference_surf(
-    surf_type, region, resolution: Union[None, int] = None
+    region, surf_type, resolution: Union[None, int] = None
 ):
     """Gets the file name of a reference surface
 
