@@ -22,8 +22,6 @@ from typing import Union
 import sys
 import os
 import re
-from collections import namedtuple
-from pathlib import Path
 import numpy as np
 import nibabel
 from .. import SIMNIBSDIR
@@ -535,6 +533,8 @@ class SubjectFiles:
 
     def get_surface(self, hemi, surface, subsampling=None):
         """Get surface files, e.g., central, pial, sphere, sphere.reg"""
+        if surface == 'sphere_reg':
+            surface = 'sphere.reg' # keep backwards compatible
         subsampling = self._parse_subsampling(subsampling)
         return Path(self.surface_folder) / subsampling / f"{hemi}.{surface}.gii"
 
