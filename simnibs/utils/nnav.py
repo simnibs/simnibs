@@ -7,7 +7,6 @@ Created on Fri Nov  4 20:37:50 2022
 import io
 import math
 import os.path
-# import regex
 import re
 import warnings
 import numpy as np
@@ -392,7 +391,42 @@ class brainsight:
     
         Data has to be exported to either 'NIfTI:Scanner' or 'World' space.
         One TMSLIST for 'Targets' and one for 'Samples' is returned.
-    
+
+        We expect:
+            - the same T1 scan for nnav and SimNIBS is used
+            - qform and sform to be equal (automatically set by SimNIBS now)
+
+        Notes:
+        ------
+        Sean: "Brainsight supports multiple coordinate systems when exporting to its .txt file format,
+        and the possible options depend on the project's anatomical dataset, specifically:
+
+        * "Brainsight" - this option is always available. It's Brainsight's internal coordinate system,
+            where the X axis goes from right to left, Y axis goes from anterior to posterior, and the Z axis goes
+            from inferior to superior. The origin is the centre of the voxel at the right-anterior-inferior corner.
+            The units are millimetres. SimNIBS calls this `LPS`, short for the direction each axis points towards.
+        * "World" - this option is only available for projects *not* based on a NIfTI file.
+            Since SimNIBS 4 no longer supports anything but NIfTI, this choice is not applicable.
+        * "NIfTI:Aligned" - this option is only available for projects based on a NIfTI file.
+            It corresponds to the qform/sform `NIFTI_XFORM_ALIGNED_ANAT
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
+            coordinate system.
+        * "NIfTI:Scanner" - same but for `NIFTI_XFORM_SCANNER_ANAT
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
+        * "NIfTI:MNI-152" - same but for `NIFTI_XFORM_MNI_152
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
+        * "NIfTI:Talairach" - same but for `NIFTI_XFORM_TALAIRACH
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
+
+        Many NIfTI files have only an sform, or only a qform, or they are both the same.
+        In that case, only one of the `NIfTI:*` options above will be available, and that is what you should use.
+
+        If the sform and qform are different, each will result in a `NIfTI:*` option,
+        but the Brainsight user interface does not indicate which is from the `qform` and which is from the `sform`.
+        To deterime that, you'd need to use a tool like
+        `nifti1_tool <https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/programs/nifti1_tool_sphx.html>`_
+        and look at the `qform_code` and `sform_code`."
+
         Parameter:
         ----------
         fn: str
@@ -420,9 +454,9 @@ class brainsight:
                 elif line.startswith('# Encoding: '):
                     encoding = line.replace("# Encoding: ", "")
 
-            if coord_sys.lower() not in ['nifti:scanner', 'world', 'nifti:aligned']:
+            if coord_sys.lower() != 'nifti:aligned':
                 raise ValueError(f"Coordinate system '{coord_sys}' is not supported. "
-                                 f"Export targes/samples as NIfTI:Scanner (or Dicom/World).")
+                                 f"Export targes/samples as NIfTI:Aligned.")
 
             # Let's only read UTF-8
             if encoding == '':
@@ -456,13 +490,13 @@ class brainsight:
 
             # get matsimnibs arrays in simnibs space and axes definition
             if len(data_targets):
-                names_targets, matsimnibs_targets = self._transform_brainsight(data_targets, coord_sys,
+                names_targets, matsimnibs_targets = self._transform_brainsight(data_targets,
                                                                                col_names_targets)
             else:
                 names_targets, matsimnibs_targets = [], None
 
             if len(data_samples):
-                names_samples, matsimnibs_samples = self._transform_brainsight(data_samples, coord_sys,
+                names_samples, matsimnibs_samples = self._transform_brainsight(data_samples,
                                                                                col_names_samples)
             else:
                 names_samples, matsimnibs_samples = [], None
@@ -492,11 +526,12 @@ class brainsight:
             # return either a single TMSLIST or a list of TMSLIST if samples and targets are found.
             return [tms_list_targets, tms_list_samples]
 
-    def write(self, matsimnibs, fn, names=None, overwrite=False, out_coord_space='NIfTI:Scanner'):
+    def write(self, matsimnibs, fn, names=None, overwrite=False):
         """
         Writes an .txt file that can be imported with the Brainsight neuronavition system.
     
         Input can be a single or multiple 4x4 matsimnibs matrices with coil position and orientation.
+        Output space is NIfTI:aligned.
     
         matsimnibs: np.ndarray or TMSLIST or POSITION
             Coil position/orientation(s) to export.
@@ -507,12 +542,7 @@ class brainsight:
             Output filename.
         overwrite : bool (Default: False)
             Overwrite existing file.
-        out_coord_space : str, one of ['NIfTI:Scanner', 'World']. Default: ''NIfTI:Scanner''
-            Coordinate space of the T1 used for neuronavigation.
-            Rule of thumb:
-                DICOM -> 'World'
-                NIFTI -> ''NIfTI:Scanner'
-    
+
         Written by Ole Numssen, numssen@cbs.mpg.de, 2022.
         """
         # unpack tmslist/position into np.ndarray
@@ -527,16 +557,8 @@ class brainsight:
 
         # check inputs
         assert matsimnibs.shape[:2] == (4, 4), 'Expecting array with shape (4, 4, N instrument marker).'
-        assert out_coord_space.lower() in ['nifti:scanner', 'world'], \
-            f'out_coord_space={out_coord_space} is not one of ["NIfTI:Scanner", "World"].'
 
-        # Let's make sure that the capitalization is correct
-        if out_coord_space.lower() == 'nifti:scanner':
-            out_coord_space = 'NIfTI:Scanner'
-        else:
-            out_coord_space = 'World'
-            # apply RAS->LPS transformation
-            matsimnibs = np.tensordot(_lps2ras(), matsimnibs, axes=[0, 0])
+        out_coord_space = 'NIfTI:Aligned'
 
         # change coil axes definition to brainsight
         matsimnibs = np.matmul(self._simnibs2brainsight(), matsimnibs)
@@ -544,7 +566,7 @@ class brainsight:
         if not fn.lower().endswith('.txt'):
             fn += '.txt'
 
-        assert not os.path.exists(fn) or overwrite, 'File {fn} already exists. Remove or set overwrite=True.'
+        assert not os.path.exists(fn) or overwrite, f'File {fn} already exists. Remove or set overwrite=True.'
 
         with open(fn, 'w') as f:  # correct windows style would be \r\n, but Localite uses \n
             f.write('# Version: 12\n')
@@ -567,13 +589,11 @@ class brainsight:
                         f'{matsimnibs[0, 1, i]:.4f}\t{matsimnibs[1, 1, i]:.4f}\t{matsimnibs[2, 1, i]:.4f}\t' +
                         f'{matsimnibs[0, 2, i]:.4f}\t{matsimnibs[1, 2, i]:.4f}\t{matsimnibs[2, 2, i]:.4f}\n')
 
-    def _transform_brainsight(self, data, coord_sys, col_names):
+    def _transform_brainsight(self, data, col_names):
         """
         Transforms Brainsight coil position/orientation into SimNIBS matsimnibs
     
         data: list of lists with positions
-        coord_sys: str
-            One of ('NIfTI:Scanner', 'World')
         col_names: list of str
     
         Returns:
@@ -586,10 +606,6 @@ class brainsight:
     
         Written by Ole Numssen, numssen@cbs.mpg.de, 2022.
         """
-        if coord_sys.lower() not in ['nifti:scanner', 'world', 'nifti:aligned']:
-            raise ValueError(f"Coordinate system '{coord_sys} is not supported. "
-                             f"Export targes/samples as NIfTI:Scanner (or Dicom/World).")
-
         matsimnibs = np.zeros((len(data), 4, 4))
         pos_names = []
         for pos, i in zip(data, range(len(data))):
@@ -602,10 +618,6 @@ class brainsight:
 
             matsimnibs[i] = np.array(m).astype(float)
             pos_names.append(pos[0])
-
-        # apply world coordinate system transformation (LPS -> RAS for dicoms, nothing for nifti)
-        if coord_sys.lower() == 'world':
-            matsimnibs = _lps2ras() @ matsimnibs
 
         # adjust coil axes definition to simnibs style
         return pos_names, matsimnibs @ self._simnibs2brainsight()
