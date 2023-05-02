@@ -506,12 +506,21 @@ class ElectrodeArrayPair():
     ----------
     center : np.ndarray of float [n_ele/2 x 3]
         Center positions of electrodes in normalized x/y plane (z=0). Array will be copied for second array.
-    radius : np.ndarray of float [n_ele/2] or None
+    radius : np.ndarray of float [n_ele/2] or list [2] or None
         Radii of single circular electrodes in array (in mm). Array will be copied for second array.
-    length_x : np.ndarray of float [n_ele/2] or None
+        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
+        varying between the provided values [min, max].
+        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
+    length_x : np.ndarray of float [n_ele/2] or list [2] or None
         Extensions in x-direction of single rectangular electrodes in array. Array will be copied for second array.
-    length_y : np.ndarray of float [n_ele/2] or None
+        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
+        varying between the provided values [min, max].
+        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
+    length_y : np.ndarray of float [n_ele/2] or list [2] or None
         Extensions in y-direction of single rectangular electrodes in array. Array will be copied for second array.
+        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
+        varying between the provided values [min, max].
+        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
     current : np.ndarray of float [n_ele] or None
         Current through electrodes. Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
@@ -536,16 +545,57 @@ class ElectrodeArrayPair():
 
     def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
                  current_estimator_method="gpc", dirichlet_correction_detailed=False):
-        self.radius = radius
-        self.length_x = length_x
-        self.length_y = length_y
+
+        # check free and fixed parameters
+        if isinstance(radius, list):
+            assert len(radius) == 2, "radius is provided as list, optimizing this parameter but length != 2 [min, max]"
+            self.radius_free = True
+            self.radius_bounds = radius
+            self.radius = np.array([np.mean(radius)])
+        else:
+            self.radius_free = False
+            self.radius_bounds = [0, 0]
+            self.radius = radius
+
+        if isinstance(length_x, list):
+            assert len(length_x) == 2, "length_x is provided as list, optimizing this parameter but length != 2 [min, max]"
+            self.length_x_free = True
+            self.length_x_bounds = length_x
+            self.length_x = np.array([np.mean(length_x)])
+        else:
+            self.length_x_free = False
+            self.length_x_bounds = [0, 0]
+            self.length_x = length_x
+
+        if isinstance(length_y, list):
+            assert len(length_y) == 2, "length_y is provided as list, optimizing this parameter but length != 2 [min, max]"
+            self.length_y_free = True
+            self.length_y_bounds = length_y
+            self.length_y = np.array([np.mean(length_y)])
+        else:
+            self.length_y_free = False
+            self.length_y_bounds = [0, 0]
+            self.length_y = length_y
+
         self.center = center
-        self.n_ele = len(center) * 2                                                        # total number of electrodes
+        self.n_ele = len(radius) * 2                                                        # total number of electrodes
         self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
         self.dirichlet_correction_detailed = dirichlet_correction_detailed
         self.ele_id = np.arange(self.n_ele)
+
+        # order of free parameters
+        self.free_geometry = np.array([self.radius_free,
+                                       self.length_x_free,
+                                       self.length_y_free])
+        self.any_free_geometry = self.free_geometry.any()
+        self.geo_para_bounds = np.vstack((self.radius_bounds,
+                                          self.length_x_bounds,
+                                          self.length_y_bounds))
+        self.geo_para_mean = np.hstack((self.radius,
+                                        self.length_x,
+                                        self.length_y))
 
         # global nodal arrays (set by compile_node_arrays)
         self.node_channel_id = None
@@ -609,6 +659,67 @@ class ElectrodeArrayPair():
         # compile node arrays
         self.compile_node_arrays()
 
+    @property
+    def radius(self):
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        if not hasattr(value, "__len__"):
+            value = np.array([value])
+        self._radius = value
+
+    @property
+    def length_x(self):
+        return self._length_x
+
+    @length_x.setter
+    def length_x(self, value):
+        if not hasattr(value, "__len__"):
+            value = np.array([value])
+        self._length_x = value
+
+    @property
+    def length_y(self):
+        return self._length_y
+
+    @length_y.setter
+    def length_y(self, value):
+        if not hasattr(value, "__len__"):
+            value = np.array([value])
+        self._length_y = value
+
+    def set_geometrical_parameters_optimization(self, params):
+        """
+        Sets the geometrical parameters of electrode and update geometry.
+        Only free parameters during optimization have to be provided in given order:
+        radius, length_x, length_y
+
+        Parameters
+        ----------
+        params : np.ndarray of float [n_free_geometry]
+            Parameters in given order (radius, length_x, length_y) but only free ones
+        """
+        assert np.sum(self.free_geometry) == len(params), "Number of free parameters in electrode does not match " \
+                                                          "number of provided parameters!"
+
+        # the order of the parameters is fixed
+        i_para = 0
+        if self.radius_free:
+            self.radius = params[i_para]
+            i_para += 1
+
+        if self.length_x_free:
+            self.length_x = params[i_para]
+            i_para += 1
+
+        if self.length_y_free:
+            self.length_y = params[i_para]
+            i_para += 1
+
+        # update geometry
+        self.update_geometry()
+
     def update_geometry(self, center=None, radius=None, length_x=None, length_y=None):
         """
         Modifies the geometry of the electrode setup (e.g. for optimization). old parameters are kept if not changed.
@@ -628,12 +739,18 @@ class ElectrodeArrayPair():
             self.center = center
 
         if radius is not None:
+            if not hasattr(radius, "__len__"):
+                radius = np.array([radius])
             self.radius = radius
 
         if length_x is not None:
+            if not hasattr(length_x, "__len__"):
+                length_x = np.array([length_x])
             self.length_x = length_x
 
         if length_y is not None:
+            if not hasattr(length_y, "__len__"):
+                length_y = np.array([length_y])
             self.length_y = length_y
 
         self.electrode_arrays = [ElectrodeArray(center=self.center,
@@ -750,14 +867,14 @@ class CircularArray():
 
     Parameters
     ----------
-    radius_inner : float
-        Radius of inner electrodes
-    distance : float
+    radius_inner : float or np.ndarray of float [2]
+        Radius of inner electrodes or (min, max) values for optimization.
+    distance : float or np.ndarray of float [2]
         Distance between inner and outer electrodes (from center) (in mm)
-    n_outer : int
-        Number of outer electrodes
-    radius_outer : float
-        Radius of outer electrodes, default: same radius as inner electrodes
+    n_outer : int or np.ndarray of int [2]
+        Number of outer electrodes or (min, max) values for optimization.
+    radius_outer : float or np.ndarray of float [2]
+        Radius of outer electrodes, default: same radius as inner electrodes or (min, max) values for optimization.
     current : np.ndarray of float [n_ele]
         Current through electrodes (First entry is central electrode).
         Has to sum up to zero net current.
@@ -780,13 +897,66 @@ class CircularArray():
     electrode_arrays : list of ElectrodeArray instances [1]
         One ElectrodeArray instance containing the Electrode instances
     """
-    def __init__(self, radius_inner, distance, n_outer=4, radius_outer=None, current=None,
-                 current_estimator_method="gpc", dirichlet_correction_detailed=False):
-        self.radius_inner = radius_inner
-        self.distance = distance
-        self.n_ele = n_outer + 1
-        self.n_outer = n_outer
-        self.channel_id = np.array([0] + [1] * n_outer)
+    def __init__(self,
+                 radius_inner, distance, n_outer=4, radius_outer=None,
+                 current=None, current_estimator_method="gpc", dirichlet_correction_detailed=False):
+
+        if radius_outer is None:
+            radius_outer = radius_inner
+
+        # check free and fixed parameters
+        if isinstance(radius_inner, np.ndarray) or isinstance(radius_inner, list):
+            self.radius_inner_free = True
+            self.radius_inner_bounds = radius_inner
+            self.radius_inner = np.mean(radius_inner)
+        else:
+            self.radius_inner_free = False
+            self.radius_inner_bounds = [radius_inner, radius_inner]
+            self.radius_inner = radius_inner
+
+        if isinstance(distance, np.ndarray) or isinstance(distance, list):
+            self.distance_free = True
+            self.distance_bounds = distance
+            self.distance = np.mean(distance)
+        else:
+            self.distance_free = False
+            self.distance_bounds = [distance, distance]
+            self.distance = distance
+
+        if isinstance(n_outer, np.ndarray) or isinstance(n_outer, list):
+            self.n_outer_free = True
+            self.n_outer_bounds = n_outer
+            self.n_outer = int(np.round(np.mean(n_outer)))
+        else:
+            self.n_outer_free = False
+            self.n_outer_bounds = [n_outer, n_outer]
+            self.n_outer = n_outer
+
+        if isinstance(radius_outer, np.ndarray) or isinstance(radius_outer, list):
+            self.radius_outer_free = True
+            self.radius_outer_bounds = radius_outer
+            self.radius_outer = np.mean(radius_outer)
+        else:
+            self.radius_outer_free = False
+            self.radius_outer_bounds = [radius_outer, radius_outer]
+            self.radius_outer = radius_outer
+
+        # order of free parameters
+        self.free_geometry = np.array([self.radius_inner_free,
+                                       self.distance_free,
+                                       self.n_outer_free,
+                                       self.radius_outer_free])
+        self.any_free_geometry = self.free_geometry.any()
+        self.geo_para_bounds = np.vstack((self.radius_inner_bounds,
+                                          self.distance_bounds,
+                                          self.n_outer_bounds,
+                                          self.radius_outer_bounds))
+        self.geo_para_mean = np.hstack((self.radius_inner,
+                                        self.distance,
+                                        self.n_outer,
+                                        self.radius_outer))
+        self.n_ele = self.n_outer + 1
+        self.channel_id = np.array([0] + [1] * self.n_outer)
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
         self.dirichlet_correction = True
@@ -807,11 +977,6 @@ class CircularArray():
         # global electrode arrays (set by compile_electrode_arrays)
         self.ele_id = np.arange(self.n_ele)
         # self.ele_channel_id = self.channel_id
-
-        if radius_outer is None:
-            self.radius_outer = radius_inner
-        else:
-            self.radius_outer = radius_outer
 
         if current is None:
             self.current = np.hstack((1, -1/(self.n_ele-1) * np.ones(self.n_ele-1)))
@@ -834,15 +999,15 @@ class CircularArray():
         # total current of each channel (here we only have 2)
         self.current_channel = np.array([self.current_total, -self.current_total])
 
-        self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(n_outer))
+        self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(self.n_outer))
         self.center = np.array([[0., 0., 0.]])
         self.length_x = np.zeros(self.n_ele)
         self.length_y = np.zeros(self.n_ele)
 
-        for i in range(n_outer):
+        for i in range(self.n_outer):
             self.center = np.vstack((self.center, np.array([[0., 0., 0.]])))
-            self.center[-1, 0] = np.cos(i*(2*np.pi)/n_outer+np.pi/2) * distance
-            self.center[-1, 1] = np.sin(i*(2*np.pi)/n_outer+np.pi/2) * distance
+            self.center[-1, 0] = np.cos(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
+            self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 
             if np.isclose(self.center[-1, 0], 0):
                 self.center[-1, 0] = 0.
@@ -872,6 +1037,41 @@ class CircularArray():
         # compile node arrays
         self.compile_node_arrays()
 
+    def set_geometrical_parameters_optimization(self, params):
+        """
+        Sets the geometrical parameters of electrode and update geometry.
+        Only free parameters during optimization have to be provided in given order:
+        radius_inner, distance, n_outer, radius_outer
+
+        Parameters
+        ----------
+        params : np.ndarray of float [n_free_geometry]
+            Parameters in given order (radius_inner, distance, n_outer, radius_outer) but only free ones
+        """
+        assert np.sum(self.free_geometry) == len(params), "Number of free parameters in electrode does not match " \
+                                                          "number of provided parameters!"
+
+        # the order of the parameters is fixed
+        i_para = 0
+        if self.radius_inner_free:
+            self.radius_inner = params[i_para]
+            i_para += 1
+
+        if self.distance_free:
+            self.distance = params[i_para]
+            i_para += 1
+
+        if self.n_outer_free:
+            self.n_outer = int(np.round(params[i_para]))
+            i_para += 1
+
+        if self.radius_outer_free:
+            self.radius_outer = params[i_para]
+            i_para += 1
+
+        # update geometry
+        self.update_geometry()
+
     def update_geometry(self, radius_inner=None, distance=None, n_outer=None,  radius_outer=None):
         """
         Modifies the geometry of the electrode setup (e.g. for optimization). old parameters are kept if not changed.
@@ -894,12 +1094,14 @@ class CircularArray():
             self.distance = distance
 
         if n_outer is not None:
-            self.n_outer = n_outer
+            self.n_outer = int(np.round(n_outer))
 
         if radius_outer is not None:
             self.radius_outer = radius_outer
 
         self.n_ele = self.n_outer + 1
+        self.ele_id = np.arange(self.n_ele)
+        self.current = np.hstack((1, -1 / (self.n_ele - 1) * np.ones(self.n_ele - 1)))
 
         if self.radius_outer is None:
             self.radius_outer = self.radius_inner

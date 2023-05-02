@@ -155,7 +155,7 @@ class OnlineFEM:
         if method == "TES" and electrode is None:
             raise AssertionError("Please provide TES electrode object for TES simulations.")
 
-    def update_field(self, electrodes=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6):
+    def update_field(self, electrodes=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None):
         """
         Calculating and updating electric field for given coil position (matsimnibs) for TMS or electrode position (TES)
 
@@ -169,10 +169,12 @@ class OnlineFEM:
             obtained from previous runs to accelerate convergence.
         matsimnibs : np.array of float [4 x 4 x n_sim]
             Tensor containing the coil positions and orientations in SimNIBS space for multiple simulations.
-        didt : float
-            Rate of change of coil current (A/s) (e.g. 1 A/us = 1e6 A/s)
         sim_idx_hdf5 : int
             Simulation index, to continue to write in .hdf5 file
+        didt : float
+            Rate of change of coil current (A/s) (e.g. 1 A/us = 1e6 A/s)
+        fn_electrode_txt : str, optional, default: None
+            Filename of .txt file containing the electrode node coords and the optimized currents
 
         Returns
         -------
@@ -205,7 +207,8 @@ class OnlineFEM:
             ############################################################################################################
             if self.method == "TES" and self.dirichlet_correction:
                 self.v = self.solve_dirichlet_correction(b=self.b,
-                                                         electrode=self.electrode[i_sim])
+                                                         electrode=self.electrode[i_sim],
+                                                         fn_electrode_txt=fn_electrode_txt)
             else:
                 self.v = self.solve(b=self.b)
 
@@ -383,7 +386,7 @@ class OnlineFEM:
 
         return v_ele_norm, currents_ele_norm
 
-    def solve_dirichlet_correction(self, b, electrode):
+    def solve_dirichlet_correction(self, b, electrode, fn_electrode_txt=None):
         """
         Solve system of equations Ax=b and corrects input currents such that the electrodes with the same channel ID
         have the same potential. Finally, add Dirichlet node (V=0) to solution.
@@ -394,6 +397,8 @@ class OnlineFEM:
             Right hand side of equation system (with Dirichlet node)
         electrode : CircularArray or ElectrodeArrayPair instance
             Electrode
+        fn_electrode_txt : str, optional, default: None
+            Filename of .txt file containing the electrode node coords and the optimized currents
 
         Returns
         -------
@@ -621,12 +626,15 @@ class OnlineFEM:
 
         # self.logger.log(20, f"Optimal currents: { *I, }")
 
-        # reset to original currents
-        for _electrode_array in electrode.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                _ele.ele_current = _ele.ele_current_init
+        if fn_electrode_txt is not None:
+            np.savetxt(fn_electrode_txt, np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
 
-        electrode.compile_node_arrays()
+        # # reset to original currents
+        # for _electrode_array in electrode.electrode_arrays:
+        #     for _ele in _electrode_array.electrodes:
+        #         _ele.ele_current = _ele.ele_current_init
+        #
+        # electrode.compile_node_arrays()
 
         # np.savetxt("/data/pt_01756/studies/ttf/plots/electrode_coords_nodes_subject_0.txt", np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
         # np.savetxt("/data/pt_01756/studies/ttf/plots/electrode_coords_nodes_subject_0.txt", np.hstack((electrode.node_coords, np.hstack(I)[:, np.newaxis])))

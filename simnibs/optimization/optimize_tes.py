@@ -187,34 +187,34 @@ class TESoptimize():
                                                  label_new=1099,
                                                  label_internal_air=501)
 
-        # create skin surface
-        skin_surface_initial = surface.Surface(mesh=self.mesh_relabel, labels=1005)
-
-        # determine point indices where the electrodes may be applied during optimization
-        # at first make an initial registration
-        skin_surface_initial = self.valid_skin_region(skin_surface=skin_surface_initial,
-                                                      mesh=self.mesh_relabel,
-                                                      additional_distance=0)
-
-        # measure distance between nasion and anterior part of mask
-        self.fn_fiducials = os.path.join(self.ff_subject.eeg_cap_folder, "Fiducials.csv")
-
-        # read fiducials from subject data
-        with open(self.fn_fiducials, newline='') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if "Fiducial" in row and "Nz" in row:
-                    # Nz (Nasion), Iz (Inion), LPHA (left ear), RPA (right ear)
-                    Nz = np.array([row[1], row[2], row[3]]).astype(float)
-
-        # distance from nasion to upper eyebrow is 25 mm (std 5 mm), here we take 30 and determine the add. distance
-        additional_distance = int(np.round(np.min(np.linalg.norm(skin_surface_initial.nodes-Nz, axis=1)) - 30))
+        # # create skin surface
+        # skin_surface_initial = surface.Surface(mesh=self.mesh_relabel, labels=1005)
+        #
+        # # determine point indices where the electrodes may be applied during optimization
+        # # at first make an initial registration
+        # skin_surface_initial = self.valid_skin_region(skin_surface=skin_surface_initial,
+        #                                               mesh=self.mesh_relabel,
+        #                                               additional_distance=0)
+        #
+        # # measure distance between nasion and anterior part of mask
+        # self.fn_fiducials = os.path.join(self.ff_subject.eeg_cap_folder, "Fiducials.csv")
+        #
+        # # read fiducials from subject data
+        # with open(self.fn_fiducials, newline='') as f:
+        #     reader = csv.reader(f)
+        #     for row in reader:
+        #         if "Fiducial" in row and "Nz" in row:
+        #             # Nz (Nasion), Iz (Inion), LPHA (left ear), RPA (right ear)
+        #             Nz = np.array([row[1], row[2], row[3]]).astype(float)
+        #
+        # # distance from nasion to upper eyebrow is 25 mm (std 5 mm), here we take 30 and determine the add. distance
+        # additional_distance = int(np.round(np.min(np.linalg.norm(skin_surface_initial.nodes-Nz, axis=1)) - 30))
 
         # make final skin surface including some additional distance
         self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
         self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface,
                                                    mesh=self.mesh_relabel,
-                                                   additional_distance=additional_distance)
+                                                   additional_distance=0)
 
         # get mapping between skin_surface node indices and global mesh nodes
         self.node_idx_msh = np.where(np.isin(self.mesh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
@@ -371,6 +371,9 @@ class TESoptimize():
         self.logger.log(20, "Setting up optimization algorithm ...")
 
         # equal ROI weighting if None is provided
+        if type(weights) is float or type(weights) is int:
+            weights = None
+
         if weights is None:
             weights = np.ones(len(self.roi)) / len(self.roi)
         elif type(weights) is list:
@@ -611,6 +614,14 @@ class TESoptimize():
             lb = np.array([-np.pi / 2, -np.pi, -np.pi] * np.sum(self.n_ele_free))
             ub = np.array([np.pi / 2, np.pi, np.pi] * np.sum(self.n_ele_free))
 
+        # add bounds of geometry parameters of electrode (if any)
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].any_free_geometry:
+                lb = np.append(lb, self.electrode[i_channel_stim].geo_para_bounds[
+                    self.electrode[i_channel_stim].free_geometry, 0])
+                ub = np.append(ub, self.electrode[i_channel_stim].geo_para_bounds[
+                    self.electrode[i_channel_stim].free_geometry, 1])
+
         bounds = Bounds(lb=lb, ub=ub)
 
         return bounds
@@ -634,27 +645,34 @@ class TESoptimize():
         """
 
         if optimize:
-            self.logger.log(20, "Finding valid initial values for optimization")
-            n_max = 1000
+            self.logger.log(20, "Finding valid initial values for electrode position for optimization.")
+            n_max = 5000
             n_para = len(bounds.lb)
 
             # make a list of possible parameter combinations within bounds
-            para_test_grid = np.random.rand(1000, n_para)
+            para_test_grid = np.random.rand(n_max, n_para)
             para_test_grid = para_test_grid * (bounds.ub - bounds.lb) + bounds.lb
 
             for i in range(n_max):
-                # reformat parameters
-                parameters_array = np.reshape(para_test_grid[i, :], (np.sum(self.n_ele_free), 3))
+                # extract electrode positions from optimal parameters
                 electrode_pos = [[] for _ in range(self.n_channel_stim)]
 
                 i_para = 0
                 for i_channel_stim in range(self.n_channel_stim):
                     for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                        electrode_pos[i_channel_stim].append(parameters_array[i_para, :])
-                        i_para += 1
+                        electrode_pos[i_channel_stim].append(para_test_grid[i, i_para:(i_para + 3)])
+                        i_para += 3
+
+                # extract geometrical electrode parameters from test set of parameters and update electrode
+                for i_channel_stim in range(self.n_channel_stim):
+                    if self.electrode[i_channel_stim].any_free_geometry:
+                        n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+                        self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
+                            para_test_grid[i, i_para:(i_para + n_free_parameters)])
+                        i_para += n_free_parameters
 
                 # test position
-                node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=False)
+                node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos)
                 valid = np.array([type(n) is not str for n in node_idx_dict]).all()
                 self.logger.log(20, f"Testing position #{i + 1}: {para_test_grid[i, :]} -> {valid}")
 
@@ -776,7 +794,7 @@ class TESoptimize():
 
         return skin_surface
 
-    def get_nodes_electrode(self, electrode_pos, plot=False):
+    def get_nodes_electrode(self, electrode_pos):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
         electrode_array.electrodes[i].nodes and electrode_array.electrodes[i].node_area.
@@ -788,8 +806,6 @@ class TESoptimize():
             Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
-        plot : bool, optional, default: False
-            Generate output files for plotting (debugging)
 
         Returns
         -------
@@ -983,16 +999,18 @@ class TESoptimize():
                                              (self.electrode[
                                                   i_channel_stim].current_estimator.channel_id == _ele.channel_id)
                             _ele.ele_current = currents_estimate[mask_estimator]
+            else:
+
+                # reset to original currents
+                for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                    for _ele in _electrode_array.electrodes:
+                        _ele.ele_current = _ele.ele_current_init
+
+                self.electrode[i_channel_stim].compile_node_arrays()
 
         # compile node arrays
         for i_channel_stim in range(self.n_channel_stim):
             self.electrode[i_channel_stim].compile_node_arrays()
-
-        # plot electrode nodes with associated current
-        if plot:
-            for i_channel_stim in range(self.n_channel_stim):
-                data = np.hstack((self.electrode[i_channel_stim].node_coords, self.electrode[i_channel_stim].node_current[:, np.newaxis]))
-                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"), data)
 
         return node_idx_dict
 
@@ -1019,7 +1037,7 @@ class TESoptimize():
 
         # assign surface nodes to electrode positions and estimate optimal currents
         # start = time.time()
-        node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos, plot=plot)
+        node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos)
         # stop = time.time()
         # print(f"Time: get_nodes_electrode: {stop-start}")
 
@@ -1035,11 +1053,27 @@ class TESoptimize():
 
             # solve system
             if self.dirichlet_correction:
-                v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
+                if plot:
+                    fn_electrode_txt = os.path.join(self.plot_folder,
+                                                    f"electrode_coords_nodes_subject_{i_channel_stim}.txt")
+                else:
+                    fn_electrode_txt = None
+
+                v = self.ofem.solve_dirichlet_correction(b=b,
+                                                         electrode=self.electrode[i_channel_stim],
+                                                         fn_electrode_txt=fn_electrode_txt)
+
                 # store number of dirichlet iterations for convergence analysis
                 self.n_iter_dirichlet_correction[i_channel_stim].append(self.ofem.n_iter_dirichlet_correction)
             else:
                 v = self.ofem.solve(b)
+
+                if plot:
+                    fn_electrode_txt = os.path.join(self.plot_folder,
+                                                    f"electrode_coords_nodes_subject_{i_channel_stim}.txt")
+                    np.savetxt(fn_electrode_txt,
+                               np.hstack((self.electrode[i_channel_stim].node_coords,
+                                          self.electrode[i_channel_stim].node_current[:, np.newaxis])))
 
             # Determine electric field in ROIs
             #start = time.time()
@@ -1104,23 +1138,28 @@ class TESoptimize():
         parameters_str = f"Parameters: {parameters}"
         self.logger.log(20, parameters_str)
 
-        # reformat parameters
-        parameters_array = np.reshape(parameters, (np.sum(self.n_ele_free), 3))
+        # extract electrode positions from parameters
         self.electrode_pos = [[] for _ in range(self.n_channel_stim)]
 
         i_para = 0
         for i_channel_stim in range(self.n_channel_stim):
             for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                self.electrode_pos[i_channel_stim].append(parameters_array[i_para, :])
-                i_para += 1
+                self.electrode_pos[i_channel_stim].append(parameters[i_para:(i_para + 3)])
+                i_para += 3
+
+        # extract geometrical electrode parameters from optimal parameters and update electrode
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].any_free_geometry:
+                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+                self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
+                    parameters[i_para:(i_para + n_free_parameters)])
+                i_para += n_free_parameters
 
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
         # compute goal function value
         goal_fun_value = self.compute_goal(e)
-
-        self.n_sim += 1
 
         self.logger.log(20, f"Goal ({self.goal}): {goal_fun_value:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
         self.logger.log(20, "-"*len(parameters_str))
@@ -1219,17 +1258,13 @@ class TESoptimize():
             # weight and sum the goal function values of the ROIs
             y_weighted_sum = np.sum(y * self.weights)
 
+        self.n_sim += 1
+
         return y_weighted_sum
 
     def optimize(self):
         """
-        Runs the optimization problem
-
-        Returns
-        -------
-        parameters : list of np.ndarray [3]
-            List containing the optimal parameters for each freely movable electrode array
-            [np.array([beta_1, lambda_1, alpha_1]), np.array([beta_2, lambda_2, alpha_2]), ...]
+        Runs the optimizer
         """
         # run optimization
         ################################################################################################################
@@ -1289,15 +1324,22 @@ class TESoptimize():
                               options={"finite_diff_rel_step": 0.01})
             self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
 
-        # reformat parameters
-        parameters_array = np.reshape(result.x, (np.sum(self.n_ele_free), 3))
+        # extract electrode positions from optimal parameters
         self.electrode_pos_opt = [[] for _ in range(self.n_channel_stim)]
 
         i_para = 0
         for i_channel_stim in range(self.n_channel_stim):
             for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                self.electrode_pos_opt[i_channel_stim].append(parameters_array[i_para, :])
-                i_para += 1
+                self.electrode_pos_opt[i_channel_stim].append(result.x[i_para:(i_para+3)])
+                i_para += 3
+
+        # extract geometrical electrode parameters from optimal parameters and update electrode
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].any_free_geometry:
+                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+                self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
+                    result.x[i_para:(i_para+n_free_parameters)])
+                i_para += n_free_parameters
 
         fopt = result.fun
         nfev = result.nfev
