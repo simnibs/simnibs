@@ -4,21 +4,22 @@ Brainsight
 ==========
 This module provides import and export functions for the `Brainsight <https://www.rogue-research.com/tms/brainsight-tms/>`_ TMS Navigator software.
 
-Several coordinate systems are supported for export and import of coil data. SimNIBS always uses the `RAS` coordinate system (NIfTI). This and the `LPS` coordinate system used for DICOMS is supported here.
+SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
+Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.
 
-The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. Both are exported in a single `.txt` file.
+The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. Both are exported in a single `.txt` file. In addition, several coordinate systems can be chosen during export. Only `NIfTI:aligned` is supported in the SimNIBS import.
 
 
 How to use 
 -----------
 
-Export from Brainsight
+Exporting from Brainsight
 ######################
-Choose `NIfTI:aligned` (preferred) or `World` coordinate systems while exporting the coil data.
+Choose `NIfTI:aligned` coordinate systems while exporting the coil data.
 
-Import to SimNIBS
+Importing to SimNIBS
 #################
-:code:`simnibs.brainsight.read(fn)` reads exported coil information from Brainsight and returns two :code:`simnibs.TMSLIST()` objects: One for `Targets` and one for `Samples`. The conversions from `LPS` (called `World` in Brainsight) to `RAS` for SimNIBS and the different coil axes definitions  are performed automatically.
+:code:`simnibs.brainsight.read(fn)` reads exported coil position information files from Brainsight and returns two :code:`simnibs.TMSLIST()` objects: One for `Targets` and one for `Samples`. The conversion of the different coil axes definitions is performed automatically.
 
 
 ..  code-block:: python
@@ -34,10 +35,9 @@ Import to SimNIBS
 
     tms_list.pos[0].name  # <- name is filled with data from .txt.
 
-
-Export from SimNIBS
+Exporting from SimNIBS
 ###################
-:code:`simnibs.brainsight.write(obj, fn)` writes an .xml file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.
+:code:`simnibs.brainsight.write(obj, fn)` writes a .txt file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.
 When `World`, i.e. `LPS` coordinate system is selected for export the conversion is performed automatically.
 
 
@@ -51,12 +51,12 @@ When `World`, i.e. `LPS` coordinate system is selected for export the conversion
     tmslist = sim_struct.TMSLIST()
     tmslist.add_position()
     # ... define (multiple) positions ...
-    brainsight().write(tmlist, fn, out_coord_space='LPS')
+    brainsight().write(tmlist, fn)
 
     ### export from POSITION
-    pos = sim_struct.POSITOIN()
+    pos = sim_struct.POSITION()
     pos.matsimnibs = ...
-    brainsight().write(pos, fn) # out_coord_space default is 'RAS'
+    brainsight().write(pos, fn)
 
     ### export from np.ndarray / matsimnibs
     opt = opt_struct.TMSoptimize()
@@ -65,9 +65,9 @@ When `World`, i.e. `LPS` coordinate system is selected for export the conversion
     brainsight().write(opt_mat, fn)
 
 Notes
-------
+-----
 
-* The **same anatomical scan** has to be used for TMS Navigator and SimNIBS.
+* The **same anatomical scan** has to be used for Brainsight and SimNIBS.
 * The **same coil model** has to be used for field simulations and for real stimulation.
 * Coordinate systems used to define coil axes for SimNIBS and Brainsight:
 
