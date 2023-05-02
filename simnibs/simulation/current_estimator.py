@@ -10,22 +10,30 @@ class CurrentEstimator():
     """
     CurrentEstimator class to track TES electrode currents for faster estimation of fake Dirichlet boundary conditions
     """
-    def __init__(self, electrode_pos=None, current=None, method="linear"):
+    def __init__(self, electrode_pos=None, current=None, method="gpc", channel_id=None, ele_id=None, current_sign=None,
+                 current_total=None):
         """
         Constructor for CurrentEstimator class instance
 
         Parameters
         ----------
-        electrode : CircularArray or ElectrodeArrayPair instance
-            TES/TTF/TI Electrode
         electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
             Positions and orientations of ElectrodeArrayPair or CircularArray
         current : list of np.ndarray of float [n_array_free][n_pos x 3]
             Optimal currents corresponding to electrode positions
-        method : str, optional, default: "linear"
+        method : str, optional, default: "gpc"
             Method to estimate the electrode currents:
-            - "GP": Gaussian process
             - "linear": linear regression
+            - "gpc": generalized polynomial chaos
+        channel_id : np.ndarray of int [n_ele_total]
+            Channel IDs of currents
+        ele_id : np.ndarray of int [n_ele_total]
+            Electrode IDs of currents
+        current_sign : np.ndarray of int [n_ele_total]
+            Expected signs of currents (current estimate is checked for validity because estimator can return currents
+            with wrong sign, the estimator will not return a solution in this case)
+        current_total: float
+            Total current (current estimate is scaled to match the total current)
 
         Attributes
         ----------
@@ -37,9 +45,10 @@ class CurrentEstimator():
             Optimal currents corresponding to electrode positions
         self.method : str
             Method to estimate the electrode currents:
-            - "GP": Gaussian process
+            - "linear": linear regression
+            - "gpc": generalized polynomial chaos
         """
-        self.method = method   # "GP" (Gaussian process) "linear" (sklearn.linear_model.LinearRegression) "gpc" (pygpc)
+        self.method = method   # "linear" (sklearn.linear_model.LinearRegression) "gpc" (pygpc)
 
         self.gpc_grid = None
         self.gpc_coeffs = None
@@ -48,6 +57,10 @@ class CurrentEstimator():
         self.gpc_order_list = None
         self.gpc_parameters = None
         self.gpc_n_coeffs_list = None
+        self.channel_id = channel_id
+        self.ele_id = ele_id
+        self.current_sign = current_sign
+        self.current_total = current_total
 
         # reshape electrode_pos from list to nparray [n_train x n_ele]
         if electrode_pos is not None:
@@ -162,11 +175,11 @@ class CurrentEstimator():
         if electrode_pos.ndim == 1:
             electrode_pos = electrode_pos[np.newaxis, :]
 
-        if self.method == "GP":
-            current = get_estimate_gaussian_process(x=electrode_pos,
-                                                    x_train=self.electrode_pos,
-                                                    y_train=self.current)
-        elif self.method == "linear":
+        # if self.method == "GP":
+        #     current = get_estimate_gaussian_process(x=electrode_pos,
+        #                                             x_train=self.electrode_pos,
+        #                                             y_train=self.current)
+        if self.method == "linear":
             if self.electrode_pos.shape[0] > 1:
                 current = get_estimate_linear_regression(x=electrode_pos,
                                                          x_train=self.electrode_pos,
@@ -184,7 +197,18 @@ class CurrentEstimator():
         else:
             raise NotImplementedError(f"Specified current estimation method '{self.method}' not implemented.")
 
-        return current[0]
+        # check for valid sign
+        if not (np.sign(current) == self.current_sign).all():
+            return None
+
+        # normalize currents to total current
+        for i in range(current.shape[0]):
+            mask_neg = current[i, :] < 0
+            mask_pos = current[i, :] > 0
+            current[i, current[i, :] < 0] = current[i, mask_neg] / np.abs(np.sum(current[i, mask_neg])) * self.current_total
+            current[i, current[i, :] > 0] = current[i, mask_pos] / np.abs(np.sum(current[i, mask_pos])) * self.current_total
+
+        return current
 
     def set_gpc_parameters(self, lb, ub):
         """

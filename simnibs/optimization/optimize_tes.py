@@ -3,6 +3,7 @@ import csv
 import time
 import copy
 import h5py
+import types
 import logging
 import datetime
 import numpy as np
@@ -22,6 +23,7 @@ from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ..utils.TI_utils import get_maxTI, get_dirTI
+from ..utils.measures import AUC, integral_focality
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
@@ -77,12 +79,14 @@ class TESoptimize():
         1: e-field vector
     optimizer : str, optional, default: "differential_evolution"
         Optimization algorithm
-    goal : str, optional, default: "mean"
-        Goal function definition:
+    goal : list of str [n_roi], or FunctionType, optional, default: ["mean"]
+        Implemented or user provided goal functions:
         - "mean": average electric field magnitude in ROI
         - "max": 99.9 percentile of electric field magnitude in ROI
         - "mean_max_TI": average maximum envelope of e-field (temporal interference)
         - "mean_max_TI_dir": average maximum envelope of e-field in certain direction (temporal interference)
+        - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float
+          [n_channel_stim][n_roi] containing np.array with e-field
 
     Attributes
     --------------
@@ -118,7 +122,7 @@ class TESoptimize():
                  overlap_factor=1.,
                  polish=True,
                  optimize_init_vals=True,
-                 dataType=0):
+                 dataType=None):
         """
         Constructor of TESoptimize class instance
         """
@@ -184,10 +188,33 @@ class TESoptimize():
                                                  label_internal_air=501)
 
         # create skin surface
-        self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
+        skin_surface_initial = surface.Surface(mesh=self.mesh_relabel, labels=1005)
 
         # determine point indices where the electrodes may be applied during optimization
-        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface, mesh=self.mesh_relabel)
+        # at first make an initial registration
+        skin_surface_initial = self.valid_skin_region(skin_surface=skin_surface_initial,
+                                                      mesh=self.mesh_relabel,
+                                                      additional_distance=0)
+
+        # measure distance between nasion and anterior part of mask
+        self.fn_fiducials = os.path.join(self.ff_subject.eeg_cap_folder, "Fiducials.csv")
+
+        # read fiducials from subject data
+        with open(self.fn_fiducials, newline='') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if "Fiducial" in row and "Nz" in row:
+                    # Nz (Nasion), Iz (Inion), LPHA (left ear), RPA (right ear)
+                    Nz = np.array([row[1], row[2], row[3]]).astype(float)
+
+        # distance from nasion to upper eyebrow is 25 mm (std 5 mm), here we take 30 and determine the add. distance
+        additional_distance = int(np.round(np.min(np.linalg.norm(skin_surface_initial.nodes-Nz, axis=1)) - 30))
+
+        # make final skin surface including some additional distance
+        self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
+        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface,
+                                                   mesh=self.mesh_relabel,
+                                                   additional_distance=additional_distance)
 
         # get mapping between skin_surface node indices and global mesh nodes
         self.node_idx_msh = np.where(np.isin(self.mesh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
@@ -236,6 +263,7 @@ class TESoptimize():
         self.electrode_pos_opt = None
         self.min_electrode_distance = min_electrode_distance
         self.dirichlet_correction = False  # will be checked later if required
+        self.dirichlet_correction_detailed = False  # will be checked later if required
 
         # number of independent stimulation channels (on after another)
         self.n_channel_stim = len(electrode)
@@ -271,14 +299,21 @@ class TESoptimize():
                         for i_channel_stim in range(self.n_channel_stim)]
 
         self.dirichlet_correction = [False] * self.n_channel_stim
+        self.dirichlet_correction_detailed = [False] * self.n_channel_stim
+        
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                if _electrode_array.dirichlet_correction:
+                if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].dirichlet_correction_detailed:
                     self.dirichlet_correction[i_channel_stim] = True
+                    if self.electrode[i_channel_stim].dirichlet_correction_detailed:
+                        self.dirichlet_correction_detailed[i_channel_stim] = True
 
                 for _electrode in _electrode_array.electrodes:
-                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.current
+                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.ele_current
 
+        self.dirichlet_correction = np.array(self.dirichlet_correction).any()
+        self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
+        
         # set initial positions of electrodes if nothing is provided
         assert self.n_channel_stim <= len(init_pos_list), "Please provide initial electrode positions."
 
@@ -320,6 +355,10 @@ class TESoptimize():
                 # set initial orientation alpha to zero
                 self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
 
+        # compile node arrays
+        for _electrode in self.electrode:
+            _electrode.compile_node_arrays()
+
         # plot electrodes
         if self.plot:
             for i_channel_stim in range(self.n_channel_stim):
@@ -337,7 +376,17 @@ class TESoptimize():
         elif type(weights) is list:
             weights = np.array(weights)
 
-        assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
+        if type(goal) is not list:
+            goal = [goal]
+
+        if type(dataType) is not list:
+            dataType = [dataType]
+
+        assert len(dataType) == len(self.roi), "Please provide the dataType 0 (magnitude), 1 (vector) for each goal function"
+
+        if not (isinstance(goal[0], types.FunctionType) and len(goal) == 1):
+            assert len(goal) == len(roi), "Please provide a goal function for each ROI."
+            assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
 
         self.goal = goal
         self.goal_dir = goal_dir
@@ -349,9 +398,18 @@ class TESoptimize():
         self.n_test = 0         # number of tries to place the electrodes
         self.n_sim = 0          # number of final simulations carried out (only valid electrode positions)
 
+        # track goal fun value (in ROI 0) and focality measures for later analysis
+        self.goal_fun_value = [[] for _ in range(self.n_channel_stim)]
+        self.AUC = [[] for _ in range(self.n_channel_stim)]
+        self.integral_focality = [[] for _ in range(self.n_channel_stim)]
+
         # ensure that we will use vector e-field for TI goal functions
-        if self.goal in ["mean_max_TI", "mean_max_TI_dir"]:
-            dataType = 1
+        for i, _dataType in enumerate(dataType):
+
+            if self.goal[i] in ["mean_max_TI", "mean_max_TI_dir"]:
+                dataType[i] = 1
+            else:
+                dataType[i] = 0
 
         # direct and shgo optimizer do not take init vals
         if self.optimizer in ["direct", "shgo"]:
@@ -364,13 +422,14 @@ class TESoptimize():
                                  overlap_factor=self.overlap_factor)
 
         # define gpc parameters for current estimator
-        if self.electrode[i_channel_stim].current_estimator.method == "gpc":
-            n_max = 0
-            for i_channel_stim in range(self.n_channel_stim):
-                self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
-                    lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
-                    ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
-            n_max += self.n_ele_free[i_channel_stim]*3
+        if self.electrode[0].current_estimator is not None:
+            if self.electrode[0].current_estimator.method == "gpc":
+                n_max = 0
+                for i_channel_stim in range(self.n_channel_stim):
+                    self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
+                        lb=bounds.lb[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)],
+                        ub=bounds.ub[n_max:(n_max+self.n_ele_free[i_channel_stim]*3)])
+                    n_max += self.n_ele_free[i_channel_stim]*3
 
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
@@ -414,24 +473,25 @@ class TESoptimize():
         # log summary
         ################################################################################################################
         self.logger.log(25, f"="*100)
-        self.logger.log(25, f"headmodel:             {self.mesh.fn}")
-        self.logger.log(25, f"n_roi:                 {self.n_roi}")
-        self.logger.log(25, f"anisotropy type:       {self.ofem.anisotropy_type}")
-        self.logger.log(25, f"n_channel_stim:        {self.n_channel_stim}")
-        self.logger.log(25, f"fn_eeg_cap:            {self.fn_eeg_cap}")
-        self.logger.log(25, f"fn_electrode_mask:     {self.fn_electrode_mask}")
-        self.logger.log(25, f"FEM solver options:    {self.ofem.solver_options}")
-        self.logger.log(25, f"dirichlet_correction:  {self.dirichlet_correction}")
-        self.logger.log(25, f"optimizer:             {self.optimizer}")
-        self.logger.log(25, f"goal:                  {self.goal}")
-        self.logger.log(25, f"weights:               {self.weights}")
-        self.logger.log(25, f"output_folder:         {self.output_folder}")
-        self.logger.log(25, f"fn_results_hdf5:       {self.fn_results_hdf5}")
+        self.logger.log(25, f"headmodel:                        {self.mesh.fn}")
+        self.logger.log(25, f"n_roi:                            {self.n_roi}")
+        self.logger.log(25, f"anisotropy type:                  {self.ofem.anisotropy_type}")
+        self.logger.log(25, f"n_channel_stim:                   {self.n_channel_stim}")
+        self.logger.log(25, f"fn_eeg_cap:                       {self.fn_eeg_cap}")
+        self.logger.log(25, f"fn_electrode_mask:                {self.fn_electrode_mask}")
+        self.logger.log(25, f"FEM solver options:               {self.ofem.solver_options}")
+        self.logger.log(25, f"dirichlet_correction:             {self.dirichlet_correction}")
+        self.logger.log(25, f"dirichlet_correction_detailed:    {self.dirichlet_correction_detailed}")
+        self.logger.log(25, f"optimizer:                        {self.optimizer}")
+        self.logger.log(25, f"goal:                             {self.goal}")
+        self.logger.log(25, f"weights:                          {self.weights}")
+        self.logger.log(25, f"output_folder:                    {self.output_folder}")
+        self.logger.log(25, f"fn_results_hdf5:                  {self.fn_results_hdf5}")
 
         if self.optimizer_options is not None:
             for key in self.optimizer_options:
                 if key != "bounds":
-                    self.logger.log(25, f"{key}:              {self.optimizer_options[key]}")
+                    self.logger.log(25, f"{key}:                {self.optimizer_options[key]}")
 
         for i_channel_stim in range(self.n_channel_stim):
             self.logger.log(25, f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})")
@@ -603,7 +663,7 @@ class TESoptimize():
 
         return np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
 
-    def valid_skin_region(self, skin_surface, mesh):
+    def valid_skin_region(self, skin_surface, mesh, additional_distance=0.):
         """
         Determine the nodes of the scalp surface where the electrode can be applied (not ears and face etc.)
 
@@ -613,12 +673,21 @@ class TESoptimize():
             Surface of the mesh (mesh_tools/surface.py)
         mesh : Msh object
             Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
+        additional_distance : float, optional, default: 0
+            Additional distance in anterior part to put between original MNI template registration
         """
         nodes_all = copy.deepcopy(skin_surface.nodes)
         tr_nodes_all = copy.deepcopy(skin_surface.tr_nodes)
         # load mask of valid electrode positions (in MNI space)
         mask_img = nib.load(self.fn_electrode_mask)
         mask_img_data = mask_img.get_fdata()
+
+        # add a certain distance to mask out closer to the eyes
+        for i_border in range(mask_img_data.shape[0]):
+            if mask_img_data[:, :, i_border].all():
+                break
+
+        mask_img_data[:, :, (i_border-additional_distance):i_border] = 1
 
         # transform skin surface points to MNI space
         skin_nodes_mni_ras = subject2mni_coords(coordinates=skin_surface.nodes,
@@ -740,7 +809,6 @@ class TESoptimize():
             b = np.zeros((self.n_ele_free[i_channel_stim], 3))
             cx.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
             cy.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
-            # n.append(np.zeros((self.n_ele_free[i_channel_stim], 3)))
             n_tmp = np.zeros((self.n_ele_free[i_channel_stim], 3))
             start_shifted_ = np.zeros((len(electrode_pos[i_channel_stim]), 3))
             distance = []
@@ -765,8 +833,6 @@ class TESoptimize():
 
                 distance.append(_electrode_array.distance)
                 alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
-                # alpha.append(get_array_direction(electrode_pos=electrode_pos[i_array], ellipsoid=self.ellipsoid) +
-                #              _electrode_array.angle)
 
             distance = np.array(distance).flatten()
             alpha = np.array(alpha).flatten()
@@ -802,17 +868,6 @@ class TESoptimize():
             if len(ele_idx) != len(alpha):
                 return "Electrode position: invalid (not all electrodes in valid skin region)"
                 # print("Electrode position: invalid (not all electrodes in valid skin region)")
-
-        # i_ele = 0
-        # ele_idx_rect = []
-        # start_shifted = []
-        #
-        # for i_array, _electrode_array in enumerate(self.electrode.electrode_arrays):
-        #     for _electrode in _electrode_array.electrodes:
-        #         if _electrode.type == "rectangular":
-        #             ele_idx_rect.append(i_ele)
-        #             start_shifted.append(start_shifted_[i_array])
-        #         i_ele += 1
 
         # loop over electrodes and determine node indices
         node_idx_dict = [dict() for _ in range(self.n_channel_stim)]
@@ -864,11 +919,11 @@ class TESoptimize():
                     _electrode.area_skin = np.sum(_electrode.node_area)
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
-                    if _electrode.area_skin < 0.8 * _electrode.area:
+                    if _electrode.area_skin < 0.9 * _electrode.area:
                         # print("Electrode position: invalid (partly overlaps with invalid skin region)")
                         return "Electrode position: invalid (partly overlaps with invalid skin region)"
 
-                    # save node indices (refering to global mesh)
+                    # save node indices (referring to global mesh)
                     _electrode.node_idx = self.node_idx_msh[mask]
 
                     # save node coords (refering to global mesh)
@@ -907,19 +962,6 @@ class TESoptimize():
 
                 i_array_test_start += 1
 
-        if plot:
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_ellipsoid.txt"), electrode_coords_eli_cart)
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_center_subject.txt"), electrode_coords_subject[0])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), node_coords_list[0])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.node_idx_msh])
-            # np.savetxt(os.path.join(self.plot_folder, "electrode_coords_nodes_subject.txt"), self.mesh.nodes.node_coord[self.electrode[0].electrode_arrays[0].electrodes[0].node_idx])
-            for i_channel_stim in range(self.n_channel_stim):
-                node_idx_all = np.hstack([np.hstack(node_idx_dict[i_channel_stim][id])
-                                          for id in node_idx_dict[i_channel_stim].keys()])
-                points_nodes = self.mesh.nodes.node_coord[node_idx_all, :]
-                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"),
-                           points_nodes)
-
         # save electrode_pos in ElectrodeArray instances
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
@@ -927,46 +969,30 @@ class TESoptimize():
 
         # estimate optimal electrode currents based on previous simulations
         for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].current_estimator.method is not None:
-                current_temp = []
-                current_pos = 0
-                current_neg = 0
+            if self.electrode[i_channel_stim].current_estimator is not None:
 
-                if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                    currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
-                    i_ele_global = 0
+                # estimate optimal currents electrode wise
+                currents_estimate = self.electrode[i_channel_stim].estimate_currents(electrode_pos[i_channel_stim])
 
-                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                    for _electrode in _electrode_array.electrodes:
-                        if self.electrode[i_channel_stim].optimize_all_currents_at_once:
-                            if currents_estimate is not None and (np.sign(currents_estimate[i_ele_global])==_electrode.current_sign):
-                                _electrode.current = currents_estimate[i_ele_global]
-                            else:
-                                _electrode.current = _electrode.current_init
-                            i_ele_global += 1
-                        else:
-                            _electrode.estimate_currents(electrode_pos[i_channel_stim])
-                            if _electrode.current is None or (np.sign(currents_estimate[i_ele_global])!=_electrode.current_sign):
-                                _electrode.current = _electrode.current_init
-                        current_temp.append(_electrode.current)
-                        # sum up current for scaling
-                        # estimator does not know about real total current and has to be corrected
-                        if _electrode.current < 0:
-                            current_neg += _electrode.current
-                        else:
-                            current_pos += _electrode.current
+                # write currents in electrodes
+                if currents_estimate is not None:
+                    currents_estimate = currents_estimate.flatten()
+                    for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                        for _ele in _electrode_array.electrodes:
+                            mask_estimator = (self.electrode[i_channel_stim].current_estimator.ele_id == _ele.ele_id) * \
+                                             (self.electrode[
+                                                  i_channel_stim].current_estimator.channel_id == _ele.channel_id)
+                            _ele.ele_current = currents_estimate[mask_estimator]
 
-                # scale current to match total current
-                current_temp_scaled = []
-                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                    for _electrode in _electrode_array.electrodes:
-                        if _electrode.current < 0:
-                            _electrode.current = _electrode.current/np.abs(current_neg) * self.electrode[i_channel_stim].current_total
-                        else:
-                            _electrode.current = _electrode.current/np.abs(current_pos) * self.electrode[i_channel_stim].current_total
-                        current_temp_scaled.append(_electrode.current)
+        # compile node arrays
+        for i_channel_stim in range(self.n_channel_stim):
+            self.electrode[i_channel_stim].compile_node_arrays()
 
-                self.logger.log(20, f'Estimating currents of stimulation {i_channel_stim}: { *current_temp_scaled, }')
+        # plot electrode nodes with associated current
+        if plot:
+            for i_channel_stim in range(self.n_channel_stim):
+                data = np.hstack((self.electrode[i_channel_stim].node_coords, self.electrode[i_channel_stim].node_current[:, np.newaxis]))
+                np.savetxt(os.path.join(self.plot_folder, f"electrode_coords_nodes_subject_{i_channel_stim}.txt"), data)
 
         return node_idx_dict
 
@@ -1008,7 +1034,7 @@ class TESoptimize():
             b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
 
             # solve system
-            if self.dirichlet_correction[i_channel_stim]:
+            if self.dirichlet_correction:
                 v = self.ofem.solve_dirichlet_correction(b=b, electrode=self.electrode[i_channel_stim])
                 # store number of dirichlet iterations for convergence analysis
                 self.n_iter_dirichlet_correction[i_channel_stim].append(self.ofem.n_iter_dirichlet_correction)
@@ -1022,7 +1048,7 @@ class TESoptimize():
                     e[i_channel_stim][i_roi] = None
                     self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
                 else:
-                    e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType)
+                    e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType[i_roi])
             #stop = time.time()
             #print(f"Time: calc fields: {stop - start}")
 
@@ -1091,66 +1117,107 @@ class TESoptimize():
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
+        # compute goal function value
+        goal_fun_value = self.compute_goal(e)
+
+        self.n_sim += 1
+
+        self.logger.log(20, f"Goal ({self.goal}): {goal_fun_value:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
+        self.logger.log(20, "-"*len(parameters_str))
+
+        return goal_fun_value
+
+    def compute_goal(self, e):
+        """
+        Computes goal function value from electric field.
+
+        Parameters
+        ----------
+        e: list of list of np.ndarrays of float [n_channel_stim][n_roi][n_roi_nodes]
+            Electric fields from simulated simulation conditions and ROIs. Containing arrays can contain e-field
+            magnitude (dataType=0) or e-field vectors (dataType=1).
+            Examples:
+            - standard TES montages with 2 electrodes have n_channel_stim=1 (only one simulation is performed)
+            - TES center surround montages have also n_channel_stim=1 because only one simulation has to be performed
+            - TTF montages with two pairs of electrode arrays, i.e. 2x2 arrays with 9 electrodes each have
+              n_channel_stim=2 because the channels have to be computed separately.
+            - TI montages have also n_channel_stim=2 because the two superimposed fields have to be computed
+              separately.
+
+        Returns
+        -------
+        goal_fun_value : float
+            Accumulated goal function value. The average is taken over all stimulation conditions and the weighted
+            average is taken according to self.weights over the different goal functions of the ROIs.
+        """
         # calculate goal function value for every ROI
-        y = np.zeros((self.n_channel_stim, self.n_roi))     # shape: [n_channel_stim x n_roi]
+        y = np.zeros((self.n_channel_stim, self.n_roi))  # shape: [n_channel_stim x n_roi]
 
         if e is None:
             self.logger.log(20, f"Goal ({self.goal}): 1.0")
             return 1.0
+
+        # user provided goal function
+        elif isinstance(self.goal[0], types.FunctionType):
+            y_weighted_sum = self.goal[0](e)
+
+        # implemented goal functions
         else:
-            # mean electric field in the roi
-            if self.goal == "mean":
+            for i_roi in range(self.n_roi):
                 for i_channel_stim in range(self.n_channel_stim):
-                    for i_roi in range(self.n_roi):
+                    # mean electric field in the roi
+                    if self.goal[i_roi] == "mean":
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
 
-            # max electric field in the roi (percentile)
-            elif self.goal == "max":
-                for i_channel_stim in range(self.n_channel_stim):
-                    for i_roi in range(self.n_roi):
+                    # max electric field in the roi (percentile)
+                    elif self.goal[i_roi] == "max":
                         if e[i_channel_stim][i_roi] is None:
                             self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
                             return 1.0
                         else:
                             y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
 
-            # mean of max envelope for TI fields
-            elif self.goal == "mean_max_TI":
-                for i_roi in range(self.n_roi):
-                    # gather fields with different frequencies
-                    for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
+                # mean of max envelope for TI fields
+                if self.goal[i_roi] == "mean_max_TI":
+                    if e[0][i_roi] is None or e[1][i_roi] is None:
+                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                        return 1.0
                     y[0, i_roi] = -np.mean(get_maxTI(E1_org=e[0][i_roi], E2_org=e[1][i_roi]))
                     y[1, i_roi] = y[0, i_roi]
 
-            # mean of max envelope for TI fields in given direction
-            elif self.goal == "mean_max_TI_dir":
-                for i_roi in range(self.n_roi):
-                    # gather fields with different frequencies
-                    for i_channel_stim in range(self.n_channel_stim):
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
+                # mean of max envelope for TI fields in given direction
+                elif self.goal[i_roi] == "mean_max_TI_dir":
+                    if e[0][i_roi] is None or e[1][i_roi] is None:
+                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
+                        return 1.0
                     y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
                     y[1, i_roi] = y[0, i_roi]
-            else:
-                raise NotImplementedError(f"Specified goal: '{self.goal}' not implemented as goal function.")
 
-        # average over all stimulations (channel_stim)
-        y = np.mean(y, axis=0)
+            # track focality measures and goal function values
+            for i_channel_stim in range(self.n_channel_stim):
+                # compute integral focality
+                self.integral_focality[i_channel_stim].append(
+                    integral_focality(e1=e[i_channel_stim][0],
+                                      e2=e[i_channel_stim][1],
+                                      v1=self.roi[0].vol,
+                                      v2=self.roi[1].vol))
 
-        # weight and sum the goal function values of the ROIs
-        y_weighted_sum = np.sum(y * self.weights)
-        self.n_sim += 1
+                # compute auc
+                self.AUC[i_channel_stim].append(AUC(e1=e[0][0],
+                                                    e2=e[0][1]))
 
-        self.logger.log(20, f"Goal ({self.goal}): {y_weighted_sum:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
-        self.logger.log(20, "-"*len(parameters_str))
+                # goal fun value in roi 0
+                self.goal_fun_value[i_channel_stim].append(np.mean(y[i_channel_stim, 0]))
+
+            # average over all stimulations (channel_stim)
+            y = np.mean(y, axis=0)
+
+            # weight and sum the goal function values of the ROIs
+            y_weighted_sum = np.sum(y * self.weights)
 
         return y_weighted_sum
 
@@ -1258,11 +1325,15 @@ class TESoptimize():
                                   goal=self.goal,
                                   n_test=self.n_test,
                                   n_sim=self.n_sim,
-                                  n_iter_dirichlet_correction=self.n_iter_dirichlet_correction)
+                                  n_iter_dirichlet_correction=self.n_iter_dirichlet_correction,
+                                  goal_fun_value=self.goal_fun_value,
+                                  AUC=self.AUC,
+                                  integral_focality=self.integral_focality)
 
 
-def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh, electrode, goal,
-                              n_test=None, n_sim=None, n_iter_dirichlet_correction=None):
+def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh,
+                              electrode, goal, n_test=None, n_sim=None, n_iter_dirichlet_correction=None,
+                              goal_fun_value=None, AUC=None, integral_focality=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
 
@@ -1296,6 +1367,12 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
     n_iter_dirichlet_correction : list of int [n_channel_stim][n_iter], optional, default: None
         Number of iterations required to determine optimal currents in case of dirichlet correction
         for each call of "solve_dirichlet_correction"
+    goal_fun_value : list of list of float [n_channel_stim][n_opt_runs]
+        Goal function values of all stimulation conditions during optimization of ROI 0
+    AUC : list of list of float [n_channel_stim][n_opt_runs]
+        Area under curve focality measure for all stimulation conditions.
+    integral_focality : list of list of float [n_channel_stim][n_opt_runs]
+        Integral focality measure for all stimulation conditions.
     """
 
     def sep(x):
@@ -1389,6 +1466,15 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         f.create_dataset(data=nfev, name="optimizer/nfev")
         f.create_dataset(data=time, name="optimizer/time")
         f.create_dataset(data=goal, name="optimizer/goal")
+
+        if goal_fun_value is not None:
+            f.create_dataset(data=np.array(goal_fun_value), name="optimizer/goal_fun_value")
+
+        if AUC is not None:
+            f.create_dataset(data=np.array(AUC), name="optimizer/AUC")
+
+        if integral_focality is not None:
+            f.create_dataset(data=np.array(integral_focality), name="optimizer/integral_focality")
 
         if n_iter_dirichlet_correction is not None:
             for i_channel_stim, n_iter in enumerate(n_iter_dirichlet_correction):

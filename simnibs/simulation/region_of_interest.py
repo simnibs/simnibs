@@ -84,6 +84,8 @@ class RegionOfInterest:
     con : np.ndarray of float [n_ele x 3(4)], optional, default: None
         Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
         be calculated in the nodes only.
+    vol : float, optional
+        Volume or area of ROI (required for focality measures)
 
     Attributes
     ----------
@@ -109,7 +111,7 @@ class RegionOfInterest:
     n_tet_mesh : int
         Number of tetrahedra in the whole head mesh
     """
-    def __init__(self, mesh, points, con=None, gradient=None, out_fill=0):
+    def __init__(self, mesh, points, con=None, gradient=None, out_fill=0, vol=None):
         """
         Initializes RegionOfInterest class instance
         """
@@ -118,6 +120,7 @@ class RegionOfInterest:
         self.n_points = self.points.shape[0]
         self.con = con
         self.sF = None
+        self.vol = vol
 
         # crop mesh that only tetrahedra are included
         mesh_cropped = mesh.crop_mesh(elm_type=4)

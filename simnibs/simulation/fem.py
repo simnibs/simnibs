@@ -754,26 +754,29 @@ class FEMSystem(object):
         return S
 
     def assemble_tdcs_neumann_rhs(self, electrodes, currents, input_type='tag', areas=None):
-        ''' Assemble the RHS for a tDCS simulation with Neumann boundary conditions 
+        '''
+        Assemble the RHS for a tDCS simulation with Neumann boundary conditions
 
         Parameters:
         ---------------
         electrodes: list of np.ndarray [n_electrodes]
-            list of the surface tags or nodes where the currents to be applied.
+            list of the surface tags or node indices where the currents will be applied.
             WARNING: should NOT include the ground electrode
         currents: list of np.ndarray [n_electrodes]
-            list of the currents in each surface
+            list of the currents in each surface (or already node-wise).
+            The current can be given for the whole electrode. In this case, the node current will be calculated
+            according to the node area. The current can also be provided already node-wise it will then be directly
+            used to construct the RHS.
             WARNING: should NOT include the ground electrode
         input_type: 'tag' or 'node' (optional)
-            Input can be either the tag of the electrode surface (default) or a list of nodes
+            Input can be either the tag of the electrode surface (default) or a list of nodes,
         areas: np.ndarray of float [N_nodes]
-            All nodes in the mesh
+            Areas of all nodes in the mesh
 
         Returns:
         -------------
         b: np.ndarray
             Right-hand-side of FEM system
-
         '''
         #if input_type == 'node':
         #    electrodes = np.atleast_2d(electrodes)
@@ -800,16 +803,24 @@ class FEMSystem(object):
         return b
 
     def _tdcs_neumann_rhs_node(self, areas, nodes, current):
-        ''' Assemble the Neumann RHS on a set of nodes
+        '''
+        Assemble the Neumann RHS on a set of nodes
         '''
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
-        total_area = areas[nodes].sum()
-        b[self.dof_map[nodes]] = current / total_area * areas[nodes]
+
+        if (type(current) is not float) and (len(current) == len(nodes)):
+            # current is already provided node-wise
+            b[self.dof_map[nodes]] = current
+        else:
+            # total electrode current is provided and is divided according to node area
+            total_area = areas[nodes].sum()
+            b[self.dof_map[nodes]] = current / total_area * areas[nodes]
 
         return b
 
     def calc_gradient(self, v):
-        ''' Calculates gradients
+        '''
+        Calculates gradients
 
         Parameters
         -----------
