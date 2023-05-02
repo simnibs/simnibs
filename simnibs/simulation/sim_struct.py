@@ -713,11 +713,11 @@ class SimuList(object):
                 c.value = []
             if not c.name:  # for data type reasons
                 c.name = []
-            if not c.distribution_type:
+            if not c._distribution_type:
                 c._distribution_type = []
             cond_mat = np.append(cond_mat, np.array(
                 [('COND', c.name, c.value, c.descrip,
-                  c.distribution_type, c.distribution_parameters)],
+                  c._distribution_type, c.distribution_parameters)],
                 dtype=cond_dt))
 
         mat_cond['cond'] = cond_mat
@@ -893,7 +893,7 @@ class SimuList(object):
                                            dtype=np.string_))
             g.create_dataset('distribution_types',
                              data=np.array(
-                                 [c.distribution_type for c in self.cond],
+                                 [c._distribution_type for c in self.cond],
                                  dtype=np.string_))
 
             distribution_parameters = np.nan * \
@@ -1134,7 +1134,7 @@ class TMSLIST(SimuList):
             'mesh property not set appropriately!'
         # gPC
         for c in self.cond:
-            if c.distribution_type:
+            if c._distribution_type:
                 logger.warning(
                     'Distribution value for conductivity found, starting gPC')
                 fn = self.run_gpc(fn_simu, cpus=cpus)
@@ -1781,7 +1781,7 @@ class TDCSLIST(SimuList):
             raise ValueError('The mesh for this simulation is not set')
 
         for c in self.cond:
-            if c.distribution_type:
+            if c._distribution_type:
                 logger.warning(
                     'Distribution value for conductivity found, starting gPC')
                 return self.run_gpc(fn_simu, cpus=cpus), [None]
