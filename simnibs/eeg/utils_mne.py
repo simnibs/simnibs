@@ -87,7 +87,7 @@ def setup_source_space(
     if subsampling:
         for h in src_from:
             src_from[h]["normals"] = np.loadtxt(
-                m2m.get_morph_data("normals.csv", h, subsampling),
+                m2m.get_morph_data(h, "normals.csv", subsampling),
                 delimiter=",",
             )
     src_from = make_source_spaces(src_from, m2m.subid)

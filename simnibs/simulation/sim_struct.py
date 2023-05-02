@@ -2706,8 +2706,8 @@ class TDCSLEADFIELD(LEADFIELD):
                         interp_to.append(
                             mesh_io.read(
                                 sub_files.get_surface(
-                                    'central',
                                     hemi,
+                                    'central',
                                     self.interpolation_subsampling)
                                     )
                         )

@@ -502,10 +502,10 @@ class SubjectFiles:
         self.hemispheres = HEMISPHERES
 
         self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
-        self.surfaces = {s: {h: self.get_surface(s, h) for h in self.hemispheres} for s in self._standard_surfaces}
+        self.surfaces = {s: {h: self.get_surface(h, s) for h in self.hemispheres} for s in self._standard_surfaces}
 
         self._standard_morph_data = ("thickness", )
-        self.morph_data = {d: {h: self.get_morph_data(d, h) for h in self.hemispheres} for d in self._standard_morph_data}
+        self.morph_data = {d: {h: self.get_morph_data(h, d) for h in self.hemispheres} for d in self._standard_morph_data}
 
         # eeg
 
@@ -533,12 +533,12 @@ class SubjectFiles:
         """
         return os.path.join(self.eeg_cap_folder, cap_name)
 
-    def get_surface(self, surface, hemi, subsampling=None):
+    def get_surface(self, hemi, surface, subsampling=None):
         """Get surface files, e.g., central, pial, sphere, sphere.reg"""
         subsampling = self._parse_subsampling(subsampling)
         return Path(self.surface_folder) / subsampling / f"{hemi}.{surface}.gii"
 
-    def get_morph_data(self, data, hemi, subsampling=None):
+    def get_morph_data(self, hemi, data, subsampling=None):
         """Get morphometry data files, e.g., thickness."""
         subsampling = self._parse_subsampling(subsampling)
         return Path(self.surface_folder) / subsampling / f"{hemi}.{data}"

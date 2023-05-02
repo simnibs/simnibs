@@ -88,7 +88,7 @@ def test_prepare_forward(point_electrodes, solver, sphere3_msh):
 
         for k, v in source_space.items():
             m = mesh_io.Msh(mesh_io.Nodes(v["points"]), mesh_io.Elements(v["tris"] + 1))
-            mesh_io.write_gifti_surface(m, m2m.get_surface("central", k))
+            mesh_io.write_gifti_surface(m, m2m.get_surface(k, "central"))
 
         forward.compute_tdcs_leadfield(
             m2m_dir, fem_dir, str(f_montage), subsampling, point_electrodes, init_kwargs

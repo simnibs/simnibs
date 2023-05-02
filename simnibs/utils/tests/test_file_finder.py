@@ -154,7 +154,7 @@ class TestSubjectFiles:
         m2m = file_finder.SubjectFiles(subpath="/path/to/m2m_subid")
         surface_dir = Path(m2m.surface_folder)
 
-        p = m2m.get_surface(surface, hemi, subsampling)
+        p = m2m.get_surface(hemi, surface, subsampling)
         if subsampling is None:
             assert p == surface_dir / f"{hemi}.{surface}.gii"
         else:
@@ -163,11 +163,11 @@ class TestSubjectFiles:
     @pytest.mark.parametrize('morph_data', ["thickness", "curv"])
     @pytest.mark.parametrize('hemi', ["lh", "rh"])
     @pytest.mark.parametrize('subsampling', [None, 12345])
-    def test_get_morph_data(self, morph_data, hemi, subsampling):
+    def test_get_morph_data(self, hemi, morph_data, subsampling):
         m2m = file_finder.SubjectFiles(subpath="/path/to/m2m_subid")
         surface_dir = Path(m2m.surface_folder)
 
-        p = m2m.get_morph_data(morph_data, hemi, subsampling)
+        p = m2m.get_morph_data(hemi, morph_data, subsampling)
         if subsampling is None:
             assert p == surface_dir / f"{hemi}.{morph_data}"
         else:
