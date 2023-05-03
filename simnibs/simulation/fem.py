@@ -3,6 +3,7 @@
     Functions for assembling and solving FEM systems
 '''
 
+import gc
 import multiprocessing
 import time
 import copy
@@ -1341,6 +1342,8 @@ def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_optio
     current = np.average(np.abs(flux))
     error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current
     logger.info('Estimated current calibration error: {0:.1%}'.format(error))
+    del s
+    gc.collect()
     return el_c / current * v.value
 
 
@@ -1410,6 +1413,9 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
     s = TMSFEM(mesh, cond, solver_options)
     b = s.assemble_rhs(dAdt)
     v = s.solve(b)
+    
+    del s, b
+    gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
 
 
@@ -1500,11 +1506,15 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
     mesh_io.write_msh(out, fn_out)
+    
+    del dAdt, v, b
+    gc.collect()
 
 
 def _finalize_global_solver():
     global tms_global_solver
     del tms_global_solver
+    gc.collect()
 
 
 def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
@@ -1533,6 +1543,9 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     S = TDCSFEMNeumann(mesh, cond, electrode_surface_tags[0])
     b = S.assemble_rhs(electrode_surface_tags[1:], currents[1:])
     v = S.solve(b)
+    
+    del S, b
+    gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
 
 
@@ -1679,6 +1692,9 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             with h5py.File(fn_hdf5, 'a') as f:
                 f[dataset][i] = out_field
 
+        del S, b, v
+        gc.collect()
+        
     # Run simulations (parallel)
     else:
         # Lock has to be passed through inheritance
@@ -1740,6 +1756,9 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset):
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tdcs_global_solver.lock.release()
+    
+    del b, v
+    gc.collect()
 
 
 def _finalize_tdcs_global_solver():
@@ -1751,6 +1770,7 @@ def _finalize_tdcs_global_solver():
     del tdcs_global_grad_matrix
     global tdcs_global_post_pro
     del tdcs_global_post_pro
+    gc.collect()
 
 
 def tms_many_simulations(
@@ -1860,6 +1880,12 @@ def tms_many_simulations(
             with h5py.File(fn_hdf5, 'a') as f:
                 f[dataset][i] = out_field
 
+            del b
+            gc.collect()
+            
+        del S
+        gc.collect()
+
     # Run in parallel
     else:
         # Lock has to be passed through inheritance
@@ -1948,6 +1974,10 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tms_many_global_solver.lock.release()
+    
+    del b
+    gc.collect()
+
 
 
 def _finalize_tms_many_simulations_global_solver():
@@ -1968,6 +1998,7 @@ def _finalize_tms_many_simulations_global_solver():
     del tms_many_global_cond
     del tms_many_global_field
     del tms_many_global_roi
+    gc.collect()
 ### Finished function to run many TMS simulations in parallel ####
 
 def electric_dipole(mesh, cond, dipole_positions, dipole_moments, source_model,
