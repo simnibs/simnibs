@@ -7,7 +7,7 @@ This module provides import and export functions for the `Brainsight <https://ww
 SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
 Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.
 
-The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. Both are exported in a single `.txt` file. In addition, several coordinate systems can be chosen during export. Only `NIfTI:aligned` is supported in the SimNIBS import.
+The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. Both are exported in a single `.txt` file. In addition, several coordinate systems can be chosen during export. Only `NIfTI:Aligned` is supported in the SimNIBS import.
 
 
 How to use 
@@ -15,7 +15,7 @@ How to use
 
 Exporting from Brainsight
 ######################
-Choose `NIfTI:aligned` coordinate systems while exporting the coil data.
+Choose `NIfTI:Aligned` coordinate systems while exporting the coil data.
 
 Importing to SimNIBS
 #################
@@ -38,7 +38,6 @@ Importing to SimNIBS
 Exporting from SimNIBS
 ###################
 :code:`simnibs.brainsight.write(obj, fn)` writes a .txt file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.
-When `World`, i.e. `LPS` coordinate system is selected for export the conversion is performed automatically.
 
 
 .. code-block:: python
