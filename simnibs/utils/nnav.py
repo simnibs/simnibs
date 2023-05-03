@@ -389,7 +389,7 @@ class brainsight:
         """
         Import coil positions/orientations from a BrainSight neuronavigation system.
     
-        Data has to be exported to either 'NIfTI:Scanner' or 'World' space.
+        Data has to be exported from Brainsight to 'NIfTI:Aligned' space.
         One TMSLIST for 'Targets' and one for 'Samples' is returned.
 
         We expect:
@@ -437,7 +437,7 @@ class brainsight:
         results : [TMSLIST, TMSLIST]
             [Targets, Samples] as SimNIBS TMSLIST objects
     
-        Written by Ole Numssen, numssen@cbs.mpg.de; Konstantin Weise, kweise@cbs.mpg.de; 2022.
+        Written by Ole Numssen, numssen@cbs.mpg.de; Konstantin Weise, kweise@cbs.mpg.de; 2023.
         """
         # init empty values in case nothing is found in fn
         coord_sys, encoding = '', ''
@@ -543,7 +543,7 @@ class brainsight:
         overwrite : bool (Default: False)
             Overwrite existing file.
 
-        Written by Ole Numssen, numssen@cbs.mpg.de, 2022.
+        Written by Ole Numssen, numssen@cbs.mpg.de, 2023.
         """
         # unpack tmslist/position into np.ndarray
         if isinstance(matsimnibs, TMSLIST):
