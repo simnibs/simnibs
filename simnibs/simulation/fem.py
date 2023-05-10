@@ -208,7 +208,8 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
 
 
 def calc_J(E, cond):
-    '''Calculates J
+    """
+    Calculates J
 
     Parameters
     ------------
@@ -222,7 +223,7 @@ def calc_J(E, cond):
     ---------
     J: ndarray
         Current density
-    '''
+    """
     if isinstance(E, mesh_io.Data):
         E = E.value
     if isinstance(cond, mesh_io.Data):
@@ -268,12 +269,13 @@ class dofMap(object):
 
 
 class DirichletBC(object):
-    '''Class Defining  dirichlet boundary conditions
+    """
+    Class Defining  dirichlet boundary conditions
+
     Attributes
     ---------
     nodes: list
         List of nodes there the BC should be applied
-
     values: list
         Value at each node
 
@@ -281,17 +283,18 @@ class DirichletBC(object):
     ---------
     nodes: list
         List of nodes there the BC should be applied
-
     values: list
         Value at each node
-    '''
+    """
+
     def __init__(self, nodes, values):
         assert len(nodes) == len(values), 'There should be one value for each node'
         self.nodes = nodes
         self.values = values
 
     def apply(self, A, b, dof_map):
-        ''' Applies the dirichlet BC to the system
+        """
+        Applies the dirichlet BC to the system
         Parameters:
         -------
         A: scipy.sparse.csr
@@ -308,7 +311,7 @@ class DirichletBC(object):
             Righ-hand side, modified
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
-        '''
+        """
         if np.any(~np.in1d(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(A.shape[0], dtype=bool)
@@ -1778,15 +1781,17 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, solver_options
     return v
 
 
-def get_dirichlet_node_index_cog(mesh):
+def get_dirichlet_node_index_cog(mesh, roi=None):
     """
-    Get closest node to center of gravity of head model ensuring that it does not lie on a surface.
-    (indexing starting with 1)
+    Get closest node to center of gravity of head model on lower 10% quantile in z-direction (neck direction)
+    ensuring that it does not lie on a surface. (indexing starting with 1)
 
     Parameters
     ----------
     mesh : Msh object
         Mesh object
+    roi : list of RegionOfInterest instances, optional, default: None
+        List of ROI surfaces. The Dirichlet node will be set such it does not lay on it.
 
     Returns
     -------
@@ -1794,10 +1799,23 @@ def get_dirichlet_node_index_cog(mesh):
         Index of the node with node indexing starting with 1
     """
 
+    # center of whole head model but lower 25% quantile of z-axis (into neck direction)
+    target_coords = np.mean(mesh.nodes.node_coord, axis=0)
+    target_coords[2] = np.quantile(mesh.nodes.node_coord[:, 2], 0.1)
+
     # get list of node indices, which are closest to center of gravity of mesh
     node_idx = np.argsort(np.linalg.norm(
-        mesh.nodes.node_coord - np.mean(mesh.nodes.node_coord, axis=0), axis=1))
-    node_idx_triangles = np.unique(mesh.elm.node_number_list[mesh.elm.triangles-1, :][:, :-1])
+        mesh.nodes.node_coord - target_coords, axis=1))
+    node_idx_triangles = np.unique(mesh.elm.node_number_list[mesh.elm.triangles-1, :][:, :-1]-1)
+
+    if roi is not None:
+        if type(roi) is not list:
+            roi = [roi]
+
+        for _roi in roi:
+            node_idx_triangles = np.hstack((node_idx_triangles, _roi.node_index_list.flatten()))
+
+        node_idx_triangles = np.unique(node_idx_triangles)
 
     # test and return first node, which is not lying on a surface
     for idx in node_idx:

@@ -20,7 +20,7 @@ import matplotlib
 
 # matplotlib.use("Qt5Agg")
 
-output_folder = "/data/pt_01756/studies/ttf/plots"
+output_folder = "/data/pt_01756/studies/ttf/TI_geo_opt"
 # output_folder = "/data/pt_01756/studies/ttf/HDTES_focality_dirichlet_detailed"
 # output_folder = "/home/kporzig/tmp"
 
@@ -37,10 +37,11 @@ example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 't
 
 optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
 optimize_init_vals = True
-goal = ["mean", "mean"]  # "mean" "mean_max_TI"
+# goal = ["mean", "mean"]  # "mean" "mean_max_TI"
+goal = ["mean_max_TI", "mean_max_TI"]  # "mean" "mean_max_TI"
 # goal = "mean"  # "mean" "mean_max_TI"
-dataType = [0, 0]
-# dataType = 0
+dataType = [1, 1]
+# dataType = [0, 0]
 weights = [1., 0.]
 # weights = None
 constrain_electrode_locations = False
@@ -56,9 +57,9 @@ dirichlet_correction_detailed = True
 print("Initializing Electrode ...")
 # create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=[5, 15], distance=[35., 70.], n_outer=4, radius_outer=[5, 15],
-                                  current_estimator_method=current_estimator_method,
-                                  dirichlet_correction_detailed=dirichlet_correction_detailed)
+# electrode = simnibs.CircularArray(radius_inner=[5, 15], distance=[35., 70.], n_outer=[2, 8], radius_outer=[5, 15],
+#                                   current_estimator_method=current_estimator_method,
+#                                   dirichlet_correction_detailed=dirichlet_correction_detailed)
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
@@ -92,6 +93,18 @@ electrode = simnibs.CircularArray(radius_inner=[5, 15], distance=[35., 70.], n_o
 # electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
 #
 # electrode = [electrode_1, electrode_2]
+
+# create 2 channel of 1 x 1 standard TES montage (Temporal interference) (geometry optimization)
+########################################################################################################################
+center = np.array([[0, 0, 0]])
+radius = np.array([0])
+length_x = [10, 30]
+length_y = [10, 30]
+
+electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
+electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y, current_estimator_method=current_estimator_method)
+
+electrode = [electrode_1, electrode_2]
 
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################

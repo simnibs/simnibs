@@ -101,7 +101,7 @@ class RegionOfInterest:
     gradient : np.array of float [n_tet_mesh_required x 4 x 3]
         Gradient operator of the tetrahedral edges.
     node_index_list :  [n_tet_mesh_required x 4]
-        Connectivity list of the head model (only using the required tetrahedra)
+        Connectivity list of the head model (only using the required tetrahedra) (0 indexed)
     sF : sparse matrix of float [n_points_ROI x n_tet_mesh_required ]
         Sparse matrix for SPR interpolation.
     inside : np.array of bool [n_points]

@@ -50,9 +50,11 @@ class OnlineFEM:
         TMS coil
     electrode : ElectrodeArrayPair or CircularArray instance
         TES electrode
+    dirichlet_node : int
+        Index of dirichlet node (indexing starting with 1)
     """
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
-                 useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None):
+                 useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None):
         """
         Constructor of the OnlineFEM class
         """
@@ -126,7 +128,10 @@ class OnlineFEM:
         self.fn_tensor_nifti = self.ff_subject.tensor_file
 
         # get Dirichlet node index where V=0 (close to center of gravity of mesh but not on a surface)
-        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)  # self.mesh.nodes.node_number[self.mesh.nodes.node_coord[:, 2].argmin()] #   # mesh.nodes.nr
+        if dirichlet_node is None:
+            self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)  # self.mesh.nodes.node_number[self.mesh.nodes.node_coord[:, 2].argmin()] #   # mesh.nodes.nr
+        else:
+            self.dirichlet_node = dirichlet_node
 
         # For TMS we use only tetrahedra (elm_type=4). The triangles (elm_type=3) are removed.
         if self.method == "TMS":

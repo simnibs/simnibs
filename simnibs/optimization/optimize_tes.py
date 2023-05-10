@@ -165,9 +165,6 @@ class TESoptimize():
         self.ff_templates = Templates()
         self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
 
-        # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
-        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)
-
         # Calculate node areas for whole mesh
         self.mesh_nodes_areas = self.mesh.nodes_areas()
 
@@ -454,6 +451,9 @@ class TESoptimize():
 
         # setup FEM
         ################################################################################################################
+        # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
+        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh, roi=self.roi)
+
         self.dataType = dataType
 
         if anisotropy_type is None:
@@ -471,7 +471,8 @@ class TESoptimize():
                               solver_options=solver_options,
                               fn_results=self.fn_results_hdf5,
                               useElements=True,
-                              dataType=self.dataType)
+                              dataType=self.dataType,
+                              dirichlet_node=self.dirichlet_node)
 
         # log summary
         ################################################################################################################
@@ -1238,16 +1239,26 @@ class TESoptimize():
 
             # track focality measures and goal function values
             for i_channel_stim in range(self.n_channel_stim):
+                if "mean_max_TI" in self.goal:
+                    e1 = get_maxTI(E1_org=e[0][0], E2_org=e[1][0])
+                    e2 = get_maxTI(E1_org=e[0][1], E2_org=e[1][1])
+                elif "mean_max_TI_dir" in self.goal:
+                    e1 = get_dirTI(E1=e[0][0], E2=e[1][0])
+                    e2 = get_dirTI(E1=e[0][1], E2=e[1][1])
+                else:
+                    e1 = e[i_channel_stim][0]
+                    e2 = e[i_channel_stim][1]
+
                 # compute integral focality
                 self.integral_focality[i_channel_stim].append(
-                    integral_focality(e1=e[i_channel_stim][0],
-                                      e2=e[i_channel_stim][1],
+                    integral_focality(e1=e1,
+                                      e2=e2,
                                       v1=self.roi[0].vol,
                                       v2=self.roi[1].vol))
 
                 # compute auc
-                self.AUC[i_channel_stim].append(AUC(e1=e[0][0],
-                                                    e2=e[0][1]))
+                self.AUC[i_channel_stim].append(AUC(e1=e1,
+                                                    e2=e2))
 
                 # goal fun value in roi 0
                 self.goal_fun_value[i_channel_stim].append(np.mean(y[i_channel_stim, 0]))
@@ -1347,8 +1358,13 @@ class TESoptimize():
         stop = time.time()
         t_optimize = stop - start
 
-        # plot final solution and electrode position
+        # plot final solution and electrode position (with node-wise dirichlet correction)
         ################################################################################################################
+        self.dirichlet_correction = True
+
+        for _electrode in self.electrode:
+            _electrode.dirichlet_correction_detailed = True
+
         # compute best field again, plot field and electrode position
         e = self.update_field(electrode_pos=self.electrode_pos_opt, plot=True)
 
