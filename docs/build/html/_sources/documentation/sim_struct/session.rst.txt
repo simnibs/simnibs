@@ -105,7 +105,7 @@ Attributes
 
 * **map_to_vol**: *bool, optional*
 
-  * **Description**: Whether to map the fields to a NIfTI volume. The NifTI volume will in the same space as the :file:`m2m_{subID}/T1fs_conform.nii.gz` file.
+  * **Description**: Whether to map the fields to a NIfTI volume. The NifTI volume will be in the same space as the :file:`m2m_{subID}/T1fs_conform.nii.gz` file.
   * **Default**: False
   * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
