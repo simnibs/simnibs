@@ -1,9 +1,17 @@
 # Version: 7
-# Coordinate system: NIfTI:Scanner
+# Coordinate system: NIfTI:Aligned
 # Created by: Brainsight 2.3.5
 # units: millimetres, degrees, milliseconds, and microvolts
 # Encoding: UTF-8
 # Notes: Each column is delimited by a tab. Each value within a column is delimited by a semicolon.
+# Target Name	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2
+Sample 2	15.020	53.062	87.219	-0.997	-0.056	0.056	0.053	-0.997	-0.048	0.059	-0.044	0.997
+Sample 1	-44.198	75.810	65.742	0.712	0.013	0.702	0.321	0.883	-0.342	-0.624	0.469	0.624
+Sample 6	-42.977	0.962	85.362	0.739	0.013	0.674	-0.013	1.000	-0.004	-0.674	-0.006	0.739
+Sample 11	-40.127	-67.042	42.366	0.757	-0.626	0.187	0.252	0.544	0.800	-0.603	-0.559	0.569
+Sample 14	66.067	47.033	57.804	0.592	0.253	-0.765	-0.420	0.907	-0.025	0.688	0.337	0.643
+Sample 18	65.572	-18.315	69.130	0.789	0.104	-0.605	0.097	0.952	0.290	0.606	-0.287	0.742
+Sample 23	52.644	-73.348	39.001	0.854	-0.008	-0.519	0.364	0.723	0.588	0.371	-0.691	0.620
 # Sample Name	Session Name	Index	Assoc. Target	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2	Dist. to Target	Target Error	Angular Error	Twist Error	Stim. Power	Date	Time	Creation Cause	Crosshairs Driver	Offset	Comment	EMG Start	EMG End	EMG Res.	EMG Channels
 Sample 1	Session 1	1	(null)	-44.198	75.810	65.742	0.712	0.013	0.702	0.321	0.883	-0.342	-0.624	0.469	0.624	(null)	(null)	(null)	(null)	(null)	2021-06-25	11:48:47.502	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
 Sample 2	Session 1	2	Sample 1	-44.005	74.694	66.280	0.621	-0.247	0.744	0.494	0.860	-0.126	-0.609	0.446	0.656	1.253	1.225	2.427	-15.884	(null)	2021-06-25	11:49:19.162	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
