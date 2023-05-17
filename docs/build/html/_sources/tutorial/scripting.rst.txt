@@ -82,12 +82,6 @@ If the scripts are not in the same folder as the subject folder, you should also
 * *Python*
 
   .. code-block:: python
-<<<<<<< HEAD
-  
-     import os
-=======
-
->>>>>>> gitlab_master
      from simnibs import sim_struct, run_simnibs
 
      # Initalize a session

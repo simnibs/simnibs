@@ -78,11 +78,7 @@ In both, we use a set of nested structures to define the simulation, and then us
 <p>Add the SimNIBS <em>MATLAB</em> functions to the <em>MATLAB</em> path. In default installations, you can call</p>
 <ul>
 <li><p><strong>Windows:</strong></p>
-<<<<<<< HEAD
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;C:\Users\&lt;USER_NAME&gt;\AppData\Local\SimNIBS\matlab&#39;</span><span class="p">)</span>
-=======
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;C:\Users\&lt;USER_NAME&gt;\AppData\Local\SimNIBS\matlab_tools&#39;</span><span class="p">)</span><span class="w"></span>
->>>>>>> gitlab_master
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;C:\Users\&lt;USER_NAME&gt;\AppData\Local\SimNIBS\matlab_tools&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -90,11 +86,7 @@ In both, we use a set of nested structures to define the simulation, and then us
 <p></p>
 <ul>
 <li><p><strong>Linux:</strong></p>
-<<<<<<< HEAD
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/home/&lt;USER_NAME&gt;/SimNIBS/matlab&#39;</span><span class="p">)</span>
-=======
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/home/&lt;USER_NAME&gt;/SimNIBS/matlab_tools&#39;</span><span class="p">)</span><span class="w"></span>
->>>>>>> gitlab_master
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/home/&lt;USER_NAME&gt;/SimNIBS/matlab_tools&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -102,11 +94,7 @@ In both, we use a set of nested structures to define the simulation, and then us
 <p></p>
 <ul>
 <li><p><strong>MacOS</strong></p>
-<<<<<<< HEAD
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/Users/&lt;USER_NAME&gt;/Applications/SimNIBS/matlab&#39;</span><span class="p">)</span>
-=======
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/Users/&lt;USER_NAME&gt;/Applications/SimNIBS/matlab_tools&#39;</span><span class="p">)</span><span class="w"></span>
->>>>>>> gitlab_master
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">addpath</span><span class="p">(</span><span class="s">&#39;/Users/&lt;USER_NAME&gt;/Applications/SimNIBS/matlab_tools&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
@@ -122,19 +110,7 @@ simulations of different types (TMS or tDCS), sharing the same head model.</p>
 Here, we will assume that the scripts are placed in the same directory as the <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code> directory of the example dataset.
 If the scripts are not in the same folder as the subject folder, you should also give the path to the subject folder.</p>
 <ul>
-<li><p><em>Python</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
-
-<span class="c1"># Initalize a session</span>
-<span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
-<span class="c1"># Name of head mesh</span>
-<span class="n">s</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
-<span class="c1"># Output folder</span>
-<span class="n">s</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tutorial/&#39;</span>
-</pre></div>
-</div>
-</li>
+<li><p><em>Python</em></p></li>
 <li><p><em>MATLAB</em></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Initialize a session</span>
 <span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
