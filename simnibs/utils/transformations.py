@@ -1845,7 +1845,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi="both"):
         )
         labels, _, names = nib.freesurfer.io.read_annot(fn_atlas)
         morph = SurfaceMorph(
-            read_gifti_surface(get_reference_surf("sphere", hemi)),
+            read_gifti_surface(get_reference_surf(hemi, "sphere")),
             read_gifti_surface(subject_files.surfaces["sphere.reg"][hemi]),
             method="nearest",  # we are interpolating labels
         )

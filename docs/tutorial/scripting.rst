@@ -25,7 +25,7 @@ Spyder IDE Setup (optional)
 You can install the `Spyder IDE <https://www.spyder-ide.org>`_ editor by running
 
 .. code-block::
-  
+
   simnibs_python -m pip install spyder==5.3.1
 
 \
@@ -42,12 +42,12 @@ MATLAB
 ''''''
 
 Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installations, you can call
-    
+
 * **Windows:**
 
   .. code-block:: matlab
 
-    addpath('C:\Users\<USER_NAME>\AppData\Local\SimNIBS\matlab')
+    addpath('C:\Users\<USER_NAME>\AppData\Local\SimNIBS\matlab_tools')
 
 \
 
@@ -55,7 +55,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('/home/<USER_NAME>/SimNIBS/matlab')
+    addpath('/home/<USER_NAME>/SimNIBS/matlab_tools')
 
 \
 
@@ -63,7 +63,7 @@ Add the SimNIBS *MATLAB* functions to the *MATLAB* path. In default installation
 
   .. code-block:: matlab
 
-    addpath('/Users/<USER_NAME>/Applications/SimNIBS/matlab')
+    addpath('/Users/<USER_NAME>/Applications/SimNIBS/matlab_tools')
 
 \
 
@@ -82,10 +82,8 @@ If the scripts are not in the same folder as the subject folder, you should also
 * *Python*
 
   .. code-block:: python
-  
-     import os
      from simnibs import sim_struct, run_simnibs
-  
+
      # Initalize a session
      s = sim_struct.SESSION()
      # Name of head mesh
@@ -96,7 +94,7 @@ If the scripts are not in the same folder as the subject folder, you should also
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
     % Initialize a session
     s = sim_struct('SESSION');
     % Name of head mesh
@@ -113,13 +111,13 @@ Setting up a TMS Simulation
 
 
 Now, we want to set-up a TMS simulation.
-To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and selecting a coil model (:ref:`list of avaliable coils <coil_fies>`).
+To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and selecting a coil model (:ref:`list of available coils <coil_fies>`).
 
 
 * *Python*
 
   .. code-block:: python
-  
+
      # Initialize a list of TMS simulations
      tmslist = s.add_tmslist()
      # Select coil
@@ -129,7 +127,7 @@ To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and se
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
     % Initialize a list of TMS simulations
     s.poslist{1} = sim_struct('TMSLIST');
     % Select coil
@@ -141,7 +139,7 @@ posteriorly. You can do it by
 * *Python*
 
   .. code-block:: python
-  
+
      # Initialize a coil position
      pos = tmslist.add_position()
      # Select coil centre
@@ -153,7 +151,7 @@ posteriorly. You can do it by
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
     % Select coil centre
     s.poslist{1}.pos(1).centre = 'C1';
     % Select coil direction
@@ -167,7 +165,7 @@ more coil position, now with the coil pointing towards Cz.
 * *Python*
 
   .. code-block:: python
-  
+
      # Add another position
      pos_superior = tmslist.add_position()
      # Centred at C1
@@ -179,7 +177,7 @@ more coil position, now with the coil pointing towards Cz.
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
     % Centred at C1
     s.poslist{1}.pos(2).centre = 'C1';
     % Pointing towards Cz
@@ -198,7 +196,7 @@ To perform a tDCS simulation, we begin by setting a :ref:`tdcslist_doc` structur
 * *Python*
 
   .. code-block:: python
-  
+
      # Initialize a tDCS simulation
      tdcslist = s.add_tdcslist()
      # Set currents
@@ -208,7 +206,7 @@ To perform a tDCS simulation, we begin by setting a :ref:`tdcslist_doc` structur
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
     % Initialize a tDCS simulation
     s.poslist{2} = sim_struct('TDCSLIST');
     % Set currents
@@ -220,7 +218,7 @@ Let's first set the cathode. Suppose we want a 70x50mm rectangular over C3, poin
 * *Python*
 
   .. code-block:: python
-  
+
      # Initialize the cathode
      cathode = tdcslist.add_electrode()
      # Connect electrode to first channel (-1e-3 mA, cathode)
@@ -240,7 +238,7 @@ Let's first set the cathode. Suppose we want a 70x50mm rectangular over C3, poin
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
      % Connect electrode to first channel (-1e-3 mA, cathode)
      s.poslist{2}.electrode(1).channelnr = 1;
      % Electrode dimension
@@ -260,7 +258,7 @@ Now we need to configure the anode. Let's set a 30x30mm circular electrode over 
 * *Python*
 
   .. code-block:: python
-  
+
      # Add another electrode
      anode = tdcslist.add_electrode()
      # Assign it to the second channel
@@ -278,7 +276,7 @@ Now we need to configure the anode. Let's set a 30x30mm circular electrode over 
 * *MATLAB*
 
   .. code-block:: matlab
-  
+
      % Assign the electrode to the second channel
      s.poslist{2}.electrode(2).channelnr = 2;
      % Electrode diameter

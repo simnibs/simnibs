@@ -6560,7 +6560,7 @@ def load_subject_surfaces(
     # according to the order in SubjectFiles.hemispheres, hence we load them in
     # the same way here to ensure that the order is the same.
     return {
-        h: read_gifti_surface(sub_files.get_surface(surface, h, subsampling))
+        h: read_gifti_surface(sub_files.get_surface(h, surface, subsampling))
         for h in sub_files.hemispheres
     }
 
@@ -6568,12 +6568,12 @@ def load_subject_morph_data(
     sub_files: SubjectFiles, data: str, subsampling: Union[int, None] = None,
 ):
     return {
-        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(data, h, subsampling))
+        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(h, data, subsampling))
         for h in sub_files.hemispheres
     }
 
 def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     return {
-        h: read_gifti_surface(get_reference_surf(surface, h, resolution))
+        h: read_gifti_surface(get_reference_surf(h, surface, resolution))
         for h in HEMISPHERES
     }

@@ -51,17 +51,18 @@
   <section id="brainsight">
 <span id="brainsight-doc"></span><h1>Brainsight<a class="headerlink" href="#brainsight" title="Permalink to this heading">¶</a></h1>
 <p>This module provides import and export functions for the <a class="reference external" href="https://www.rogue-research.com/tms/brainsight-tms/">Brainsight</a> TMS Navigator software.</p>
-<p>Several coordinate systems are supported for export and import of coil data. SimNIBS always uses the <cite>RAS</cite> coordinate system (NIfTI). This and the <cite>LPS</cite> coordinate system used for DICOMS is supported here.</p>
-<p>The Brainsight ecosystem provides two main ways of storing positions/orientations: <cite>Targets</cite> and <cite>Samples</cite>. Both are exported in a single <cite>.txt</cite> file.</p>
+<p>SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
+Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.</p>
+<p>The Brainsight ecosystem provides two main ways of storing positions/orientations: <cite>Targets</cite> and <cite>Samples</cite>. Both are exported in a single <cite>.txt</cite> file. In addition, several coordinate systems can be chosen during export. Only <cite>NIfTI:Aligned</cite> is supported in the SimNIBS import.</p>
 <section id="how-to-use">
 <h2>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this heading">¶</a></h2>
-<section id="export-from-brainsight">
-<h3>Export from Brainsight<a class="headerlink" href="#export-from-brainsight" title="Permalink to this heading">¶</a></h3>
-<p>Choose <cite>NIfTI:aligned</cite> (preferred) or <cite>World</cite> coordinate systems while exporting the coil data.</p>
+<section id="exporting-from-brainsight">
+<h3>Exporting from Brainsight<a class="headerlink" href="#exporting-from-brainsight" title="Permalink to this heading">¶</a></h3>
+<p>Choose <cite>NIfTI:Aligned</cite> coordinate systems while exporting the coil data.</p>
 </section>
-<section id="import-to-simnibs">
-<h3>Import to SimNIBS<a class="headerlink" href="#import-to-simnibs" title="Permalink to this heading">¶</a></h3>
-<p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.read(fn)</span></code> reads exported coil information from Brainsight and returns two <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code> objects: One for <cite>Targets</cite> and one for <cite>Samples</cite>. The conversions from <cite>LPS</cite> (called <cite>World</cite> in Brainsight) to <cite>RAS</cite> for SimNIBS and the different coil axes definitions  are performed automatically.</p>
+<section id="importing-to-simnibs">
+<h3>Importing to SimNIBS<a class="headerlink" href="#importing-to-simnibs" title="Permalink to this heading">¶</a></h3>
+<p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.read(fn)</span></code> reads exported coil position information files from Brainsight and returns two <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code> objects: One for <cite>Targets</cite> and one for <cite>Samples</cite>. The conversion of the different coil axes definitions is performed automatically.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">Import a single Brainsight .txt file as <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">brainsight</span>
@@ -77,10 +78,9 @@
 </div>
 </div>
 </section>
-<section id="export-from-simnibs">
-<h3>Export from SimNIBS<a class="headerlink" href="#export-from-simnibs" title="Permalink to this heading">¶</a></h3>
-<p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.write(obj,</span> <span class="pre">fn)</span></code> writes an .xml file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.
-When <cite>World</cite>, i.e. <cite>LPS</cite> coordinate system is selected for export the conversion is performed automatically.</p>
+<section id="exporting-from-simnibs">
+<h3>Exporting from SimNIBS<a class="headerlink" href="#exporting-from-simnibs" title="Permalink to this heading">¶</a></h3>
+<p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.write(obj,</span> <span class="pre">fn)</span></code> writes a .txt file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
 <div class="code-block-caption"><span class="caption-text">Export a file for precomputed positions/orientations</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">brainsight</span>
@@ -90,12 +90,12 @@ When <cite>World</cite>, i.e. <cite>LPS</cite> coordinate system is selected for
 <span class="n">tmslist</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
 <span class="n">tmslist</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
 <span class="c1"># ... define (multiple) positions ...</span>
-<span class="n">brainsight</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmlist</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">out_coord_space</span><span class="o">=</span><span class="s1">&#39;LPS&#39;</span><span class="p">)</span>
+<span class="n">brainsight</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmlist</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
 
 <span class="c1">### export from POSITION</span>
-<span class="n">pos</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">POSITOIN</span><span class="p">()</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">POSITION</span><span class="p">()</span>
 <span class="n">pos</span><span class="o">.</span><span class="n">matsimnibs</span> <span class="o">=</span> <span class="o">...</span>
-<span class="n">brainsight</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span> <span class="c1"># out_coord_space default is &#39;RAS&#39;</span>
+<span class="n">brainsight</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
 
 <span class="c1">### export from np.ndarray / matsimnibs</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TMSoptimize</span><span class="p">()</span>
@@ -110,7 +110,7 @@ When <cite>World</cite>, i.e. <cite>LPS</cite> coordinate system is selected for
 <section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>The <strong>same anatomical scan</strong> has to be used for TMS Navigator and SimNIBS.</p></li>
+<li><p>The <strong>same anatomical scan</strong> has to be used for Brainsight and SimNIBS.</p></li>
 <li><p>The <strong>same coil model</strong> has to be used for field simulations and for real stimulation.</p></li>
 <li><p>Coordinate systems used to define coil axes for SimNIBS and Brainsight:</p></li>
 </ul>

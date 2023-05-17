@@ -386,9 +386,9 @@ def run(
                 # GM central surfaces
                 m = Msh()
                 if "lh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("central", "lh")))
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("lh", "central")))
                 if "rh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("central", "rh")))
+                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("rh", "central")))
                     # fill in GM and save updated mask
                 if m.nodes.nr > 0:
                     label_img = charm_utils._fillin_gm_layer(
@@ -412,7 +412,7 @@ def run(
                 m = Msh()
                 if "lh" in pial:
                     m2 = read_gifti_surface(
-                        sub_files.get_surface("pial", "lh")
+                        sub_files.get_surface("lh", "pial")
                     )
                     # remove self-intersections using meshfix
                     with tempfile.NamedTemporaryFile(suffix=".off") as f:
@@ -427,7 +427,7 @@ def run(
                         os.remove("meshfix_log.txt")
                 if "rh" in pial:
                     m2 = read_gifti_surface(
-                        sub_files.get_surface("pial", "rh")
+                        sub_files.get_surface("rh", "pial")
                     )
                     # remove self-intersections using meshfix
                     with tempfile.NamedTemporaryFile(suffix=".off") as f:

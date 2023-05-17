@@ -57,7 +57,7 @@ def compute_tdcs_leadfield(
 
     m2m = SubjectFiles(subpath=str(m2m_dir))
 
-    if subsampling and not all(m2m.get_surface("central", h, subsampling=subsampling).exists() for h in m2m.hemispheres):
+    if subsampling and not all(m2m.get_surface(h, "central", subsampling=subsampling).exists() for h in m2m.hemispheres):
         _ = subsample_surfaces(m2m_dir, n_points=subsampling)
 
     # The paths should be strings otherwise errors might occur when writing the
