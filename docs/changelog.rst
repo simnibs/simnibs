@@ -2,6 +2,12 @@
 
 Changelog
 ===========
+4.0.1
+------
+  * changed Brainsight position import/export to support only NIfTI:Aligned (to avoid ambiguities)
+  * small bug fixes
+
+NOTE & Known issues: see 4.0.0
 
 4.0.0
 ------
