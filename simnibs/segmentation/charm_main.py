@@ -662,7 +662,7 @@ def _prepare_t2(T1, T2, registerT2, T2_reg, force_qform, force_sform):
                     data_tmp = np.squeeze(T2_tmp.get_fdata())
                     T2_tmp = nib.Nifti1Image(data_tmp, T2_tmp.affine)
 
-                    nib.save(T2_tmp, T2_reg)
+                nib.save(T2_tmp, T2_reg)
                 charm_utils._registerT1T2(T1, T2_reg, T2_reg)
             else:
                 raise FileNotFoundError(f"Could not find input T2 file: {T2}")
