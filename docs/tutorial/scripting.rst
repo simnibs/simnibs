@@ -81,15 +81,16 @@ If the scripts are not in the same folder as the subject folder, you should also
 
 * *Python*
 
-  .. code-block:: python
-     from simnibs import sim_struct, run_simnibs
+.. code-block:: python
 
-     # Initalize a session
-     s = sim_struct.SESSION()
-     # Name of head mesh
-     s.subpath = 'm2m_ernie'
-     # Output folder
-     s.pathfem = 'tutorial/'
+    from simnibs import sim_struct, run_simnibs
+
+    # Initalize a session
+    s = sim_struct.SESSION()
+    # Name of head mesh
+    s.subpath = 'm2m_ernie'
+    # Output folder
+    s.pathfem = 'tutorial/'
 
 * *MATLAB*
 

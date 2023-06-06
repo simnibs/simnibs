@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Scripting Simulations &#8212; SimNIBS 4.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -109,8 +108,20 @@ simulations of different types (TMS or tDCS), sharing the same head model.</p>
 <p>We always start our scripts by initializing a <a class="reference internal" href="../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> <em>class</em> (<em>Python</em>) or <em>struct</em> (<em>MATLAB</em>), selecting a head mesh and the output folder.
 Here, we will assume that the scripts are placed in the same directory as the <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code> directory of the example dataset.
 If the scripts are not in the same folder as the subject folder, you should also give the path to the subject folder.</p>
-<ul>
+<ul class="simple">
 <li><p><em>Python</em></p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="c1"># Initalize a session</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="c1"># Name of head mesh</span>
+<span class="n">s</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
+<span class="c1"># Output folder</span>
+<span class="n">s</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tutorial/&#39;</span>
+</pre></div>
+</div>
+<ul>
 <li><p><em>MATLAB</em></p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Initialize a session</span>
 <span class="n">s</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
@@ -431,7 +442,7 @@ After the simulations are finished running the results can be found in the newly
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
