@@ -1,0 +1,11 @@
+from enum import IntEnum
+
+
+class CoilElementTag(IntEnum):
+    COIL_CASING = 1
+    COIL_CASING_MIN_DISTANCE_POINTS = 2
+    COIL_CASING_INTERSECT_POINTS = 3
+    DIPOLES = 4
+    LINE_ELEMENTS = 5
+    LINE_POINTS = 6
+    SAMPLED_GRID_ELEMENTS = 7

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -14,7 +15,7 @@ class CoilDeformation(ABC):
         self.current = self.initial
 
     @property
-    def current(self):
+    def current(self) -> float:
         return self._current  
     
     @current.setter
@@ -31,6 +32,29 @@ class CoilDeformation(ABC):
     @abstractmethod
     def as_matrix(self) -> npt.NDArray[np.float_]:
         pass
+
+    def to_tcd(self) -> dict:
+        tcd_deformation = {}
+        tcd_deformation["initial"] = self.initial
+        tcd_deformation["range"] = list(self.range)
+        return tcd_deformation
+
+    @classmethod
+    def from_tcd(cls, tcd_deformation: dict):
+        initial = tcd_deformation["initial"]
+        deform_range = tcd_deformation["range"]
+        if tcd_deformation["type"] == "x":
+            return CoilTranslation(initial, deform_range, 0)
+        elif tcd_deformation["type"] == "y":
+            return CoilTranslation(initial, deform_range, 1)
+        elif tcd_deformation["type"] == "z":
+            return CoilTranslation(initial, deform_range, 2)
+        elif tcd_deformation["type"] == "rot2p":
+            point_1 = np.array(tcd_deformation["point1"])
+            point_2 = np.array(tcd_deformation["point2"])
+            return CoilRotation(initial, deform_range, point_1, point_2)
+        else:
+            raise ValueError(f"Invalid deformation type: {tcd_deformation['type']}")
 
 
 class CoilTranslation(CoilDeformation):
@@ -55,6 +79,20 @@ class CoilTranslation(CoilDeformation):
         affine_matrix = np.eye(4)
         affine_matrix[:3, 3] = self.get_translation()
         return affine_matrix
+    
+    def to_tcd(self) -> dict:
+        tcd_deformation = super().to_tcd()
+        if self.axis == 0:
+            tcd_deformation["type"] = "x"
+        elif self.axis == 1:
+            tcd_deformation["type"] = "y"
+        elif self.axis == 2:
+            tcd_deformation["type"] = "z"
+        else:
+            raise ValueError(
+                f"Translation axis ({self.axis}) out of range (0-2)"
+            )
+        return tcd_deformation
 
 
 class CoilRotation(CoilDeformation):
@@ -69,17 +107,28 @@ class CoilRotation(CoilDeformation):
         self.point_1 = point_1
         self.point_2 = point_2
 
-    def get_rotation(self) -> Rotation:
+    def get_rotation(self) -> npt.NDArray[np.float_]:
         v = (self.point_2 - self.point_1) / np.linalg.norm(self.point_2 - self.point_1)
-        rotation = Rotation.from_rotvec(self.current * v, degrees=True)
-        #TODO Check correctness 
-        return rotation
+        T = np.identity(4)
+        T[:3, 3] = self.point_1
+        iT = np.identity(4)
+        iT[:3, 3] = -self.point_1
+        R = np.identity(4)
+        R[:3, :3] = Rotation.from_rotvec(v * self.current, degrees=True).as_matrix()
+        Q = T @ R @ iT
+        return Q
 
     def apply(self, points:npt.NDArray[np.float_]):
-        return self.get_rotation().apply(points)
+        rotation_matrix = self.get_rotation()
+        points = points @ rotation_matrix[:3, :3].T + rotation_matrix[None, :3, 3]
+        return points
 
     def as_matrix(self) -> npt.NDArray[np.float_]:
-        rotation_matrix = self.get_rotation().as_matrix()
-        affine_matrix = np.eye(4)
-        affine_matrix[:3, :3] = rotation_matrix
-        return affine_matrix
+        return self.get_rotation()
+    
+    def to_tcd(self) -> dict:
+        tcd_deformation = super().to_tcd()
+        tcd_deformation["type"] = "rot2p"
+        tcd_deformation["point1"] = self.point_1.tolist()
+        tcd_deformation["point2"] = self.point_2.tolist()
+        return tcd_deformation

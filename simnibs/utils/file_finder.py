@@ -45,6 +45,9 @@ fs_resolutions = [None, 10, 40, 160]
 fs_resolutions_names = ["", "10k", "40k", ""]
 fs_res_mapper = dict(zip(fs_resolutions, fs_resolutions_names))
 
+coil_models = os.path.join(SIMNIBSDIR, "resources", "coil_models")
+ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, "resources", "ElectrodeCaps_MNI")
+
 
 class Templates:
     """Defines the Templates for file names used in SimNIBS
@@ -66,6 +69,8 @@ class Templates:
     final_tissues_LUT: str
         Path to freeview color LUT for the final_tissues.nii.gz and
         label_prep/tissue_labeling_upsampled.nii.gz
+    tcd_json_schema: str
+        Path to the json schema describing the tcd format (json)
     """
 
     def __init__(self):
@@ -126,6 +131,7 @@ class Templates:
 
         self.eeg_montage_dir = Path(SIMNIBSDIR) / "resources" / "ElectrodeCaps_MNI"
         self.fiducials = self.eeg_montage_dir / "Fiducials.csv"
+        self.tcd_json_schema = os.path.join(coil_models, "coil_model.schema.json")
 
     def get_eeg_montage(self, name):
         f = self.eeg_montage_dir / f"{name}.csv"
@@ -133,11 +139,7 @@ class Templates:
             raise FileNotFoundError
         return f
 
-
 templates = Templates()
-coil_models = os.path.join(SIMNIBSDIR, "resources", "coil_models")
-ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, "resources", "ElectrodeCaps_MNI")
-
 
 def get_atlas(atlas_name, hemi="both"):
     """Loads a brain atlas based of the FreeSurfer fsaverage template
