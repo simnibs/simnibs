@@ -1,0 +1,518 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://simnibs.github.io/coil_model.schema.json",
+    "title": "TMS Coil Definition",
+    "description": "TMS Coil Definition File Specification (.tcd files). The .tcd file follows the standard JSON file format specification",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "The name of the coil",
+            "type": "string"
+        },
+        "brand": {
+            "description": "The brand of the coil",
+            "type": "string"
+        },
+        "version": {
+            "description": "The version of the coil",
+            "type": "string"
+        },
+        "limits": {
+            "description": "Used for expansion into NIfTI digitized files. This is in mm format and follows the structure [[min(x), max(x)],[min(y), max(y)],min(z), max(z)]",
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+            },
+            "minItems": 3,
+            "maxItems": 3
+        },
+        "resolution": {
+            "description": "The sampling resolution (step width in mm) for expansion into NIfTI files. This follows the structure [rx,ry,rz] for x, y, and z directions",
+            "type": "array",
+            "items": {
+                "type": "number",
+                "exclusiveMinimum": 0
+            },
+            "minItems": 3,
+            "maxItems": 3
+        },
+        "coilCasing": {
+            "description": "Index of coil model used as the coil casing",
+            "type": "integer",
+            "minimum": 0
+        },
+        "coilElementList": {
+            "description": "The coil elements used for this coil",
+            "type": "array",
+            "items": {
+                "description": "A single coil element",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The name of the coil element",
+                        "type": "string"
+                    },
+                    "stimulator": {
+                        "description": "Index of stimulator used for this coil element",
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "elementCasing": {
+                        "description": "Index of coil model used as the coil element casing",
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "deformations": {
+                        "description": "Indexes of deformations which should be applied for this coil element",
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "minItems": 1
+                    },
+                    "type": {
+                        "description": "Type of coil element. 1: dipoles, 2: line elements, 3: line points, *4: raw (digitized grid)",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ]
+                    },
+                    "weights": {
+                        "description": "Weighting array of length N with one scalar per element",
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 1
+                    },
+                    "points": {
+                        "description": "An array of 3D vectors, defining positions for points, elements or dipoles",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "values": {
+                        "description": "An array of 3D vectors, defines dipole moments or direction definition for line elements",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "data": {
+                        "description": "An array of 3D grid values for every (x, y, z) coordinate in voxel space",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number"
+                                            },
+                                            "minItems": 3,
+                                            "maxItems": 3
+                                        },
+                                        "minItems": 1
+                                    },
+                                    "minItems": 1
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "affine": {
+                        "description": "Affine matrix (4x4) used to transform the digitized points data from voxel space into world space",
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            },
+                            "minItems": 4,
+                            "maxItems": 4
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                    }
+                },
+                "required": [
+                    "type"
+                ],
+                "oneOf": [
+                    {
+                        "allOf": [
+                            { 
+                                "required": [
+                                    "points"
+                                ]
+                            },
+                            {
+                                "not" : {  
+                                    "anyOf" : [
+                                        { "required" : ["values"] },
+                                        { "required" : ["data"]  },
+                                        { "required" : ["affine"]  }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "allOf": [
+                            { 
+                                "required": [
+                                    "points",
+                                    "values"
+                                ]
+                            },
+                            { 
+                                "not" : {  
+                                    "anyOf" : [
+                                        { "required" : ["data"]  },
+                                        { "required" : ["affine"]  }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "allOf": [
+                            { 
+                                "required": [
+                                    "data",
+                                    "affine"
+                                ]
+                            },
+                            { 
+                                "not" : {  
+                                    "anyOf" : [
+                                        { "required" : ["points"] },
+                                        { "required" : ["values"]  }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "additionalProperties": false
+            },
+            "minItems": 1
+        },
+        "stimulatorList": {
+            "description": "The stimulators used for this coil",
+            "type": "array",
+            "items": {
+                "description": "A single stimulator",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The name of the stimulator",
+                        "type": "string"
+                    },
+                    "brand": {
+                        "description": "The brand of the stimulator",
+                        "type": "string"
+                    },
+                    "maxdIdt": {
+                        "description": "Maximum dI/dt values for the stimulator",
+                        "type": "number",
+                        "exclusiveMinimum":0
+                    },
+                    "waveformList": {
+                        "description": "The waveforms that the stimulator can generate",
+                        "type": "array",
+                        "items": {
+                            "description": "A single waveform",
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "description": "Name of the waveform",
+                                    "type": "string"
+                                },
+                                "time": {
+                                    "description": "The recorded timestamps",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 2
+                                },
+                                "signal": {
+                                    "description": "The recorded signal",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "minItems": 2
+                                },
+                                "fit": {
+                                    "description": "A parametric fitted version of the signal",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1
+                                    },
+                                    "minItems": 2
+                                }
+                            },
+                            "required": [
+                                "time",
+                                "signal"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "maxdIdt"
+                ],
+                "additionalProperties": false
+            },
+            "minItems": 1
+        },
+        "deformList": {
+            "description": "The deformations used for this coil",
+            "type": "array",
+            "items": {
+                "description": "A single deformation",
+                "type": "object",
+                "properties": {
+                    "initial": {
+                        "description": "The initial value for the deformation",
+                        "type": "number"
+                    },
+                    "range": {
+                        "description": "The allowable range for deformation parameter [minimum, maximum]",
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "type": {
+                        "description": "Either 'x', 'y', 'z', 'rot2p' corresponding to translations in x, y, z or rotation around the axis defined by point1 and point2",
+                        "type": "string",
+                        "enum": [
+                            "x",
+                            "y",
+                            "z",
+                            "rot2p"
+                        ]
+                    },
+                    "point1": {
+                        "description": "The x, y, z coordinates for the first point defining the rotation axis (in case of rot2p)",
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                    },
+                    "point2": {
+                        "description": "The x, y, z coordinates for the second point defining the rotation axis (in case of rot2p)",
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                    }
+                },
+                "oneOf": [
+                    {
+                        "allOf": [
+                            { 
+                                "required": [
+                                    "initial",
+                                    "range",
+                                    "type"
+                                ] 
+                            },
+                            { 
+                                "not" : {  
+                                    "anyOf" : [
+                                        { "required" : ["point1"] },
+                                        { "required" : ["point2"]  }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "required": [
+                            "initial",
+                            "range",
+                            "type",
+                            "point1",
+                            "point2"
+                        ]
+                    }
+                ],
+                "additionalProperties": false
+            },
+            "minItems": 1
+        },
+        "coilModels": {
+            "description": "The 3D models used for this coil",
+            "type": "array",
+            "items": {
+                "description": "A single 3D coil model",
+                "type": "object",
+                "properties": {
+                    "points": {
+                        "description": "A list of 3D vertex positions",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 3
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "faces": {
+                        "description": "A list of triangular faces constructed of point indexes",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "minDistancePoints": {
+                        "description": "A list of 3D points used for the minimum distance optimization",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    },
+                    "intersectPoints": {
+                        "description": "A list of points 3D points used for intersection detection",
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                },
+                                "minItems": 1
+                            },
+                            {
+                                "type": "string",
+                                "contentEncoding": "base64",
+                                "contentMediaType": "application/json"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "points",
+                    "faces"
+                ],
+				"additionalProperties": false
+            },
+            "minItems": 1
+        }
+    },
+    "required": [
+        "coilElementList"
+    ],
+    "additionalProperties": false
+}
