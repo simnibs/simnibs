@@ -1,36 +1,72 @@
 import json
+import re
 from typing import Optional
+
 import jsonschema
+import nibabel as nib
 import numpy as np
 import numpy.typing as npt
-import nibabel as nib
 import scipy.optimize as opt
 
-from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
-from simnibs.simulation.coil.coil_constants import CoilElementTag
-from simnibs.simulation.coil.coil_deformation import (
-    CoilDeformation,
-    CoilRotation,
-    CoilTranslation,
+from simnibs import __version__
+from simnibs.mesh_tools import mesh_io
+from simnibs.mesh_tools.mesh_io import Msh, NodeData
+from simnibs.simulation.tms_coil.tcd_element import TcdElement
+from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilDeformation
+from simnibs.simulation.tms_coil.tms_coil_element import (
+    DipoleElements,
+    SampledGridPointElements,
+    TmsCoilElements,
 )
-from simnibs.simulation.coil.tcd_element import TcdElement
-from simnibs.simulation.coil.tms_stimulator import TMSStimulator, TMSWaveform
+from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
+from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator, TmsWaveform
 from simnibs.utils import file_finder
 
-from .coil_model import CoilModel
-from .coil_element import (
-    CoilDipoles,
-    CoilElement,
-    CoilLineElements,
-    CoilLinePoints,
-    CoilSampledGridElements,
-    DirectionalCoilElement,
-    PositionalCoilElement,
-)
-from ... import __version__
 
+class TmsCoil(TcdElement):
+    """A representation of a coil used for TMS
 
-class Coil(TcdElement):
+    Parameters
+    ----------
+    name : Optional[str]
+        The name of the coil
+    brand : Optional[str]
+        The brand of the coil
+    version : Optional[str]
+        The version of the coil
+    limits : Optional[npt.NDArray[np.float_]] (3x2)
+        Used for expansion into NIfTI digitized files.
+        This is in mm and follows the structure [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]]
+    resolution : Optional[npt.NDArray[np.float_]] (3)
+        The sampling resolution (step width in mm) for expansion into NIfTI files.
+        This follows the structure [rx,ry,rz]
+    casing : Optional[TmsCoilModel]
+        The casing of the coil
+    elements : list[TmsCoilElement]
+        The stimulation elements of the coil
+
+    Attributes
+    ----------------------
+    name : Optional[str]
+        The name of the coil
+    brand : Optional[str]
+        The brand of the coil
+    version : Optional[str]
+        The version of the coil
+    limits : Optional[npt.NDArray[np.float_]] (3x2)
+        Used for expansion into NIfTI digitized files.
+        This is in mm and follows the structure [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]]
+    resolution : Optional[npt.NDArray[np.float_]] (3)
+        The sampling resolution (step width in mm) for expansion into NIfTI files.
+        This follows the structure [rx,ry,rz]
+    casing : Optional[TmsCoilModel]
+        The casing of the coil
+    elements : list[TmsCoilElement]
+        The stimulation elements of the coil
+    deformations : list[TmsCoilDeformation]
+        All deformations used in the stimulation elements of the coil
+    """
+
     def __init__(
         self,
         name: Optional[str],
@@ -38,19 +74,19 @@ class Coil(TcdElement):
         version: Optional[str],
         limits: Optional[npt.NDArray[np.float_]],
         resolution: Optional[npt.NDArray[np.float_]],
-        coil_casing: Optional[CoilModel],
-        coil_elements: list[CoilElement],
+        casing: Optional[TmsCoilModel],
+        elements: list[TmsCoilElements],
     ):
         self.name = name
         self.brand = brand
         self.version = version
         self.limits = limits
         self.resolution = resolution
-        self.coil_casing = coil_casing
-        self.coil_elements = coil_elements
+        self.casing = casing
+        self.elements = elements
 
-        self.deformations: list[CoilDeformation] = []
-        for coil_element in self.coil_elements:
+        self.deformations: list[TmsCoilDeformation] = []
+        for coil_element in self.elements:
             for coil_deformation in coil_element.deformations:
                 if coil_deformation not in self.deformations:
                     self.deformations.append(coil_deformation)
@@ -61,10 +97,28 @@ class Coil(TcdElement):
         coil_affine: npt.NDArray[np.float_],
         di_dt: float,
         eps: float = 1e-3,
-    ):
+    ) -> NodeData:
+        """Calculate the dA/dt field applied by the coil at each node of the mesh.
+
+        Parameters
+        ----------
+        msh : Msh
+            The mesh at which nodes the dA/dt field should be calculated
+        coil_affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        di_dt : float
+            dI/dt in A/s
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        NodeData
+            The dA/dt field at every node of the mesh
+        """
         target_positions = msh.nodes.node_coord
         A = np.zeros_like(target_positions)
-        for coil_element in self.coil_elements:
+        for coil_element in self.elements:
             A += coil_element.get_da_dt(target_positions, coil_affine, di_dt, eps)
 
         return NodeData(A)
@@ -74,9 +128,25 @@ class Coil(TcdElement):
         points: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
-    ):
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the A field applied by the coil at each point.
+
+        Parameters
+        ----------
+        points : npt.NDArray[np.float_]
+            The points at which the A field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The A field at every point
+        """
         a_field = np.zeros_like(points)
-        for coil_element in self.coil_elements:
+        for coil_element in self.elements:
             a_field += coil_element.get_a_field(points, coil_affine, eps)
 
         return a_field
@@ -89,17 +159,37 @@ class Coil(TcdElement):
         include_optimization_points: bool = True,
         include_coil_elements: bool = True,
     ) -> Msh:
+        """Generates a mesh of the coil
+
+        Parameters
+        ----------
+        coil_affine : Optional[npt.NDArray[np.float_]], optional
+            The affine transformation that is applied to the coil, by default None
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+        include_casing : bool, optional
+            Whether or not to include the casing mesh, by default True
+        include_optimization_points : bool, optional
+            Whether or not to include the min distance and intersection points, by default True
+        include_coil_elements : bool, optional
+            Whether or not to include the stimulating elements in the mesh, by default True
+
+        Returns
+        -------
+        Msh
+            The generated mesh of the coil
+        """
         if coil_affine is None:
             coil_affine = np.eye(4)
 
         coil_msh = Msh()
-        if self.coil_casing is not None and include_casing:
+        if self.casing is not None and include_casing:
             coil_msh = coil_msh.join_mesh(
-                self.coil_casing.get_transformed_mesh(
+                self.casing.get_mesh(
                     coil_affine, include_optimization_points, 0
                 )
             )
-        for i, coil_element in enumerate(self.coil_elements):
+        for i, coil_element in enumerate(self.elements):
             coil_msh = coil_msh.join_mesh(
                 coil_element.get_mesh(
                     coil_affine,
@@ -112,32 +202,46 @@ class Coil(TcdElement):
             )
         return coil_msh
 
-    def get_deformed_casing_coordinates(
-        self, affine: Optional[npt.NDArray[np.float_]] = None
+    def get_casing_coordinates(
+        self,
+        affine: Optional[npt.NDArray[np.float_]] = None,
+        apply_deformation: bool = True,
     ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Returns all casing points, min distance points and intersect points of this coil and the coil elements.
+
+        Parameters
+        ----------
+        affine : Optional[npt.NDArray[np.float_]], optional
+            The affine transformation that is applied to the coil, by default None
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]
+            A tuple containing the casing points, min distance points and intersect points
+        """
         if affine is None:
             affine = np.eye(4)
 
         casing_points = (
-            [self.coil_casing.get_points(affine)]
-            if self.coil_casing is not None
-            else []
+            [self.casing.get_points(affine)] if self.casing is not None else []
         )
         min_distance_points = (
-            [self.coil_casing.get_min_distance_points(affine)]
-            if self.coil_casing is not None
+            [self.casing.get_min_distance_points(affine)]
+            if self.casing is not None
             else []
         )
         intersect_points = (
-            [self.coil_casing.get_intersect_points(affine)]
-            if self.coil_casing is not None
+            [self.casing.get_intersect_points(affine)]
+            if self.casing is not None
             else []
         )
 
-        for coil_element in self.coil_elements:
-            if coil_element.element_casing is not None:
-                element_casing_points = coil_element.get_deformed_casing_coordinates(
-                    affine
+        for coil_element in self.elements:
+            if coil_element.casing is not None:
+                element_casing_points = coil_element.get_casing_coordinates(
+                    affine, apply_deformation
                 )
                 casing_points.append(element_casing_points[0])
                 min_distance_points.append(element_casing_points[1])
@@ -150,8 +254,19 @@ class Coil(TcdElement):
         return casing_points, min_distance_points, intersect_points
 
     @staticmethod
-    def _add_logo(mesh: Msh):
-        """adds the simnibs logo to the coil surface"""
+    def _add_logo(mesh: Msh) -> Msh:
+        """Adds the SimNIBS logo to the coil surface
+
+        Parameters
+        ----------
+        mesh : Msh
+            The mesh of the coil
+
+        Returns
+        -------
+        Msh
+            The coil mesh including the SimNIBS logo
+        """
 
         msh_logo = Msh(fn=file_finder.templates.simnibs_logo)
 
@@ -187,38 +302,114 @@ class Coil(TcdElement):
         return mesh
 
     @classmethod
-    def from_file(
-        cls,
-        fn: str,
-        name: Optional[str] = None,
-        brand: Optional[str] = None,
-        version: Optional[str] = None,
-    ):
+    def from_file(cls, fn: str):
+        """Loads the coil file. The file has to be either in the tcd, ccd or the NIfTI format
+
+        Parameters
+        ----------
+        fn : str
+            The path to the coil file
+
+        Returns
+        -------
+        TmsCoil
+            The tms coil loaded from the coil file
+
+        Raises
+        ------
+        IOError
+            If the file type is unsupported or the file extension for a NIfTI file is missing
+        """
         if fn.endswith(".tcd"):
-            return Coil.from_tcd_file(fn)
+            return TmsCoil.from_tcd(fn)
         elif fn.endswith(".ccd"):
-            return Coil.from_ccd(fn, version)
+            return TmsCoil.from_ccd(fn)
         elif fn.endswith(".nii.gz") or fn.endswith(".nii"):
-            return Coil.from_nifti(fn, name, brand, version)
-        else:
-            return Coil.from_tcd(fn)
+            return TmsCoil.from_nifti(fn)
+
+        try:
+            return TmsCoil.from_tcd(fn)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+
+        try:
+            return TmsCoil.from_ccd(fn)
+        except (UnicodeDecodeError, ValueError):
+            pass
+
+        raise IOError(
+            "Error loading file: Unsupported file type or missing file extension for NIfTI file"
+        )
 
     def write(self, fn: str):
+        """Writes the TMS coil in the tcd format
+
+        Parameters
+        ----------
+        fn : str
+            The path and file name to store the tcd coil file as
+        """
         self.write_tcd(fn)
 
     @classmethod
     def from_ccd(
         cls,
         fn: str,
-        version: Optional[str] = None,
+        fn_coil_casing: Optional[str] = None,
+        fn_waveform_file: Optional[str] = None,
     ):
+        """Loads a ccd coil file with the optional addition of a coil casing as an stl file and waveform information from a tsv file
+
+        Parameters
+        ----------
+        fn : str
+            The path to the ccd coil file
+        fn_coil_casing : Optional[str], optional
+            The path to a stl coil casing file, by default None
+        fn_waveform_file : Optional[str], optional
+            the path to a tsv waveform information file, by default None
+
+        Returns
+        -------
+        TmsCoil
+            The coil loaded from the ccd (and optional stl and tsv) file
+        """
         with open(fn, "r") as f:
             header = f.readline()
 
-        pairs = header.replace("\n", "").split(";")[1:]
+        coil_casing = None
+        if fn_coil_casing is not None:
+            coil_casing_mesh = mesh_io.read_stl(fn_coil_casing)
+            coil_casing = TmsCoilModel(coil_casing_mesh, None, None)
+
+        waveforms = None
+        if fn_waveform_file is not None:
+            waveform_data = np.genfromtxt(
+                fn_waveform_file, delimiter="\t", filling_values=0, names=True
+            )
+            names = waveform_data.dtype.names
+            waveforms = [
+                TmsWaveform(
+                    names[1],
+                    waveform_data[names[0]],
+                    waveform_data[names[1]],
+                    waveform_data[names[2]],
+                )
+            ]
+
+        meta_informations = header.replace("\n", "").split(";")
+        file_discription = meta_informations[0]
+        version_match = re.search(r"version (\d+\.\d+)", file_discription)
+        file_version = version_match.group(1) if version_match else None
+
+        parametric_information = meta_informations[1:]
+        parametric_information = [pair.strip() for pair in parametric_information]
+        parametric_information = [
+            pair for pair in parametric_information if len(pair) > 0
+        ]
 
         header_dict = {}
-        for pair in pairs:
+        for pair in parametric_information:
             key, value = pair.split("=")
 
             if value == "none":
@@ -256,36 +447,42 @@ class Coil(TcdElement):
 
         ccd_file = np.atleast_2d(np.loadtxt(fn, skiprows=2))
 
-        dipole_positions = ccd_file[:, 0:3]
+        dipole_positions = ccd_file[:, 0:3] * 1e3
         dipole_moments = ccd_file[:, 3:]
 
+        stimulator = None
         if "dIdtmax" in header_dict.keys():
-            stimulator = TMSStimulator(
-                header_dict.get("stimulator"), None, header_dict["dIdtmax"], None
+            stimulator = TmsStimulator(
+                header_dict.get("stimulator"), None, header_dict["dIdtmax"], waveforms
             )
-        else:
-            stimulator = None
 
         coil_elements = [
-            CoilDipoles(None, None, [], dipole_positions, dipole_moments, stimulator)
+            DipoleElements(None, None, [], dipole_positions, dipole_moments, stimulator)
         ]
 
         return cls(
             header_dict.get("coilname"),
             header_dict.get("brand"),
-            version,
+            file_version,
             np.array(bb),
             np.array(res),
-            None,
+            coil_casing,
             coil_elements,
         )
-    
+
     def to_tcd(self) -> dict:
+        """Packs the coil information into a tcd like dictionary
+
+        Returns
+        -------
+        dict
+            A tcd like dictionary representing the coil
+        """
         tcd_coil_models = []
         coil_models = []
-        if self.coil_casing is not None:
-            tcd_coil_models.append(self.coil_casing.to_tcd())
-            coil_models.append(self.coil_casing)
+        if self.casing is not None:
+            tcd_coil_models.append(self.casing.to_tcd())
+            coil_models.append(self.casing)
 
         tcd_deforms = []
 
@@ -296,13 +493,13 @@ class Coil(TcdElement):
             tcd_deforms.append(deformation.to_tcd())
 
         tcd_coil_elements = []
-        for coil_element in self.coil_elements:
+        for coil_element in self.elements:
             if (
-                coil_element.element_casing not in coil_models
-                and coil_element.element_casing is not None
+                coil_element.casing not in coil_models
+                and coil_element.casing is not None
             ):
-                coil_models.append(coil_element.element_casing)
-                tcd_coil_models.append(coil_element.element_casing.to_tcd())
+                coil_models.append(coil_element.casing)
+                tcd_coil_models.append(coil_element.casing.to_tcd())
 
             if (
                 coil_element.stimulator not in stimulators
@@ -326,8 +523,8 @@ class Coil(TcdElement):
             tcd_coil["limits"] = self.limits.tolist()
         if self.resolution is not None:
             tcd_coil["resolution"] = self.resolution.tolist()
-        if self.coil_casing is not None:
-            tcd_coil["coilCasing"] = coil_models.index(self.coil_casing)
+        if self.casing is not None:
+            tcd_coil["coilCasing"] = coil_models.index(self.casing)
         tcd_coil["coilElementList"] = tcd_coil_elements
         if len(tcd_stimulators) > 0:
             tcd_coil["stimulatorList"] = tcd_stimulators
@@ -339,7 +536,26 @@ class Coil(TcdElement):
         return tcd_coil
 
     @classmethod
-    def from_tcd(cls, coil: dict, validate=True):
+    def from_tcd_dict(cls, coil: dict, validate=True):
+        """Loads the coil from a tcd like dictionary
+
+        Parameters
+        ----------
+        coil : dict
+            A tcd like dictionary storing coil information
+        validate : bool, optional
+            Whether or not to validate the dictionary based on the tcd coil json schema, by default True
+
+        Returns
+        -------
+        TmsCoil
+            The TMS coil loaded from the tcd like dictionary
+
+        Raises
+        ------
+        ValidationError
+            Raised if validate is true and the dictionary is not valid to the tcd coil json schema
+        """
         if validate:
             with open(file_finder.templates.tcd_json_schema, "r") as fid:
                 tcd_schema = json.loads(fid.read())
@@ -357,20 +573,20 @@ class Coil(TcdElement):
 
         coil_models = []
         for coil_model in coil.get("coilModels", []):
-            coil_models.append(CoilModel.from_tcd(coil_model))
+            coil_models.append(TmsCoilModel.from_tcd_dict(coil_model))
 
         deformations = []
         for deform in coil.get("deformList", []):
-            deformations.append(CoilDeformation.from_tcd(deform))
+            deformations.append(TmsCoilDeformation.from_tcd(deform))
 
         stimulators = []
         for stimulator in coil.get("stimulatorList", []):
-            stimulators.append(TMSStimulator.from_tcd(stimulator))
+            stimulators.append(TmsStimulator.from_tcd(stimulator))
 
         coil_elements = []
         for coil_element in coil["coilElementList"]:
             coil_elements.append(
-                CoilElement.from_tcd(
+                TmsCoilElements.from_tcd_dict(
                     coil_element, stimulators, coil_models, deformations
                 )
             )
@@ -390,24 +606,51 @@ class Coil(TcdElement):
         )
 
     @classmethod
-    def from_tcd_file(cls, fn: str, validate=True):
+    def from_tcd(cls, fn: str, validate=True):
+        """Loads the TMS coil from a tcd file
+
+        Parameters
+        ----------
+        fn : str
+            The path to the ccd coil file
+        validate : bool, optional
+            Whether or not to validate the dictionary based on the tcd coil json schema, by default True
+
+        Returns
+        -------
+        TmsCoil
+            The TMS coil loaded from the tcd file
+        """
         with open(fn, "r") as fid:
             coil = json.loads(fid.read())
 
-        return cls.from_tcd(coil, validate)
+        return cls.from_tcd_dict(coil, validate)
 
     def write_tcd(self, fn: str):
+        """Writes the coil as a tcd file
+
+        Parameters
+        ----------
+        fn : str
+            The path and file name to store the tcd coil file as
+        """
         with open(fn, "w") as json_file:
             json.dump(self.to_tcd(), json_file, indent=4)
 
     @classmethod
-    def from_nifti(
-        cls,
-        fn: str,
-        name: Optional[str] = None,
-        brand: Optional[str] = None,
-        version: Optional[str] = None,
-    ):
+    def from_nifti(cls, fn: str):
+        """Loads coil information from a NIfTI file
+
+        Parameters
+        ----------
+        fn : str
+            The path to the coil NIfTI file
+
+        Returns
+        -------
+        TmsCoil
+            The TMS coil loaded from the NIfTI file
+        """
         nifti = nib.load(fn)
         data = nifti.get_fdata()
         affine = nifti.affine
@@ -428,9 +671,9 @@ class Coil(TcdElement):
             ]
         )
 
-        coil_elements = [CoilSampledGridElements(name, None, [], data, affine, None)]
+        coil_elements = [SampledGridPointElements(None, None, [], data, affine, None)]
 
-        return cls(name, brand, version, limits, resolution, None, coil_elements)
+        return cls(None, None, None, limits, resolution, None, coil_elements)
 
     def write_nifti(
         self,
@@ -438,6 +681,24 @@ class Coil(TcdElement):
         limits: Optional[npt.NDArray[np.float_]] = None,
         resolution: Optional[npt.NDArray[np.float_]] = None,
     ):
+        """Writes the A field of the coil in the NIfTI file format
+
+        Parameters
+        ----------
+        fn : str
+           The path and file name to store the tcd coil file as
+        limits : Optional[npt.NDArray[np.float_]], optional
+            Overrides the limits set in the coil object, by default None
+        resolution : Optional[npt.NDArray[np.float_]], optional
+            Overrides the resolution set in the coil object, by default None
+
+        Raises
+        ------
+        ValueError
+            If the limits are not set in the coil object or as a parameter
+        ValueError
+            If the resolution is not set in the coil object or as a parameter
+        """
         limits = limits or self.limits
         if limits is None:
             raise ValueError("Limits needs to be set")
@@ -471,12 +732,41 @@ class Coil(TcdElement):
 
     def optimize_deformations(
         self, optimization_surface: Msh, affine: npt.NDArray[np.float_]
-    ):
-        # TODO Test for any casings and raise exception
+    ) -> tuple[float, float]:
+        """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
+        and the min distance points (if not present, the coil casing points) while preventing intersections of the
+        optimization_surface and the intersect points (if not present, the coil casing points)
+
+        Parameters
+        ----------
+        optimization_surface : Msh
+            The surface the deformations have to be optimized for
+        affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+
+        Returns
+        -------
+        tuple[float, float]
+            The initial mean distance to the surface and the mean distance after optimization
+
+        Raises
+        ------
+        ValueError
+            If the coil has no deformations to optimize
+        ValueError
+            If the coil has no coil casing and no min distance points and no intersection points
+        ValueError
+            If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
+        """
         coil_deformations = self.deformations
         if len(coil_deformations) == 0:
             raise ValueError(
                 "The coil has no deformations to optimize the coil element positions with."
+            )
+
+        if not np.any([np.any(arr) for arr in self.get_casing_coordinates()]):
+            raise ValueError(
+                "The coil has no coil casing or min_distance/intersection points."
             )
 
         cost_surface_tree = optimization_surface.get_AABBTree()
@@ -562,11 +852,27 @@ class Coil(TcdElement):
     def _get_current_deformation_scores(
         self, cost_surface_tree, affine: npt.NDArray[np.float_]
     ) -> tuple[bool, float]:
+        """Evaluates whether or not the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
+        and calculates the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
+
+        Parameters
+        ----------
+        cost_surface_tree : AABBTree
+            The AABBTree of the surface to evaluate the current cost for
+        affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+
+        Returns
+        -------
+        tuple[bool, float]
+            Whether or not the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
+            and the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
+        """
         (
             casing_points,
             min_distance_points,
             intersect_points,
-        ) = self.get_deformed_casing_coordinates(affine)
+        ) = self.get_casing_coordinates(affine)
 
         min_distance_points = (
             min_distance_points if len(min_distance_points) > 0 else casing_points

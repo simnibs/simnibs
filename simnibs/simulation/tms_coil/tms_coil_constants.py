@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 
-class CoilElementTag(IntEnum):
+class TmsCoilElementTag(IntEnum):
     COIL_CASING = 1
     COIL_CASING_MIN_DISTANCE_POINTS = 2
     COIL_CASING_INTERSECT_POINTS = 3

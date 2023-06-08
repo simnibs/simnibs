@@ -1,16 +1,37 @@
 from copy import deepcopy
 from typing import Optional
 
-from simnibs.simulation.coil.coil_constants import CoilElementTag
-from simnibs.simulation.coil.tcd_element import TcdElement
-
-from ...mesh_tools.mesh_io import Elements, Msh, Nodes
-
 import numpy as np
 import numpy.typing as npt
 
+from simnibs.simulation.tms_coil.tcd_element import TcdElement
+from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 
-class CoilModel(TcdElement):
+from ...mesh_tools.mesh_io import Elements, Msh, Nodes
+
+
+class TmsCoilModel(TcdElement):
+    """_summary_
+
+    Parameters
+    ----------
+    mesh : Msh
+        The coil model
+    min_distance_points : Optional[npt.NDArray[np.float_]]
+        Min distance points used for optimization of coil deformation
+    intersect_points : Optional[npt.NDArray[np.float_]]
+        Intersection points used for optimization of coil deformation
+
+    Attributes
+    ----------------------
+    mesh : Msh
+        The coil model
+    min_distance_points : Optional[npt.NDArray[np.float_]]
+        Min distance points used for optimization of coil deformation
+    intersect_points : Optional[npt.NDArray[np.float_]]
+        Intersection points used for optimization of coil deformation
+
+    """
     def __init__(
         self,
         mesh: Msh,
@@ -25,16 +46,32 @@ class CoilModel(TcdElement):
             np.array([]) if intersect_points is None else intersect_points
         )
 
-    def get_transformed_mesh(
+    def get_mesh(
         self,
         affine_matrix: npt.NDArray[np.float_],
         include_optimization_points: bool = True,
         model_tag: int = 0,
     ) -> Msh:
+        """Returns the casing as a mesh, optionally including the min distance points and the intersection points
+
+        Parameters
+        ----------
+        affine_matrix : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil model
+        include_optimization_points : bool, optional
+            Whether or not to include the min distance and intersection points, by default True
+        model_tag : int, optional
+            The base value used as a tag for this coil model, by default 0
+
+        Returns
+        -------
+        Msh
+            The coil casing as a mesh
+        """
         transformed_mesh = deepcopy(self.mesh)
         transformed_mesh.nodes.node_coord = self.get_points(affine_matrix)
-        transformed_mesh.elm.tag1[:] = model_tag + CoilElementTag.COIL_CASING
-        transformed_mesh.elm.tag2[:] = model_tag + CoilElementTag.COIL_CASING
+        transformed_mesh.elm.tag1[:] = model_tag + TmsCoilElementTag.COIL_CASING
+        transformed_mesh.elm.tag2[:] = model_tag + TmsCoilElementTag.COIL_CASING
         if not include_optimization_points:
             return transformed_mesh
 
@@ -47,10 +84,10 @@ class CoilModel(TcdElement):
                 Elements(points=np.arange(len(transformed_min_distance_points)) + 1),
             )
             point_mesh.elm.tag1[:] = (
-                model_tag + CoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
+                model_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
             )
             point_mesh.elm.tag2[:] = (
-                model_tag + CoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
+                model_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
             )
             transformed_mesh = transformed_mesh.join_mesh(point_mesh)
         if len(self.intersect_points) > 0:
@@ -60,10 +97,10 @@ class CoilModel(TcdElement):
                 Elements(points=np.arange(len(transformed_intersect_points)) + 1),
             )
             point_mesh.elm.tag1[:] = (
-                model_tag + CoilElementTag.COIL_CASING_INTERSECT_POINTS
+                model_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
             )
             point_mesh.elm.tag2[:] = (
-                model_tag + CoilElementTag.COIL_CASING_INTERSECT_POINTS
+                model_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
             )
             transformed_mesh = transformed_mesh.join_mesh(point_mesh)
         return transformed_mesh
@@ -71,6 +108,18 @@ class CoilModel(TcdElement):
     def get_points(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
     ) -> npt.NDArray[np.float_]:
+        """Returns the coil model points, optionally transformed by an affine transformation
+
+        Parameters
+        ----------
+        affine_matrix : Optional[npt.NDArray[np.float_]], optional
+            The affine transformation that is applied to the coil model, by default None
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The coil model points
+        """
         if affine_matrix is None:
             affine_matrix = np.eye(4)
         if len(self.mesh.nodes.node_coord) == 0:
@@ -83,6 +132,18 @@ class CoilModel(TcdElement):
     def get_min_distance_points(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
     ) -> npt.NDArray[np.float_]:
+        """Returns the coil model min distance points, optionally transformed by an affine transformation
+
+        Parameters
+        ----------
+        affine_matrix : Optional[npt.NDArray[np.float_]], optional
+            The affine transformation that is applied to the coil model, by default None
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The coil model min distance points
+        """
         if affine_matrix is None:
             affine_matrix = np.eye(4)
         if len(self.min_distance_points) == 0:
@@ -95,6 +156,18 @@ class CoilModel(TcdElement):
     def get_intersect_points(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
     ) -> npt.NDArray[np.float_]:
+        """Returns the coil model intersection points, optionally transformed by an affine transformation
+
+        Parameters
+        ----------
+        affine_matrix : Optional[npt.NDArray[np.float_]], optional
+            The affine transformation that is applied to the coil model, by default None
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The coil model coil model intersection points
+        """
         if affine_matrix is None:
             affine_matrix = np.eye(4)
         if len(self.intersect_points) == 0:
@@ -115,7 +188,7 @@ class CoilModel(TcdElement):
         return tcd_coil_model
 
     @classmethod
-    def from_tcd(cls, tcd_coil_model: dict):
+    def from_tcd_dict(cls, tcd_coil_model: dict):
         points = np.array(tcd_coil_model["points"])
         faces = np.array(tcd_coil_model["faces"]) + 1
         min_distance_points = (

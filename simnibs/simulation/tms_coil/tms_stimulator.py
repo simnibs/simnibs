@@ -1,9 +1,35 @@
 from typing import Optional
+
 import numpy as np
 import numpy.typing as npt
 
 
-class TMSWaveform:
+class TmsWaveform:
+    """A representation of a TMS waveform
+
+    Parameters
+    ----------
+    name : Optional[str]
+        The name of the waveform
+    time : npt.NDArray[np.float_]
+        The recording time stamps
+    signal : npt.NDArray[np.float_]
+        The recorded signal
+    fit : Optional[npt.NDArray[np.float_]]
+        A fitted version of the recorded signal
+
+    Attributes
+    ----------------------
+    name : Optional[str]
+        The name of the waveform
+    time : npt.NDArray[np.float_]
+        The recording time stamps
+    signal : npt.NDArray[np.float_]
+        The recorded signal
+    fit : Optional[npt.NDArray[np.float_]]
+        A fitted version of the recorded signal
+    """
+
     def __init__(
         self,
         name: Optional[str],
@@ -35,13 +61,37 @@ class TMSWaveform:
         return cls(name, time, signal, fit)
 
 
-class TMSStimulator:
+class TmsStimulator:
+    """A representation of a TMS stimulator
+
+    Parameters
+    ----------
+    name : Optional[str]
+        The name of the stimulator
+    brand : Optional[str]
+        the brand of the stimulator
+    max_di_dt : float
+        Maximum dI/dt values for the stimulator
+    waveforms : Optional[list[TmsWaveform]]
+        A list of waveforms that can be generated with this stimulator
+
+    Attributes
+    ----------------------
+    name : Optional[str]
+        The name of the stimulator
+    brand : Optional[str]
+        the brand of the stimulator
+    max_di_dt : float
+        Maximum dI/dt values for the stimulator
+    waveforms : Optional[list[TmsWaveform]]
+        A list of waveforms that can be generated with this stimulator
+    """
     def __init__(
         self,
         name: Optional[str],
         brand: Optional[str],
         max_di_dt: float,
-        waveforms: Optional[list[TMSWaveform]],
+        waveforms: Optional[list[TmsWaveform]],
     ):
         self.name = name
         self.brand = brand
@@ -70,6 +120,6 @@ class TMSStimulator:
         max_di_dt = tcd_element["maxdIdt"]
         waveforms = []
         for waveform in tcd_element.get("waveformList", []):
-            waveforms.append(TMSWaveform.from_tcd(waveform))
+            waveforms.append(TmsWaveform.from_tcd(waveform))
 
         return cls(name, brand, max_di_dt, waveforms)

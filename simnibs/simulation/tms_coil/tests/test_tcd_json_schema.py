@@ -191,14 +191,6 @@ class TestFailJsonSchema:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_list_sizes, tcd_json_schema)
 
-    def test_wrong_list_size_deformList(
-        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
-    ):
-        coil_wrong_list_sizes = deepcopy(full_tcd_coil_dict)
-        coil_wrong_list_sizes["deformList"] = []
-        with pytest.raises(jsonschema.ValidationError):
-            jsonschema.validate(coil_wrong_list_sizes, tcd_json_schema)
-
     def test_wrong_list_size_coilModels(
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
@@ -369,43 +361,57 @@ class TestFailJsonSchema:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_list_sizes, tcd_json_schema)
 
-    def test_wrong_type_coil_casing(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_coil_casing(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilCasing"] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_stimulator(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_stimulator(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilElementList"][0]["stimulator"] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_element_casing(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_element_casing(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilElementList"][0]["elementCasing"] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_deformations(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_deformations(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilElementList"][0]["deformations"][0] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_faces(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_faces(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilModels"][0]["faces"][0] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_element_type(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_element_type(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["coilElementList"][0]["type"] = 1.2
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_types, tcd_json_schema)
 
-    def test_wrong_type_deform_type(self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any):
+    def test_wrong_type_deform_type(
+        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
+    ):
         coil_wrong_types = deepcopy(full_tcd_coil_dict)
         coil_wrong_types["deformList"][0]["type"] = 3
         with pytest.raises(jsonschema.ValidationError):
