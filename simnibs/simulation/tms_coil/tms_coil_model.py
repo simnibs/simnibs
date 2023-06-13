@@ -11,7 +11,7 @@ from ...mesh_tools.mesh_io import Elements, Msh, Nodes
 
 
 class TmsCoilModel(TcdElement):
-    """_summary_
+    """A representation of a coil model including the casing and optimization points
 
     Parameters
     ----------
@@ -49,6 +49,7 @@ class TmsCoilModel(TcdElement):
     def get_mesh(
         self,
         affine_matrix: npt.NDArray[np.float_],
+        include_casing: bool = True,
         include_optimization_points: bool = True,
         model_tag: int = 0,
     ) -> Msh:
@@ -58,6 +59,8 @@ class TmsCoilModel(TcdElement):
         ----------
         affine_matrix : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil model
+        include_casing : bool, optional
+            Whether or not to include the casing mesh, by default True
         include_optimization_points : bool, optional
             Whether or not to include the min distance and intersection points, by default True
         model_tag : int, optional
@@ -68,12 +71,17 @@ class TmsCoilModel(TcdElement):
         Msh
             The coil casing as a mesh
         """
-        transformed_mesh = deepcopy(self.mesh)
-        transformed_mesh.nodes.node_coord = self.get_points(affine_matrix)
-        transformed_mesh.elm.tag1[:] = model_tag + TmsCoilElementTag.COIL_CASING
-        transformed_mesh.elm.tag2[:] = model_tag + TmsCoilElementTag.COIL_CASING
+        mesh = Msh()
+
+        if include_casing:
+            transformed_mesh = deepcopy(self.mesh)
+            transformed_mesh.nodes.node_coord = self.get_points(affine_matrix)
+            transformed_mesh.elm.tag1[:] = model_tag + TmsCoilElementTag.COIL_CASING
+            transformed_mesh.elm.tag2[:] = model_tag + TmsCoilElementTag.COIL_CASING
+            mesh = mesh.join_mesh(transformed_mesh)
+
         if not include_optimization_points:
-            return transformed_mesh
+            return mesh
 
         if len(self.min_distance_points) > 0:
             transformed_min_distance_points = self.get_min_distance_points(
@@ -89,7 +97,7 @@ class TmsCoilModel(TcdElement):
             point_mesh.elm.tag2[:] = (
                 model_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
             )
-            transformed_mesh = transformed_mesh.join_mesh(point_mesh)
+            mesh = mesh.join_mesh(point_mesh)
         if len(self.intersect_points) > 0:
             transformed_intersect_points = self.get_intersect_points(affine_matrix)
             point_mesh = Msh(
@@ -102,8 +110,8 @@ class TmsCoilModel(TcdElement):
             point_mesh.elm.tag2[:] = (
                 model_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
             )
-            transformed_mesh = transformed_mesh.join_mesh(point_mesh)
-        return transformed_mesh
+            mesh = mesh.join_mesh(point_mesh)
+        return mesh
 
     def get_points(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None

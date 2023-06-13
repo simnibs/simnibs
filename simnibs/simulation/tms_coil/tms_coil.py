@@ -151,7 +151,7 @@ class TmsCoil(TcdElement):
 
         return a_field
 
-    def get_coil_mesh(
+    def get_mesh(
         self,
         coil_affine: Optional[npt.NDArray[np.float_]] = None,
         apply_deformation: bool = True,
@@ -183,10 +183,10 @@ class TmsCoil(TcdElement):
             coil_affine = np.eye(4)
 
         coil_msh = Msh()
-        if self.casing is not None and include_casing:
+        if self.casing is not None:
             coil_msh = coil_msh.join_mesh(
                 self.casing.get_mesh(
-                    coil_affine, include_optimization_points, 0
+                    coil_affine, include_casing, include_optimization_points, 0
                 )
             )
         for i, coil_element in enumerate(self.elements):

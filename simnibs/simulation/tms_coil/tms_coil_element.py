@@ -44,6 +44,7 @@ class TmsCoilElements(ABC, TcdElement):
     weights : Optional[npt.NDArray[np.float_]], optional
         An additional weighting array with one scalar per element, by default None
     """
+
     def __init__(
         self,
         name: Optional[str],
@@ -133,9 +134,11 @@ class TmsCoilElements(ABC, TcdElement):
         return affine_matrix
 
     def get_casing_coordinates(
-        self, affine_matrix: Optional[npt.NDArray[np.float_]] = None, apply_deformation: bool = True
+        self,
+        affine_matrix: Optional[npt.NDArray[np.float_]] = None,
+        apply_deformation: bool = True,
     ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Returns the casing points, min distance points and intersection points, 
+        """Returns the casing points, min distance points and intersection points,
         optionally transformed by the affine matrix and deformed by the element deformation
 
         Parameters
@@ -161,9 +164,7 @@ class TmsCoilElements(ABC, TcdElement):
             transformed_coordinates[1] = self.casing.get_min_distance_points(
                 affine_matrix
             )
-            transformed_coordinates[2] = self.casing.get_intersect_points(
-                affine_matrix
-            )
+            transformed_coordinates[2] = self.casing.get_intersect_points(affine_matrix)
 
         return tuple(transformed_coordinates)
 
@@ -200,11 +201,12 @@ class TmsCoilElements(ABC, TcdElement):
             The generated mesh
         """
         element_mesh = Msh()
-        if self.casing is not None and include_element_casing:
+        if self.casing is not None:
             if apply_deformation:
                 element_mesh = element_mesh.join_mesh(
                     self.casing.get_mesh(
                         self.get_combined_transformation(affine_matrix),
+                        include_element_casing,
                         include_optimization_points,
                         element_tag,
                     )
@@ -212,13 +214,20 @@ class TmsCoilElements(ABC, TcdElement):
             else:
                 element_mesh = element_mesh.join_mesh(
                     self.casing.get_mesh(
-                        affine_matrix, include_optimization_points, element_tag
+                        affine_matrix,
+                        include_element_casing,
+                        include_optimization_points,
+                        element_tag,
                     )
                 )
         if include_coil_element:
-            element_mesh = element_mesh.join_mesh(self.generate_element_mesh(affine_matrix, apply_deformation, element_tag))
+            element_mesh = element_mesh.join_mesh(
+                self.generate_element_mesh(
+                    affine_matrix, apply_deformation, element_tag
+                )
+            )
         return element_mesh
-    
+
     @abstractmethod
     def generate_element_mesh(
         self,
@@ -369,6 +378,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
     weights : Optional[npt.NDArray[np.float_]], optional
         An additional weighting array with one scalar per element, by default None
     """
+
     def __init__(
         self,
         name: Optional[str],
@@ -387,7 +397,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         apply_deformation: bool = True,
     ) -> npt.NDArray[np.float_]:
         """Returns the positions of the stimulation elements,
-        optionally transformed by the affine matrix and deformed by the element deformation 
+        optionally transformed by the affine matrix and deformed by the element deformation
 
         Parameters
         ----------
@@ -399,7 +409,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         Returns
         -------
         npt.NDArray[np.float_]
-        The positions of the stimulation elements, optionally transformed by the affine matrix and deformed by the element deformation 
+        The positions of the stimulation elements, optionally transformed by the affine matrix and deformed by the element deformation
         """
         if affine_matrix is None:
             affine_matrix = np.eye(4)
@@ -428,6 +438,7 @@ class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
     weights : Optional[npt.NDArray[np.float_]], optional
         An additional weighting array with one scalar per element, by default None
     """
+
     def __init__(
         self,
         name: Optional[str],
@@ -438,9 +449,7 @@ class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
         stimulator: Optional[TmsStimulator],
         weights: Optional[npt.NDArray[np.float_]] = None,
     ):
-        super().__init__(
-            name, casing, deformations, points, stimulator, weights
-        )
+        super().__init__(name, casing, deformations, points, stimulator, weights)
         self.values = values
 
     def get_values(
@@ -449,7 +458,7 @@ class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
         apply_deformation: bool = True,
     ) -> npt.NDArray[np.float_]:
         """Returns the values of the stimulation elements,
-        optionally transformed by the affine matrix and deformed by the element deformation 
+        optionally transformed by the affine matrix and deformed by the element deformation
 
         Parameters
         ----------
@@ -461,7 +470,7 @@ class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
         Returns
         -------
         npt.NDArray[np.float_]
-            the values of the stimulation elements, optionally transformed by the affine matrix and deformed by the element deformation 
+            the values of the stimulation elements, optionally transformed by the affine matrix and deformed by the element deformation
         """
         if affine_matrix is None:
             affine_matrix = np.eye(4)
@@ -757,9 +766,7 @@ class LinePointElements(PositionalTmsCoilElements):
         Msh
             The generated mesh representing the coil element
         """
-        transformed_points = self.get_points(
-            affine_matrix, apply_deformation
-        )
+        transformed_points = self.get_points(affine_matrix, apply_deformation)
         point_mesh = Msh(
             Nodes(transformed_points),
             Elements(points=np.arange(len(transformed_points)) + 1),
@@ -857,11 +864,12 @@ class SampledGridPointElements(TmsCoilElements):
         Msh
             The generated mesh representing the coil element
         """
-        combined_affine = self.affine 
+        combined_affine = self.affine
         if apply_deformation:
-            combined_affine = combined_affine @ self.get_combined_transformation(affine_matrix)
+            combined_affine = self.get_combined_transformation(
+                affine_matrix) @ combined_affine 
         else:
-            combined_affine = combined_affine @ affine_matrix
+            combined_affine = affine_matrix @ combined_affine
 
         voxel_coordinates = np.array(
             list(np.ndindex(self.data.shape[0], self.data.shape[1], self.data.shape[2]))
@@ -871,6 +879,8 @@ class SampledGridPointElements(TmsCoilElements):
             voxel_coordinates @ combined_affine[:3, :3].T + combined_affine[None, :3, 3]
         )
         targets = points + self.data.reshape(-1, 3)
+
+        print(targets)
 
         point_mesh = Msh(
             Nodes(np.concatenate((points, targets))),

@@ -9,7 +9,7 @@ from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilRotation
-from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, LinePointElements, SampledGridPointElements
+from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, DirectionalTmsCoilElements, LinePointElements, LineSegmentElements, PositionalTmsCoilElements, SampledGridPointElements
 from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 
 from .... import SIMNIBSDIR
@@ -19,6 +19,12 @@ def testcoil_ccd():
     fn = os.path.join(
         SIMNIBSDIR, '_internal_resources', 'testing_files', 'testcoil.ccd')
     return fn
+
+def is_close_subset_of(array1, array2, tolerance=1e-4):
+    return np.all([np.any(np.all(np.isclose(array2, element, atol=tolerance), axis=1)) for element in array1])
+
+def is_close_to_any(array1, array2, tolerance=1e-4):
+    return np.any([np.any(np.all(np.isclose(array2, element, atol=tolerance), axis=1)) for element in array1])
 
 class TestReadCoil:
     def test_read_minimal_tcd(self, minimal_tcd_coil_dict: dict[str, Any], tmp_path: Path):
@@ -134,6 +140,195 @@ class TestWriteCoil:
         np.testing.assert_allclose(sampled_grid.data, field)
         np.testing.assert_allclose(sampled_grid.affine, affine)
 
+class TestCoilMesh:
+    def test_generate_full_coil_mesh(self, full_tcd_coil: TmsCoil):
+        coil_mesh = full_tcd_coil.get_mesh(apply_deformation=False)
+
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 4 + 3
+        assert is_close_subset_of(full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+        for coil_element in full_tcd_coil.elements:
+            assert is_close_subset_of(coil_element.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, PositionalTmsCoilElements):
+                assert is_close_subset_of(coil_element.points , coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, DipoleElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values * 1e3, coil_mesh.nodes.node_coord)
+            
+            if isinstance(coil_element, LineSegmentElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, SampledGridPointElements):
+                voxel_coordinates = np.array(
+                    list(np.ndindex(coil_element.data.shape[0], coil_element.data.shape[1], coil_element.data.shape[2]))
+                )
+
+                points = (
+                    voxel_coordinates @ coil_element.affine[:3, :3].T + coil_element.affine[None, :3, 3]
+                )
+
+                targets = points + coil_element.data.reshape(-1, 3)
+
+                assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
+                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
+
+    def test_generate_full_coil_mesh_with_affine(self, full_tcd_coil: TmsCoil):
+        coil_affine = np.array([[np.cos(1.23323),-np.sin(1.23323),0,111],
+                                [np.sin(1.23323),np.cos(1.23323),0,-32],
+                                [0,0,1,232],
+                                [0,0,0,1]])
+        inv_coil_affine = np.linalg.inv(coil_affine)
+        coil_mesh = full_tcd_coil.get_mesh(coil_affine=coil_affine, apply_deformation=False)
+
+        coil_mesh_node_coord = coil_mesh.nodes.node_coord @ inv_coil_affine[:3, :3].T + inv_coil_affine[None, :3, 3]
+        print(list(coil_mesh.nodes.node_coord))
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 4 + 3
+        assert is_close_subset_of(full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh_node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.min_distance_points, coil_mesh_node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.intersect_points, coil_mesh_node_coord)
+
+        for coil_element in full_tcd_coil.elements:
+            assert is_close_subset_of(coil_element.casing.mesh.nodes.node_coord, coil_mesh_node_coord)
+            assert is_close_subset_of(coil_element.casing.min_distance_points, coil_mesh_node_coord)
+            assert is_close_subset_of(coil_element.casing.intersect_points, coil_mesh_node_coord)
+
+            if isinstance(coil_element, PositionalTmsCoilElements):
+                assert is_close_subset_of(coil_element.points , coil_mesh_node_coord)
+
+            if isinstance(coil_element, DipoleElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values * 1e3, coil_mesh_node_coord)
+            
+            if isinstance(coil_element, LineSegmentElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values, coil_mesh_node_coord)
+
+            if isinstance(coil_element, SampledGridPointElements):
+                voxel_coordinates = np.array(
+                    list(np.ndindex(coil_element.data.shape[0], coil_element.data.shape[1], coil_element.data.shape[2]))
+                )
+
+                points = (
+                    voxel_coordinates @ coil_element.affine[:3, :3].T + coil_element.affine[None, :3, 3]
+                )
+
+                targets = points + coil_element.data.reshape(-1, 3) 
+                print(points)
+                print(targets)
+                print(list(coil_mesh_node_coord))
+                assert is_close_subset_of(points, coil_mesh_node_coord)
+                #TODO assert is_close_subset_of(targets, coil_mesh_node_coord)
+
+    def test_generate_coil_mesh_exclude_casings(self, full_tcd_coil: TmsCoil):
+        coil_mesh = full_tcd_coil.get_mesh(include_casing=False, apply_deformation=False)
+
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 2
+        assert not is_close_to_any(full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+        for coil_element in full_tcd_coil.elements:
+            assert not is_close_to_any(coil_element.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, PositionalTmsCoilElements):
+                assert is_close_subset_of(coil_element.points , coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, DipoleElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values * 1e3, coil_mesh.nodes.node_coord)
+            
+            if isinstance(coil_element, LineSegmentElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, SampledGridPointElements):
+                voxel_coordinates = np.array(
+                    list(np.ndindex(coil_element.data.shape[0], coil_element.data.shape[1], coil_element.data.shape[2]))
+                )
+
+                points = (
+                    voxel_coordinates @ coil_element.affine[:3, :3].T + coil_element.affine[None, :3, 3]
+                )
+
+                targets = points + coil_element.data.reshape(-1, 3)
+
+                assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
+                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
+
+    def test_generate_coil_mesh_exclude_optimization_points(self, full_tcd_coil: TmsCoil):
+        coil_mesh = full_tcd_coil.get_mesh(include_optimization_points=False, apply_deformation=False)
+
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 2 + 1
+        assert is_close_subset_of(full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+        assert not is_close_to_any(full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord)
+        assert not is_close_to_any(full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+        for coil_element in full_tcd_coil.elements:
+            assert is_close_subset_of(coil_element.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+            assert not is_close_to_any(coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord)
+            assert not is_close_to_any(coil_element.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, PositionalTmsCoilElements):
+                assert is_close_subset_of(coil_element.points , coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, DipoleElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values * 1e3, coil_mesh.nodes.node_coord)
+            
+            if isinstance(coil_element, LineSegmentElements):
+                assert is_close_subset_of(coil_element.points + coil_element.values, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, SampledGridPointElements):
+                voxel_coordinates = np.array(
+                    list(np.ndindex(coil_element.data.shape[0], coil_element.data.shape[1], coil_element.data.shape[2]))
+                )
+
+                points = (
+                    voxel_coordinates @ coil_element.affine[:3, :3].T + coil_element.affine[None, :3, 3]
+                )
+
+                targets = points + coil_element.data.reshape(-1, 3)
+
+                assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
+                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
+
+    def test_generate_coil_mesh_exclude_optimization_points(self, full_tcd_coil: TmsCoil):
+        coil_mesh = full_tcd_coil.get_mesh(include_coil_elements=False, apply_deformation=False)
+
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 3
+        assert is_close_subset_of(full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord)
+        assert is_close_subset_of(full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+        for coil_element in full_tcd_coil.elements:
+            assert is_close_subset_of(coil_element.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord)
+            assert is_close_subset_of(coil_element.casing.intersect_points, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, PositionalTmsCoilElements):
+                assert not is_close_to_any(coil_element.points , coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, DipoleElements):
+                assert not is_close_to_any(coil_element.points + coil_element.values * 1e3, coil_mesh.nodes.node_coord)
+            
+            if isinstance(coil_element, LineSegmentElements):
+                assert not is_close_to_any(coil_element.points + coil_element.values, coil_mesh.nodes.node_coord)
+
+            if isinstance(coil_element, SampledGridPointElements):
+                voxel_coordinates = np.array(
+                    list(np.ndindex(coil_element.data.shape[0], coil_element.data.shape[1], coil_element.data.shape[2]))
+                )
+
+                points = (
+                    voxel_coordinates @ coil_element.affine[:3, :3].T + coil_element.affine[None, :3, 3]
+                )
+
+                targets = points + coil_element.data.reshape(-1, 3)
+
+                assert not is_close_to_any(points, coil_mesh.nodes.node_coord)
+                assert not is_close_to_any(targets, coil_mesh.nodes.node_coord)
 
 class TestPositionOptimization:
     def test_simple_optimization(self, sphere3_msh: Msh):
