@@ -32,7 +32,7 @@ from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.spawn_process import spawn_process
 from ..utils.transformations import resample_vol, crop_vol, normalize
-
+from ..utils import mesh_element_properties 
 
 
 # --------------- expansion from central to pial surface ------------------
@@ -2114,3 +2114,4 @@ def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
     ensure_orientation_consistency(rr, tris)
     surfs[f"cent_{name}_sub"] = pv.make_tri_mesh(central_surf["points"][used], tris)
     surfs[f"sphe_{name}_sub"] = pv.make_tri_mesh(sphere_surf["points"][used], tris)
+    

@@ -13,8 +13,10 @@ import h5py
 import numpy as np
 import scipy.sparse as sparse
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from ..mesh_tools import mesh_io
-from . import cond as cond_lib
+from ..utils import cond_utils as cond_lib
 from . import coil_numpy as coil_lib
 from . import pardiso
 from . import petsc_solver
@@ -190,7 +192,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
                 cond.field_name = 'conductivity'
                 cond.mesh = out_mesh
                 if cond.nr_comp == 9:
-                    out_mesh.elmdata += cond_lib.TensorVisualization(cond, out_mesh)
+                    out_mesh.elmdata += cond_lib.visualize_tensor(cond, out_mesh)
                 else:
                     out_mesh.elmdata.append(cond)
 
@@ -1347,7 +1349,7 @@ def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_optio
     return el_c / current * v.value
 
 
-def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[5, 1005], units='mm'):
+def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE], units='mm'):
     # Set-up a mesh with a mesh
     m = copy.deepcopy(v.mesh)
     m.nodedata = [v]

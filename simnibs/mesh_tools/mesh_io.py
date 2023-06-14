@@ -43,6 +43,8 @@ import scipy.interpolate
 import nibabel
 import h5py
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
@@ -2407,7 +2409,7 @@ class Msh:
         """
         assert tol > 0
 
-        skin_faces = self.elm[self.elm.tag1 == 1005, :3]
+        skin_faces = self.elm[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]
         subset = np.unique(skin_faces-1)
         m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
 

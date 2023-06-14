@@ -26,9 +26,10 @@ import sys
 import argparse
 import nibabel
 
-import simnibs.simulation.cond as cond
 import simnibs.mesh_tools.mesh_io as mesh_io
+import simnibs.utils.cond_utils
 from simnibs.utils.simnibs_logger import logger
+from ..utils.mesh_element_properties import ElementTags
 from simnibs import __version__
 
 
@@ -65,11 +66,11 @@ def main():
     affine = image.affine
     if args.ev:
         logger.info('Creating tensor visualization')
-        mesh = mesh.crop_mesh([1, 2, 1001, 1002])
-        cond_list = [c.value for c in cond.standard_cond()]
-        sigma = cond.cond2elmdata(mesh, cond_list, anisotropy_volume=vol, affine=affine,
-                                  aniso_tissues=[1, 2])
-        views = cond.TensorVisualization(sigma, mesh)
+        mesh = mesh.crop_mesh([ElementTags.WM, ElementTags.GM, ElementTags.WM_TH_SURFACE, ElementTags.GM_TH_SURFACE])
+        cond_list = [c.value for c in simnibs.utils.cond_utils.standard_cond()]
+        sigma = simnibs.utils.cond_utils.cond2elmdata(mesh, cond_list, anisotropy_volume=vol, affine=affine,
+                                  aniso_tissues=[ElementTags.WM, ElementTags.GM])
+        views = simnibs.utils.cond_utils.visualize_tensor(sigma, mesh)
         mesh.nodedata = []
         mesh.elmdata = views
         mesh_io.write_msh(mesh, args.fn_out)

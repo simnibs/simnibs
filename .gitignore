@@ -50,6 +50,7 @@ simnibs/ccd-files/README.md
 # IDE stuff
 .idea/
 .Rhistory
+.vscode
 
 # Mac stuff
 .DS_store

@@ -32,7 +32,7 @@ import sys
 
 from simnibs import SIMNIBSDIR, __version__
 from simnibs.utils import html_writer
-from simnibs.simulation import cond
+from simnibs.utils import cond_utils
 from simnibs.mesh_tools import mesh_io
 from simnibs.utils import transformations
 from simnibs.utils.file_finder import SubjectFiles, templates, ElectrodeCaps_MNI
@@ -343,7 +343,7 @@ def convert_old_new(subpath_old, subpath_new):
             mesh_in=mesh,
         )
                 
-    v = final_mesh.view(cond_list=cond.standard_cond())
+    v = final_mesh.view(cond_list=cond_utils.standard_cond())
     v.write_opt(sf_new.fnamehead)
     
     # Write label image from mesh
