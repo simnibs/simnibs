@@ -70,17 +70,17 @@ class TmsCoilElements(ABC, TcdElement):
 
         Parameters
         ----------
-        target_positions : npt.NDArray[np.float_]
+        target_positions : npt.NDArray[np.float_] (N x 3)
             The points at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every target positions
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every target positions in Tesla*meter
         """
         pass
 
@@ -490,17 +490,17 @@ class DipoleElements(DirectionalTmsCoilElements):
 
         Parameters
         ----------
-        target_positions : npt.NDArray[np.float_]
-            The target positions at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the A field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every target positions
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every target positions in Tesla*meter
         """
         dipole_moment = self.get_values(coil_affine)
         dipole_position_m = self.get_points(coil_affine) * 1e-3
@@ -601,17 +601,17 @@ class LineSegmentElements(DirectionalTmsCoilElements):
 
         Parameters
         ----------
-        target_positions : npt.NDArray[np.float_]
-            The target positions at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the A field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every target positions
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every target positions in Tesla*meter
         """
         directions_m = self.get_values(coil_affine) * 1e-3
         segment_position_m = self.get_points(coil_affine) * 1e-3
@@ -705,17 +705,17 @@ class LinePointElements(PositionalTmsCoilElements):
 
         Parameters
         ----------
-        target_positions : npt.NDArray[np.float_]
-            The target positions at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the A field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every target positions
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every target positions in Tesla*meter
         """
         segment_position_m = self.get_points(coil_affine) * 1e-3
         target_positions_m = target_positions * 1e-3
@@ -813,17 +813,17 @@ class SampledGridPointElements(TmsCoilElements):
 
         Parameters
         ----------
-        target_positions : npt.NDArray[np.float_]
-            The target positions at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the A field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every target positions
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every target positions in Tesla*meter
         """
         combined_affine = self.get_combined_transformation(coil_affine)
         iM = np.linalg.pinv(self.affine) @ np.linalg.pinv(combined_affine)

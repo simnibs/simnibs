@@ -133,17 +133,17 @@ class TmsCoil(TcdElement):
 
         Parameters
         ----------
-        points : npt.NDArray[np.float_]
-            The points at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_]
+        points : npt.NDArray[np.float_] (N x 3)
+            The points at which the A field should be calculated in mm
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
-        npt.NDArray[np.float_]
-            The A field at every point
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every point in Tesla*meter
         """
         a_field = np.zeros_like(points)
         for coil_element in self.elements:
