@@ -32,6 +32,8 @@ import scipy.ndimage
 import scipy.spatial
 from scipy.sparse import coo_matrix, csr_matrix
 from typing import Union
+
+from simnibs.utils.mesh_element_properties import ElementTags
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
@@ -1649,10 +1651,10 @@ def middle_gm_interpolation(
     sim_name = "." + os.path.splitext(sim_name)[0]
 
     # Crop out WM, GM, and CSF. We add WM and CSF to make the mesh convex.
-    m = m.crop_mesh(tags=[1, 2, 3])
+    m = m.crop_mesh(tags=[ElementTags.WM, ElementTags.GM, ElementTags.CSF])
 
     # Set the volume to be GM. The interpolation will use only the tetrahedra in the volume.
-    th_indices = m.elm.elm_number[m.elm.tag1 == 2]
+    th_indices = m.elm.elm_number[m.elm.tag1 == ElementTags.GM]
 
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
@@ -1760,8 +1762,8 @@ def middle_gm_interpolation(
 
     def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
         mesh = surfs["lh"].join_mesh(surfs["rh"])
-        mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
-        mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag1 = ElementTags.GM_TH_SURFACE * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag2 = ElementTags.GM_TH_SURFACE * np.ones(mesh.elm.nr, dtype=int)
         mesh.nodedata = []
         mesh.elmdata = []
         for k in surfs["lh"].field.keys():

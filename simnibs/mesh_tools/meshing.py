@@ -5,6 +5,8 @@ import scipy.sparse
 import scipy.ndimage
 import time
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from . import mesh_io
 from . import cgal
 from ..utils.simnibs_logger import logger, format_time
@@ -304,7 +306,7 @@ def remesh(mesh, facet_size, cell_size,
     # Reconstruct surfaces from tetrahedra
     mesh = mesh.crop_mesh(elm_type=4)
     mesh.reconstruct_surfaces()
-    mesh.elm.tag1[mesh.elm.tag1 > 1000] -= 1000
+    mesh.elm.tag1[mesh.elm.tag1 > ElementTags.TH_END] -= ElementTags.TH_SURFACE_START
     # Find the tetrahedra adjacent to each surface
     adj_th = mesh.elm.find_adjacent_tetrahedra()
     adj_labels = mesh.elm.tag1[adj_th - 1]

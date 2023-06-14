@@ -1,108 +1,119 @@
-'''
-    Manipulation of conductivity information for SimNIBS
-    This program is part of the SimNIBS package.
-    Please check on www.simnibs.org how to cite our work in publications.
 
-    Copyright (C) 2018 Guilherme Saturnino, Andre Antunes, Axel Thielscher
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-
-'''
-
-
-from __future__ import division
 import numpy as np
-from . import sim_struct
-from ..mesh_tools import mesh_io
-from ..utils.simnibs_logger import logger
+from simnibs.mesh_tools import mesh_io
+from simnibs.utils.mesh_element_properties import ElementTags
+from simnibs.utils import mesh_element_properties
+
+from simnibs.utils.simnibs_logger import logger
 
 
-def standard_cond():
-    S = []
-    for i in range(1000):
-        S.append(sim_struct.COND())
+def _get_sorted_eigenv(tensors):
+    eig_val, eig_vec = np.linalg.eig(tensors)
+    eig_val = np.real(eig_val)
+    eig_vec = np.real(eig_vec)
+    sort = eig_val.argsort(axis=1)[:, ::-1]
+    eig_val = np.sort(eig_val, axis=1)[:, ::-1]
+    s_eig_vec = np.zeros_like(tensors)
+    for i in range(3):
+        s_eig_vec[:, :, i] = eig_vec[np.arange(len(eig_vec)), :, sort[:, i]]
+    eig_vec = s_eig_vec
+    return eig_val, eig_vec
 
-    # WM
-    S[0].name = 'WM'
-    S[0].value = 0.126
-    S[0].descrip = 'brain white matter (from Wagner 2004)'
 
-    # GM
-    S[1].name = 'GM'
-    S[1].value = 0.275
-    S[1].descrip = 'brain gray matter (from Wagner 2004)'
+def _form_tensors(eigval, eigvec):
+    # What we are doing: eig_vec[0].dot((ls[0, None] * eig_vec[0]).T)
+    tensors = np.einsum('aij,akj -> aik',
+                        eigvec, eigval[:, None] * eigvec)
+    return tensors
 
-    # CSF
-    S[2].name = 'CSF'
-    S[2].value = 1.654
-    S[2].descrip = 'cerebrospinal fluid (from Wagner 2004)'
 
-    # Bone
-    S[3].name = 'Bone'
-    S[3].value = 0.010
-    S[3].descrip = 'average bone (from Wagner 2004)'
+def _adjust_excentricity(eig_val, scaling):
+    '''' Tensor excentricity '''
+    if scaling >= 1. or scaling < 0.:
+        raise ValueError('Invalid scaling factor for '
+                         'tensor excentricity: {0}'.format(scaling))
 
-    # Scalp
-    S[4].name = 'Scalp'
-    S[4].value = 0.465
-    S[4].descrip = 'average scalp (from Wagner 2004)'
+    if np.any(eig_val) < 0:
+        raise ValueError('Found a negative eigenvalue!')
+    if np.any(np.isclose(eig_val, 0)):
+        raise ValueError('Found a zero eigenvalue!')
+    # Excentricity
+    ex = np.sqrt(1 - (eig_val[:, [1, 2, 2]]/eig_val[:, [0, 0, 1]]) ** 2)
+    # Scale excentricity
+    if scaling < .5:
+        es = 2.0 * ex * scaling
+    elif scaling > .5:
+        es = 2.0 * (1 - ex) * scaling + 2 * ex - 1
+    else:
+        es = ex
+    # New eigenvalues
+    ls = np.ones_like(eig_val)
+    ls[:, 1] = np.sqrt(1 - es[:, 0]**2)
+    ls[:, 2] = np.sqrt(1 - es[:, 1]**2)
+    # Scale the new eigenvalues so that they keep the volume of the tensor
+    ls *= (np.prod(eig_val, axis=1)/np.prod(ls, axis=1))[:, None]**(1.0/3.0)
+    # If the tensor is isotropic, don't scale it
+    iso = np.isclose(eig_val[:, 0], eig_val[:, 2], rtol=1e-2)
+    ls[iso] = eig_val[iso]
+    return ls
 
-    # Eye balls (vitreous humour)
-    S[5].name = 'Eye_balls'
-    S[5].value = 0.5
-    S[5].descrip = 'vitreous humour (from Opitz, Paulus, Thielscher, submitted)'
 
-    # Compact bone
-    S[6].name = 'Compact_bone'
-    S[6].value = 0.008
-    S[6].descrip = 'compact bone (from Opitz, Paulus, Thielscher, submitted)'
+def _fix_zeros(tensors, c):
+    tensors = tensors.reshape(-1, 9)
+    negative = np.all(np.isclose(tensors, 0), axis=1)
+    frac = np.sum(negative)/len(tensors)
+    if frac > .1:
+        log = logger.critical
+    else:
+        log = logger.info
+    log('Found {0} ({1:.1%}) Zero tensors in the volume. '
+        ' Fixing it.'.format(np.sum(negative), frac))
+    tensors[negative] = c * np.eye(3).reshape(-1)
+    tensors = tensors.reshape(-1, 3, 3)
+    return tensors
 
-    # Spongy bone
-    S[7].name = 'Spongy_bone'
-    S[7].value = 0.025
-    S[7].descrip = 'spongy bone (from Opitz, Paulus, Thielscher, submitted)'
 
-    # Blood
-    S[8].name = 'Blood'
-    S[8].value = 0.6
-    S[8].descrip = 'Blood (from Gabriel et al, 2009)'
+def _fix_eigv(eig_val, max_value, max_ratio, c):
+    negative = np.all(eig_val <= 0.0, axis=1)
+    eig_val[negative] = c
+    frac = np.sum(negative)/len(eig_val)
+    if frac > .1:
+        log = logger.critical
+    else:
+        log = logger.info
+    log('Found {0} ({1:.1%}) Negative Semi-definite tensors in the volume. '
+        ' Fixing it.'.format(np.sum(negative), frac))
 
-    # Muscle
-    S[9].name = 'Muscle'
-    S[9].value = 0.16
-    S[9].descrip = 'Muscle (from Gabriel et al, 2009)'
+    large = eig_val > max_value
+    eig_val[large] = max_value
 
-    # Rubber
-    S[99].name = 'Electrode_rubber'
-    S[99].value = 29.4
-    S[99].descrip = 'for tDCS rubber electrodes'
+    frac = np.sum(large)/(3. * len(eig_val))
+    if frac > .1:
+        log = logger.critical
+    else:
+        log = logger.info
+    log('Found {0} ({1:.1%}) too large eigenvalues in the volume. '
+        ' Fixing it.'.format(np.sum(large), frac))
 
-    # Saline
-    S[499].name = 'Saline'
-    S[499].value = 1.
-    S[499].descrip = 'for tDCS sponge electrodes'
+    small = eig_val < (eig_val[:, 0] / max_ratio)[:, None]
+    eig_val[small[:, 1], 1] = eig_val[small[:, 1], 0] / max_ratio
+    eig_val[small[:, 2], 2] = eig_val[small[:, 2], 0] / max_ratio
+    frac = np.sum(small)/(3 * len(eig_val))
+    if frac > .1:
+        log = logger.critical
+    else:
+        log = logger.info
+    log('Found {0} ({1:.1%}) too small or negative eigenvalues in the volume. '
+        ' Fixing it.'.format(np.sum(small), frac))
 
-    return S
+    return eig_val
 
 
 def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
-                 aniso_tissues=[1, 2], correct_FSL=True, normalize=False,
+                 aniso_tissues=[ElementTags.WM, ElementTags.GM], correct_FSL=True, normalize=False,
                  excentricity_scaling=None, max_ratio=10, max_cond=2, correct_intensity=True):
     """ Define conductivity ElementData from a conductivity list or anisotropy
     information
-
     Parameters
     ----------
     mesh: simnibs.mesh_io.Msh
@@ -135,7 +146,6 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
         Wether or not to fit the tensor sizes according to the scalar values (See
         Rullmann et. al. 2009). This procedure scales the entire tensor field with a
         single scalar. Does not run if normalize==True
-
     Returns
     -------
     cond: simnibs.mesh_io.ElementData
@@ -284,112 +294,8 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
 
     return cond
 
-
-def _get_sorted_eigenv(tensors):
-    eig_val, eig_vec = np.linalg.eig(tensors)
-    eig_val = np.real(eig_val)
-    eig_vec = np.real(eig_vec)
-    sort = eig_val.argsort(axis=1)[:, ::-1]
-    eig_val = np.sort(eig_val, axis=1)[:, ::-1]
-    s_eig_vec = np.zeros_like(tensors)
-    for i in range(3):
-        s_eig_vec[:, :, i] = eig_vec[np.arange(len(eig_vec)), :, sort[:, i]]
-    eig_vec = s_eig_vec
-    return eig_val, eig_vec
-
-
-def _form_tensors(eigval, eigvec):
-    # What we are doing: eig_vec[0].dot((ls[0, None] * eig_vec[0]).T)
-    tensors = np.einsum('aij,akj -> aik',
-                        eigvec, eigval[:, None] * eigvec)
-    return tensors
-
-
-def _adjust_excentricity(eig_val, scaling):
-    '''' Tensor excentricity '''
-    if scaling >= 1. or scaling < 0.:
-        raise ValueError('Invalid scaling factor for '
-                         'tensor excentricity: {0}'.format(scaling))
-
-    if np.any(eig_val) < 0:
-        raise ValueError('Found a negative eigenvalue!')
-    if np.any(np.isclose(eig_val, 0)):
-        raise ValueError('Found a zero eigenvalue!')
-    # Excentricity
-    ex = np.sqrt(1 - (eig_val[:, [1, 2, 2]]/eig_val[:, [0, 0, 1]]) ** 2)
-    # Scale excentricity
-    if scaling < .5:
-        es = 2.0 * ex * scaling
-    elif scaling > .5:
-        es = 2.0 * (1 - ex) * scaling + 2 * ex - 1
-    else:
-        es = ex
-    # New eigenvalues
-    ls = np.ones_like(eig_val)
-    ls[:, 1] = np.sqrt(1 - es[:, 0]**2)
-    ls[:, 2] = np.sqrt(1 - es[:, 1]**2)
-    # Scale the new eigenvalues so that they keep the volume of the tensor
-    ls *= (np.prod(eig_val, axis=1)/np.prod(ls, axis=1))[:, None]**(1.0/3.0)
-    # If the tensor is isotropic, don't scale it
-    iso = np.isclose(eig_val[:, 0], eig_val[:, 2], rtol=1e-2)
-    ls[iso] = eig_val[iso]
-    return ls
-
-
-def _fix_zeros(tensors, c):
-    tensors = tensors.reshape(-1, 9)
-    negative = np.all(np.isclose(tensors, 0), axis=1)
-    frac = np.sum(negative)/len(tensors)
-    if frac > .1:
-        log = logger.critical
-    else:
-        log = logger.info
-    log('Found {0} ({1:.1%}) Zero tensors in the volume. '
-        ' Fixing it.'.format(np.sum(negative), frac))
-    tensors[negative] = c * np.eye(3).reshape(-1)
-    tensors = tensors.reshape(-1, 3, 3)
-    return tensors
-
-
-def _fix_eigv(eig_val, max_value, max_ratio, c):
-    negative = np.all(eig_val <= 0.0, axis=1)
-    eig_val[negative] = c
-    frac = np.sum(negative)/len(eig_val)
-    if frac > .1:
-        log = logger.critical
-    else:
-        log = logger.info
-    log('Found {0} ({1:.1%}) Negative Semi-definite tensors in the volume. '
-        ' Fixing it.'.format(np.sum(negative), frac))
-
-    large = eig_val > max_value
-    eig_val[large] = max_value
-
-    frac = np.sum(large)/(3. * len(eig_val))
-    if frac > .1:
-        log = logger.critical
-    else:
-        log = logger.info
-    log('Found {0} ({1:.1%}) too large eigenvalues in the volume. '
-        ' Fixing it.'.format(np.sum(large), frac))
-
-    small = eig_val < (eig_val[:, 0] / max_ratio)[:, None]
-    eig_val[small[:, 1], 1] = eig_val[small[:, 1], 0] / max_ratio
-    eig_val[small[:, 2], 2] = eig_val[small[:, 2], 0] / max_ratio
-    frac = np.sum(small)/(3 * len(eig_val))
-    if frac > .1:
-        log = logger.critical
-    else:
-        log = logger.info
-    log('Found {0} ({1:.1%}) too small or negative eigenvalues in the volume. '
-        ' Fixing it.'.format(np.sum(small), frac))
-
-    return eig_val
-
-
-def TensorVisualization(cond, mesh, all_compoents=False):
+def visualize_tensor(cond, mesh, all_compoents=False):
     ''' Creates a visualization of the tensors for plotting
-
     Parameters
     -----------
     cond: Nx9 numpy array
@@ -399,7 +305,6 @@ def TensorVisualization(cond, mesh, all_compoents=False):
     all_componets: bool (optional)
         Whether or nor to plot the middle and minimum eigenvalue, as well as the mean
         conductivity
-
     Returns
     ---------
     data: list
@@ -428,3 +333,98 @@ def TensorVisualization(cond, mesh, all_compoents=False):
             mesh_io.ElementData(mc,
                  name='mean_conductivity', mesh=mesh))
     return data
+
+
+class COND(object):
+    """ conductivity information
+    Conductivity information for simulations
+    Attributes:
+    ---------------------
+    name: str
+        Name of tissue
+    value: float
+        value of conductivity
+    descrip: str
+        description of conductivity
+    distribution_type: 'uniform', 'normal', 'beta' or None
+        type of distribution for gPC simulation
+    distribution_parameters: list of floats
+        if distribution_type is 'uniform': [min_value, max_value]
+        if distribution_type is 'normal': [mean, standard_deviation]
+        if distribution_type is 'beta': [p, q, min_value, max_value]
+    """
+
+    def __init__(self, matlab_struct=None):
+        self.name = None  # e.g. WM, GM
+        self.value = None  # in S/m
+        self.descrip = ''
+        self._distribution_type = None
+        self.distribution_parameters = []
+
+        if matlab_struct is not None:
+            self.read_mat_struct(matlab_struct)
+
+    @property
+    def distribution_type(self):
+        return self._distribution_type
+
+    @distribution_type.setter
+    def distribution_type(self, dist):
+        if dist == '':
+            dist = None
+        if dist in ['uniform', 'normal', 'beta', None]:
+            self._distribution_type = dist
+        else:
+            raise ValueError('Invalid distribution type: {0}'.format(dist))
+
+    def read_mat_struct(self, c):
+        try:
+            self.name = str(c['name'][0])
+        except:
+            pass
+
+        try:
+            self.value = c['value'][0][0]
+        except:
+            self.value = None
+
+        try:
+            self.descrip = str(c['descrip'][0])
+        except:
+            pass
+
+        try:
+            self.distribution_type = str(c['distribution_type'][0])
+        except:
+            pass
+
+        try:
+            self.distribution_parameters = c['distribution_parameters'][0]
+        except:
+            pass
+
+    def __eq__(self, other):
+        if self.name != other.name or self.value != other.value:
+            return False
+        else:
+            return True
+
+    def __str__(self):
+        s = "name: {0}\nvalue: {1}\ndistribution: {2}\ndistribution parameters: {3}".format(
+            self.name, self.value, self.distribution_type, self.distribution_parameters)
+        return s
+
+
+def standard_cond():
+    S = []
+    for i in range(ElementTags.TH_END + 1):
+        S.append(COND())
+
+    for tissue_tag in mesh_element_properties.tissue_tags:
+        S[tissue_tag - 1].name = mesh_element_properties.tissue_names[tissue_tag]
+        S[tissue_tag - 1].value = mesh_element_properties.tissue_conductivities[tissue_tag]
+        S[tissue_tag - 1].desc  = mesh_element_properties.tissue_conductivity_descriptions[tissue_tag]
+
+    return S
+
+

@@ -30,7 +30,7 @@ from ..mesh_tools.mesh_io import (
     Msh,
     ElementData,
 )
-from ..simulation import cond
+from ..utils import cond_utils
 from ..utils import plotting, html_writer
 
 
@@ -516,7 +516,7 @@ def run(
 
         logger.info("Writing mesh")
         write_msh(final_mesh, sub_files.fnamehead)
-        v = final_mesh.view(cond_list=cond.standard_cond())
+        v = final_mesh.view(cond_list=cond_utils.standard_cond())
         v.write_opt(sub_files.fnamehead)
 
         logger.info("Transforming EEG positions")

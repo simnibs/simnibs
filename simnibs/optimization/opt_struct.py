@@ -39,14 +39,14 @@ from . import optimize_tms
 from . import optimization_methods
 from . import ADMlib
 from ..simulation import fem
-from ..simulation import cond
+from ..utils import cond_utils
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct
 from ..mesh_tools import mesh_io, gmsh_view
 from ..utils import transformations
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
-
+from ..utils.mesh_element_properties import ElementTags
 
 class TMSoptimize():
     """
@@ -114,18 +114,18 @@ class TMSoptimize():
         # Name of coil file
         self.fnamecoil = None
         # Conductivity stuff
-        self.cond = cond.standard_cond()
+        self.cond = cond_utils.standard_cond()
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
-        self.anisotropic_tissues = [1, 2]
+        self.anisotropic_tissues = [ElementTags.WM, ElementTags.GM]
         # If set, they have priority over fname_tensor
         self.anisotropy_vol = None  # 4-d data with anisotropy information
         self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         # Optimization stuff
         self.target = None
         self.target_direction = None
-        self.tissues = [2]
+        self.tissues = [ElementTags.GM]
         self.target_size = 5
         self.centre = []
         self.pos_ydir = []
@@ -2292,14 +2292,14 @@ class TDCSDistributedOptimize():
         field = np.float64(field[:])
 
         # setting values in eyes to zero
-        if np.any(self.mesh.elm.tag1 == 1006):
+        if np.any(self.mesh.elm.tag1 == ElementTags.EYE_BALLS_TH_SURFACE):
             logger.info('setting target values in eyes to zero')
             if self.lf_type == 'node':
-                eye_nodes=np.unique(self.mesh.elm.node_number_list[self.mesh.elm.tag1 == 1006,:])
+                eye_nodes=np.unique(self.mesh.elm.node_number_list[self.mesh.elm.tag1 == ElementTags.EYE_BALLS_TH_SURFACE,:])
                 eye_nodes = eye_nodes[eye_nodes>0]
                 field[eye_nodes-1] = 0.0 # node indices in mesh are 1-based
             elif self.lf_type == 'element':
-                field[self.mesh.elm.tag1 == 1006] = 0.0
+                field[self.mesh.elm.tag1 == ElementTags.EYE_BALLS_TH_SURFACE] = 0.0
 
         if self.mni_space:
             self.mesh.nodes.node_coord = orig_nodes
@@ -2449,7 +2449,7 @@ class TDCSDistributedOptimize():
             v = m.view()
             ## Configure view
             v.Mesh.SurfaceFaces = 0
-            v.View[2].Visible = 1
+            v.View[ElementTags.GM].Visible = 1
             # Electrode geo file
             el_geo_fn = os.path.splitext(fn_out_mesh)[0] + '_el_currents.geo'
             self._tdcs_opt_obj.electrode_geo(el_geo_fn, currents)
