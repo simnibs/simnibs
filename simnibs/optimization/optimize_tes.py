@@ -6,6 +6,7 @@ import h5py
 import types
 import logging
 import datetime
+import itertools
 import numpy as np
 import nibabel as nib
 import scipy.ndimage.morphology as mrph
@@ -18,12 +19,12 @@ from ..mesh_tools import mesh_io
 from ..mesh_tools import surface
 from ..simulation.sim_struct import ELECTRODE
 from ..simulation.fem import get_dirichlet_node_index_cog
-from ..simulation.onlinefem import OnlineFEM
+from ..simulation.onlinefem import OnlineFEM, postprocess_e
 from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ..utils.TI_utils import get_maxTI, get_dirTI
-from ..utils.measures import AUC, integral_focality
+from ..utils.measures import AUC, integral_focality, ROC
 
 SIMNIBSDIR = os.path.split(os.path.abspath(os.path.dirname(os.path.realpath(__file__))))[0]
 
@@ -74,19 +75,29 @@ class TESoptimize():
     optimize_init_vals : bool, optional, default: True
         If True, find initial values for optimization, guaranteeing a valid solution. If False, initial values
         are the center between bounds.
-    dataType : int, optional, default: 0
-        0: e-field magnitude
-        1: e-field vector
+    e_postproc : str, optional, default: "norm"
+        Specifies how the raw e-field in the ROI (Ex, Ey, Ez) is post-processed.
+        - "norm": electric field magnitude (default)
+        - "normal": determine normal component (required surface normals in dirvec)
+        - "tangential": determine tangential component (required surface normals in dirvec)
+        - "max_TI": maximum envelope for temporal interference fields
+        - "dir_TI": directional sensitive maximum envelope for temporal interference fields
     optimizer : str, optional, default: "differential_evolution"
         Optimization algorithm
     goal : list of str [n_roi], or FunctionType, optional, default: ["mean"]
         Implemented or user provided goal functions:
-        - "mean": average electric field magnitude in ROI
-        - "max": 99.9 percentile of electric field magnitude in ROI
-        - "mean_max_TI": average maximum envelope of e-field (temporal interference)
-        - "mean_max_TI_dir": average maximum envelope of e-field in certain direction (temporal interference)
+        - "mean": maximize mean e-field in ROI
+        - "max": maximize 99.9 percentile of electric field in ROI
+        - "focality": Maximize focality  (goal: sensitivity = specificity = 1)
+        - "focality_inv": Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
         - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float
           [n_channel_stim][n_roi] containing np.array with e-field
+    dirichlet_correction : bool, optional, default: True
+        Apply dirichlet correction of nodal currents for each electrode (electrode wise, not node wise).
+        If you want to apply the dirichlet corrrection node wise, please specify it when initializing the electrodes
+        (dirichlet_correction_detailed = True)
+    track_focality : bool, optional, default: False
+        Tracks focality for each goal function value (requires ROI and non-ROI definition)
 
     Attributes
     --------------
@@ -112,9 +123,10 @@ class TESoptimize():
                  optimizer_options=None,
                  weights=None,
                  anisotropy_type=None,
-                 min_electrode_distance=None,
+                 min_electrode_distance=0.,
                  plot=False,
                  goal="mean",
+                 threshold=None,
                  optimizer="differential_evolution",
                  output_folder=None,
                  goal_dir=None,
@@ -122,7 +134,9 @@ class TESoptimize():
                  overlap_factor=1.,
                  polish=True,
                  optimize_init_vals=True,
-                 dataType=None):
+                 e_postproc="norm",
+                 dirichlet_correction=None,
+                 track_focality=False):
         """
         Constructor of TESoptimize class instance
         """
@@ -209,9 +223,10 @@ class TESoptimize():
 
         # make final skin surface including some additional distance
         self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
-        self.skin_surface = self.valid_skin_region(skin_surface=self.skin_surface,
-                                                   mesh=self.mesh_relabel,
-                                                   additional_distance=0)
+        self.skin_surface = valid_skin_region(skin_surface=self.skin_surface,
+                                              fn_electrode_mask=self.fn_electrode_mask,
+                                              mesh=self.mesh_relabel,
+                                              additional_distance=0)
 
         # get mapping between skin_surface node indices and global mesh nodes
         self.node_idx_msh = np.where(np.isin(self.mesh.nodes.node_coord, self.skin_surface.nodes).all(axis=1))[0]
@@ -259,8 +274,6 @@ class TESoptimize():
         self.electrode = electrode
         self.electrode_pos_opt = None
         self.min_electrode_distance = min_electrode_distance
-        self.dirichlet_correction = False  # will be checked later if required
-        self.dirichlet_correction_detailed = False  # will be checked later if required
 
         # number of independent stimulation channels (on after another)
         self.n_channel_stim = len(electrode)
@@ -295,21 +308,30 @@ class TESoptimize():
         self.current = [np.zeros(len(np.unique(self.electrode[i_channel_stim].channel_id)))
                         for i_channel_stim in range(self.n_channel_stim)]
 
-        self.dirichlet_correction = [False] * self.n_channel_stim
-        self.dirichlet_correction_detailed = [False] * self.n_channel_stim
-        
-        for i_channel_stim in range(self.n_channel_stim):
-            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].dirichlet_correction_detailed:
-                    self.dirichlet_correction[i_channel_stim] = True
-                    if self.electrode[i_channel_stim].dirichlet_correction_detailed:
-                        self.dirichlet_correction_detailed[i_channel_stim] = True
+        # if nothing is provided, the dirichlet correction will be applied on the electrode level
+        if dirichlet_correction or dirichlet_correction is None:
+            # first we set it to false
+            self.dirichlet_correction = [False] * self.n_channel_stim
+            self.dirichlet_correction_detailed = [False] * self.n_channel_stim
 
-                for _electrode in _electrode_array.electrodes:
-                    self.current[i_channel_stim][_electrode.channel_id] += _electrode.ele_current
+            # now we check if multiple channels are connected together and a dirichlet correction is required
+            for i_channel_stim in range(self.n_channel_stim):
+                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                    if _electrode_array.dirichlet_correction or self.electrode[i_channel_stim].dirichlet_correction_detailed:
+                        self.dirichlet_correction[i_channel_stim] = True
 
-        self.dirichlet_correction = np.array(self.dirichlet_correction).any()
-        self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
+                        # check if node wise dirichlet correction is defined in the electrode
+                        if self.electrode[i_channel_stim].dirichlet_correction_detailed:
+                            self.dirichlet_correction_detailed[i_channel_stim] = True
+
+                    for _electrode in _electrode_array.electrodes:
+                        self.current[i_channel_stim][_electrode.channel_id] += _electrode.ele_current
+
+            self.dirichlet_correction = np.array(self.dirichlet_correction).any()
+            self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
+        else:
+            self.dirichlet_correction = [False] * self.n_channel_stim
+            self.dirichlet_correction_detailed = [False] * self.n_channel_stim
         
         # set initial positions of electrodes if nothing is provided
         assert self.n_channel_stim <= len(init_pos_list), "Please provide initial electrode positions."
@@ -379,19 +401,42 @@ class TESoptimize():
         if type(goal) is not list:
             goal = [goal]
 
-        if type(dataType) is not list:
-            dataType = [dataType]
+        if type(goal) is not list:
+            goal = [goal]
 
-        assert len(dataType) == len(self.roi), "Please provide the dataType 0 (magnitude), 1 (vector) for each goal function"
+        if "focality" in goal and len(goal) != len(self.roi):
+            goal = ["focality"] * len(self.roi)
 
-        if not (isinstance(goal[0], types.FunctionType) and len(goal) == 1):
+        if (type(threshold) != list and type(threshold) != np.ndarray) and threshold is not None:
+            threshold = [threshold]
+
+        if type(e_postproc) is not list:
+            e_postproc = [e_postproc]
+
+        if len(e_postproc) != len(self.roi):
+            e_postproc = e_postproc * len(self.roi)
+
+        if track_focality and len(self.roi) != 2:
+            raise ValueError("Focality can not be computed and tracked with only one ROI (non-ROI missing).")
+
+        if "focality" in goal and threshold is None:
+            raise ValueError("Please provide threshold(s) for receiving operator characteristics as goal function. "
+                             "Either one threshold for ROI and non-ROI or two individual thresholds.")
+
+        if not ((isinstance(goal[0], types.FunctionType) and len(goal) == 1) or "focality" in goal or "focality_inv" in goal):
             assert len(goal) == len(roi), "Please provide a goal function for each ROI."
             assert len(weights) == len(self.roi), "Number of weights has to match the number ROIs"
 
+        if "focality" in goal and len(roi) != 2:
+            raise ValueError("For focality optimization please provide ROI and non ROI region (in this order).")
+
         self.goal = goal
         self.goal_dir = goal_dir
+        self.e_postproc = e_postproc
+        self.threshold = threshold
         self.optimizer = optimizer
         self.weights = weights
+        self.track_focality = track_focality
         self.constrain_electrode_locations = constrain_electrode_locations
         self.overlap_factor = overlap_factor
         self.polish = polish
@@ -402,14 +447,6 @@ class TESoptimize():
         self.goal_fun_value = [[] for _ in range(self.n_channel_stim)]
         self.AUC = [[] for _ in range(self.n_channel_stim)]
         self.integral_focality = [[] for _ in range(self.n_channel_stim)]
-
-        # ensure that we will use vector e-field for TI goal functions
-        for i, _dataType in enumerate(dataType):
-
-            if self.goal[i] in ["mean_max_TI", "mean_max_TI_dir"]:
-                dataType[i] = 1
-            else:
-                dataType[i] = 0
 
         # direct and shgo optimizer do not take init vals
         if self.optimizer in ["direct", "shgo"]:
@@ -454,7 +491,8 @@ class TESoptimize():
         # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
         self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh, roi=self.roi)
 
-        self.dataType = dataType
+        # always compute e-field components (Ex, Ey, Ez), it will be postprocessed later according to self.e_postproc
+        self.dataType = [1] * len(self.roi)
 
         if anisotropy_type is None:
             anisotropy_type = "scalar"
@@ -488,6 +526,8 @@ class TESoptimize():
         self.logger.log(25, f"dirichlet_correction_detailed:    {self.dirichlet_correction_detailed}")
         self.logger.log(25, f"optimizer:                        {self.optimizer}")
         self.logger.log(25, f"goal:                             {self.goal}")
+        self.logger.log(25, f"e_postproc:                       {self.e_postproc}")
+        self.logger.log(25, f"threshold:                        {self.threshold}")
         self.logger.log(25, f"weights:                          {self.weights}")
         self.logger.log(25, f"output_folder:                    {self.output_folder}")
         self.logger.log(25, f"fn_results_hdf5:                  {self.fn_results_hdf5}")
@@ -511,10 +551,6 @@ class TESoptimize():
                 # self.logger.log(25, f"\tlength_y: {_electrode_array.length_y}")
 
         self.logger.log(25, f"=" * 100)
-
-        # perform optimization
-        ################################################################################################################
-        self.optimize()
 
     def get_bounds(self, constrain_electrode_locations, overlap_factor=1.):
         """
@@ -548,7 +584,7 @@ class TESoptimize():
                         Nz = np.array([row[1], row[2], row[3]]).astype(float)
 
             # project nasion to skin surface and determine normal vector
-            con_skin = self.mesh.elm.node_number_list[self.mesh.elm.tag1==1005, ][:, :3]-1
+            con_skin = self.mesh.elm.node_number_list[self.mesh.elm.tag1 == 1005, ][:, :3] - 1
             tri_skin_center = np.mean(self.mesh.nodes.node_coord[con_skin, ], axis=1)
             idx_min = np.argmin(np.linalg.norm(tri_skin_center - Nz, axis=1))
             p1_tri = self.mesh.nodes.node_coord[con_skin[:, 0], :]
@@ -563,14 +599,22 @@ class TESoptimize():
             Nz_cart = self.ellipsoid.ellipsoid2cartesian(coords=Nz_eli, norm=False)
             Nz_jacobi = self.ellipsoid.cartesian2jacobi(coords=Nz_cart, norm=False)
 
-            if Nz_jacobi[0, 1] + np.pi / 2 > np.pi:
-                lambda_sign = -1
-            else:
+            # go a small step into positive z-direction
+            Nz_cart_test = self.ellipsoid.jacobi2cartesian(coords=Nz_jacobi + np.array([0, 1e-2]), norm=False)
+
+            if Nz_cart_test[0, 2] > Nz_cart[0, 2]:
                 lambda_sign = 1
+            else:
+                lambda_sign = -1
+
+            # if Nz_jacobi[0, 1] + np.pi / 2 > np.pi:
+            #     lambda_sign = -1
+            # else:
+            #     lambda_sign = 1
             beta_min = np.array([-np.pi / 4, -np.pi / 4, -np.pi / 2, np.pi / 4])
             beta_max = np.array([ np.pi / 4,  np.pi / 4, -np.pi / 4, np.pi / 2])
             lambda_min = np.array([Nz_jacobi[0, 1],             Nz_jacobi[0, 1] + lambda_sign*(np.pi / 2 + np.pi/16),  -np.pi,  -np.pi])
-            lambda_max = np.array([Nz_jacobi[0, 1] + lambda_sign*(np.pi / 2 + np.pi/16), Nz_jacobi[0, 1] + lambda_sign*3*np.pi / 2,   np.pi,   np.pi])
+            lambda_max = np.array([Nz_jacobi[0, 1] + lambda_sign*(np.pi / 2 + np.pi/16), Nz_jacobi[0, 1] + lambda_sign*3*np.pi / 2 -np.pi/8 ,   np.pi,   np.pi])
             alpha_min = -np.pi * np.ones(np.sum(self.n_ele_free))
             alpha_max =  np.pi * np.ones(np.sum(self.n_ele_free))
 
@@ -606,8 +650,8 @@ class TESoptimize():
 
             np.savetxt(os.path.join(self.plot_folder, "coords_region_0.txt"), coords_region_0)
             np.savetxt(os.path.join(self.plot_folder, "coords_region_1.txt"), coords_region_1)
-            np.savetxt(os.path.join(self.plot_folder, "coords_region_3.txt"), coords_region_2)
-            np.savetxt(os.path.join(self.plot_folder, "coords_region_4.txt"), coords_region_3)
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_2.txt"), coords_region_2)
+            np.savetxt(os.path.join(self.plot_folder, "coords_region_3.txt"), coords_region_3)
 
         else:
             # beta, lambda, alpha
@@ -629,7 +673,7 @@ class TESoptimize():
 
     def get_init_vals(self, bounds, optimize=True):
         """
-        Determine initial values for optimization, guaranteeing a valid solution.
+        Determine initial values for optimization, guaranteeing a valid electrode position.
 
         Parameters
         ----------
@@ -653,6 +697,7 @@ class TESoptimize():
             # make a list of possible parameter combinations within bounds
             para_test_grid = np.random.rand(n_max, n_para)
             para_test_grid = para_test_grid * (bounds.ub - bounds.lb) + bounds.lb
+            para_test_grid_orig = copy.deepcopy(para_test_grid)
 
             for i in range(n_max):
                 # extract electrode positions from optimal parameters
@@ -674,126 +719,32 @@ class TESoptimize():
 
                 # test position
                 node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos)
-                valid = np.array([type(n) is not str for n in node_idx_dict]).all()
+
+                if type(node_idx_dict[0]) is str:
+                    valid = False
+                    electrode_pos_valid = node_idx_dict[1]
+
+                    # write valid electrode positions into test grid to ease future iterations
+                    i_para = 0
+                    for i_channel_stim in range(self.n_channel_stim):
+                        for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                            if electrode_pos_valid[i_channel_stim][i_ele_free] is not None:
+                                para_test_grid[i:, i_para:(i_para + 3)] = electrode_pos_valid[i_channel_stim][i_ele_free]
+                            else:
+                                para_test_grid[:, i_para:(i_para + 3)] = para_test_grid_orig[:, i_para:(i_para + 3)]
+                            i_para += 3
+                else:
+                    valid = True
+
                 self.logger.log(20, f"Testing position #{i + 1}: {para_test_grid[i, :]} -> {valid}")
+
+                if not valid:
+                    self.logger.log(20, f"> electrode_pos_valid: {node_idx_dict[1]}")
 
                 if valid:
                     return para_test_grid[i, :]
 
         return np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
-
-    def valid_skin_region(self, skin_surface, mesh, additional_distance=0.):
-        """
-        Determine the nodes of the scalp surface where the electrode can be applied (not ears and face etc.)
-
-        Parameters
-        ----------
-        skin_surface : Surface object
-            Surface of the mesh (mesh_tools/surface.py)
-        mesh : Msh object
-            Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
-        additional_distance : float, optional, default: 0
-            Additional distance in anterior part to put between original MNI template registration
-        """
-        nodes_all = copy.deepcopy(skin_surface.nodes)
-        tr_nodes_all = copy.deepcopy(skin_surface.tr_nodes)
-        # load mask of valid electrode positions (in MNI space)
-        mask_img = nib.load(self.fn_electrode_mask)
-        mask_img_data = mask_img.get_fdata()
-
-        # add a certain distance to mask out closer to the eyes
-        for i_border in range(mask_img_data.shape[0]):
-            if mask_img_data[:, :, i_border].all():
-                break
-
-        mask_img_data[:, :, (i_border-additional_distance):i_border] = 1
-
-        # transform skin surface points to MNI space
-        skin_nodes_mni_ras = subject2mni_coords(coordinates=skin_surface.nodes,
-                                                m2m_folder=os.path.split(mesh.fn)[0],
-                                                transformation_type='nonl')
-
-        # transform coordinates to voxel space
-        skin_nodes_mni_voxel = np.floor(np.linalg.inv(mask_img.affine) @
-                                        np.hstack((skin_nodes_mni_ras,
-                                                   np.ones(skin_nodes_mni_ras.shape[0])[:, np.newaxis]))
-                                        .transpose())[:3, :].transpose().astype(int)
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 0] >= mask_img.shape[0], 0] = mask_img.shape[0] - 1
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 1] >= mask_img.shape[1], 1] = mask_img.shape[1] - 1
-        skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 2] >= mask_img.shape[2], 2] = mask_img.shape[2] - 1
-        # skin_nodes_mni_voxel[skin_nodes_mni_voxel < 0] = 0
-
-        # get boolean mask of valid skin points
-        skin_surface.mask_valid_nodes = mask_img_data[skin_nodes_mni_voxel[:, 0],
-                                                      skin_nodes_mni_voxel[:, 1],
-                                                      skin_nodes_mni_voxel[:, 2]].astype(bool)
-
-        # remove points outside of MNI space (lower neck)
-        skin_surface.mask_valid_nodes[(skin_nodes_mni_voxel < 0).any(axis=1)] = False
-
-        skin_surface.mask_valid_tr = np.zeros(skin_surface.tr_centers.shape).astype(bool)
-
-        unique_points = np.unique(skin_surface.tr_nodes[skin_surface.mask_valid_nodes[skin_surface.tr_nodes].all(axis=1), :])
-        for point in unique_points:
-            idx_where = np.where(skin_surface.tr_nodes == point)
-            skin_surface.mask_valid_tr[idx_where[0], idx_where[1]] = True
-        skin_surface.mask_valid_tr = skin_surface.mask_valid_tr.all(axis=1)
-
-        # determine connectivity list of valid skin region (creates new node and connectivity list)
-        skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
-            points=skin_surface.nodes,
-            con=skin_surface.tr_nodes,
-            point_mask=skin_surface.mask_valid_nodes)
-
-        # identify spurious skin patches inside head and remove them
-        tri_domain = np.ones(skin_surface.tr_nodes.shape[0]).astype(int) * -1
-        point_domain = np.ones(skin_surface.nodes.shape[0]).astype(int) * -1
-
-        domain = 0
-        while (tri_domain == -1).any():
-            nodes_idx_of_domain = np.array([])
-            tri_idx_of_domain = np.where(tri_domain == -1)[0][0]
-
-            n_current = -1
-            n_last = 0
-            while n_last != n_current:
-                n_last = copy.deepcopy(n_current)
-                nodes_idx_of_domain = np.unique(np.append(nodes_idx_of_domain, skin_surface.tr_nodes[tri_idx_of_domain, :])).astype(int)
-                tri_idx_of_domain = np.isin(skin_surface.tr_nodes, nodes_idx_of_domain).any(axis=1)
-                n_current = np.sum(tri_idx_of_domain)
-                # print(f"domain: {domain}, n_current: {n_current}")
-
-            tri_domain[tri_idx_of_domain] = domain
-            point_domain[nodes_idx_of_domain] = domain
-            domain += 1
-
-        domain_idx_main = np.argmax([np.sum(point_domain == d) for d in range(domain)])
-
-        skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
-            points=skin_surface.nodes,
-            con=skin_surface.tr_nodes,
-            point_mask=point_domain == domain_idx_main)
-
-        # update masks
-        skin_surface.mask_valid_nodes = np.zeros(nodes_all.shape[0]).astype(bool)
-        for i_p, p in enumerate(nodes_all):
-            if p in skin_surface.nodes:
-                skin_surface.mask_valid_nodes[i_p] = True
-
-        skin_surface.mask_valid_tr = np.zeros(tr_nodes_all.shape[0]).astype(bool)
-        for i_t, t in enumerate(tr_nodes_all):
-            if t in skin_surface.tr_nodes:
-                skin_surface.mask_valid_tr[i_t] = True
-
-        skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
-        skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
-        skin_surface.surf2msh_nodes = skin_surface.surf2msh_nodes[skin_surface.mask_valid_nodes]
-        skin_surface.surf2msh_triangles = skin_surface.surf2msh_triangles[skin_surface.mask_valid_tr]
-        skin_surface.tr_areas = skin_surface.tr_areas[skin_surface.mask_valid_tr]
-        skin_surface.tr_centers = skin_surface.tr_centers[skin_surface.mask_valid_tr, :]
-        skin_surface.tr_normals = skin_surface.tr_normals[skin_surface.mask_valid_tr, :]
-
-        return skin_surface
 
     def get_nodes_electrode(self, electrode_pos):
         """
@@ -815,6 +766,11 @@ class TESoptimize():
         """
 
         electrode_coords_subject = [0 for _ in range(self.n_channel_stim)]
+        electrode_pos_valid = [[None for _ in range(len(self.electrode[i_channel_stim].electrode_arrays))] for i_channel_stim in range(self.n_channel_stim)]
+        node_idx_dict = [dict() for _ in range(self.n_channel_stim)]
+        node_coords_list = [[] for _ in range(np.sum(self.n_ele_free))]
+        i_array_global = 0
+
         n = []
         cx = []
         cy = []
@@ -863,6 +819,9 @@ class TESoptimize():
             start = np.vstack([np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
                                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays)])
 
+            electrode_array_idx = np.hstack([i_array * np.ones(_electrode_array.n_ele)
+                                   for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays)])
+
             # determine electrode center on ellipsoid
             if not (distance == 0.).all():
                 electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(start=start,
@@ -878,22 +837,23 @@ class TESoptimize():
             electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
 
             # project coordinates to subject
-            ele_idx, electrode_coords_subject[i_channel_stim] = ellipsoid2subject(coords=electrode_coords_eli_eli,
-                                                                                  ellipsoid=self.ellipsoid,
-                                                                                  surface=self.skin_surface)
-
-            if len(ele_idx) != len(alpha):
-                return "Electrode position: invalid (not all electrodes in valid skin region)"
-                # print("Electrode position: invalid (not all electrodes in valid skin region)")
-
-        # loop over electrodes and determine node indices
-        node_idx_dict = [dict() for _ in range(self.n_channel_stim)]
-        node_coords_list = [[] for _ in range(np.sum(self.n_ele_free))]
-        i_array_global = 0
-
-        for i_channel_stim in range(self.n_channel_stim):
+            tmp_arrays = []
             i_ele = 0
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                ele_idx, tmp = ellipsoid2subject(coords=electrode_coords_eli_eli[electrode_array_idx == i_array, :],
+                                                 ellipsoid=self.ellipsoid,
+                                                 surface=self.skin_surface)
+                tmp_arrays.append(tmp)
+
+                if len(ele_idx) != len(alpha[electrode_array_idx == i_array]):
+                    return "Electrode position: invalid (not all electrodes in valid skin region)", electrode_pos_valid
+                else:
+                    electrode_pos_valid[i_channel_stim][i_array] = electrode_pos[i_channel_stim][i_array]
+                    # print("Electrode position: invalid (not all electrodes in valid skin region)")
+
+                electrode_coords_subject[i_channel_stim] = np.vstack(tmp_arrays)
+
+                # loop over electrodes and determine node indices
                 for _electrode in _electrode_array.electrodes:
                     if _electrode.type == "spherical":
                         # mask with a sphere
@@ -936,9 +896,10 @@ class TESoptimize():
                     _electrode.area_skin = np.sum(_electrode.node_area)
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
-                    if _electrode.area_skin < 0.9 * _electrode.area:
+                    if _electrode.area_skin < 0.90 * _electrode.area:
+                        electrode_pos_valid[i_channel_stim][i_array] = None
                         # print("Electrode position: invalid (partly overlaps with invalid skin region)")
-                        return "Electrode position: invalid (partly overlaps with invalid skin region)"
+                        return "Electrode position: invalid (partly overlaps with invalid skin region)", electrode_pos_valid
 
                     # save node indices (referring to global mesh)
                     _electrode.node_idx = self.node_idx_msh[mask]
@@ -959,12 +920,17 @@ class TESoptimize():
 
                     i_ele += 1
 
+                electrode_pos_valid[i_channel_stim][i_array] = electrode_pos[i_channel_stim][i_array]
+
                 # gather all electrode node coords of freely movable arrays
                 node_coords_list[i_array_global] = np.vstack(node_coords_list[i_array_global])
                 i_array_global += 1
 
         # check if electrode distance is sufficient
-        if self.min_electrode_distance is not None and self.min_electrode_distance > 0:
+        invalid = False
+        i_array_global_lst = np.hstack([np.arange(self.n_ele_free[i_channel_stim]) for i_channel_stim in range(self.n_channel_stim)]).astype(int)
+        i_channel_stim_global_lst = np.hstack([i_channel_stim*np.ones(self.n_ele_free[i_channel_stim]) for i_channel_stim in range(self.n_channel_stim)]).astype(int)
+        if self.min_electrode_distance is not None and self.min_electrode_distance >= 0:
             i_array_test_start = 1
             # start with first array and test if all node coords are too close to other arrays
             for i_array_global in range(np.sum(self.n_ele_free)):
@@ -973,11 +939,16 @@ class TESoptimize():
                         # calculate euclidean distance between node coords
                         min_dist = np.min(np.linalg.norm(node_coords_list[i_array_test] - node_coord, axis=1))
                         # stop testing if an electrode is too close
-                        if min_dist < self.min_electrode_distance:
+                        if min_dist <= self.min_electrode_distance:
+                            # remove tested array from valid list
+                            electrode_pos_valid[i_channel_stim_global_lst[i_array_test]][i_array_global_lst[i_array_test]] = None
                             # print("Electrode position: invalid (minimal distance between electrodes too small)")
-                            return "Electrode position: invalid (minimal distance between electrodes too small)"
+                            invalid = True
 
                 i_array_test_start += 1
+
+        if invalid:
+            return "Electrode position: invalid (minimal distance between electrodes too small)", electrode_pos_valid
 
         # save electrode_pos in ElectrodeArray instances
         for i_channel_stim in range(self.n_channel_stim):
@@ -1001,7 +972,6 @@ class TESoptimize():
                                                   i_channel_stim].current_estimator.channel_id == _ele.channel_id)
                             _ele.ele_current = currents_estimate[mask_estimator]
             else:
-
                 # reset to original currents
                 for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
                     for _ele in _electrode_array.electrodes:
@@ -1044,8 +1014,8 @@ class TESoptimize():
 
         # perform one electric field calculation for every stimulation condition (one at a time is on)
         for i_channel_stim in range(self.n_channel_stim):
-            if type(node_idx_dict[i_channel_stim]) is str:
-                self.logger.log(20, node_idx_dict)
+            if type(node_idx_dict[0]) is str:
+                self.logger.log(20, node_idx_dict[0])
                 return None
             self.logger.log(20, f"Electrode position for stimulation {i_channel_stim}: valid")
 
@@ -1093,30 +1063,37 @@ class TESoptimize():
                     if _e is not None:
                         # if we have a connectivity (surface):
                         if self.roi[i_roi].con is not None:
-                            # nodes -> elm center
-                            if _e.shape[1] == 1:
-                                data = np.mean(_e.flatten()[self.roi[i_roi].con], axis=1)
-                            else:
-                                data = np.zeros((self.roi[i_roi].con.shape[0], _e.shape[1]))
-                                for j in range(_e.shape[1]):
-                                    data[:, j] = np.mean(_e[:, j][self.roi[i_roi].con], axis=1)
-
                             import pynibs
-                            pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                       points=self.roi[i_roi].points,
-                                                       con=self.roi[i_roi].con,
-                                                       replace=True,
-                                                       hdf5_path='/mesh')
+                            # surface plot
+                            if self.roi[i_roi].con.shape == 3:
+                                pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                           points=self.roi[i_roi].nodes,
+                                                           con=self.roi[i_roi].con,
+                                                           replace=True,
+                                                           hdf5_path='/mesh')
 
-                            pynibs.write_data_hdf5_surf(data=[data],
-                                                        data_names=["E"],
-                                                        data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
-                                                        geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                        replace=True)
+                                pynibs.write_data_hdf5_surf(data=[_e],
+                                                            data_names=["E"],
+                                                            data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
+                                                            geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                            replace=True)
+                            # volume plot
+                            else:
+                                pynibs.write_geo_hdf5_vol(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                          points=self.roi[i_roi].nodes,
+                                                          con=self.roi[i_roi].con,
+                                                          replace=True,
+                                                          hdf5_path='/mesh')
+
+                                pynibs.write_data_hdf5_vol(data=[_e],
+                                                           data_names=["E"],
+                                                           data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
+                                                           geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
+                                                           replace=True)
                         else:
                             # if we just have points and data:
                             np.savetxt(os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.txt"),
-                                       np.hstack((self.roi[i_roi].points, _e)))
+                                       np.hstack((self.roi[i_roi].center, _e)))
 
         return e
 
@@ -1159,8 +1136,28 @@ class TESoptimize():
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
+        # post-process raw electric field (components Ex, Ey, Ez)
+        if e is None:
+            e_pp = None
+        else:
+            e_pp = [[0 for _ in range(self.n_roi)] for _ in range(self.n_channel_stim)]
+            if "max_TI" in self.e_postproc or "dir_TI" in self.e_postproc:
+                for i_roi in range(self.n_roi):
+                    e_pp[0][i_roi] = postprocess_e(e=e[0][i_roi],
+                                                   e2=e[1][i_roi],
+                                                   dirvec=self.goal_dir,
+                                                   type=self.e_postproc[i_roi])
+                    e_pp[1][i_roi] = e_pp[0][i_roi]
+            else:
+                for i_channel_stim in range(self.n_channel_stim):
+                    for i_roi in range(self.n_roi):
+                        e_pp[i_channel_stim][i_roi] = postprocess_e(e=e[i_channel_stim][i_roi],
+                                                                    e2=None,
+                                                                    dirvec=self.goal_dir,
+                                                                    type=self.e_postproc[i_roi])
+
         # compute goal function value
-        goal_fun_value = self.compute_goal(e)
+        goal_fun_value = self.compute_goal(e_pp)
 
         self.logger.log(20, f"Goal ({self.goal}): {goal_fun_value:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})")
         self.logger.log(20, "-"*len(parameters_str))
@@ -1174,15 +1171,7 @@ class TESoptimize():
         Parameters
         ----------
         e: list of list of np.ndarrays of float [n_channel_stim][n_roi][n_roi_nodes]
-            Electric fields from simulated simulation conditions and ROIs. Containing arrays can contain e-field
-            magnitude (dataType=0) or e-field vectors (dataType=1).
-            Examples:
-            - standard TES montages with 2 electrodes have n_channel_stim=1 (only one simulation is performed)
-            - TES center surround montages have also n_channel_stim=1 because only one simulation has to be performed
-            - TTF montages with two pairs of electrode arrays, i.e. 2x2 arrays with 9 electrodes each have
-              n_channel_stim=2 because the channels have to be computed separately.
-            - TI montages have also n_channel_stim=2 because the two superimposed fields have to be computed
-              separately.
+            Post-processed electric fields from simulated simulation conditions and ROIs.
 
         Returns
         -------
@@ -1194,79 +1183,114 @@ class TESoptimize():
         y = np.zeros((self.n_channel_stim, self.n_roi))  # shape: [n_channel_stim x n_roi]
 
         if e is None:
-            self.logger.log(20, f"Goal ({self.goal}): 1.0")
-            return 1.0
+            self.logger.log(20, f"Goal ({self.goal}): 2.0")
+            return 2.0
 
         # user provided goal function
+        ################################################################################################################
         elif isinstance(self.goal[0], types.FunctionType):
             y_weighted_sum = self.goal[0](e)
 
         # implemented goal functions
         else:
-            for i_roi in range(self.n_roi):
-                for i_channel_stim in range(self.n_channel_stim):
-                    # mean electric field in the roi
-                    if self.goal[i_roi] == "mean":
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
-                        else:
-                            y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
+            # focality based goal functions
+            ############################################################################################################
+            if "focality" in self.goal:
+                # TI focality (total field was previously calculated by the 2 channels, no loop over channel_stim here)
+                if "max_TI" in self.e_postproc or "dir_TI" in self.e_postproc:
+                    y[:, :] = -100 * (np.sqrt(2) - ROC(e1=e[0][0],  # e-field in ROI
+                                                       e2=e[0][1],  # e-field in non-ROI
+                                                       threshold=self.threshold,
+                                                       focal=True))
 
-                    # max electric field in the roi (percentile)
-                    elif self.goal[i_roi] == "max":
-                        if e[i_channel_stim][i_roi] is None:
-                            self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                            return 1.0
-                        else:
-                            y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
-
-                # mean of max envelope for TI fields
-                if self.goal[i_roi] == "mean_max_TI":
-                    if e[0][i_roi] is None or e[1][i_roi] is None:
-                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                        return 1.0
-                    y[0, i_roi] = -np.mean(get_maxTI(E1_org=e[0][i_roi], E2_org=e[1][i_roi]))
-                    y[1, i_roi] = y[0, i_roi]
-
-                # mean of max envelope for TI fields in given direction
-                elif self.goal[i_roi] == "mean_max_TI_dir":
-                    if e[0][i_roi] is None or e[1][i_roi] is None:
-                        self.logger.log(20, f"Goal ({self.goal}): 1.0 (one e-field was None)")
-                        return 1.0
-                    y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
-                    y[1, i_roi] = y[0, i_roi]
-
-            # track focality measures and goal function values
-            for i_channel_stim in range(self.n_channel_stim):
-                if "mean_max_TI" in self.goal:
-                    e1 = get_maxTI(E1_org=e[0][0], E2_org=e[1][0])
-                    e2 = get_maxTI(E1_org=e[0][1], E2_org=e[1][1])
-                elif "mean_max_TI_dir" in self.goal:
-                    e1 = get_dirTI(E1=e[0][0], E2=e[1][0])
-                    e2 = get_dirTI(E1=e[0][1], E2=e[1][1])
+                # General focality (can be different for each channel for e.g. TTF)
                 else:
-                    e1 = e[i_channel_stim][0]
-                    e2 = e[i_channel_stim][1]
+                    for i_channel_stim in range(self.n_channel_stim):
+                        y[i_channel_stim, :] = -100 * (np.sqrt(2) - ROC(e1=e[i_channel_stim][0],  # e-field in ROI
+                                                                        e2=e[i_channel_stim][1],  # e-field in non-ROI
+                                                                        threshold=self.threshold,
+                                                                        focal=True))
 
-                # compute integral focality
-                self.integral_focality[i_channel_stim].append(
-                    integral_focality(e1=e1,
-                                      e2=e2,
-                                      v1=self.roi[0].vol,
-                                      v2=self.roi[1].vol))
+            elif "focality_inv" in self.goal:
+                # TI focality (total field was previously calculated by the 2 channels, no loop over channel_stim here)
+                if "max_TI" in self.e_postproc or "dir_TI" in self.e_postproc:
+                    y[:, :] = -100 * (np.sqrt(2) - ROC(e1=e[0][0],  # e-field in ROI
+                                                       e2=e[0][1],  # e-field in non-ROI
+                                                       threshold=self.threshold,
+                                                       focal=False))
 
-                # compute auc
-                self.AUC[i_channel_stim].append(AUC(e1=e1,
-                                                    e2=e2))
+                # General focality (can be different for each channel for e.g. TTF)
+                else:
+                    for i_channel_stim in range(self.n_channel_stim):
+                        y[i_channel_stim, :] = -100 * ROC(e1=e[i_channel_stim][0],  # e-field in ROI
+                                                          e2=e[i_channel_stim][1],  # e-field in non-ROI
+                                                          threshold=self.threshold,
+                                                          focal=False)
+
+            # Mean/Max/ etc. based goal functions
+            ############################################################################################################
+            else:
+                for i_roi in range(self.n_roi):
+                    for i_channel_stim in range(self.n_channel_stim):
+                        if e[i_channel_stim][i_roi] is None:
+                            self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                            return 2.0
+                        else:
+                            # mean electric field in the roi
+                            if self.goal[i_roi] == "mean":
+                                y[i_channel_stim, i_roi] = -np.mean(e[i_channel_stim][i_roi])
+                            # negative mean electric field in the roi (for e.g. normal component)
+                            elif self.goal[i_roi] == "neg_mean":
+                                y[i_channel_stim, i_roi] = np.mean(e[i_channel_stim][i_roi])
+                            # mean of absolute value of electric field in the roi (for e.g. normal component)
+                            elif self.goal[i_roi] == "mean_abs":
+                                y[i_channel_stim, i_roi] = -np.mean(np.abs(e[i_channel_stim][i_roi]))
+                            # max electric field in the roi (percentile)
+                            elif self.goal[i_roi] == "max":
+                                y[i_channel_stim, i_roi] = -np.percentile(e[i_channel_stim][i_roi], 99.9)
+                            # negative max electric field in the roi (percentile)
+                            elif self.goal[i_roi] == "neg_max":
+                                y[i_channel_stim, i_roi] = np.percentile(e[i_channel_stim][i_roi], 99.9)
+                            # max of absolute value of electric field in the roi (percentile)
+                            elif self.goal[i_roi] == "max_abs":
+                                y[i_channel_stim, i_roi] = -np.percentile(np.abs(e[i_channel_stim][i_roi]), 99.9)
+
+            # if desired, track focality measures and goal function values
+            for i_channel_stim in range(self.n_channel_stim):
+                if self.track_focality:
+                    if "max_TI" in self.e_postproc:
+                        e1 = get_maxTI(E1_org=e[0][0], E2_org=e[1][0])
+                        e2 = get_maxTI(E1_org=e[0][1], E2_org=e[1][1])
+                    elif "dir_TI" in self.e_postproc:
+                        e1 = get_dirTI(E1=e[0][0], E2=e[1][0], dirvec_org=self.goal_dir)
+                        e2 = get_dirTI(E1=e[0][1], E2=e[1][1], dirvec_org=self.goal_dir)
+                    else:
+                        e1 = e[i_channel_stim][0]
+                        e2 = e[i_channel_stim][1]
+
+                    # compute integral focality
+                    self.integral_focality[i_channel_stim].append(
+                        integral_focality(e1=e1,
+                                          e2=e2,
+                                          v1=self.roi[0].vol,
+                                          v2=self.roi[1].vol))
+
+                    # compute auc
+                    self.AUC[i_channel_stim].append(AUC(e1=e1,
+                                                        e2=e2))
+                else:
+                    self.AUC[i_channel_stim].append(0)
+                    self.integral_focality[i_channel_stim].append(0)
 
                 # goal fun value in roi 0
                 self.goal_fun_value[i_channel_stim].append(np.mean(y[i_channel_stim, 0]))
 
             # average over all stimulations (channel_stim)
+            ############################################################################################################
             y = np.mean(y, axis=0)
 
             # weight and sum the goal function values of the ROIs
+            ############################################################################################################
             y_weighted_sum = np.sum(y * self.weights)
 
         self.n_sim += 1
@@ -1573,6 +1597,120 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
                 f.create_dataset(data=e[i_stim][i_roi].flatten(), name=f"e/channel_{i_stim}/e_roi_{i_roi}")
 
 
+def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance=0.):
+    """
+    Determine the nodes of the scalp surface where the electrode can be applied (not ears and face etc.)
+
+    Parameters
+    ----------
+    skin_surface : Surface object
+        Surface of the mesh (mesh_tools/surface.py)
+    mesh : Msh object
+        Mesh object created by SimNIBS (mesh_tools/mesh_io.py)
+    additional_distance : float, optional, default: 0
+        Additional distance in anterior part to put between original MNI template registration
+    """
+    nodes_all = copy.deepcopy(skin_surface.nodes)
+    tr_nodes_all = copy.deepcopy(skin_surface.tr_nodes)
+    # load mask of valid electrode positions (in MNI space)
+    mask_img = nib.load(fn_electrode_mask)
+    mask_img_data = mask_img.get_fdata()
+
+    # add a certain distance to mask out closer to the eyes
+    for i_border in range(mask_img_data.shape[0]):
+        if mask_img_data[:, :, i_border].all():
+            break
+
+    mask_img_data[:, :, (i_border-additional_distance):i_border] = 1
+
+    # transform skin surface points to MNI space
+    skin_nodes_mni_ras = subject2mni_coords(coordinates=skin_surface.nodes,
+                                            m2m_folder=os.path.split(mesh.fn)[0],
+                                            transformation_type='nonl')
+
+    # transform coordinates to voxel space
+    skin_nodes_mni_voxel = np.floor(np.linalg.inv(mask_img.affine) @
+                                    np.hstack((skin_nodes_mni_ras,
+                                               np.ones(skin_nodes_mni_ras.shape[0])[:, np.newaxis]))
+                                    .transpose())[:3, :].transpose().astype(int)
+    skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 0] >= mask_img.shape[0], 0] = mask_img.shape[0] - 1
+    skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 1] >= mask_img.shape[1], 1] = mask_img.shape[1] - 1
+    skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 2] >= mask_img.shape[2], 2] = mask_img.shape[2] - 1
+    # skin_nodes_mni_voxel[skin_nodes_mni_voxel < 0] = 0
+
+    # get boolean mask of valid skin points
+    skin_surface.mask_valid_nodes = mask_img_data[skin_nodes_mni_voxel[:, 0],
+                                                  skin_nodes_mni_voxel[:, 1],
+                                                  skin_nodes_mni_voxel[:, 2]].astype(bool)
+
+    # remove points outside of MNI space (lower neck)
+    skin_surface.mask_valid_nodes[(skin_nodes_mni_voxel < 0).any(axis=1)] = False
+
+    skin_surface.mask_valid_tr = np.zeros(skin_surface.tr_centers.shape).astype(bool)
+
+    unique_points = np.unique(skin_surface.tr_nodes[skin_surface.mask_valid_nodes[skin_surface.tr_nodes].all(axis=1), :])
+    for point in unique_points:
+        idx_where = np.where(skin_surface.tr_nodes == point)
+        skin_surface.mask_valid_tr[idx_where[0], idx_where[1]] = True
+    skin_surface.mask_valid_tr = skin_surface.mask_valid_tr.all(axis=1)
+
+    # determine connectivity list of valid skin region (creates new node and connectivity list)
+    skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
+        points=skin_surface.nodes,
+        con=skin_surface.tr_nodes,
+        point_mask=skin_surface.mask_valid_nodes)
+
+    # identify spurious skin patches inside head and remove them
+    tri_domain = np.ones(skin_surface.tr_nodes.shape[0]).astype(int) * -1
+    point_domain = np.ones(skin_surface.nodes.shape[0]).astype(int) * -1
+
+    domain = 0
+    while (tri_domain == -1).any():
+        nodes_idx_of_domain = np.array([])
+        tri_idx_of_domain = np.where(tri_domain == -1)[0][0]
+
+        n_current = -1
+        n_last = 0
+        while n_last != n_current:
+            n_last = copy.deepcopy(n_current)
+            nodes_idx_of_domain = np.unique(np.append(nodes_idx_of_domain, skin_surface.tr_nodes[tri_idx_of_domain, :])).astype(int)
+            tri_idx_of_domain = np.isin(skin_surface.tr_nodes, nodes_idx_of_domain).any(axis=1)
+            n_current = np.sum(tri_idx_of_domain)
+            # print(f"domain: {domain}, n_current: {n_current}")
+
+        tri_domain[tri_idx_of_domain] = domain
+        point_domain[nodes_idx_of_domain] = domain
+        domain += 1
+
+    domain_idx_main = np.argmax([np.sum(point_domain == d) for d in range(domain)])
+
+    skin_surface.nodes, skin_surface.tr_nodes = create_new_connectivity_list_point_mask(
+        points=skin_surface.nodes,
+        con=skin_surface.tr_nodes,
+        point_mask=point_domain == domain_idx_main)
+
+    # update masks
+    skin_surface.mask_valid_nodes = np.zeros(nodes_all.shape[0]).astype(bool)
+    for i_p, p in enumerate(nodes_all):
+        if p in skin_surface.nodes:
+            skin_surface.mask_valid_nodes[i_p] = True
+
+    skin_surface.mask_valid_tr = np.zeros(tr_nodes_all.shape[0]).astype(bool)
+    for i_t, t in enumerate(tr_nodes_all):
+        if t in skin_surface.tr_nodes:
+            skin_surface.mask_valid_tr[i_t] = True
+
+    skin_surface.nodes_areas = skin_surface.nodes_areas[skin_surface.mask_valid_nodes]
+    skin_surface.nodes_normals = skin_surface.nodes_normals[skin_surface.mask_valid_nodes, :]
+    skin_surface.surf2msh_nodes = skin_surface.surf2msh_nodes[skin_surface.mask_valid_nodes]
+    skin_surface.surf2msh_triangles = skin_surface.surf2msh_triangles[skin_surface.mask_valid_tr]
+    skin_surface.tr_areas = skin_surface.tr_areas[skin_surface.mask_valid_tr]
+    skin_surface.tr_centers = skin_surface.tr_centers[skin_surface.mask_valid_tr, :]
+    skin_surface.tr_normals = skin_surface.tr_normals[skin_surface.mask_valid_tr, :]
+
+    return skin_surface
+
+
 def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
     """
     Relabels skin in internal air cavities to something else; relevant for charm meshes
@@ -1841,3 +1979,57 @@ def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(me
 #                             data_hdf_fn_out="/data/pt_01756/studies/ttf/upper_head_region_data.hdf5",
 #                             geo_hdf_fn=os.path.join(self.output_folder, "plots", "upper_head_region_geo.hdf5"),
 #                             replace=True)
+
+
+
+# elif self.goal[i_roi] == "mean_normal":
+                    #     if e[i_channel_stim][i_roi] is None:
+                    #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                    #         return 2.0
+                    #     else:
+                    #         e_norm = -np.sum(e[i_channel_stim][i_roi] * self.roi[i_roi].triangles_normals, axis=1)
+                    #         y[i_channel_stim, i_roi] = -np.mean(np.abs(e_norm))
+                    #
+                    # elif self.goal[i_roi] == "max_normal":
+                    #     if e[i_channel_stim][i_roi] is None:
+                    #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                    #         return 2.0
+                    #     else:
+                    #         e_norm = -np.sum(e[i_channel_stim][i_roi] * self.roi[i_roi].triangles_normals, axis=1)
+                    #         y[i_channel_stim, i_roi] = -np.percentile(np.abs(e_norm), 99.9)
+                    #
+                    # elif self.goal[i_roi] == "mean_tangential":
+                    #     if e[i_channel_stim][i_roi] is None:
+                    #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                    #         return 2.0
+                    #     else:
+                    #         e_mag = np.linalg.norm(e[i_channel_stim][i_roi], axis=1)
+                    #         e_norm = -np.sum(e[i_channel_stim][i_roi] * self.roi[i_roi].triangles_normals, axis=1)
+                    #         e_tan = np.sqrt(e_mag ** 2 - e_norm ** 2)
+                    #         y[i_channel_stim, i_roi] = -np.mean(e_tan)
+                    #
+                    # elif self.goal[i_roi] == "max_tangential":
+                    #     if e[i_channel_stim][i_roi] is None:
+                    #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                    #         return 2.0
+                    #     else:
+                    #         e_mag = np.linalg.norm(e[i_channel_stim][i_roi], axis=1)
+                    #         e_norm = -np.sum(e[i_channel_stim][i_roi] * self.roi[i_roi].triangles_normals, axis=1)
+                    #         e_tan = np.sqrt(e_mag ** 2 - e_norm ** 2)
+                    #         y[i_channel_stim, i_roi] = -np.percentile(e_tan, 99.9)
+
+                # # mean of max envelope for TI fields
+                # if self.goal[i_roi] == "mean_max_TI":
+                #     if e[0][i_roi] is None or e[1][i_roi] is None:
+                #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                #         return 2.0
+                #     y[0, i_roi] = -np.mean(get_maxTI(E1_org=e[0][i_roi], E2_org=e[1][i_roi]))
+                #     y[1, i_roi] = y[0, i_roi]
+                #
+                # # mean of max envelope for TI fields in given direction
+                # elif self.goal[i_roi] == "mean_max_TI_dir":
+                #     if e[0][i_roi] is None or e[1][i_roi] is None:
+                #         self.logger.log(20, f"Goal ({self.goal}): 2.0 (one e-field was None)")
+                #         return 2.0
+                #     y[0, i_roi] = -np.mean(get_dirTI(E1=e[0][i_roi], E2=e[1][i_roi], dirvec_org=self.goal_dir))
+                #     y[1, i_roi] = y[0, i_roi]

@@ -351,10 +351,15 @@ class Ellipsoid():
         lam = np.zeros(coords.shape[0])
 
         for i, _coords in enumerate(coords):
-            res = minimize(self.cartesian2jacobi_system, (0.1, 0.1),
-                           method='Nelder-Mead',
-                           bounds=((-np.pi/2, np.pi/2), (-np.pi, np.pi)),
-                           args=_coords)
+            diff = np.inf
+            while diff > 1:
+                beta0 = np.random.rand(1)*2 - 1
+                lambda0 = np.random.rand(1)*2 - 1
+                res = minimize(self.cartesian2jacobi_system, (beta0[0], lambda0[0]),
+                               method='Nelder-Mead',
+                               bounds=((-np.pi/2, np.pi/2), (-np.pi, np.pi)),
+                               args=_coords)
+                diff = res.fun
 
             beta[i] = res.x[0]
             lam[i] = res.x[1]
@@ -919,7 +924,7 @@ def polyToParams3D(vec: np.ndarray) -> (np.ndarray,  np.ndarray,  np.ndarray):
 
     Parameters
     ----------
-    vec : np.ndarray of float []
+    vec : np.ndarray of float
         Vector whose elements are the polynomial coefficients A...J
 
     Returns
@@ -971,6 +976,53 @@ def polyToParams3D(vec: np.ndarray) -> (np.ndarray,  np.ndarray,  np.ndarray):
     rotmat = np.linalg.inv(ec)
 
     return (center, radii, rotmat)
+
+
+def check_ellipsoid_fit(center, radii, rotmat, points):
+    """
+    Check solution of ellipsoidal fit
+    Convert to unit sphere centered at origin
+     1) Subtract off center
+     2) Rotate points so bulges are aligned with axes (no xy,xz,yz terms)
+     3) Scale the points by the inverse of the axes gains
+     4) Back rotate
+    Rotations and gains are collected into single transformation matrix M
+
+    Parameters
+    ----------
+    center : np.ndarray of float [3]
+        Center of ellipsoid
+    radii : np.ndarray of float [3]
+        Axes length
+    rotmat : np.ndarray of float [3 x 3]
+        Rotation matrix of ellipsoid (direction of principal axes)
+    points : np.ndarray of float [n_points x 3]
+        XYZ coordinates of points to fit.
+    Returns
+    -------
+    average_radius : float
+        Average radius (truth is 1.0)
+    std_radius : float
+        Standard deviation of radius
+    """
+    # subtract the offset so ellipsoid is centered at origin
+    xc = points[:, 0] - center[0]
+    yc = points[:, 1] - center[1]
+    zc = points[:, 2] - center[2]
+
+    # create transformation matrix
+    L = np.diag([1 / radii[0], 1 / radii[1], 1 / radii[2]])
+    M = np.dot(rotmat.T, np.dot(L, rotmat))
+
+    # apply the transformation matrix
+    [xm, ym, zm] = np.dot(M, [xc, yc, zc])
+    # Calculate distance from origin for each point (ideal = 1.0)
+    rm = np.sqrt(xm * xm + ym * ym + zm * zm)
+
+    average_radius = np.mean(rm)
+    std_radius = np.std(rm)
+
+    return average_radius, std_radius
 
 
 def subject2ellipsoid(coords: np.ndarray, normals: np.ndarray, ellipsoid: Ellipsoid) -> np.ndarray:

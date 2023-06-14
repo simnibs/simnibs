@@ -81,3 +81,78 @@ def AUC(e1, e2):
     # plt.ylabel("sens")
 
     return auc
+
+
+def ROC(e1, e2, threshold, focal=False):
+    """
+    Determine distance of receiving operating characteristic (ROC) to optimal solution,
+    i.e. sensitivity = specificity = 1, for a given electric field and threshold(s).
+
+    Parameters
+    ----------
+    e1 : np.ndarray of float [n_ele_roi]
+        Electric field magnitude in ROI
+    e2 : np.ndarray of float [n_ele_non-roi]
+        Electric field magnitude in non-ROI
+    threshold : float or list of float [2]
+        Threshold(s) the receiving operating characteristic is computed for. Either a single value or two values can be
+        given. If two values are given, the first threshold may not be exceeded in the non-ROI and the second value
+        should be exceeded in the ROI in the sense of a safety gap.
+    focal : bool, optional, default: True
+        Distance to optimal solution.
+            True : quantifies focality of a solution.
+                   (goal: sensitivity = specificity = 1)
+            False: quantifies intensity in ROI while also increasing the field in the non ROI
+                   (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
+    Return
+    ------
+    dist : float
+        Distance of the ROC value to the optimal solution (optimality depends on "focal" flag)
+    """
+    if (type(threshold) != list and type(threshold) != np.ndarray):
+        threshold = [threshold, threshold]
+
+    if len(threshold) == 1:
+        threshold = [threshold[0], threshold[0]]
+
+    threshold_array = np.linspace(0, 1, 500)
+    sensitivity = np.zeros(len(threshold_array))
+    specificity_inv = np.zeros(len(threshold_array))
+    n_roi_1 = len(e1)
+    n_roi_2 = len(e2)
+
+    for i, t in enumerate(threshold_array):
+        # true positive
+        sensitivity[i] = np.sum(e1 >= t) / n_roi_1
+
+        # false positive (1-specificity)
+        specificity_inv[i] = np.sum(e2 >= t) / n_roi_2
+
+    # sort it for thresholds
+    sort_idx = np.argsort(threshold_array)
+    specificity_inv = specificity_inv[sort_idx]
+    sensitivity = sensitivity[sort_idx]
+    threshold_array = threshold_array[sort_idx]
+
+    # get sensitivity and specificity_inv value where threshold conditions are fulfilled
+    sens_idx_tmp = np.where(threshold_array > threshold[1])[0]
+    if len(sens_idx_tmp) == 0:
+        sens_thresh = 0.
+    else:
+        sens_idx = sens_idx_tmp[0]
+        sens_thresh = sensitivity[sens_idx]
+
+    spec_inv_idx_tmp = np.where(threshold_array < threshold[0])[0]
+    if len(spec_inv_idx_tmp) == 0:
+        spec_inv_thresh = 1.
+    else:
+        spec_inv_idx = spec_inv_idx_tmp[-1]
+        spec_inv_thresh = specificity_inv[spec_inv_idx]
+
+    # determine distance to optimum
+    if focal:
+        dist = np.linalg.norm([spec_inv_thresh, sens_thresh - 1])
+    else:
+        dist = np.linalg.norm([spec_inv_thresh, sens_thresh])
+
+    return dist

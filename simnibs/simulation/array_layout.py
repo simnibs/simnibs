@@ -859,6 +859,18 @@ class ElectrodeArrayPair():
                 if self.node_current[0] is not None:
                     _ele.node_current = self.node_current[mask]
 
+    def export_node_coords(self, fn_out):
+        """
+        Export node coordinates and node currents on subject skin surface to .txt file.
+        The first 3 columns are the x, y, and z coordinates and the last column is the coil current.
+
+        Parameters
+        ----------
+        fn_out : str
+            Filename of output .txt file.
+        """
+        np.savetxt(fn_out, np.hstack((self.node_coords, self.node_current[:, np.newaxis])))
+
 
 class CircularArray():
     """
@@ -987,7 +999,7 @@ class CircularArray():
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
 
         # number of electrodes per channel [n_channel]
-        self.n_ele_per_channel =  np.array([np.sum(self.channel_id == i) for i in np.unique(self.channel_id)])
+        self.n_ele_per_channel = np.array([np.sum(self.channel_id == i) for i in np.unique(self.channel_id)])
 
         # total current entering domain (read from center electrode)
         self.current_total = self.current[0]
@@ -1036,6 +1048,18 @@ class CircularArray():
 
         # compile node arrays
         self.compile_node_arrays()
+
+    def export_node_coords(self, fn_out):
+        """
+        Export node coordinates and node currents on subject skin surface to .txt file.
+        The first 3 columns are the x, y, and z coordinates and the last column is the coil current.
+
+        Parameters
+        ----------
+        fn_out : str
+            Filename of output .txt file.
+        """
+        np.savetxt(fn_out, np.hstack((self.node_coords, self.node_current[:, np.newaxis])))
 
     def set_geometrical_parameters_optimization(self, params):
         """
@@ -1223,3 +1247,196 @@ class CircularArray():
 
                 if self.node_current[0] is not None:
                     _ele.node_current = self.node_current[mask]
+
+
+class ElectrodeArrayPairOpt(ElectrodeArrayPair):
+    """
+    Symmetric pair of electrode arrays with n_x * n_y electrodes each.
+    Contains 2 ElectrodeArray instances with n_x * n_y Electrode instances each.
+    Contains only circular electrodes.
+
+    Parameters
+    ----------
+    n_ele_x : int
+        Number of electrodes in x-direction
+    n_ele_y : int
+        Number of electrodes in y-direction
+    separation_distance : float
+        Distance between individual electrodes in the array from center to center in mm.
+    radius : float
+        Radius of electrodes in mm. All the electrodes in the array will have the radius.
+    current_estimator_method : str, optional, default: "linear"
+        Method to estimate the electrode currents:
+        - "linear": linear regression
+        - "gpc": generalized polynomial chaos
+    dirichlet_correction_detailed : bool, optional, default: False
+        Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
+        voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
+
+    Attributes
+    ----------
+
+    """
+
+    def __init__(self, n_ele_x, n_ele_y, separation_distance, radius, current_estimator_method="gpc",
+                 dirichlet_correction_detailed=False):
+        """
+        Initializes ElectrodeArrayPairOpt
+        """
+        # check free and fixed parameters
+        if isinstance(n_ele_x, np.ndarray) or isinstance(n_ele_x, list):
+            self.OPT_n_ele_x_free = True
+            self.OPT_n_ele_x_bounds = n_ele_x
+            self.OPT_n_ele_x = int(np.round(np.mean(n_ele_x)))
+
+            # disabling current estimator because number of electrodes changes during optimization
+            current_estimator_method = None
+        else:
+            self.OPT_n_ele_x_free = False
+            self.OPT_n_ele_x_bounds = [n_ele_x, n_ele_x]
+            self.OPT_n_ele_x = int(np.round(n_ele_x))
+
+        if isinstance(n_ele_y, np.ndarray) or isinstance(n_ele_y, list):
+            self.OPT_n_ele_y_free = True
+            self.OPT_n_ele_y_bounds = n_ele_y
+            self.OPT_n_ele_y = int(np.round(np.mean(n_ele_y)))
+
+            # disabling current estimator because number of electrodes changes during optimization
+            current_estimator_method = None
+        else:
+            self.OPT_n_ele_y_free = False
+            self.OPT_n_ele_y_bounds = [n_ele_y, n_ele_y]
+            self.OPT_n_ele_y = int(np.round(n_ele_y))
+
+        if isinstance(separation_distance, np.ndarray) or isinstance(separation_distance, list):
+            self.OPT_separation_distance_free = True
+            self.OPT_separation_distance_bounds = separation_distance
+            self.OPT_separation_distance = np.mean(separation_distance)
+        else:
+            self.OPT_separation_distance_free = False
+            self.OPT_separation_distance_bounds = [separation_distance, separation_distance]
+            self.OPT_separation_distance = separation_distance
+
+        if isinstance(radius, np.ndarray) or isinstance(radius, list):
+            self.OPT_radius_free = True
+            self.OPT_radius_bounds = radius
+            self.OPT_radius = np.mean(radius)
+        else:
+            self.OPT_radius_free = False
+            self.OPT_radius_bounds = [radius, radius]
+            self.OPT_radius = radius
+
+        self.current_estimator_method = current_estimator_method
+        self.dirichlet_correction_detailed = dirichlet_correction_detailed
+
+        n_ele = self.OPT_n_ele_x * self.OPT_n_ele_y
+        extent_x = 2 * self.OPT_radius + (self.OPT_n_ele_x - 1) * self.OPT_separation_distance
+        extent_y = 2 * self.OPT_radius + (self.OPT_n_ele_y - 1) * self.OPT_separation_distance
+        ele_pos_x = np.linspace(-extent_x / 2 + self.OPT_radius, extent_x / 2 - self.OPT_radius, self.OPT_n_ele_x)
+        ele_pos_y = np.linspace(-extent_y / 2 + self.OPT_radius, extent_y / 2 - self.OPT_radius, self.OPT_n_ele_y)
+        center = np.hstack((np.tile(ele_pos_x, (self.OPT_n_ele_y, 1)).flatten()[:, np.newaxis],
+                            np.tile(ele_pos_y[:, np.newaxis], (1, self.OPT_n_ele_x)).flatten()[:, np.newaxis],
+                            np.zeros((n_ele, 1))))
+
+        # Initialize parent class (ElectrodeArrayPair)
+        super(ElectrodeArrayPairOpt, self).__init__(center=center,
+                                                    radius=self.OPT_radius * np.ones(n_ele),
+                                                    length_x=np.zeros(n_ele),
+                                                    length_y=np.zeros(n_ele),
+                                                    current_estimator_method=current_estimator_method,
+                                                    dirichlet_correction_detailed=dirichlet_correction_detailed)
+
+        # order of free parameters
+        self.free_geometry = np.array([self.OPT_n_ele_x_free,
+                                       self.OPT_n_ele_y_free,
+                                       self.OPT_separation_distance_free,
+                                       self.OPT_radius_free])
+        self.any_free_geometry = self.free_geometry.any()
+        self.geo_para_bounds = np.vstack((self.OPT_n_ele_x_bounds,
+                                          self.OPT_n_ele_y_bounds,
+                                          self.OPT_separation_distance_bounds,
+                                          self.OPT_radius_bounds))
+        self.geo_para_mean = np.hstack((self.OPT_n_ele_x,
+                                        self.OPT_n_ele_y,
+                                        self.OPT_separation_distance,
+                                        self.OPT_radius))
+
+    def update_geometry(self, n_ele_x=None, n_ele_y=None, separation_distance=None, radius=None):
+        """
+        Modifies the geometry of the electrode setup (e.g. for optimization). old parameters are kept if not changed.
+
+        Parameters
+        ----------
+        n_ele_x : int, optional, default: None
+            Number of electrodes in x-direction
+        n_ele_y : int, optional, default: None
+            Number of electrodes in y-direction
+        separation_distance : float, optional, default: None
+            Distance between individual electrodes in the array from center to center in mm.
+        radius : float, optional, default: None
+            Radius of electrodes in mm. All the electrodes in the array will have the radius.
+        """
+
+        if n_ele_x is not None:
+            self.OPT_n_ele_x = int(np.round(n_ele_x))
+
+        if n_ele_y is not None:
+            self.OPT_n_ele_y = int(np.round(n_ele_y))
+
+        if separation_distance is not None:
+            self.OPT_separation_distance = separation_distance
+
+        if radius is not None:
+            self.OPT_radius = radius
+
+        n_ele = self.OPT_n_ele_x * self.OPT_n_ele_y
+        extent_x = 2 * self.OPT_radius + (self.OPT_n_ele_x - 1) * self.OPT_separation_distance
+        extent_y = 2 * self.OPT_radius + (self.OPT_n_ele_y - 1) * self.OPT_separation_distance
+        ele_pos_x = np.linspace(-extent_x / 2 + self.OPT_radius, extent_x / 2 - self.OPT_radius, self.OPT_n_ele_x)
+        ele_pos_y = np.linspace(-extent_y / 2 + self.OPT_radius, extent_y / 2 - self.OPT_radius, self.OPT_n_ele_y)
+        center = np.hstack((np.tile(ele_pos_x, (self.OPT_n_ele_y, 1)).flatten()[:, np.newaxis],
+                            np.tile(ele_pos_y[:, np.newaxis], (1, self.OPT_n_ele_x)).flatten()[:, np.newaxis],
+                            np.zeros((n_ele, 1))))
+
+        # Initialize parent class (ElectrodeArrayPair)
+        super(ElectrodeArrayPairOpt, self).__init__(center=center,
+                                                    radius=self.OPT_radius * np.ones(n_ele),
+                                                    length_x=np.zeros(n_ele),
+                                                    length_y=np.zeros(n_ele),
+                                                    current_estimator_method=self.current_estimator_method,
+                                                    dirichlet_correction_detailed=self.dirichlet_correction_detailed)
+
+    def set_geometrical_parameters_optimization(self, params):
+        """
+        Sets the geometrical parameters of electrode and updates geometry.
+        Only free parameters during optimization have to be provided in given order:
+        n_ele_x, n_ele_y, separation_distance, radius
+
+        Parameters
+        ----------
+        params : np.ndarray of float [n_free_geometry]
+            Parameters in given order (n_ele_x, n_ele_y, separation_distance, radius) but only free ones
+        """
+        assert np.sum(self.free_geometry) == len(params), "Number of free parameters in electrode does not match " \
+                                                          "number of provided parameters!"
+
+        # the order of the parameters is fixed
+        i_para = 0
+        if self.OPT_n_ele_x_free:
+            self.OPT_n_ele_x = int(np.round(params[i_para]))
+            i_para += 1
+
+        if self.OPT_n_ele_y_free:
+            self.OPT_n_ele_y = int(np.round(params[i_para]))
+            i_para += 1
+
+        if self.OPT_separation_distance_free:
+            self.OPT_separation_distance = params[i_para]
+            i_para += 1
+
+        if self.OPT_radius_free:
+            self.OPT_radius = params[i_para]
+            i_para += 1
+
+        # update geometry
+        self.update_geometry()

@@ -74,30 +74,36 @@ def _get_gradient(local_dist):
 class RegionOfInterest:
     """
     Region of interest class containing methods to compute the electric field from the electric potential (fast).
+    Either define ROI with nodes and con
 
     Parameters
     ----------
-    msh : Msh object instance
+    mesh : Msh object instance
         Head mesh
-    points : np.ndarray of float [n_roi_points x 3]
-        Coordinates of points in the ROI
+    center : np.ndarray of flloat [n_roi_center x 3]
+        The point coordinates where the e-field is calculated, e.g. element center of triangles or tetrahedra.
+    nodes : np.ndarray of float [n_roi_nodes x 3], optional, default: None
+        Node coordinates of ROI (triangles or tetrahedra). Not requires to calculate e-field but to determine the
+        area or volume of the ROI elements, which are required to determine for example focality measures.
+        If not provided, all elements will have the same area/volume.
     con : np.ndarray of float [n_ele x 3(4)], optional, default: None
-        Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
-        be calculated in the nodes only.
-    vol : float, optional
-        Volume or area of ROI (required for focality measures)
+        Connectivity list of ROI (triangles or tetrahedra). Not requires to calculate e-field but to determine the
+        area or volume of the ROI elements, which are required to determine for example focality measures.
+        If not provided, all elements will have the same area/volume.
+    domains : int or list of int or np.ndarray of int
+        Domain indices the ROI is defined for (1: WM, 2: GM, 3: CSF, etc.)
 
     Attributes
     ----------
-    msh : Msh object instance
-        Head mesh
-    points : np.ndarray of float [n_roi_points x 3]
+    center : np.ndarray of flloat [n_roi_center x 3]
+        The point coordinates where the e-field is calculated, e.g. element center of triangles or tetrahedra.
+    center : np.ndarray of flloat [n_roi_center]
+        Number of center points in the ROI.
+    nodes : np.ndarray of float [n_roi_points x 3]
         Coordinates of points in the ROI
     con : np.ndarray of float [n_ele x 3(4)], optional, default: None
         Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
         be calculated in the provided points only.
-    n_points : int
-        Number of ROI points
     gradient : np.array of float [n_tet_mesh_required x 4 x 3]
         Gradient operator of the tetrahedral edges.
     node_index_list :  [n_tet_mesh_required x 4]
@@ -110,17 +116,24 @@ class RegionOfInterest:
         Indices of tetrahedra, which are required for SPR
     n_tet_mesh : int
         Number of tetrahedra in the whole head mesh
+    vol : float
+        Volume or area of ROI elements
     """
-    def __init__(self, mesh, points, con=None, gradient=None, out_fill=0, vol=None):
+    def __init__(self, mesh, center=None, nodes=None, con=None, gradient=None, out_fill=0, domains=None):
         """
         Initializes RegionOfInterest class instance
         """
-        self.points = points
-        assert self.points.shape[1] == 3
-        self.n_points = self.points.shape[0]
+        if center is not None and domains is not None:
+            raise AssertionError("ROI definition ambiguous. Please define either points (center) OR whole domains.")
+
+        self.center = center
+        self.nodes = nodes
         self.con = con
         self.sF = None
-        self.vol = vol
+        self.triangles_normals = None
+        self.vol = None
+        self.n_center = None
+        self.gradient = None
 
         # crop mesh that only tetrahedra are included
         mesh_cropped = mesh.crop_mesh(elm_type=4)
@@ -131,17 +144,67 @@ class RegionOfInterest:
 
         self.n_tet_mesh = mesh_cropped.elm.node_number_list.shape[0]
 
-        # compute sF matrix
-        self._get_sF_matrix(mesh_cropped, self.points, out_fill)
+        if type(domains) is not list and type(domains) is not np.ndarray:
+            domains = np.array([domains])
+        elif type(domains) is list and type(domains) is not np.ndarray:
+            domains = np.array(domains)
 
+        self.domains = domains
+
+        # compute gradient
         if not gradient:
             # get the lengths of the tetrahedral edges _get_local_distances(node_numbers, node_coordinates)
             local_dist, _ = _get_local_distances(node_numbers=mesh_cropped.elm.node_number_list,
                                                  node_coordinates=mesh_cropped.nodes.node_coord.T)
             # get gradient operator
             gradient = _get_gradient(local_dist)
-        self.gradient = gradient[self.idx]
-        self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
+
+        # determine sF matrix for fast interpolation
+        if None in domains:
+            # compute sF matrix
+            self._get_sF_matrix(mesh_cropped, self.center, out_fill)
+            self.gradient = gradient[self.idx]
+            self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
+            self.n_center = self.center.shape[0]
+
+        # if domains are specified, read e-field directly from the element center
+        else:
+            if (self.domains >= 1000).any():
+                raise NotImplementedError("Surfaces can not be defined as ROI domains.")
+
+            mask = np.zeros(mesh_cropped.elm.node_number_list.shape[0])
+            for d in self.domains:
+                mask += mesh_cropped.elm.tag1 == d
+            mask = mask > 0
+
+            self.node_index_list = mesh_cropped.elm.node_number_list[mask] - 1
+            self.con = self.node_index_list
+            self.idx = np.where(mask)[0]
+            self.nodes = mesh_cropped.nodes.node_coord
+            self.gradient = gradient[mask]
+            self.n_center = self.con.shape[0]
+
+        # determine element properties
+        if self.nodes is not None and self.con is not None:
+            # surface ROI
+            if self.con.shape[1] == 3:
+                p1 = self.nodes[self.con[:, 0], :]
+                p2 = self.nodes[self.con[:, 1], :]
+                p3 = self.nodes[self.con[:, 2], :]
+                self.vol = 0.5 * np.linalg.norm(np.cross(p2 - p1, p3 - p1), axis=1)
+                self.triangles_normals = np.cross(p2 - p1, p3 - p1)
+                self.triangles_normals /= np.linalg.norm(self.triangles_normals, axis=1)[:, np.newaxis]
+            # volume ROI
+            elif self.con.shape == 4:
+                p1 = self.nodes[self.con[:, 0], :]
+                p2 = self.nodes[self.con[:, 1], :]
+                p3 = self.nodes[self.con[:, 2], :]
+                p4 = self.nodes[self.con[:, 3], :]
+                self.vol = 1.0 / 6 * np.sum(np.multiply(np.cross(p2 - p1, p3 - p1), p4 - p1), 1)
+                self.center = 1.0 / 4 * (p1 + p2 + p3 + p4)
+
+        elif nodes is None or con is None:
+            self.vol = np.ones(self.n_center)
 
     def calc_fields(self, v, dadt=None, dataType=0):
         """
@@ -162,10 +225,12 @@ class RegionOfInterest:
             Electric field in ROI
         """
         # get the E field in all tetrahedra (v: (number_of_nodes, 1))
+        ################################################################################################################
         if dadt is None:
             # TES
+            ############################################################################################################
             if dataType == 0:
-                fields = postp_mag(self.gradient, v, np.zeros((self.n_tet_mesh, 3)), self.node_index_list, self.idx) # dadt should be in elements
+                fields = postp_mag(self.gradient, v, np.zeros((self.n_tet_mesh, 3)), self.node_index_list, self.idx)
             else:
                 fields = postp(self.gradient, v, np.zeros((self.n_tet_mesh, 3)), self.node_index_list, self.idx)
 
@@ -174,27 +239,33 @@ class RegionOfInterest:
             #     fields = np.linalg.norm(fields, axis=1)
 
         else:
-            # TMS
+            # TMS (dadt should be in elements)
+            ############################################################################################################
             if dataType == 0:
                 fields = postp_mag(self.gradient, v, dadt, self.node_index_list, self.idx)
             else:
                 fields = postp(self.gradient, v, dadt, self.node_index_list, self.idx)
+
             # fields = np.einsum('ijk,ij->ik', self.gradient, - (v * 1e3)[self.node_index_list]) - dadt[self.idx]
 
-
-        # interpolate to ROI
-        # e = self.sF @ fields
-        e = np.zeros((self.n_points, fields.shape[1]))
-        spmatmul(self.sF.data, self.sF.indptr, self.sF.indices, fields, e)
+        # Calculate field in ROI
+        ############################################################################################################
+        if self.sF is not None:
+            # interpolate to ROI using sF matrix
+            # e = self.sF @ fields
+            e = np.zeros((self.n_center, fields.shape[1]))
+            spmatmul(self.sF.data, self.sF.indptr, self.sF.indices, fields, e)
+        else:
+            e = fields
 
         return e
 
-    def _get_sF_matrix(self, msh, points, out_fill, tags=None):
+    def _get_sF_matrix(self, msh, center, out_fill, tags=None):
         """
         Create a sparse matrix for SPR interpolation from element data to arbitrary positions (here: the surface nodes)
 
         Sets the following object variables:
-           sF       sparse.csr_matrix: (number_of_points, number_of_kept_tetrahedra)
+           sF       sparse.csr_matrix: (number_of_center_points, number_of_kept_tetrahedra)
            idx      index of the tetrahedra included in sF as columns
            inside   indices of the positions inside the mesh
 
@@ -202,7 +273,7 @@ class RegionOfInterest:
         ----------
         msh : Msh object
             Loaded mesh.
-        points : np.array of float [n_points_ROI x 3]
+        center : np.array of float [n_center_ROI x 3]
             The coordinates of the points that we want to interpolate.
         out_fill : float or None
             Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value;
@@ -219,7 +290,7 @@ class RegionOfInterest:
         else:
             th_indices = msh.elm.elm_number[np.in1d(msh.elm.tag1, tags)]
 
-        th_with_points, bar = msh.find_tetrahedron_with_points(points, compute_baricentric=True)
+        th_with_points, bar = msh.find_tetrahedron_with_points(center, compute_baricentric=True)
         inside = np.isin(th_with_points, th_indices)
         self.inside = inside
 
@@ -230,7 +301,7 @@ class RegionOfInterest:
             th = th_with_points[inside]
 
             # interpolate the E field to the points using SPR
-            sF = self._get_sF_inside_tissues(msh, th, np.where(inside)[0], bar, points.shape[0])
+            sF = self._get_sF_inside_tissues(msh, th, np.where(inside)[0], bar, center.shape[0])
 
         # Finally, fill in the unassigned values
         if np.any(~inside):
@@ -240,11 +311,11 @@ class RegionOfInterest:
                     elm_in_volume = msh.elm.elm_number[is_in]
                     m_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
-                    _, nearest = m_in_volume.find_closest_element(points[~inside], return_index=True)
+                    _, nearest = m_in_volume.find_closest_element(center[~inside], return_index=True)
 
                     sF[np.where(~inside)[0], elm_in_volume[nearest - 1] - 1] = 1
                 else:
-                    _, nearest = msh.find_closest_element(points[~inside], return_index=True)
+                    _, nearest = msh.find_closest_element(center[~inside], return_index=True)
 
                     sF[np.where(~inside)[0], nearest - 1] = 1
 
@@ -258,7 +329,7 @@ class RegionOfInterest:
         # convert to csr matrix for fast row indexing in the matrix multiplication
         self.sF = sparse.csr_matrix(sF)
 
-    def _get_sF_inside_tissues(self, msh, th, w, bar, n_points):
+    def _get_sF_inside_tissues(self, msh, th, w, bar, n_center):
         """
         Create a sparse matrix to interpolate from element data to arbitrary positions using the
         superconvergent patch recovery (SPR) approach.
@@ -267,25 +338,25 @@ class RegionOfInterest:
         ----------
         msh : Msh object
             Loaded mesh
-        th : np.array of int [n_points_ROI]
-            Indices of the elements in the global mesh (start from 0) that contains the ROI points.
-        w : np.array of int [n_points_ROI_in]
-            Indices of the points that are inside the mesh
+        th : np.array of int [n_center_ROI]
+            Indices of the elements in the global mesh (start from 0) that contains the ROI center points.
+        w : np.array of int [n_center_ROI_in]
+            Indices of the center points that are inside the mesh
         bar : np.array of float [n_points_ROI x 4]
-            Barycentric coordinates of the ROI points of the tetrahedra nodes.
-        n_points : int
-            Number of RIU points
+            Barycentric coordinates of the ROI center points of the tetrahedra nodes.
+        n_center : int
+            Number of ROI center points
 
         Returns
         -------
-        sF : sparse matrix of float [n_points_ROI x n_tet_mesh]
+        sF : sparse matrix of float [n_center_ROI x n_tet_mesh]
             Sparse matrix for interpolation
         """
 
         # initialize the sparse matrix
-        sF = sparse.dok_matrix((n_points, msh.elm.nr))
+        sF = sparse.dok_matrix((n_center, msh.elm.nr))
 
-        # get the 'tag1' from 'msh' for every element in 'th' in 'points' order
+        # get the 'tag1' from 'msh' for every element in 'th' in 'center' order
         tag1_inside = msh.elm.tag1[th - 1]
 
         for t in np.unique(tag1_inside):
@@ -328,10 +399,10 @@ class RegionOfInterest:
         ----------
         msh : Msh object
             Loaded mesh
-        bar : np.array of float [n_points_ROI x 4]
-            Barycentric coordinates of the ROI points of the tetrahedra nodes.
-        idx : np.array of int [n_points_ROI]
-            Indices of the elements in mesh (start from 0) of ROI points that need to calculate SPR.
+        bar : np.array of float [n_center_ROI x 4]
+            Barycentric coordinates of the ROI center points of the tetrahedra nodes.
+        idx : np.array of int [n_center_ROI]
+            Indices of the elements in mesh (start from 0) of ROI center points that need to calculate SPR.
 
         Returns
         -------

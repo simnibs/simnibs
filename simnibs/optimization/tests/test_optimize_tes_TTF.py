@@ -20,7 +20,7 @@ import matplotlib
 
 # matplotlib.use("Qt5Agg")
 
-output_folder = "/data/pt_01756/studies/ttf/results/optimization/15484.08_charm_beta_coarse/HDTES_goal_mean_normal"
+output_folder = "/data/pt_01756/studies/ttf/TTF_opt_focality"
 # output_folder = "/data/pt_01756/studies/ttf/HDTES_focality_dirichlet_detailed"
 # output_folder = "/home/kporzig/tmp"
 
@@ -36,47 +36,30 @@ fn_roi_2 = "/data/pt_01756/studies/ttf/roi_1_geo.hdf5"
 example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
 
 optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
-optimize_init_vals = False
-goal = ["mean_normal", "mean_normal"]  # (focality)
-# goal = ["mean_tangential", "mean_tangential"]  # (focality)
-# goal = "ROC"  # (focality)
-# threshold = [0.1, 0.2]
-threshold = None
-# goal = ["mean", "mean"]  # "mean" "mean_max_TI"
+optimize_init_vals = True
+goal = ["mean", "mean"]  # "mean" "mean_max_TI"
 # goal = ["mean_max_TI", "mean_max_TI"]  # "mean" "mean_max_TI"
 # goal = "mean"  # "mean" "mean_max_TI"
 # dataType = [1, 1]
-dataType = [1, 1]
+dataType = [0, 0]
 weights = [1., 0.]
 # weights = None
-constrain_electrode_locations = False
+constrain_electrode_locations = True
 overlap_factor = 1.
 polish = False
 locally_biased = True
 init_pos = None
-current_estimator_method = None  # None gpc
+current_estimator_method = "gpc"  # None gpc
 dirichlet_correction_detailed = False
-dirichlet_correction = True
 # init_pos = ["C3"]
 # init_pos = ["C3", "C4"]
 
 print("Initializing Electrode ...")
-
-# create a circular array with 1 center electrode and 4 outer electrodes
-########################################################################################################################
-electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radius_outer=10,
-                                  current_estimator_method=current_estimator_method,
-                                  dirichlet_correction_detailed=dirichlet_correction_detailed,
-                                  current=np.array([0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]))
-
-
-# create a circular array with 1 center electrode and N outer electrodes (geometry optimization)
+# create a circular array with 1 center electrode and 6 outer electrodes
 ########################################################################################################################
 # electrode = simnibs.CircularArray(radius_inner=[5, 15], distance=[35., 70.], n_outer=[2, 8], radius_outer=[5, 15],
 #                                   current_estimator_method=current_estimator_method,
 #                                   dirichlet_correction_detailed=dirichlet_correction_detailed)
-
-
 
 # create 1 x 1 standard TES montage
 ########################################################################################################################
@@ -126,26 +109,19 @@ electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radiu
 # create 3 x 3 circular electrode array pair
 ########################################################################################################################
 # center = np.array([[-30, 20, 0],
-#                    [0, 20, 0],
-#                    [30, 20, 0],
-#                    [-30, 0, 0],
-#                    [0, 0, 0],
-#                    [30, 0, 0],
-#                    [-30, -20, 0],
-#                    [0, -20, 0],
-#                    [30, -20, 0]])
+#                      [0, 20, 0],
+#                      [30, 20, 0],
+#                      [-30, 0, 0],
+#                      [0, 0, 0],
+#                      [30, 0, 0],
+#                      [-30, -20, 0],
+#                      [0, -20, 0],
+#                      [30, -20, 0]])
 # radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
 # length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
 # electrode = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                        current_estimator_method=current_estimator_method,
-#                                        dirichlet_correction_detailed=dirichlet_correction_detailed)
-
-# create 3 x 3 circular electrode array pair (geometry optimization)
-########################################################################################################################
-# electrode = simnibs.ElectrodeArrayPairOpt(n_ele_x=[1, 5], n_ele_y=[1, 2], radius=[2, 7], separation_distance=[15, 30],
-#                                           current_estimator_method=current_estimator_method,
-#                                           dirichlet_correction_detailed=dirichlet_correction_detailed)
+#                                        current_estimator_method=current_estimator_method)
 
 # create two 3 x 3 circular electrode array pairs (2 channels)
 ########################################################################################################################
@@ -155,26 +131,26 @@ electrode = simnibs.CircularArray(radius_inner=10, distance=40, n_outer=4, radiu
 # radius = np.array([7, 7, 7])
 # length_x = np.array([0, 0, 0])
 # length_y = np.array([0, 0, 0])
-# center = np.array([[-30, 20, 0],
-#                     [0, 20, 0],
-#                     [30, 20, 0],
-#                     [-30, 0, 0],
-#                     [0, 0, 0],
-#                     [30, 0, 0],
-#                     [-30, -20, 0],
-#                     [0, -20, 0],
-#                     [30, -20, 0]])
-# radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
-# length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
-# electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                          current_estimator_method=current_estimator_method,
-#                                          dirichlet_correction_detailed=dirichlet_correction_detailed)
-# electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
-#                                          current_estimator_method=current_estimator_method,
-#                                          dirichlet_correction_detailed=dirichlet_correction_detailed)
-#
-# electrode = [electrode_1, electrode_2]
+center = np.array([[-30, 20, 0],
+                    [0, 20, 0],
+                    [30, 20, 0],
+                    [-30, 0, 0],
+                    [0, 0, 0],
+                    [30, 0, 0],
+                    [-30, -20, 0],
+                    [0, -20, 0],
+                    [30, -20, 0]])
+radius = np.array([7, 7, 7, 7, 7, 7, 7, 7, 7])
+length_x = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+length_y = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+electrode_1 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+                                         current_estimator_method=current_estimator_method,
+                                         dirichlet_correction_detailed=dirichlet_correction_detailed)
+electrode_2 = simnibs.ElectrodeArrayPair(center=center, radius=radius, length_x=length_x, length_y=length_y,
+                                         current_estimator_method=current_estimator_method,
+                                         dirichlet_correction_detailed=dirichlet_correction_detailed)
+
+electrode = [electrode_1, electrode_2]
 
 # create 3 x 3 mixed circular and rectangular electrode array pair
 #######################################################################################################################
@@ -221,13 +197,21 @@ mesh = simnibs.read_msh(fn_mesh)
 with h5py.File(fn_roi_1, "r") as f:
     points_1 = f["mesh/nodes/node_coord"][:]
     con_1 = f["mesh/elm/triangle_number_list"][:]
-center_1 = np.mean(points_1[con_1, ], axis=1)
 
 with h5py.File(fn_roi_2, "r") as f:
     points_2 = f["mesh/nodes/node_coord"][:]
     con_2 = f["mesh/elm/triangle_number_list"][:]
-center_2 = np.mean(points_2[con_2, ], axis=1)
 
+# calculate ROI volumes (areas)
+p1_tri_1 = points_1[con_1[:, 0], :]
+p2_tri_1 = points_1[con_1[:, 1], :]
+p3_tri_1 = points_1[con_1[:, 2], :]
+vol_1 = np.sum(0.5 * np.linalg.norm(np.cross(p2_tri_1 - p1_tri_1, p3_tri_1 - p1_tri_1), axis=1))
+
+p1_tri_2 = points_2[con_2[:, 0], :]
+p2_tri_2 = points_2[con_2[:, 1], :]
+p3_tri_2 = points_2[con_2[:, 2], :]
+vol_2 = np.sum(0.5 * np.linalg.norm(np.cross(p2_tri_2 - p1_tri_2, p3_tri_2 - p1_tri_2), axis=1))
 
 # import pynibs
 # # write hdf5 _geo file
@@ -257,10 +241,10 @@ center_2 = np.mean(points_2[con_2, ], axis=1)
 
 # create a region of interest
 print("Initializing ROI #1 ...")
-roi_1 = simnibs.RegionOfInterest(center=center_1, nodes=points_1, con=con_1, mesh=mesh)
+roi_1 = simnibs.RegionOfInterest(points=points_1, con=con_1, mesh=mesh, vol=vol_1)
 
 print("Initializing ROI #2 ...")
-roi_2 = simnibs.RegionOfInterest(center=center_2, nodes=points_2, con=con_2, mesh=mesh)
+roi_2 = simnibs.RegionOfInterest(points=points_2, con=con_2, mesh=mesh, vol=vol_2)
 
 roi = [roi_1, roi_2]
 # roi = roi_1
@@ -285,14 +269,9 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      optimizer_options=optimizer_options,
                                      min_electrode_distance=min_electrode_distance,
                                      weights=weights,
-                                     goal=goal,
-                                     threshold=threshold,
+                                     goal=goal,  # mean"
                                      constrain_electrode_locations=constrain_electrode_locations,
                                      overlap_factor=overlap_factor,
                                      optimize_init_vals=optimize_init_vals,
                                      dataType=dataType,
-                                     polish=polish,
-                                     dirichlet_correction=dirichlet_correction)
-
-# run optimization
-opt.optimize()
+                                     polish=polish)

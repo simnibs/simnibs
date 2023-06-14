@@ -19,6 +19,7 @@ from ..utils.file_finder import Templates, SubjectFiles
 from ..utils.utils_numba import sumf, sumf2, map_coord_lin_trans, node2elmf, sumf3
 from .region_of_interest import _get_gradient, _get_local_distances
 from simnibs.simulation import pardiso
+from ..utils.TI_utils import get_maxTI, get_dirTI
 
 
 class OnlineFEM:
@@ -411,11 +412,11 @@ class OnlineFEM:
             Corrected solution (including the Dirichlet node at the right position)
         """
         if electrode.dirichlet_correction_detailed:
-            th_maxrelerr = 0.01
+            th_maxrelerr = 0.02
         else:
             th_maxrelerr = 0.01
 
-        maxiter = 200
+        maxiter = 1000
 
         # create nodal arrays
         # v_nodes | v_node_idx | channel_id_nodes | ele_id_nodes | node_area
@@ -1254,3 +1255,64 @@ def delete_col_csr(mat, i):
     mask[i] = False
 
     return mat[:, mask]
+
+
+def postprocess_e(e, e2=None, dirvec=None, type="norm"):
+    """
+    Post-processing electric field according to specified type.
+
+    Parameters
+    ----------
+    e : np.ndarray of float [n_nodes x 3]
+        Electric field components in query points (Ex, Ey, Ez)
+    e2 : np.ndarray of float [n_nodes x 3]
+        Electric field components in query points of second channel (Ex, Ey, Ez) for TI fields.
+    dirvec : np.ndarray of float [n_nodes x 3]
+        Normal vectors for normal and tangential e-field component calculation or general direction vectors the
+        directional TI fields are calculated for. Can be either a single vector (1 x 3)
+        that is applied to all positions or one vector per position (N x 3).
+    type : str, optional, default: "norm"
+        Type of postprocessing to apply:
+        - "norm": electric field magnitude (default)
+        - "normal": determine normal component (required surface normals in dirvec)
+        - "tangential": determine tangential component (required surface normals in dirvec)
+        - "max_TI": maximum envelope for TI fields
+        - "dir_TI": directional sensitive maximum envelope for TI fields
+
+    Returns
+    -------
+    e_pp: np.ndarray of float [n_nodes, ]
+        Post-processed electric field in query points
+    """
+    assert e.shape[1] == 3, "Shape of electric field does not match the requirement [n_roi x 3]. " \
+                            "Electric field components needed (Ex, Ey, Ez)!"
+
+    if dirvec is not None:
+        if dirvec.shape[0] == 1:
+            dirvec = np.repeat(dirvec, e.shape[0], axis=0)
+
+    if type in ["max_TI", "dir_TI"] and e2 is None:
+        raise ValueError("Please provide second e-field to calculate TI field!")
+
+    if type == "norm":
+        e_pp = np.linalg.norm(e, axis=1)
+
+    elif type == "normal":
+        e_pp = -np.sum(e * dirvec, axis=1)
+
+    elif type == "tangential":
+        e_pp = np.sqrt(np.linalg.norm(e, axis=1) ** 2 - np.sum(e * dirvec, axis=1) ** 2)
+
+    elif type == "max_TI":
+        e_pp = get_maxTI(E1_org=e, E2_org=e2)
+
+    elif type == "dir_TI":
+        e_pp = get_dirTI(E1=e, E2=e2, dirvec_org=dirvec)
+
+    elif type is None:
+        e_pp = e
+
+    else:
+        raise NotImplementedError(f"Specified type for e-field post-processing '{type}' not implemented.")
+
+    return e_pp
