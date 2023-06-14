@@ -229,7 +229,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
-            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh", ref_fs=True)
+            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh")
 
             tmpmsh.add_node_field(move, 'move')
 

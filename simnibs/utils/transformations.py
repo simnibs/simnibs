@@ -1675,8 +1675,7 @@ def middle_gm_interpolation(
     for hemi in subject_files.hemispheres:
         mesh_io.write_freesurfer_surface(
             middle_surf[hemi],
-            os.path.join(out_folder, hemi + ".central"),
-            subject_files.ref_fs,
+            os.path.join(out_folder, hemi + ".central")
         )
 
     if out_fsaverage is not None:

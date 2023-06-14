@@ -296,10 +296,6 @@ class SubjectFiles:
     final_labels_MNI: str
         Label image created from final mesh in MNI space
 
-    ref_fs: str
-        Reference FreeSurfer space file (.nii.gz)
-        Now always set to True, so that a standard header is added, which seems to work
-
     hemispheres: list
         Hemisphere names.
 
@@ -421,11 +417,9 @@ class SubjectFiles:
         self.settings = os.path.join(self.subpath, "settings.ini")
         self.charm_log = os.path.join(self.subpath, "charm_log.html")
         self.summary_report = os.path.join(self.subpath, "charm_report.html")
-        # self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
 
         self.final_labels = os.path.join(self.subpath, "final_tissues.nii.gz")
         self.tensor_file = os.path.join(self.subpath, "DTI_coregT1_tensor.nii.gz")
-        self.ref_fs = True  # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
 
         # transformations
 

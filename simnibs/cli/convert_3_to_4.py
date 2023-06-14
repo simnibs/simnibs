@@ -90,9 +90,6 @@ class SubjectFiles_old:
     mni2conf_12dof: str
         MNI to conform 12 DOF transfomation (.txt or .mat)
 
-    ref_fs: str
-        Reference FreeSurfer space file (.nii.gz)
-
     surf_dir: str
         Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
 
@@ -198,7 +195,6 @@ class SubjectFiles_old:
 
 
         # Stuff for surface transformations
-        self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         headreco_surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
         mri2mesh_surf_dir = os.path.join(self.basedir, 'fs_' + self.subid, 'surf')
 
