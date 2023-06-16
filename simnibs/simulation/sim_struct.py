@@ -1037,7 +1037,6 @@ class TMSLIST(SimuList):
         # pos data type
         pos_dt = np.dtype([('type', 'O'),
                            ('name', 'O'), ('date', 'O'),
-                           ('istrig', 'O'), ('matORG', 'O'), ('orient', 'O'),
                            ('matsimnibs', 'O'), ('didt', 'O'),
                            ('fnamefem', 'O'), ('centre', 'O'),
                            ('pos_ydir', 'O'), ('distance', 'O')])
@@ -1046,9 +1045,6 @@ class TMSLIST(SimuList):
         for pos in self.pos:
             pos_array = np.array([('POSITION', remove_None(pos.name),
                                    remove_None(pos.date),
-                                   remove_None(pos.istrig),
-                                   remove_None(pos.matORG),
-                                   remove_None(pos.orient),
                                    remove_None(pos.matsimnibs),
                                    remove_None(pos.didt),
                                    remove_None(pos.fnamefem),
@@ -1286,9 +1282,6 @@ class POSITION(object):
         name of position
     date: str
         date when stimulation was done
-    matORG: list
-        4x4 matrix defining coil center and orientation
-        in the original coordinate system
     matsimnibs: list with 16 numbers
         4x4 matrix defining coil center and orientation
         in simnibs coordinate system.
@@ -1314,9 +1307,6 @@ class POSITION(object):
     def __init__(self, matlab_struct=None):
         self.name = ''
         self.date = None
-        self.istrig = False
-        self.matORG = None
-        self.orient = ''
         self.matsimnibs = None
         self.didt = 1e6  # corresponding to 1 A/us
         self.fnamefem = ''
@@ -1345,14 +1335,8 @@ class POSITION(object):
         self.name = try_to_read_matlab_field(p, 'name', str, self.name)
         self.date = try_to_read_matlab_field(p, 'date', str, self.date)
         self.didt = try_to_read_matlab_field(p, 'didt', float, self.didt)
-        self.istrig = try_to_read_matlab_field(p, 'istrig', bool, self.istrig)
-        self.orient = try_to_read_matlab_field(p, 'orient', str, self.orient)
         self.fnamefem = try_to_read_matlab_field(
             p, 'fnamefem', str, self.fnamefem)
-        try:
-            self.matORG = (p['matORG'][0]).tolist()
-        except:
-            pass
         try:
             self.matsimnibs = (p['matsimnibs']).tolist()
         except:
@@ -1425,7 +1409,6 @@ class POSITION(object):
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
-                self.mat != other.mat or self.orient != other.orient or \
                 self.matsimnibs != other.matsimnibs or self.didt != other.didt:
             return False
 

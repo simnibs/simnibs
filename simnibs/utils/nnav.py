@@ -10,11 +10,14 @@ import os.path
 import re
 import warnings
 import numpy as np
+import nibabel as nib
+import json
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
 from ..simulation import TMSLIST, POSITION
 from .. import __version__ as simnibs_v
+from .file_finder import SubjectFiles
 
 
 def _lps2ras():
@@ -637,3 +640,233 @@ class brainsight:
             [+0, +1, +0, +0],  # +y -> +y
             [+0, +0, -1, +0],  # +z -> -z
             [0, 0, 0, 1]])
+
+
+class ant:
+    """
+    I/O of ANT data
+    """
+    
+    def _compare_imageinfos(self, ImageInfo, ImageInfo2):
+        ''' compare two image info dicts'''
+        keys1 = set(ImageInfo.keys())
+        keys2 = set(ImageInfo2.keys())
+        
+        shared_keys = keys1.intersection(keys2)
+        if len(shared_keys) < len(keys1):
+            warnings.warn("image infos have different fields")
+            return False
+        
+        for k in keys1:
+            if len(ImageInfo[k]) != len(ImageInfo2[k]):
+                warnings.warn("these info field differs in length: "+str(k))
+                return False
+            else:
+                if not np.all(np.isclose(ImageInfo[k], ImageInfo2[k], atol=1e-05)):
+                    warnings.warn('these info field has varying entries: '
+                                  +str(k)+' '+str(ImageInfo[k])+' '+str(ImageInfo2[k])
+                                  )
+                    return False    
+        return True
+    
+    def _imageinfo_from_nifti(self, fn):
+        ''' loads the relevant infos from image header into a dict'''
+        hdr = nib.load(fn).header
+        ImageInfo = {}
+        ImageInfo['NIfTI_quatern'] = [float(hdr['quatern_b']),
+                                      float(hdr['quatern_c']),
+                                      float(hdr['quatern_d'])]
+                                                
+        ImageInfo['NIfTI_pixdim'] = np.asarray(hdr['pixdim'][:4], dtype=float).tolist()
+        ImageInfo['NIfTI_qoffset'] = [float(hdr['qoffset_x']),
+                                      float(hdr['qoffset_y']),
+                                      float(hdr['qoffset_z'])]
+        return ImageInfo
+    
+    def _mrk_template(self):
+        mrk_template = {'Configuration': 
+                        {'SourceInfo': {'AppName': 'SimNIBS',
+                                        'AppVersion': str(simnibs_v)
+                                        },
+                         'AssociatedImageInfo': {'NIfTI_quatern': [0.0, 0.0, 0.0],
+                                                 'NIfTI_qoffset': [0.0, 0.0, 0.0],
+                                                 'NIfTI_pixdim':  [0.0, 0.0, 0.0, 0.0]
+                                                 }
+                         },
+                          'TargetMarkers': []
+                        }
+        return mrk_template
+    
+    def _target_template(self):
+        target_template = {'CoilTarget': 
+                           {'Name': '',
+                            'CoordinateSystem': 'ASSOCIATED_IMAGE',
+                            'PositionalUnit': 'mm',
+                            'CoilAxesConvention': 'simnibs',
+                            'CoilInfo': {'Type': '',
+                                         'Id': ''
+                                         },
+                            'CoilPose': {'RigidTransformMatrix4x4': []}
+                            }
+                           }
+        return target_template
+    
+    def read(self, fn, subpath=None, imageinfo=None, return_imageinfo=False):
+        """
+        Imports coil positions from a .mrk-file written by an ANT 
+        neuronavigation system. 
+        
+        Optionally, the image information stored in the .mrk-file will be compared
+        to the T1 scan of the SimNIBS headmodel to ensure that the coordinates 
+        spaces match.
+        
+        Parameters
+        ----------
+        fn : str
+            Filename of .mrk-file.
+        subpath : str, optional
+            Path to m2m-folder of the subject. If given, some header fields of 
+            m2m-{subID}/T1.nii.gz (qform quaternion, qform offset, pixdim) will 
+            be compared to the image information stored in the .mrk-file.
+            Mismatches raise warnings. The default is None.
+        imageinfo : dict, optional
+            Image information to compare to the information stored in the .mrk-file.
+            Can be used as alternative to providing subpath. subpath takes precedence
+            in case both are set. The default is None.
+        return_imageinfo : bool, optional
+            Returns the image information stored in the .mrk-file. The default is False.
+    
+        Returns
+        -------
+        list of TMSLIST
+            The list contains one TMSLIST for each coil ID found in the .mrk-file
+        dict (optional)
+            The dict contains the image info stored in .mrk-file
+        
+        Written by Axel Thielscher, 2023
+        """
+        assert os.path.exists(fn), f"File does not exist: {fn}"
+        
+        with open(fn) as marker_file:
+          marker_str = marker_file.read()
+        marker_dict = json.loads(marker_str)
+        
+        # determine image info from .mrk, and (optionally) compare to internal info
+        try:
+            conf = marker_dict.get('Configuration')
+            imInfo_mrk = conf.get('AssociatedImageInfo')
+        except:
+            imInfo_mrk = None
+            warnings.warn("no image information associated with positions")
+        
+        imInfo_internal = None
+        if imageinfo is not None:
+            imInfo_internal = imageinfo
+        if subpath is not None:
+            ff = SubjectFiles(subpath=subpath)
+            imInfo_internal = self._imageinfo_from_nifti(ff.reference_volume)
+            
+        if imInfo_mrk is not None and imInfo_internal is not None:
+            if not self._compare_imageinfos(imInfo_mrk, imInfo_internal):
+                warnings.warn("image informations DO NOT MATCH!")       
+    
+        # read in positions
+        tms_lists = []
+        targets=marker_dict.get('TargetMarkers')
+        if targets is None:
+            warnings.warn("marker file does not contain positions")
+        else:
+            for t in targets:
+                coiltarget = t.get('CoilTarget')
+                if coiltarget is None:
+                    warnings.warn("position is not a CoilTarget, skipping")
+                else:
+                    assert coiltarget.get('CoordinateSystem') == 'ASSOCIATED_IMAGE'
+                    assert coiltarget.get('PositionalUnit') == 'mm'
+                    assert coiltarget.get('CoilAxesConvention') == 'simnibs'
+                    assert 'CoilPose' in coiltarget
+                    assert 'RigidTransformMatrix4x4' in coiltarget['CoilPose']
+                    
+                    p = POSITION()
+                    if 'Name' in coiltarget:
+                        p.name = coiltarget['Name']
+                    p.matsimnibs = np.asarray(coiltarget['CoilPose']['RigidTransformMatrix4x4'])
+                    
+                    # get coil filename
+                    fn_coil = ''
+                    if 'CoilInfo' in coiltarget:
+                        if 'Id' in coiltarget['CoilInfo']:
+                            fn_coil = coiltarget['CoilInfo']['Id']
+                            
+                    # get tmslist to which position should be added (match coil filename)
+                    current_list = None
+                    for tms_list in tms_lists:
+                        if tms_list.fnamecoil == fn_coil:
+                            current_list = tms_list
+                            break
+                    
+                    # no matching tmslist found, or tms_lists still empty
+                    if current_list is None:
+                        tms_lists.append(TMSLIST())
+                        current_list = tms_lists[-1]
+                        current_list.fnamecoil = fn_coil
+                    
+                    current_list.add_position(p)
+                    
+        if return_imageinfo:
+            return tms_lists, imInfo_mrk
+        return tms_lists
+                        
+    def write(self, tms_lists, fn, subpath=None, imageinfo=None):
+        """
+        Exports coil positions from TMSLISTs to a .mrk-file. 
+        
+        Optionally, the image information stored in T1 scan of the SimNIBS headmodel 
+        will be added to the .mrk-file. By that, the ANT neuronavigation can ensure
+        that the coordinates spaces match when importing the .mrk-file.
+    
+        Parameters
+        ----------
+        fn : str
+            Filename of .mrk-file.
+        tms_lists : list of TMSLIST
+            List of TMSLISTs to be exported.
+        subpath : str, optional
+            Path to m2m-folder of the subject. If given, some header fields of 
+            m2m-{subID}/T1.nii.gz (qform quaternion, qform offset, pixdim) will 
+            be added as image information to the .mrk-file. The default is None.
+        imageinfo : dict, optional
+            Image information to add to to the .mrk-file.
+            Can be used as alternative to providing subpath. subpath takes precedence
+            in case both are set. The default is None.
+            
+        Written by Axel Thielscher, 2023
+        """
+        marker_dict = self._mrk_template()
+        
+        imInfo_internal = None
+        if imageinfo is not None:
+            imInfo_internal = imageinfo
+        if subpath is not None:
+            ff = SubjectFiles(subpath=subpath)
+            imInfo_internal = self._imageinfo_from_nifti(ff.reference_volume)
+                
+        if imInfo_internal is not None:
+            marker_dict['Configuration']['AssociatedImageInfo'] = imInfo_internal
+            
+        if isinstance(tms_lists,TMSLIST):
+            tms_lists = [tms_lists]
+            
+        poslist = marker_dict['TargetMarkers']
+        for tms_list in tms_lists:
+            for p in tms_list.pos:
+                pos_dict = self._target_template()
+                pos_dict['CoilTarget']['Name'] = p.name
+                pos_dict['CoilTarget']['CoilInfo']['Id'] = tms_list.fnamecoil
+                pos_dict['CoilTarget']['CoilPose']['RigidTransformMatrix4x4'] = p.matsimnibs.tolist()
+                poslist.append(pos_dict)
+        
+        marker_str = json.dumps(marker_dict)
+        with open(fn, "w") as marker_file:
+             marker_file.write(marker_str)
+
