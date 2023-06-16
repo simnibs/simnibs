@@ -442,6 +442,9 @@ class OnlineFEM:
         I_total = [[] for _ in range(n_channel)]
 
         for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
+            # total channel current
+            I_total[i_channel] = electrode.current_channel[i_channel]
+
             if electrode.dirichlet_correction_detailed:
                 # take nodal current
                 I[i_channel] = electrode.node_current[electrode.node_channel_id == _channel_id]
@@ -449,9 +452,6 @@ class OnlineFEM:
 
                 # mean current over electrodes [n_channel]
                 I_mean[i_channel] = electrode.current[i_channel] / np.sum(electrode.node_channel_id == _channel_id)
-
-                # total channel current
-                I_total[i_channel] = electrode.current_channel[i_channel]
 
             else:
                 # take total electrode current (sum nodal current up)

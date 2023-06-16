@@ -12,6 +12,7 @@ from ..utils.simnibs_logger import logger, format_time
 from ..segmentation.brain_surface import dilate, erosion
 from ..segmentation._thickness import _calc_thickness
 from ..utils.transformations import get_vox_size
+from .mesh_io import convert_mmg_msh
 
 
 class MeshingError(ValueError):
@@ -46,52 +47,52 @@ def _write_inr(image, voxel_dims, fn_out):
         f.write(image.tobytes(order='F'))
 
 
-def improve_mesh(fn_in_msh, fn_out_msh=None, dihedral_angle_limit=5, element_size=0.1):
-    """
-    Improves element quality of given .msh
-
-    Parameters
-    ----------
-    fn_in_msh : str
-        Path to input .msh (gmsh) file
-    fn_out_msh : str, optional, default: None
-        Path to output .msh (gmsh) file. If None, input file will be overwritten.
-    dihedral_angle_limit : float, optional, default: 5
-        Lower bound of dihedral angle (in degree)
-    element_size : float, optional, default: 0.1
-        Target element size of refined regions (in mm)
-    """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # MEDIT files are created just temporary
-        fn_in_mesh_medit = os.path.join(tmpdir, os.path.split(os.path.splitext(fn_in_msh)[0] + ".mesh")[1])
-        fn_out_mesh_medit = os.path.splitext(fn_in_mesh_medit)[0] + "_improved.mesh"
-
-        if fn_out_msh is None:
-            fn_out_msh = fn_in_msh
-
-        # convert gmsh (.msh) file to MEDIT format (.mesh)
-        _m = meshio.read(fn_in_msh)
-        _m.write(fn_in_mesh_medit)
-        del _m
-
-        # start remeshing (CGAL)
-        ret = cgal.improve_mesh_quality(fn_in_mesh_medit.encode(),
-                                        fn_out_mesh_medit.encode(),
-                                        dihedral_angle_limit,
-                                        element_size)
-
-        if ret != 0:
-            raise MeshingError('There was an error while re-meshing during after care')
-
-        # read MEDIT (.mesh) file
-        mesh = mesh_io.read_medit(fn_out_mesh_medit)
-
-        # In concurrent meshing there might be some spurious nodes
-        used_nodes = np.unique(mesh.elm[:])[1:]
-        mesh = mesh.crop_mesh(nodes=used_nodes)
-
-        # write improved mesh in gmsh (.msh) format
-        mesh.write(fn_out_msh)
+# def improve_mesh(fn_in_msh, fn_out_msh=None, dihedral_angle_limit=5, element_size=0.1):
+#     """
+#     Improves element quality of given .msh
+#
+#     Parameters
+#     ----------
+#     fn_in_msh : str
+#         Path to input .msh (gmsh) file
+#     fn_out_msh : str, optional, default: None
+#         Path to output .msh (gmsh) file. If None, input file will be overwritten.
+#     dihedral_angle_limit : float, optional, default: 5
+#         Lower bound of dihedral angle (in degree)
+#     element_size : float, optional, default: 0.1
+#         Target element size of refined regions (in mm)
+#     """
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         # MEDIT files are created just temporary
+#         fn_in_mesh_medit = os.path.join(tmpdir, os.path.split(os.path.splitext(fn_in_msh)[0] + ".mesh")[1])
+#         fn_out_mesh_medit = os.path.splitext(fn_in_mesh_medit)[0] + "_improved.mesh"
+#
+#         if fn_out_msh is None:
+#             fn_out_msh = fn_in_msh
+#
+#         # convert gmsh (.msh) file to MEDIT format (.mesh)
+#         _m = meshio.read(fn_in_msh)
+#         _m.write(fn_in_mesh_medit)
+#         del _m
+#
+#         # start remeshing (CGAL)
+#         ret = cgal.improve_mesh_quality(fn_in_mesh_medit.encode(),
+#                                         fn_out_mesh_medit.encode(),
+#                                         dihedral_angle_limit,
+#                                         element_size)
+#
+#         if ret != 0:
+#             raise MeshingError('There was an error while re-meshing during after care')
+#
+#         # read MEDIT (.mesh) file
+#         mesh = mesh_io.read_medit(fn_out_mesh_medit)
+#
+#         # In concurrent meshing there might be some spurious nodes
+#         used_nodes = np.unique(mesh.elm[:])[1:]
+#         mesh = mesh.crop_mesh(nodes=used_nodes)
+#
+#         # write improved mesh in gmsh (.msh) format
+#         mesh.write(fn_out_msh)
 
 
 def _mesh_image(image, voxel_dims, facet_angle,
@@ -1532,9 +1533,9 @@ def create_mesh(label_img, affine,
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
-    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag, 
-                                  faces = faces, idx_tet_faces = tet_faces, 
-                                  adj_tets = adj_tets)
+    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag,
+                                 faces = faces, idx_tet_faces = tet_faces,
+                                 adj_tets = adj_tets)
 
     # remove "air" tetrahedra with label -1 and corresponding nodes
     idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
@@ -1553,13 +1554,18 @@ def create_mesh(label_img, affine,
         logger.info('Extra Skin Care')
         m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
 
-    # improve mesh quality (remesh elements with low quality resulting from despiking)
+    # TODO: improve mesh quality (remesh elements with low quality resulting from despiking), output file name?
     if improve_mesh_quality > 0:
         logger.info('Improving Mesh Quality')
-        improve_mesh(fn_in_msh=m.fn,
-                     fn_out_msh=m.fn,
-                     dihedral_angle_limit=5,
-                     element_size=0.1)
+        fn_sol = ""
+        fn_out = os.path.join(os.path.splitext(m.fn)[0], "_improved.msh")
+
+        # run MMG to improve mesh
+        cmd = f"mmg3d_O3 -v 6 -nosurf -noswap -ar 70 -hgrad 3.0 -sol {fn_sol} -in {m.fn} -out {fn_out}"
+        os.system(cmd)
+
+        # convert output of MMG to .msh v4 (binary) format (overwriting original output)
+        convert_mmg_msh(fn_out)
 
     logger.info(
         'Time to post-process mesh: ' +

@@ -552,6 +552,11 @@ class TESoptimize():
 
         self.logger.log(25, f"=" * 100)
 
+        # test electrode_pos
+        # electrode_pos = [[np.array([-0.33367133, -1.42342995, -0.97406187]), np.array([0.3356765,   1.02366826, -1.32358541])],
+        #                  [np.array([-1.10395945, -0.10505088,  2.4692269]),  np.array([1.26350727, -0.35311936, -2.35440874])]]
+        # self.update_field(electrode_pos=electrode_pos, plot=True)
+
     def get_bounds(self, constrain_electrode_locations, overlap_factor=1.):
         """
         Get boundaries of freely movable electrode arrays for optimizer.
@@ -991,7 +996,7 @@ class TESoptimize():
 
         Parameters
         ----------
-        electrode_pos : list of list of np.ndarray of float [3] of length [n_channel_stim][n_ele_free]
+        electrode_pos : list of list of np.ndarray of float [3] of length [n_channel_stim][n_ele_free][3]
             Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
@@ -1056,44 +1061,6 @@ class TESoptimize():
                     e[i_channel_stim][i_roi] = r.calc_fields(v, dataType=self.dataType[i_roi])
             #stop = time.time()
             #print(f"Time: calc fields: {stop - start}")
-
-            # plot field
-            if plot:
-                for i_roi, _e in enumerate(e[i_channel_stim]):
-                    if _e is not None:
-                        # if we have a connectivity (surface):
-                        if self.roi[i_roi].con is not None:
-                            import pynibs
-                            # surface plot
-                            if self.roi[i_roi].con.shape == 3:
-                                pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                           points=self.roi[i_roi].nodes,
-                                                           con=self.roi[i_roi].con,
-                                                           replace=True,
-                                                           hdf5_path='/mesh')
-
-                                pynibs.write_data_hdf5_surf(data=[_e],
-                                                            data_names=["E"],
-                                                            data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
-                                                            geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                            replace=True)
-                            # volume plot
-                            else:
-                                pynibs.write_geo_hdf5_vol(out_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                          points=self.roi[i_roi].nodes,
-                                                          con=self.roi[i_roi].con,
-                                                          replace=True,
-                                                          hdf5_path='/mesh')
-
-                                pynibs.write_data_hdf5_vol(data=[_e],
-                                                           data_names=["E"],
-                                                           data_hdf_fn_out=os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.hdf5"),
-                                                           geo_hdf_fn=os.path.join(self.plot_folder, f"e_roi_{i_roi}_geo.hdf5"),
-                                                           replace=True)
-                        else:
-                            # if we just have points and data:
-                            np.savetxt(os.path.join(self.plot_folder, f"e_stim_{i_channel_stim}_roi_{i_roi}_data.txt"),
-                                       np.hstack((self.roi[i_roi].center, _e)))
 
         return e
 
@@ -1389,8 +1356,47 @@ class TESoptimize():
         for _electrode in self.electrode:
             _electrode.dirichlet_correction_detailed = True
 
-        # compute best field again, plot field and electrode position
+        # compute best e-field again, plot field and electrode position
         e = self.update_field(electrode_pos=self.electrode_pos_opt, plot=True)
+
+        # postprocess e-field
+        e_pp = [[0 for _ in range(self.n_roi)] for _ in range(self.n_channel_stim)]
+        e_plot = [[] for _ in range(self.n_roi)]
+        e_plot_label = [[] for _ in range(self.n_roi)]
+        if "max_TI" in self.e_postproc or "dir_TI" in self.e_postproc:
+            for i_roi in range(self.n_roi):
+                e_pp[0][i_roi] = postprocess_e(e=e[0][i_roi],
+                                               e2=e[1][i_roi],
+                                               dirvec=self.goal_dir,
+                                               type=self.e_postproc[i_roi])
+                e_pp[1][i_roi] = e_pp[0][i_roi]
+
+                e_plot[i_roi].append(e[0][i_roi])
+                e_plot[i_roi].append(e[0][i_roi])
+                e_plot[i_roi].append(e_pp[0][i_roi])
+                e_plot_label[i_roi].append(f"e_stim_0")
+                e_plot_label[i_roi].append(f"e_stim_1")
+                e_plot_label[i_roi].append(f"e_pp")
+
+                # plot field
+                if self.plot:
+                    fn_out = os.path.join(self.plot_folder, f"e_roi_{i_roi}")
+                    plot_roi_field(e=e_plot[i_roi], roi=self.roi[i_roi], e_label=e_plot_label[i_roi], fn_out=fn_out)
+        else:
+            for i_roi in range(self.n_roi):
+                for i_channel_stim in range(self.n_channel_stim):
+                    e_pp[i_channel_stim][i_roi] = postprocess_e(e=e[i_channel_stim][i_roi],
+                                                                e2=None,
+                                                                dirvec=self.goal_dir,
+                                                                type=self.e_postproc[i_roi])
+                    e_plot[i_roi].append(e[i_channel_stim][i_roi])
+                    e_plot[i_roi].append(e_pp[i_channel_stim][i_roi])
+                    e_plot_label[i_roi].append(f"e_stim_{i_channel_stim}")
+                    e_plot_label[i_roi].append(f"e_pp_stim_{i_channel_stim}")
+
+                if self.plot:
+                    fn_out = os.path.join(self.plot_folder, f"e_roi_{i_roi}")
+                    plot_roi_field(e=e_plot[i_roi], roi=self.roi[i_roi], e_label=e_plot_label[i_roi], fn_out=fn_out)
 
         # print optimization summary
         save_optimization_results(fname=os.path.join(self.output_folder, "summary"),
@@ -1401,6 +1407,7 @@ class TESoptimize():
                                   popt=self.electrode_pos_opt,
                                   nfev=nfev,
                                   e=e,
+                                  e_pp=e_pp,
                                   time=t_optimize,
                                   msh=self.mesh,
                                   electrode=self.electrode,
@@ -1413,8 +1420,8 @@ class TESoptimize():
                                   integral_focality=self.integral_focality)
 
 
-def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, time, msh,
-                              electrode, goal, n_test=None, n_sim=None, n_iter_dirichlet_correction=None,
+def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_before_polish, popt, nfev, e, e_pp, time,
+                              msh, electrode, goal, n_test=None, n_sim=None, n_iter_dirichlet_correction=None,
                               goal_fun_value=None, AUC=None, integral_focality=None):
     """
     Saves optimization settings and results in an <fname>.hdf5 file and prints a summary in a <fname>.txt file.
@@ -1434,8 +1441,10 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         [np.array([beta_1, lambda_1, alpha_1]), np.array([beta_2, lambda_2, alpha_2]), ...]
     nfev : int
         Number of function evaluations during optimization
-    e : list of np.ndarray [n_roi]
-        List of containing np.ndarrays of the electric fields in the ROIs
+    e : list of np.ndarray [n_channel_stim][n_roi]
+        List of list containing np.ndarrays of the (raw) electric fields in the ROIs (Ex, Ey, Ez)
+    e_pp : list of np.ndarray [n_channel_stim][n_roi]
+        List of list containing np.ndarrays of the postprocessed electric fields in the ROIs (norm or normal etc...)
     time : float
         Runtime of optimization in s
     electrode : list of ElectrodeArray objects [n_channel_stim]
@@ -1595,6 +1604,7 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         for i_stim in range(len(e)):
             for i_roi in range(len(e[i_stim])):
                 f.create_dataset(data=e[i_stim][i_roi].flatten(), name=f"e/channel_{i_stim}/e_roi_{i_roi}")
+                f.create_dataset(data=e_pp[i_stim][i_roi].flatten(), name=f"e_pp/channel_{i_stim}/e_roi_{i_roi}")
 
 
 def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance=0.):
@@ -1847,6 +1857,54 @@ def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(me
     logger = logging.getLogger("simnibs")
 
     return logger
+
+
+def plot_roi_field(e, roi, fn_out, e_label=None):
+    """
+    Creates plot files for paraview to visualize electric fields.
+    Creates file triple of *_geo.hdf5,  *_data.hdf5, and *_data.xdmf, which can be loaded with Paraview.
+
+    Parameters
+    ----------
+    e : np.ndarray of float [n_roi_ele, ] or list of np.ndarray of float [n_e-fields]
+        Electric fields to visualize. Multiple fields can be passed in a list. Each field has to match the ROI.
+    roi : RegionOfInterest class instance
+        RegionOfInterest Object the data is associated with.
+    fn_out : str
+        Prefix of output file name, will append *_geo.hdf5, *_data.hdf5, and *_data.xdmf
+    e_label : str or list of str [n_e-fields]
+        Data names
+    """
+    if type(e) is not list:
+        e = [e]
+
+    if e_label is None:
+        e_label = [f"data_{str(i)}" for i in range(len(e))]
+
+    if type(e_label) is not list:
+        e_label = [e_label]
+
+    # if we have a connectivity (surface):
+    if roi.con is not None:
+        import pynibs
+
+        fn_geo = fn_out + "_geo.hdf5"
+        fn_data = fn_out + "_data.hdf5"
+
+        # surface plot
+        if roi.con.shape[1] == 3:
+            pynibs.write_geo_hdf5_surf(out_fn=fn_geo, points=roi.nodes, con=roi.con, replace=True, hdf5_path='/mesh')
+            pynibs.write_data_hdf5_surf(data=e, data_names=e_label, data_hdf_fn_out=fn_data, geo_hdf_fn=fn_geo, replace=True)
+
+        # volume plot
+        else:
+            pynibs.write_geo_hdf5_vol(out_fn=fn_geo, points=roi.nodes, con=roi.con, replace=True, hdf5_path='/mesh')
+            pynibs.write_data_hdf5_vol(data=e, data_names=e_label, data_hdf_fn_out=fn_data, geo_hdf_fn=fn_geo, replace=True)
+
+    else:
+        # if we just have points and data w/o connectivity information:
+        e = np.hstack(e)
+        np.savetxt(fn_out + "_data.txt", np.hstack((roi.center, e)))
 
 # def get_element_intersect_line_surface(p, w, points, con, triangle_center=None, triangle_normals=None):
 #     """

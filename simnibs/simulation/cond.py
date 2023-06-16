@@ -125,6 +125,16 @@ def standard_cond(n=11000):
     S[9].value = 0.16
     S[9].descrip = 'Muscle (from Gabriel et al, 2009)'
 
+    # Edema
+    S[10].name = 'Edema'
+    S[10].value = 0.71
+    S[10].descrip = 'Edema'
+
+    # Necrosis
+    S[15].name = 'Necrosis'
+    S[15].value = 1.0
+    S[15].descrip = 'Necrosis'
+
     # Burrholes
     S[18].name = 'Burrholes'
     S[18].value = 1.654
@@ -134,6 +144,11 @@ def standard_cond(n=11000):
     S[19].name = 'Resection Cavities'
     S[19].value = 1.654
     S[19].descrip = 'Resection Cavities (CSF)'
+
+    # Tumor shell
+    S[23].name = 'Tumor shell'
+    S[23].value = 0.24
+    S[23].descrip = 'Tumor shell'
 
     # Residual Tumor
     S[24].name = 'Residual Tumor'

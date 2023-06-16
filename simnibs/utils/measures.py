@@ -115,7 +115,7 @@ def ROC(e1, e2, threshold, focal=False):
     if len(threshold) == 1:
         threshold = [threshold[0], threshold[0]]
 
-    threshold_array = np.linspace(0, 1, 500)
+    threshold_array = np.linspace(threshold[0], threshold[1], 2)
     sensitivity = np.zeros(len(threshold_array))
     specificity_inv = np.zeros(len(threshold_array))
     n_roi_1 = len(e1)
@@ -135,14 +135,14 @@ def ROC(e1, e2, threshold, focal=False):
     threshold_array = threshold_array[sort_idx]
 
     # get sensitivity and specificity_inv value where threshold conditions are fulfilled
-    sens_idx_tmp = np.where(threshold_array > threshold[1])[0]
+    sens_idx_tmp = np.where(threshold_array >= threshold[1])[0]
     if len(sens_idx_tmp) == 0:
         sens_thresh = 0.
     else:
         sens_idx = sens_idx_tmp[0]
         sens_thresh = sensitivity[sens_idx]
 
-    spec_inv_idx_tmp = np.where(threshold_array < threshold[0])[0]
+    spec_inv_idx_tmp = np.where(threshold_array <= threshold[0])[0]
     if len(spec_inv_idx_tmp) == 0:
         spec_inv_thresh = 1.
     else:
