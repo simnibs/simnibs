@@ -22,16 +22,16 @@ def read_csv_positions(fn):
 
     coordinates: list
         Coordinates in each row
-    
+
     extra: list
         extra coordinates in each row (eg: electrode or coil axes)
-        
+
     name: list
-        Name of position 
+        Name of position
 
     extra_cols: list
         Any extra information stored in the columns
-    
+
     header: str
         Any information in the header
 
@@ -102,44 +102,50 @@ def read_csv_positions(fn):
 
 
 
-def write_csv_positions(fn, type_, coordinates, extra, name, extra_cols, header):
-    ''' Reads positions from a .csv file
+def write_csv_positions(filename, types, coordinates, name, extra=None, extra_cols=None, header=None):
+    ''' Write positions to a .csv file
 
     Parameters
     ------------
     fn: str
         Name of csv file
-
     type: list
         Type of position in each row ('Generic', 'Fiducial', 'Electrode', 'ReferenceElectrode' or
         'Coil')
-
-    coordinates: list
+    coordinates: numpy array
         Coordinates in each row
-    
+    name: list
+        Name of position
     extra: list
         extra coordinates in each row (eg: electrode or coil axes)
-        
-    name: list
-        Name of position 
-
     extra_cols: list
         Any extra information stored in the columns
-    
     header: str
         Any information in the header
 
     '''
+    n = len(types)
 
     coordinates = coordinates.tolist()
-    name = [[] if not n else [n] for n in name]
-    extra_cols = [[] if not e_c else e_c for e_c in extra_cols]
+
+    name = [[n] if n else [] for n in name]
+
+    if extra is None:
+        extra = [None]*n
     extra = [[] if e is None else e.tolist() for e in extra]
-    with open(fn, 'w', newline='') as f:
+
+    if extra_cols is None:
+        extra_cols = [None]*n
+    extra_cols = [e_c or [] for e_c in extra_cols]
+
+    if header is None:
+        header = []
+
+    with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         if header != []:
             writer.writerow(header)
-        for t, c, e, n, e_c in zip(type_, coordinates, extra, name, extra_cols):
+        for t, c, e, n, e_c in zip(types, coordinates, extra, name, extra_cols):
             writer.writerow([t] + c + e + n + e_c)
 
 def _get_eeg_positions(fn_csv):
@@ -151,6 +157,7 @@ def _get_eeg_positions(fn_csv):
         if t in ['Electrode', 'ReferenceElectrode', 'Fiducial']:
             eeg_pos[name[i]] = coordinates[i]
     return eeg_pos
+
 
 def eeg_positions(m2m_folder, cap_name='EEG10-10_UI_Jurak_2007.csv'):
     ''' Returns a directory with EEG electrode positions

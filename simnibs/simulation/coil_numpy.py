@@ -7,6 +7,8 @@ import numpy as np
 import nibabel as nib
 import os
 import re
+
+from simnibs.utils.mesh_element_properties import ElementTags
 from .. import __version__
 from ..mesh_tools import mesh_io
 from ..utils.file_finder import Templates
@@ -206,7 +208,7 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
     d_position : ndarray
         dipole positions (Nx3).
     target_positions : ndarray
-        position for which to calculate the A field.
+        positions for which to calculate the A field.
     eps : float
         Precision. The default is 1e-3
     direct : bool
@@ -287,7 +289,7 @@ def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
     B *= -1e-7
     return B
 
-def A_biot_savart_path(lsegments, points, I=1.):
+def A_biot_savart_path(lsegments, points, dl=None, I=1.):
     '''
     Calculate A field naively (without FMM) from current path
 
@@ -297,6 +299,8 @@ def A_biot_savart_path(lsegments, points, I=1.):
         line segments, definition of M wire path as 3D points (3 x M).
     points : ndarray
         3D points where field is calculated (3 x N).
+    dl : ndarray, optional
+        direction vectors if not supplied determined by the line segments.
     I : float, optional
         Current strenth in A. The default is 1..
 
@@ -307,14 +311,16 @@ def A_biot_savart_path(lsegments, points, I=1.):
 
     '''
     r1 = np.sqrt(np.sum((points[:,:,None]-lsegments[:,None,:])**2,axis=0))
-    dl = np.zeros(lsegments.shape)
-    dl[:,:-1] = np.diff(lsegments,axis=1)
-    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
-    A = np.sum(dl[:,None,:]/r1[None],axis=2)
+    if dl is None:
+        dl = np.zeros(lsegments.shape)
+        dl[:,:-1] = np.diff(lsegments,axis=1)
+        dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+
+    A = np.sum(dl[:,None,:] / r1[None],axis=2)
     A *= I*1e-7
     return A
 
-def A_biot_savart_path_fmm(lsegments, points, I=1., eps=1e-3, direct='auto'):
+def A_biot_savart_path_fmm(lsegments, points, dl=None, I=1., eps=1e-3, direct='auto'):
     '''
     Calculate A field using FMM3D from current path
 
@@ -339,9 +345,12 @@ def A_biot_savart_path_fmm(lsegments, points, I=1., eps=1e-3, direct='auto'):
         A field at points (3 x N) in Tesla*meter.
 
     '''
-    dl = np.zeros(lsegments.shape)
-    dl[:,:-1] = np.diff(lsegments,axis=1)
-    dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+
+    if dl is None:
+        dl = np.zeros(lsegments.shape)
+        dl[:,:-1] = np.diff(lsegments,axis=1)
+        dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+    
     if direct == 'auto':
         if dl.shape[1] >= 300:
             direct = False
@@ -513,13 +522,13 @@ def _add_logo(msh_stl):
     # 0 gray, 1 red, 2 lightblue, 3 blue
     major_version = __version__.split('.')[0]
     if  major_version == '3':
-        msh_logo=msh_logo.crop_mesh(tags = [1,2])
-        msh_logo.elm.tag1[msh_logo.elm.tag1==2] = 3 # version in blue
+        msh_logo=msh_logo.crop_mesh(tags = [ElementTags.WM, ElementTags.GM])
+        msh_logo.elm.tag1[msh_logo.elm.tag1==ElementTags.GM] = 3 # version in blue
     elif major_version == '4':
-        msh_logo=msh_logo.crop_mesh(tags=[1,3])
+        msh_logo=msh_logo.crop_mesh(tags=[ElementTags.WM, ElementTags.CSF])
     else:
-        msh_logo=msh_logo.crop_mesh(tags=1)
-    msh_logo.elm.tag1[msh_logo.elm.tag1==1] = 2 # 'simnibs' in light blue
+        msh_logo=msh_logo.crop_mesh(tags=ElementTags.WM)
+    msh_logo.elm.tag1[msh_logo.elm.tag1==ElementTags.WM] = 2 # 'simnibs' in light blue
 
     # center logo in xy-plane, mirror at yz-plane and scale
     bbox_coil=np.vstack([np.min(msh_stl.nodes[:],0),
@@ -604,8 +613,8 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
         raise ValueError('coil file must be either a .ccd file or a nifti file')
 
     if (fn_geo is not None) and (fn_stl is not None):
-        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) |
-                                        (msh.elm.tag1 == 5) )
+        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == ElementTags.SCALP_TH_SURFACE) |
+                                        (msh.elm.tag1 == ElementTags.SCALP) )
         msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
         if not os.path.isfile(fn_stl):
             raise IOError('Could not find stl file: {0}'.format(fn_stl))

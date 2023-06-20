@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EntryTargetList coordinateSpace="LPS">
+    <Entry alwaysVisible="false" index="0" selected="true">
+        <Marker color="#00ff00" description="" drawAura="false"
+            radius="4.0" set="true">
+            <ColVec3D data0="34.460376971779084"
+                data1="32.060835295641006" data2="95.52184958938703"/>
+        </Marker>
+    </Entry>
+    <Target alwaysVisible="false" index="0" selected="true">
+        <Marker color="#00ffff" description="premot" drawAura="true"
+            radius="4.0" set="true">
+            <ColVec3D data0="25.79795658961348" data1="27.9844021746219" data2="77.68745468492844"/>
+        </Marker>
+    </Target>
+</EntryTargetList>

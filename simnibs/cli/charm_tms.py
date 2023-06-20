@@ -29,9 +29,9 @@ import textwrap
 import time
 from simnibs import __version__
 from simnibs import SIMNIBSDIR
-from simnibs.mesh_tools.mesh_io import read_gifti_surface, write_gifti_surface
 from simnibs.segmentation import charm_main
-from simnibs.segmentation.charm_utils import _cut_and_combine_labels, _downsample_surface
+from simnibs.segmentation.brain_surface import subsample_surfaces
+from simnibs.segmentation.charm_utils import _cut_and_combine_labels
 from simnibs.utils.settings_reader import read_ini
 from simnibs.utils import file_finder
 
@@ -106,13 +106,17 @@ MANUAL EDITING:
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
     parser.add_argument('--forceqform', action='store_true', default=False,
-                        help="""Force sform and qform to be the same.""")
+                        help="""Replace sform with qform.""")
+    parser.add_argument('--forcesform', action='store_true', default=False,
+                        help="""Replace qform with sform. Note: strips shears.""")
     parser.add_argument('--usetransform',  help="""Transformation matrix used
                         instead of doing affine registration of the MNI
                         template to the subject MRI, i.e., it takes the MNI
                         template *to* subject space. Supplied as a path to a
                         space delimited .txt file containing a 4x4
                         transformation matrix (default = None).""")
+    parser.add_argument('--debug', action='store_true', default=False,
+        help="""Write results from intermediate steps to disk.""")
     args=parser.parse_args(argv)
 
     # subID is required, otherwise print help and exit (-v and -h handled by parser)
@@ -170,8 +174,8 @@ def main():
         # run all steps except meshing as usual        
         charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                        args.segment, args.surfaces, False, args.usesettings, args.noneck,
-                       args.inittransform, args.usetransform, args.forceqform,
-                       " ".join(sys.argv[1:]))
+                       args.inittransform, args.usetransform, args.forceqform, args.forcesform,
+                       " ".join(sys.argv[1:]), args.debug)
         
     if args.segment:
         # update label image: cut neck and combine labels
@@ -183,7 +187,8 @@ def main():
 
         _cut_and_combine_labels(sub_files.tissue_labeling_upsampled, 
                                 templates.mni_volume,
-                                fn_affine, settings["tms"])
+                                fn_affine, settings["tms"], n_dil=60)
+        # 60 dilations with 0.5 mm each --> cut 30 mm below MNI mask
         
         charm_main._stop_logger(sub_files.charm_log)
     
@@ -193,23 +198,17 @@ def main():
         charm_main._setup_logger(sub_files.charm_log)
         settings = read_ini(args.usesettings)
         
-        hemis = settings["surfaces"]["pial"]
-        for s in hemis:
-            fn_surforg = sub_files.get_surface(s)
-            fn_surfout = os.path.join(sub_files.surface_folder,s+'.central_tms.gii')
-            
-            m = read_gifti_surface(fn_surforg)
-            mout = _downsample_surface(m, settings["tms"]["n_nodes"])
-            write_gifti_surface(mout, fn_surfout)    
-            
+        for n in settings["tms"]["n_nodes"]:
+            subsample_surfaces(subject_dir, n)
+                    
         charm_main._stop_logger(sub_files.charm_log)
         
     # run meshing after update of label image
     if args.mesh:
         charm_main.run(subject_dir, None, None, False, False,
                        False, False, True, args.usesettings, False,
-                       None, None, False,
-                       " ".join(sys.argv[1:]))
+                       None, None, False, False,
+                       " ".join(sys.argv[1:]), False)
 
 
 if __name__ == '__main__':

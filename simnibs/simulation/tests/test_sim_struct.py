@@ -9,6 +9,8 @@ import scipy.io
 import numpy as np
 import nibabel
 
+import simnibs.utils.cond_utils
+
 from ... import SIMNIBSDIR
 from .. import sim_struct
 from ...mesh_tools import mesh_io
@@ -296,17 +298,6 @@ class TestPosition:
     def test_position_read_didt(self, mat_session):
         pos = sim_struct.POSITION(mat_session['poslist'][0][0][0]['pos'][0][0][0])
         assert pos.didt == 123
-
-class TestCond:
-    def test_set_distribution(self):
-        c = sim_struct.COND()
-        c.distribution_type = 'uniform'
-        assert True
-
-    def test_set_distribution_fail(self):
-        c = sim_struct.COND()
-        with pytest.raises(ValueError):
-            c.distribution_type = 'b'
 
 class TestTryToReadMat:
     def test_try_to_read_string(self):

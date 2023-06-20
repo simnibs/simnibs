@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>simnibs.simulation.tdcs_leadfield &#8212; SimNIBS 4.0b1 documentation</title>
+    <title>simnibs.simulation.tdcs_leadfield &#8212; SimNIBS 4.0.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
@@ -54,19 +54,25 @@
 <h1>simnibs.simulation.tdcs_leadfield<a class="headerlink" href="#simnibs-simulation-tdcs-leadfield" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.tdcs_leadfield">
-<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tdcs_leadfield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">electrode_surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_hdf5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_pro</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tag'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs_leadfield" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulates tDCS fields using Neumann boundary conditions and writes the output
-Electric fields to an HDF5 file</p>
+<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tdcs_leadfield</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">electrode_surface</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_hdf5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_pro</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'E'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weigh_by_area</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tdcs_leadfield" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulates tDCS fields using Neumann boundary conditions and writes the
+output electric fields to an HDF5 file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh file with geometry information</p></li>
 <li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – An ElementData field with conductivity information</p></li>
-<li><p><strong>electrode_surface</strong> (<em>list</em>) – A list of the tag of the electrode surfaces (if input_type=’tag’)
-or of nodes (if input_type=’node’). The first will be used as a reference</p></li>
+<li><p><strong>electrode_surface</strong> (<em>list</em>) – If <cite>input_type</cite> is “tag”, then this is a list of the tags of the
+electrode surfaces. If <cite>input_type</cite> is “nodes”, then this is a list
+(or list of lists) of nodes. The first electrode is used as a
+reference.</p></li>
 <li><p><strong>fn_hdf5</strong> (<em>str</em>) – Name of hdf5 where simulations will be saved</p></li>
 <li><p><strong>dataset</strong> (<em>str</em>) – Name of dataset where data is to be saved</p></li>
-<li><p><strong>current</strong> (<em>float</em><em> (</em><em>optional</em><em>)</em>) – Current to use in each simulation. Default: 1 A</p></li>
+<li><p><strong>current</strong> (<em>float</em><em> | </em><em>iterable</em>) – Specifies the current (in ampere) to use in each simulation. If float,
+this current will be used in all simulations. If iterable (where the
+length of the iterable is number of electrodes minus one as the
+reference is set to zero), it explicitly specifies the current in each
+simulation. (Default = 1).</p></li>
 <li><p><strong>roi</strong> (<em>list</em><em> or </em><em>None</em><em> (</em><em>optional</em><em>)</em>) – Regions of interest where the fields is to be saved.
 If set to None, will save the electric field in all tissues.
 Default: None</p></li>
@@ -76,17 +82,48 @@ f_post is an Nx3 ndarray. The postprocessing result will be saved instead of the
 field</p></li>
 <li><p><strong>solver_options</strong> (<em>str</em><em> (</em><em>optional</em><em>)</em>) – Options to be used by the solver. Default: Hypre solver</p></li>
 <li><p><strong>n_workers</strong> (<em>int</em>) – Number of workers to use</p></li>
-<li><p><strong>input_type</strong> (<em>'tag'</em><em>  or </em><em>'node'</em><em> (</em><em>optional</em><em>)</em>) – Wether electrode_surface refers to surface tags (default) or nodes.</p></li>
+<li><p><strong>input_type</strong> (<em>'tag'</em><em>  or </em><em>&quot;nodes&quot;</em><em> (</em><em>optional</em><em>)</em>) – Whether electrode_surface refers to surface tags (default) or nodes.</p></li>
+<li><p><strong>weigh_by_area</strong> (<em>bool</em>) – Weigh current by node area. If <cite>input_type == “tag”</cite> this is ignored
+and area weighting is implied.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>Writes the field resulting from each simulation to a dataset called</em></p></li>
-<li><p><em>fn_dataset in an hdf5 file called fn_hdf5</em></p></li>
-</ul>
-</p>
+<dd class="field-even"><p>Writes the field resulting from each simulation to a dataset called
+fn_dataset in an hdf5 file called fn_hdf5.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Possible combinations/uses of <cite>electrode_surface</cite> and <cite>current</cite> when
+<cite>input_type=”nodes”</cite>.</p>
+<ol class="arabic">
+<li><p>One node per electrode (weigh_by_area has no effect)</p>
+<p>tdcs_leadfield(…, el=[1,2,3,4], current=1., input_type=”nodes”, …)
+tdcs_leadfield(…, el=[1,2,3,4], current=[1.,2.,1.], input_type=”nodes”, …)</p>
+</li>
+<li><p>Several nodes per electrode</p></li>
+</ol>
+<p>Set same current for all electrodes (or one value per electrode) and weigh
+according to area so that the total current per electrode is equal to the
+input current</p>
+<blockquote>
+<div><p>tdcs_leadfield(…, el=[[1,2,3],[4,5,6],[7,8,9]], current=1., input_type=”nodes”, …)
+tdcs_leadfield(…, el=[[1,2,3],[4,5,6],[7,8,9]], current=[1., 2.], input_type=”nodes”, …)</p>
+</div></blockquote>
+<p>Set the weighting eplicitly by specifying the current per node for all
+electrodes (disable weigh_by_area)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>tdcs_leadfield(…,</dt><dd><p>el = [[1,2,3],[4,5,6],[7,8,9]],
+current = [[0.1,0.2,0.7],[0.2,0.3,0.5]],
+input_type = “nodes”,
+weigh_by_area = False,</p>
+</dd>
+</dl>
+<p>…)</p>
+</div></blockquote>
 </dd></dl>
 
 </section>
@@ -137,6 +174,7 @@ field</p></li>
 <li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>

@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Localite &#8212; SimNIBS 4.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Brainsight" href="brainsight.html" />
+    <link rel="prev" title="Neuronavigation Data Import/Export" href="neuronavigation.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="neuronavigation.html" title="Previous document">Neuronavigation Data Import/Export</a>
+        </li>
+        <li>
+          <a href="brainsight.html" title="Next document">Brainsight</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="localite">
+<span id="localite-doc"></span><h1>Localite<a class="headerlink" href="#localite" title="Permalink to this heading">¶</a></h1>
+<p>This module provides import and export functions for the <a class="reference external" href="http://localite.de">Localite</a> TMS Navigator software.</p>
+<p>The Localite ecosystem provides two main options to store coil positions/orientations:</p>
+<section id="instrumentmarkers">
+<h2>InstrumentMarkers<a class="headerlink" href="#instrumentmarkers" title="Permalink to this heading">¶</a></h2>
+<p>These are often set manually by the user during an experimental session. They show up in the TMS Navigator GUI under <cite>InstrumentMarkers</cite>, can individually be named, and are visualized by a red cross in the 3D view of the TMS Navigator.</p>
+<p><code class="code docutils literal notranslate"><span class="pre">InstrumentMarkers</span></code> can be used if one wants to post-hoc compute one single electrical field for an experimental condition (-&gt; <a class="reference internal" href="#import"><span class="std std-ref">Import to SimNIBS</span></a>). On the other hand, <code class="code docutils literal notranslate"><span class="pre">InstrumentMarkers</span></code> can be generated for a specific coil position with SimNIBS, for example after running an E-field optimization (-&gt; <a class="reference internal" href="#export"><span class="std std-ref">Export from SimNIBS</span></a>).</p>
+<p>Storage location in Localite TMS Navigator patients folder:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>subject_folder/Sessions/Session_%datetime%/InstrumentMarkers/InstrumentMarker%datetime%.xml
+</pre></div>
+</div>
+<p>Example <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> .xml file:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;InstrumentMarkerList</span> <span class="na">coordinateSpace=</span><span class="s">&quot;RAS&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;InstrumentMarker</span> <span class="na">alwaysVisible=</span><span class="s">&quot;false&quot;</span> <span class="na">index=</span><span class="s">&quot;0&quot;</span> <span class="na">selected=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;Marker</span> <span class="na">additionalInformation=</span><span class="s">&quot;&quot;</span> <span class="na">color=</span><span class="s">&quot;#ff0000&quot;</span> <span class="na">description=</span><span class="s">&quot;M1&quot;</span> <span class="na">set=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Matrix4D</span> <span class="na">data00=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data01=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data02=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data03=</span><span class="s">&quot;0.0&quot;</span>
+                      <span class="na">data10=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data11=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data12=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data13=</span><span class="s">&quot;0.0&quot;</span>
+                      <span class="na">data20=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data21=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data22=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data23=</span><span class="s">&quot;0.0&quot;</span>
+                      <span class="na">data30=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data31=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data32=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data33=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/Marker&gt;</span>
+    <span class="nt">&lt;/InstrumentMarker&gt;</span>
+<span class="cm">&lt;!-- more &lt;InstrumentMarker&gt; objects here --&gt;</span>
+<span class="nt">&lt;/InstrumentMarkerList&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="triggermarkers">
+<h2>TriggerMarkers<a class="headerlink" href="#triggermarkers" title="Permalink to this heading">¶</a></h2>
+<p>These are saved automatically after hitting the <cite>Record Stimulation Markers</cite> button. For each pulse sent from the stimulator, positions/orientations for coil 1 and coil 2 are stored. These are visualized as arrows in the 3D view of the TMS Navigator. <code class="code docutils literal notranslate"><span class="pre">TriggerMarkers</span></code> can be used to post-hoc compute all realized stimulations during an experiment.</p>
+<p><code class="code docutils literal notranslate"><span class="pre">TriggerMarkers</span></code> can also store the realized stimulator (%MSO) and stimulation (dIdt) intensity.</p>
+<p>Storage location in Localite TMS Navigator patients folder:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>subject_folder/Sessions/Session_%datetime%/TMSTrigger/TriggerMarkers_CoilX_<span class="nv">$datetime</span>$.xml
+</pre></div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Example <code class="code docutils literal notranslate"><span class="pre">TriggerMarkers</span></code> .xml file</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span> <span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+ <span class="nt">&lt;TriggerMarkerList</span> <span class="na">coordinateSpace=</span><span class="s">&quot;RAS&quot;</span> <span class="na">isOnlineReading=</span><span class="s">&quot;false&quot;</span> <span class="na">startTime=</span><span class="s">&quot;13:55:07.658&quot;</span><span class="nt">&gt;</span>
+     <span class="nt">&lt;ResponseParameters</span> <span class="na">selectedResponseChannel=</span><span class="s">&quot;0&quot;</span><span class="nt">&gt;</span>
+         <span class="nt">&lt;responseDescription</span> <span class="na">id=</span><span class="s">&quot;response&quot;</span> <span class="na">maxValue=</span><span class="s">&quot;51200.0&quot;</span>
+             <span class="na">minValue=</span><span class="s">&quot;-51200.0&quot;</span> <span class="na">name=</span><span class="s">&quot;Response&quot;</span> <span class="na">unit=</span><span class="s">&quot;uV&quot;</span><span class="nt">/&gt;</span>
+         <span class="nt">&lt;responseDescription</span> <span class="na">id=</span><span class="s">&quot;valueA&quot;</span> <span class="na">maxValue=</span><span class="s">&quot;200.0&quot;</span> <span class="na">minValue=</span><span class="s">&quot;0.0&quot;</span>
+             <span class="na">name=</span><span class="s">&quot;Value A (di/dt)&quot;</span> <span class="na">unit=</span><span class="s">&quot;A/us&quot;</span><span class="nt">/&gt;</span>
+         <span class="nt">&lt;responseDescription</span> <span class="na">id=</span><span class="s">&quot;amplitudeA&quot;</span> <span class="na">maxValue=</span><span class="s">&quot;100.0&quot;</span>
+             <span class="na">minValue=</span><span class="s">&quot;0.0&quot;</span> <span class="na">name=</span><span class="s">&quot;Amplitude A&quot;</span> <span class="na">unit=</span><span class="s">&quot;%&quot;</span><span class="nt">/&gt;</span>
+     <span class="nt">&lt;/ResponseParameters&gt;</span>
+     <span class="nt">&lt;TriggerMarker</span> <span class="na">color=</span><span class="s">&quot;#ffafaf&quot;</span> <span class="na">description=</span><span class="s">&quot;&quot;</span> <span class="na">recordingTime=</span><span class="s">&quot;52358&quot;</span>
+         <span class="na">selected=</span><span class="s">&quot;false&quot;</span> <span class="na">set=</span><span class="s">&quot;false&quot;</span> <span class="na">visibility=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+         <span class="nt">&lt;ResponseValues&gt;</span>
+             <span class="nt">&lt;Value</span> <span class="na">key=</span><span class="s">&quot;valueA&quot;</span> <span class="na">response=</span><span class="s">&quot;61.0&quot;</span><span class="nt">/&gt;</span>
+             <span class="nt">&lt;Value</span> <span class="na">key=</span><span class="s">&quot;response&quot;</span> <span class="na">response=</span><span class="s">&quot;NaN&quot;</span><span class="nt">/&gt;</span>
+             <span class="nt">&lt;Value</span> <span class="na">key=</span><span class="s">&quot;amplitudeA&quot;</span> <span class="na">response=</span><span class="s">&quot;44.0&quot;</span><span class="nt">/&gt;</span>
+         <span class="nt">&lt;/ResponseValues&gt;</span>
+         <span class="nt">&lt;Matrix4D</span> <span class="na">data00=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data01=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data02=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data03=</span><span class="s">&quot;0.0&quot;</span>
+             <span class="na">data10=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data11=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data12=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data13=</span><span class="s">&quot;0.0&quot;</span>
+             <span class="na">data20=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data21=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data22=</span><span class="s">&quot;1.0&quot;</span> <span class="na">data23=</span><span class="s">&quot;0.0&quot;</span>
+             <span class="na">data30=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data31=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data32=</span><span class="s">&quot;0.0&quot;</span> <span class="na">data33=</span><span class="s">&quot;1.0&quot;</span><span class="nt">/&gt;</span>
+     <span class="nt">&lt;/TriggerMarker&gt;</span>
+     <span class="cm">&lt;!-- (Many) more &lt;TriggerMarker&gt; objects here --&gt;</span>
+ <span class="nt">&lt;/TriggerMarkerList&gt;</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="how-to-use">
+<h2>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this heading">¶</a></h2>
+<section id="import-to-simnibs">
+<span id="import"></span><h3>Import to SimNIBS<a class="headerlink" href="#import-to-simnibs" title="Permalink to this heading">¶</a></h3>
+<p><code class="code docutils literal notranslate"><span class="pre">simnibs.localite.read(fn)</span></code> reads <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> and <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> .xml files and returns a <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code> object. The conversion from TMS Navigator coordinate system (i.e. coil axes definition and enforced ‘RAS’) to SimNIBS coordinate system is performed automatically.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Import a single <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> .xml file as a <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code></span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">localite</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+
+<span class="n">fn</span> <span class="o">=</span> <span class="s2">&quot;subject_folder/Sessions/Session_</span><span class="si">%d</span><span class="s2">atetime%/TMSTrigger/TriggerMarkers_CoilX_$datetime$.xml&quot;</span>
+<span class="n">tms_list</span> <span class="o">=</span> <span class="n">localite</span><span class="p">()</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>  <span class="c1"># read all TriggerMarkers from file and return as TMSLIST()</span>
+<span class="n">s</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">(</span><span class="n">tms_list</span><span class="p">)</span>
+
+<span class="n">tms_list</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">didt</span>  <span class="c1"># &lt;- stimulation intensity is filled with data from .xml if available or defaults to 1 A/µs.</span>
+<span class="n">tms_list</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># &lt;- name is filled with data from .xml if available or defaults to &#39;&#39;.</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="export-from-simnibs">
+<span id="export"></span><h3>Export from SimNIBS<a class="headerlink" href="#export-from-simnibs" title="Permalink to this heading">¶</a></h3>
+<p><code class="code docutils literal notranslate"><span class="pre">simnibs.localite.write(obj,</span> <span class="pre">fn)</span></code> writes an .xml file that is compatible with TMS Navigator <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> .xml files. The conversion from SimNIBS TMS Navigator coil axes definition is performed automatically.</p>
+<p><strong>Caution</strong>: The world coordinate system of the T1 scan used in the TMS Navigator has to be set correctly. Rule of thumb: Nifti -&gt; ‘RAS’ and DICOM -&gt; ‘LPS’.</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Export a <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> .xml file for precomputed positions/orientations</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">localite</span>
+<span class="n">fn</span> <span class="o">=</span> <span class="s2">&quot;precomuted_InstrumentMarker.xml&quot;</span>
+
+<span class="c1">### export from TMSLIST</span>
+<span class="n">tmslist</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
+<span class="n">tmslist</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
+<span class="c1"># ... define (multiple) positions ...</span>
+<span class="n">localite</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmlist</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">out_coord_space</span><span class="o">=</span><span class="s1">&#39;LPS&#39;</span><span class="p">)</span>
+
+<span class="c1">### export from POSITION</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">POSITOIN</span><span class="p">()</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">matsimnibs</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">localite</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span> <span class="c1"># out_coord_space default is &#39;RAS&#39;</span>
+
+<span class="c1">### export from np.ndarray / matsimnibs</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TMSoptimize</span><span class="p">()</span>
+<span class="c1"># ... prepare optmization ...</span>
+<span class="n">opt_mat</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="c1"># get optimal position</span>
+<span class="n">localite</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">opt_mat</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The generated .xml file can now to be imported into the TMS Navigator Session structure. This can be done manually by copy-pasting the contents of the .xml file into the correct (~ last) <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> .xml file. Alternatively, one can use the (not official) <a class="reference external" href="https://gitlab.gwdg.de/tms-localization/utils/importer">IMporter</a> tool.</p>
+</section>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>The <strong>same anatomical scan</strong> has to be used for TMS Navigator and SimNIBS.</p></li>
+<li><p>The <strong>same coil model</strong> has to be used for field simulations and for real stimulation.</p></li>
+<li><p>The <strong>correct world coordinate system</strong> (‘RAS’ or ‘LPS’) used in TMS Navigator has to be set when writing <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> .xml files. SimNIBS always uses ‘RAS’.</p></li>
+<li><p>TMS Navigator stores one <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> file per coil, even if only one coil is calibrated:</p>
+<ul>
+<li><p>Coil 1 -&gt; TriggerMarkers_Coil0_$datetime$.xml</p></li>
+<li><p>Coil 2 -&gt; TriggerMarkers_Coil1_$datetime$.xml</p></li>
+</ul>
+</li>
+<li><p>When a coil is not tracked during a pulse, the <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> position/orientation matrix is filled with <code class="code docutils literal notranslate"><span class="pre">0</span></code>. These are automatically removed by <code class="code docutils literal notranslate"><span class="pre">simnibs.localite.write(obj,</span> <span class="pre">fn)</span></code>.</p></li>
+<li><p>TMS Navigator saves many <code class="code docutils literal notranslate"><span class="pre">TriggerMarker</span></code> and <code class="code docutils literal notranslate"><span class="pre">InstrumentMarker</span></code> .xml files during an experimental session. The very last ones are good candidates to contain all data for the experimental session.</p></li>
+<li><p>Coordinate systems used to define coil axes for SimNIBS and Localite:</p></li>
+</ul>
+<figure class="align-default">
+<img alt="../../_images/coil_axesorientation_localite.png" src="../../_images/coil_axesorientation_localite.png" />
+</figure>
+</section>
+<section id="links">
+<h2>Links<a class="headerlink" href="#links" title="Permalink to this heading">¶</a></h2>
+<p>Importer tool: <a class="reference external" href="https://gitlab.gwdg.de/tms-localization/utils/importer">https://gitlab.gwdg.de/tms-localization/utils/importer</a></p>
+<p>Localite TMS Navigator: <a class="reference external" href="https://www.localite.de/en/products/tms-navigator/">https://www.localite.de/en/products/tms-navigator/</a></p>
+<p></p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="neuronavigation.html" title="Previous document">Neuronavigation Data Import/Export</a>
+        </li>
+        <li>
+          <a href="brainsight.html" title="Next document">Brainsight</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="neuronavigation.html">Neuronavigation Data Import/Export</a><ul>
+      <li>Previous: <a href="neuronavigation.html" title="previous chapter">Neuronavigation Data Import/Export</a></li>
+      <li>Next: <a href="brainsight.html" title="next chapter">Brainsight</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/documentation/neuronavigation/localite.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

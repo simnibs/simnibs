@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TriggerMarkerList coordinateSpace="RAS" isOnlineReading="false" startTime="17:06:40.58">
+    <!--All positions are saved in the coordinate system of the corresponding medical data.
+NIfTI image data are recommended using RAS system (x-axis increases from the left hand side to the right hand side of the patient,
+y-axis increases from the posterior side to the anterior side of the patient and z-axis increases from the feet toward the head of the patient).-->
+    <ResponseParameters selectedResponseChannel="0">
+        <responseDescription id="response" maxValue="51200.0"
+            minValue="-51200.0" name="Response" unit="uV"/>
+        <responseDescription id="valueA" maxValue="200.0" minValue="0.0"
+            name="Value A (di/dt)" unit="A/us"/>
+        <responseDescription id="amplitudeA" maxValue="100.0"
+            minValue="0.0" name="Amplitude A" unit="%"/>
+    </ResponseParameters>
+</TriggerMarkerList>

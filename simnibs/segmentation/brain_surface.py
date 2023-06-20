@@ -11,7 +11,6 @@ import logging
 #from math import log, sqrt
 #from multiprocessing import Process
 import nibabel as nib
-import numba
 import numpy as np
 import os
 #from queue import Queue, Empty
@@ -32,8 +31,8 @@ from ..mesh_tools import mesh_io
 from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.spawn_process import spawn_process
-from ..utils.transformations import resample_vol, crop_vol
-
+from ..utils.transformations import resample_vol, crop_vol, normalize
+from ..utils import mesh_element_properties 
 
 
 # --------------- expansion from central to pial surface ------------------
@@ -230,7 +229,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
-            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh", ref_fs=True)
+            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh")
 
             tmpmsh.add_node_field(move, 'move')
 
@@ -845,7 +844,7 @@ def createCS(Ymf, Yleft, Ymaskhemis, vox2mm, actualsurf,
     mesh_io.write_gifti_surface(CS, Praw)
     del Yppi, CS
     gc.collect()
-    logger.info(f'Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Create initial surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # -------- refine intial surface and register to fsaverage template --------
@@ -1045,7 +1044,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ywmd=os.path.join(surffolder,'Ywm_after_a_million_steps_' + actualsurf + '.nii.gz')
         nib.save(Ywmd_image, fname_Ywmd)
 
-    logger.info(f'WM distance: ' +
+    logger.info('WM distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     #  CSF distance
@@ -1130,7 +1129,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
         fname_Ycsfdc=os.path.join(surffolder,'Ycsfdc_a_million_steps_' + actualsurf + '.nii.gz')
         nib.save(Ycsfdc_image, fname_Ycsfdc)
 
-    logger.info(f'CSF distance: ' +
+    logger.info('CSF distance: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     # PBT thickness mapping using pbt2x
@@ -1253,7 +1252,7 @@ def cat_vol_pbt_AT(Ymf, resV, actualsurf, debug=False, vox2mm=None, surffolder=N
     Ygmt = Ygmt * resV
     Ygmt[Ygmt > 10] = 10
 
-    logger.info(f'PBT2x thickness: ' +
+    logger.info('PBT2x thickness: ' +
                 time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
     logger.info(f'Cortical thickness and surface position estimation: {debug}: ' + time.strftime(
@@ -1333,8 +1332,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.freesurfer.gii')
     Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.freesurfer.gii')
 
-    if debug:
-        Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
+    # if debug:
+        # Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
         # contains:
         # region 1: initial surface with defects (as node data)
         # region 2: spherical version of initial surface with defects (as node data)
@@ -1370,7 +1369,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     if os.path.isfile(Pdefects0):
         os.remove(Pdefects0)
 
-    logger.info(f'Preparing surface improvment: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Preparing surface improvment: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # --------- topology correction ---------
@@ -1389,7 +1388,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
         del CS
         gc.collect()
 
-    logger.info(f'Topology correction: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Topology correction: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # --------- surface refinement by deformation based on the PP map ---------
@@ -1437,7 +1436,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     # map thickness data on final surface
     CS = mesh_io.read_gifti_surface(Pcentral)
     Vthk=nib.load(fname_thkimg)
-    nd = mesh_io.NodeData.from_data_grid(CS, Vthk.get_data(), Vthk.affine, 'thickness')
+    nd = mesh_io.NodeData.from_data_grid(CS, Vthk.get_fdata(), Vthk.affine, 'thickness')
     mesh_io.write_curv(Pthick, nd.value, nd.nr)
 
     if debug:
@@ -1445,7 +1444,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
         thickness=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
         # Yppt sampled on the final surface should be distributed sharply around 0.5
         Vpp = nib.load(fname_ppimg)
-        nd = mesh_io.NodeData.from_data_grid(CS, Vpp.get_data(), Vpp.affine, 'pp')
+        nd = mesh_io.NodeData.from_data_grid(CS, Vpp.get_fdata(), Vpp.affine, 'pp')
         pponsurf=np.hstack((np.zeros_like(CS_dbg.nodes.node_number),nd.value))
 
         CS_dbg.elm.add_triangles(CS.elm.node_number_list[:,0:3]+CS_dbg.nodes.nr,4)
@@ -1456,7 +1455,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     del CS, Vthk, nd
     gc.collect()
 
-    logger.info(f'Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Refine central surface: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # AT: this part can create self intersections when neighboring surfaces are close to each other
@@ -1493,7 +1492,7 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
            '-i', Pcentral, '-is', Psphere, '-t', Pfsavg, '-ts', Pfsavgsph, '-ws', Pspherereg]
     spawn_process(cmd)
 
-    logger.info(f'Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
+    logger.info('Registration to FSAVERAGE template: '+time.strftime('%H:%M:%S', time.gmtime(time.time() - stimet)))
 
 
     # -------- remove unnecessary files --------
@@ -1548,23 +1547,16 @@ def labclose(image,n):
     return ~lab(~tmp)
 
 
-# Subsampling of CAT surfaces
+def subsample_surfaces(m2m_dir, n_points: int) -> dict:
+    """Subsample the surfaces files for each hemisphere (the original surfaces
+    contain ~100,000 nodes per hemisphere).
 
-def subsample_surfaces(m2m_dir, n_points):
-    """Subsample the central gray matter surfaces and spherical registrations
-    for each hemisphere generated by CAT. The original surfaces contain
-    approximately 100,000 nodes per hemisphere.
-
-    The subsampled surfaces are written to files with an added suffix, e.g.,
-    if n_points=10000
-
-        lh.central.gii      -> lh.central.10000.gii
-        lh.sphere.reg.gii   -> lh.sphere.reg.10000.gii
-
-    Additionally, the normals from the full resolution surfaces corresponding
-    to the subsampled nodes are written to a txt file, e.g.,
-
-        lh.central.10000.normals.txt
+    The subsampled surfaces are written to files in a subfolder in /surfaces,
+    e.g., /surfaces/10000 for n_points=10000. All standard surfaces and morph
+    data are subsampled. Additionally, the indices of the subsampled points in
+    the original files are saved to {hemi}.index.csv and the normals from the
+    full resolution surfaces corresponding to these nodes are written to a csv
+    file {hemi}.normals.csv.
 
     PARAMETERS
     ----------
@@ -1576,39 +1568,58 @@ def subsample_surfaces(m2m_dir, n_points):
     RETURNS
     -------
     sub : dict
-        Dictionary of the subsampled surfaces with entries (hemi, surf).
-        Each entry contains rr and tris corresponding to nodes and
-        triangulation, respectively. (hemi, 'central') also contains nn, the
-        normals of the subsampled points (from the original surfaces).
-
-    NOTES
-    -----
-    The actual number of points in the subsampled surfaces may be less than the
-    requested number since sometimes multiple subsampled points may map to the
-    same point on the original surface in which case only one will be kept.
-    However, for consistency the filename will reflect the *requested* number
-    of points rather than the *actual* number of points.
+        Dictionary (hemispheres) of the subsampled central surface. Meshes
+        contain fields 'index' (indices of points on original mesh) and
+        'normals' (normals of points from original mesh).
     """
-    surfs = ('central', 'sphere')
+    logger.info(f"Downsampling brain surfaces to {n_points} points")
 
-    surfs_full, surfs_sub = {}, {s: {} for s in surfs}
-    sf = file_finder.SubjectFiles(subpath=m2m_dir)
+    m2m = file_finder.SubjectFiles(subpath=m2m_dir)
 
-    for s in surfs:
-        surfs_full[s] = sf.v2v2_read_surface(s)
-    hemis = surfs_full[surfs[0]].keys()
+    full = dict(
+        central = mesh_io.load_subject_surfaces(m2m, "central"),
+        sphere = mesh_io.load_subject_surfaces(m2m, "sphere"),
+    )
+    subsampled = {h: subsample_surface(full["central"][h], full["sphere"][h], n_points) for h in full["central"]}
 
-    for h in hemis:
-        surfs_sub["central"][h], surfs_sub["sphere"][h] = subsample_surface(surfs_full["central"][h], surfs_full["sphere"][h], n_points)
+    # write subsampled central surface as well as index and normals
+    for h, v in subsampled.items():
+        filename = m2m.get_surface(h, "central", n_points)
+        if not filename.parent.exists():
+            filename.parent.mkdir()
+        mesh_io.write_gifti_surface(v, filename)
+        for name, data in v.field.items():
+            filename = m2m.get_morph_data(h, name, n_points)
+            filename = filename.with_suffix(f"{filename.suffix}.csv")
+            if name == "index":
+                np.savetxt(filename, data.value, "%i", ",")
+            else:
+                np.savetxt(filename, data.value, delimiter=",")
 
-    for s in surfs:
-        sf.v2v2_write_surface(surfs_sub[s], s, n_points)
+    # apply subsampling to all standard surfaces and morph data
+    for s in m2m._standard_surfaces:
+        if s == "central":
+            continue
+        m = mesh_io.load_subject_surfaces(m2m, s)
+        for h, v in m.items():
+            m = mesh_io.write_gifti_surface(
+                mesh_io.Msh(
+                    mesh_io.Nodes(v.nodes.node_coord[subsampled[h].field["index"].value]),
+                    subsampled[h].elm,
+                ),
+                m2m.get_surface(h, s, n_points)
+            )
 
-    f = sf.v2v2_get_morph_data_file("normals", n_points)
-    for h in hemis:
-        np.savetxt(f[h].with_suffix(f"{f[h].suffix}.txt"), surfs_sub["central"][h]["normals"])
-        # np.save(f[h], surfs_sub["central"][h]["normals"]) # .npy
-    return surfs_sub
+    for d in m2m._standard_morph_data:
+        data = mesh_io.load_subject_morph_data(m2m, d)
+        for h, v in data.items():
+            nib.freesurfer.write_morph_data(
+                m2m.get_morph_data(h, d, n_points),
+                v[subsampled[h].field["index"].value],
+            )
+
+    return subsampled
+
 
 def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     """Subsample a hemisphere surface using its spherical registration.
@@ -1633,12 +1644,12 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
         The subsampled surface.
     """
     assert isinstance(n_points, int)
-    assert isinstance(central_surf, dict)
-    assert isinstance(sphere_surf, dict)
-    assert n_points < (n_full := central_surf['points'].shape[0])
+    assert n_points < (n_full := central_surf.nodes.nr)
 
-    sphere_points = sphere_surf["points"] / np.linalg.norm(sphere_surf["points"], axis=1, keepdims=True)
-    tree = cKDTree(sphere_points)
+    # visualize = False # temporary debug flag for testing; requires pyvista
+
+    # sphere_points = sphere_surf["points"] / np.linalg.norm(sphere_surf["points"], axis=1, keepdims=True)
+    tree = cKDTree(normalize(sphere_surf.nodes.node_coord, axis=1))
 
     points, _ = fibonacci_sphere(n_points)
     _, idx = tree.query(points)
@@ -1649,59 +1660,75 @@ def subsample_surface(central_surf, sphere_surf, n_points, refine=True):
     used = np.zeros(n_full, dtype=bool)
     used[uniq] = True
 
-    A = get_weighted_and_smoothed_adjacency_matrix(central_surf['tris'], n_points / n_full)
-    coverage = A[:, used].sum(1) # A @ x
+    n_smooth = get_n_smooth(n_points / n_full)
+    basis = compute_gaussian_basis_functions(
+        central_surf.nodes.node_coord,
+        central_surf.elm.node_number_list[:, :3] - 1,
+        n_smooth,
+    ).tocsc()
+    # rescale to avoid numerical problems?
+    basis.data /= basis.mean(0).mean()
+    coverage = np.asarray(
+        basis[:, used].sum(1)
+    ).ravel()  # i.e., basis @ x where x is indicator vector
 
-    # surfs = {}
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "init")
+    # if visualize:
+    #     surfs = {}
+    #     add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "init")
 
     # updates `coverage` in-place
-    used, unused = maximize_coverage_by_addition(used, coverage, A, n_points - uniq.size)
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "add")
+    used, unused = maximize_coverage_by_addition(
+        used, coverage, basis, n_points - uniq.size
+    )
+    # if visualize:
+    #     add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "add")
 
     if refine:
         # updates `used`, `ununsed`, and `coverage` in-place
-        indptr, indices, data = A.indptr, A.indices, A.data
-        # covs, pairs, hard_swaps = equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
+        indptr, indices, data = basis.indptr, basis.indices, basis.data
         equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
+        # covs, pairs, hard_swaps = equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data)
 
     # Triangulate
-    hull = ConvexHull(sphere_surf['points'][used])
+    # hull = ConvexHull(sphere_surf['points'][used])
+    hull = ConvexHull(sphere_surf.nodes.node_coord[used])
     points, tris = hull.points, hull.simplices
     ensure_orientation_consistency(points, tris)
 
-    # add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "swap")
+    # if visualize:
+    #     import pyvista as pv
+    #     add_surfs(surfs, central_surf, sphere_surf, coverage.copy(), used, "swap")
 
-    # # visualize with pyvista
-    # clim = np.percentile(surfs["cent_init"]['coverage'], [5,95])
-    # names = ["init", "add", "swap"]
+    #     # visualize with pyvista
+    #     clim = np.percentile(surfs["cent_init"]['coverage'], [5,95])
+    #     names = ["init", "add", "swap"]
 
-    # p = pv.Plotter(shape=(2,3), window_size=(1600,1000), notebook=False)
-    # for i, name in enumerate(names):
-    #     p.subplot(0,i)
-    #     p.add_mesh(surfs[f"cent_{name}_sub"], show_edges=True)
-    #     p.subplot(1,i)
-    #     p.add_mesh(surfs[f"cent_{name}"], clim=clim, show_edges=True)
-    # p.link_views()
-    # p.show()
+    #     p = pv.Plotter(shape=(2,3), window_size=(1600,1000), notebook=False)
+    #     for i, name in enumerate(names):
+    #         p.subplot(0,i)
+    #         p.add_mesh(surfs[f"cent_{name}_sub"], show_edges=True)
+    #         p.subplot(1,i)
+    #         p.add_mesh(surfs[f"cent_{name}"], clim=clim, show_edges=True)
+    #     # p.add_points(surfs[f'cent_{name}_sub'].points)
+    #     p.link_views()
+    #     p.show()
 
     # Use the normals from the original (high resolution) surface as this
     # should be more accurate
-    normals = mesh_io.Msh(
-            mesh_io.Nodes(central_surf["points"]),
-            mesh_io.Elements(central_surf["tris"]+1)
-            ).nodes_normals().value
-    central_surf_sub = dict(
-        points = central_surf["points"][used],
-        tris = tris,
-        normals = normals[used]
+    idx = mesh_io.NodeData(used, "index")
+    normals = mesh_io.NodeData(central_surf.nodes_normals().value[used], "normals")
+    central_surf_sub = mesh_io.Msh(
+        mesh_io.Nodes(central_surf.nodes.node_coord[used]),
+        mesh_io.Elements(tris + 1),
     )
-    sphere_surf_sub = dict(
-        points = sphere_surf["points"][used],
-        tris = tris
-    )
+    # sphere_surf_sub = mesh_io.Msh(
+    #     mesh_io.Nodes(sphere_surf.nodes.node_coord[used]),
+    #     mesh_io.Elements(tris + 1),
+    # )
+    central_surf_sub.nodedata += [idx, normals]
+    # sphere_surf_sub.nodedata += [idx]
 
-    return central_surf_sub, sphere_surf_sub
+    return central_surf_sub
 
 
 def fibonacci_sphere(n, radius=1):
@@ -1761,7 +1788,7 @@ def fibonacci_sphere_points(n):
     # (MODIFIED) FIBONACCI LATTICE
 
     x2, _ = np.modf(i / golden_ratio)
-    y2 = (i + epsilon) / (n - 1 + 2*epsilon)
+    y2 = (i + epsilon) / (n - 1 + 2 * epsilon)
 
     # Project to fibonacci spiral via equal area projection
     # theta = 2 * np.pi * x2
@@ -1782,8 +1809,8 @@ def fibonacci_sphere_points(n):
     # Spherical coordinates (r = 1 is implicit because it is the unit sphere)
     # theta : longitude (around sphere, 0 <= theta <= 2*pi)
     # phi   : latitude (from pole to pole, 0 <= phi <= pi)
-    theta = 2*np.pi*x2
-    phi = np.arccos(1 - 2*y2)
+    theta = 2 * np.pi * x2
+    phi = np.arccos(1 - 2 * y2)
 
     # Cartesian coordinates
     x3 = np.cos(theta) * np.sin(phi)
@@ -1810,12 +1837,15 @@ def ensure_orientation_consistency(points, tris):
     """
     # centroid_tris: vector from global centroid to centroid of each triangle
     # (in this case the global centroid is [0,0,0] and so can be ignored)
-    n = mesh_io.Msh(mesh_io.Nodes(points),
-                    mesh_io.Elements(tris+1)
-                    ).triangle_normals().value
+    n = (
+        mesh_io.Msh(mesh_io.Nodes(points), mesh_io.Elements(tris + 1))
+        .triangle_normals()
+        .value
+    )
     centroid_tris = points[tris].mean(1)
     orientation = np.sum(centroid_tris * n, axis=1)
     swap_select_columns(tris, orientation < 0, [1, 2])
+
 
 def swap_select_columns(arr, rows, cols):
     """Swap the columns (cols) of the selected rows (rows) in the array (arr).
@@ -1828,73 +1858,84 @@ def swap_select_columns(arr, rows, cols):
 
 
 def recursive_matmul(X, n):
-    assert isinstance(n, int) and  n >= 1
-    return X if n == 1 else recursive_matmul(X, n-1) @ X
+    """Compute X @ X @ ... `n` times"""
+    assert isinstance(n, int) and n >= 1
+    return X if n == 1 else recursive_matmul(X, n - 1) @ X
 
 
-def get_adjacency_matrix(tris): # , verts=None
-    """Make sparse adjacency matrix for vertices with connections `tris`.
+def compute_adjacency_matrix(el, with_diag=False):
+    """Make (sparse) adjacency matrix of vertices with connections as specified
+    by `el`.
+
+    PARAMETERS
+    ----------
+    el : ndarray
+        n x m array describing the connectivity of the elements (e.g.,
+        n x 3 for a triangulated of surface).
+    with_diag : bool
+        Include ones on the diagonal (default = False).
+
+    RETURNS
+    -------
+    a : csr_matrix
+        Sparse matrix in column order.
     """
-    N = tris.max() + 1
+    N = el.max() + 1
 
-    pairs = list(itertools.combinations(np.arange(tris.shape[1]), 2))
-    row_ind = np.concatenate([tris[:, i] for p in pairs for i in p])
-    col_ind = np.concatenate([tris[:, i] for p in pairs for i in p[::-1]])
+    pairs = np.array(list(itertools.combinations(np.arange(el.shape[1]), 2))).T
+    row_ind = el[:, pairs.ravel()].ravel()
+    col_ind = el[:, pairs[::-1].ravel()].ravel()
 
-    # if verts is not None:
-    #     data = np.linalg.norm(verts[row_ind]-verts[col_ind], axis=1)
-    # else:
     data = np.ones_like(row_ind)
-    return scipy.sparse.csr_array((data / 2, (row_ind, col_ind)), shape=(N, N))
+    a = scipy.sparse.csr_matrix((data / 2, (row_ind, col_ind)), shape=(N, N))
+
+    if with_diag:
+        a = a.tolil()
+        a.setdiag(1)
+        a = a.tocsr()
+
+    return a
 
 
-def scale_adjacency_matrix(A):
-    """This needs to be changed...
-    """
-    d = np.diff(A.indptr) # nonzero per row
-    dd = np.repeat(d,d)/2/d.mean()
-    A.data /= dd
-    A = A.tocsc()
-    A.data /= dd
-    A = A.tolil()
-    A.setdiag(A.sum(1))
-    A = A.tocsc()
+def compute_gaussian_basis_functions(points, tris, degree):
+    """Generate a set of basis functions centered on each vertex"""
+    A = compute_adjacency_matrix(tris)
+
+    # Estimate standard deviation for Gaussian distance computation
+    Acoo = A.tocoo()
+    data = np.linalg.norm(points[Acoo.row] - points[Acoo.col], axis=1)
+    # set sigma to half average distance to neighbors. This is arbitrary but
+    # seems to work. Large sigmas do not seem to work well as they tend to
+    # created a "striped" pattern in dense regions
+    sigma = 0.5 * data.mean()
+
+    # smooth to `neighborhood` degree neighbors
+    A = recursive_matmul(A, degree)
+
+    # compute gaussian distances
+    Acoo = A.tocoo()
+    data = np.linalg.norm(points[Acoo.row] - points[Acoo.col], axis=1)
+    A.data = np.exp(-(data**2) / (2 * sigma**2))
+
     return A
 
 
-def smooth_adjacency_matrix(A, frac):
-    """Smooth adjacency matrix based on subsampling fraction (more decimation
-    implies more smoothing). This is currently very heuristic.
+def get_n_smooth(frac):
+    """How much to smooth adjacency matrix. These numbers are heuristic at the
+    moment.
     """
-
-    # if n_full == 100,000
-    # 2500  5
-    # 5000  4
-    # 10000 4
-    # 25000 3
-    # 50000 3
-    # 75000 3
-    # 90000 3
     n_smooth = 3
     if frac < 0.2:
         n_smooth += 1
     if frac < 0.05:
         n_smooth += 1
-    # print(f"smoothing adjacency matrix {n_smooth} times")
-    return recursive_matmul(A, n_smooth).power(1/n_smooth)
+    return n_smooth
 
 
-def get_weighted_and_smoothed_adjacency_matrix(tris, frac):
-    A = get_adjacency_matrix(tris)
-    A = scale_adjacency_matrix(A)
-    A = smooth_adjacency_matrix(A, frac)
-    return A
-
-
-@numba.jit(nopython=True, fastmath=True)
+# @numba.jit(nopython=True, fastmath=True)
 def update_vec(vec, indptr, indices, data, addi, subi):
-    addi_indptr0, addi_indptr1 = indptr[addi:addi+2]
-    subi_indptr0, subi_indptr1 = indptr[subi:subi+2]
+    addi_indptr0, addi_indptr1 = indptr[addi : addi + 2]
+    subi_indptr0, subi_indptr1 = indptr[subi : subi + 2]
     addi_indices = indices[addi_indptr0:addi_indptr1]
     subi_indices = indices[subi_indptr0:subi_indptr1]
     addi_data = data[addi_indptr0:addi_indptr1]
@@ -1904,35 +1945,34 @@ def update_vec(vec, indptr, indices, data, addi, subi):
     vec[subi_indices] -= subi_data
 
 
-@numba.jit(nopython=True, fastmath=True)
-def masked_indexed_argmin(x, index, mask, range_of_index):
-    """Equivalent to (but faster than)
-
-        ixm = index[mask]
-        iargmin = x[ixm].argmin()
-        ixargmin = ixm[iargmin]
-
-    the more sparse/irregular `mask` is (since the boolean indexing operation
-    becomes slow).
-
-    """
-    iargmin, ixargmin = 0, 0
-    minval = np.inf
-    for i in range_of_index:
-        if mask[i]:
-            ixi = index[i]
-            val = x[ixi]
-            if val < minval:
-                minval = val
-                iargmin = i
-                ixargmin = ixi
-    return iargmin, ixargmin, minval
-
-
-# numba complains about the np.ones stuff. Also, A would have to be unpacked
-# before. However, doesn't seem to make much difference
 # @numba.jit(nopython=True, fastmath=True)
-def maximize_coverage_by_addition(used, coverage, A, n_add):
+# def masked_indexed_argmin(x, index, mask, range_of_index):
+#     """Equivalent to (but slightly faster than)
+
+#         iargmin = range_of_index[mask][x[index[mask]].argmin()]
+#         ixargmin = ixm[iargmin]
+
+#     the more sparse/irregular `mask` is (since the boolean indexing operation
+#     becomes slow).
+
+#     """
+#     iargmin, ixargmin = 0, 0
+#     minval = np.inf
+#     for i in range_of_index:
+#         if mask[i]:
+#             ixi = index[i]
+#             val = x[ixi]
+#             if val < minval:
+#                 minval = val
+#                 iargmin = i
+#                 ixargmin = ixi
+#     return iargmin, ixargmin, minval
+
+
+# numba complains about the np.ones stuff. However, doesn't seem to make much
+# difference
+# @numba.jit(nopython=True, fastmath=True)
+def maximize_coverage_by_addition(used, coverage, basis, n_add):
     """Add `n_add` points (move from unused to used) and update `coverage`
     accordingly (this is done in-place).
 
@@ -1954,7 +1994,7 @@ def maximize_coverage_by_addition(used, coverage, A, n_add):
         Indices of the unused points.
     """
 
-    indptr, indices, data = A.indptr, A.indices, A.data
+    indptr, indices, data = basis.indptr, basis.indices, basis.data
 
     unused = np.where(~used)[0]
     added = -np.ones(n_add, dtype=int)
@@ -1963,12 +2003,15 @@ def maximize_coverage_by_addition(used, coverage, A, n_add):
 
     for i in np.arange(n_add):
         # identify vertex to add
-        irem, iadd, _ = masked_indexed_argmin(coverage, unused, mask, range_of_index)
+        # irem, iadd, _ = masked_indexed_argmin(coverage, unused, mask, range_of_index)
+        irem = range_of_index[mask][coverage[unused[mask]].argmin()]
+        iadd = unused[irem]
+
         mask[irem] = False
         added[i] = iadd
 
         # update coverage accordingly
-        start, stop = indptr[iadd:iadd+2]
+        start, stop = indptr[iadd : iadd + 2]
         coverage[indices[start:stop]] += data[start:stop]
 
     used[added] = True
@@ -1980,7 +2023,9 @@ def maximize_coverage_by_addition(used, coverage, A, n_add):
 
 # argpartition is not recognized by numba...
 # @numba.jit(nopython=True, fastmath=True)
-def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=10, max_iter=5000):
+def equalize_coverage_by_swap(
+    used, unused, coverage, indptr, indices, data, k=10, max_iter=5000
+):
     """Try to equalize coverage by swapping used and unused points. In
     particular, the objective is to minimize the variance of the coverage.
 
@@ -2005,16 +2050,9 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
 
     """
-    # indptr, indices, data = A.indptr, A.indices, A.data
-
     coverage_var = coverage.var()
 
-    n_swaps = 0
-    # covs = []
-    # pairs = []
-    # hard_swaps = []
-
-    for iteration in np.arange(max_iter):
+    for _ in np.arange(max_iter):
 
         cov_un = coverage[unused]
         cov_us = coverage[used]
@@ -2025,33 +2063,23 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
         update_vec(coverage, indptr, indices, data, addi, subi)
 
-        # if iteration % 1000 == 0:
-        #     print(iteration)
-
         if (coverage_swap_var := coverage.var()) < coverage_var:
             unused[addii] = subi
             used[subii] = addi
             coverage_var = coverage_swap_var
-
-            # covs.append(coverage_swap_var)
-            n_swaps += 1
         else:
-            update_vec(coverage, indptr, indices, data, subi, addi) # undo
+            update_vec(coverage, indptr, indices, data, subi, addi)  # undo
 
-            # hard_swaps.append(iteration)
+            # this is the "slow" bit
+            addiis = cov_un.argpartition(k)[:k]
+            subiis = cov_us.argpartition(-k)[-k:]
 
-            # slow
-            addiis = cov_un.argpartition(k)[:k] # [::10]
-            subiis = cov_us.argpartition(-k)[-k:] # [::10]
-
-            # order in pairs
-            # skip the 1st as we already checked that
+            # order in pairs (skip the 1st as we already checked that)
             addiis = addiis[cov_un[addiis].argsort()][1:]
             subiis = subiis[cov_us[subiis].argsort()[::-1]][1:]
 
             found = False
-            for i, (addii, subii) in enumerate(zip(addiis, subiis)):
-
+            for addii, subii in zip(addiis, subiis):
                 addi = unused[addii]
                 subi = used[subii]
 
@@ -2059,34 +2087,31 @@ def equalize_coverage_by_swap(used, unused, coverage, indptr, indices, data, k=1
 
                 if (coverage_swap_var := coverage.var()) < coverage_var:
                     found = True
-
                     unused[addii] = subi
                     used[subii] = addi
-
                     coverage_var = coverage_swap_var
 
-                    # covs.append(coverage_swap_var)
-                    # pairs.append(i)
-
-                    break
+                    break  # next iteration
                 else:
-                    update_vec(coverage, indptr, indices, data, subi, addi) # undo
+                    update_vec(coverage, indptr, indices, data, subi, addi)  # undo
 
             if not found:
-                break
-
-    # return covs, pairs, hard_swaps
-
+                break  # if nothing to swap, terminate
 
 
 # some temporary stuff for plotting results of subsampling...
 def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
-    surfs[f"cent_{name}"] = pv.make_tri_mesh(central_surf["points"], central_surf['tris'])
-    surfs[f"cent_{name}"]['coverage'] = coverage
-    surfs[f"sphe_{name}"] = pv.make_tri_mesh(sphere_surf["points"], sphere_surf['tris'])
-    surfs[f"sphe_{name}"]['coverage'] = coverage
+    import pyvista as pv
+
+    surfs[f"cent_{name}"] = pv.make_tri_mesh(
+        central_surf["points"], central_surf["tris"]
+    )
+    surfs[f"cent_{name}"]["coverage"] = coverage
+    surfs[f"sphe_{name}"] = pv.make_tri_mesh(sphere_surf["points"], sphere_surf["tris"])
+    surfs[f"sphe_{name}"]["coverage"] = coverage
     hull = ConvexHull(sphere_surf["points"][used])
     rr, tris = hull.points, hull.simplices
     ensure_orientation_consistency(rr, tris)
-    surfs[f"cent_{name}_sub"] = pv.make_tri_mesh(central_surf["points"][used],tris)
-    surfs[f"sphe_{name}_sub"] = pv.make_tri_mesh(sphere_surf["points"][used],tris)
+    surfs[f"cent_{name}_sub"] = pv.make_tri_mesh(central_surf["points"][used], tris)
+    surfs[f"sphe_{name}_sub"] = pv.make_tri_mesh(sphere_surf["points"][used], tris)
+    

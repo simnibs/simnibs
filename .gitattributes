@@ -1,3 +1,5 @@
-simnibs/external/* linguist-vendored
-simnibs/resources/* linguist-vendored
-docs/* linguist-documentation
+simnibs/external/** linguist-vendored
+simnibs/resources/** linguist-vendored
+docs/** linguist-documentation
+docs/build/** linguist-generated
+simnibs/resources/coil_models/** linguist-generated

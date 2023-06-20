@@ -12,7 +12,7 @@ from copy import deepcopy
 import os
 import numpy as np
 
-from simnibs import sim_struct, run_simnibs, mesh_io
+from simnibs import sim_struct, run_simnibs, mesh_io, ElementTags
 from simnibs.utils import TI_utils as TI
 
 
@@ -59,7 +59,7 @@ m2 = mesh_io.read_msh(os.path.join(S.pathfem, 'ernie_TDCS_2_scalar.msh'))
 
 # remove all tetrahedra and triangles belonging to the electrodes so that
 # the two meshes have same number of elements
-tags_keep = np.hstack((np.arange(1,100), np.arange(1001,1100)))
+tags_keep = np.hstack((np.arange(ElementTags.TH_START, ElementTags.SALINE_START - 1), np.arange(ElementTags.TH_SURFACE_START, ElementTags.SALINE_TH_SURFACE_START - 1)))
 m1=m1.crop_mesh(tags = tags_keep)
 m2=m2.crop_mesh(tags = tags_keep)
 

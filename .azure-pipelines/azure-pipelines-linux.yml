@@ -9,9 +9,9 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'ubuntu-latest'
-
-  container: simnibs/simnibs-testing:centos7
+     vmImage: 'ubuntu-20.04'
+     
+  container: simnibs/simnibs-testing:latest
   steps:
   - bash: |
       conda update -y conda
@@ -19,6 +19,7 @@ jobs:
     displayName: Create Conda environment
 
   - bash: |
+      gcc -v
       source activate simnibs_env
       python setup.py bdist_wheel
       pip install jinja2 conda-pack
@@ -41,14 +42,12 @@ jobs:
     matrix:
       centos7:
         containerImage: centos:7
-      ubuntu16:
-        containerImage: ubuntu:16.04
-      ubuntu18:
-        containerImage: ubuntu:18.04
       ubuntu20:
         containerImage: ubuntu:20.04
+      ubuntu22:
+        containerImage: ubuntu:22.04
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-20.04'
     maxParallel: 4
 
   container:  $[ variables['containerImage'] ]
@@ -66,7 +65,7 @@ jobs:
   - bash: |
       tar -zxf $(System.ArtifactsDirectory)/linux/simnibs_installer_linux.tar.gz -C .
       simnibs_installer/install -s -t simnibs_install
-      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
+      simnibs_install/bin/simnibs_python -m pytest simnibs_install/simnibs_env/lib/python*/site-packages/simnibs/ --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
   
   - task: PublishTestResults@2
@@ -79,7 +78,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-20.04'
 
   steps:
   - checkout: none
@@ -116,6 +115,8 @@ jobs:
   dependsOn:
     - Test
     - Examples
+#  dependsOn: Build
+  
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -132,10 +133,11 @@ jobs:
   - task: GithubRelease@0
     displayName: Edit GitHub Release
     inputs: 
-      gitHubConnection: guilhermebs # I use my connection because github does not generate OAuth token for organizations
+      gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
       tag: dev
       assets: $(System.ArtifactsDirectory)/linux/*
       assetUploadMode: 'replace'
       isDraft: true
+

@@ -841,18 +841,18 @@ class TestMsh:
         hull = ConvexHull(vertices)
         elements=hull.simplices+1
         S=mesh_io.Msh(mesh_io.Nodes(vertices),mesh_io.Elements(triangles=elements))
-        
+
         # generate random points and directions
         points=np.random.uniform(-10, 10, size=(100000,3))
         directions=np.random.uniform(-1, 1, size=(100000,3))
-        
+
         idx,endpoints = S._intersect_segment_getfarpoint(points, directions)
-        
+
         # test whether all intersection points are on the surface of the
         # internally used bounding box
         eps=0.01 # internal eps in _intersect_segment_getfarpoint to create ROI
         ROI=np.array([[-1-eps,2+eps],[-3-eps,4+eps],[-5-eps,6+eps]])
-        
+
         eps=100*np.finfo(float).eps
         if len(idx)>0:
             nhits = (np.abs(endpoints[:,0] - ROI[0,0]) < eps).astype(int) + \
@@ -860,9 +860,9 @@ class TestMsh:
                     (np.abs(endpoints[:,1] - ROI[1,0]) < eps).astype(int) + \
                     (np.abs(endpoints[:,1] - ROI[1,1]) < eps).astype(int) + \
                     (np.abs(endpoints[:,2] - ROI[2,0]) < eps).astype(int) + \
-                    (np.abs(endpoints[:,2] - ROI[2,1]) < eps).astype(int)                
+                    (np.abs(endpoints[:,2] - ROI[2,1]) < eps).astype(int)
             assert np.all(nhits == 1)
-        
+
     def test_intersect_ray(self):
         # generate cuboid and fix triangle orientations
         vertices=np.array([[-1,-3,-5],[2,-3,-5],[2,4,-5],[-1,4,-5],
@@ -871,7 +871,7 @@ class TestMsh:
         elements=hull.simplices+1
         S=mesh_io.Msh(mesh_io.Nodes(vertices),
                       mesh_io.Elements(triangles=elements))
-        
+
         normals = S.triangle_normals()[:]
         baricenters = S.elements_baricenters()[:]
         baricenters -= np.mean(baricenters,axis=0)
@@ -898,7 +898,20 @@ class TestMsh:
                     (np.abs(inters_pos[:,2] - ROI[2,0]) < eps).astype(int) + \
                     (np.abs(inters_pos[:,2] - ROI[2,1]) < eps).astype(int)
             assert np.all(nhits == 1)
-        
+
+    def test_get_outer_skin_points(self, sphere3_msh):
+        """Flip the normal of some node(s). Then this/these should be
+        considered inside by get_outer_skin_points.
+        """
+        mesh = copy.deepcopy(sphere3_msh)
+        skin_nodes = np.unique(mesh.elm[mesh.elm.tag1==1005,:3])-1
+        flip_node_indices = [0]
+        for i in skin_nodes[flip_node_indices]:
+            for j in np.where(mesh.elm.node_number_list == i+1)[0]:
+                mesh.elm.node_number_list[j, [1,2]] = mesh.elm.node_number_list[j, [2,1]]
+        ix = mesh.get_outer_skin_points()
+        assert all(i not in ix for i in skin_nodes[flip_node_indices])
+
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
         M = m.elm2node_matrix()
@@ -1026,7 +1039,7 @@ class TestMsh:
         m = copy.deepcopy(sphere3_msh)
         with pytest.raises(ValueError):
             m.add_node_field(m.nodes.node_coord[1:], 'node_coord')
-        
+
     def test_add_elm_field_value(self, sphere3_msh):
         m = copy.deepcopy(sphere3_msh)
         m.add_element_field(m.elm.tag1, 'tags')
@@ -1077,7 +1090,7 @@ class TestMsh:
         assert m.elm.nr == m2.elm.nr
         assert np.all(m2_tags == m_tags)
         assert np.all(m2_cts == m_cts)
-        
+
     def test_smooth_calc_gamma(self):
         tetrahedra=np.array([0, 1, 2, 3],dtype=np.uint)
         nodes = np.array(
@@ -1150,7 +1163,7 @@ class TestMsh:
         curvature_after = mesh.gaussian_curvature()
         low_q = mesh_before.gamma_metric()[:] >= 3
         assert np.all(mesh_before.gamma_metric()[~low_q] < 3)
-      
+
     def test_split_tets_along_line(self, sphere3_msh):
         m=sphere3_msh.crop_mesh(elm_type = 4)
         n_nodes_pre = m.nodes.nr
@@ -1782,7 +1795,7 @@ class TestNodeData:
         flux = nodedata.calc_flux(nodes)
         # Divergence theorem
         assert np.isclose(flux, 85 ** 3 * 4 * np.pi, rtol=1e-2)
-        
+
     def test_interpolate_scattered(self, sphere3_msh):
         msh = sphere3_msh.crop_mesh([3, 4, 5])
         nd = mesh_io.NodeData(msh.nodes.node_coord)
@@ -1980,7 +1993,7 @@ class TestHashing:
         hash_ = mesh_io._hash_rows(np.array(array))
         _, count = np.unique(hash_, return_counts=True)
         assert np.all(count == 1)
-        
+
 class TestNodeRasterization:
     def test_interpolate_to_grid_max(self, atlas_itk_msh):
         l, p = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
@@ -1988,13 +2001,13 @@ class TestNodeRasterization:
             np.identity(4), parallel=False)
         assert np.allclose(np.bincount(l.ravel()),(49984, 9335))
         assert np.allclose(np.bincount(p.ravel().astype(int)),(5652, 53667))
-        
+
         lp, pp = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
             np.max(atlas_itk_msh.nodes.node_coord,axis=0).astype(int),
             np.identity(4), parallel=True)
         assert(np.allclose(l,lp))
         assert(np.allclose(p,pp))
-        
+
         lp, pp = atlas_itk_msh.nodedata[0].interpolate_to_grid_max(
             np.max(atlas_itk_msh.nodes.node_coord,axis=0).astype(int), compartments=[[1],[0]],
             affine=np.identity(4), parallel=True)
@@ -2004,7 +2017,7 @@ class TestNodeRasterization:
 class TestAABBTree:
     def test_AABBTree(self, sphere3_msh):
         tree = sphere3_msh.get_AABBTree()
-        
+
         insideidx = tree.points_inside(np.array(((0,0,0),(50,50,50),(10,50,50))))
         assert(insideidx==[0,2])
         assert(tree.any_point_inside(np.array(((0,0,0),(50,30,25)))))

@@ -21,7 +21,6 @@
 from __future__ import division
 from __future__ import print_function
 import os
-import re
 import struct
 import copy
 import datetime
@@ -31,6 +30,7 @@ import hashlib
 import tempfile
 import subprocess
 import threading
+from typing import Union
 from functools import partial
 
 import numpy as np
@@ -43,9 +43,11 @@ import scipy.interpolate
 import nibabel
 import h5py
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import path2bin
+from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
 from . import cython_msh
 from . import cgal
 
@@ -180,7 +182,7 @@ class Elements:
     --------------------------
     triangles (optional): (Nx3) ndarray
         List of nodes composing each triangle
-    tetrahedra(optional): (Nx4) ndarray
+    tetrahedra(optional): (Nx3) ndarray
         List of nodes composing each tetrahedra
 
 
@@ -198,7 +200,7 @@ class Elements:
         4xnumber_of_element matrix of the nodes that constitute the element.
         For the triangles, the fourth element = -1
     nr: int
-        Number or elements
+        Number or elemets
 
 
     Notes
@@ -206,15 +208,13 @@ class Elements:
     Node and element count starts at 1!
 
     """
+
     def __init__(self, triangles=None, tetrahedra=None):
         # gmsh fields
         self.elm_type = np.zeros(0, 'int8')
         self.tag1 = np.zeros(0, dtype='int16')
         self.tag2 = np.zeros(0, dtype='int16')
         self.node_number_list = np.zeros((0, 4), dtype='int32')
-
-        # if lines is not None:
-        #     assert lines.shape[1] == 2
 
         if triangles is not None:
             assert triangles.shape[1] == 3
@@ -740,13 +740,6 @@ class Msh:
         '''
         write_msh(self, out_fn)
 
-    # TODO: add function to modify mesh in case of surface impedances (needs COND struct for regions)
-    def modify_mesh_surface_impedance(self, cond):
-        pass
-    #1 get tissues of boundary nodes
-    #2 duplicate nodes and label them
-    #3 save as NodeData (init with zero as "normal" node) and save pairs of nodes
-
     def crop_mesh(self, tags=None, elm_type=None, nodes=None, elements=None):
         """ Crops the specified tags from the mesh
         Generates a new mesh, with only the specified tags
@@ -1047,7 +1040,7 @@ class Msh:
             list of element indices that are of interest
 
         k: (optional) int
-            number of nearest neighbours to return
+            number of nearest neighbourt to return
 
         Returns
         -------------------------------
@@ -2196,7 +2189,7 @@ class Msh:
         if far.ndim == 1:
             far = far[None, :]
         if not (near.shape[1] == 3 and far.shape[1] == 3):
-            raise ValueError('near and far points should be arrays of size (N, 3)')
+            raise ValueError('near and far poins should be arrays of size (N, 3)')
 
         indices, points = cgal.segment_triangle_intersection(
             self.nodes[:],
@@ -2395,6 +2388,40 @@ class Msh:
         else:
             return False
         return any_intersections
+
+    def get_outer_skin_points(self, tol: float = 1e-3):
+        """Return indices of points estimated to be on the outer skin surface
+        (i.e., not those inside nasal cavities, ear canals etc.). Outer points
+        are identified by looking for points which do not intersect the mesh in
+        the direction of its normal. This is not perfect but seems to do a
+        reasonable job of identifying the relevant points. These may then be
+        used for projecting electrodes onto the surface.
+
+        PARAMETERS
+        ----------
+        tol : float
+            Tolerance for avoiding self-intersections.
+
+        RETURNS
+        -------
+        indices : ndarray
+            Indices of the outer skin points.
+        """
+        assert tol > 0
+
+        skin_faces = self.elm[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]
+        subset = np.unique(skin_faces-1)
+        m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
+
+        subset = subset if len(subset) < m.nodes.nr else slice(None)
+        n = m.nodes_normals().value[subset]
+        # Avoid self-intersections by moving each point slightly along the test
+        # direction
+        idx = np.unique(m.intersect_ray(m.nodes.node_coord[subset] + tol * n, n)[0][:, 0])
+        if isinstance(subset, slice):
+            return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
+        else:
+            return np.setdiff1d(subset, subset[idx], assume_unique=True)
 
     def get_AABBTree(self):
         """
@@ -2750,6 +2777,7 @@ class Msh:
         * Will not fix any element_data that might be associated with this mesh
         * will not add triangles to "air" tetrahedra (having label -1)
         '''
+
 
         assert np.all(self.elm.elm_type==4)
 
@@ -3798,7 +3826,33 @@ class ElementData(Data):
                                          np.repeat(baricenters[:, i], 4) *
                                          np.repeat(value[:, j], 4))
 
-        a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        try:
+            a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        except np.linalg.LinAlgError:
+            # The mesh probably contains "duplicate" nodes
+            # TODO fix the mesh instead - then this shouldn't be necessary
+            used_nodes = uq_in[uq_in != -1]-1
+            the_nodes = msh.nodes.node_coord[used_nodes]
+
+            S = np.linalg.svd(A[uq_in != -1], compute_uv=False)
+            to_interp = S[:, 1:].sum(1) < 1e-6
+            to_compute = ~to_interp
+            tree = scipy.spatial.cKDTree(the_nodes[to_compute])
+            di, ix = tree.query(the_nodes[to_interp])
+
+            warnings.warn(
+                ("NumPy raised a `LinAlgError` interpolating to certain nodes "
+                 f"(mean coordinate {the_nodes[to_interp].mean(0)}, "
+                 f"standard deviation {the_nodes[to_interp].std(0)}). "
+                 f"Using nearest neighbor interpolation at {to_interp.sum()} "
+                 f"nodes (maximum distance is {di.max():.5f})."
+                )
+            )
+
+            a = np.zeros(b[uq_in != -1].shape)
+            a[to_compute] = np.linalg.solve(A[uq_in != -1][to_compute], b[uq_in != -1][to_compute])
+            a[to_interp] = a[to_compute][ix]
+
         p = np.hstack([np.ones((np.sum(uq_in != -1), 1)), msh.nodes[uq_in[uq_in != -1]]])
         f = np.einsum('ij, ijk -> ik', p, a)
         nd[uq_in[uq_in != -1]] = f
@@ -4583,7 +4637,7 @@ class NodeData(Data):
         inv_affine = np.linalg.inv(affine)
         nd = np.hstack([msh_th.nodes.node_coord, np.ones((msh_th.nodes.nr, 1))])
         nd = inv_affine.dot(nd.T).T[:, :3]
-        
+
         #handle compartments
         if compartments is None:
             compartments = [[i,] for i in range(v.shape[1])]
@@ -4605,7 +4659,7 @@ class NodeData(Data):
             i = 0
             while i < n:
                 pool.apply_async(cython_msh.interp_grid_nodedata_max,args=(
-                   np.array(n_voxels, dtype=int), field, nd, 
+                   np.array(n_voxels, dtype=int), field, nd,
                    msh_th.elm.node_number_list[i:i+n_elm] - 1,
                    compartments,labelimage,maximage))
                 i += n_elm
@@ -4613,7 +4667,7 @@ class NodeData(Data):
             pool.join()
         else:
             cython_msh.interp_grid_nodedata_max(
-               np.array(n_voxels, dtype=int), field, nd, 
+               np.array(n_voxels, dtype=int), field, nd,
                msh_th.elm.node_number_list - 1,
                compartments,labelimage,maximage)
         del nd
@@ -5849,14 +5903,16 @@ def write_geo_triangles(triangles, nodes, fn,  values=None, name="", mode="bw"):
 
 
 
-def read_freesurfer_surface(fn):
-    ''' Function to read FreeSurfer surface files, based on the read_surf.m script by
-    Bruce Fischl
+def read_freesurfer_surface(fn, apply_transform : bool = False):
+    ''' Function to read FreeSurfer surface files
 
     Parameters
     ------------
     fn: str
         File name
+    apply_transform : bool, optional
+        Apply transformation from Vertex RAS to Scanner RAS. 
+        This is needed when importing surfaces created by Freesurfer to align Freesurfer surfaces with SimNIBS head models, by default False
 
     Returns
     --------
@@ -5864,41 +5920,20 @@ def read_freesurfer_surface(fn):
         Mesh structure
 
     '''
-    TRIANGLE_FILE_MAGIC_NUMBER = 16777214
-    QUAD_FILE_MAGIC_NUMBER = 16777215
+    vertex_coords, faces, meta = nibabel.freesurfer.io.read_geometry(
+        '/mnt/c/Users/torwo/Documents/Projects/simnibs4_examples/m2m_ernie/0/surf/lh.white',
+        read_metadata=True
+    )
 
-    def read_3byte_integer(f):
-        n = 0
-        for i in range(3):
-            b = f.read(1)
-            n += struct.unpack("B", b)[0] << 8 * (2 - i)
-        return n
-
-    with open(fn, 'rb') as f:
-        # Read magic number as a 3 byte integer
-        magic = read_3byte_integer(f)
-        if magic == QUAD_FILE_MAGIC_NUMBER:
-            raise IOError('Quad files not supported!')
-
-        elif magic == TRIANGLE_FILE_MAGIC_NUMBER:
-            f.readline()
-            f.readline()
-            # notice that the format uses big-endian machine format
-            vnum = struct.unpack(">i", f.read(4))[0]
-            fnum = struct.unpack(">i", f.read(4))[0]
-            vertex_coords = np.fromfile(f, np.dtype('>f'), vnum * 3)
-            vertex_coords = vertex_coords.reshape((-1, 3)).astype(np.float64)
-            faces = np.fromfile(f, np.dtype('>i'), fnum * 3)
-            faces = faces.reshape((-1, 3)).astype(np.int64)
-        else:
-            raise IOError('Invalid magic number')
+    if apply_transform:
+        vertex_coords = vertex_coords + meta['cras']
 
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertex_coords)
     return msh
 
-def write_freesurfer_surface(msh, fn, ref_fs=None):
+def write_freesurfer_surface(msh, fn, write_standard_header : bool = True):
     ''' Writes a FreeSurfer surface
     Only the surfaces (triangles) are writen to the FreeSurfer surface file
 
@@ -5906,69 +5941,37 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     -----------
     msh: Msh()
         Mesh structure
-
     fn: str
         output file name
-
-    ref_fs: bool or str
-        if set to True, a standard LIA orientation string will be written to tail
-        if set to Name of a ref_fs file, the orientation of that file will be set
+    write_standard_header : bool, optional
+        If True, writes the standard header. If False, writes no header, by default True
     '''
 
-    def write_3byte_integer(f, n):
-        b1 = struct.pack('B', (n >> 16) & 255)
-        b2 = struct.pack('B', (n >> 8) & 255)
-        b3 = struct.pack('B', n & 255)
-        f.write(b1)
-        f.write(b2)
-        f.write(b3)
-
-    TRIANGLE_FILE_MAGIC_NUMBER = 16777214
     m = msh.crop_mesh(elm_type=2)
     faces = m.elm.node_number_list[:, :3] - 1
     vertices = m.nodes.node_coord
-    vnum = m.nodes.nr
-    fnum = m.elm.nr
 
-    if ref_fs is True:
+    stamp = f"Created by {os.getenv('USER')} on {str(datetime.datetime.now())} with SimNIBS"
+
+    if write_standard_header:
         affine= np.array([[-1.0, 0.0, 0.0],
                           [ 0.0, 0.0, -1.0],
                           [ 0.0, 1.0, 0.0]])
         voxelsize=np.array([1.0, 1.0, 1.0])
-        filename_str='filename = {0}\n'.format('fake.nii.gz').encode('ascii')
-        volume_str=b'volume = 256 256 256\n'
-        write_tail = True
-    elif type(ref_fs) is str:
-        ref_vol = nibabel.load(ref_fs)
-        affine = ref_vol.affine.copy()[:3, :3]
-        volume = ref_vol.header['dim'][1:4]
-        voxelsize = np.sqrt(np.sum(affine ** 2, axis=0))
-        affine /= voxelsize[None, :]
-        affine = np.linalg.inv(affine)
-        filename_str='filename = {0}\n'.format(ref_fs).encode('ascii')
-        volume_str='volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii')
-        write_tail = True
+        volume_info = {
+            'head': [2, 0, 20],
+            'valid': '1',
+            'filename': 'fake.nii.gz',
+            'volume': [256, 256, 256],
+            'voxelsize': voxelsize,
+            'xras': affine[0, :],
+            'yras': affine[1, :],
+            'zras': affine[2, :],
+            'cras': [0, 0, 0]
+        }
+        nibabel.freesurfer.io.write_geometry(fn, vertices, faces, stamp, volume_info)
     else:
-        write_tail = False
-
-    with open(fn, 'wb') as f:
-        write_3byte_integer(f, TRIANGLE_FILE_MAGIC_NUMBER)
-        f.write('Created by {0} on {1} with SimNIBS\n\n'.format(
-            os.getenv('USER'), str(datetime.datetime.now())).encode('ascii'))
-        f.write(struct.pack('>i', vnum))
-        f.write(struct.pack('>i', fnum))
-        f.write(vertices.reshape(-1).astype('>f').tobytes())
-        f.write(faces.reshape(-1).astype('>i').tobytes())
-        if write_tail:
-            f.write(b'\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x14')
-            f.write(b'valid = 1  # volume info valid\n')
-            f.write(filename_str)
-            f.write(volume_str)
-            f.write('voxelsize = {0:.15e} {1:.15e} {2:.15e}\n'.format(*voxelsize).encode('ascii'))
-            f.write('xras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[0, :]).encode('ascii'))
-            f.write('yras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[1, :]).encode('ascii'))
-            f.write('zras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[2, :]).encode('ascii'))
-            f.write('cras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(0, 0, 0).encode('ascii'))
+        nibabel.freesurfer.io.write_geometry(fn, vertices, faces, stamp)
 
 
 def read_gifti_surface(fn):
@@ -6328,15 +6331,13 @@ def read_medit(fn):
         Mesh class
     '''
     with open(fn, 'r') as f:
-        n_vertices = 0
         if not f.readline().startswith('MeshVersionFormatted'):
             raise IOError('invalid mesh format')
         if f.readline().strip() != 'Dimension 3':
             raise IOError('Can only read 3D meshes')
-        if f.readline().strip() not in ['Vertices', '# CGAL::Mesh_complex_3_in_triangulation_3']:
+        if f.readline().strip() != 'Vertices':
             raise IOError('invalid mesh format')
-        if f.readline().strip() == 'Vertices':
-            n_vertices = int(f.readline().strip())
+        n_vertices = int(f.readline().strip())
         assert n_vertices > 0
         vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)
@@ -6492,72 +6493,38 @@ class _GetitemTester():
         return _getitem_one_indexed(self.array, index)
 
 
-def convert_mmg_msh(fn_in, fn_out=None):
+def load_subject_surfaces(
+    sub_files: SubjectFiles, surface: str, subsampling: Union[int, None] = None
+):
+    """Load subject-specific surfaces.
+
+    PARARMETERS
+    -----------
+    sub_files : simnibs.utils.file_finder.SubjectFiles
+        SubjectFiles object.
+    surf : str
+        The surface type to load (e.g., 'central').
+    subsampling : int | None
+        The subsampling to load (default = None).
     """
-    Converts .msh (ascii) output from MMG to .msh v4 (binary) format, which can be read by simnibs.
+    # When a leadfield simulation is run, the hemisphere surfaces are appended
+    # according to the order in SubjectFiles.hemispheres, hence we load them in
+    # the same way here to ensure that the order is the same.
+    return {
+        h: read_gifti_surface(sub_files.get_surface(h, surface, subsampling))
+        for h in sub_files.hemispheres
+    }
 
-    Parameters
-    ----------
-    fn_in : str
-        Input file name of .msh (ascii) mesh generated by MMG
-    fn_out : str, optional, default: None
-        Output file name of .msh v4 (binary) mesh. If None, the input file will be overwritten.
-    """
+def load_subject_morph_data(
+    sub_files: SubjectFiles, data: str, subsampling: Union[int, None] = None,
+):
+    return {
+        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(h, data, subsampling))
+        for h in sub_files.hemispheres
+    }
 
-    find_point_elmts_pattern = re.compile(r"^[0-9]+\s15\s2\s[0-9]+\s[0-9]+\s[0-9]+")
-    find_line_elmts_pattern = re.compile(r"^[0-9]+\s1\s2\s[0-9]+\s[0-9]+\s[0-9]+\s[0-9]+")
-
-    if not os.path.exists(fn_in):
-        raise FileNotFoundError(f"{fn_in} not found.")
-
-    if fn_out is None:
-        fn_out = fn_in
-
-    with open(fn_in, mode='r') as mesh_file_handle:
-
-        num_matches = 0  # number of lines that matched the regular expressions (= number of removed points and lines)
-        num_lines_read = 0  # total number of read lines
-        total_number_elements = 0  # the number of elements as specified in the file
-        line_number_num_elements = 0  # the line number where the total number of elements is defined
-        outfile_text_content = []  # each line of the outfile is one element of this array
-
-        while line := mesh_file_handle.readline():
-            num_lines_read += 1
-            # finished when reach the the node data field:
-            #  It is the final field of the file and contains a quality metric added by MMG.
-            if "NodeData" in line:
-                break
-
-            # Check and remember the total number of elements.
-            if "$Elements" in line:
-                total_number_elements_line = mesh_file_handle.readline()
-                total_number_elements = int(total_number_elements_line)
-                line_number_num_elements = num_lines_read  # 'num_lines_read' is 1 ahead of the acutal position
-
-                # append the current line (= "$Elements")
-                outfile_text_content.append(line)
-                # append the line we forwarded to (= number of elements)
-                outfile_text_content.append(total_number_elements_line)
-                # increase counter by one since we forwarded the file handle by one line
-                num_lines_read += 1
-
-                continue
-
-            # Sort out point and line element data, we only want the triangles and tetrahedra.
-            for pattern in (find_point_elmts_pattern, find_line_elmts_pattern):
-                if pattern.match(line) is not None:
-                    num_matches += 1
-                    break
-            else:
-                outfile_text_content.append(line)
-
-        # the new total number of elements after removing points and lines
-        reduced_number_elements = total_number_elements - num_matches
-        outfile_text_content[line_number_num_elements] = f"{reduced_number_elements}\n"
-
-        # write out and re-read with simnibs to convert to GMSHv4 binary
-        with open(fn_out, mode='w') as outfile_handle:
-            outfile_handle.write("".join(outfile_text_content))
-
-        msh = read_msh(fn_out)
-        msh.write(fn_out)
+def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
+    return {
+        h: read_gifti_surface(get_reference_surf(h, surface, resolution))
+        for h in HEMISPHERES
+    }

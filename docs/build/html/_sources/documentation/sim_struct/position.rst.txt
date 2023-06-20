@@ -15,7 +15,7 @@ Initialization
      from simnibs import sim_struct
      s = sim_struct.SESSION()
      tms_list = s.add_tmslist()
-     pos = tmslist.add_position()
+     pos = tms_list.add_position()
 
   \
 
@@ -33,7 +33,7 @@ Attributes
 ----------
 
 * **centre**: *list/array of floats or string/character array (Python/MATLAB)*
-  
+
   * **Description**: Center of the coil. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position
   * **Example** *Python/MATLAB*
 
@@ -41,7 +41,7 @@ Attributes
 
     .. code-block:: python
 
-       coil.centre = 'Cz'
+       pos.centre = 'Cz'
 
     \
 
@@ -49,7 +49,7 @@ Attributes
 
     .. code-block:: python
 
-       coil.centre = [-1.2, -15.8, 116.0]
+       pos.centre = [-1.2, -15.8, 116.0]
 
     \
 
@@ -109,7 +109,7 @@ Examples
 --------
 
 * Set up a simulation with a coil centered in C3, pointing posteriorly (towards CP3), with a distance of 5mm from the cortex and a :math:`dI/dt = 20 \times 10^6` A/s.
-  
+
   *Python/MATLAB*
 
   .. code-block:: python
@@ -123,8 +123,8 @@ Examples
 
 
 * Run a simulation with the coil placed at (-1.2, -15.8, 120.0), pointing anteriorly and facing downwards.
-  
-  By default, in the head models *+y* indicates the anterior direction. Therefore, the coil *y* axis is to be aligned with the model's. Also by default, *+z* indicats the superior directio. Therefore, given the :download:`definitions <../../data/coil_axesorientation.pdf>`, the coil *z* axis need to point towards the *-z* direction. Finally, for the coordinates to be right-handed :math:`\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z`.
+
+  By default, in the head models *+y* indicates the anterior direction. Therefore, the coil *y* axis is to be aligned with the model's. Also by default, *+z* indicates the superior direction. Therefore, given the :download:`definitions <../../data/coil_axesorientation.pdf>`, the coil *z* axis need to point towards the *-z* direction. Finally, for the coordinates to be right-handed :math:`\mathbf{p}^x = \mathbf{p}^y \times  \mathbf{p}^z`.
 
   * *Python*
 

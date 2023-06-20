@@ -1,0 +1,145 @@
+# Version: 7
+# Coordinate system: NIfTI:Scanner
+# Created by: Brainsight 2.3.5
+# units: millimetres, degrees, milliseconds, and microvolts
+# Encoding: UTF-8
+# Notes: Each column is delimited by a tab. Each value within a column is delimited by a semicolon.
+# Target Name	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2
+Sample 2	15.020	53.062	87.219	-0.997	-0.056	0.056	0.053	-0.997	-0.048	0.059	-0.044	0.997
+Sample 1	-44.198	75.810	65.742	0.712	0.013	0.702	0.321	0.883	-0.342	-0.624	0.469	0.624
+Sample 6	-42.977	0.962	85.362	0.739	0.013	0.674	-0.013	1.000	-0.004	-0.674	-0.006	0.739
+Sample 11	-40.127	-67.042	42.366	0.757	-0.626	0.187	0.252	0.544	0.800	-0.603	-0.559	0.569
+Sample 14	66.067	47.033	57.804	0.592	0.253	-0.765	-0.420	0.907	-0.025	0.688	0.337	0.643
+Sample 18	65.572	-18.315	69.130	0.789	0.104	-0.605	0.097	0.952	0.290	0.606	-0.287	0.742
+Sample 23	52.644	-73.348	39.001	0.854	-0.008	-0.519	0.364	0.723	0.588	0.371	-0.691	0.620
+# Sample Name	Session Name	Index	Assoc. Target	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2	Dist. to Target	Target Error	Angular Error	Twist Error	Stim. Power	Date	Time	Creation Cause	Crosshairs Driver	Offset	Comment	EMG Start	EMG End	EMG Res.	EMG Channels
+Sample 1	Session 1	1	(null)	-44.198	75.810	65.742	0.712	0.013	0.702	0.321	0.883	-0.342	-0.624	0.469	0.624	(null)	(null)	(null)	(null)	(null)	2021-06-25	11:48:47.502	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 2	Session 1	2	Sample 1	-44.005	74.694	66.280	0.621	-0.247	0.744	0.494	0.860	-0.126	-0.609	0.446	0.656	1.253	1.225	2.427	-15.884	(null)	2021-06-25	11:49:19.162	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 3	Session 1	3	Sample 1	-44.743	75.105	66.036	-0.186	-0.903	0.387	0.805	0.085	0.587	-0.563	0.421	0.711	0.938	0.912	6.704	-82.357	(null)	2021-06-25	11:49:44.487	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 4	Session 1	4	Sample 1	-52.565	67.679	67.106	0.764	-0.056	0.642	0.381	0.843	-0.380	-0.520	0.535	0.666	11.746	11.711	7.437	-1.356	(null)	2021-06-25	11:51:31.719	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 5	Session 1	5	Sample 1	-38.968	73.736	71.497	0.739	-0.177	0.650	0.362	0.918	-0.163	-0.568	0.356	0.742	8.048	8.028	9.911	-8.185	(null)	2021-06-25	11:51:43.071	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 6	Session 1	6	Sample 1	-42.977	0.962	85.362	0.739	0.013	0.674	-0.013	1.000	-0.004	-0.674	-0.006	0.739	77.386	76.090	28.428	1.143	(null)	2021-06-25	11:51:54.558	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 7	Session 1	7	Sample 6	-44.046	1.689	86.022	0.738	-0.388	0.552	0.346	0.920	0.184	-0.579	0.055	0.813	1.452	0.822	7.753	-23.617	(null)	2021-06-25	11:52:37.948	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 8	Session 1	8	Sample 6	-43.856	-1.129	85.739	0.137	-0.972	0.191	0.802	0.222	0.555	-0.582	0.077	0.810	2.300	2.205	8.213	-77.900	(null)	2021-06-25	11:52:45.503	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 9	Session 1	9	Sample 6	-45.129	1.633	86.305	0.848	0.002	0.531	0.097	0.982	-0.159	-0.522	0.186	0.833	2.444	1.356	15.098	-0.686	(null)	2021-06-25	11:52:53.399	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 10	Session 1	10	Sample 6	-38.572	1.029	87.147	0.843	-0.038	0.536	0.030	0.999	0.025	-0.537	-0.005	0.844	4.753	4.675	9.939	-2.970	(null)	2021-06-25	11:53:03.536	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 11	Session 1	11	Sample 6	-40.127	-67.042	42.366	0.757	-0.626	0.187	0.252	0.544	0.800	-0.603	-0.559	0.569	80.507	79.637	33.880	-49.828	(null)	2021-06-25	11:53:25.295	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 12	Session 1	12	Sample 11	-46.576	-70.252	42.076	0.777	-0.581	0.242	0.288	0.670	0.685	-0.560	-0.462	0.688	7.209	5.291	9.099	4.231	(null)	2021-06-25	11:54:31.673	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 13	Session 1	13	Sample 11	-34.568	-74.509	46.817	0.803	-0.525	0.282	0.065	0.547	0.835	-0.592	-0.652	0.473	10.318	9.638	7.703	8.223	(null)	2021-06-25	11:54:41.764	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 14	Session 1	14	Sample 11	66.067	47.033	57.804	0.592	0.253	-0.765	-0.420	0.907	-0.025	0.688	0.337	0.643	156.616	98.956	103.696	-41.597	(null)	2021-06-25	11:55:25.664	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 15	Session 1	15	Sample 14	68.434	32.463	62.318	0.537	0.771	-0.343	-0.675	0.636	0.374	0.506	0.031	0.862	15.436	14.722	24.108	29.550	(null)	2021-06-25	11:56:02.347	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 16	Session 1	16	Sample 14	73.688	47.572	54.706	0.643	0.022	-0.766	-0.372	0.883	-0.286	0.670	0.469	0.576	8.244	7.429	8.561	-13.438	(null)	2021-06-25	11:56:16.211	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 17	Session 1	17	Sample 14	62.111	55.967	62.183	0.733	0.031	-0.680	-0.123	0.988	-0.089	0.669	0.149	0.728	10.708	10.543	11.897	-15.474	(null)	2021-06-25	11:56:26.498	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 18	Session 1	18	Sample 14	65.572	-18.315	69.130	0.789	0.104	-0.605	0.097	0.952	0.290	0.606	-0.287	0.742	66.324	60.630	37.164	-15.258	(null)	2021-06-25	11:56:32.192	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 19	Session 1	19	Sample 18	64.383	-19.258	69.809	0.625	0.647	-0.437	-0.230	0.687	0.689	0.746	-0.330	0.578	1.662	1.652	12.606	33.460	(null)	2021-06-25	11:56:56.447	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 20	Session 1	20	Sample 18	65.175	-24.310	71.236	0.134	0.990	0.047	-0.442	0.017	0.897	0.887	-0.142	0.440	6.366	6.205	25.275	76.457	(null)	2021-06-25	11:57:04.908	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 21	Session 1	21	Sample 18	63.156	-18.840	70.621	0.655	-0.168	-0.736	0.327	0.942	0.076	0.681	-0.291	0.672	2.887	2.845	5.852	-18.043	(null)	2021-06-25	11:57:29.907	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 22	Session 1	22	Sample 18	54.764	-21.476	78.826	0.700	-0.175	-0.692	0.375	0.916	0.147	0.608	-0.362	0.706	14.860	14.792	4.726	-17.510	(null)	2021-06-25	11:57:34.800	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 23	Session 1	23	Sample 18	52.644	-73.348	39.001	0.854	-0.008	-0.519	0.364	0.723	0.588	0.371	-0.691	0.620	64.058	62.380	27.943	-4.796	(null)	2021-06-25	11:57:46.717	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 24	Session 1	24	Sample 23	47.017	-69.522	44.769	0.809	0.554	-0.197	-0.074	0.429	0.901	0.584	-0.714	0.387	8.921	8.080	18.184	35.464	(null)	2021-06-25	11:58:11.734	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 25	Session 1	25	Sample 23	54.083	-79.197	36.980	0.737	0.044	-0.674	0.339	0.839	0.426	0.584	-0.542	0.604	6.353	5.706	14.986	-5.601	(null)	2021-06-25	11:58:24.046	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 26	Session 1	26	Sample 23	35.429	-71.673	54.381	0.809	0.029	-0.587	0.398	0.709	0.582	0.433	-0.704	0.562	23.145	23.145	4.943	-1.734	(null)	2021-06-25	11:58:32.390	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 27	Session 1	27	Sample 23	-33.377	61.942	79.506	0.722	-0.233	0.651	0.374	0.923	-0.084	-0.581	0.305	0.754	165.359	111.838	87.625	32.321	(null)	2021-06-25	11:59:46.580	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 28	Session 1	28	Sample 23	-42.771	69.503	69.341	0.580	-0.347	0.737	0.577	0.813	-0.072	-0.575	0.467	0.672	174.445	101.398	96.857	27.529	(null)	2021-06-25	12:00:06.412	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 29	Session 1	29	Sample 23	-12.803	55.027	91.732	0.731	-0.498	0.467	0.600	0.795	-0.091	-0.326	0.347	0.879	153.440	104.647	79.351	13.746	(null)	2021-06-25	12:00:08.596	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 30	Session 1	30	Sample 23	-27.468	30.764	90.183	0.709	-0.499	0.498	0.519	0.848	0.110	-0.477	0.180	0.860	140.985	98.365	76.590	12.393	(null)	2021-06-25	12:00:11.614	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 31	Session 1	31	Sample 23	-48.415	34.887	76.874	0.397	-0.703	0.589	0.700	0.648	0.301	-0.594	0.293	0.750	152.847	94.588	87.575	-1.098	(null)	2021-06-25	12:00:16.705	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 32	Session 1	32	Sample 23	-47.404	26.449	77.915	0.019	-0.970	0.243	0.760	0.172	0.626	-0.649	0.173	0.741	146.572	95.649	84.329	-35.579	(null)	2021-06-25	12:00:19.751	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 33	Session 1	33	Sample 23	-4.296	36.782	97.412	0.867	-0.435	0.243	0.478	0.863	-0.161	-0.140	0.256	0.957	137.050	101.563	68.633	11.599	(null)	2021-06-25	12:00:23.198	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 34	Session 1	34	Sample 23	-6.331	61.101	95.274	0.814	-0.459	0.355	0.580	0.676	-0.455	-0.031	0.576	0.817	157.230	95.041	84.453	21.823	(null)	2021-06-25	12:00:26.451	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 35	Session 1	35	Sample 23	-49.103	47.528	74.815	0.566	-0.469	0.678	0.558	0.823	0.103	-0.607	0.320	0.727	162.006	101.174	89.747	17.207	(null)	2021-06-25	12:00:29.341	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 36	Session 1	36	Sample 23	-52.851	48.649	67.320	0.621	-0.187	0.761	0.297	0.955	-0.007	-0.725	0.231	0.649	163.750	108.092	91.495	34.143	(null)	2021-06-25	12:00:32.653	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 37	Session 1	37	Sample 23	-44.724	57.407	73.423	0.332	-0.732	0.596	0.715	0.607	0.347	-0.615	0.311	0.725	166.620	109.589	89.651	-3.645	(null)	2021-06-25	12:00:37.212	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 38	Session 1	38	Sample 23	1.939	44.719	98.197	0.802	-0.559	0.210	0.597	0.756	-0.269	-0.008	0.341	0.940	141.474	103.586	69.893	1.072	(null)	2021-06-25	12:00:43.079	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 39	Session 1	39	Sample 23	-15.259	27.925	95.776	0.574	-0.784	0.237	0.800	0.598	0.040	-0.173	0.166	0.971	134.500	105.257	65.001	-16.267	(null)	2021-06-25	12:00:44.731	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 40	Session 1	40	Sample 23	-33.992	6.464	89.307	0.140	-0.988	0.064	0.890	0.154	0.428	-0.433	-0.003	0.901	128.087	97.867	66.403	-42.297	(null)	2021-06-25	12:00:46.952	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 41	Session 1	41	Sample 23	-65.817	3.014	64.778	0.196	-0.974	0.112	0.704	0.219	0.675	-0.682	-0.053	0.729	143.278	106.763	76.356	-34.927	(null)	2021-06-25	12:00:49.250	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 42	Session 1	42	Sample 23	-59.460	38.197	76.477	0.240	-0.854	0.463	0.880	0.393	0.268	-0.410	0.343	0.845	162.524	113.909	82.252	-18.669	(null)	2021-06-25	12:00:52.169	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 43	Session 1	43	Sample 23	-58.659	42.785	60.989	0.014	-0.930	0.368	0.602	0.302	0.739	-0.798	0.212	0.564	162.354	102.597	95.321	-27.322	(null)	2021-06-25	12:00:54.620	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 44	Session 1	44	Sample 23	-40.441	-47.550	68.127	0.726	-0.501	0.471	0.170	0.795	0.583	-0.666	-0.343	0.662	100.889	70.192	66.394	10.360	(null)	2021-06-25	12:00:59.039	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 45	Session 1	45	Sample 23	-23.795	-39.136	85.591	0.764	-0.637	0.108	0.541	0.722	0.431	-0.352	-0.270	0.896	95.833	75.185	52.277	-6.957	(null)	2021-06-25	12:01:00.907	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 46	Session 1	46	Sample 23	-1.016	-48.696	87.216	0.549	-0.790	-0.273	0.826	0.462	0.323	-0.129	-0.403	0.906	76.236	64.482	37.567	-32.811	(null)	2021-06-25	12:01:03.013	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 47	Session 1	47	Sample 23	-14.130	-76.130	55.246	0.880	-0.475	-0.003	0.343	0.630	0.697	-0.329	-0.614	0.717	68.778	59.004	41.644	-1.456	(null)	2021-06-25	12:01:05.109	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 48	Session 1	48	Sample 23	-55.275	-44.095	48.614	0.621	-0.783	0.035	0.400	0.355	0.845	-0.674	-0.510	0.534	112.226	92.892	64.293	-19.539	(null)	2021-06-25	12:01:07.308	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 49	Session 1	49	Sample 23	-54.409	-14.666	72.840	0.416	-0.848	0.329	0.412	0.498	0.763	-0.811	-0.182	0.557	126.684	83.877	80.195	-15.593	(null)	2021-06-25	12:01:12.325	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 50	Session 1	50	Sample 23	-32.494	-4.682	89.821	0.674	-0.672	0.306	0.556	0.735	0.388	-0.486	-0.091	0.869	120.608	90.879	65.055	-3.577	(null)	2021-06-25	12:01:15.295	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 51	Session 1	51	Sample 23	2.028	-16.118	100.157	0.780	-0.621	0.082	0.581	0.766	0.275	-0.233	-0.167	0.958	97.863	76.669	51.458	-7.176	(null)	2021-06-25	12:01:17.292	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 52	Session 1	52	Sample 23	-6.832	-48.222	87.570	0.748	-0.663	-0.022	0.604	0.667	0.436	-0.274	-0.340	0.900	80.794	62.282	46.282	-12.931	(null)	2021-06-25	12:01:18.949	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 53	Session 1	53	Sample 23	-20.063	-65.413	66.513	0.613	-0.755	-0.233	0.710	0.397	0.582	-0.346	-0.522	0.779	78.143	65.586	44.292	-27.376	(null)	2021-06-25	12:01:21.047	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 54	Session 1	54	Sample 23	7.015	-68.856	72.294	0.525	-0.722	-0.452	0.830	0.315	0.461	-0.191	-0.617	0.764	56.663	47.192	33.986	-36.671	(null)	2021-06-25	12:01:22.902	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 55	Session 1	55	Sample 23	6.838	-29.619	96.918	0.615	-0.778	-0.130	0.789	0.605	0.111	-0.008	-0.170	0.985	85.818	69.762	43.461	-27.730	(null)	2021-06-25	12:01:24.917	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 56	Session 1	56	Sample 23	-8.939	-23.857	96.668	0.645	-0.763	0.036	0.726	0.626	0.285	-0.240	-0.158	0.958	97.812	75.463	52.134	-18.499	(null)	2021-06-25	12:01:30.360	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 57	Session 1	57	Sample 23	-14.076	-42.130	87.247	0.759	-0.648	0.061	0.540	0.679	0.498	-0.364	-0.345	0.865	88.056	68.543	50.229	-9.076	(null)	2021-06-25	12:02:32.391	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 58	Session 1	58	Sample 23	-16.395	-72.233	61.030	0.638	-0.719	-0.277	0.680	0.357	0.640	-0.362	-0.597	0.716	72.477	60.387	43.727	-27.058	(null)	2021-06-25	12:02:35.561	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 59	Session 1	59	Sample 23	-57.504	-41.370	50.184	0.523	-0.850	0.061	0.449	0.336	0.828	-0.724	-0.406	0.558	115.240	89.157	69.035	-23.495	(null)	2021-06-25	12:02:38.533	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 60	Session 1	60	Sample 23	47.851	42.286	81.229	0.864	-0.058	-0.499	-0.098	0.955	-0.280	0.493	0.290	0.820	123.196	104.118	60.620	-2.419	(null)	2021-06-25	12:02:50.820	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 61	Session 1	61	Sample 23	73.202	34.169	54.855	0.635	-0.203	-0.745	-0.112	0.930	-0.349	0.764	0.305	0.568	110.606	94.449	64.877	-39.684	(null)	2021-06-25	12:02:53.047	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 62	Session 1	62	Sample 23	62.557	23.221	69.697	0.633	0.264	-0.728	-0.327	0.943	0.058	0.702	0.201	0.684	101.813	90.123	56.977	-0.652	(null)	2021-06-25	12:02:55.292	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 63	Session 1	63	Sample 23	43.302	28.745	85.392	0.789	0.312	-0.529	-0.356	0.934	0.020	0.501	0.173	0.848	112.527	99.637	53.675	19.858	(null)	2021-06-25	12:02:57.315	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 64	Session 1	64	Sample 23	18.307	25.634	96.293	0.954	0.153	-0.258	-0.176	0.982	-0.069	0.243	0.111	0.964	119.410	104.455	52.350	26.795	(null)	2021-06-25	12:02:59.411	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 65	Session 1	65	Sample 23	24.561	40.588	93.331	0.970	0.009	-0.244	-0.054	0.982	-0.179	0.238	0.187	0.953	129.312	110.957	56.636	20.261	(null)	2021-06-25	12:03:01.111	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 66	Session 1	66	Sample 23	39.163	-12.330	90.367	0.942	-0.022	-0.336	0.029	0.999	0.015	0.335	-0.024	0.942	80.891	68.878	43.556	9.873	(null)	2021-06-25	12:03:03.389	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 67	Session 1	67	Sample 23	62.153	-0.388	74.967	0.655	0.065	-0.753	0.030	0.993	0.112	0.755	-0.096	0.649	81.897	78.443	41.539	-11.202	(null)	2021-06-25	12:03:05.578	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 68	Session 1	68	Sample 23	70.439	31.970	56.989	0.444	0.040	-0.895	-0.180	0.983	-0.045	0.878	0.181	0.443	108.314	99.552	61.627	-28.527	(null)	2021-06-25	12:03:07.739	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 69	Session 1	69	Sample 23	57.566	45.501	69.798	0.582	-0.021	-0.813	-0.234	0.953	-0.192	0.779	0.302	0.550	122.873	109.051	65.076	-29.793	(null)	2021-06-25	12:03:09.891	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 70	Session 1	70	Sample 23	13.075	34.809	96.421	0.982	0.097	-0.163	-0.113	0.989	-0.092	0.152	0.109	0.982	128.688	112.688	53.812	28.148	(null)	2021-06-25	12:03:13.133	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 71	Session 1	71	Sample 23	41.076	8.849	87.865	0.625	0.657	-0.422	-0.557	0.754	0.349	0.547	0.017	0.837	96.321	89.375	44.732	39.673	(null)	2021-06-25	12:03:15.323	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 72	Session 1	72	Sample 23	65.815	10.708	70.825	0.333	0.746	-0.576	-0.442	0.664	0.603	0.833	0.054	0.551	90.838	84.613	52.170	25.528	(null)	2021-06-25	12:03:17.417	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 73	Session 1	73	Sample 23	82.473	5.172	45.204	0.272	0.653	-0.707	-0.299	0.755	0.583	0.915	0.052	0.401	84.223	77.113	56.521	11.278	(null)	2021-06-25	12:03:19.378	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 74	Session 1	74	Sample 23	51.599	27.550	80.338	0.864	-0.034	-0.503	-0.027	0.993	-0.114	0.503	0.112	0.857	109.042	98.758	50.186	-0.514	(null)	2021-06-25	12:03:21.861	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 75	Session 1	75	Sample 23	14.773	23.821	97.912	0.942	-0.300	-0.154	0.264	0.940	-0.213	0.208	0.160	0.965	119.777	100.877	55.629	3.170	(null)	2021-06-25	12:03:25.757	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 76	Session 1	76	Sample 23	31.267	-53.115	78.052	0.916	0.096	-0.390	0.116	0.867	0.485	0.384	-0.490	0.783	48.901	47.293	14.890	10.290	(null)	2021-06-25	12:03:34.598	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 77	Session 1	77	Sample 23	60.731	-38.866	65.392	0.658	0.271	-0.703	0.027	0.924	0.382	0.753	-0.270	0.600	44.168	42.325	33.066	1.394	(null)	2021-06-25	12:03:36.624	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 78	Session 1	78	Sample 23	80.686	-27.277	42.867	0.536	0.228	-0.813	0.053	0.952	0.302	0.843	-0.205	0.498	54.072	51.618	40.270	-7.606	(null)	2021-06-25	12:03:41.522	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 79	Session 1	79	Sample 23	61.334	-63.353	42.977	0.750	0.096	-0.655	0.293	0.839	0.458	0.593	-0.535	0.601	13.828	13.652	15.669	-2.509	(null)	2021-06-25	12:03:44.921	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 80	Session 1	80	Sample 23	35.272	-78.710	46.234	0.949	0.066	-0.307	0.172	0.709	0.684	0.263	-0.702	0.662	19.566	19.158	6.647	12.284	(null)	2021-06-25	12:03:47.535	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 81	Session 1	81	Sample 23	27.981	-62.427	72.871	0.981	0.057	-0.188	0.062	0.817	0.573	0.186	-0.574	0.797	43.299	40.172	16.198	16.848	(null)	2021-06-25	12:03:51.429	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 82	Session 1	82	Sample 23	33.447	-28.661	92.863	0.989	-0.014	-0.148	0.060	0.948	0.312	0.137	-0.317	0.939	72.571	64.241	31.588	16.442	(null)	2021-06-25	12:03:53.844	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 83	Session 1	83	Sample 23	34.146	-18.756	91.153	0.711	0.694	-0.112	-0.608	0.686	0.400	0.354	-0.216	0.910	77.732	72.080	32.331	53.726	(null)	2021-06-25	12:03:56.826	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 84	Session 1	84	Sample 23	60.516	-22.215	73.024	0.617	0.755	-0.222	-0.540	0.612	0.578	0.572	-0.237	0.785	61.920	58.892	30.381	47.511	(null)	2021-06-25	12:03:59.229	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 85	Session 1	85	Sample 23	68.614	-46.127	47.732	0.527	0.810	-0.258	-0.330	0.474	0.817	0.784	-0.345	0.517	32.745	31.844	31.833	41.680	(null)	2021-06-25	12:04:01.726	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 86	Session 1	86	Sample 23	79.085	-35.653	37.946	0.272	0.962	-0.034	-0.410	0.148	0.900	0.871	-0.231	0.434	46.056	43.925	41.239	57.823	(null)	2021-06-25	12:04:04.069	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 87	Session 1	87	Sample 23	57.730	-42.479	76.020	0.418	0.907	0.066	-0.538	0.189	0.822	0.731	-0.377	0.567	48.468	46.623	27.868	63.423	(null)	2021-06-25	12:04:06.297	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 88	Session 1	88	Sample 23	37.920	-32.319	93.328	0.514	0.845	0.148	-0.682	0.298	0.668	0.520	-0.444	0.730	69.654	68.279	17.773	67.867	(null)	2021-06-25	12:04:08.467	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 89	Session 1	89	Sample 23	41.252	-70.563	56.253	0.894	-0.116	-0.433	0.375	0.723	0.580	0.246	-0.681	0.690	20.861	19.581	8.213	-0.754	(null)	2021-06-25	12:04:11.512	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 90	Session 1	90	Sample 23	35.426	-26.466	89.084	0.922	0.053	-0.385	0.025	0.980	0.196	0.387	-0.191	0.902	70.729	64.257	33.396	10.060	(null)	2021-06-25	12:04:14.957	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 91	Session 1	91	Sample 23	66.805	-32.660	62.308	0.615	0.124	-0.778	0.067	0.976	0.209	0.785	-0.181	0.592	48.982	45.733	38.414	-9.584	(null)	2021-06-25	12:04:17.103	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 92	Session 1	92	Sample 23	-70.325	-40.494	98.104	0.643	-0.434	0.630	0.115	0.869	0.481	-0.757	-0.237	0.609	140.335	70.619	74.870	16.972	(null)	2021-06-25	12:04:25.905	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 93	Session 1	93	Sample 23	-53.180	14.928	118.356	0.689	-0.558	0.462	0.481	0.830	0.284	-0.542	0.026	0.840	159.024	96.591	72.436	7.240	(null)	2021-06-25	12:04:29.847	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 94	Session 1	94	Sample 23	-61.185	13.133	156.857	0.712	-0.582	0.392	0.515	0.813	0.271	-0.477	0.009	0.879	185.273	95.663	68.785	4.263	(null)	2021-06-25	12:04:31.791	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 95	Session 1	95	Sample 23	-69.916	9.113	201.004	0.719	-0.612	0.329	0.545	0.790	0.279	-0.431	-0.022	0.902	219.240	95.855	65.503	0.778	(null)	2021-06-25	12:04:33.540	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 96	Session 1	96	Sample 23	-41.208	58.958	196.035	0.712	-0.626	0.320	0.580	0.780	0.235	-0.396	0.018	0.918	225.771	131.199	65.812	-0.336	(null)	2021-06-25	12:04:35.690	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 97	Session 1	97	Sample 23	-35.679	30.644	159.960	0.948	0.153	0.279	-0.185	0.978	0.092	-0.259	-0.139	0.956	182.336	133.605	53.669	41.776	(null)	2021-06-25	12:04:37.885	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 98	Session 1	98	Sample 23	-40.159	19.171	116.429	0.953	0.085	0.290	-0.099	0.994	0.034	-0.286	-0.061	0.956	152.208	119.011	58.031	39.489	(null)	2021-06-25	12:04:40.082	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 99	Session 1	99	Sample 23	85.279	15.938	107.694	0.880	0.118	-0.460	-0.056	0.988	0.147	0.471	-0.103	0.876	117.285	96.722	37.876	9.872	(null)	2021-06-25	12:04:42.579	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 100	Session 1	100	Sample 23	119.409	13.919	182.079	0.891	0.097	-0.444	-0.019	0.984	0.176	0.454	-0.148	0.878	180.401	109.801	35.375	9.333	(null)	2021-06-25	12:04:44.377	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+Sample 101	Session 1	101	Sample 23	131.555	16.883	211.020	0.893	0.071	-0.444	0.011	0.983	0.181	0.449	-0.167	0.878	209.664	120.737	34.305	8.031	(null)	2021-06-25	12:04:46.075	Remote	Coil 1	0.000	(null)	(null)	(null)	(null)	(null)
+# Electrode Name	Electrode Type	Session Name	Loc. X	Loc. Y	Loc. Z	m0n0	m0n1	m0n2	m1n0	m1n1	m1n2	m2n0	m2n1	m2n2
+# Planned Landmark Name	Loc. X	Loc. Y	Loc. Z
+LPA	-78.055	18.147	-27.638
+Nasion	-6.446	115.489	-18.295
+RPA	76.361	20.144	-44.653
+# Session Landmark Name	Session Name	Loc. X	Loc. Y	Loc. Z
+LPA	Session 1	-75.385	13.826	-29.872
+Nasion	Session 1	-6.785	116.530	-20.583
+RPA	Session 1	70.371	17.275	-45.903
+Refinement landmark 1	Session 1	-67.444	20.797	46.155
+Refinement landmark 2	Session 1	-32.512	-3.850	86.817
+Refinement landmark 3	Session 1	19.311	-27.480	92.783
+Refinement landmark 4	Session 1	58.843	-9.543	72.879
+Refinement landmark 5	Session 1	78.443	-14.877	39.876
+Refinement landmark 6	Session 1	81.447	-1.453	5.418
+Refinement landmark 7	Session 1	77.013	33.030	20.524
+Refinement landmark 8	Session 1	56.552	34.327	70.088
+Refinement landmark 9	Session 1	17.084	47.793	90.499
+Refinement landmark 10	Session 1	-33.233	53.799	82.231
+Refinement landmark 11	Session 1	-62.235	46.902	49.821
+Refinement landmark 12	Session 1	-37.748	80.668	68.308
+Refinement landmark 13	Session 1	18.645	84.396	78.809
+Refinement landmark 14	Session 1	32.702	86.046	67.041
+Refinement landmark 15	Session 1	58.815	85.550	24.226
+Refinement landmark 16	Session 1	67.303	-45.668	-10.479
+Refinement landmark 17	Session 1	46.647	-70.936	20.167
+Refinement landmark 18	Session 1	5.127	-84.097	29.515
+Refinement landmark 19	Session 1	-51.088	-51.020	31.813
+Refinement landmark 20	Session 1	-66.711	-17.746	38.925

@@ -7,7 +7,7 @@ tms_opt.subpath = 'm2m_ernie';
 % Select output folder
 tms_opt.pathfem = 'tms_optimization_refined/';
 % Select the coil model
-tms_opt.fnamecoil = fullfile('legacy','Magstim_70mm_Fig8.ccd');
+tms_opt.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 % Select a target for the optimization
 tms_opt.target = [-39.7, 7.5, 65.6];
 % Optional: Use the MKL PARDISO solver

@@ -9,7 +9,7 @@ Current Contributors
    * Project coordination
    * Debugging and maintenance across the complete code.
    * Meshing part of :ref:`charm_docs` (4.0)
-   * new TMS coil models (4.0)
+   * New TMS coil models (4.0)
    * :ref:`dwi2cond_docs` (2.1)
    * Example dataset *ernie* (2.1)
 
@@ -21,9 +21,10 @@ Current Contributors
 * Kristoffer H. Madsen
    * Debugging and maintenance across the complete code.
    * Cross-platform building (4.0)
-   * new html-based viewer (4.0)
-   * ccd to nifti conversion (4.0)
-   * new TMS coil models (4.0)
+   * New html-based viewer (4.0)
+   * Ccd to nifti conversion (4.0)
+   * New TMS coil models (4.0)
+   * I/O function for Softaxic (4.0)
    * MNI transformation (2.1)
    * Fast I/O for gmsh-meshes in python (2.0)
    * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
@@ -46,6 +47,7 @@ Current Contributors
    * Help with the UQ functionality (3.0)
 
 * Ole Numssen
+   * I/O functions for Localite and Brainsight (4.0)
    * First version of the TMS optimization (3.1)
 
 Former Contributors

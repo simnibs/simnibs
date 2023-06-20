@@ -59,5 +59,5 @@ cp -R "${CUR_DIR}/documentation" "${INSTALL_DIR}/documentation"
 # Fix entrypoint shebangs
 "${INSTALL_DIR}/simnibs_env/bin/python" "${INSTALL_DIR}/simnibs_env/fix_entrypoints.py" "${INSTALL_DIR}/simnibs_env/bin" "${INSTALL_DIR}/simnibs_env/bin"
 # Run SimNIBS postinstall operation
-"${INSTALL_DIR}/simnibs_env/bin/postinstall_simnibs" -d "${INSTALL_DIR}" --setup-links --no-extra-coils $silent
+"${INSTALL_DIR}/simnibs_env/bin/postinstall_simnibs" -d "${INSTALL_DIR}" --setup-links $silent
 ) 2>&1 | tee "${INSTALL_LOG}"

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BaseMarkerList coordinateSpace="RAS">
+    <Marker color="#ffff00" description="right eye" drawAura="false"
+        radius="4.0" set="false">
+        <ColVec3D data0="0.0" data1="0.0" data2="0.0"/>
+    </Marker>
+    <Marker color="#ff00ff" description="nasion" drawAura="false"
+        radius="4.0" set="false">
+        <ColVec3D data0="0.0" data1="0.0" data2="0.0"/>
+    </Marker>
+    <Marker color="#00ffff" description="" drawAura="false" radius="4.0" set="false">
+        <ColVec3D data0="0.0" data1="0.0" data2="0.0"/>
+    </Marker>
+</BaseMarkerList>
+<!--LOCALITE Navigation Systems work in RAS.
+For external use all following values and positions have to be transformed to the coordinate system of the corresponding medical data.-->

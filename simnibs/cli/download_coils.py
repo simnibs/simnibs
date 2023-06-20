@@ -18,10 +18,38 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 '''
+import os
 import sys
+import shutil
+import tempfile
 import argparse
-from .postinstall_simnibs import download_extra_coils
+import zipfile
+import requests
+import functools
 
+from simnibs import file_finder
+
+
+# from https://stackoverflow.com/questions/16694907/download-large-file-in-python-with-requests
+def download_file(url, local_filename, timeout=None):
+    with requests.get(url, stream=True, timeout=timeout) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(local_filename, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+
+def download_extra_coils(timeout=None):
+    version = 'master'
+    url = f'https://github.com/simnibs/simnibs-coils/archive/{version}.zip'
+    with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
+        tmpname = tmpf.name
+    download_file(url, tmpf.name, timeout)
+    with zipfile.ZipFile(tmpname) as z:
+        z.extractall(file_finder.coil_models)
+    os.remove(tmpname)
+    src = os.path.join(file_finder.coil_models, f'simnibs-coils-{version}')
+    dst = os.path.join(file_finder.coil_models, f'Deng-coils-{version}')
+    shutil.move(src, dst)
+    
 def main():
     parser = argparse.ArgumentParser(
         prog="download_coils",

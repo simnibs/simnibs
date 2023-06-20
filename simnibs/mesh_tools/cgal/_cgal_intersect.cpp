@@ -91,6 +91,7 @@ class TreeC{
   bool _any_intersections(float*, float*, int);
   bool _any_point_inside(float*, int);
   std::vector<int> _points_inside(float*, int);
+  std::vector<float> _min_sqdist(float*, int);
 };
 
 TreeC::TreeC(float* vertices, int n_vertices, int* tris, int n_faces) {
@@ -195,4 +196,13 @@ std::vector<int> TreeC::_points_inside(float* points, int n_points) {
     };
  }
   return indices;
+}
+
+std::vector<float> TreeC::_min_sqdist(float* points, int n_points) {
+ std::vector<float> dist;
+ for (int i=0; i < n_points; i++){
+  // Determine the side and return true if inside!
+  dist.push_back(this->tree.squared_distance(Point(points[3*i], points[3*i + 1], points[3*i + 2])));
+ }
+  return dist;
 }

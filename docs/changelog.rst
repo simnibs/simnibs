@@ -11,7 +11,8 @@ Changelog
  * New flexible meshing approach to simplify manual editing and inclusion of custom tissue types in the head mesh
  * New command line tool *meshmesh* to support meshing of custom geometries
  * Support of Nx1 center-surround montages in python and Matlab
- * added python examples for temporal interference simulations using pre-calculated leadfields for speed
+ * Added python examples for temporal interference simulations using pre-calculated leadfields for speed
+ * Added basic I/O functions for neuronavigation data in python
  * Update to python 3.9
  * Major code cleanup and restructuring under the hood
  * Tested on Windows 10, Linux and Macs with Intel and Apple Silicon
@@ -21,7 +22,8 @@ NOTE: Simnibs 4 is NOT backwards compatible. Head models created with charm cann
  
 Known issues:
  * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)
- * simnibs_gui does not work on linux systems with wayland (workaround: use docker image for now)
+ * simnibs_gui does not start on some linux systems, e.g. with wayland (workaround: ld preloading of libstdc++.so.6 seems to help; example: export LD_PRELOAD=/usr/lib/libstdc++.so.6 - path needs to be adjusted according to library path on local system)
+ * The PARDISO solver (available as option for the FEM calculations) does not work on Apple Silicon
  
 3.2.6
 ------
@@ -67,6 +69,7 @@ Known issues:
  * mri2mesh does not work with Freesurfer 7; please use Freesurfer 6 for now
  * SimNIBS is so far not tested on Macs with Apple Silicon, and is likely to give errors on those machines
 
+
 3.2
 ----
  * Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)
@@ -77,6 +80,7 @@ Known issues:
  * Refactoring of optimization code
  * Calculating coil-cortex distances during TMS simulations
  * New installers
+
 
 3.1
 ----

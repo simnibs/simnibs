@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Transformation coordinateSpace="RAS">
+    <TransformationMatrix>
+        <Matrix4D data00="0.05226886841900916"
+            data01="-0.10373154907053125" data02="-0.9932309555796291"
+            data03="88.72198226693746" data10="-0.9079006941302766"
+            data11="-0.4191662193842684" data12="-0.004001265407535454"
+            data13="-26.154446791939414" data20="-0.41591380716677134"
+            data21="0.9019642156175194" data22="-0.1160872893710343"
+            data23="56.755265308446084" data30="0.0" data31="0.0"
+            data32="0.0" data33="1.0"/>
+    </TransformationMatrix>
+</Transformation>
+<!--LOCALITE Navigation Systems work in RAS.
+For external use all following values and positions have to be transformed to the coordinate system of the corresponding medical data.-->

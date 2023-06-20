@@ -57,7 +57,6 @@ s.tet_idx=[];
 if nargin<1
     error('at least one argument is needed');
 end
-
 s=parse_input(s,varargin{:});
 
 keepTri=false;

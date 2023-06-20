@@ -632,12 +632,14 @@ class TMSoptimize():
 
         return s
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 
 def _create_grid(mesh, pos, distance, radius, resolution_pos, scalp_normals_smoothing_steps=20):
     ''' Creates a position grid '''
     # extract ROI
     msh_surf = mesh.crop_mesh(elm_type=2)
-    msh_skin = msh_surf.crop_mesh([5, 1005])
+    msh_skin = msh_surf.crop_mesh([ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE])
     target_skin = msh_skin.find_closest_element(pos)
     elm_center = msh_skin.elements_baricenters()[:]
     elm_mask_roi = np.linalg.norm(elm_center - target_skin, axis=1) < 1.2 * radius

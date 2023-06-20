@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<InstrumentMarkerList coordinateSpace="RAS">
+    <!--All positions are saved in the coordinate system of the corresponding medical data.
+NIfTI image data are recommended using RAS system (x-axis increases from the left hand side to the right hand side of the patient,
+y-axis increases from the posterior side to the anterior side of the patient and z-axis increases from the feet toward the head of the patient).-->
+    <InstrumentMarker alwaysVisible="false" index="0" selected="false">
+        <Marker additionalInformation="" color="#ff0000" description="m" set="true">
+            <Matrix4D data00="0.7001678286338018"
+                data01="-0.676140394453129"
+                data02="-0.22957031274062797"
+                data03="-44.93413019840018"
+                data10="-0.16428118506310424"
+                data11="-0.46543055292482205"
+                data12="0.8697640153485258" data13="-8.795673746840876"
+                data20="-0.6948957142890748"
+                data21="-0.5712371811688176"
+                data22="-0.43693406695955095"
+                data23="101.09705268152501" data30="0.0" data31="0.0"
+                data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+    <InstrumentMarker alwaysVisible="false" index="1" selected="false">
+        <Marker additionalInformation="" color="#ff0000"
+            description="m+" set="true">
+            <Matrix4D data00="0.7085338890058762"
+                data01="-0.3746351911698321" data02="-0.598038595117554"
+                data03="-48.1301151853133" data10="-0.16654595031051256"
+                data11="-0.9122911697680236" data12="0.3741780693483843"
+                data13="-8.496673713354284" data20="-0.6857580726088478"
+                data21="-0.16551511919839662"
+                data22="-0.7087754021912458" data23="105.04679465818678"
+                data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+    <InstrumentMarker alwaysVisible="false" index="2" selected="false">
+        <Marker additionalInformation="" color="#ff0000"
+            description="m-" set="true">
+            <Matrix4D data00="0.6998856404107608"
+                data01="-0.6759367222211214"
+                data02="0.23080294977068083" data03="-47.14651023734736"
+                data10="-0.1604512496255371"
+                data11="0.16609056118328835" data12="0.9729695194108006"
+                data13="-8.698683445321137" data20="-0.6959998926461723"
+                data21="-0.7179998863243977"
+                data22="0.007789505615168446" data23="101.3889337750127"
+                data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+    <InstrumentMarker alwaysVisible="false" index="3" selected="false">
+        <Marker additionalInformation="" color="#ff0000" description="p" set="true">
+            <Matrix4D data00="0.7067911889045553"
+                data01="-0.6887119412157743"
+                data02="-0.16137027112817756"
+                data03="-50.20256326612157"
+                data10="-0.09479535834005878"
+                data11="-0.3182827531827426" data12="0.9432010475788759"
+                data13="-25.84610055366423" data20="-0.7009838389109699"
+                data21="-0.6513756505608028"
+                data22="-0.29025799994560864" data23="99.64027120419644"
+                data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+    <InstrumentMarker alwaysVisible="false" index="4" selected="true">
+        <Marker additionalInformation="" color="#ff0000"
+            description="p+" set="true">
+            <Matrix4D data00="0.6843298918949845"
+                data01="-0.3615173494856086"
+                data02="-0.6332721860011791" data03="-56.0832108089071"
+                data10="-0.12133148501467172"
+                data11="-0.9128122332744633" data12="0.3899850689596127"
+                data13="-27.285950364968954"
+                data20="-0.7190320759784958"
+                data21="-0.19003917829805522"
+                data22="-0.6685161485773293" data23="102.27839199645153"
+                data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+    <InstrumentMarker alwaysVisible="false" index="5" selected="false">
+        <Marker additionalInformation="" color="#ff0000"
+            description="p-" set="true">
+            <Matrix4D data00="0.6812719497811031"
+                data01="-0.6634269029590268" data02="0.309412090209263"
+                data03="-53.80413293187006"
+                data10="-0.11095965383028686"
+                data11="0.32420460409206747" data12="0.9394582995553261"
+                data13="-27.327218957797697" data20="-0.72357380574433"
+                data21="-0.6743579804612059"
+                data22="0.14725769428103302" data23="98.88818525785251"
+                data30="0.0" data31="0.0" data32="0.0" data33="1.0"/>
+        </Marker>
+    </InstrumentMarker>
+</InstrumentMarkerList>
