@@ -1265,7 +1265,7 @@ def create_mesh(label_img, affine,
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
                 hierarchy=None, smooth_steps=5, skin_care=20, 
-                sizing_field=None, DEBUG_FN=None):
+                sizing_field=None, DEBUG_FN=None, mmg_noinsert=False):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1334,6 +1334,9 @@ def create_mesh(label_img, affine,
         Sizing field to control the element sizes. Its shape has to be the same
         as label_img.shape. Zeros will be replaced by values from the 
         standard sizing field. Default: None
+    mmg_noinsert : bool, optional, default: False
+        Set this flag to constrain the mesh improvement algorithm of MMG to not insert additional points.
+        In this way, the number of elements of the mesh is not increased. (not recommended)
 
     Returns
     -------
@@ -1409,6 +1412,9 @@ def create_mesh(label_img, affine,
     
     # Run meshing
     logger.info('Meshing')
+    logger.info(f'================================')
+    logger.info(f'USING cell_radius_edge_ratio=2.1')
+    logger.info(f'================================')
     start = time.time()
     m = image2mesh(
         label_img,
@@ -1416,8 +1422,10 @@ def create_mesh(label_img, affine,
         facet_size=size_field,
         facet_distance=distance_field,
         cell_size=size_field,
-        optimize=optimize
+        optimize=optimize,
+        cell_radius_edge_ratio=2.1
     )
+
     del size_field, distance_field
     logger.info(
         'Time to mesh: ' +
@@ -1479,9 +1487,9 @@ def create_mesh(label_img, affine,
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
-    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag, 
-                                  faces = faces, idx_tet_faces = tet_faces, 
-                                  adj_tets = adj_tets)
+    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag,
+                                 faces = faces, idx_tet_faces = tet_faces,
+                                 adj_tets = adj_tets)
 
     # remove "air" tetrahedra with label -1 and corresponding nodes
     idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
@@ -1490,7 +1498,7 @@ def create_mesh(label_img, affine,
     # keep only largest component
     idx=m.elm.connected_components()
     m = m.crop_mesh(elements=max(idx,key=np.size))
-    
+
     # Smooth mesh
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')
@@ -1499,6 +1507,26 @@ def create_mesh(label_img, affine,
     if skin_care > 0:
         logger.info('Extra Skin Care')
         m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
+
+    # Improve mesh quality
+    logger.info('Improving Mesh Quality')
+    fn_msh_tmp = tempfile.TemporaryFile()
+    fn_msh_tmp_improved = os.path.splitext(fn_msh_tmp)[0] + "_improved.msh"
+    m.write_msh(fn_msh_tmp)
+
+    # set MMG command
+    if mmg_noinsert:
+        cmd = f"mmg3d_O3 -v 6 -optim -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        # cmd = f"mmg3d_O3 -v 6 -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+    else:
+        cmd = f"mmg3d_O3 -v 6 -optim -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        # cmd = f"mmg3d_O3 -v 6 -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+
+    # run MMG to improve mesh
+    os.system(cmd)
+
+    # convert output of MMG to .msh (binary) format (overwriting original output)
+    m = mesh_io.convert_mmg_msh(fn_msh_tmp_improved)
 
     logger.info(
         'Time to post-process mesh: ' +
