@@ -18,7 +18,7 @@
             "type": "string"
         },
         "limits": {
-            "description": "Used for expansion into NIfTI digitized files. This is in mm format and follows the structure [[min(x), max(x)],[min(y), max(y)],min(z), max(z)]",
+            "description": "Used for expansion into NIfTI digitized files. This is in mm format and follows the structure [[min(x), max(x)],[min(y), max(y)],[min(z), max(z)]]",
             "type": "array",
             "items": {
                 "type": "array",
@@ -77,25 +77,16 @@
                         "minItems": 1
                     },
                     "type": {
-                        "description": "Type of coil element. 1: dipoles, 2: line elements, 3: line points, *4: raw (digitized grid)",
+                        "description": "Type of coil element. 1: dipoles, 2: line elements, *3: raw (digitized grid)",
                         "type": "integer",
                         "enum": [
                             1,
                             2,
-                            3,
-                            4
+                            3
                         ]
                     },
-                    "weights": {
-                        "description": "Weighting array of length N with one scalar per element",
-                        "type": "array",
-                        "items": {
-                            "type": "number"
-                        },
-                        "minItems": 1
-                    },
                     "points": {
-                        "description": "An array of 3D vectors, defining positions for points, elements or dipoles",
+                        "description": "An array of 3D vectors, defining positions for line segments or dipoles",
                         "oneOf": [
                             {
                                 "type": "array",
@@ -184,27 +175,10 @@
                     }
                 },
                 "required": [
-                    "type"
+                    "type",
+                    "stimulator"
                 ],
                 "oneOf": [
-                    {
-                        "allOf": [
-                            { 
-                                "required": [
-                                    "points"
-                                ]
-                            },
-                            {
-                                "not" : {  
-                                    "anyOf" : [
-                                        { "required" : ["values"] },
-                                        { "required" : ["data"]  },
-                                        { "required" : ["affine"]  }
-                                    ]
-                                }
-                            }
-                        ]
-                    },
                     {
                         "allOf": [
                             { 
@@ -315,9 +289,7 @@
                         "minItems": 1
                     }
                 },
-                "required": [
-                    "maxdIdt"
-                ],
+                "minProperties": 1,
                 "additionalProperties": false
             },
             "minItems": 1
@@ -512,7 +484,8 @@
         }
     },
     "required": [
-        "coilElementList"
+        "coilElementList",
+        "stimulatorList"
     ],
     "additionalProperties": false
 }

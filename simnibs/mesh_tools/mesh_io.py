@@ -871,6 +871,8 @@ class Msh:
         """
         if self.nodes.nr == 0:
             return copy.deepcopy(other)
+        elif other.nodes.nr == 0:
+            return copy.deepcopy(self)
 
         joined = copy.deepcopy(self)
         joined.elmdata = []

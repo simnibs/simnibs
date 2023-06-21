@@ -1,5 +1,7 @@
 import json
+import os
 import re
+import shutil
 from typing import Optional
 
 import jsonschema
@@ -10,11 +12,17 @@ import scipy.optimize as opt
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
-from simnibs.mesh_tools.mesh_io import Msh, NodeData
+from simnibs.mesh_tools.gmsh_view import Visualization, _gray_red_lightblue_blue_cm
+from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
-from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilDeformation
+from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
+from simnibs.simulation.tms_coil.tms_coil_deformation import (
+    TmsCoilDeformation,
+    TmsCoilTranslation,
+)
 from simnibs.simulation.tms_coil.tms_coil_element import (
     DipoleElements,
+    LineSegmentElements,
     SampledGridPointElements,
     TmsCoilElements,
 )
@@ -95,10 +103,10 @@ class TmsCoil(TcdElement):
         self,
         msh: Msh,
         coil_affine: npt.NDArray[np.float_],
-        di_dt: float,
         eps: float = 1e-3,
     ) -> NodeData:
         """Calculate the dA/dt field applied by the coil at each node of the mesh.
+        The dI/dt value used for the simulation is set by the stimulators.
 
         Parameters
         ----------
@@ -106,20 +114,18 @@ class TmsCoil(TcdElement):
             The mesh at which nodes the dA/dt field should be calculated
         coil_affine : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil
-        di_dt : float
-            dI/dt in A/s
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
         NodeData
-            The dA/dt field at every node of the mesh
+            The dA/dt field in V/m at every node of the mesh
         """
         target_positions = msh.nodes.node_coord
         A = np.zeros_like(target_positions)
         for coil_element in self.elements:
-            A += coil_element.get_da_dt(target_positions, coil_affine, di_dt, eps)
+            A += coil_element.get_da_dt(target_positions, coil_affine, eps)
 
         return NodeData(A)
 
@@ -197,10 +203,135 @@ class TmsCoil(TcdElement):
                     include_casing,
                     include_optimization_points,
                     include_coil_elements,
-                    (i + 1) * 100,
+                    (i + 1),
                 )
             )
         return coil_msh
+
+    def write_visualization(self, folder_path: str, base_file_name: str):
+        visualization = Visualization(
+            self.get_mesh(
+                include_casing=False,
+                apply_deformation=False,
+                include_optimization_points=False,
+            )
+        )
+        casings = self.get_mesh(
+            apply_deformation=False,
+            include_optimization_points=False,
+            include_coil_elements=False,
+        )
+        optimization_points = self.get_mesh(
+            apply_deformation=False, include_casing=False, include_coil_elements=False
+        )
+
+        visualization.visibility = np.unique(visualization.mesh.elm.tag1)
+
+        for i, key in enumerate(visualization.mesh.field.keys()):
+            if isinstance(self.elements[i], DipoleElements):
+                visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0)
+                visualization.Mesh.Nodes = 1
+                visualization.Mesh.PointSize = 2
+            elif isinstance(self.elements[i], LineSegmentElements):
+                vector_lengths = np.linalg.norm(self.elements[i].values, axis=1)
+                visualization.add_view(
+                    Visible=1,
+                    VectorType=2,
+                    RangeType=2,
+                    CenterGlyphs=0,
+                    GlyphLocation=2,
+                    CustomMin=np.min(vector_lengths),
+                    CustomMax=np.max(vector_lengths),
+                    ArrowSizeMax=30,
+                    ArrowSizeMin=30,
+                )
+                visualization.Mesh.Lines = 1
+            elif isinstance(self.elements[i], SampledGridPointElements):
+                vector_lengths = np.linalg.norm(
+                    visualization.mesh.field[key].value, axis=1
+                )
+                visualization.add_view(
+                    Visible=1,
+                    VectorType=1,
+                    RangeType=2,
+                    CenterGlyphs=0,
+                    CustomMin=np.percentile(vector_lengths, 99),
+                    CustomMax=np.percentile(vector_lengths, 99.99),
+                    ArrowSizeMax=30,
+                    ArrowSizeMin=10,
+                )
+
+        coords = visualization.mesh.nodes.node_coord
+        if casings.elm.nr > 0:
+            coords = np.concatenate((coords, casings.nodes.node_coord))
+        if optimization_points.elm.nr > 0:
+            coords = np.concatenate((coords, optimization_points.nodes.node_coord))
+        min_coords = np.min(coords, axis=0)
+        max_coords = np.max(coords, axis=0)
+        bounding = Msh(
+            Nodes(
+                np.array(
+                    [
+                        min_coords,
+                        [min_coords[0], min_coords[1], max_coords[2]],
+                        [min_coords[0], max_coords[1], min_coords[2]],
+                        [max_coords[0], min_coords[1], min_coords[2]],
+                    ]
+                )
+            ),
+            Elements(lines=np.array([[1, 2], [1, 3], [1, 4]])),
+        )
+        bounding.elm.tag1[:] = TmsCoilElementTag.BOUNDING_BOX
+        bounding.elm.tag2[:] = TmsCoilElementTag.BOUNDING_BOX
+        visualization.mesh = visualization.mesh.join_mesh(bounding)
+
+        geo_file_name = os.path.join(folder_path, f"{base_file_name}.geo")
+        if os.path.isfile(geo_file_name):
+            os.remove(geo_file_name)
+
+        for tag in np.unique(optimization_points.elm.tag1):
+            element_optimization_points = optimization_points.crop_mesh(tags=[tag])
+            index = str(tag)[:-2]
+            identifier = (
+                "min_distance_points"
+                if int(str(tag)[-2:])
+                == TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
+                else "intersect_points"
+            )
+
+            mesh_io.write_geo_spheres(
+                element_optimization_points.nodes.node_coord,
+                geo_file_name,
+                np.full((element_optimization_points.nodes.node_coord.shape[0]), 1),
+                name=f"{index}-{identifier}",
+                mode="ba",
+            )
+            visualization.add_view(ShowScale=0)
+
+        for tag in np.unique(casings.elm.tag1):
+            casing = casings.crop_mesh(tags=[tag])
+            index = str(tag)[:-2]
+            index = index if len(index) > 0 else "0"
+            mesh_io.write_geo_triangles(
+                casing.elm.node_number_list - 1,
+                casing.nodes.node_coord,
+                geo_file_name,
+                name=f"{index}-casing",
+                mode="ba",
+            )
+            visualization.add_view(
+                ColorTable=_gray_red_lightblue_blue_cm(),
+                Visible=1,
+                ShowScale=0,
+                CustomMin=-0.5,
+                CustomMax=3.5,
+                RangeType=2,
+            )
+
+        if optimization_points.elm.nr > 0 or casings.elm.nr > 0:
+            visualization.add_merge(geo_file_name)
+        visualization.mesh.write(os.path.join(folder_path, f"{base_file_name}.msh"))
+        visualization.write_opt(os.path.join(folder_path, f"{base_file_name}.msh"))
 
     def get_casing_coordinates(
         self,
@@ -252,6 +383,30 @@ class TmsCoil(TcdElement):
         intersect_points = np.concatenate(intersect_points, axis=0)
 
         return casing_points, min_distance_points, intersect_points
+
+    def get_elements_grouped_by_stimulators(
+        self,
+    ) -> dict[TmsStimulator, list[TmsCoilElements]]:
+        """Returns a dictionary mapping from each stimulator to the list of elements using it
+
+        Returns
+        -------
+        dict[TmsStimulator, list[TmsCoilElements]]
+            The dictionary mapping from each stimulator to the list of elements using it
+        """
+        stimulators = []
+        elements_by_stimulators = {}
+
+        for element in self.elements:
+            if element.stimulator is None:
+                raise NotImplementedError()
+            if element.stimulator in stimulators:
+                elements_by_stimulators[element.stimulator].append(element)
+                continue
+            stimulators.append(element.stimulator)
+            elements_by_stimulators[element.stimulator] = [element]
+
+        return elements_by_stimulators
 
     @staticmethod
     def _add_logo(mesh: Msh) -> Msh:
@@ -337,9 +492,43 @@ class TmsCoil(TcdElement):
         except (UnicodeDecodeError, ValueError):
             pass
 
-        raise IOError(
-            "Error loading file: Unsupported file type or missing file extension for NIfTI file"
-        )
+        try:
+            shutil.copy2(
+                fn, os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii.gz")
+            )
+            coil = TmsCoil.from_nifti(
+                os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii.gz")
+            )
+            return coil
+        except (nib.filebasedimages.ImageFileError):
+            pass
+        finally:
+            if os.path.exists(
+                os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii.gz")
+            ):
+                os.remove(
+                    os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii.gz")
+                )
+
+        try:
+            shutil.copy2(
+                fn, os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii")
+            )
+            coil = TmsCoil.from_nifti(
+                os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii")
+            )
+            return coil
+        except (nib.filebasedimages.ImageFileError):
+            pass
+        finally:
+            if os.path.exists(
+                os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii")
+            ):
+                os.remove(
+                    os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii")
+                )
+
+        raise IOError(f"Error loading file: Unsupported file type '{fn}'")
 
     def write(self, fn: str):
         """Writes the TMS coil in the tcd format
@@ -450,11 +639,9 @@ class TmsCoil(TcdElement):
         dipole_positions = ccd_file[:, 0:3] * 1e3
         dipole_moments = ccd_file[:, 3:]
 
-        stimulator = None
-        if "dIdtmax" in header_dict.keys():
-            stimulator = TmsStimulator(
-                header_dict.get("stimulator"), None, header_dict["dIdtmax"], waveforms
-            )
+        stimulator = TmsStimulator(
+            header_dict.get("stimulator"), None, header_dict.get("dIdtmax"), waveforms
+        )
 
         coil_elements = [
             DipoleElements(None, None, [], dipole_positions, dipole_moments, stimulator)
@@ -504,6 +691,12 @@ class TmsCoil(TcdElement):
             if (
                 coil_element.stimulator not in stimulators
                 and coil_element.stimulator is not None
+                and (
+                    coil_element.stimulator.name is not None
+                    or coil_element.stimulator.brand is not None
+                    or coil_element.stimulator.max_di_dt is not None
+                    or len(coil_element.stimulator.waveforms) > 0
+                )
             ):
                 stimulators.append(coil_element.stimulator)
                 tcd_stimulators.append(coil_element.stimulator.to_tcd())
@@ -587,7 +780,10 @@ class TmsCoil(TcdElement):
         for coil_element in coil["coilElementList"]:
             coil_elements.append(
                 TmsCoilElements.from_tcd_dict(
-                    coil_element, stimulators, coil_models, deformations
+                    coil_element,
+                    stimulators,
+                    coil_models,
+                    deformations,
                 )
             )
 
@@ -671,7 +867,19 @@ class TmsCoil(TcdElement):
             ]
         )
 
-        coil_elements = [SampledGridPointElements(None, None, [], data, affine, None)]
+        if len(data.shape) == 4 :
+            coil_elements = [SampledGridPointElements(None, None, [], data, affine, TmsStimulator("Generic", None, None, None))]
+        elif len(data.shape) == 5 and data.shape[3] == 1:
+            element_data = data.reshape(data.shape[0], data.shape[1], data.shape[2], data.shape[4])
+            coil_elements = [SampledGridPointElements(None, None, [], element_data, affine, TmsStimulator("Generic", None, None, None))]
+        elif len(data.shape) == 5:
+            data = np.split(data, data.shape[-2], axis=-2)
+            coil_elements = []
+            for i, element_data in enumerate(data):
+                element_data = element_data.reshape(element_data.shape[0], element_data.shape[1], element_data.shape[2], element_data.shape[4])
+                coil_elements.append(SampledGridPointElements(None, None, [], element_data, affine, TmsStimulator(f"Generic-{i + 1}", None, None, None)))
+        else:
+            raise ValueError("NIfTI file needs to at least contain one 3D vector per voxel!")
 
         return cls(None, None, None, limits, resolution, None, coil_elements)
 
@@ -681,12 +889,13 @@ class TmsCoil(TcdElement):
         limits: Optional[npt.NDArray[np.float_]] = None,
         resolution: Optional[npt.NDArray[np.float_]] = None,
     ):
-        """Writes the A field of the coil in the NIfTI file format
+        """Writes the A field of the coil in the NIfTI file format.
+        If multiple stimulators are present, the NIfTI file will be 5D and containing vector data for each stimulator group.
 
         Parameters
         ----------
         fn : str
-           The path and file name to store the tcd coil file as
+           The path and file name to store the NIfTI coil file as
         limits : Optional[npt.NDArray[np.float_]], optional
             Overrides the limits set in the coil object, by default None
         resolution : Optional[npt.NDArray[np.float_]], optional
@@ -699,10 +908,69 @@ class TmsCoil(TcdElement):
         ValueError
             If the resolution is not set in the coil object or as a parameter
         """
-        limits = limits or self.limits
+        limits = limits if limits is not None else self.limits
         if limits is None:
             raise ValueError("Limits needs to be set")
-        resolution = resolution or self.resolution
+        resolution = resolution if resolution is not None else self.resolution
+        if resolution is None:
+            raise ValueError("resolution needs to be set")
+
+        stimulators_to_elements = self.get_elements_grouped_by_stimulators()
+        sample_positions, dims = self.get_sample_positions(limits, resolution)
+
+        data_per_stimulator = []
+        for stimulator in stimulators_to_elements.keys():
+            stimulator_a_field = np.zeros_like(sample_positions)
+            for element in stimulators_to_elements[stimulator]:
+                stimulator_a_field += element.get_a_field(sample_positions, np.eye(4))
+
+            stimulator_a_field = stimulator_a_field.reshape(
+                (dims[0], dims[1], dims[2], 3)
+            )
+            data_per_stimulator.append(stimulator_a_field)
+
+        data = np.stack(data_per_stimulator, axis=-2)
+
+        affine = np.array(
+            [
+                [resolution[0], 0, 0, limits[0][0]],
+                [0, resolution[1], 0, limits[1][0]],
+                [0, 0, resolution[2], limits[2][0]],
+                [0, 0, 0, 1],
+            ]
+        )
+        nib.save(nib.Nifti1Image(data, affine), fn)
+
+    def get_sample_positions(
+        self,
+        limits: Optional[npt.NDArray[np.float_]] = None,
+        resolution: Optional[npt.NDArray[np.float_]] = None,
+    ) -> tuple[npt.NDArray[np.float_], list[int]]:
+        """Returns the sampled positions and the dimensions calculated using the limits and resolution of this TMS coil or the parameter if supplied
+
+        Parameters
+        ----------
+        limits : Optional[npt.NDArray[np.float_]], optional
+            Overrides the limits set in the coil object, by default None
+        resolution : Optional[npt.NDArray[np.float_]], optional
+            Overrides the resolution set in the coil object, by default None
+
+        Returns
+        -------
+        tuple[npt.NDArray[np.float_], list[int]]
+            The sampled positions and the dimensions calculated using the limits and resolution of this TMS coil or the parameter if supplied
+
+        Raises
+        ------
+         ValueError
+            If the limits are not set in the coil object or as a parameter
+        ValueError
+            If the resolution is not set in the coil object or as a parameter
+        """
+        limits = limits if limits is not None else self.limits
+        if limits is None:
+            raise ValueError("Limits needs to be set")
+        resolution = resolution if resolution is not None else self.resolution
         if resolution is None:
             raise ValueError("resolution needs to be set")
 
@@ -714,10 +982,44 @@ class TmsCoil(TcdElement):
         x = np.linspace(limits[0][0], limits[0][1] - resolution[0] + dx, dims[0])
         y = np.linspace(limits[1][0], limits[1][1] - resolution[0] + dx, dims[1])
         z = np.linspace(limits[2][0], limits[2][1] - resolution[0] + dx, dims[2])
-        points = np.array(np.meshgrid(x, y, z, indexing="ij"))
-        points = points.reshape((3, -1)).T
+        return np.array(np.meshgrid(x, y, z, indexing="ij")).reshape((3, -1)).T, dims
 
-        data = self.get_a_field(points, np.eye(4)).reshape((len(x), len(y), len(z), 3))
+    def as_sampled(
+        self,
+        limits: Optional[npt.NDArray[np.float_]] = None,
+        resolution: Optional[npt.NDArray[np.float_]] = None,
+        resample_sampled_elements: bool = False
+    ) -> "TmsCoil":
+        """Turns every coil element into SampledGridPointElements. 
+        If resample_sampled_elements is true, existing SampledGridPointElements are resampled.
+
+        Parameters
+        ----------
+        limits : Optional[npt.NDArray[np.float_]], optional
+            Overrides the limits set in the coil object, by default None
+        resolution : Optional[npt.NDArray[np.float_]], optional
+            Overrides the resolution set in the coil object, by default None
+        resample_sampled_elements : bool, optional
+             Whether or not to resample existing SampledGridPointElements, by default False
+
+        Returns
+        -------
+        TmsCoil
+            A new TMS coil where all elements are replaced by SampledGridPointElements.
+
+        Raises
+        ------
+         ValueError
+            If the limits are not set in the coil object or as a parameter
+        ValueError
+            If the resolution is not set in the coil object or as a parameter
+        """
+        limits = limits if limits is not None else self.limits
+        if limits is None:
+            raise ValueError("Limits needs to be set")
+        resolution = resolution if resolution is not None else self.resolution
+        if resolution is None:
+            raise ValueError("resolution needs to be set")
 
         affine = np.array(
             [
@@ -728,11 +1030,122 @@ class TmsCoil(TcdElement):
             ]
         )
 
-        nib.save(nib.Nifti1Image(data, affine), fn)
+        sample_positions, dims = self.get_sample_positions(limits, resolution)
+
+        sampled_coil_elements = []
+        for coil_element in self.elements:
+            if isinstance(coil_element, SampledGridPointElements) and not resample_sampled_elements:
+                sampled_coil_elements.append(coil_element)
+            else:
+                data = coil_element.get_a_field(sample_positions, np.eye(4), apply_deformation=False).reshape(
+                    ((dims[0], dims[1], dims[2], 3))
+                )
+
+                sampled_coil_elements.append(
+                    SampledGridPointElements(
+                        coil_element.name,
+                        coil_element.casing,
+                        coil_element.deformations,
+                        data,
+                        affine,
+                        coil_element.stimulator,
+                    )
+                )
+
+        return TmsCoil(
+            self.name,
+            self.brand,
+            self.version,
+            limits,
+            resolution,
+            self.casing,
+            sampled_coil_elements,
+        )
+
+    def as_sampled_squashed(
+        self,
+        limits: Optional[npt.NDArray[np.float_]] = None,
+        resolution: Optional[npt.NDArray[np.float_]] = None,
+    ) -> "TmsCoil":
+        """Turns the coil elements grouped by the stimulators into sampled elements and returns the resulting TMS coil.
+        Deformations are applied before the sampling.
+
+        Parameters
+        ----------
+        limits : Optional[npt.NDArray[np.float_]], optional
+            Overrides the limits set in the coil object, by default None
+        resolution : Optional[npt.NDArray[np.float_]], optional
+            Overrides the resolution set in the coil object, by default None
+
+        Returns
+        -------
+        TmsCoil
+            The combined TMS coil containing one sampled element per stimulator
+
+        Raises
+        ------
+         ValueError
+            If the limits are not set in the coil object or as a parameter
+        ValueError
+            If the resolution is not set in the coil object or as a parameter
+        """
+        limits = limits if limits is not None else self.limits
+        if limits is None:
+            raise ValueError("Limits needs to be set")
+        resolution = resolution if resolution is not None else self.resolution
+        if resolution is None:
+            raise ValueError("resolution needs to be set")
+
+        affine = np.array(
+            [
+                [resolution[0], 0, 0, limits[0][0]],
+                [0, resolution[1], 0, limits[1][0]],
+                [0, 0, resolution[2], limits[2][0]],
+                [0, 0, 0, 1],
+            ]
+        )
+
+        sample_positions, dims = self.get_sample_positions(limits, resolution)
+        stimulator_to_elements = self.get_elements_grouped_by_stimulators()
+
+        sampled_coil_elements = []
+        for stimulator in stimulator_to_elements.keys():
+            combined_data = np.zeros_like(sample_positions)
+            combined_casing = None
+            for coil_element in stimulator_to_elements[stimulator]:
+                combined_data += coil_element.get_a_field(sample_positions, np.eye(4), apply_deformation=False)
+                if combined_casing is None and coil_element.casing is not None:
+                    combined_casing = coil_element.casing
+                elif combined_casing is not None and coil_element.casing is not None:
+                    combined_casing = combined_casing.merge(coil_element.casing)
+
+            sampled_coil_elements.append(
+                SampledGridPointElements(
+                    None,
+                    combined_casing,
+                    None,
+                    combined_data.reshape(((dims[0], dims[1], dims[2], 3))),
+                    affine,
+                    stimulator,
+                )
+            )
+
+        return TmsCoil(
+            self.name,
+            self.brand,
+            self.version,
+            limits,
+            resolution,
+            self.casing,
+            sampled_coil_elements,
+        )
 
     def optimize_deformations(
-        self, optimization_surface: Msh, affine: npt.NDArray[np.float_]
-    ) -> tuple[float, float]:
+        self,
+        optimization_surface: Msh,
+        affine: npt.NDArray[np.float_],
+        coil_translation_ranges: npt.NDArray[np.float_] = None,
+    ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
         optimization_surface and the intersect points (if not present, the coil casing points)
@@ -743,11 +1156,17 @@ class TmsCoil(TcdElement):
             The surface the deformations have to be optimized for
         affine : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil
+        coil_translation_ranges : npt.NDArray[np.float_], optional
+            If the coil position is supposed to be optimized as well, these ranges in the format
+            [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
+            and the updated affine coil transformation is returned, by default None
 
         Returns
         -------
-        tuple[float, float]
-            The initial mean distance to the surface and the mean distance after optimization
+        tuple[float, float, npt.NDArray[np.float_]]
+            The initial mean distance to the surface, the mean distance after optimization
+            and the affine matrix. If coil_translation_ranges is None than its the input affine,
+            otherwise it is the optimized affine.
 
         Raises
         ------
@@ -758,8 +1177,7 @@ class TmsCoil(TcdElement):
         ValueError
             If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
         """
-        coil_deformations = self.deformations
-        if len(coil_deformations) == 0:
+        if len(self.deformations) == 0:
             raise ValueError(
                 "The coil has no deformations to optimize the coil element positions with."
             )
@@ -769,8 +1187,29 @@ class TmsCoil(TcdElement):
                 "The coil has no coil casing or min_distance/intersection points."
             )
 
+        if coil_translation_ranges is not None:
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1]), 0
+                )
+            )
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1]), 1
+                )
+            )
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1]), 2
+                )
+            )
+            for coil_element in self.elements:
+                coil_element.deformations.append(self.deformations[-3])
+                coil_element.deformations.append(self.deformations[-2])
+                coil_element.deformations.append(self.deformations[-1])
+
         cost_surface_tree = optimization_surface.get_AABBTree()
-        deformation_ranges = np.array([deform.range for deform in coil_deformations])
+        deformation_ranges = np.array([deform.range for deform in self.deformations])
 
         intersecting, min_found_distance = self._get_current_deformation_scores(
             cost_surface_tree, affine
@@ -783,12 +1222,12 @@ class TmsCoil(TcdElement):
             self._get_current_deformation_scores(cost_surface_tree, affine)[1]
         )
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in coil_deformations]
+            [coil_deformation.current for coil_deformation in self.deformations]
         )
         best_deformation_settings = np.copy(initial_deformation_settings)
 
         def cost_f_x0(x, x0):
-            for coil_deformation, deformation_setting in zip(coil_deformations, x0 + x):
+            for coil_deformation, deformation_setting in zip(self.deformations, x0 + x):
                 coil_deformation.current = deformation_setting
             intersecting, distance = self._get_current_deformation_scores(
                 cost_surface_tree, affine
@@ -844,10 +1283,23 @@ class TmsCoil(TcdElement):
             )
 
         for coil_deformation, deformation_setting in zip(
-            coil_deformations, best_deformation_settings
+            self.deformations, best_deformation_settings
         ):
             coil_deformation.current = deformation_setting
-        return initial_abs_mean_dist, min_found_distance
+
+        result_affine = affine.astype(float)
+
+        if coil_translation_ranges is not None:
+            z_translation = self.deformations.pop()
+            y_translation = self.deformations.pop()
+            x_translation = self.deformations.pop()
+            for coil_element in self.elements:
+                coil_element.deformations = coil_element.deformations[:-3]
+            result_affine[0, 3] += x_translation.current
+            result_affine[1, 3] += y_translation.current
+            result_affine[2, 3] += z_translation.current
+
+        return initial_abs_mean_dist, min_found_distance, result_affine
 
     def _get_current_deformation_scores(
         self, cost_surface_tree, affine: npt.NDArray[np.float_]

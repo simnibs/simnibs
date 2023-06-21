@@ -26,10 +26,8 @@ class TmsCoilElements(ABC, TcdElement):
         The casing of the element
     deformations : Optional[list[TmsCoilDeformation]]
         A list of all deformations of the element
-    stimulator : Optional[TmsStimulator]
+    stimulator : TmsStimulator
         The stimulator used for this element
-    weights : Optional[npt.NDArray[np.float_]], optional
-        An additional weighting array with one scalar per element, by default None
 
     Attributes
     ----------------------
@@ -39,10 +37,8 @@ class TmsCoilElements(ABC, TcdElement):
         The casing of the element
     deformations : Optional[list[TmsCoilDeformation]]
         A list of all deformations of the element
-    stimulator : Optional[TmsStimulator]
+    stimulator : TmsStimulator
         The stimulator used for this element
-    weights : Optional[npt.NDArray[np.float_]], optional
-        An additional weighting array with one scalar per element, by default None
     """
 
     def __init__(
@@ -50,14 +46,12 @@ class TmsCoilElements(ABC, TcdElement):
         name: Optional[str],
         casing: Optional[TmsCoilModel],
         deformations: Optional[list[TmsCoilDeformation]],
-        stimulator: Optional[TmsStimulator],
-        weights: Optional[npt.NDArray[np.float_]] = None,
+        stimulator: TmsStimulator
     ):
         self.name = name
         self.casing = casing
         self.deformations = deformations if deformations is not None else []
         self.stimulator = stimulator
-        self.weights = weights if weights is not None else np.array([])
 
     @abstractmethod
     def get_a_field(
@@ -65,6 +59,7 @@ class TmsCoilElements(ABC, TcdElement):
         target_positions: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
+        apply_deformation: bool = True
     ) -> npt.NDArray[np.float_]:
         """Calculates the A field applied by the coil element at each target position.
 
@@ -76,6 +71,8 @@ class TmsCoilElements(ABC, TcdElement):
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+                    Whether or not to apply the current coil element deformations, by default True
 
         Returns
         -------
@@ -88,7 +85,6 @@ class TmsCoilElements(ABC, TcdElement):
         self,
         target_positions: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
-        di_dt: float,
         eps: float = 1e-3,
     ) -> npt.NDArray[np.float_]:
         """Calculate the dA/dt field applied by the coil element at each target point
@@ -96,25 +92,24 @@ class TmsCoilElements(ABC, TcdElement):
         Parameters
         ----------
         target_positions : npt.NDArray[np.float_]
-            The target positions at which the dA/dt field should be calculated
+            The target positions in mm at which the dA/dt field should be calculated
         coil_affine : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil
-        di_dt : float
-            dI/dt in A/s
         eps : float, optional
             The requested precision, by default 1e-3
 
         Returns
         -------
         npt.NDArray[np.float_]
-            The dA/dt field at every target position
+            The dA/dt field in V/m at every target position
         """
-        return di_dt * self.get_a_field(target_positions, coil_affine, eps)
+        return self.stimulator.di_dt * self.get_a_field(target_positions, coil_affine, eps)
 
     def get_combined_transformation(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
     ) -> npt.NDArray[np.float_]:
-        """Returns the affine matrix that combines the deformations and the input affine matrix into one
+        """Returns the affine matrix that combines the deformations and the input affine matrix into one.
+        The deformations are applied first, in the order they are stored in, the affine matrix is applied last
 
         Parameters
         ----------
@@ -126,12 +121,14 @@ class TmsCoilElements(ABC, TcdElement):
         npt.NDArray[np.float_]
             The affine matrix that combines the deformations and the input affine matrix into one
         """
-        if affine_matrix is None:
-            affine_matrix = np.eye(4)
+        affine_matrix_result = np.eye(4)
         for deformation in self.deformations:
-            affine_matrix = affine_matrix @ deformation.as_matrix()
+            affine_matrix_result = deformation.as_matrix() @ affine_matrix_result
 
-        return affine_matrix
+        if affine_matrix is not None:
+            affine_matrix_result = affine_matrix @ affine_matrix_result
+
+        return affine_matrix_result
 
     def get_casing_coordinates(
         self,
@@ -175,7 +172,7 @@ class TmsCoilElements(ABC, TcdElement):
         include_element_casing: bool = True,
         include_optimization_points: bool = True,
         include_coil_element: bool = True,
-        element_tag: int = 0,
+        element_index: int = 0,
     ) -> Msh:
         """Generates a mesh of the coil element, optionally transformed by the affine matrix, deformed by the element deformation,
         including the element casing, including the min distance and intersection points and including the coil element
@@ -192,8 +189,8 @@ class TmsCoilElements(ABC, TcdElement):
             Whether or not to include the min distance and intersection points, by default True
         include_coil_element : bool, optional
             Whether or not to include the stimulating elements in the mesh, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
+        element_index : int, optional
+            The index of this coil element, by default 0
 
         Returns
         -------
@@ -208,7 +205,7 @@ class TmsCoilElements(ABC, TcdElement):
                         self.get_combined_transformation(affine_matrix),
                         include_element_casing,
                         include_optimization_points,
-                        element_tag,
+                        element_index,
                     )
                 )
             else:
@@ -217,15 +214,16 @@ class TmsCoilElements(ABC, TcdElement):
                         affine_matrix,
                         include_element_casing,
                         include_optimization_points,
-                        element_tag,
+                        element_index,
                     )
                 )
         if include_coil_element:
             element_mesh = element_mesh.join_mesh(
                 self.generate_element_mesh(
-                    affine_matrix, apply_deformation, element_tag
+                    affine_matrix, apply_deformation, element_index
                 )
             )
+
         return element_mesh
 
     @abstractmethod
@@ -233,7 +231,7 @@ class TmsCoilElements(ABC, TcdElement):
         self,
         affine_matrix: npt.NDArray[np.float_],
         apply_deformation: bool = True,
-        element_tag: int = 0,
+        element_index: int = 0,
     ) -> Msh:
         """Generate a visualization of the coil element as a mesh
 
@@ -243,8 +241,8 @@ class TmsCoilElements(ABC, TcdElement):
             The affine transformation that is applied to the coil element
         apply_deformation : bool, optional
             Whether or not to apply the current coil element deformations, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
+        element_index : int, optional
+            The index of this coil element, by default 0
 
         Returns
         -------
@@ -263,7 +261,7 @@ class TmsCoilElements(ABC, TcdElement):
         if self.name is not None:
             tcd_coil_element["name"] = self.name
 
-        if self.stimulator is not None:
+        if self.stimulator is not None and self.stimulator in stimulators:
             tcd_coil_element["stimulator"] = stimulators.index(self.stimulator)
 
         if self.casing is not None:
@@ -273,9 +271,6 @@ class TmsCoilElements(ABC, TcdElement):
             tcd_coil_element["deformations"] = [
                 deformations.index(x) for x in self.deformations
             ]
-
-        if len(self.weights) > 0:
-            tcd_coil_element["weights"] = self.weights.tolist()
 
         return tcd_coil_element
 
@@ -289,7 +284,7 @@ class TmsCoilElements(ABC, TcdElement):
     ):
         name = tcd_coil_element.get("name")
         stimulator = (
-            None
+            TmsStimulator(None, None, None, None)
             if tcd_coil_element.get("stimulator") is None
             else stimulators[tcd_coil_element["stimulator"]]
         )
@@ -303,11 +298,6 @@ class TmsCoilElements(ABC, TcdElement):
             if tcd_coil_element.get("deformations") is None
             else [deformations[i] for i in tcd_coil_element["deformations"]]
         )
-        weights = (
-            None
-            if tcd_coil_element.get("weights") is None
-            else np.array(tcd_coil_element["weights"])
-        )
 
         if tcd_coil_element["type"] == 1:
             points = np.array(tcd_coil_element["points"])
@@ -319,7 +309,6 @@ class TmsCoilElements(ABC, TcdElement):
                 points,
                 values,
                 stimulator,
-                weights,
             )
 
         elif tcd_coil_element["type"] == 2:
@@ -332,19 +321,8 @@ class TmsCoilElements(ABC, TcdElement):
                 points,
                 values,
                 stimulator,
-                weights,
             )
         elif tcd_coil_element["type"] == 3:
-            points = np.array(tcd_coil_element["points"])
-            return LinePointElements(
-                name,
-                element_casing,
-                element_deformations,
-                points,
-                stimulator,
-                weights,
-            )
-        elif tcd_coil_element["type"] == 4:
             data = np.array(tcd_coil_element["data"])
             affine = np.array(tcd_coil_element["affine"])
             return SampledGridPointElements(
@@ -354,14 +332,13 @@ class TmsCoilElements(ABC, TcdElement):
                 data,
                 affine,
                 stimulator,
-                weights,
             )
         else:
             raise ValueError(f"Invalid coil element type: {tcd_coil_element['type']}")
 
 
 class PositionalTmsCoilElements(TmsCoilElements, ABC):
-    """A representation of a positional stimulating element of a TMS coil
+    """A representation of directional stimulating elements of a TMS coil
 
     Parameters
     ----------
@@ -373,10 +350,10 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         A list of all deformations of the element
     points : npt.NDArray[np.float_]
         The positions of the stimulation elements
-    stimulator : Optional[TmsStimulator]
+    values: npt.NDArray[np.float_]
+        The values of the stimulation elements
+    stimulator : TmsStimulator
         The stimulator used for this element
-    weights : Optional[npt.NDArray[np.float_]], optional
-        An additional weighting array with one scalar per element, by default None
     """
 
     def __init__(
@@ -385,11 +362,12 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         casing: Optional[TmsCoilModel],
         deformations: Optional[list[TmsCoilDeformation]],
         points: npt.NDArray[np.float_],
-        stimulator: Optional[TmsStimulator],
-        weights: Optional[npt.NDArray[np.float_]] = None,
+        values: npt.NDArray[np.float_],
+        stimulator: TmsStimulator,
     ):
-        super().__init__(name, casing, deformations, stimulator, weights)
+        super().__init__(name, casing, deformations, stimulator)
         self.points = points
+        self.values = values
 
     def get_points(
         self,
@@ -416,41 +394,6 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         if apply_deformation:
             affine_matrix = self.get_combined_transformation(affine_matrix)
         return self.points @ affine_matrix[:3, :3].T + affine_matrix[None, :3, 3]
-
-
-class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
-    """A representation of a directional stimulating element of a TMS coil
-
-    Parameters
-    ----------
-    name : Optional[str]
-        The name of the element
-    casing : Optional[TmsCoilModel]
-        The casing of the element
-    deformations : Optional[list[TmsCoilDeformation]]
-        A list of all deformations of the element
-    points : npt.NDArray[np.float_]
-        The positions of the stimulation elements
-    values: npt.NDArray[np.float_]
-        The values of the stimulation elements
-    stimulator : Optional[TmsStimulator]
-        The stimulator used for this element
-    weights : Optional[npt.NDArray[np.float_]], optional
-        An additional weighting array with one scalar per element, by default None
-    """
-
-    def __init__(
-        self,
-        name: Optional[str],
-        casing: Optional[TmsCoilModel],
-        deformations: Optional[list[TmsCoilDeformation]],
-        points: npt.NDArray[np.float_],
-        values: npt.NDArray[np.float_],
-        stimulator: Optional[TmsStimulator],
-        weights: Optional[npt.NDArray[np.float_]] = None,
-    ):
-        super().__init__(name, casing, deformations, points, stimulator, weights)
-        self.values = values
 
     def get_values(
         self,
@@ -479,12 +422,13 @@ class DirectionalTmsCoilElements(PositionalTmsCoilElements, ABC):
         return self.values @ affine_matrix[:3, :3].T
 
 
-class DipoleElements(DirectionalTmsCoilElements):
+class DipoleElements(PositionalTmsCoilElements):
     def get_a_field(
         self,
         target_positions: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
+        apply_deformation: bool = True
     ) -> npt.NDArray[np.float_]:
         """Calculates the A field applied by the dipole elements at each target positions.
 
@@ -496,14 +440,16 @@ class DipoleElements(DirectionalTmsCoilElements):
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
 
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
             The A field at every target positions in Tesla*meter
         """
-        dipole_moment = self.get_values(coil_affine)
-        dipole_position_m = self.get_points(coil_affine) * 1e-3
+        dipole_moment = self.get_values(coil_affine, apply_deformation)
+        dipole_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
         target_positions_m = target_positions * 1e-3
         if dipole_moment.shape[0] < 300:
             out = fmm3dpy.l3ddir(
@@ -537,9 +483,9 @@ class DipoleElements(DirectionalTmsCoilElements):
         self,
         affine_matrix: npt.NDArray[np.float_],
         apply_deformation: bool = True,
-        element_tag: int = 0,
+        element_index: int = 0,
     ) -> Msh:
-        """Generates a visualization of the sampled grid point elements visualized as lines as a mesh
+        """Generates a visualization of the dipole elements visualized as points and a vector field as a mesh
 
         Parameters
         ----------
@@ -547,33 +493,24 @@ class DipoleElements(DirectionalTmsCoilElements):
             The affine transformation that is applied to the coil element
         apply_deformation : bool, optional
             Whether or not to apply the current coil element deformations, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
+        element_index : int, optional
+            The index of this coil element, by default 0
 
         Returns
         -------
         Msh
             The generated mesh representing the coil element
         """
+        element_base_tag = TmsCoilElementTag.INDEX_OFFSET * element_index
 
         transformed_points = self.get_points(affine_matrix, apply_deformation)
-        transformed_values = (
-            transformed_points + self.get_values(affine_matrix, apply_deformation) * 1e3
-        )
         point_mesh = Msh(
-            Nodes(np.concatenate((transformed_points, transformed_values))),
-            Elements(
-                lines=np.column_stack(
-                    (
-                        np.arange(len(transformed_points)),
-                        np.arange(len(transformed_points)) + len(transformed_values),
-                    )
-                )
-                + 1
-            ),
+            Nodes(transformed_points),
+            Elements(points=np.arange(len(transformed_points)) + 1),
         )
-        point_mesh.elm.tag1[:] = element_tag + TmsCoilElementTag.DIPOLES
-        point_mesh.elm.tag2[:] = element_tag + TmsCoilElementTag.DIPOLES
+        point_mesh.add_node_field(self.get_values(affine_matrix, apply_deformation), f"{element_index}-dipole_moment")
+        point_mesh.elm.tag1[:] = element_base_tag + TmsCoilElementTag.DIPOLES
+        point_mesh.elm.tag2[:] = element_base_tag + TmsCoilElementTag.DIPOLES
 
         return point_mesh
 
@@ -590,12 +527,46 @@ class DipoleElements(DirectionalTmsCoilElements):
         return tcd_coil_element
 
 
-class LineSegmentElements(DirectionalTmsCoilElements):
+class LineSegmentElements(PositionalTmsCoilElements):
+    """A representation of line segment elements of a TMS coil
+
+    Parameters
+    ----------
+    name : Optional[str]
+        The name of the element
+    casing : Optional[TmsCoilModel]
+        The casing of the element
+    deformations : Optional[list[TmsCoilDeformation]]
+        A list of all deformations of the element
+    points : npt.NDArray[np.float_]
+        The positions of the line segment elements
+    values: Optional[npt.NDArray[np.float_]]
+        The direction and length of the line segment elements, if None, they get calculated from the ordering of the points
+    stimulator : TmsStimulator
+        The stimulator used for this element
+    """
+    def __init__(
+        self,
+        name: Optional[str],
+        casing: Optional[TmsCoilModel],
+        deformations: Optional[list[TmsCoilDeformation]],
+        points: npt.NDArray[np.float_],
+        values: Optional[npt.NDArray[np.float_]],
+        stimulator: TmsStimulator,
+    ):
+        if values is None:
+            values = np.zeros(points.shape)
+            values[:, :-1] = np.diff(points, axis=1)
+            values[:, -1] = points[:, 0] - points[:, -1]
+
+        super().__init__(name, casing, deformations, points, values, stimulator)
+
     def get_a_field(
         self,
         target_positions: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
+        apply_deformation: bool = True
     ) -> npt.NDArray[np.float_]:
         """Calculates the A field applied by the line segment elements at each target positions.
 
@@ -607,14 +578,16 @@ class LineSegmentElements(DirectionalTmsCoilElements):
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
 
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
             The A field at every target positions in Tesla*meter
         """
-        directions_m = self.get_values(coil_affine) * 1e-3
-        segment_position_m = self.get_points(coil_affine) * 1e-3
+        directions_m = self.get_values(coil_affine, apply_deformation) * 1e-3
+        segment_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
         target_positions_m = target_positions * 1e-3
 
         if directions_m.shape[0] >= 300:
@@ -642,7 +615,7 @@ class LineSegmentElements(DirectionalTmsCoilElements):
         self,
         affine_matrix: npt.NDArray[np.float_],
         apply_deformation: bool = True,
-        element_tag: int = 0,
+        element_index: int = 0,
     ) -> Msh:
         """Generates a visualization of the line segment elements visualized as lines as a mesh
 
@@ -652,20 +625,23 @@ class LineSegmentElements(DirectionalTmsCoilElements):
             The affine transformation that is applied to the coil element
         apply_deformation : bool, optional
             Whether or not to apply the current coil element deformations, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
+        element_index : int, optional
+            The index of this coil element, by default 0
 
         Returns
         -------
         Msh
             The generated mesh representing the coil element
         """
+        element_base_tag = TmsCoilElementTag.INDEX_OFFSET * element_index
         transformed_points = self.get_points(affine_matrix, apply_deformation)
-        transformed_values = transformed_points + self.get_values(
+        transformed_values = self.get_values(
             affine_matrix, apply_deformation
         )
+
+        points_and_targets = np.concatenate((transformed_points, transformed_points + transformed_values))
         point_mesh = Msh(
-            Nodes(np.concatenate((transformed_points, transformed_values))),
+            Nodes(points_and_targets),
             Elements(
                 lines=np.column_stack(
                     (
@@ -676,8 +652,14 @@ class LineSegmentElements(DirectionalTmsCoilElements):
                 + 1
             ),
         )
-        point_mesh.elm.tag1[:] = element_tag + TmsCoilElementTag.LINE_ELEMENTS
-        point_mesh.elm.tag2[:] = element_tag + TmsCoilElementTag.LINE_ELEMENTS
+
+
+        segment_direction_field = np.zeros_like(points_and_targets)
+        segment_direction_field[:len(transformed_points)] = transformed_values
+        point_mesh.add_node_field(segment_direction_field, f"{element_index}-line_segment_direction")
+
+        point_mesh.elm.tag1[:] = element_base_tag + TmsCoilElementTag.LINE_ELEMENTS
+        point_mesh.elm.tag2[:] = element_base_tag + TmsCoilElementTag.LINE_ELEMENTS
 
         return point_mesh
 
@@ -693,101 +675,6 @@ class LineSegmentElements(DirectionalTmsCoilElements):
         tcd_coil_element["values"] = self.values.tolist()
         return tcd_coil_element
 
-
-class LinePointElements(PositionalTmsCoilElements):
-    def get_a_field(
-        self,
-        target_positions: npt.NDArray[np.float_],
-        coil_affine: npt.NDArray[np.float_],
-        eps: float = 1e-3,
-    ) -> npt.NDArray[np.float_]:
-        """Calculates the A field applied by the line point elements at each target positions.
-
-        Parameters
-        ----------
-        target_positions : npt.NDArray[np.float_] (N x 3)
-            The points at which the A field should be calculated (in mm)
-        coil_affine : npt.NDArray[np.float_] (4 x 4)
-            The affine transformation that is applied to the coil
-        eps : float, optional
-            The requested precision, by default 1e-3
-
-        Returns
-        -------
-        npt.NDArray[np.float_] (N x 3)
-            The A field at every target positions in Tesla*meter
-        """
-        segment_position_m = self.get_points(coil_affine) * 1e-3
-        target_positions_m = target_positions * 1e-3
-
-        directions_m = np.zeros(segment_position_m.shape)
-        directions_m[:, :-1] = np.diff(segment_position_m, axis=1)
-        directions_m[:, -1] = segment_position_m[:, 0] - segment_position_m[:, -1]
-
-        if directions_m.shape[0] >= 300:
-            A = fmm3dpy.l3ddir(
-                sources=segment_position_m.T,
-                charges=directions_m.T,
-                targets=target_positions_m.T,
-                nd=3,
-                pgt=1,
-            )
-        else:
-            A = fmm3dpy.lfmm3d(
-                sources=segment_position_m.T,
-                charges=directions_m.T,
-                targets=target_positions_m.T,
-                nd=3,
-                eps=eps,
-                pgt=1,
-            )
-        A = 1e-7 * A.pottarg.T
-        return A
-
-    def generate_element_mesh(
-        self,
-        affine_matrix: npt.NDArray[np.float_],
-        apply_deformation: bool = True,
-        element_tag: int = 0,
-    ) -> Msh:
-        """Generates a visualization of the line point elements visualized as nodes as a mesh
-
-        Parameters
-        ----------
-        affine_matrix : npt.NDArray[np.float_]
-            The affine transformation that is applied to the coil element
-        apply_deformation : bool, optional
-            Whether or not to apply the current coil element deformations, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
-
-        Returns
-        -------
-        Msh
-            The generated mesh representing the coil element
-        """
-        transformed_points = self.get_points(affine_matrix, apply_deformation)
-        point_mesh = Msh(
-            Nodes(transformed_points),
-            Elements(points=np.arange(len(transformed_points)) + 1),
-        )
-        point_mesh.elm.tag1[:] = element_tag + TmsCoilElementTag.LINE_POINTS
-        point_mesh.elm.tag2[:] = element_tag + TmsCoilElementTag.LINE_POINTS
-
-        return point_mesh
-
-    def to_tcd(
-        self,
-        stimulators: list[TmsStimulator],
-        coil_models: list[TmsCoilModel],
-        deformations: list[TmsCoilDeformation],
-    ) -> dict:
-        tcd_coil_element = super().to_tcd(stimulators, coil_models, deformations)
-        tcd_coil_element["type"] = 3
-        tcd_coil_element["points"] = self.points.tolist()
-        return tcd_coil_element
-
-
 class SampledGridPointElements(TmsCoilElements):
     def __init__(
         self,
@@ -796,10 +683,9 @@ class SampledGridPointElements(TmsCoilElements):
         deformations: Optional[list[TmsCoilDeformation]],
         data: npt.NDArray[np.float_],
         affine: npt.NDArray[np.float_],
-        stimulator: Optional[TmsStimulator],
-        weights: Optional[npt.NDArray[np.float_]] = None,
+        stimulator: TmsStimulator,
     ):
-        super().__init__(name, casing, deformations, stimulator, weights)
+        super().__init__(name, casing, deformations, stimulator)
         self.data = data
         self.affine = affine
 
@@ -808,6 +694,7 @@ class SampledGridPointElements(TmsCoilElements):
         target_positions: npt.NDArray[np.float_],
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
+        apply_deformation: bool = True
     ) -> npt.NDArray[np.float_]:
         """Calculates the A field interpolated from the sampled grid point elements at each target positions.
 
@@ -819,13 +706,17 @@ class SampledGridPointElements(TmsCoilElements):
             The affine transformation that is applied to the coil
         eps : float, optional
             The requested precision, by default 1e-3
-
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+            
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
             The A field at every target positions in Tesla*meter
         """
-        combined_affine = self.get_combined_transformation(coil_affine)
+        combined_affine = coil_affine
+        if apply_deformation:
+            combined_affine = self.get_combined_transformation(combined_affine)
         iM = np.linalg.pinv(self.affine) @ np.linalg.pinv(combined_affine)
 
         target_voxle_coordinates = (
@@ -846,7 +737,7 @@ class SampledGridPointElements(TmsCoilElements):
         self,
         affine_matrix: npt.NDArray[np.float_],
         apply_deformation: bool = True,
-        element_tag: int = 0,
+        element_index: int = 0,
     ) -> Msh:
         """Generates a visualization of the sampled grid point elements visualized as lines as a mesh
 
@@ -856,14 +747,15 @@ class SampledGridPointElements(TmsCoilElements):
             The affine transformation that is applied to the coil element
         apply_deformation : bool, optional
             Whether or not to apply the current coil element deformations, by default True
-        element_tag : int, optional
-            The base value used as a tag for this coil element, by default 0
+        element_index : int, optional
+            The index of this coil element, by default 0
 
         Returns
         -------
         Msh
             The generated mesh representing the coil element
         """
+        element_base_tag = TmsCoilElementTag.INDEX_OFFSET * element_index
         combined_affine = self.affine
         if apply_deformation:
             combined_affine = self.get_combined_transformation(
@@ -878,24 +770,20 @@ class SampledGridPointElements(TmsCoilElements):
         points = (
             voxel_coordinates @ combined_affine[:3, :3].T + combined_affine[None, :3, 3]
         )
-        targets = points + self.data.reshape(-1, 3)
 
-        print(targets)
+        step_size = 1
+        if len(points) > 100:
+            step_size = max(int(5 / points[0,0] - points[1,0]), 1)
 
         point_mesh = Msh(
-            Nodes(np.concatenate((points, targets))),
-            Elements(
-                lines=np.column_stack(
-                    (
-                        np.arange(len(points)),
-                        np.arange(len(targets)) + len(points),
-                    )
-                )
-                + 1
-            ),
+            Nodes(points),
+            Elements(points=np.arange(len(points)) + 1),
         )
-        point_mesh.elm.tag1[:] = element_tag + TmsCoilElementTag.SAMPLED_GRID_ELEMENTS
-        point_mesh.elm.tag2[:] = element_tag + TmsCoilElementTag.SAMPLED_GRID_ELEMENTS
+
+        point_mesh.add_node_field(self.data.reshape(-1, 3), f"{element_index}-sampled_vector")
+
+        point_mesh.elm.tag1[:] = element_base_tag + TmsCoilElementTag.SAMPLED_GRID_ELEMENTS
+        point_mesh.elm.tag2[:] = element_base_tag + TmsCoilElementTag.SAMPLED_GRID_ELEMENTS
 
         return point_mesh
 
@@ -906,7 +794,7 @@ class SampledGridPointElements(TmsCoilElements):
         deformations: list[TmsCoilDeformation],
     ) -> dict:
         tcd_coil_element = super().to_tcd(stimulators, coil_models, deformations)
-        tcd_coil_element["type"] = 4
+        tcd_coil_element["type"] = 3
         tcd_coil_element["data"] = self.data.tolist()
         tcd_coil_element["affine"] = self.affine.tolist()
         return tcd_coil_element

@@ -38,14 +38,6 @@ class TestFailJsonSchema:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_missing_property, tcd_json_schema)
 
-    def test_missing_property_element_points(
-        self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
-    ):
-        coil_missing_property = deepcopy(full_tcd_coil_dict)
-        coil_missing_property["coilElementList"][2].pop("points")
-        with pytest.raises(jsonschema.ValidationError):
-            jsonschema.validate(coil_missing_property, tcd_json_schema)
-
     def test_missing_property_points_and_values(
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
@@ -59,7 +51,7 @@ class TestFailJsonSchema:
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
         coil_missing_property = deepcopy(full_tcd_coil_dict)
-        coil_missing_property["coilElementList"][3].pop("data")
+        coil_missing_property["coilElementList"][2].pop("data")
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_missing_property, tcd_json_schema)
 
@@ -67,15 +59,18 @@ class TestFailJsonSchema:
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
         coil_missing_property = deepcopy(full_tcd_coil_dict)
-        coil_missing_property["coilElementList"][3].pop("affine")
+        coil_missing_property["coilElementList"][2].pop("affine")
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_missing_property, tcd_json_schema)
 
-    def test_missing_property_maxdIdt(
+    def test_missing_property_from_stimulator(
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
         coil_missing_property = deepcopy(full_tcd_coil_dict)
         coil_missing_property["stimulatorList"][0].pop("maxdIdt")
+        coil_missing_property["stimulatorList"][0].pop("name")
+        coil_missing_property["stimulatorList"][0].pop("brand")
+        coil_missing_property["stimulatorList"][0].pop("waveformList")
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_missing_property, tcd_json_schema)
 

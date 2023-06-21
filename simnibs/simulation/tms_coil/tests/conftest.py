@@ -13,7 +13,6 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
 )
 from simnibs.simulation.tms_coil.tms_coil_element import (
     DipoleElements,
-    LinePointElements,
     LineSegmentElements,
     SampledGridPointElements,
 )
@@ -32,7 +31,7 @@ def sphere3_msh():
 
 @pytest.fixture(scope="module")
 def minimal_tcd_coil_dict() -> dict[str, Any]:
-    coil_dict = {"coilElementList": [{"type": 3, "points": [[1, 2, 3]]}]}
+    coil_dict = {"coilElementList": [{"stimulator":0, "type": 1, "points": [[1, 2, 3]], "values":[[4,5,6]]}], "stimulatorList": [{"name": "SimNIBS-Stimulator"}]}
     return coil_dict
 
 
@@ -45,7 +44,7 @@ def minimal_tcd_coil() -> TmsCoil:
         None,
         None,
         None,
-        [LinePointElements(None, None, None, np.array([[1, 2, 3]]), None, None)],
+        [DipoleElements(None, None, None, np.array([[1, 2, 3]]), np.array([[4, 5, 6]]), TmsStimulator("SimNIBS-Stimulator", None, None, None))],
     )
     return coil
 
@@ -55,20 +54,22 @@ def medium_tcd_coil_dict() -> dict[str, Any]:
     coil_dict = {
         "coilElementList": [
             {
+                "stimulator": 0,
                 "deformations": [0, 1, 2, 3],
                 "type": 1,
                 "points": [[1, 2, 3]],
                 "values": [[0, 1, 2]],
             },
             {
+                "stimulator": 0,
                 "elementCasing": 0,
                 "type": 2,
                 "points": [[1, 2, 3]],
                 "values": [[0, 1, 2]],
             },
-            {"stimulator": 0, "type": 3, "points": [[1, 2, 3]]},
             {
-                "type": 4,
+                "stimulator": 0,
+                "type": 3,
                 "data": [[[[1, 2, 3]]]],
                 "affine": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
             },
@@ -133,8 +134,7 @@ def medium_tcd_coil() -> TmsCoil:
                 [deformations[0], deformations[1], deformations[2], deformations[3]],
                 np.array([[1, 2, 3]]),
                 np.array([[0, 1, 2]]),
-                None,
-                None,
+                stimulator,
             ),
             LineSegmentElements(
                 None,
@@ -142,11 +142,7 @@ def medium_tcd_coil() -> TmsCoil:
                 None,
                 np.array([[1, 2, 3]]),
                 np.array([[0, 1, 2]]),
-                None,
-                None,
-            ),
-            LinePointElements(
-                None, None, None, np.array([[1, 2, 3]]), stimulator, None
+                stimulator,
             ),
             SampledGridPointElements(
                 None,
@@ -154,8 +150,7 @@ def medium_tcd_coil() -> TmsCoil:
                 None,
                 np.array([[[[1, 2, 3]]]]),
                 np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]),
-                None,
-                None,
+                stimulator,
             ),
         ],
     )
@@ -177,7 +172,6 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "stimulator": 0,
                 "elementCasing": 1,
                 "deformations": [0],
-                "weights": [1],
                 "type": 1,
                 "points": [[1.1, 2.1, 3.1]],
                 "values": [[100.1, 101.1, 102.1]],
@@ -187,27 +181,16 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "stimulator": 0,
                 "elementCasing": 2,
                 "deformations": [0, 1],
-                "weights": [1],
                 "type": 2,
                 "points": [[1.2, 2.2, 3.2]],
                 "values": [[100.2, 101.2, 102.2]],
             },
             {
-                "name": "Line Point Elements",
-                "stimulator": 0,
-                "elementCasing": 3,
-                "deformations": [2],
-                "weights": [1],
-                "type": 3,
-                "points": [[1.3, 2.3, 3.3]],
-            },
-            {
                 "name": "Digitized Grid Elements",
                 "stimulator": 0,
-                "elementCasing": 4,
-                "deformations": [3],
-                "weights": [1],
-                "type": 4,
+                "elementCasing": 3,
+                "deformations": [2, 3],
+                "type": 3,
                 "data": [[[[1.4, 2.4, 3.4]]]],
                 "affine": [[1.0, 0.0, 0.0, 1.4], [0.0, 1.0, 0.0, 1.4], [0.0, 0.0, 1.0, 1.4], [0.0, 0.0, 0.0, 1.0]],
             },
@@ -264,12 +247,6 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "minDistancePoints": [[-9, -10, -11]],
                 "intersectPoints": [[4, 4, 4]],
             },
-            {
-                "points": [[37, 38, 39], [40, 41, 42], [43, 44, 45]],
-                "faces": [[0, 1, 2]],
-                "minDistancePoints": [[-12, -13, -14]],
-                "intersectPoints": [[5, 5, 5]],
-            },
         ],
     }
     return coil_dict
@@ -309,15 +286,7 @@ def full_tcd_coil() -> TmsCoil:
             ),
             np.array([[-9, -10, -11]]),
             np.array([[4, 4, 4]]),
-        ),
-        TmsCoilModel(
-            Msh(
-                Nodes(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) + 36),
-                Elements(triangles=np.array([[0, 1, 2]]) + 1),
-            ),
-            np.array([[-12, -13, -14]]),
-            np.array([[5, 5, 5]]),
-        ),
+        )
     ]
     deformations = [
         TmsCoilTranslation(-25, (-100, -50), 0),
@@ -350,7 +319,6 @@ def full_tcd_coil() -> TmsCoil:
                 np.array([[1.1, 2.1, 3.1]]),
                 np.array([[100.1, 101.1, 102.1]]),
                 stimulator,
-                np.array([1]),
             ),
             LineSegmentElements(
                 "Line Elements",
@@ -359,24 +327,14 @@ def full_tcd_coil() -> TmsCoil:
                 np.array([[1.2, 2.2, 3.2]]),
                 np.array([[100.2, 101.2, 102.2]]),
                 stimulator,
-                np.array([1]),
-            ),
-            LinePointElements(
-                "Line Point Elements",
-                coil_casings[3],
-                [deformations[2]],
-                np.array([[1.3, 2.3, 3.3]]),
-                stimulator,
-                np.array([1]),
             ),
             SampledGridPointElements(
                 "Digitized Grid Elements",
-                coil_casings[4],
-                [deformations[3]],
+                coil_casings[3],
+                [deformations[2], deformations[3]],
                 np.array([[[[1.4, 2.4, 3.4]]]]),
                 np.array([[1, 0, 0, 1.4], [0, 1, 0, 1.4], [0, 0, 1, 1.4], [0, 0, 0, 1]]),
                 stimulator,
-                np.array([1]),
             ),
         ],
     )

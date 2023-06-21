@@ -70,7 +70,7 @@ class TmsStimulator:
         The name of the stimulator
     brand : Optional[str]
         the brand of the stimulator
-    max_di_dt : float
+    max_di_dt :  Optional[float]
         Maximum dI/dt values for the stimulator
     waveforms : Optional[list[TmsWaveform]]
         A list of waveforms that can be generated with this stimulator
@@ -81,16 +81,18 @@ class TmsStimulator:
         The name of the stimulator
     brand : Optional[str]
         the brand of the stimulator
-    max_di_dt : float
-        Maximum dI/dt values for the stimulator
-    waveforms : Optional[list[TmsWaveform]]
+    max_di_dt :  Optional[float]
+        Maximum dI/dt value in A/s for the stimulator
+    waveforms : list[TmsWaveform]
         A list of waveforms that can be generated with this stimulator
+    di_dt : float
+        The current dI/dt setting in A/s of this stimulator, used for the A field calculation of connected coil elements
     """
     def __init__(
         self,
         name: Optional[str],
         brand: Optional[str],
-        max_di_dt: float,
+        max_di_dt: Optional[float],
         waveforms: Optional[list[TmsWaveform]],
     ):
         self.name = name
@@ -99,13 +101,32 @@ class TmsStimulator:
         self.max_di_dt = max_di_dt
         self.waveforms = waveforms if waveforms is not None else []
 
+        if self.max_di_dt is not None and 1.0 > self.max_di_dt:
+            self._di_dt = self.max_di_dt
+        else:
+            self._di_dt = 1.0
+
+    @property
+    def di_dt(self) -> float:
+        return self._di_dt
+
+    @di_dt.setter
+    def di_dt(self, value):
+        if self.max_di_dt is not None and (self.di_dt < -self.max_di_dt or self.di_dt > self.max_di_dt):
+            raise ValueError(
+                f"dIdt must be within the range ({-self.max_di_dt}, {self.max_di_dt})"
+            )
+        else:
+            self._di_dt = value
+
     def to_tcd(self) -> dict:
         tcd_stimulator = {}
         if self.name is not None:
             tcd_stimulator["name"] = self.name
         if self.brand is not None:
             tcd_stimulator["brand"] = self.brand
-        tcd_stimulator["maxdIdt"] = self.max_di_dt
+        if self.max_di_dt is not None:
+            tcd_stimulator["maxdIdt"] = self.max_di_dt
         if self.waveforms is not None and len(self.waveforms) > 0:
             tcd_waveforms = []
             for waveform in self.waveforms:
@@ -117,7 +138,7 @@ class TmsStimulator:
     def from_tcd(cls, tcd_element: dict):
         name = tcd_element.get("name")
         brand = tcd_element.get("brand")
-        max_di_dt = tcd_element["maxdIdt"]
+        max_di_dt = tcd_element.get("maxdIdt")
         waveforms = []
         for waveform in tcd_element.get("waveformList", []):
             waveforms.append(TmsWaveform.from_tcd(waveform))

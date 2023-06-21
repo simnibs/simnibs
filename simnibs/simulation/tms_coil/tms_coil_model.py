@@ -51,7 +51,7 @@ class TmsCoilModel(TcdElement):
         affine_matrix: npt.NDArray[np.float_],
         include_casing: bool = True,
         include_optimization_points: bool = True,
-        model_tag: int = 0,
+        model_index: int = 0,
     ) -> Msh:
         """Returns the casing as a mesh, optionally including the min distance points and the intersection points
 
@@ -63,8 +63,8 @@ class TmsCoilModel(TcdElement):
             Whether or not to include the casing mesh, by default True
         include_optimization_points : bool, optional
             Whether or not to include the min distance and intersection points, by default True
-        model_tag : int, optional
-            The base value used as a tag for this coil model, by default 0
+        model_index : int, optional
+            The index of this coil model, by default 0
 
         Returns
         -------
@@ -72,12 +72,13 @@ class TmsCoilModel(TcdElement):
             The coil casing as a mesh
         """
         mesh = Msh()
+        model_base_tag = model_index * TmsCoilElementTag.INDEX_OFFSET
 
         if include_casing:
             transformed_mesh = deepcopy(self.mesh)
             transformed_mesh.nodes.node_coord = self.get_points(affine_matrix)
-            transformed_mesh.elm.tag1[:] = model_tag + TmsCoilElementTag.COIL_CASING
-            transformed_mesh.elm.tag2[:] = model_tag + TmsCoilElementTag.COIL_CASING
+            transformed_mesh.elm.tag1[:] = model_base_tag + TmsCoilElementTag.COIL_CASING
+            transformed_mesh.elm.tag2[:] = model_base_tag + TmsCoilElementTag.COIL_CASING
             mesh = mesh.join_mesh(transformed_mesh)
 
         if not include_optimization_points:
@@ -92,10 +93,10 @@ class TmsCoilModel(TcdElement):
                 Elements(points=np.arange(len(transformed_min_distance_points)) + 1),
             )
             point_mesh.elm.tag1[:] = (
-                model_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
+                model_base_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
             )
             point_mesh.elm.tag2[:] = (
-                model_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
+                model_base_tag + TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
             )
             mesh = mesh.join_mesh(point_mesh)
         if len(self.intersect_points) > 0:
@@ -105,10 +106,10 @@ class TmsCoilModel(TcdElement):
                 Elements(points=np.arange(len(transformed_intersect_points)) + 1),
             )
             point_mesh.elm.tag1[:] = (
-                model_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
+                model_base_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
             )
             point_mesh.elm.tag2[:] = (
-                model_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
+                model_base_tag + TmsCoilElementTag.COIL_CASING_INTERSECT_POINTS
             )
             mesh = mesh.join_mesh(point_mesh)
         return mesh
@@ -183,6 +184,27 @@ class TmsCoilModel(TcdElement):
         return (
             self.intersect_points @ affine_matrix[:3, :3].T + affine_matrix[None, :3, 3]
         )
+    
+    def merge(self, other_coil_model: "TmsCoilModel") -> "TmsCoilModel":
+        """Merges two coil models into one and returning the combination as a new coil model
+
+        Parameters
+        ----------
+        other_coil_model : TmsCoilModel
+            The coil model that is supposed to be merged with this coil model
+
+        Returns
+        -------
+        TmsCoilModel
+            The combined coil model
+        """
+        merged_coil_model = deepcopy(self)
+        merged_coil_model.mesh = merged_coil_model.mesh.join_mesh(other_coil_model.mesh)
+        merged_coil_model.min_distance_points = np.concatenate((merged_coil_model.min_distance_points, other_coil_model.min_distance_points), axis=0)
+        merged_coil_model.intersect_points = np.concatenate((merged_coil_model.intersect_points, other_coil_model.intersect_points), axis=0)
+
+        return merged_coil_model
+
 
     def to_tcd(self) -> dict:
         tcd_coil_model = {}
