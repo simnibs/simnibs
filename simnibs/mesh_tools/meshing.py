@@ -1,5 +1,6 @@
 import os
 import tempfile
+import logging
 import numpy as np
 import scipy.sparse
 import scipy.ndimage
@@ -9,6 +10,8 @@ from simnibs.utils.mesh_element_properties import ElementTags
 
 from . import mesh_io
 from . import cgal
+from ..utils import file_finder
+from ..utils.spawn_process import spawn_process
 from ..utils.simnibs_logger import logger, format_time
 from ..segmentation.brain_surface import dilate, erosion
 from ..segmentation._thickness import _calc_thickness
@@ -1510,20 +1513,21 @@ def create_mesh(label_img, affine,
 
     # Improve mesh quality
     logger.info('Improving Mesh Quality')
-    fn_msh_tmp = tempfile.TemporaryFile()
+    fn_msh_tmp = tempfile.NamedTemporaryFile().name + ".msh"
     fn_msh_tmp_improved = os.path.splitext(fn_msh_tmp)[0] + "_improved.msh"
     m.write_msh(fn_msh_tmp)
 
     # set MMG command
     if mmg_noinsert:
-        cmd = f"mmg3d_O3 -v 6 -optim -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
-        # cmd = f"mmg3d_O3 -v 6 -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -optim -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        # cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
     else:
-        cmd = f"mmg3d_O3 -v 6 -optim -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
-        # cmd = f"mmg3d_O3 -v 6 -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -optim -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        # cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
 
     # run MMG to improve mesh
-    os.system(cmd)
+    spawn_process(cmd, lvl=logging.DEBUG)
+    # os.system(cmd)
 
     # convert output of MMG to .msh (binary) format (overwriting original output)
     m = mesh_io.convert_mmg_msh(fn_msh_tmp_improved)
