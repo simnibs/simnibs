@@ -1519,11 +1519,11 @@ def create_mesh(label_img, affine,
 
     # set MMG command
     if mmg_noinsert:
-        cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -optim -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
-        # cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -nosurf -hgrad -1 -rmc -noinsert -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
+               "-in", fn_msh_tmp, "-out", fn_msh_tmp_improved]
     else:
-        cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -optim -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
-        # cmd = f"{file_finder.path2bin('mmg3d_O3')} -v 6 -nosurf -hgrad -1 -rmc -in {fn_msh_tmp} -out {fn_msh_tmp_improved}"
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
+               "-in", fn_msh_tmp, "-out", fn_msh_tmp_improved]
 
     # run MMG to improve mesh
     spawn_process(cmd, lvl=logging.DEBUG)
