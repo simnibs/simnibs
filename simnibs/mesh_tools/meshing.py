@@ -2,6 +2,7 @@ import os
 import tempfile
 import logging
 import numpy as np
+import nibabel as nib
 import scipy.sparse
 import scipy.ndimage
 import time
@@ -1261,6 +1262,167 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
     return m
 
 
+def _remove_spikes(m, label_img, affine, label_GM = 2, label_CSF = 3):
+    """
+    wrapper function around the three spike removal steps
+
+    Parameters
+    ----------
+    m : simnibs.Msh
+        mesh from cgal, has to be without surfaces!
+    label_img: 3D np.ndarray in uint8 format
+        Labeled image from segmentation
+    affine: 4x4 np.ndarray
+        Affine transformation from voxel coordinates to world coordinates
+    label_GM : int, optional
+        label for GM volume. The default is 2.
+    label_CSF : int, optional
+        label for CSF volume. The default is 3.
+
+    Returns
+    -------
+    msh: simnibs.Msh
+        Mesh structure
+
+    """
+    logger.info('Removing Spikes')
+    logger.info(' Step 1: Update tags from label image')
+    faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
+    tag_buff = m.elm.tag1.copy()
+    m = update_tag_from_label_img(m, adj_tets, label_img, affine, 
+                                  label_GM = label_GM, label_CSF = label_CSF)
+    
+    logger.info(' Step 2: Update tags from tet neighbors')
+    m = update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets)
+    
+    logger.info(' Step 3: Resolve remaining localized spikes ')
+    m = update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = True)
+            
+    logger.info('Done Removing Spikes: Total number of relabled tets: ' +
+                str(np.sum(m.elm.tag1[:len(tag_buff)] != tag_buff)) +
+                '; Number of split tets: ' + str(len(m.elm.tag1) - len(tag_buff)))
+    
+    # remove "air" tetrahedra with label -1 and corresponding nodes
+    idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
+    m = m.crop_mesh(elements = idx_keep)
+    
+    return m
+
+
+def _fix_labels(m):
+    ''' Assign the right labels to the mesh as CGAL modifies them '''
+    indices_seg, label_counts = np.unique(label_img,return_counts=True)
+    indices_seg = indices_seg[1:]
+    label_counts = label_counts[1:]
+    indices_cgal = np.unique(m.elm.tag1)
+    n_dropped = len(indices_seg)-len(indices_cgal)
+    if n_dropped:    
+        idx_keep = np.argsort(label_counts)[::-1]
+        idx_keep = idx_keep[:-n_dropped]
+        indices_seg = np.sort(indices_seg[idx_keep])
+        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
+    new_tags = np.copy(m.elm.tag1)
+    for i, t in enumerate(indices_seg):
+        new_tags[m.elm.tag1 == i+1] = t
+    m.elm.tag1 = new_tags
+    m.elm.tag2 = new_tags.copy()
+    return m
+
+
+def _relabel_microtets(m, el_max = 0.0001):
+    """ CGAL can create spurious groups of microscopic tetrahedra
+    at region boundaries. In order to get mmg to fix them, they are
+    relabled to the most common tag in each group. By that, the 
+    boundary is moved away and mmg will resolve them even
+    when -nosurf is set.
+    
+    Parameters
+    ----------
+    m : simnibs.Msh
+        Mesh structure.
+    el_max : float, optional
+        maximal edge length. Tetrahedra will be relabeled
+        when all edges are shorter than el_max. 
+        The default is 0.0001.
+
+    Returns
+    -------
+    m : simnibs.Msh
+        Mesh structure.
+
+    """
+    M = m.nodes[m.elm[:]]
+    E = np.array([
+        M[:, 0] - M[:, 1],
+        M[:, 0] - M[:, 2],
+        M[:, 0] - M[:, 3],
+        M[:, 1] - M[:, 2],
+        M[:, 1] - M[:, 3],
+        M[:, 2] - M[:, 3]])
+    E = np.swapaxes(E, 0, 1)
+    # max Edge length
+    Smax = np.max(np.linalg.norm(E, axis=2), axis=1)
+
+    idx=np.argwhere(Smax<el_max).flatten()
+    idx_c = m.elm.connected_components(idx+1)
+    for i in idx_c:
+        logger.debug(f"Relabeling group of {len(i)} micro-tets")
+        m.elm.tag1[i-1] = np.argmax(np.bincount(m.elm.tag1[i-1]))
+    m.elm.tag2[:] = m.elm.tag1
+    return m
+
+
+def _run_mmg(m,mmg_noinsert = True):
+    """
+    wrapper around mmg command line call to improve mesh quality
+
+    Parameters
+    ----------
+    m : simnibs.Msh
+        Mesh structure.
+    mmg_noinsert : bool, optional
+        set -noinsert flag to prevent mmg from adding nodes. The default is True.
+
+    Returns
+    -------
+    m : simnibs.Msh
+        Mesh structure.
+
+    """
+    logger.info('Improving Mesh Quality')
+    fn_tmp_in = tempfile.NamedTemporaryFile().name + ".msh"
+    fn_tmp_out = tempfile.NamedTemporaryFile().name + ".msh"
+    mesh_io.write_msh(m,fn_tmp_in)
+    del m
+    
+    # set MMG command
+    if mmg_noinsert:
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
+               "-in", fn_tmp_in, "-out", fn_tmp_out]
+    else:
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
+               "-in", fn_tmp_in, "-out", fn_tmp_out]
+        
+    # run MMG to improve mesh
+    spawn_process(cmd, lvl=logging.DEBUG)
+
+    # read mesh written by MMG (msh in ascii format)
+    m = mesh_io.read_msh(fn_tmp_out, skip_data=True)
+    
+    # remove tmp-files
+    try:
+        os.remove(fn_tmp_in)
+    except:
+        logger.warning(f'Could not delete {fn_tmp_in}')
+        
+    try:
+        os.remove(fn_tmp_out)
+    except:
+        logger.warning(f'Could not delete {fn_tmp_out}')
+        
+    return m
+    
+
 def create_mesh(label_img, affine,
                 elem_sizes={"standard": {"range": [1, 5], "slope": 1.0}},
                 smooth_size_field = 2,
@@ -1268,7 +1430,7 @@ def create_mesh(label_img, affine,
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
                 hierarchy=None, smooth_steps=5, skin_care=20, 
-                sizing_field=None, DEBUG_FN=None, mmg_noinsert=False):
+                sizing_field=None, mmg_noinsert=False, debug=False):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1413,11 +1575,18 @@ def create_mesh(label_img, affine,
         assert sizing_field.shape == label_img.shape
         size_field[sizing_field>0] = sizing_field[sizing_field>0]
     
+    if debug:
+        tmp_nii = nib.Nifti1Image(size_field, affine)
+        nib.save(tmp_nii, 'size_field.nii.gz')
+        tmp_nii = nib.Nifti1Image(distance_field, affine)
+        nib.save(tmp_nii, 'distance_field.nii.gz')
+        del tmp_nii
+    
     # Run meshing
     logger.info('Meshing')
-    logger.info(f'================================')
-    logger.info(f'USING cell_radius_edge_ratio=2.1')
-    logger.info(f'================================')
+    logger.info('================================')
+    logger.info('USING cell_radius_edge_ratio=2.1')
+    logger.info('================================')
     start = time.time()
     m = image2mesh(
         label_img,
@@ -1435,74 +1604,33 @@ def create_mesh(label_img, affine,
         format_time(time.time()-start)
     )
     
-    # Separate out tetrahedron (will reconstruct triangles later)
+    # separate out tetrahedron (will reconstruct surfaces later)
     start = time.time()
     m = m.crop_mesh(elm_type=4)
-    # Assign the right labels to the mesh as CGAL modifies them
-    indices_seg, label_counts = np.unique(label_img,return_counts=True)
-    indices_seg = indices_seg[1:]
-    label_counts = label_counts[1:]
-    indices_cgal = np.unique(m.elm.tag1)
-    n_dropped = len(indices_seg)-len(indices_cgal)
-    if n_dropped:    
-        idx_keep = np.argsort(label_counts)[::-1]
-        idx_keep = idx_keep[:-n_dropped]
-        indices_seg = np.sort(indices_seg[idx_keep])
-        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
-    new_tags = np.copy(m.elm.tag1)
-    for i, t in enumerate(indices_seg):
-        new_tags[m.elm.tag1 == i+1] = t
-    m.elm.tag1 = new_tags
-    m.elm.tag2 = new_tags.copy()
     
-    if DEBUG_FN is not None:
-        mesh_io.write_msh(m, DEBUG_FN)
+    # assign the right labels to the mesh as CGAL modifies them
+    m = _fix_labels(m)
     
-    # Preparation for despiking and surface reconstruction
-    faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
+    # relabel groups of microscopic tets to a common tag, so that mmg fixes them
+    m = _relabel_microtets(m)
     
-    # Remove spikes from mesh
-    do_splits = True # allow for splitting tets to resolve some spikes (needs additional time)
+    if debug:
+        mesh_io.write_msh(m, 'before_despike.msh')
+        
+    # remove spikes from mesh
     if remove_spikes:
-        logger.info('Removing Spikes')
-        logger.info(' Step 1: Update tags from label image')
-        tag_buff = m.elm.tag1.copy()
-        m = update_tag_from_label_img(m, adj_tets, label_img, affine, 
-                                      label_GM = 2, label_CSF = 3)
-        
-        logger.info(' Step 2: Update tags from tet neighbors')
-        m = update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets)
-        
-        logger.info(' Step 3: Resolve remaining localized spikes ')
-        m = update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = do_splits)
-                
-        logger.info('Done Removing Spikes: Total number of relabled tets: ' +
-                    str(np.sum(m.elm.tag1[:len(tag_buff)] != tag_buff)) +
-                    '; Number of split tets: ' + str(len(m.elm.tag1) - len(tag_buff)))
-
-        if do_splits:
-            # remove "air" tetrahedra with label -1 and corresponding nodes
-            idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
-            m = m.crop_mesh(elements = idx_keep)
-            # redo preparation step, as it's needed by the later surface smoothing
-            faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
-        
-    # reconstruct surfaces
-    logger.info('Reconstructing Surfaces')
-    m.fix_th_node_ordering()
-    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag,
-                                 faces = faces, idx_tet_faces = tet_faces,
-                                 adj_tets = adj_tets)
-
-    # remove "air" tetrahedra with label -1 and corresponding nodes
-    idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
-    m = m.crop_mesh(elements = idx_keep)
-
+        m = _remove_spikes(m, label_img, affine, label_GM = 2, label_CSF = 3)
+    
     # keep only largest component
     idx=m.elm.connected_components()
     m = m.crop_mesh(elements=max(idx,key=np.size))
 
-    # Smooth mesh
+    # reconstruct surfaces
+    logger.info('Reconstructing Surfaces')
+    m.fix_th_node_ordering()
+    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag)
+
+    # smooth surfaces
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')
         m.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
@@ -1511,27 +1639,12 @@ def create_mesh(label_img, affine,
         logger.info('Extra Skin Care')
         m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
 
-    # Improve mesh quality
-    logger.info('Improving Mesh Quality')
-    fn_msh_tmp = tempfile.NamedTemporaryFile().name + ".msh"
-    fn_msh_tmp_improved = os.path.splitext(fn_msh_tmp)[0] + "_improved.msh"
-    m.write_msh(fn_msh_tmp)
-
-    # set MMG command
-    if mmg_noinsert:
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
-               "-in", fn_msh_tmp, "-out", fn_msh_tmp_improved]
-    else:
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
-               "-in", fn_msh_tmp, "-out", fn_msh_tmp_improved]
-
-    # run MMG to improve mesh
-    spawn_process(cmd, lvl=logging.DEBUG)
-    # os.system(cmd)
-
-    # convert output of MMG to .msh (binary) format (overwriting original output)
-    m = mesh_io.convert_mmg_msh(fn_msh_tmp_improved)
-
+    if debug:
+        mesh_io.write_msh(m, 'before_mmg.msh')
+        
+    # improve mesh quality using mmg
+    m = _run_mmg(m, mmg_noinsert)
+        
     logger.info(
         'Time to post-process mesh: ' +
         format_time(time.time()-start)

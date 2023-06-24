@@ -495,6 +495,7 @@ def run(
         mmg_noinsert = mesh_settings["mmg_noinsert"]
 
         # Meshing
+        debug=True
         DEBUG_FN = None
         if debug:
             DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
