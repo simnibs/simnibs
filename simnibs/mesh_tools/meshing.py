@@ -1400,8 +1400,11 @@ def _run_mmg(m,mmg_noinsert = True):
         cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
                "-in", fn_tmp_in, "-out", fn_tmp_out]
     else:
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
-               "-in", fn_tmp_in, "-out", fn_tmp_out]
+        # cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
+        #        "-in", fn_tmp_in, "-out", fn_tmp_out]
+    
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", 
+               "-rmc", "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in, "-out", fn_tmp_out]
         
     # run MMG to improve mesh
     spawn_process(cmd, lvl=logging.DEBUG)
