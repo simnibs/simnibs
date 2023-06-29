@@ -513,7 +513,6 @@ def run(
             hierarchy=hierarchy,
             smooth_steps=smooth_steps,
             skin_care=skin_care,
-            DEBUG_FN=DEBUG_FN,
             mmg_noinsert=mmg_noinsert
         )
 
