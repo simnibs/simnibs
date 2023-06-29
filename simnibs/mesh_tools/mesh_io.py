@@ -2653,13 +2653,53 @@ class Msh:
 
         return string
 
+    def add_sizing_field(self, sizing_field, affine=None):
+        """
+        Add sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg.
+        Each node gets a target element size associated, which will be considered by mmg during remeshing.
+        Sizing field can be provided as a filename of a nifti image, the nifti image itself or 3D ndarray with
+        affine. The data will be applied to the nodes of the mesh and written to a NodeData field "sizing_field:metric".
+
+        Parameters
+        ----------
+        sizing_field : str or nifti image or np.ndarray
+            Filename of nifti image or nifti image of sizing field, or 3D numpy array with the same shape as
+            label_img.shape, which will be applied to the nodes.
+        affine : 4x4 ndarray
+            Array describing the affine transformation from the data grid to the mesh space.
+        """
+
+        # read sizing image
+        if type(sizing_field) is str:
+            sizing_image = nibabel.load(sizing_field)
+            sizing_field = sizing_image.get_fdata()
+        # if an image is passed read the sizing field data out of it
+        elif type(sizing_field) is nibabel.nifti1.Nifti1Image:
+            affine = sizing_field.affine
+            sizing_field = sizing_field.get_fdata()
+
+        if affine is None:
+            raise ValueError("Please provide affine for sizing field.")
+
+        # create a NodeData field containiong the sizing field with ":metric" tag for mmg
+        sizing_field_NodeData = NodeData.from_data_grid(mesh=self,
+                                                        data_grid=sizing_field,
+                                                        affine=affine,
+                                                        field_name='sizing_field:metric')
+
+        # ensure positive element sizes
+        sizing_field_NodeData.value = np.abs(sizing_field_NodeData.value)
+
+        # add NodeData with sizing field to mesh
+        self.nodedata.append(sizing_field_NodeData)
+
     def reconstruct_surfaces(self, tags=None):
         ''' Reconstruct the mesh surfaces for each label/connected component individually
         This function acts in-place, and will keep any surfaces already present in the
         mesh
 
         Parameters
-        ------------
+        ----------
         tags: list of ints or None (optional)
             List of tags where we should reconstruct the surface off. Defaut: all volume tags in the
             mesh

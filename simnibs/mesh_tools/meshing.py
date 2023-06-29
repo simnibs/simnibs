@@ -1309,9 +1309,9 @@ def _remove_spikes(m, label_img, affine, label_GM = 2, label_CSF = 3):
     return m
 
 
-def _fix_labels(m):
+def _fix_labels(m, label_img):
     ''' Assign the right labels to the mesh as CGAL modifies them '''
-    indices_seg, label_counts = np.unique(label_img,return_counts=True)
+    indices_seg, label_counts = np.unique(label_img, return_counts=True)
     indices_seg = indices_seg[1:]
     label_counts = label_counts[1:]
     indices_cgal = np.unique(m.elm.tag1)
@@ -1372,9 +1372,9 @@ def _relabel_microtets(m, el_max = 0.0001):
     return m
 
 
-def _run_mmg(m,mmg_noinsert = True):
+def _run_mmg(m, mmg_noinsert=True):
     """
-    wrapper around mmg command line call to improve mesh quality
+    Wrapper around mmg command line call to improve mesh quality.
 
     Parameters
     ----------
@@ -1387,24 +1387,28 @@ def _run_mmg(m,mmg_noinsert = True):
     -------
     m : simnibs.Msh
         Mesh structure.
-
     """
     logger.info('Improving Mesh Quality')
-    fn_tmp_in = tempfile.NamedTemporaryFile().name + ".msh"
+    fn_tmp_in_gmsh = tempfile.NamedTemporaryFile().name + ".msh"
+    fn_tmp_in_medit = tempfile.NamedTemporaryFile().name + ".mesh"
     fn_tmp_out = tempfile.NamedTemporaryFile().name + ".msh"
-    mesh_io.write_msh(m,fn_tmp_in)
+    mesh_io.write_msh(m, fn_tmp_in_gmsh)
     del m
-    
+
+    # set meshio convert command
+    cmd = [file_finder.path2bin("meshio"), "convert", fn_tmp_in_gmsh, fn_tmp_in_medit,
+           "--input-format", "gmsh", "--output-format", "medit"]
+
+    # convert mesh from gmsh (.msh) to medit format (.mesh) for mmg
+    spawn_process(cmd, lvl=logging.DEBUG)
+
     # set MMG command
     if mmg_noinsert:
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
-               "-in", fn_tmp_in, "-out", fn_tmp_out]
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
+               "-in", fn_tmp_in_medit, "-out", fn_tmp_out]
     else:
-        # cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-optim", "-nosurf", "-hgrad", "-1", "-rmc",
-        #        "-in", fn_tmp_in, "-out", fn_tmp_out]
-    
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", 
-               "-rmc", "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in, "-out", fn_tmp_out]
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc",
+               "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in_medit, "-out", fn_tmp_out]
         
     # run MMG to improve mesh
     spawn_process(cmd, lvl=logging.DEBUG)
@@ -1414,10 +1418,15 @@ def _run_mmg(m,mmg_noinsert = True):
     
     # remove tmp-files
     try:
-        os.remove(fn_tmp_in)
+        os.remove(fn_tmp_in_gmsh)
     except:
-        logger.warning(f'Could not delete {fn_tmp_in}')
-        
+        logger.warning(f'Could not delete {fn_tmp_in_gmsh}')
+
+    try:
+        os.remove(fn_tmp_in_medit)
+    except:
+        logger.warning(f'Could not delete {fn_tmp_in_medit}')
+
     try:
         os.remove(fn_tmp_out)
     except:
@@ -1612,7 +1621,7 @@ def create_mesh(label_img, affine,
     m = m.crop_mesh(elm_type=4)
     
     # assign the right labels to the mesh as CGAL modifies them
-    m = _fix_labels(m)
+    m = _fix_labels(m, label_img)
     
     # relabel groups of microscopic tets to a common tag, so that mmg fixes them
     m = _relabel_microtets(m)
@@ -1622,16 +1631,16 @@ def create_mesh(label_img, affine,
         
     # remove spikes from mesh
     if remove_spikes:
-        m = _remove_spikes(m, label_img, affine, label_GM = 2, label_CSF = 3)
+        m = _remove_spikes(m, label_img, affine, label_GM=2, label_CSF=3)
     
     # keep only largest component
-    idx=m.elm.connected_components()
-    m = m.crop_mesh(elements=max(idx,key=np.size))
+    idx = m.elm.connected_components()
+    m = m.crop_mesh(elements=max(idx, key=np.size))
 
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
-    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag)
+    m.reconstruct_unique_surface(hierarchy=hierarchy, add_outer_as=skin_tag)
 
     # smooth surfaces
     if smooth_steps > 0:
@@ -1640,11 +1649,20 @@ def create_mesh(label_img, affine,
 
     if skin_care > 0:
         logger.info('Extra Skin Care')
-        m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
+        m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
 
     if debug:
         mesh_io.write_msh(m, 'before_mmg.msh')
-        
+
+    # sizing fields can theoretically also applied by creating a NodeData field but this is currently not working.
+    # add sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg
+    # m.add_sizing_field(sizing_field=sizing_field, affine=affine)
+
+    create_sizing_field_sol_file(mesh=m,
+                                 sizing_field=sizing_field,
+                                 affine=affine,
+                                 fn_sol=os.path.splitext(m.fn)[0] + ".sol")
+
     # improve mesh quality using mmg
     m = _run_mmg(m, mmg_noinsert)
         
@@ -1654,6 +1672,59 @@ def create_mesh(label_img, affine,
     )
     return m
 
+
+def create_sizing_field_sol_file(mesh, sizing_field, affine, fn_sol=None):
+    """
+
+    Parameters
+    ----------
+    mesh : Msh
+        Head mesh the sizing field is computed for.
+    sizing_field : str or nifti image or np.ndarray
+        Filename of nifti image or nifti image of sizing field, or 3D numpy array with the same shape as
+        label_img.shape, which will be applied to the nodes.
+    affine : 4x4 ndarray
+        Array describing the affine transformation from the data grid to the mesh space.
+    fn_sol : str
+        Filename of .sol file containing the sizing field in the nodes.
+        If nothing is provided, the file will have the same name as the mesh with a .sol extension.
+    """
+    if fn_sol is None:
+        os.path.splitext(mesh.fn)[0] + ".sol"
+
+    # read sizing image
+    if type(sizing_field) is str:
+        sizing_image = nib.load(sizing_field)
+        sizing_field = sizing_image.get_fdata()
+    # if an image is passed read the sizing field data out of it
+    elif type(sizing_field) is nib.nifti1.Nifti1Image:
+        affine = sizing_field.affine
+        sizing_field = sizing_field.get_fdata()
+
+    if affine is None:
+        raise ValueError("Please provide affine for sizing field.")
+
+    # create a NodeData field containiong the sizing field with ":metric" tag for mmg
+    sizing_field_NodeData = mesh_io.NodeData.from_data_grid(mesh=mesh,
+                                                            data_grid=sizing_field,
+                                                            affine=affine,
+                                                            field_name='sizing_field:metric')
+
+    # ensure positive element sizes
+    sizing_field_NodeData.value = np.abs(sizing_field_NodeData.value)
+
+    # write .sol file with sizing field
+    with open(fn_sol, 'w') as f:
+        f.write('MeshVersionFormatted 2\n')
+        f.write('\n')
+        f.write('Dimension 3\n')
+        f.write('\n')
+        f.write('SolAtVertices\n')
+        f.write(f'{len(sizing_field_NodeData.value)}\n')
+        f.write('1 1\n')
+        np.savetxt(f, sizing_field_NodeData.value, newline="\n", fmt='%.6f')
+        f.write('\n')
+        f.write('End')
 
 # def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b, 
 #                    target_label, labels, nodes_label, adj_th, adj_threshold=2,
