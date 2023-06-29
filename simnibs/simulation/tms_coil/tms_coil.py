@@ -10,6 +10,7 @@ import nibabel as nib
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize as opt
+from scipy.spatial import KDTree
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
@@ -24,13 +25,14 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
 from simnibs.simulation.tms_coil.tms_coil_element import (
     DipoleElements,
     LineSegmentElements,
+    PositionalTmsCoilElements,
     SampledGridPointElements,
     TmsCoilElements,
 )
 from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator, TmsWaveform
 from simnibs.utils import file_finder
-
+from simnibs.segmentation.marching_cube import marching_cubes_lewiner
 
 class TmsCoil(TcdElement):
     """A representation of a coil used for TMS
@@ -105,14 +107,22 @@ class TmsCoil(TcdElement):
             or self.limits.shape[1] != 2
         ):
             raise ValueError(
-                f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but shape was {self.limits.shape}"
+                f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but shape was {self.limits.shape} ({self.limits})"
+            )
+        elif self.limits is not None and (self.limits[0,0] >= self.limits[0,1] or self.limits[1,0] >= self.limits[1,1] or self.limits[2,0] >= self.limits[2,1]):
+            raise ValueError(
+                f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but min was greater or equals than max ({self.limits})"
             )
 
         if self.resolution is not None and (
             self.resolution.ndim != 1 or self.resolution.shape[0] != 3
         ):
             raise ValueError(
-                f"Expected 'point_1' to be in the format [rx,ry,rz] but shape was {self.resolution.shape}"
+                f"Expected 'resolution' to be in the format [rx,ry,rz] but shape was {self.resolution.shape} ({self.resolution})"
+            )
+        elif self.resolution is not None and (self.resolution[0] <= 0 or self.resolution[1] <= 0 or self.resolution[2] <= 0):
+            raise ValueError(
+                f"Expected 'resolution' to have values greater than 0 ({self.resolution})"
             )
 
         self.deformations: list[TmsCoilDeformation] = []
@@ -421,7 +431,7 @@ class TmsCoil(TcdElement):
 
         for element in self.elements:
             if element.stimulator is None:
-                raise NotImplementedError()
+                raise ValueError("Every coil element needs to have a stimulator attached!")
             if element.stimulator in stimulators:
                 elements_by_stimulators[element.stimulator].append(element)
                 continue
@@ -1231,6 +1241,51 @@ class TmsCoil(TcdElement):
                 self.casing,
             )
         )
+    
+    def generate_element_casings(self, distance:float, grid_spacing:float, override:bool=False):
+        """Generates coil element casings for all coil elements except sampled elements. 
+        The casing will have the specified distance from the coil element points.
+        If override is true, all element casings will be overridden by the generated ones.
+
+        Parameters
+        ----------
+        distance : float
+            The minimum distance of the casing to the element points
+        grid_spacing : float
+            The spacing of the discretization grid used to generate the casing
+        override : bool, optional
+            Whether or not to override existing coil casings, by default False
+        """
+        for element in self.elements:
+            if isinstance(element, PositionalTmsCoilElements) and (element.casing is None or override):
+                limits = [
+                    [np.min(element.points[:, 0]) - distance - grid_spacing, np.max(element.points[:, 0]) + distance + grid_spacing],
+                    [np.min(element.points[:, 1]) - distance - grid_spacing, np.max(element.points[:, 1]) + distance + grid_spacing],
+                    [np.min(element.points[:, 2]) - distance - grid_spacing, np.max(element.points[:, 2]) + distance + grid_spacing],
+                ]
+
+                grid_x = np.arange(limits[0][0], limits[0][1], grid_spacing)
+                grid_y = np.arange(limits[1][0], limits[1][1], grid_spacing)
+                grid_z =  np.arange(limits[2][0], limits[2][1], grid_spacing)
+                grid_points = np.stack(np.meshgrid(grid_x, grid_y, grid_z, indexing='ij'), axis=-1).reshape(-1, 3)
+
+                volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
+                volume_data.fill(1)
+
+                tree = KDTree(element.points)
+                distances, _ = tree.query(grid_points, k=1)
+                indices = np.argwhere(distances < distance)
+                volume_data[np.unravel_index(indices, volume_data.shape)] = 0
+
+                vertices, faces, _, _ = marching_cubes_lewiner(volume_data, level=0.5,
+                                                            spacing=tuple(np.array(
+                                                                [grid_spacing, grid_spacing, grid_spacing], dtype='float32')),
+                                                            step_size=1, allow_degenerate=False)
+                vertices += [limits[0][0], limits[1][0], limits[2][0]]
+                casing = mesh_io.Msh(mesh_io.Nodes(vertices), mesh_io.Elements(faces + 1))
+                casing.smooth_surfaces(40)
+
+                element.casing = TmsCoilModel(casing)
 
     def optimize_deformations(
         self,

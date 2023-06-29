@@ -833,3 +833,58 @@ class TestPositionOptimization:
         assert not small_functional_3_element_coil._get_current_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
         )[0]
+
+class TestInit:
+    def test_init_zero_element_exception(self):
+        with pytest.raises(ValueError):
+            TmsCoil([])
+
+    def test_empty_limits(self):
+        with pytest.raises(ValueError):
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[])
+
+    def test_to_few_elements_limits(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1], [1], [1]])
+
+    def test_wrong_shape_limits(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1,2], [1,2], [1,2], [1,2]])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1,2,3], [1,2,3], [1,2,3]])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1,2], [1,2], [1,2], [1,2]])
+        
+    def test_to_uneven_elements_limits(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1, 1], [1], [1]])
+
+    def test_to_min_greater_max_limits(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[2, 1], [1, 3], [1, 3]])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1, 2], [3, 1], [1, 3]])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], limits=[[1, 2], [1, 3], [2.11, 2.10]])
+
+    def test_wrong_shape_resolution(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[1,2])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[1,2,3,4])
+
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[[1,2], [3,4]])
+
+    def test_zero_values_resolution(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[0, 0, 0])
+
+    def test_negative_values_resolution(self):
+        with pytest.raises(ValueError): 
+            TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[-1, 2, 3])

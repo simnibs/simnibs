@@ -125,14 +125,14 @@ class TestCombinedTransformation:
     def test_rotation_translation(self, rotation_amount, translation_amount, rot_axis, trans_axis):
         dipoles_rot_trans = DipoleElements(
             None, [[1,2,3]], [[1,2,3]],
-            deformations=[TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis), TmsCoilTranslation(translation_amount, (-200, 200), trans_axis)],
+            deformations=[TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis), TmsCoilTranslation(translation_amount, (-200, 200), trans_axis)],
         )
 
         dipoles_trans_rot = DipoleElements(
             None,
             [[1,2,3]],
             [[1,2,3]],
-            deformations=[TmsCoilTranslation(translation_amount, (-200, 200), trans_axis), TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis)],
+            deformations=[TmsCoilTranslation(translation_amount, (-200, 200), trans_axis), TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis)],
         )
 
         if rot_axis[0] == 1:
@@ -174,7 +174,7 @@ class TestCombinedTransformation:
             None,
             [[1,2,3]],
             [[1,2,3]],
-            deformations=[TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis),
+            deformations=[TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis),
              TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1),
              TmsCoilTranslation(translation_amount2, (-200, 200), trans_axis2)],
         )
@@ -185,7 +185,7 @@ class TestCombinedTransformation:
             [[1,2,3]],
             deformations=[TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1),
              TmsCoilTranslation(translation_amount2, (-200, 200), trans_axis2),
-             TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis)],            
+             TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis)],            
         )
 
         dipoles_trans_rot_trans = DipoleElements(
@@ -193,7 +193,7 @@ class TestCombinedTransformation:
             [[1,2,3]],
             [[1,2,3]],
             deformations=[TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1),
-             TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis),
+             TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis),
              TmsCoilTranslation(translation_amount2, (-200, 200), trans_axis2)],
         )
 
@@ -241,9 +241,9 @@ class TestCombinedTransformation:
             None,
             [[1,2,3]],
             [[1,2,3]],
-            deformations=[TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis),
+            deformations=[TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis),
              TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1),
-             TmsCoilRotation(rotation_amount2, (0, 360), np.array([0, 0, 0]), rot_axis2)],
+             TmsCoilRotation(rotation_amount2, (-5000, 5000), np.array([0, 0, 0]), rot_axis2)],
         )
 
         dipoles_trans_rot_rot = DipoleElements(
@@ -251,16 +251,16 @@ class TestCombinedTransformation:
             [[1,2,3]],
             [[1,2,3]],
             deformations=[TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1),
-             TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis),
-             TmsCoilRotation(rotation_amount2, (0, 360), np.array([0, 0, 0]), rot_axis2)],            
+             TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis),
+             TmsCoilRotation(rotation_amount2, (-5000, 5000), np.array([0, 0, 0]), rot_axis2)],            
         )
 
         dipoles_rot_rot_trans = DipoleElements(
             None,
             [[1,2,3]],
             [[1,2,3]],
-            deformations=[TmsCoilRotation(rotation_amount, (0, 360), np.array([0, 0, 0]), rot_axis),
-             TmsCoilRotation(rotation_amount2, (0, 360), np.array([0, 0, 0]), rot_axis2),
+            deformations=[TmsCoilRotation(rotation_amount, (-5000, 5000), np.array([0, 0, 0]), rot_axis),
+             TmsCoilRotation(rotation_amount2, (-5000, 5000), np.array([0, 0, 0]), rot_axis2),
              TmsCoilTranslation(translation_amount1, (-200, 200), trans_axis1)],
         )
 
@@ -347,7 +347,7 @@ class TestGetMesh:
             None,
             dipole_locations,
             dipole_moments,
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([1, 0, 0]))],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([1, 0, 0]))],
         )
         mesh = dipoles.get_mesh(np.eye(4), True, False, False, True)
 
@@ -376,7 +376,7 @@ class TestGetMesh:
             None,
             dipole_locations,
             dipole_moments,
-            deformations=[TmsCoilTranslation(123, (0, 200), 0)],
+            deformations=[TmsCoilTranslation(123, (-200, 200), 0)],
         )
         mesh = dipoles.get_mesh(np.eye(4), True, False, False, True)
 
@@ -404,7 +404,7 @@ class TestGetMesh:
             None,
             dipole_locations,
             dipole_moments,
-            deformations=[TmsCoilTranslation(123, (0, 200), 0)],
+            deformations=[TmsCoilTranslation(123, (-200, 200), 0)],
         )
         mesh = dipoles.get_mesh(affine, False, False, False, True)
 
@@ -432,7 +432,7 @@ class TestGetMesh:
             None,
             dipole_locations,
             dipole_moments,
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (0, 200), 2)],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (-200, 200), 2)],
         )
         mesh = dipoles.get_mesh(affine, True, False, False, True)
 
@@ -484,7 +484,7 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
-            deformations=[TmsCoilTranslation(45.34, (0, 200), 1)],
+            deformations=[TmsCoilTranslation(45.34, (-200, 200), 1)],
         )
         mesh = line_segment.get_mesh(np.eye(4), True, False, False, True)
 
@@ -505,7 +505,7 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
-            deformations=[TmsCoilRotation(-90, (-180, 360), np.array([0, 0, 0]), np.array([0, 0, 1]))],
+            deformations=[TmsCoilRotation(-90, (-18-5000, 5000), np.array([0, 0, 0]), np.array([0, 0, 1]))],
         )
         mesh = line_segment.get_mesh(np.eye(4), True, False, False, True)
 
@@ -540,7 +540,7 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
-            deformations=[TmsCoilRotation(-90, (-180, 360), np.array([0, 0, 0]), np.array([0, 0, 1]))],
+            deformations=[TmsCoilRotation(-90, (-18-5000, 5000), np.array([0, 0, 0]), np.array([0, 0, 1]))],
         )
         mesh = line_segment.get_mesh(affine, False, False, False, True)
 
@@ -570,7 +570,7 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(22.22, (0, 200), 2)],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(22.22, (-200, 200), 2)],
         )
         mesh = line_segment.get_mesh(affine, True, False, False, True)
 
@@ -631,7 +631,7 @@ class TestGetMesh:
             None,
             data,
             sample_affine,  
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([1, 0, 0]))],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([1, 0, 0]))],
         )
         mesh = sampled_element.get_mesh(np.eye(4), True, False, False, True)
 
@@ -662,7 +662,7 @@ class TestGetMesh:
             None,
             data,
             sample_affine, 
-            deformations=[TmsCoilTranslation(12.21, (0, 200), 0)],
+            deformations=[TmsCoilTranslation(12.21, (-200, 200), 0)],
         )
         mesh = sampled_element.get_mesh(np.eye(4), True, False, False, True)
 
@@ -691,7 +691,7 @@ class TestGetMesh:
             None,
             data,
             sample_affine,
-            deformations=[TmsCoilTranslation(123, (0, 200), 0)], 
+            deformations=[TmsCoilTranslation(123, (-200, 200), 0)], 
         )
         mesh = sampled_element.get_mesh(affine, False, False, False, True)
 
@@ -719,7 +719,7 @@ class TestGetMesh:
             None,
             data,
             affine,
-            deformations=[TmsCoilTranslation(123, (0, 200), 0)],
+            deformations=[TmsCoilTranslation(123, (-200, 200), 0)],
         )
         mesh = sampled_element.get_mesh(np.eye(4), False, False, False, True)
 
@@ -747,7 +747,7 @@ class TestGetMesh:
             None,
             data,
             sample_affine,
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (0, 200), 2)],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (-200, 200), 2)],
         )
         mesh = sampled_element.get_mesh(affine, True, False, False, True)
 
@@ -775,7 +775,7 @@ class TestGetMesh:
             mesh.field[list(mesh.field.keys())[0]].value, transformed_moments, atol=1e-5
         )
 
-    def test_sampled_grid_elements_mesh_deformation_and_affine(self):
+    def test_sampled_grid_elements_mesh_deformation_and_affine_and_affine(self):
         affine = np.array([
             [ 0.25  ,0.5   ,0.25  ,121 ],
             [ 0.25  ,0.5   ,0.25  ,-2 ],
@@ -794,7 +794,7 @@ class TestGetMesh:
             None,
             data,
             sample_affine,
-            deformations=[TmsCoilRotation(90, (0, 360), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (0, 200), 2)],
+            deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(-33.33, (-200, 200), 2)],
         )
         mesh = sampled_element.get_mesh(affine, True, False, False, True)
 

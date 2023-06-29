@@ -71,7 +71,7 @@ def figure_of_8_wire_path(
 
 
 wire_diam = 0.5
-segment_count = 500
+segment_count = 1000
 connection_segment_count = 20
 outer_diam = 10
 inner_diam = 1
@@ -98,5 +98,7 @@ line_element = LineSegmentElements(stimulator, wire_path, name="Spirals")
 tms_coil = TmsCoil(
     [line_element], "Example Coil", "Example Coil Brand", "V1.0", limits, [1, 1, 1]
 )
+
+tms_coil.generate_element_casings(1, 0.1)
 
 tms_coil.write("example_coil.tcd")

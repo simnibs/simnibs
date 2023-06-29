@@ -1,9 +1,63 @@
 import numpy as np
+import pytest
 
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilRotation,
     TmsCoilTranslation,
 )
+
+
+class TestInit:
+    def test_wrong_shape_range(self):
+        with pytest.raises(ValueError): 
+            TmsCoilTranslation(0, [0,2, 3], 0)
+
+        with pytest.raises(ValueError): 
+            TmsCoilTranslation(0, [[0,2, 3]], 0)
+
+    def test_min_greater_max_range(self):
+        with pytest.raises(ValueError): 
+            TmsCoilTranslation(0, [0, -3], 0)
+
+    def test_initial_out_of_range(self):
+        with pytest.raises(ValueError): 
+            TmsCoilTranslation(0, [1, 5], 0)
+
+    def test_axis_out_of_range(self):
+        with pytest.raises(ValueError): 
+            TmsCoilTranslation(3, [1, 5], 4)
+
+    def test_shape_point_1(self):
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [], [3,4,5])
+
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [1,2], [3,4,5])
+
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [1,2,4,4], [3,4,5])
+
+    def test_shape_point_2(self):
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [3,4,5], [])
+
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [1,2,3], [4,5])
+
+        with pytest.raises(ValueError): 
+            TmsCoilRotation(3, [1, 5], [1,2,4], [3,4,5,6])
+
+class TestCurrent:
+    def test_reset(self):
+        trans = TmsCoilTranslation(3, [1, 5], 0)
+        trans.current = 4.5
+        trans.reset()
+        assert trans.current == trans.initial
+
+    def test_current_out_of_range(self):
+        trans = TmsCoilTranslation(3, [1, 5], 0)
+        with pytest.raises(ValueError): 
+            trans.current = 5.1
 
 
 class TestCoilTranslation:
@@ -165,7 +219,7 @@ class TestCoilTranslation:
 class TestCoilRotation:
     def test_basic(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0])
+            0, (-199.0, 199.0), np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0])
         )
         rotation.current = 90.0
 
@@ -177,7 +231,7 @@ class TestCoilRotation:
 
     def test_negative(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])
+            0, (-199.0, 199.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])
         )
         rotation.current = -45
 
@@ -191,7 +245,7 @@ class TestCoilRotation:
 
     def test_zero(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])
+            0, (-199.0, 199.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 1.0])
         )
         rotation.current = 0
 
@@ -203,7 +257,7 @@ class TestCoilRotation:
 
     def test_arbitrary_origin_axis(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 0.0])
+            0, (-199.0, 199.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 1.0, 0.0])
         )
         rotation.current = 180
 
@@ -215,7 +269,7 @@ class TestCoilRotation:
 
     def test_arbitrary_axis(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([1.0, 0.0, 1.0]), np.array([1.0, 1.0, 1.0])
+            0, (-199.0, 199.0), np.array([1.0, 0.0, 1.0]), np.array([1.0, 1.0, 1.0])
         )
         rotation.current = 180
 
@@ -227,7 +281,7 @@ class TestCoilRotation:
 
     def test_as_matrix(self):
         rotation = TmsCoilRotation(
-            0, (-1.0, 1.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])
+            0, (-199.0, 199.0), np.array([0.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])
         )
         rotation.current = 90.0
         expected_rotation = np.array(

@@ -70,9 +70,9 @@ def medium_tcd_coil_dict() -> dict[str, Any]:
             {"maxdIdt": 1, "waveformList": [{"time": [0.0, 100.0], "signal": [0.0, 0.99]}]}
         ],
         "deformList": [
-            {"initial": -25, "range": [-100.0, -50.0], "type": "x"},
+            {"initial": -75, "range": [-100.0, -50.0], "type": "x"},
             {"initial": 0, "range": [-50.0, 50.0], "type": "y"},
-            {"initial": 25, "range": [50.0, 100.0], "type": "z"},
+            {"initial": 75, "range": [50.0, 100.0], "type": "z"},
             {
                 "initial": 180,
                 "range": [0.0, 360.0],
@@ -101,9 +101,9 @@ def medium_tcd_coil() -> TmsCoil:
         ),
     ]
     deformations = [
-        TmsCoilTranslation(-25, (-100, -50), 0),
+        TmsCoilTranslation(-75, (-100, -50), 0),
         TmsCoilTranslation(0, (-50, 50), 1),
-        TmsCoilTranslation(25, (50, 100), 2),
+        TmsCoilTranslation(75, (50, 100), 2),
         TmsCoilRotation(180, (0, 360), np.array([0, 0, 0]), np.array([0, 0, 1])),
     ]
     stimulator = TmsStimulator(
@@ -189,9 +189,9 @@ def full_tcd_coil_dict() -> dict[str, Any]:
             }
         ],
         "deformList": [
-            {"initial": -25, "range": [-100.0, -50.0], "type": "x"},
+            {"initial": -75, "range": [-100.0, -50.0], "type": "x"},
             {"initial": 0, "range": [-50.0, 50.0], "type": "y"},
-            {"initial": 25, "range": [50.0, 100.0], "type": "z"},
+            {"initial": 75, "range": [50.0, 100.0], "type": "z"},
             {
                 "initial": 180,
                 "range": [0.0, 360.0],
@@ -267,9 +267,9 @@ def full_tcd_coil() -> TmsCoil:
         )
     ]
     deformations = [
-        TmsCoilTranslation(-25, (-100, -50), 0),
+        TmsCoilTranslation(-75, (-100, -50), 0),
         TmsCoilTranslation(0, (-50, 50), 1),
-        TmsCoilTranslation(25, (50, 100), 2),
+        TmsCoilTranslation(75, (50, 100), 2),
         TmsCoilRotation(180, (0, 360), np.array([0, 0, 0]), np.array([0, 0, 1])),
     ]
     stimulator = TmsStimulator(
