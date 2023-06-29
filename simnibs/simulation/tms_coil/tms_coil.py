@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+from copy import deepcopy
 from typing import Optional
 
 import jsonschema
@@ -36,62 +37,83 @@ class TmsCoil(TcdElement):
 
     Parameters
     ----------
-    name : Optional[str]
-        The name of the coil
-    brand : Optional[str]
-        The brand of the coil
-    version : Optional[str]
-        The version of the coil
-    limits : Optional[npt.NDArray[np.float_]] (3x2)
-        Used for expansion into NIfTI digitized files.
-        This is in mm and follows the structure [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]]
-    resolution : Optional[npt.NDArray[np.float_]] (3)
-        The sampling resolution (step width in mm) for expansion into NIfTI files.
-        This follows the structure [rx,ry,rz]
-    casing : Optional[TmsCoilModel]
-        The casing of the coil
     elements : list[TmsCoilElement]
         The stimulation elements of the coil
+    name : Optional[str], optional
+        The name of the coil, by default None
+    brand : Optional[str], optional
+        The brand of the coil, by default None
+    version : Optional[str], optional
+        The version of the coil, by default None
+    limits : Optional[npt.ArrayLike] (3x2), optional
+        Used for expansion into NIfTI digitized files, by default None.
+        This is in mm and follows the structure [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]]
+    resolution : Optional[npt.ArrayLike] (3), optional
+        The sampling resolution (step width in mm) for expansion into NIfTI files, by default None.
+        This follows the structure [rx,ry,rz]
+    casing : Optional[TmsCoilModel], optional
+        The casing of the coil, by default None
 
     Attributes
     ----------------------
+    elements : list[TmsCoilElement]
+        The stimulation elements of the coil
     name : Optional[str]
         The name of the coil
     brand : Optional[str]
         The brand of the coil
     version : Optional[str]
         The version of the coil
-    limits : Optional[npt.NDArray[np.float_]] (3x2)
+    limits : Optional[npt.NDArray[np.float64]] (3x2)
         Used for expansion into NIfTI digitized files.
         This is in mm and follows the structure [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]]
-    resolution : Optional[npt.NDArray[np.float_]] (3)
+    resolution : Optional[npt.NDArray[np.float64]] (3)
         The sampling resolution (step width in mm) for expansion into NIfTI files.
         This follows the structure [rx,ry,rz]
     casing : Optional[TmsCoilModel]
         The casing of the coil
-    elements : list[TmsCoilElement]
-        The stimulation elements of the coil
     deformations : list[TmsCoilDeformation]
         All deformations used in the stimulation elements of the coil
     """
 
     def __init__(
         self,
-        name: Optional[str],
-        brand: Optional[str],
-        version: Optional[str],
-        limits: Optional[npt.NDArray[np.float_]],
-        resolution: Optional[npt.NDArray[np.float_]],
-        casing: Optional[TmsCoilModel],
         elements: list[TmsCoilElements],
+        name: Optional[str] = None,
+        brand: Optional[str] = None,
+        version: Optional[str] = None,
+        limits: Optional[npt.ArrayLike] = None,
+        resolution: Optional[npt.ArrayLike] = None,
+        casing: Optional[TmsCoilModel] = None,
     ):
         self.name = name
         self.brand = brand
         self.version = version
-        self.limits = limits
-        self.resolution = resolution
+        self.limits = None if limits is None else np.array(limits, dtype=np.float64)
+        self.resolution = (
+            None if resolution is None else np.array(resolution, dtype=np.float64)
+        )
         self.casing = casing
         self.elements = elements
+
+        if len(elements) == 0:
+            raise ValueError("Expected at least one coil element but got 0")
+
+        if self.limits is not None and (
+            self.limits.ndim != 2
+            or self.limits.shape[0] != 3
+            or self.limits.shape[1] != 2
+        ):
+            raise ValueError(
+                f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but shape was {self.limits.shape}"
+            )
+
+        if self.resolution is not None and (
+            self.resolution.ndim != 1 or self.resolution.shape[0] != 3
+        ):
+            raise ValueError(
+                f"Expected 'point_1' to be in the format [rx,ry,rz] but shape was {self.resolution.shape}"
+            )
 
         self.deformations: list[TmsCoilDeformation] = []
         for coil_element in self.elements:
@@ -255,8 +277,8 @@ class TmsCoil(TcdElement):
                     VectorType=1,
                     RangeType=2,
                     CenterGlyphs=0,
-                    CustomMin=np.percentile(vector_lengths, 99),
-                    CustomMax=np.percentile(vector_lengths, 99.99),
+                    CustomMin=np.nanpercentile(vector_lengths, 99),
+                    CustomMax=np.nanpercentile(vector_lengths, 99.99),
                     ArrowSizeMax=30,
                     ArrowSizeMin=10,
                 )
@@ -530,15 +552,17 @@ class TmsCoil(TcdElement):
 
         raise IOError(f"Error loading file: Unsupported file type '{fn}'")
 
-    def write(self, fn: str):
+    def write(self, fn: str, ascii_mode: bool = False):
         """Writes the TMS coil in the tcd format
 
         Parameters
         ----------
         fn : str
             The path and file name to store the tcd coil file as
+        ascii_mode : bool, optional
+            Whether or not to write arrays in an ascii format, by default False
         """
-        self.write_tcd(fn)
+        self.write_tcd(fn, ascii_mode)
 
     @classmethod
     def from_ccd(
@@ -579,9 +603,9 @@ class TmsCoil(TcdElement):
             names = waveform_data.dtype.names
             waveforms = [
                 TmsWaveform(
-                    names[1],
                     waveform_data[names[0]],
                     waveform_data[names[1]],
+                    names[1],
                     waveform_data[names[2]],
                 )
             ]
@@ -615,24 +639,26 @@ class TmsCoil(TcdElement):
         bb = []
         for dim in ("x", "y", "z"):
             a = header_dict.get(dim)
-            if a is None:
-                bb.append(None)
-            else:
+            if a is not None:
                 if len(a) < 2:
                     bb.append((-np.abs(a[0]), np.abs(a[0])))
                 else:
                     bb.append(a)
 
+        if len(bb) != 3:
+            bb = None
+
         res = []
         a = header_dict.get("resolution")
-        if a is None:
-            res.append(None)
-        else:
+        if a is not None:
             a = np.atleast_1d(a)
             if len(a) < 3:
                 for i in range(len(a), 3):
                     a = np.concatenate((a, (a[i - 1],)))
             res = a
+
+        if len(res) != 3:
+            res = None
 
         ccd_file = np.atleast_2d(np.loadtxt(fn, skiprows=2))
 
@@ -640,35 +666,41 @@ class TmsCoil(TcdElement):
         dipole_moments = ccd_file[:, 3:]
 
         stimulator = TmsStimulator(
-            header_dict.get("stimulator"), None, header_dict.get("dIdtmax"), waveforms
+            header_dict.get("stimulator"),
+            max_di_dt=header_dict.get("dIdtmax"),
+            waveforms=waveforms,
         )
 
-        coil_elements = [
-            DipoleElements(None, None, [], dipole_positions, dipole_moments, stimulator)
-        ]
+        coil_elements = [DipoleElements(stimulator, dipole_positions, dipole_moments)]
 
         return cls(
+            coil_elements,
             header_dict.get("coilname"),
             header_dict.get("brand"),
             file_version,
-            np.array(bb),
-            np.array(res),
+            None if bb is None else np.array(bb),
+            None if res is None else np.array(res),
             coil_casing,
-            coil_elements,
         )
 
-    def to_tcd(self) -> dict:
+    def to_tcd(self, ascii_mode: bool = False) -> dict:
         """Packs the coil information into a tcd like dictionary
+
+        Parameters
+        ----------
+        ascii_mode : bool, optional
+            Whether or not to write arrays in an ascii format, by default False
 
         Returns
         -------
         dict
             A tcd like dictionary representing the coil
         """
+
         tcd_coil_models = []
         coil_models = []
         if self.casing is not None:
-            tcd_coil_models.append(self.casing.to_tcd())
+            tcd_coil_models.append(self.casing.to_tcd(ascii_mode))
             coil_models.append(self.casing)
 
         tcd_deforms = []
@@ -677,7 +709,7 @@ class TmsCoil(TcdElement):
         stimulators = []
 
         for deformation in self.deformations:
-            tcd_deforms.append(deformation.to_tcd())
+            tcd_deforms.append(deformation.to_tcd(ascii_mode))
 
         tcd_coil_elements = []
         for coil_element in self.elements:
@@ -686,7 +718,7 @@ class TmsCoil(TcdElement):
                 and coil_element.casing is not None
             ):
                 coil_models.append(coil_element.casing)
-                tcd_coil_models.append(coil_element.casing.to_tcd())
+                tcd_coil_models.append(coil_element.casing.to_tcd(ascii_mode))
 
             if (
                 coil_element.stimulator not in stimulators
@@ -699,10 +731,12 @@ class TmsCoil(TcdElement):
                 )
             ):
                 stimulators.append(coil_element.stimulator)
-                tcd_stimulators.append(coil_element.stimulator.to_tcd())
+                tcd_stimulators.append(coil_element.stimulator.to_tcd(ascii_mode))
 
             tcd_coil_elements.append(
-                coil_element.to_tcd(stimulators, coil_models, self.deformations)
+                coil_element.to_tcd(
+                    stimulators, coil_models, self.deformations, ascii_mode
+                )
             )
 
         tcd_coil = {}
@@ -792,13 +826,13 @@ class TmsCoil(TcdElement):
         )
 
         return cls(
+            coil_elements,
             coil.get("name"),
             coil.get("brand"),
             coil.get("version"),
             None if coil.get("limits") is None else np.array(coil["limits"]),
             None if coil.get("resolution") is None else np.array(coil["resolution"]),
             coil_casing,
-            coil_elements,
         )
 
     @classmethod
@@ -822,16 +856,19 @@ class TmsCoil(TcdElement):
 
         return cls.from_tcd_dict(coil, validate)
 
-    def write_tcd(self, fn: str):
+    def write_tcd(self, fn: str, ascii_mode: bool = False):
         """Writes the coil as a tcd file
 
         Parameters
         ----------
         fn : str
             The path and file name to store the tcd coil file as
+        ascii_mode : bool, optional
+            Whether or not to write arrays in an ascii format, by default False
         """
+
         with open(fn, "w") as json_file:
-            json.dump(self.to_tcd(), json_file, indent=4)
+            json.dump(self.to_tcd(ascii_mode), json_file, indent=4)
 
     @classmethod
     def from_nifti(cls, fn: str):
@@ -867,21 +904,44 @@ class TmsCoil(TcdElement):
             ]
         )
 
-        if len(data.shape) == 4 :
-            coil_elements = [SampledGridPointElements(None, None, [], data, affine, TmsStimulator("Generic", None, None, None))]
+        if len(data.shape) == 4:
+            coil_elements = [
+                SampledGridPointElements(TmsStimulator("Generic"), data, affine)
+            ]
         elif len(data.shape) == 5 and data.shape[3] == 1:
-            element_data = data.reshape(data.shape[0], data.shape[1], data.shape[2], data.shape[4])
-            coil_elements = [SampledGridPointElements(None, None, [], element_data, affine, TmsStimulator("Generic", None, None, None))]
+            element_data = data.reshape(
+                data.shape[0], data.shape[1], data.shape[2], data.shape[4]
+            )
+            coil_elements = [
+                SampledGridPointElements(
+                    TmsStimulator("Generic"),
+                    element_data,
+                    affine,
+                )
+            ]
         elif len(data.shape) == 5:
             data = np.split(data, data.shape[-2], axis=-2)
             coil_elements = []
             for i, element_data in enumerate(data):
-                element_data = element_data.reshape(element_data.shape[0], element_data.shape[1], element_data.shape[2], element_data.shape[4])
-                coil_elements.append(SampledGridPointElements(None, None, [], element_data, affine, TmsStimulator(f"Generic-{i + 1}", None, None, None)))
+                element_data = element_data.reshape(
+                    element_data.shape[0],
+                    element_data.shape[1],
+                    element_data.shape[2],
+                    element_data.shape[4],
+                )
+                coil_elements.append(
+                    SampledGridPointElements(
+                        TmsStimulator(f"Generic-{i + 1}"),
+                        element_data,
+                        affine,
+                    )
+                )
         else:
-            raise ValueError("NIfTI file needs to at least contain one 3D vector per voxel!")
+            raise ValueError(
+                "NIfTI file needs to at least contain one 3D vector per voxel!"
+            )
 
-        return cls(None, None, None, limits, resolution, None, coil_elements)
+        return cls(coil_elements, limits=limits, resolution=resolution)
 
     def write_nifti(
         self,
@@ -988,9 +1048,9 @@ class TmsCoil(TcdElement):
         self,
         limits: Optional[npt.NDArray[np.float_]] = None,
         resolution: Optional[npt.NDArray[np.float_]] = None,
-        resample_sampled_elements: bool = False
+        resample_sampled_elements: bool = False,
     ) -> "TmsCoil":
-        """Turns every coil element into SampledGridPointElements. 
+        """Turns every coil element into SampledGridPointElements.
         If resample_sampled_elements is true, existing SampledGridPointElements are resampled.
 
         Parameters
@@ -1034,32 +1094,37 @@ class TmsCoil(TcdElement):
 
         sampled_coil_elements = []
         for coil_element in self.elements:
-            if isinstance(coil_element, SampledGridPointElements) and not resample_sampled_elements:
+            if (
+                isinstance(coil_element, SampledGridPointElements)
+                and not resample_sampled_elements
+            ):
                 sampled_coil_elements.append(coil_element)
             else:
-                data = coil_element.get_a_field(sample_positions, np.eye(4), apply_deformation=False).reshape(
-                    ((dims[0], dims[1], dims[2], 3))
-                )
+                data = coil_element.get_a_field(
+                    sample_positions, np.eye(4), apply_deformation=False
+                ).reshape(((dims[0], dims[1], dims[2], 3)))
 
                 sampled_coil_elements.append(
                     SampledGridPointElements(
+                        coil_element.stimulator,
+                        data,
+                        affine,
                         coil_element.name,
                         coil_element.casing,
                         coil_element.deformations,
-                        data,
-                        affine,
-                        coil_element.stimulator,
                     )
                 )
 
-        return TmsCoil(
-            self.name,
-            self.brand,
-            self.version,
-            limits,
-            resolution,
-            self.casing,
-            sampled_coil_elements,
+        return deepcopy(
+            TmsCoil(
+                sampled_coil_elements,
+                self.name,
+                self.brand,
+                self.version,
+                limits,
+                resolution,
+                self.casing,
+            )
         )
 
     def as_sampled_squashed(
@@ -1113,7 +1178,9 @@ class TmsCoil(TcdElement):
             combined_data = np.zeros_like(sample_positions)
             combined_casing = None
             for coil_element in stimulator_to_elements[stimulator]:
-                combined_data += coil_element.get_a_field(sample_positions, np.eye(4), apply_deformation=False)
+                combined_data += coil_element.get_a_field(
+                    sample_positions, np.eye(4), apply_deformation=False
+                )
                 if combined_casing is None and coil_element.casing is not None:
                     combined_casing = coil_element.casing
                 elif combined_casing is not None and coil_element.casing is not None:
@@ -1121,30 +1188,55 @@ class TmsCoil(TcdElement):
 
             sampled_coil_elements.append(
                 SampledGridPointElements(
-                    None,
-                    combined_casing,
-                    None,
+                    stimulator,
                     combined_data.reshape(((dims[0], dims[1], dims[2], 3))),
                     affine,
-                    stimulator,
+                    casing=combined_casing,
                 )
             )
 
-        return TmsCoil(
-            self.name,
-            self.brand,
-            self.version,
-            limits,
-            resolution,
-            self.casing,
-            sampled_coil_elements,
+        return deepcopy(
+            TmsCoil(
+                sampled_coil_elements,
+                self.name,
+                self.brand,
+                self.version,
+                limits,
+                resolution,
+                self.casing,
+            )
+        )
+
+    def freeze_deformations(self) -> "TmsCoil":
+        """Creates a new TMS coil without any coil deformations where the current deformations are applied.
+
+        Returns
+        -------
+        TmsCoil
+            A new TMS coil without any coil deformations where the current deformations are applied
+        """
+        frozen_elements = []
+        for element in self.elements:
+            frozen_element = element.freeze_deformations()
+            frozen_elements.append(frozen_element)
+
+        return deepcopy(
+            TmsCoil(
+                frozen_elements,
+                self.name,
+                self.brand,
+                self.version,
+                self.limits,
+                self.resolution,
+                self.casing,
+            )
         )
 
     def optimize_deformations(
         self,
         optimization_surface: Msh,
         affine: npt.NDArray[np.float_],
-        coil_translation_ranges: npt.NDArray[np.float_] = None,
+        coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1156,7 +1248,7 @@ class TmsCoil(TcdElement):
             The surface the deformations have to be optimized for
         affine : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil
-        coil_translation_ranges : npt.NDArray[np.float_], optional
+        coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
             If the coil position is supposed to be optimized as well, these ranges in the format
             [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
             and the updated affine coil transformation is returned, by default None

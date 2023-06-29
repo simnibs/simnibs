@@ -253,31 +253,58 @@
                                 },
                                 "time": {
                                     "description": "The recorded timestamps",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "number"
-                                    },
-                                    "minItems": 2
+                                    "oneOf": [
+                                        {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number"
+                                            },
+                                            "minItems": 2
+                                        },
+                                        {
+                                            "type": "string",
+                                            "contentEncoding": "base64",
+                                            "contentMediaType": "application/json"
+                                        }
+                                    ]
                                 },
                                 "signal": {
                                     "description": "The recorded signal",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "number",
-                                        "minimum": 0,
-                                        "maximum": 1
-                                    },
-                                    "minItems": 2
+                                    "oneOf": [
+                                        {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number",
+                                                "minimum": 0,
+                                                "maximum": 1
+                                            },
+                                            "minItems": 2
+                                        },
+                                        {
+                                            "type": "string",
+                                            "contentEncoding": "base64",
+                                            "contentMediaType": "application/json"
+                                        }
+                                    ]
                                 },
                                 "fit": {
                                     "description": "A parametric fitted version of the signal",
-                                    "type": "array",
-                                    "items": {
-                                        "type": "number",
-                                        "minimum": 0,
-                                        "maximum": 1
-                                    },
-                                    "minItems": 2
+                                    "oneOf": [
+                                        {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "number",
+                                                "minimum": 0,
+                                                "maximum": 1
+                                            },
+                                            "minItems": 2
+                                        },
+                                        {
+                                            "type": "string",
+                                            "contentEncoding": "base64",
+                                            "contentMediaType": "application/json"
+                                        }
+                                    ]
                                 }
                             },
                             "required": [

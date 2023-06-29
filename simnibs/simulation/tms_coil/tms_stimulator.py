@@ -1,3 +1,4 @@
+import base64
 from typing import Optional
 
 import numpy as np
@@ -9,56 +10,102 @@ class TmsWaveform:
 
     Parameters
     ----------
-    name : Optional[str]
-        The name of the waveform
-    time : npt.NDArray[np.float_]
+    time : npt.ArrayLike
         The recording time stamps
-    signal : npt.NDArray[np.float_]
+    signal : npt.ArrayLike
         The recorded signal
-    fit : Optional[npt.NDArray[np.float_]]
-        A fitted version of the recorded signal
+    name : Optional[str], optional
+        The name of the waveform, by default None
+    fit : Optional[npt.ArrayLike], optional
+        A fitted version of the recorded signal, by default None
 
     Attributes
     ----------------------
     name : Optional[str]
         The name of the waveform
-    time : npt.NDArray[np.float_]
+    time : npt.NDArray[np.float64]
         The recording time stamps
-    signal : npt.NDArray[np.float_]
+    signal : npt.NDArray[np.float64]
         The recorded signal
-    fit : Optional[npt.NDArray[np.float_]]
+    fit : Optional[npt.NDArray[np.float64]]
         A fitted version of the recorded signal
     """
 
     def __init__(
         self,
-        name: Optional[str],
-        time: npt.NDArray[np.float_],
-        signal: npt.NDArray[np.float_],
-        fit: Optional[npt.NDArray[np.float_]],
+        time: npt.ArrayLike,
+        signal: npt.ArrayLike,
+        name: Optional[str] = None,
+        fit: Optional[npt.ArrayLike] = None,
     ):
         self.name = name
-        self.time = time
-        self.signal = signal
-        self.fit = fit
+        self.time = np.array(time, dtype=np.float64)
+        self.signal = np.array(signal, dtype=np.float64)
+        self.fit = None if fit is None else np.array(fit, dtype=np.float64)
 
-    def to_tcd(self) -> dict:
+        if self.time.ndim != 1:
+            raise ValueError(
+                f"Expected 'time' to have the shape (N) but shape was {self.time.shape}"
+            )
+
+        if self.signal.ndim != 1:
+            raise ValueError(
+                f"Expected 'signal' to have the shape (N) but shape was {self.signal.shape}"
+            )
+
+        if self.fit is not None and self.fit.ndim != 1:
+            raise ValueError(
+                f"Expected 'fit' to have the shape (N) but shape was {self.fit.shape}"
+            )
+
+    def to_tcd(self, ascii_mode: bool = False) -> dict:
         tcd_waveform = {}
         if self.name is not None:
             tcd_waveform["name"] = self.name
-        tcd_waveform["time"] = self.time.tolist()
-        tcd_waveform["signal"] = self.signal.tolist()
-        if self.fit is not None and len(self.fit) > 0:
-            tcd_waveform["fit"] = self.fit.tolist()
+
+        if ascii_mode:
+            tcd_waveform["time"] = self.time.tolist()
+            tcd_waveform["signal"] = self.signal.tolist()
+            if self.fit is not None and len(self.fit) > 0:
+                tcd_waveform["fit"] = self.fit.tolist()
+        else:
+            tcd_waveform["time"] = base64.b64encode(self.time.tobytes()).decode("ascii")
+            tcd_waveform["signal"] = base64.b64encode(self.signal.tobytes()).decode(
+                "ascii"
+            )
+            if self.fit is not None and len(self.fit) > 0:
+                tcd_waveform["fit"] = base64.b64encode(self.fit.tobytes()).decode(
+                    "ascii"
+                )
+
         return tcd_waveform
 
     @classmethod
     def from_tcd(cls, tcd_element: dict):
         name = tcd_element.get("name")
-        time = np.array(tcd_element["time"])
-        signal = np.array(tcd_element["signal"])
-        fit = None if tcd_element.get("fit") is None else np.array(tcd_element["fit"])
-        return cls(name, time, signal, fit)
+
+        if isinstance(tcd_element["time"], str):
+            time = np.frombuffer(
+                base64.b64decode(tcd_element["time"]), dtype=np.float64
+            )
+        else:
+            time = np.array(tcd_element["time"])
+
+        if isinstance(tcd_element["signal"], str):
+            signal = np.frombuffer(
+                base64.b64decode(tcd_element["signal"]), dtype=np.float64
+            )
+        else:
+            signal = np.array(tcd_element["signal"])
+
+        if tcd_element.get("fit") is None:
+            fit = None
+        elif isinstance(tcd_element["fit"], str):
+            fit = np.frombuffer(base64.b64decode(tcd_element["fit"]), dtype=np.float64)
+        else:
+            fit = np.array(tcd_element["fit"])
+
+        return cls(time, signal, name, fit)
 
 
 class TmsStimulator:
@@ -68,12 +115,12 @@ class TmsStimulator:
     ----------
     name : Optional[str]
         The name of the stimulator
-    brand : Optional[str]
-        the brand of the stimulator
-    max_di_dt :  Optional[float]
-        Maximum dI/dt values for the stimulator
-    waveforms : Optional[list[TmsWaveform]]
-        A list of waveforms that can be generated with this stimulator
+    brand : Optional[str], optional
+        the brand of the stimulator, by default None
+    max_di_dt :  Optional[float], optional
+        Maximum dI/dt values for the stimulator, by default None
+    waveforms : Optional[list[TmsWaveform]], optional
+        A list of waveforms that can be generated with this stimulator, by default None
 
     Attributes
     ----------------------
@@ -88,12 +135,13 @@ class TmsStimulator:
     di_dt : float
         The current dI/dt setting in A/s of this stimulator, used for the A field calculation of connected coil elements
     """
+
     def __init__(
         self,
         name: Optional[str],
-        brand: Optional[str],
-        max_di_dt: Optional[float],
-        waveforms: Optional[list[TmsWaveform]],
+        brand: Optional[str] = None,
+        max_di_dt: Optional[float] = None,
+        waveforms: Optional[list[TmsWaveform]] = None,
     ):
         self.name = name
         self.brand = brand
@@ -112,14 +160,16 @@ class TmsStimulator:
 
     @di_dt.setter
     def di_dt(self, value):
-        if self.max_di_dt is not None and (self.di_dt < -self.max_di_dt or self.di_dt > self.max_di_dt):
+        if self.max_di_dt is not None and (
+            self.di_dt < -self.max_di_dt or self.di_dt > self.max_di_dt
+        ):
             raise ValueError(
                 f"dIdt must be within the range ({-self.max_di_dt}, {self.max_di_dt})"
             )
         else:
             self._di_dt = value
 
-    def to_tcd(self) -> dict:
+    def to_tcd(self, ascii_mode: bool = False) -> dict:
         tcd_stimulator = {}
         if self.name is not None:
             tcd_stimulator["name"] = self.name
@@ -130,7 +180,7 @@ class TmsStimulator:
         if self.waveforms is not None and len(self.waveforms) > 0:
             tcd_waveforms = []
             for waveform in self.waveforms:
-                tcd_waveforms.append(waveform.to_tcd())
+                tcd_waveforms.append(waveform.to_tcd(ascii_mode))
             tcd_stimulator["waveformList"] = tcd_waveforms
         return tcd_stimulator
 

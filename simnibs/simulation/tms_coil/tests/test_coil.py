@@ -68,10 +68,35 @@ class TestReadCoil:
         assert coil.limits is None
         assert coil.casing is None
         assert len(coil.elements) == 1
+        assert len(coil.deformations) == 0
+
         assert isinstance(coil.elements[0], DipoleElements)
         np.testing.assert_array_almost_equal(coil.elements[0].points, [[1, 2, 3]])
-        assert len(coil.elements[0].deformations) == 0
+        np.testing.assert_array_almost_equal(coil.elements[0].values, [[4, 5, 6]])
+        assert coil.elements[0].name is None
         assert coil.elements[0].casing is None
+        assert coil.elements[0].stimulator is not None
+        assert coil.elements[0].stimulator.name == "SimNIBS-Stimulator"
+        assert coil.elements[0].stimulator.brand is None
+        assert coil.elements[0].stimulator.max_di_dt is None
+        assert len(coil.elements[0].stimulator.waveforms) == 0
+        assert len(coil.elements[0].deformations) == 0
+
+    def test_read_medium_tcd(
+        self, medium_tcd_coil_dict: dict[str, Any], tmp_path: Path
+    ):
+        with open(tmp_path / "test.tcd", "w") as f:
+            json.dump(medium_tcd_coil_dict, f)
+        coil = TmsCoil.from_tcd(str(tmp_path / "test.tcd"))
+        assert str(coil.to_tcd(ascii_mode=True)) == str(medium_tcd_coil_dict)
+
+    def test_read_full_tcd(
+        self, full_tcd_coil_dict: dict[str, Any], tmp_path: Path
+    ):
+        with open(tmp_path / "test.tcd", "w") as f:
+            json.dump(full_tcd_coil_dict, f)
+        coil = TmsCoil.from_tcd(str(tmp_path / "test.tcd"))
+        assert str(coil.to_tcd(ascii_mode=True)) == str(full_tcd_coil_dict)
 
     def test_read_minimal_tcd_no_ending(
         self, minimal_tcd_coil_dict: dict[str, Any], tmp_path: Path
@@ -236,7 +261,7 @@ class TestWriteCoil:
         minimal_tcd_coil_dict: dict[str, Any],
         tmp_path: Path,
     ):
-        minimal_tcd_coil.write(str(tmp_path / "test.tcd"))
+        minimal_tcd_coil.write(str(tmp_path / "test.tcd"), ascii_mode=True)
 
         with open(tmp_path / "test.tcd", "r") as fid:
             coil = json.loads(fid.read())
@@ -249,7 +274,7 @@ class TestWriteCoil:
         medium_tcd_coil_dict: dict[str, Any],
         tmp_path: Path,
     ):
-        medium_tcd_coil.write(str(tmp_path / "test.tcd"))
+        medium_tcd_coil.write(str(tmp_path / "test.tcd"), ascii_mode=True)
 
         with open(tmp_path / "test.tcd", "r") as fid:
             coil = json.loads(fid.read())
@@ -259,7 +284,7 @@ class TestWriteCoil:
     def test_write_full_tcd(
         self, full_tcd_coil: TmsCoil, full_tcd_coil_dict: dict[str, Any], tmp_path: Path
     ):
-        full_tcd_coil.write(str(tmp_path / "test.tcd"))
+        full_tcd_coil.write(str(tmp_path / "test.tcd"), ascii_mode=True)
 
         with open(tmp_path / "test.tcd", "r") as fid:
             coil = json.loads(fid.read())
@@ -284,7 +309,7 @@ class TestWriteCoil:
         nib.save(image, tmp_path / "test.nii")
 
         coil = TmsCoil.from_nifti(str(tmp_path / "test.nii"))
-        coil.write(str(tmp_path / "test.tcd"))
+        coil.write(str(tmp_path / "test.tcd"), ascii_mode=True)
 
         coil = TmsCoil.from_tcd(str(tmp_path / "test.tcd"))
 
@@ -295,47 +320,80 @@ class TestWriteCoil:
 
 
 class TestWriteReadCoil:
-    def test_multiple_exclusive_stimulators_nifti(
-        self, full_tcd_coil: TmsCoil, tmp_path: Path
+    def test_base64_encoding_full_coil(self, full_tcd_coil: TmsCoil, tmp_path: Path):
+        full_tcd_coil.write(str(tmp_path / "test.tcd"), ascii_mode=False)
+        after = TmsCoil.from_tcd(str(tmp_path / "test.tcd"))
+
+        np.testing.assert_allclose(full_tcd_coil.casing.mesh.nodes.node_coord, after.casing.mesh.nodes.node_coord)
+        waveform = full_tcd_coil.elements[0].stimulator.waveforms[0]
+        waveform_after = after.elements[0].stimulator.waveforms[0]
+        np.testing.assert_allclose(waveform.time, waveform_after.time)
+        np.testing.assert_allclose(waveform.signal, waveform_after.signal)
+        np.testing.assert_allclose(waveform.fit, waveform_after.fit)
+
+        for element, element_after in zip(full_tcd_coil.elements, after.elements):
+            np.testing.assert_allclose(element.casing.mesh.nodes.node_coord, element_after.casing.mesh.nodes.node_coord)
+            np.testing.assert_allclose(element.casing.mesh.elm.node_number_list, element_after.casing.mesh.elm.node_number_list)
+
+            if isinstance(element, PositionalTmsCoilElements) and isinstance(element_after, PositionalTmsCoilElements):
+                np.testing.assert_allclose(element.points, element_after.points)
+                np.testing.assert_allclose(element.values, element_after.values)
+
+            elif isinstance(element, SampledGridPointElements) and isinstance(element_after, SampledGridPointElements):
+                np.testing.assert_allclose(element.data, element_after.data)
+                np.testing.assert_allclose(element.affine, element_after.affine)
+            else:
+                assert False
+
+    def test_multiple_exclusive_stimulators_nifti_vs_sampled_elements(
+        self, small_functional_3_element_coil: TmsCoil, tmp_path: Path
     ):
-        coil = deepcopy(full_tcd_coil)
-        coil.resolution = np.array([1, 1, 1])
-        coil.limits = np.array([[0, 25], [0, 25], [0, 25]])
-        coil.elements[0].stimulator = TmsStimulator("Stim 1", None, None, None)
-        coil.elements[1].stimulator = TmsStimulator("Stim 2", None, None, None)
-        coil.elements[2].stimulator = TmsStimulator("Stim 3", None, None, None)
+        coil = deepcopy(small_functional_3_element_coil)
 
-        coil_sampled = coil.as_sampled(resample_sampled_elements=True)
+        coil.elements[1].deformations[0].current = 45
+        coil.elements[2].deformations[0].current = 45
 
+        coil.elements[0].stimulator = TmsStimulator("Stim 1")
+        coil.elements[1].stimulator = TmsStimulator("Stim 2")
+        coil.elements[2].stimulator = TmsStimulator("Stim 3")
+        coil_sampled = coil.as_sampled()
+        
         coil.write_nifti(str(tmp_path / "test.nii.gz"))
         coil_nifti = TmsCoil.from_nifti(str(tmp_path / "test.nii.gz"))
 
         assert len(coil_sampled.elements) == len(coil_nifti.elements)
+        np.testing.assert_allclose(coil_sampled.get_sample_positions()[0], coil_nifti.get_sample_positions()[0])
 
         for sampled_element, nifti_element in zip(
             coil_sampled.elements, coil_nifti.elements
         ):
             assert isinstance(sampled_element, SampledGridPointElements)
             assert isinstance(nifti_element, SampledGridPointElements)
+            test_positions = sampled_element.casing.get_points()
+            test_positions[: 2] -= 10
             np.testing.assert_allclose(
                 sampled_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
+                    test_positions, np.eye(4)
                 ),
                 nifti_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
-                ),
+                    test_positions, np.eye(4)
+                ), atol=1e-5
             )
 
+        casing_points = np.concatenate((coil.elements[0].casing.get_points(), coil.elements[1].casing.get_points(), coil.elements[2].casing.get_points()))
+        casing_points[: 2] -= 10
+
         np.testing.assert_allclose(
-            coil_sampled.get_a_field(coil_sampled.get_sample_positions()[0], np.eye(4)),
-            coil_nifti.get_a_field(coil_nifti.get_sample_positions()[0], np.eye(4)),
+            coil_sampled.get_a_field(casing_points, np.eye(4)),
+            coil_nifti.get_a_field(casing_points, np.eye(4)), atol=1e-5
         )
 
-    def test_single_stimulators_nifti(self, full_tcd_coil: TmsCoil, tmp_path: Path):
-        coil = deepcopy(full_tcd_coil)
-        coil.resolution = np.array([1, 1, 1])
-        coil.limits = np.array([[0, 25], [0, 25], [0, 25]])
-        stimulator = TmsStimulator("Stim 1", None, None, None)
+    def test_single_stimulators_nifti_vs_sampled_elements(self, small_functional_3_element_coil: TmsCoil, tmp_path: Path):
+        coil = deepcopy(small_functional_3_element_coil)
+
+        coil.elements[1].deformations[0].current = 45
+        coil.elements[2].deformations[0].current = 45
+        stimulator = TmsStimulator("Stim 1")
         coil.elements[0].stimulator = stimulator
         coil.elements[1].stimulator = stimulator
         coil.elements[2].stimulator = stimulator
@@ -352,28 +410,34 @@ class TestWriteReadCoil:
         ):
             assert isinstance(sampled_element, SampledGridPointElements)
             assert isinstance(nifti_element, SampledGridPointElements)
+            test_positions = sampled_element.casing.get_points()
+            test_positions[: 2] -= 10
             np.testing.assert_allclose(
                 sampled_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
+                    test_positions, np.eye(4)
                 ),
                 nifti_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
-                ),
+                    test_positions, np.eye(4)
+                ), atol=1e-5
             )
 
+        casing_points = np.concatenate((coil.elements[0].casing.get_points(), coil.elements[1].casing.get_points(), coil.elements[2].casing.get_points()))
+        casing_points[: 2] -= 10
+
         np.testing.assert_allclose(
-            coil_sampled.get_a_field(coil_sampled.get_sample_positions()[0], np.eye(4)),
-            coil_nifti.get_a_field(coil_nifti.get_sample_positions()[0], np.eye(4)),
+            coil_sampled.get_a_field(casing_points, np.eye(4)),
+            coil_nifti.get_a_field(casing_points, np.eye(4)), atol=1e-5
         )
 
-    def test_multiple_stimulators_nifti(self, full_tcd_coil: TmsCoil, tmp_path: Path):
-        coil = deepcopy(full_tcd_coil)
-        coil.resolution = np.array([1, 1, 1])
-        coil.limits = np.array([[0, 25], [0, 25], [0, 25]])
-        stimulator = TmsStimulator("Stim 1", None, None, None)
+    def test_multiple_stimulators_nifti(self, small_functional_3_element_coil: TmsCoil, tmp_path: Path):
+        coil = deepcopy(small_functional_3_element_coil)
+
+        coil.elements[1].deformations[0].current = 45
+        coil.elements[2].deformations[0].current = 45
+        stimulator = TmsStimulator("Stim 1")
         coil.elements[0].stimulator = stimulator
         coil.elements[1].stimulator = stimulator
-        coil.elements[2].stimulator = TmsStimulator("Stim 2", None, None, None)
+        coil.elements[2].stimulator = TmsStimulator("Stim 2")
 
         coil_sampled = coil.as_sampled_squashed()
 
@@ -387,22 +451,29 @@ class TestWriteReadCoil:
         ):
             assert isinstance(sampled_element, SampledGridPointElements)
             assert isinstance(nifti_element, SampledGridPointElements)
+            test_positions = sampled_element.casing.get_points()
+            test_positions[: 2] -= 10
             np.testing.assert_allclose(
                 sampled_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
+                    test_positions, np.eye(4)
                 ),
                 nifti_element.get_a_field(
-                    coil_sampled.get_sample_positions()[0], np.eye(4)
-                ),
+                    test_positions, np.eye(4)
+                ), atol=1e-5
             )
 
+        casing_points = np.concatenate((coil.elements[0].casing.get_points(), coil.elements[1].casing.get_points(), coil.elements[2].casing.get_points()))
+        casing_points[: 2] -= 10
+
         np.testing.assert_allclose(
-            coil_sampled.get_a_field(coil_sampled.get_sample_positions()[0], np.eye(4)),
-            coil_nifti.get_a_field(coil_nifti.get_sample_positions()[0], np.eye(4)),
+            coil_sampled.get_a_field(casing_points, np.eye(4)),
+            coil_nifti.get_a_field(casing_points, np.eye(4)), atol=1e-5
         )
 
 
+@pytest.mark.filterwarnings("ignore:Second axis larger")
 class TestCoilMesh:
+
     def test_generate_full_coil_mesh(self, full_tcd_coil: TmsCoil):
         coil_mesh = full_tcd_coil.get_mesh(apply_deformation=False)
 
@@ -435,7 +506,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, DipoleElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -461,10 +532,7 @@ class TestCoilMesh:
                     + coil_element.affine[None, :3, 3]
                 )
 
-                targets = points + coil_element.data.reshape(-1, 3)
-
                 assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
-                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
 
     def test_generate_full_coil_mesh_with_affine(self, full_tcd_coil: TmsCoil):
         coil_affine = np.array(
@@ -512,7 +580,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, DipoleElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values, coil_mesh_node_coord
+                    coil_element.points, coil_mesh_node_coord
                 )
 
             if isinstance(coil_element, LineSegmentElements):
@@ -536,12 +604,7 @@ class TestCoilMesh:
                     + coil_element.affine[None, :3, 3]
                 )
 
-                targets = points + coil_element.data.reshape(-1, 3)
-                print(points)
-                print(targets)
-                print(list(coil_mesh_node_coord))
                 assert is_close_subset_of(points, coil_mesh_node_coord)
-                # TODO assert is_close_subset_of(targets, coil_mesh_node_coord)
 
     def test_generate_coil_mesh_exclude_casings(self, full_tcd_coil: TmsCoil):
         coil_mesh = full_tcd_coil.get_mesh(
@@ -577,7 +640,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, DipoleElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -603,10 +666,8 @@ class TestCoilMesh:
                     + coil_element.affine[None, :3, 3]
                 )
 
-                targets = points + coil_element.data.reshape(-1, 3)
 
                 assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
-                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
 
     def test_generate_coil_mesh_exclude_optimization_points(
         self, full_tcd_coil: TmsCoil
@@ -644,7 +705,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, DipoleElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -670,12 +731,9 @@ class TestCoilMesh:
                     + coil_element.affine[None, :3, 3]
                 )
 
-                targets = points + coil_element.data.reshape(-1, 3)
-
                 assert is_close_subset_of(points, coil_mesh.nodes.node_coord)
-                assert is_close_subset_of(targets, coil_mesh.nodes.node_coord)
 
-    def test_generate_coil_mesh_exclude_optimization_points(
+    def test_generate_coil_mesh_exclude_coil_elements(
         self, full_tcd_coil: TmsCoil
     ):
         coil_mesh = full_tcd_coil.get_mesh(
@@ -711,7 +769,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, DipoleElements):
                 assert not is_close_to_any(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -737,190 +795,41 @@ class TestCoilMesh:
                     + coil_element.affine[None, :3, 3]
                 )
 
-                targets = points + coil_element.data.reshape(-1, 3)
-
                 assert not is_close_to_any(points, coil_mesh.nodes.node_coord)
-                assert not is_close_to_any(targets, coil_mesh.nodes.node_coord)
 
 
 class TestPositionOptimization:
-    def test_simple_optimization(self, sphere3_msh: Msh):
+    def test_simple_optimization(self, small_functional_3_element_coil : TmsCoil,sphere3_msh: Msh):
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
-        casings = [
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array(
-                            [[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]]
-                        )
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array(
-                            [[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]]
-                        )
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-        ]
-        deformations = [
-            TmsCoilRotation(0, (0, 90), np.array([0, -20, 0]), np.array([40, -20, 0])),
-            TmsCoilRotation(
-                0,
-                (0, 90),
-                np.array([40, 20, 0]),
-                np.array([0, 20, 0]),
-            ),
-        ]
-        coil = TmsCoil(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            [
-                LineSegmentElements(
-                    None, casings[0], None, np.array([[1, 2, 3]]), None, None
-                ),
-                LineSegmentElements(
-                    None,
-                    casings[1],
-                    [deformations[0]],
-                    np.array([[1, 2, 3]]),
-                    None,
-                    None,
-                ),
-                LineSegmentElements(
-                    None,
-                    casings[2],
-                    [deformations[1]],
-                    np.array([[1, 2, 3]]),
-                    None,
-                    None,
-                ),
-            ],
-        )
+      
 
-        before, after, affine_after = coil.optimize_deformations(
+        before, after, affine_after = small_functional_3_element_coil.optimize_deformations(
             skin_surface, coil_affine
         )
         assert before > after
         assert after < 6.1
         np.testing.assert_allclose(coil_affine, affine_after)
-        assert not coil._get_current_deformation_scores(
+        assert not small_functional_3_element_coil._get_current_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
         )[0]
 
-    def test_optimization_with_global_translation(self, sphere3_msh: Msh):
+    def test_optimization_with_global_translation(self, small_functional_3_element_coil : TmsCoil, sphere3_msh: Msh):
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
 
         coil_affine = np.array(
             [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
         )
-        casings = [
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array(
-                            [[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]]
-                        )
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array(
-                            [[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]]
-                        )
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-            TmsCoilModel(
-                Msh(
-                    Nodes(
-                        np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])
-                    ),
-                    Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-                ),
-                None,
-                None,
-            ),
-        ]
-        deformations = [
-            TmsCoilRotation(0, (0, 90), np.array([0, -20, 0]), np.array([40, -20, 0])),
-            TmsCoilRotation(
-                0,
-                (0, 90),
-                np.array([40, 20, 0]),
-                np.array([0, 20, 0]),
-            ),
-        ]
-        coil = TmsCoil(
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            [
-                LineSegmentElements(
-                    None, casings[0], None, np.array([[1, 2, 3]]), None, None
-                ),
-                LineSegmentElements(
-                    None,
-                    casings[1],
-                    [deformations[0]],
-                    np.array([[1, 2, 3]]),
-                    None,
-                    None,
-                ),
-                LineSegmentElements(
-                    None,
-                    casings[2],
-                    [deformations[1]],
-                    np.array([[1, 2, 3]]),
-                    None,
-                    None,
-                ),
-            ],
-        )
-        before, after, affine_after = coil.optimize_deformations(
+
+        before, after, affine_after = small_functional_3_element_coil.optimize_deformations(
             skin_surface, coil_affine, np.array([[-5, 5], [-5, 5], [-20, 20]])
         )
 
         assert before > after
         assert after < 1.0
         assert not np.allclose(coil_affine, affine_after)
-        assert not coil._get_current_deformation_scores(
+        assert not small_functional_3_element_coil._get_current_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
         )[0]
