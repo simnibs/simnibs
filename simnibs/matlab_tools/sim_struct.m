@@ -95,9 +95,6 @@ switch S.type
     case 'POSITION'
         S.name='';  % string; optional
         S.date='';  % string; used to store time and date at which position was safed in neuronavigation system; optional
-        S.istrig=false; % boolean; used indicate whether position was automatically created by neuronavigation system after input trigger; optional
-        S.matORG=[]; % position in cooridnate system used by neuronavigation system; optional
-        S.orient=''; % orientation used by neuronavigation system; optional
         S.matsimnibs=[]; % 4x4 matrix defining the coil position and direction
         %[x y z c]
         %[0 0 0 1]

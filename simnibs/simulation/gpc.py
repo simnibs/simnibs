@@ -27,6 +27,8 @@ import numpy as np
 import copy
 from collections import OrderedDict
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 
 from . import pygpc
 from ..mesh_tools import mesh_io
@@ -509,7 +511,7 @@ def prep_gpc(simlist):
     return random_vars, pdf_type, pdfshape, limits
 
 
-def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
+def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[ElementTags.GM], eps=1e-2,
                 max_iter=1000, min_iter=2, data_poly_ratio=2):
     ''' Runs one TMS gPC for each position in the current TMSLIST
 

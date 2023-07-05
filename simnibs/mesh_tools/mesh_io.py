@@ -43,6 +43,8 @@ import scipy.interpolate
 import nibabel
 import h5py
 
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
@@ -2431,7 +2433,7 @@ class Msh:
         """
         assert tol > 0
 
-        skin_faces = self.elm[self.elm.tag1 == 1005, :3]
+        skin_faces = self.elm[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]
         subset = np.unique(skin_faces-1)
         m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
 
@@ -3848,7 +3850,33 @@ class ElementData(Data):
                                          np.repeat(baricenters[:, i], 4) *
                                          np.repeat(value[:, j], 4))
 
-        a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        try:
+            a = np.linalg.solve(A[uq_in != -1], b[uq_in != -1])
+        except np.linalg.LinAlgError:
+            # The mesh probably contains "duplicate" nodes
+            # TODO fix the mesh instead - then this shouldn't be necessary
+            used_nodes = uq_in[uq_in != -1]-1
+            the_nodes = msh.nodes.node_coord[used_nodes]
+
+            S = np.linalg.svd(A[uq_in != -1], compute_uv=False)
+            to_interp = S[:, 1:].sum(1) < 1e-6
+            to_compute = ~to_interp
+            tree = scipy.spatial.cKDTree(the_nodes[to_compute])
+            di, ix = tree.query(the_nodes[to_interp])
+
+            warnings.warn(
+                ("NumPy raised a `LinAlgError` interpolating to certain nodes "
+                 f"(mean coordinate {the_nodes[to_interp].mean(0)}, "
+                 f"standard deviation {the_nodes[to_interp].std(0)}). "
+                 f"Using nearest neighbor interpolation at {to_interp.sum()} "
+                 f"nodes (maximum distance is {di.max():.5f})."
+                )
+            )
+
+            a = np.zeros(b[uq_in != -1].shape)
+            a[to_compute] = np.linalg.solve(A[uq_in != -1][to_compute], b[uq_in != -1][to_compute])
+            a[to_interp] = a[to_compute][ix]
+
         p = np.hstack([np.ones((np.sum(uq_in != -1), 1)), msh.nodes[uq_in[uq_in != -1]]])
         f = np.einsum('ij, ijk -> ik', p, a)
         nd[uq_in[uq_in != -1]] = f
@@ -5931,14 +5959,16 @@ def write_geo_triangles(triangles, nodes, fn,  values=None, name="", mode="bw"):
 
 
 
-def read_freesurfer_surface(fn):
-    ''' Function to read FreeSurfer surface files, based on the read_surf.m script by
-    Bruce Fischl
+def read_freesurfer_surface(fn, apply_transform : bool = False):
+    ''' Function to read FreeSurfer surface files
 
     Parameters
     ------------
     fn: str
         File name
+    apply_transform : bool, optional
+        Apply transformation from Vertex RAS to Scanner RAS. 
+        This is needed when importing surfaces created by Freesurfer to align Freesurfer surfaces with SimNIBS head models, by default False
 
     Returns
     --------
@@ -5946,41 +5976,20 @@ def read_freesurfer_surface(fn):
         Mesh structure
 
     '''
-    TRIANGLE_FILE_MAGIC_NUMBER = 16777214
-    QUAD_FILE_MAGIC_NUMBER = 16777215
+    vertex_coords, faces, meta = nibabel.freesurfer.io.read_geometry(
+        '/mnt/c/Users/torwo/Documents/Projects/simnibs4_examples/m2m_ernie/0/surf/lh.white',
+        read_metadata=True
+    )
 
-    def read_3byte_integer(f):
-        n = 0
-        for i in range(3):
-            b = f.read(1)
-            n += struct.unpack("B", b)[0] << 8 * (2 - i)
-        return n
-
-    with open(fn, 'rb') as f:
-        # Read magic number as a 3 byte integer
-        magic = read_3byte_integer(f)
-        if magic == QUAD_FILE_MAGIC_NUMBER:
-            raise IOError('Quad files not supported!')
-
-        elif magic == TRIANGLE_FILE_MAGIC_NUMBER:
-            f.readline()
-            f.readline()
-            # notice that the format uses big-endian machine format
-            vnum = struct.unpack(">i", f.read(4))[0]
-            fnum = struct.unpack(">i", f.read(4))[0]
-            vertex_coords = np.fromfile(f, np.dtype('>f'), vnum * 3)
-            vertex_coords = vertex_coords.reshape((-1, 3)).astype(np.float64)
-            faces = np.fromfile(f, np.dtype('>i'), fnum * 3)
-            faces = faces.reshape((-1, 3)).astype(np.int64)
-        else:
-            raise IOError('Invalid magic number')
+    if apply_transform:
+        vertex_coords = vertex_coords + meta['cras']
 
     msh = Msh()
     msh.elm = Elements(triangles=faces + 1)
     msh.nodes = Nodes(vertex_coords)
     return msh
 
-def write_freesurfer_surface(msh, fn, ref_fs=None):
+def write_freesurfer_surface(msh, fn, write_standard_header : bool = True):
     ''' Writes a FreeSurfer surface
     Only the surfaces (triangles) are writen to the FreeSurfer surface file
 
@@ -5988,69 +5997,37 @@ def write_freesurfer_surface(msh, fn, ref_fs=None):
     -----------
     msh: Msh()
         Mesh structure
-
     fn: str
         output file name
-
-    ref_fs: bool or str
-        if set to True, a standard LIA orientation string will be written to tail
-        if set to Name of a ref_fs file, the orientation of that file will be set
+    write_standard_header : bool, optional
+        If True, writes the standard header. If False, writes no header, by default True
     '''
 
-    def write_3byte_integer(f, n):
-        b1 = struct.pack('B', (n >> 16) & 255)
-        b2 = struct.pack('B', (n >> 8) & 255)
-        b3 = struct.pack('B', n & 255)
-        f.write(b1)
-        f.write(b2)
-        f.write(b3)
-
-    TRIANGLE_FILE_MAGIC_NUMBER = 16777214
     m = msh.crop_mesh(elm_type=2)
     faces = m.elm.node_number_list[:, :3] - 1
     vertices = m.nodes.node_coord
-    vnum = m.nodes.nr
-    fnum = m.elm.nr
 
-    if ref_fs is True:
+    stamp = f"Created by {os.getenv('USER')} on {str(datetime.datetime.now())} with SimNIBS"
+
+    if write_standard_header:
         affine= np.array([[-1.0, 0.0, 0.0],
                           [ 0.0, 0.0, -1.0],
                           [ 0.0, 1.0, 0.0]])
         voxelsize=np.array([1.0, 1.0, 1.0])
-        filename_str='filename = {0}\n'.format('fake.nii.gz').encode('ascii')
-        volume_str=b'volume = 256 256 256\n'
-        write_tail = True
-    elif type(ref_fs) is str:
-        ref_vol = nibabel.load(ref_fs)
-        affine = ref_vol.affine.copy()[:3, :3]
-        volume = ref_vol.header['dim'][1:4]
-        voxelsize = np.sqrt(np.sum(affine ** 2, axis=0))
-        affine /= voxelsize[None, :]
-        affine = np.linalg.inv(affine)
-        filename_str='filename = {0}\n'.format(ref_fs).encode('ascii')
-        volume_str='volume = {0:d} {1:d} {2:d}\n'.format(*volume).encode('ascii')
-        write_tail = True
+        volume_info = {
+            'head': [2, 0, 20],
+            'valid': '1',
+            'filename': 'fake.nii.gz',
+            'volume': [256, 256, 256],
+            'voxelsize': voxelsize,
+            'xras': affine[0, :],
+            'yras': affine[1, :],
+            'zras': affine[2, :],
+            'cras': [0, 0, 0]
+        }
+        nibabel.freesurfer.io.write_geometry(fn, vertices, faces, stamp, volume_info)
     else:
-        write_tail = False
-
-    with open(fn, 'wb') as f:
-        write_3byte_integer(f, TRIANGLE_FILE_MAGIC_NUMBER)
-        f.write('Created by {0} on {1} with SimNIBS\n\n'.format(
-            os.getenv('USER'), str(datetime.datetime.now())).encode('ascii'))
-        f.write(struct.pack('>i', vnum))
-        f.write(struct.pack('>i', fnum))
-        f.write(vertices.reshape(-1).astype('>f').tobytes())
-        f.write(faces.reshape(-1).astype('>i').tobytes())
-        if write_tail:
-            f.write(b'\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x14')
-            f.write(b'valid = 1  # volume info valid\n')
-            f.write(filename_str)
-            f.write(volume_str)
-            f.write('voxelsize = {0:.15e} {1:.15e} {2:.15e}\n'.format(*voxelsize).encode('ascii'))
-            f.write('xras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[0, :]).encode('ascii'))
-            f.write('yras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[1, :]).encode('ascii'))
-            f.write('zras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(*affine[2, :]).encode('ascii'))
-            f.write('cras   = {0:.15e} {1:.15e} {2:.15e}\n'.format(0, 0, 0).encode('ascii'))
+        nibabel.freesurfer.io.write_geometry(fn, vertices, faces, stamp)
 
 
 def read_gifti_surface(fn):
@@ -6590,7 +6567,7 @@ def load_subject_surfaces(
     # according to the order in SubjectFiles.hemispheres, hence we load them in
     # the same way here to ensure that the order is the same.
     return {
-        h: read_gifti_surface(sub_files.get_surface(surface, h, subsampling))
+        h: read_gifti_surface(sub_files.get_surface(h, surface, subsampling))
         for h in sub_files.hemispheres
     }
 
@@ -6598,12 +6575,12 @@ def load_subject_morph_data(
     sub_files: SubjectFiles, data: str, subsampling: Union[int, None] = None,
 ):
     return {
-        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(data, h, subsampling))
+        h: nibabel.freesurfer.read_morph_data(sub_files.get_morph_data(h, data, subsampling))
         for h in sub_files.hemispheres
     }
 
 def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     return {
-        h: read_gifti_surface(get_reference_surf(surface, h, resolution))
+        h: read_gifti_surface(get_reference_surf(h, surface, resolution))
         for h in HEMISPHERES
     }

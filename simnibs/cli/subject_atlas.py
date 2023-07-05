@@ -112,7 +112,7 @@ def main():
         labels, colors, names = nibabel.freesurfer.io.read_annot(fn_atlas)
 
         morph = SurfaceMorph(ref_surf[hemi], sub_surf[hemi], method="nearest")
-        labels_sub = morph.transform(labels)
+        labels_sub = morph.transform(labels).astype(int)
 
         fn_out = os.path.join(
             args.out_folder, f"{hemi}.{subject_files.subid}_{args.atlas}.annot"

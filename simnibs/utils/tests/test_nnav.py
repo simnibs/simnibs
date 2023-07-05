@@ -2,16 +2,17 @@ import pytest
 import os
 import numpy as np
 import tempfile
+import warnings
 
 from ... import SIMNIBSDIR
 from ...simulation.sim_struct import TMSLIST, POSITION
-from ..nnav import localite, softaxic, brainsight
+from ..nnav import localite, softaxic, brainsight, ant
 
 
 FIXTURE_DIR = os.path.join(
-    SIMNIBSDIR, 
-    "_internal_resources", 
-    "testing_files", 
+    SIMNIBSDIR,
+    "_internal_resources",
+    "testing_files",
     "nnav_testdata"
 )
 
@@ -124,6 +125,15 @@ def dcm_world_fn():
 
 
 @pytest.fixture()
+def dcm_niftialigned_fn():
+    # Brainsight export for DICOM file, dicom coordinate system
+    dcm_fn = os.path.join(FIXTURE_DIR,
+                          "brainsight",
+                          "dcmimage_niftialignedcoord.txt".replace('/', os.sep))
+    return dcm_fn
+
+
+@pytest.fixture()
 def nii_brainsight_fn():
     # Brainsight export for nifti file, brainsight coordinate system
     nii_fn = os.path.join(FIXTURE_DIR,
@@ -133,41 +143,49 @@ def nii_brainsight_fn():
 
 
 @pytest.fixture()
-def nii_nifti_fn():
-    # Brainsight export for nifti file, nifti coordinate system
+def nii_niftiscanner_fn():
+    # Brainsight export for nifti file, nifti:scanner coordinate system
     nii_fn = os.path.join(FIXTURE_DIR,
                           "brainsight",
                           "niiImage_nifticoord.txt".replace('/', os.sep))
     return nii_fn
 
+@pytest.fixture()
+def nii_niftialigned_fn():
+    # Brainsight export for nifti file, nifti:aligned coordinate system
+    nii_fn = os.path.join(FIXTURE_DIR,
+                          "brainsight",
+                          "niiImage_niftialignedcoord.txt".replace('/', os.sep))
+    return nii_fn
+
 
 @pytest.fixture()
-def nii_nifti_empty_fn():
-    # Brainsight export for nifti file, nifti coordinate system
+def nii_niftialigned_empty_fn():
+    # Brainsight export for nifti file, nifti:aligned coordinate system
     # no targets, not samples
     nii_fn = os.path.join(FIXTURE_DIR,
                           "brainsight",
-                          "niiImage_nifticoord_empty.txt".replace('/', os.sep))
+                          "niiImage_niftialignedcoord_empty.txt".replace('/', os.sep))
     return nii_fn
 
 
 @pytest.fixture()
-def nii_nifti_no_samples_fn():
-    # Brainsight export for nifti file, nifti coordinate system
+def nii_niftialigned_no_samples_fn():
+    # Brainsight export for nifti file, nifti:aligned coordinate system
     # not samples
     nii_fn = os.path.join(FIXTURE_DIR,
                           "brainsight",
-                          "niiImage_nifticoord_no_samples.txt".replace('/', os.sep))
+                          "niiImage_niftialignedcoord_no_samples.txt".replace('/', os.sep))
     return nii_fn
 
 
 @pytest.fixture()
-def nii_nifti_no_targets_fn():
-    # Brainsight export for nifti file, nifti coordinate system
+def nii_niftialigned_no_targets_fn():
+    # Brainsight export for nifti file, nifti:aligned coordinate system
     # no targets
     nii_fn = os.path.join(FIXTURE_DIR,
                           "brainsight",
-                          "niiImage_nifticoord_no_targets.txt".replace('/', os.sep))
+                          "niiImage_niftialignedcoord_no_targets.txt".replace('/', os.sep))
     return nii_fn
 
 
@@ -185,6 +203,16 @@ def arr_sample2():
                      [-1.3000e-02, 8.8300e-01, -4.6900e-01, 7.5810e+01],
                      [-7.0200e-01, -3.4200e-01, -6.2400e-01, 6.5742e+01],
                      [0.0000e+00, 0.0000e+00, 0.0000e+00, 1.0000e+00]])
+
+
+## ANT test files and data ##
+@pytest.fixture()
+def ant_mrk_fn():
+    # ANT visor .mrk-file example
+    fn = os.path.join(FIXTURE_DIR,
+                      "ant",
+                      "ioJson3DMarker_example_SimNIBS.mrk")
+    return fn
 
 
 
@@ -269,16 +297,34 @@ class TestSoftaxic():
     def test_read(self, softaxicTestFile, pos0):
         poslist = softaxic().read(softaxicTestFile)
         assert np.allclose(poslist.pos[0].matsimnibs, pos0)
-        
+
 
 class TestBrainsight:
+    # No support for brainsight/world/nifti:scanner
+
     def test_read_dcm_brainsight(self, dcm_brainsight_fn):
-        # No support for brainsight NLR
         with pytest.raises(ValueError) as e:
             brainsight().read(dcm_brainsight_fn)
 
-    def test_read_dcm_world(self, dcm_world_fn, arr_sample1):
-        tmslist_targets, tms_list_samples = brainsight().read(dcm_world_fn)
+
+    def test_read_dcm_world(self, dcm_world_fn):
+        with pytest.raises(ValueError) as e:
+            brainsight().read(dcm_world_fn)
+
+
+    def test_read_nii_brainsight(self, nii_brainsight_fn):
+        with pytest.raises(ValueError):
+            brainsight().read(nii_brainsight_fn)
+
+
+    def test_read_nii_niftiscanner(self, nii_niftiscanner_fn):
+        with pytest.raises(ValueError):
+            brainsight().read(nii_niftiscanner_fn)
+
+    # Only support for nifti:aligned
+
+    def test_read_dcm_niftialigned(self, dcm_niftialigned_fn, arr_sample1):
+        tmslist_targets, tms_list_samples = brainsight().read(dcm_niftialigned_fn)
         assert tmslist_targets.name == 'Targets'
         assert tms_list_samples.name == 'Samples'
         assert len(tmslist_targets.pos) == 1
@@ -286,13 +332,9 @@ class TestBrainsight:
         assert tms_list_samples.pos[0].name == 'Sample 1'
         np.all(np.isclose(tms_list_samples.pos[0].matsimnibs, arr_sample1))
 
-    def test_read_nii_brainsight(self, nii_brainsight_fn):
-        # No support for brainsight NLR
-        with pytest.raises(ValueError) as e:
-            brainsight().read(nii_brainsight_fn)
 
-    def test_read_nii_nifti(self, nii_nifti_fn, arr_sample2):
-        tmslist_targets, tms_list_samples = brainsight().read(nii_nifti_fn)
+    def test_read_nii_niftialigned(self, nii_niftialigned_fn, arr_sample2):
+        tmslist_targets, tms_list_samples = brainsight().read(nii_niftialigned_fn)
         assert tmslist_targets.name == 'Targets'
         assert tms_list_samples.name == 'Samples'
         assert len(tmslist_targets.pos) == 7
@@ -300,43 +342,79 @@ class TestBrainsight:
         assert tms_list_samples.pos[0].name == 'Sample 1'
         np.all(np.isclose(tms_list_samples.pos[0].matsimnibs, arr_sample2))
 
-    def test_read_nii_nifti_empty(self, nii_nifti_empty_fn):
-        with pytest.raises(ValueError) as e:
-            tmslist_targets, tms_list_samples = brainsight().read(nii_nifti_empty_fn)
 
-    def test_read_nii_nifti_no_samples(self, nii_nifti_no_samples_fn):
-        tmslist_targets, tmslist_samples = brainsight().read(nii_nifti_no_samples_fn)
+    def test_read_nii_niftialigned_empty(self, nii_niftialigned_empty_fn):
+        with pytest.raises(ValueError):
+            tmslist_targets, tms_list_samples = brainsight().read(nii_niftialigned_empty_fn)
+
+
+    def test_read_nii_niftialigned_no_samples(self, nii_niftialigned_no_samples_fn):
+        tmslist_targets, tmslist_samples = brainsight().read(nii_niftialigned_no_samples_fn)
         assert len(tmslist_targets.pos) == 7
         assert len(tmslist_samples.pos) == 0
 
-    def test_read_nii_nifti_no_targets(self, nii_nifti_no_targets_fn):
-        tmslist_targets, tmslist_samples = brainsight().read(nii_nifti_no_targets_fn)
+
+    def test_read_nii_niftialigned_no_targets(self, nii_niftialigned_no_targets_fn):
+        tmslist_targets, tmslist_samples = brainsight().read(nii_niftialigned_no_targets_fn)
         assert len(tmslist_targets.pos) == 0
         assert len(tmslist_samples.pos) == 101
 
-    def test_write_nii_space(self, arr_sample2):
+
+    def test_write_nii_niftialigned_space(self, arr_sample2):
         pos = POSITION()
         pos.matsimnibs = arr_sample2
         with tempfile.TemporaryDirectory() as folder:
             print(folder)
             fn = os.path.join(folder, 'export.txt')
 
-            brainsight().write(pos, fn, out_coord_space='NIfTI:Scanner')
+            brainsight().write(pos, fn)
             tmslist_targets, tmslist_samples = brainsight().read(fn)
             assert len(tmslist_targets.pos) == 1
             assert len(tmslist_samples.pos) == 0
             assert np.all(np.isclose(tmslist_targets.pos[0].matsimnibs, arr_sample2))
 
-    def test_write_dicom_space(self, arr_sample1):
-        pos = POSITION()
-        pos.matsimnibs = arr_sample1
+
+class TestAnt:
+    def test_read_mrk(self, ant_mrk_fn):
+        tmslists = ant().read(ant_mrk_fn)
+        assert len(tmslists) == 3
+        assert len(tmslists[0].pos) == 4
+        assert len(tmslists[1].pos) == 2
+        assert len(tmslists[2].pos) == 1
+        
+    def test_read_mrk_with_info(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
+        assert 'NIfTI_quatern' in imageinfo
+        assert 'NIfTI_pixdim' in imageinfo
+        assert 'NIfTI_qoffset' in imageinfo
+        
+    def test_write_mrk(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
         with tempfile.TemporaryDirectory() as folder:
             print(folder)
-            fn = os.path.join(folder, 'export.txt')
-
-            brainsight().write(pos, fn, out_coord_space='World')
-            tmslist_targets, tmslist_samples = brainsight().read(fn)
-            assert len(tmslist_targets.pos) == 1
-            assert len(tmslist_samples.pos) == 0
-            assert np.all(np.isclose(tmslist_targets.pos[0].matsimnibs, arr_sample1))
+            fn = os.path.join(folder, 'export.mrk')
+            ant().write(tmslists, fn, imageinfo=imageinfo)
             
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                # header infos are identical --> no warning should be raised
+                tmslists2 = ant().read(fn, imageinfo=imageinfo)
+                assert len(tmslists2) == 3
+                assert np.all(np.isclose(tmslists[0].pos[-1].matsimnibs, 
+                                         tmslists2[0].pos[-1].matsimnibs))
+                   
+    def test_write_mrk_no_imageinfo(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
+        with tempfile.TemporaryDirectory() as folder:
+            print(folder)
+            fn = os.path.join(folder, 'export.mrk')
+            ant().write(tmslists, fn)
+            
+            with pytest.warns():
+                # header infos are different --> warning should be raised
+                tmslists2 = ant().read(fn, imageinfo=imageinfo)
+                assert len(tmslists2) == 3
+                assert np.all(np.isclose(tmslists[0].pos[-1].matsimnibs, 
+                                         tmslists2[0].pos[-1].matsimnibs))
+
+        

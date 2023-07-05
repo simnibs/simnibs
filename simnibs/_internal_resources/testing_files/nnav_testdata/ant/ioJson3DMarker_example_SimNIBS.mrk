@@ -1,0 +1,155 @@
+{
+  "Configuration": {
+    "SourceInfo": {
+      "AppName": "visor2",
+      "AppVersion": "2.8.0"
+    },
+    "AssociatedImageInfo": {
+        "NIfTI_quatern": [0.0, 1.0, 0.0],
+        "NIfTI_qoffset": [90.0, -126.0, -172.0],
+        "NIfTI_pixdim": [-1.0, 1.0, 1.0, 1.0]
+    }
+  },
+  "TargetMarkers": [
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_1",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": "Drakaki_BrainStim_2022/MagStim_D70.ccd"
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [  -0.55403229, 0.25881905,  0.79124012, -70.0 ],
+            [   0.14845251, 0.96592583, -0.21201215, -10.0 ],
+            [  -0.81915204, 0.0,        -0.57357644,  60.0 ],
+            [   0.0,        0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_2",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": "Drakaki_BrainStim_2022/MagStim_D70.ccd"
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_3",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": ""
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": "Drakaki_BrainStim_2022/MagStim_D70.ccd"
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_4",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": "legacy_and_other/Magstim_70mm_Fig8.nii.gz"
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_5",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": ""
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    },
+    {
+      "CoilTarget": {
+        "Name": "CoilMarker_6",
+        "CoordinateSystem": "ASSOCIATED_IMAGE",
+        "PositionalUnit": "mm",
+        "CoilAxesConvention": "simnibs",
+        "CoilInfo": {
+          "Type": "MagStim_D70",
+          "Id": "Drakaki_BrainStim_2022/MagStim_D70.ccd"
+        },
+        "CoilPose": {
+          "RigidTransformMatrix4x4": [
+            [ -0.90630779,  0.07338689,  0.41619774, -35.0 ],
+            [  0.0,         0.98480775, -0.17364818, -20.0 ],
+            [ -0.42261826, -0.1573787,  -0.89253894,  91.0 ],
+            [  0.0,         0.0,         0.0,          1.0 ]
+          ]
+        }
+      }
+    }
+ ]
+}

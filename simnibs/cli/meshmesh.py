@@ -34,7 +34,7 @@ import numpy as np
 
 from simnibs import __version__
 from simnibs import SIMNIBSDIR
-from simnibs.simulation import cond
+from simnibs.utils import cond_utils
 from simnibs.mesh_tools.mesh_io import write_msh
 from simnibs.mesh_tools.meshing import create_mesh
 from simnibs.utils.transformations import resample_vol, crop_vol
@@ -162,7 +162,7 @@ def main():
     if not args.mesh_name.lower().endswith('.msh'):
         args.mesh_name+='.msh'
     write_msh(new_mesh, args.mesh_name)
-    v = new_mesh.view(cond_list = cond.standard_cond())
+    v = new_mesh.view(cond_list = cond_utils.standard_cond())
     v.write_opt(args.mesh_name)
     try:
         shutil.copyfile(args.usesettings, args.mesh_name+'.ini')

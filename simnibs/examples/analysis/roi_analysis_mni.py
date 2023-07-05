@@ -15,7 +15,7 @@ head_mesh = simnibs.read_msh(
 )
 
 # Crop the mesh so we only have gray matter volume elements (tag 2 in the mesh)
-gray_matter = head_mesh.crop_mesh(2)
+gray_matter = head_mesh.crop_mesh(simnibs.ElementTags.GM)
 
 
 ## Define the ROI

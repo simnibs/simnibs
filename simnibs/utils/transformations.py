@@ -32,6 +32,8 @@ import scipy.ndimage
 import scipy.spatial
 from scipy.sparse import coo_matrix, csr_matrix
 from typing import Union
+
+from simnibs.utils.mesh_element_properties import ElementTags
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
@@ -1210,7 +1212,7 @@ def warp_coordinates(coordinates, m2m_folder,
     # Write CSV
     if out_name is not None:
         write_csv_positions(
-            out_name, type_, transformed_coords, transformed_extra, name, extra_cols, header)
+            out_name, type_, transformed_coords, name, transformed_extra, extra_cols, header)
         if out_geo is not None:
             csv_to_geo(out_name, out_geo)
 
@@ -1649,10 +1651,10 @@ def middle_gm_interpolation(
     sim_name = "." + os.path.splitext(sim_name)[0]
 
     # Crop out WM, GM, and CSF. We add WM and CSF to make the mesh convex.
-    m = m.crop_mesh(tags=[1, 2, 3])
+    m = m.crop_mesh(tags=[ElementTags.WM, ElementTags.GM, ElementTags.CSF])
 
     # Set the volume to be GM. The interpolation will use only the tetrahedra in the volume.
-    th_indices = m.elm.elm_number[m.elm.tag1 == 2]
+    th_indices = m.elm.elm_number[m.elm.tag1 == ElementTags.GM]
 
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
@@ -1675,8 +1677,7 @@ def middle_gm_interpolation(
     for hemi in subject_files.hemispheres:
         mesh_io.write_freesurfer_surface(
             middle_surf[hemi],
-            os.path.join(out_folder, hemi + ".central"),
-            subject_files.ref_fs,
+            os.path.join(out_folder, hemi + ".central")
         )
 
     if out_fsaverage is not None:
@@ -1761,8 +1762,8 @@ def middle_gm_interpolation(
 
     def join_and_write(surfs, fn_out, open_in_gmsh, f_geo=None):
         mesh = surfs["lh"].join_mesh(surfs["rh"])
-        mesh.elm.tag1 = 1002 * np.ones(mesh.elm.nr, dtype=int)
-        mesh.elm.tag2 = 1002 * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag1 = ElementTags.GM_TH_SURFACE * np.ones(mesh.elm.nr, dtype=int)
+        mesh.elm.tag2 = ElementTags.GM_TH_SURFACE * np.ones(mesh.elm.nr, dtype=int)
         mesh.nodedata = []
         mesh.elmdata = []
         for k in surfs["lh"].field.keys():
@@ -1845,7 +1846,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi="both"):
         )
         labels, _, names = nib.freesurfer.io.read_annot(fn_atlas)
         morph = SurfaceMorph(
-            read_gifti_surface(get_reference_surf("sphere", hemi)),
+            read_gifti_surface(get_reference_surf(hemi, "sphere")),
             read_gifti_surface(subject_files.surfaces["sphere.reg"][hemi]),
             method="nearest",  # we are interpolating labels
         )

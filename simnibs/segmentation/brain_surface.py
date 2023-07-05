@@ -32,7 +32,7 @@ from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.spawn_process import spawn_process
 from ..utils.transformations import resample_vol, crop_vol, normalize
-
+from ..utils import mesh_element_properties 
 
 
 # --------------- expansion from central to pial surface ------------------
@@ -229,7 +229,7 @@ def expandCS(vertices_org, faces, mm2move_total, ensure_distance=0.2, nsteps=5,
                          elements=mesh_io.Elements(faces+1))
             filename = "mesh_expand_{:d}_of_{:d}"
             filename = filename.format(i+1, nsteps)
-            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh", ref_fs=True)
+            mesh_io.write_freesurfer_surface(tmpmsh, filename+".fsmesh")
 
             tmpmsh.add_node_field(move, 'move')
 
@@ -1584,12 +1584,12 @@ def subsample_surfaces(m2m_dir, n_points: int) -> dict:
 
     # write subsampled central surface as well as index and normals
     for h, v in subsampled.items():
-        filename = m2m.get_surface("central", h, n_points)
+        filename = m2m.get_surface(h, "central", n_points)
         if not filename.parent.exists():
             filename.parent.mkdir()
         mesh_io.write_gifti_surface(v, filename)
         for name, data in v.field.items():
-            filename = m2m.get_morph_data(name, h, n_points)
+            filename = m2m.get_morph_data(h, name, n_points)
             filename = filename.with_suffix(f"{filename.suffix}.csv")
             if name == "index":
                 np.savetxt(filename, data.value, "%i", ",")
@@ -1607,14 +1607,14 @@ def subsample_surfaces(m2m_dir, n_points: int) -> dict:
                     mesh_io.Nodes(v.nodes.node_coord[subsampled[h].field["index"].value]),
                     subsampled[h].elm,
                 ),
-                m2m.get_surface(s, h, n_points)
+                m2m.get_surface(h, s, n_points)
             )
 
     for d in m2m._standard_morph_data:
         data = mesh_io.load_subject_morph_data(m2m, d)
         for h, v in data.items():
             nib.freesurfer.write_morph_data(
-                m2m.get_morph_data(d, h, n_points),
+                m2m.get_morph_data(h, d, n_points),
                 v[subsampled[h].field["index"].value],
             )
 
@@ -2114,3 +2114,4 @@ def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
     ensure_orientation_consistency(rr, tris)
     surfs[f"cent_{name}_sub"] = pv.make_tri_mesh(central_surf["points"][used], tris)
     surfs[f"sphe_{name}_sub"] = pv.make_tri_mesh(sphere_surf["points"][used], tris)
+    

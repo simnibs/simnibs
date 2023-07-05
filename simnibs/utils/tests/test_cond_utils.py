@@ -1,10 +1,15 @@
+
+
+import pytest
+from simnibs.utils.cond_utils import COND
 import os
 import numpy as np
 import pytest
 
+import simnibs.utils.cond_utils
+
 from ... import SIMNIBSDIR
 from ...mesh_tools import mesh_io
-from .. import cond
 
 @pytest.fixture
 def sphere3_msh():
@@ -29,7 +34,7 @@ def tensor():
 class TestCond2Elmdata:
     def test_isotropic(self, sphere3_msh):
         cond_list = [None, None, 1, 2, 3]
-        c = cond.cond2elmdata(sphere3_msh, cond_list).value
+        c = simnibs.utils.cond_utils.cond2elmdata(sphere3_msh, cond_list).value
         assert np.all(c[sphere3_msh.elm.tag1==3] == 1)
         assert np.all(c[sphere3_msh.elm.tag1==1003] == 1)
         assert np.all(c[sphere3_msh.elm.tag1==4] == 2)
@@ -48,7 +53,7 @@ class TestCond2Elmdata:
                            [0, 0, 0, 1]])
 
         msh = sphere3_msh
-        elmcond = cond.cond2elmdata(msh, cond_list, v, affine,
+        elmcond = simnibs.utils.cond_utils.cond2elmdata(msh, cond_list, v, affine,
                                     aniso_tissues=3,
                                     max_cond=np.inf,
                                     max_ratio=np.inf,
@@ -62,7 +67,7 @@ class TestCond2Elmdata:
                            [3, 0, 0, 0, 3, 0, 0, 0, 3])
         vol = np.linalg.eig(tensor)[0].prod() ** (1./3.)
         scaling = (vol * 1 + vol * 2) / (2 * (vol ** 2))
-        elmcond = cond.cond2elmdata(msh, cond_list, v, affine,
+        elmcond = simnibs.utils.cond_utils.cond2elmdata(msh, cond_list, v, affine,
                                     aniso_tissues=[3, 4],
                                     max_cond=np.inf,
                                     max_ratio=np.inf,
@@ -85,7 +90,7 @@ class TestCond2Elmdata:
                            [0, 0, 1, -127],
                            [0, 0, 0, 1]])
 
-        elmcond = cond.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
+        elmcond = simnibs.utils.cond_utils.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
                                     normalize=True)
         tensor = elmcond.value[sphere3_msh.elm.tag1 == 3].reshape(-1, 3, 3)
         t = affine[:3, :3].dot(t).dot(affine[:3, :3])
@@ -107,7 +112,7 @@ class TestCond2Elmdata:
                            [0, 0, 1, -127],
                            [0, 0, 0, 1]])
 
-        elmcond = cond.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
+        elmcond = simnibs.utils.cond_utils.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
                                     normalize=True)
         assert np.allclose(elmcond.value[sphere3_msh.elm.tag1 == 3],
                            [2, 0, 0, 0, 2, 0, 0, 0, 2])
@@ -129,7 +134,7 @@ class TestCond2Elmdata:
                            [0, 0, 1, -127],
                            [0, 0, 0, 1]])
 
-        elmcond = cond.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
+        elmcond = simnibs.utils.cond_utils.cond2elmdata(sphere3_msh, cond_list, v, affine, aniso_tissues=3,
                                     normalize=True, excentricity_scaling=0.)
         tensor = elmcond.value[sphere3_msh.elm.tag1 == 3].reshape(-1, 3, 3)
         t = affine[:3, :3].dot(t).dot(affine[:3, :3])
@@ -142,42 +147,42 @@ class TestExcentricity:
     def test_excentricity_no_change(self, tensor):
         t = np.tile(np.array([10., 5, 1]), [10, 1])
         t[1] = [1, 1, 1]
-        t2 = cond._adjust_excentricity(t, .5)
+        t2 = simnibs.utils.cond_utils._adjust_excentricity(t, .5)
         assert np.allclose(t2, t)
 
     def test_excentricity_to_iso(self, tensor):
         t = np.tile(np.array([10., 5, 1]), [10, 1])
         t[1, :] = 50 ** (1./3.)
-        t2 = cond._adjust_excentricity(t, 0)
+        t2 = simnibs.utils.cond_utils._adjust_excentricity(t, 0)
         assert np.allclose(t2.prod(axis=1), t.prod(axis=1))
         assert np.allclose(t2, 50 ** (1./3.))
 
     def test_iso_to_excentric(self):
         t = np.tile(np.array([1., 1, 1]), [10, 1])
         t *= np.arange(1, 11)[:, None]
-        t2 = cond._adjust_excentricity(t, .99)
+        t2 = simnibs.utils.cond_utils._adjust_excentricity(t, .99)
         assert np.allclose(t2, t)
 
 
 class TestFixTensors:
     def test_change_negative_eigv(self):
         eigv = np.array([[10, 1, -2], [20, 2, -1]])
-        eigv = cond._fix_eigv(eigv, 100, 10, 1)
+        eigv = simnibs.utils.cond_utils._fix_eigv(eigv, 100, 10, 1)
         assert np.allclose(eigv, [[10, 1, 1], [20, 2, 2]])
 
     def test_change_large_eigv(self):
         eigv = np.array([[100, 1, 1], [200, 2, 2]])
-        eigv = cond._fix_eigv(eigv, 50, 100, 1)
+        eigv = simnibs.utils.cond_utils._fix_eigv(eigv, 50, 100, 1)
         assert np.allclose(eigv, [[50, 1, 1], [50, 2, 2]])
 
     def test_change_small_eigv(self):
         eigv = np.array([[100, 1, 1], [200, 2, 2]])
-        eigv = cond._fix_eigv(eigv, 500, 10, 1)
+        eigv = simnibs.utils.cond_utils._fix_eigv(eigv, 500, 10, 1)
         assert np.allclose(eigv, [[100, 10, 10], [200, 20, 20]])
 
     def test_change_negative_semidef(self):
         eigv = np.array([[100, 1, 1], [-1, -2, -1]])
-        eigv = cond._fix_eigv(eigv, 500, 10, 1)
+        eigv = simnibs.utils.cond_utils._fix_eigv(eigv, 500, 10, 1)
         assert np.allclose(eigv, [[100, 10, 10], [1, 1, 1]])
 
 
@@ -190,7 +195,7 @@ class TestTensorVisualization:
         factor = np.arange(1, 11)
         t *= factor[:, None, None]
         t = mesh_io.ElementData(t.reshape(-1, 9))
-        fields = cond.TensorVisualization(t, None, all_compoents=True)
+        fields = simnibs.utils.cond_utils.visualize_tensor(t, None, all_compoents=True)
         assert np.allclose(fields[0].value / factor[:, None],
                            eig_val[max_eig] * eig_vec[:, max_eig])
         assert np.allclose(fields[2].value / factor[:, None],
@@ -211,3 +216,15 @@ class TestTensorVisualization:
         return t
 '''
 
+
+
+class TestCond:
+    def test_set_distribution(self):
+        c = COND()
+        c.distribution_type = 'uniform'
+        assert True
+
+    def test_set_distribution_fail(self):
+        c = COND()
+        with pytest.raises(ValueError):
+            c.distribution_type = 'b'

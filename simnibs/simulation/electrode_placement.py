@@ -26,6 +26,8 @@ import warnings
 import copy
 import numpy as np
 import scipy.spatial
+
+from simnibs.utils.mesh_element_properties import ElementTags
 from ..mesh_tools.mesh_io import _hash_rows
 from ..utils.transformations import project_points_on_surface
 
@@ -51,7 +53,7 @@ def _get_nodes_in_surface(mesh, surface_tags):
     nodes_in_surface = np.unique(mesh.elm.node_number_list[tr_of_interest, :3])
     return nodes_in_surface
 
-def _get_transform(center, y_axis, mesh, mesh_surface=[5, 1005], y_type='relative',
+def _get_transform(center, y_axis, mesh, mesh_surface=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE], y_type='relative',
                    nodes_roi=None):
     ''' Finds the transformation to make  '''
     center = np.array(center, dtype=float)
@@ -699,7 +701,7 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
 
 
 def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_tag,
-                             on_top_of=[5, 1005], holes=[], plug=None, plug_tag=None,
+                             on_top_of=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE], holes=[], plug=None, plug_tag=None,
                              middle_layer=None):
     ''' Given the spatial localization of the electrode and the polygon description, add
     it to the mesh '''
@@ -820,7 +822,7 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
     return mesh
 
 
-def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
+def _create_polygon_from_elec(elec, mesh, skin_tag=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE]):
     if elec.definition == 'plane':
         if elec.shape in ['rect', 'rectangle', 'ellipse']:
             if elec.dimensions is None or len(elec.dimensions) == 0:
@@ -894,8 +896,8 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[5, 1005]):
 
     return poly, center, y_axis
 
-def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[5, 1005], extra_add=400,
-                          surf_add=1000, plug_add=2000):
+def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE], extra_add=(ElementTags.SALINE_START - ElementTags.ELECTRODE_RUBBER_START),
+                          surf_add=ElementTags.TH_SURFACE_START, plug_add=ElementTags.ELECTRODE_PLUG_SURFACE_START):
     ''' Places an electrode in the given mesh
 
     Parameters

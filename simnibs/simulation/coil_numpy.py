@@ -7,6 +7,8 @@ import numpy as np
 import nibabel as nib
 import os
 import re
+
+from simnibs.utils.mesh_element_properties import ElementTags
 from .. import __version__
 from ..mesh_tools import mesh_io
 from ..utils.file_finder import Templates
@@ -531,13 +533,13 @@ def _add_logo(msh_stl):
     # 0 gray, 1 red, 2 lightblue, 3 blue
     major_version = __version__.split('.')[0]
     if  major_version == '3':
-        msh_logo=msh_logo.crop_mesh(tags = [1,2])
-        msh_logo.elm.tag1[msh_logo.elm.tag1==2] = 3 # version in blue
+        msh_logo=msh_logo.crop_mesh(tags = [ElementTags.WM, ElementTags.GM])
+        msh_logo.elm.tag1[msh_logo.elm.tag1==ElementTags.GM] = 3 # version in blue
     elif major_version == '4':
-        msh_logo=msh_logo.crop_mesh(tags=[1,3])
+        msh_logo=msh_logo.crop_mesh(tags=[ElementTags.WM, ElementTags.CSF])
     else:
-        msh_logo=msh_logo.crop_mesh(tags=1)
-    msh_logo.elm.tag1[msh_logo.elm.tag1==1] = 2 # 'simnibs' in light blue
+        msh_logo=msh_logo.crop_mesh(tags=ElementTags.WM)
+    msh_logo.elm.tag1[msh_logo.elm.tag1==ElementTags.WM] = 2 # 'simnibs' in light blue
 
     # center logo in xy-plane, mirror at yz-plane and scale
     bbox_coil=np.vstack([np.min(msh_stl.nodes[:],0),
@@ -635,8 +637,8 @@ def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=N
         raise ValueError('coil file must be either a .ccd file or a nifti file')
 
     if (fn_geo is not None) and (fn_stl is not None):
-        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == 1005) |
-                                        (msh.elm.tag1 == 5) )
+        idx = (msh.elm.elm_type == 2)&( (msh.elm.tag1 == ElementTags.SCALP_TH_SURFACE) |
+                                        (msh.elm.tag1 == ElementTags.SCALP) )
         msh_skin = msh.crop_mesh(elements = msh.elm.elm_number[idx])
         if not os.path.isfile(fn_stl):
             raise IOError('Could not find stl file: {0}'.format(fn_stl))

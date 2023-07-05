@@ -109,23 +109,17 @@ def write_csv_positions(filename, types, coordinates, name, extra=None, extra_co
     ------------
     fn: str
         Name of csv file
-
     type: list
         Type of position in each row ('Generic', 'Fiducial', 'Electrode', 'ReferenceElectrode' or
         'Coil')
-
     coordinates: numpy array
         Coordinates in each row
-
-    extra: list
-        extra coordinates in each row (eg: electrode or coil axes)
-
     name: list
         Name of position
-
+    extra: list
+        extra coordinates in each row (eg: electrode or coil axes)
     extra_cols: list
         Any extra information stored in the columns
-
     header: str
         Any information in the header
 
