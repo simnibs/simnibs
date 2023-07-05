@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 from typing import Any
 import numpy as np
+from scipy.spatial import KDTree
 import nibabel as nib
 import pytest
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
@@ -799,6 +800,46 @@ class TestCoilMesh:
 
 
 class TestPositionOptimization:
+    def test_initial_intersection(self, small_functional_3_element_coil : TmsCoil,sphere3_msh: Msh):
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 50], [0, 0, 0, 1]]
+        )
+        with pytest.raises(ValueError):
+            small_functional_3_element_coil.optimize_deformations(
+                skin_surface, coil_affine
+            )
+
+    def test_no_deformations(self, small_functional_3_element_coil : TmsCoil,sphere3_msh: Msh):
+        coil = deepcopy(small_functional_3_element_coil)
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+        for element in coil.elements:
+            element.deformations = []
+
+        coil.deformations = []
+
+        with pytest.raises(ValueError):
+            coil.optimize_deformations(
+                skin_surface, coil_affine
+            )
+
+    def test_no_casings(self, small_functional_3_element_coil : TmsCoil,sphere3_msh: Msh):
+        coil = deepcopy(small_functional_3_element_coil)
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+        for element in coil.elements:
+            element.casing = None
+                    
+        with pytest.raises(ValueError):
+            coil.optimize_deformations(
+                skin_surface, coil_affine
+            )
+
     def test_simple_optimization(self, small_functional_3_element_coil : TmsCoil,sphere3_msh: Msh):
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
         coil_affine = np.array(
@@ -888,3 +929,13 @@ class TestInit:
     def test_negative_values_resolution(self):
         with pytest.raises(ValueError): 
             TmsCoil([DipoleElements(TmsStimulator(""),[[1,2,3]], [[1,2,3]])], resolution=[-1, 2, 3])
+
+class TestCasingGeneration:
+    def test_distance(self, small_functional_3_element_coil:TmsCoil):
+        coil = deepcopy(small_functional_3_element_coil)
+        coil.generate_element_casings(10.0, 1, True)
+        for element in coil.elements:
+            if isinstance(element, LineSegmentElements):
+                tree = KDTree(element.points)
+                distances, _ = tree.query(element.casing.mesh.nodes.node_coord, k=1)
+                assert np.min(distances) + 0.3 > 10.0

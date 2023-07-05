@@ -1,7 +1,9 @@
+from copy import deepcopy
 import numpy as np
 import pytest
 
-from simnibs.mesh_tools.mesh_io import Msh
+from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilRotation, TmsCoilTranslation
 from simnibs.simulation.tms_coil.tms_coil_element import (
@@ -9,6 +11,7 @@ from simnibs.simulation.tms_coil.tms_coil_element import (
     LineSegmentElements,
     SampledGridPointElements,
 )
+from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator
 
 class TestCalcdAdt:
@@ -116,7 +119,44 @@ class TestCalcdAdt:
         np.testing.assert_allclose(da_dt[:, 1], 1e6, atol=1e-6)
         np.testing.assert_allclose(da_dt[:, 2], 3e6, atol=1e-6)
 
-class TestCombinedTransformation:
+class TestTransformationAndDeformation:
+    def test_freeze_element_dipole(sself):
+        element = DipoleElements(None, [[1,2,3]], [[4,5,6]], 
+                                casing=TmsCoilModel(Msh(Nodes([[7,8,9], [10,11,12], [13,14,15]]), Elements(np.array([[1,2,3]])))),
+                                deformations=[TmsCoilTranslation(22, [0, 100], 0)])
+        element_after = element.freeze_deformations()
+
+        assert len(element_after.deformations) == 0
+        np.testing.assert_allclose(element_after.points, [[1+22,2,3]])
+        np.testing.assert_allclose(element_after.values, [[4,5,6]])
+        np.testing.assert_allclose(element_after.casing.mesh.nodes.node_coord, [[7+22,8,9], [10+22,11,12], [13+22,14,15]])
+        np.testing.assert_allclose(element_after.casing.mesh.elm.node_number_list, [[1,2,3,-1]])
+
+    def test_freeze_element_line_elements(self):
+        element = LineSegmentElements(None, [[1,2,3]], [[4,5,6]], 
+                                casing=TmsCoilModel(Msh(Nodes([[7,8,9], [10,11,12], [13,14,15]]), Elements(np.array([[1,2,3]])))),
+                                deformations=[TmsCoilTranslation(22, [0, 100], 0)])
+        element_after = element.freeze_deformations()
+
+        assert len(element_after.deformations) == 0
+        np.testing.assert_allclose(element_after.points, [[1+22,2,3]])
+        np.testing.assert_allclose(element_after.values, [[4,5,6]])
+        np.testing.assert_allclose(element_after.casing.mesh.nodes.node_coord, [[7+22,8,9], [10+22,11,12], [13+22,14,15]])
+        np.testing.assert_allclose(element_after.casing.mesh.elm.node_number_list, [[1,2,3,-1]])
+
+    def test_freeze_element_sampled_grid_points(self):
+        element = SampledGridPointElements(None, [[[[1,2,3]]]], np.eye(4), 
+                                casing=TmsCoilModel(Msh(Nodes([[7,8,9], [10,11,12], [13,14,15]]), Elements(np.array([[1,2,3]])))),
+                                deformations=[TmsCoilTranslation(22, [0, 100], 0)])
+        element_after = element.freeze_deformations()
+
+        assert len(element_after.deformations) == 0
+        np.testing.assert_allclose(element_after.data, [[[[1,2,3]]]])
+        affine_after = np.eye(4)
+        affine_after[0, 3] = 22
+        np.testing.assert_allclose(element_after.affine, affine_after)
+        np.testing.assert_allclose(element_after.casing.mesh.nodes.node_coord, [[7+22,8,9], [10+22,11,12], [13+22,14,15]])
+        np.testing.assert_allclose(element_after.casing.mesh.elm.node_number_list, [[1,2,3,-1]])
 
     @pytest.mark.parametrize("rotation_amount", [-121.99, -24, 0, 44, 180.23, 720])
     @pytest.mark.parametrize("translation_amount", [-199.9, -34, 0, 21, 122])
@@ -316,9 +356,64 @@ class TestCombinedTransformation:
         np.testing.assert_allclose(dipoles_rot_rot_trans.get_combined_transformation(), trans1 @ rot2 @ rot, atol=1e-5)
 
 
+class TestInit:
+    def test_wrong_shape_points(self):
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [1,2,3], [[1,2,3]])
 
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3,4]], [[1,2,3]])
+
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2], [3,4]], [[1,2,3]])
+
+    def test_wrong_shape_values(self):
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3]], [1,2,3])
+
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3]], [[1,2,3,4]])
+
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3]], [[1,2], [3,4]])
+
+    def test_uneven_point_value_count(self):
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3], [1,2,3]], [[1,2,3]])
+
+        with pytest.raises(ValueError): 
+            DipoleElements(None, [[1,2,3]], [[1,2,3], [1,2,3]])
+
+class TestGetFunctions:
+    def test_get_points_no_transformation(self):
+        element = DipoleElements(None, [[1,2,3]], [[4,5,6]])
+
+        np.testing.assert_allclose(element.get_points(apply_deformation=False), [[1,2,3]])
+
+    def test_get_values_no_transformation(self):
+        element = DipoleElements(None, [[1,2,3]], [[4,5,6]])
+
+        np.testing.assert_allclose(element.get_values(apply_deformation=False), [[4,5,6]])
 
 class TestGetMesh:
+    def test_get_casing_coordinates_no_transformation(self, small_functional_3_element_coil: TmsCoil):
+        
+        casing, min_distance_points, intersection_points = small_functional_3_element_coil.elements[0].get_casing_coordinates()
+
+        np.testing.assert_allclose(casing, small_functional_3_element_coil.elements[0].casing.mesh.nodes.node_coord)
+        assert len(min_distance_points) == 0
+        assert len(intersection_points) == 0
+
+    def test_get_mesh_deformed(self, small_functional_3_element_coil: TmsCoil):
+        
+        coil = deepcopy(small_functional_3_element_coil)
+        coil.elements[2].deformations[0].current = 90
+        element_mesh = coil.elements[2].get_mesh(np.eye(4), include_coil_element=False)
+        np.testing.assert_allclose(element_mesh.nodes.node_coord, [[-20.,  20.,   0.],
+                                                                        [-20.,  20., -40.],
+                                                                        [ 20.,  20.,   0.],
+                                                                        [ 20.,  20., -40.]])
+
     def test_dipole_element_mesh(self):
         dipole_locations = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
         dipole_moments = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])

@@ -43,19 +43,19 @@ class TmsWaveform:
         self.signal = np.array(signal, dtype=np.float64)
         self.fit = None if fit is None else np.array(fit, dtype=np.float64)
 
-        if self.time.ndim != 1:
+        if self.time.ndim != 1 or len(self.time) < 2:
             raise ValueError(
-                f"Expected 'time' to have the shape (N) but shape was {self.time.shape}"
+                f"Expected 'time' to have the shape (N) with N >= 2 but shape was {self.time.shape}"
             )
 
-        if self.signal.ndim != 1:
+        if self.signal.ndim != 1 or len(self.signal) < 2:
             raise ValueError(
-                f"Expected 'signal' to have the shape (N) but shape was {self.signal.shape}"
+                f"Expected 'signal' to have the shape (N) with N >= 2 but shape was {self.signal.shape}"
             )
 
-        if self.fit is not None and self.fit.ndim != 1:
+        if self.fit is not None and (self.fit.ndim != 1 or len(self.fit) < 2):
             raise ValueError(
-                f"Expected 'fit' to have the shape (N) but shape was {self.fit.shape}"
+                f"Expected 'fit' to have the shape (N) with N >= 2 but shape was {self.fit.shape}"
             )
 
     def to_tcd(self, ascii_mode: bool = False) -> dict:
@@ -161,7 +161,7 @@ class TmsStimulator:
     @di_dt.setter
     def di_dt(self, value):
         if self.max_di_dt is not None and (
-            self.di_dt < -self.max_di_dt or self.di_dt > self.max_di_dt
+            value < -self.max_di_dt or value > self.max_di_dt
         ):
             raise ValueError(
                 f"dIdt must be within the range ({-self.max_di_dt}, {self.max_di_dt})"

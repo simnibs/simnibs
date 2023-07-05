@@ -11,6 +11,7 @@ import numpy as np
 import numpy.typing as npt
 import scipy.optimize as opt
 from scipy.spatial import KDTree
+from scipy import ndimage
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
@@ -1259,9 +1260,9 @@ class TmsCoil(TcdElement):
         for element in self.elements:
             if isinstance(element, PositionalTmsCoilElements) and (element.casing is None or override):
                 limits = [
-                    [np.min(element.points[:, 0]) - distance - grid_spacing, np.max(element.points[:, 0]) + distance + grid_spacing],
-                    [np.min(element.points[:, 1]) - distance - grid_spacing, np.max(element.points[:, 1]) + distance + grid_spacing],
-                    [np.min(element.points[:, 2]) - distance - grid_spacing, np.max(element.points[:, 2]) + distance + grid_spacing],
+                    [np.min(element.points[:, 0]) - 3 * distance - grid_spacing, np.max(element.points[:, 0]) + 3 * distance + grid_spacing],
+                    [np.min(element.points[:, 1]) - 3 * distance - grid_spacing, np.max(element.points[:, 1]) + 3 * distance + grid_spacing],
+                    [np.min(element.points[:, 2]) - 3 * distance - grid_spacing, np.max(element.points[:, 2]) + 3 * distance + grid_spacing],
                 ]
 
                 grid_x = np.arange(limits[0][0], limits[0][1], grid_spacing)
@@ -1269,19 +1270,21 @@ class TmsCoil(TcdElement):
                 grid_z =  np.arange(limits[2][0], limits[2][1], grid_spacing)
                 grid_points = np.stack(np.meshgrid(grid_x, grid_y, grid_z, indexing='ij'), axis=-1).reshape(-1, 3)
 
-                volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
-                volume_data.fill(1)
+                #volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
+                #volume_data.fill(0)
 
                 tree = KDTree(element.points)
                 distances, _ = tree.query(grid_points, k=1)
-                indices = np.argwhere(distances < distance)
-                volume_data[np.unravel_index(indices, volume_data.shape)] = 0
+                volume_data = distances.reshape((len(grid_x), len(grid_y), len(grid_z)))
 
-                vertices, faces, _, _ = marching_cubes_lewiner(volume_data, level=0.5,
+                volume_data = ndimage.gaussian_filter(volume_data, sigma=1)
+
+                vertices, faces, _, _ = marching_cubes_lewiner(volume_data, level=distance,
                                                             spacing=tuple(np.array(
                                                                 [grid_spacing, grid_spacing, grid_spacing], dtype='float32')),
                                                             step_size=1, allow_degenerate=False)
                 vertices += [limits[0][0], limits[1][0], limits[2][0]]
+
                 casing = mesh_io.Msh(mesh_io.Nodes(vertices), mesh_io.Elements(faces + 1))
                 casing.smooth_surfaces(40)
 

@@ -414,6 +414,11 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
             raise ValueError(
                 f"Expected 'values' to have the shape (N, 3) but shape was {self.values.shape}"
             )
+        
+        if len(self.values) != len(self.points):
+            raise ValueError(
+                f"Expected the same amount of 'points' and 'values' ({len(self.values)} != {len(self.points)})"
+            )
 
     def get_points(
         self,

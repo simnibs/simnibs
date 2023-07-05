@@ -41,8 +41,8 @@ class TmsCoilModel(TcdElement):
         intersect_points: Optional[npt.ArrayLike] = None,
     ):
         self.mesh = mesh
-        self.mesh.nodes.node_coord = self.mesh.nodes.node_coord.astype(np.float64)
-        self.mesh.elm.node_number_list = self.mesh.elm.node_number_list.astype(np.int64)
+        self.mesh.nodes.node_coord = np.array(self.mesh.nodes.node_coord, dtype=np.float64)
+        self.mesh.elm.node_number_list = np.array(self.mesh.elm.node_number_list, dtype=np.int64)
 
         self.min_distance_points = (
             np.array([], dtype=np.float64)
@@ -244,10 +244,12 @@ class TmsCoilModel(TcdElement):
     def apply_deformations(
         self, affine_matrix: npt.NDArray[np.float_]
     ) -> "TmsCoilModel":
+        deformed_min_distance_points = self.get_min_distance_points(affine_matrix)
+        deformed_intersection_points = self.get_intersect_points(affine_matrix)
         return TmsCoilModel(
             Msh(Nodes(self.get_points(affine_matrix)), self.mesh.elm),
-            self.get_min_distance_points(affine_matrix),
-            self.get_intersect_points(affine_matrix),
+            deformed_min_distance_points if len(deformed_min_distance_points) > 0 else None,
+            deformed_intersection_points if len(deformed_intersection_points) > 0 else None,
         )
 
     def to_tcd(self, ascii_mode: bool = False) -> dict:
