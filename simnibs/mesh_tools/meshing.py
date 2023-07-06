@@ -1363,8 +1363,13 @@ def _relabel_microtets(m, el_max = 0.0001):
     # max Edge length
     Smax = np.max(np.linalg.norm(E, axis=2), axis=1)
 
-    idx=np.argwhere(Smax<el_max).flatten()
+    idx = np.argwhere(Smax<el_max).flatten()
+
+    if len(idx) == 0:
+        return m
+
     idx_c = m.elm.connected_components(idx+1)
+
     for i in idx_c:
         logger.debug(f"Relabeling group of {len(i)} micro-tets")
         m.elm.tag1[i-1] = np.argmax(np.bincount(m.elm.tag1[i-1]))
@@ -1372,7 +1377,7 @@ def _relabel_microtets(m, el_max = 0.0001):
     return m
 
 
-def _run_mmg(m, mmg_noinsert=True):
+def _run_mmg(m, mmg_noinsert=True, fn_sol=None):
     """
     Wrapper around mmg command line call to improve mesh quality.
 
@@ -1382,6 +1387,8 @@ def _run_mmg(m, mmg_noinsert=True):
         Mesh structure.
     mmg_noinsert : bool, optional
         set -noinsert flag to prevent mmg from adding nodes. The default is True.
+    fn_sol : str, optional, default: None
+        Filename of .sol file containing the sizing field (created with create_sizing_field_sol_file())
 
     Returns
     -------
@@ -1396,7 +1403,7 @@ def _run_mmg(m, mmg_noinsert=True):
     del m
 
     # set meshio convert command
-    cmd = [file_finder.path2bin("meshio"), "convert", fn_tmp_in_gmsh, fn_tmp_in_medit,
+    cmd = ["meshio", "convert", fn_tmp_in_gmsh, fn_tmp_in_medit,  # file_finder.path2bin("meshio")
            "--input-format", "gmsh", "--output-format", "medit"]
 
     # convert mesh from gmsh (.msh) to medit format (.mesh) for mmg
@@ -1407,8 +1414,12 @@ def _run_mmg(m, mmg_noinsert=True):
         cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc", "-noinsert",
                "-in", fn_tmp_in_medit, "-out", fn_tmp_out]
     else:
-        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc",
-               "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in_medit, "-out", fn_tmp_out]
+        if fn_sol is not None:
+            cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc",
+                   "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in_medit, "-out", fn_tmp_out, "-sol", fn_sol]
+        else:
+            cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-hgrad", "-1", "-rmc",
+                   "-hsiz", "100.0", "-hmin", "1.3", "-in", fn_tmp_in_medit, "-out", fn_tmp_out]
         
     # run MMG to improve mesh
     spawn_process(cmd, lvl=logging.DEBUG)
@@ -1615,24 +1626,24 @@ def create_mesh(label_img, affine,
         'Time to mesh: ' +
         format_time(time.time()-start)
     )
-    
+
     # separate out tetrahedron (will reconstruct surfaces later)
     start = time.time()
     m = m.crop_mesh(elm_type=4)
-    
+
     # assign the right labels to the mesh as CGAL modifies them
     m = _fix_labels(m, label_img)
-    
+
     # relabel groups of microscopic tets to a common tag, so that mmg fixes them
     m = _relabel_microtets(m)
-    
+
     if debug:
         mesh_io.write_msh(m, 'before_despike.msh')
-        
+
     # remove spikes from mesh
     if remove_spikes:
         m = _remove_spikes(m, label_img, affine, label_GM=2, label_CSF=3)
-    
+
     # keep only largest component
     idx = m.elm.connected_components()
     m = m.crop_mesh(elements=max(idx, key=np.size))
@@ -1658,13 +1669,17 @@ def create_mesh(label_img, affine,
     # add sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg
     # m.add_sizing_field(sizing_field=sizing_field, affine=affine)
 
-    create_sizing_field_sol_file(mesh=m,
-                                 sizing_field=sizing_field,
-                                 affine=affine,
-                                 fn_sol=os.path.splitext(m.fn)[0] + ".sol")
+    if sizing_field is not None:
+        fn_sol = os.path.splitext(m.fn)[0] + ".sol"
+        create_sizing_field_sol_file(mesh=m,
+                                     sizing_field=sizing_field,
+                                     affine=affine,
+                                     fn_sol=os.path.splitext(m.fn)[0] + ".sol")
+    else:
+        fn_sol = None
 
     # improve mesh quality using mmg
-    m = _run_mmg(m, mmg_noinsert)
+    m = _run_mmg(m, mmg_noinsert, fn_sol)
         
     logger.info(
         'Time to post-process mesh: ' +
