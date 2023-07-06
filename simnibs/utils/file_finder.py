@@ -96,6 +96,10 @@ class Templates:
             self._resources, "templates", "MNI152_T1_1mm.nii.gz"
         )
 
+        # Electrode mask of valid skin region in MNI space
+        self.mni_volume_upper_head_mask = os.path.join(
+            self._resources, 'templates', 'MNI152_T1_1mm_upper_head_mask.nii.gz')
+
         # SimNIBS logo
         self.simnibs_logo = os.path.join(self._resources, "simnibslogo.msh")
 

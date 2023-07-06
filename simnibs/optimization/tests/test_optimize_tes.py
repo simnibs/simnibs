@@ -14,39 +14,33 @@ import nibabel
 import numpy as np
 import matplotlib.pyplot as plt
 
-from simnibs.optimization.optimize_tes import create_new_connectivity_list_point_mask
+# from simnibs.optimization.optimize_tes import create_new_connectivity_list_point_mask
 
 import matplotlib
 
 # matplotlib.use("Qt5Agg")
 
-output_folder = "/data/pt_01756/studies/ttf/results/optimization/15484.08_charm_beta_coarse/HDTES_goal_mean_normal"
+# output_folder = "/data/pt_01756/studies/ttf/results/optimization/15484.08_charm_beta_coarse/HDTES_goal_mean_normal"
 # output_folder = "/data/pt_01756/studies/ttf/HDTES_focality_dirichlet_detailed"
-# output_folder = "/home/kporzig/tmp"
+output_folder = "/home/kporzig/tmp"
 
-fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/15484.08.msh"
-# fn_mesh = "/home/kporzig/tmp/charm_beta_coarse/m2m_15484.08/15484.08.msh"
+# fn_mesh = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/m2m_15484.08/15484.08.msh"
+fn_mesh = "/home/kporzig/tmp/charm_beta_coarse/m2m_15484.08/15484.08.msh"
 
-fn_roi_1 = "/data/pt_01756/studies/ttf/roi_0_geo.hdf5"
-fn_roi_2 = "/data/pt_01756/studies/ttf/roi_1_geo.hdf5"
+# fn_roi_1 = "/data/pt_01756/studies/ttf/roi_0_geo.hdf5"
+# fn_roi_2 = "/data/pt_01756/studies/ttf/roi_1_geo.hdf5"
+fn_roi_1 = "/home/kporzig/tmp/charm_beta_coarse/roi/roi_0_geo.hdf5"
+fn_roi_2 = "/home/kporzig/tmp/charm_beta_coarse/roi/roi_1_geo.hdf5"
 # fn_roi = "/data/pt_01756/probands/15484.08/mesh/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
 # fn_roi = "/home/kporzig/tmp/charm_beta_coarse/roi/midlayer_m1s1pmd/geo.hdf5"
 
 # location of example data
-example_data_folder = os.path.join(simnibs.SIMNIBSDIR, '_internal_resources', 'testing_files')
-
 optimizer = "differential_evolution"  # "direct"  "Nelder-Mead"  "differential_evolution" "shgo"
 optimize_init_vals = False
-goal = ["mean_normal", "mean_normal"]  # (focality)
-# goal = ["mean_tangential", "mean_tangential"]  # (focality)
-# goal = "ROC"  # (focality)
+goal = ["mean", "mean"]
+e_postproc = "norm"
 # threshold = [0.1, 0.2]
 threshold = None
-# goal = ["mean", "mean"]  # "mean" "mean_max_TI"
-# goal = ["mean_max_TI", "mean_max_TI"]  # "mean" "mean_max_TI"
-# goal = "mean"  # "mean" "mean_max_TI"
-# dataType = [1, 1]
-dataType = [1, 1]
 weights = [1., 0.]
 # weights = None
 constrain_electrode_locations = False
@@ -54,7 +48,7 @@ overlap_factor = 1.
 polish = False
 locally_biased = True
 init_pos = None
-current_estimator_method = None  # None gpc
+current_estimator_method = "gpc"  # None gpc
 dirichlet_correction_detailed = False
 dirichlet_correction = True
 # init_pos = ["C3"]
@@ -286,11 +280,11 @@ opt = simnibs.opt_struct.TESoptimize(mesh=mesh,
                                      min_electrode_distance=min_electrode_distance,
                                      weights=weights,
                                      goal=goal,
+                                     e_postproc=e_postproc,
                                      threshold=threshold,
                                      constrain_electrode_locations=constrain_electrode_locations,
                                      overlap_factor=overlap_factor,
                                      optimize_init_vals=optimize_init_vals,
-                                     dataType=dataType,
                                      polish=polish,
                                      dirichlet_correction=dirichlet_correction)
 
