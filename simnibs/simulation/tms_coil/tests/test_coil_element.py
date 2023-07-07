@@ -79,7 +79,7 @@ class TestCalcdAdt:
         target_pos = np.array([[0, 0.5, 0.5]])
         coil_matrix = np.eye(4)
 
-        r1 = np.sqrt(np.sum((target_pos.T[:,:,None]-seg_pos.T[:,None,:])**2,axis=0))
+        r1 = np.sqrt(np.sum((target_pos.T[:,:,None]-line_segments.points.T[:,None,:])**2,axis=0))
         A = np.sum(line_segments.values.T[:,None,:] / r1[None],axis=2).T * 1e-7
 
         np.testing.assert_allclose(
@@ -558,19 +558,20 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]]),
+            np.array([[1, 0, 0], [-1, 1, 0], [0, -1, 1], [0, 0, -1]]),
         )
         mesh = line_segment.get_mesh(np.eye(4), False, False, False, True, 1)
 
         assert mesh.elm.node_number_list.shape[0] == 4
-        np.testing.assert_allclose(np.unique(mesh.elm.elm_type), [1])
+        np.testing.assert_allclose(np.unique(mesh.elm.elm_type), [15])
         assert np.all(mesh.elm.tag1 == 100 + TmsCoilElementTag.LINE_ELEMENTS)
         np.testing.assert_allclose(
             mesh.nodes.node_coord,
-            [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]],
+            [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
         )
         assert len(mesh.field) == 1
         np.testing.assert_allclose(
-            mesh.field[list(mesh.field.keys())[0]].value, [[1, 0, 0], [-1, 1, 0], [0, -1, 1], [0, 0, -1], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],]
+            mesh.field[list(mesh.field.keys())[0]].value, [[1, 0, 0], [-1, 1, 0], [0, -1, 1], [0, 0, -1]]
         )
 
     def test_line_segment_element_mesh_translation(self):
@@ -579,11 +580,12 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
+            line_segment_directions,
             deformations=[TmsCoilTranslation(45.34, (-200, 200), 1)],
         )
         mesh = line_segment.get_mesh(np.eye(4), True, False, False, True)
 
-        translated_points = np.concatenate((np.array(line_segment_locations), line_segment_locations + line_segment_directions))
+        translated_points = np.array(line_segment_locations)
         translated_points[:, 1] = translated_points[:, 1] + 45.34
 
         np.testing.assert_allclose(
@@ -591,7 +593,7 @@ class TestGetMesh:
         )
         assert len(mesh.field) == 1
         np.testing.assert_allclose(
-            mesh.field[list(mesh.field.keys())[0]].value, np.concatenate((line_segment_directions, np.zeros_like(line_segment_directions))), atol=1e-5
+            mesh.field[list(mesh.field.keys())[0]].value, line_segment_directions, atol=1e-5
         )
 
     def test_line_segment_element_mesh_rotation(self):
@@ -600,11 +602,12 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
+            line_segment_directions,
             deformations=[TmsCoilRotation(-90, (-18-5000, 5000), np.array([0, 0, 0]), np.array([0, 0, 1]))],
         )
         mesh = line_segment.get_mesh(np.eye(4), True, False, False, True)
 
-        points = np.concatenate((np.array(line_segment_locations), line_segment_locations + line_segment_directions))
+        points = np.array(line_segment_locations)
         rotated_points = np.zeros_like(points)
         rotated_points[:, 0] = points[:, 1]
         rotated_points[:, 1] = -points[:, 0]
@@ -620,7 +623,7 @@ class TestGetMesh:
         )
         assert len(mesh.field) == 1
         np.testing.assert_allclose(
-            mesh.field[list(mesh.field.keys())[0]].value, np.concatenate((rotated_directions, np.zeros_like(rotated_directions))), atol=1e-5
+            mesh.field[list(mesh.field.keys())[0]].value, rotated_directions, atol=1e-5
         )
 
     def test_line_segment_element_mesh_affine(self):
@@ -635,11 +638,12 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
+            line_segment_directions,
             deformations=[TmsCoilRotation(-90, (-18-5000, 5000), np.array([0, 0, 0]), np.array([0, 0, 1]))],
         )
         mesh = line_segment.get_mesh(affine, False, False, False, True)
 
-        points = np.concatenate((np.array(line_segment_locations), line_segment_locations + line_segment_directions))
+        points = np.array(line_segment_locations)
         
         transformed_points = points @ affine[:3, :3].T + affine[None, :3, 3]
         transformed_direction = line_segment_directions @ affine[:3, :3].T
@@ -650,7 +654,7 @@ class TestGetMesh:
         )
         assert len(mesh.field) == 1
         np.testing.assert_allclose(
-            mesh.field[list(mesh.field.keys())[0]].value, np.concatenate((transformed_direction, np.zeros_like(transformed_direction))), atol=1e-5
+            mesh.field[list(mesh.field.keys())[0]].value, transformed_direction, atol=1e-5
         )
 
     def test_line_segment_element_mesh_deformation_and_affine(self):
@@ -665,11 +669,12 @@ class TestGetMesh:
         line_segment = LineSegmentElements(
             None,
             line_segment_locations,
+            line_segment_directions,
             deformations=[TmsCoilRotation(90, (-5000, 5000), np.array([0, 0, 0]), np.array([0, 1, 0])), TmsCoilTranslation(22.22, (-200, 200), 2)],
         )
         mesh = line_segment.get_mesh(affine, True, False, False, True)
 
-        points = np.concatenate((np.array(line_segment_locations), line_segment_locations + line_segment_directions))
+        points = np.array(line_segment_locations)
         
         transformed_points = np.zeros_like(points)
         transformed_points[:, 0] = points[:, 2]
@@ -692,7 +697,7 @@ class TestGetMesh:
         )
         assert len(mesh.field) == 1
         np.testing.assert_allclose(
-            mesh.field[list(mesh.field.keys())[0]].value, np.concatenate((transformed_direction, np.zeros_like(transformed_direction))), atol=1e-5
+            mesh.field[list(mesh.field.keys())[0]].value, transformed_direction, atol=1e-5
         )
 
     def test_sampled_grid_elements_element_mesh(self):

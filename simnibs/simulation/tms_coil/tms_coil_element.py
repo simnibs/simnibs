@@ -649,6 +649,7 @@ class LineSegmentElements(PositionalTmsCoilElements):
             values = np.zeros(points.shape)
             values[:-1] = np.diff(points, axis=0)
             values[-1] = points[0] - points[-1]
+            points = points + values / 2
         else:
             values = np.array(values, dtype=np.float64)
 
@@ -730,26 +731,16 @@ class LineSegmentElements(PositionalTmsCoilElements):
         transformed_points = self.get_points(affine_matrix, apply_deformation)
         transformed_values = self.get_values(affine_matrix, apply_deformation)
 
-        points_and_targets = np.concatenate(
-            (transformed_points, transformed_points + transformed_values)
-        )
+
         point_mesh = Msh(
-            Nodes(points_and_targets),
+            Nodes(transformed_points),
             Elements(
-                lines=np.column_stack(
-                    (
-                        np.arange(len(transformed_points)),
-                        np.arange(len(transformed_points)) + len(transformed_values),
-                    )
-                )
-                + 1
+                points=np.arange(len(transformed_points)) + 1
             ),
         )
 
-        segment_direction_field = np.zeros_like(points_and_targets)
-        segment_direction_field[: len(transformed_points)] = transformed_values
         point_mesh.add_node_field(
-            segment_direction_field, f"{element_index}-line_segment_direction"
+            transformed_values, f"{element_index}-line_segment_direction"
         )
 
         point_mesh.elm.tag1[:] = element_base_tag + TmsCoilElementTag.LINE_ELEMENTS

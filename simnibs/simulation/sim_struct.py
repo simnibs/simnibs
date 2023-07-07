@@ -1086,14 +1086,6 @@ class TMSLIST(SimuList):
                 self.pos.append(p)
 
     def resolve_fnamecoil(self):
-        # workaround for tcd file
-        if isinstance(self.fnamecoil, dict):
-            from simnibs.simulation import tcd_utils
-            import tempfile
-            fn = tempfile.NamedTemporaryFile(suffix='.tcd').name
-            tcd_utils.write_tcd(self.fnamecoil, fn)
-            self.fnamecoil = fn
-
         try:
             fnamecoil = os.path.expanduser(self.fnamecoil)
         except TypeError:
@@ -1157,11 +1149,11 @@ class TMSLIST(SimuList):
         matsimnibs_list = [p.calc_matsimnibs(self.mesh) for p in self.pos]
         didt_list = [p.didt for p in self.pos]
         dirname = os.path.dirname(self.fnamecoil)
-        fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
-        fname = fname.split('.nii')[0]+'.stl'
-        fn_stl = os.path.join(dirname,fname)
-        if not os.path.isfile(fn_stl):
-            fn_stl = None
+        #fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
+        #fname = fname.split('.nii')[0]+'.stl'
+        #fn_stl = os.path.join(dirname,fname)
+        #if not os.path.isfile(fn_stl):
+        #    fn_stl = None
 
         # Output names
         coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
@@ -1173,32 +1165,16 @@ class TMSLIST(SimuList):
         geo_names = [f + 'coil_pos.geo' for f in fn_simu]
 
         # call tms_coil
-        fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
+        fem.tms_coil(self.mesh, cond, self.cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     solver_options=self.solver_options, n_workers=cpus,
-                     fn_stl=fn_stl)
+                     solver_options=self.solver_options, n_workers=cpus)
 
+        
         logger.info('Creating visualizations')
         summary = ''
-        for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
+        for p, n, s in zip(self.pos, output_names, fn_simu):
             p.fnamefem = n
             m = mesh_io.read_msh(n)
-            # write .opt-file
-            v = m.view(
-                visible_tags=_surf_preferences(m),
-                visible_fields=_field_preferences(self.postprocess),
-                cond_list=self.cond)
-            v.add_merge(g)
-            v.add_view(ShowScale=0)  # dipoles or direction "hook"
-            if fn_stl is not None:  # coil casing
-                v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
-                           Visible=1, ShowScale=0, CustomMin=-0.5,
-                           CustomMax=3.5, RangeType=2)
-            if add_scalp_to_geo:
-                self._scalp_geo(m, g)  # append scalp to .geo-file
-                v.add_view(ColormapNumber=8, ColormapAlpha=.3,
-                           Visible=0, ShowScale=0)  # scalp
-            v.write_opt(n)
 
             if view:
                 mesh_io.open_in_gmsh(n, True)

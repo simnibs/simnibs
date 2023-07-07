@@ -430,6 +430,8 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
     # bring everything to SI
     d_position *= 1e-3
     pos = msh.nodes[:] * 1e-3
+    print("d_pos", d_position)
+    print("m_pos", pos)
     A = np.zeros((len(pos), 3), dtype=float)
     out = fmm3dpy.lfmm3d(
             eps=eps,

@@ -236,7 +236,7 @@
                         "type": "string"
                     },
                     "maxdIdt": {
-                        "description": "Maximum dI/dt values for the stimulator",
+                        "description": "Maximum dI/dt values in A/s for the stimulator",
                         "type": "number",
                         "exclusiveMinimum":0
                     },
@@ -252,7 +252,7 @@
                                     "type": "string"
                                 },
                                 "time": {
-                                    "description": "The recorded timestamps",
+                                    "description": "The recorded timestamps in seconds",
                                     "oneOf": [
                                         {
                                             "type": "array",

@@ -9,10 +9,10 @@ class TestInitStimulator:
 
 class TestdIdT:
     def test_set_di_dt(self):
-        with pytest.raises(ValueError): 
+        with pytest.warns(UserWarning): 
             TmsStimulator(name= "Test", max_di_dt=21.4).di_dt = 22
 
-        with pytest.raises(ValueError): 
+        with pytest.warns(UserWarning): 
             TmsStimulator(name= "Test", max_di_dt=10.4).di_dt = -10.5
 
 class TestInitWaveform:

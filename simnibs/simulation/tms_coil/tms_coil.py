@@ -160,7 +160,10 @@ class TmsCoil(TcdElement):
         for coil_element in self.elements:
             A += coil_element.get_da_dt(target_positions, coil_affine, eps)
 
-        return NodeData(A)
+        node_data_result = NodeData(A)
+        node_data_result.mesh = msh
+
+        return node_data_result
 
     def get_a_field(
         self,
@@ -263,8 +266,6 @@ class TmsCoil(TcdElement):
         for i, key in enumerate(visualization.mesh.field.keys()):
             if isinstance(self.elements[i], DipoleElements):
                 visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0)
-                visualization.Mesh.Nodes = 1
-                visualization.Mesh.PointSize = 2
             elif isinstance(self.elements[i], LineSegmentElements):
                 vector_lengths = np.linalg.norm(self.elements[i].values, axis=1)
                 visualization.add_view(
@@ -278,7 +279,8 @@ class TmsCoil(TcdElement):
                     ArrowSizeMax=30,
                     ArrowSizeMin=30,
                 )
-                visualization.Mesh.Lines = 1
+                visualization.Mesh.Nodes = 1
+                visualization.Mesh.PointSize = 2
             elif isinstance(self.elements[i], SampledGridPointElements):
                 vector_lengths = np.linalg.norm(
                     visualization.mesh.field[key].value, axis=1
@@ -365,6 +367,92 @@ class TmsCoil(TcdElement):
             visualization.add_merge(geo_file_name)
         visualization.mesh.write(os.path.join(folder_path, f"{base_file_name}.msh"))
         visualization.write_opt(os.path.join(folder_path, f"{base_file_name}.msh"))
+
+    def append_simulation_visualization(self, visualization: Visualization, goe_fn:str, msh_skin:Msh, coil_matrix:npt.NDArray[np.float_]):
+        for i, element in enumerate(self.elements):
+            points = []
+            vectors = []
+            if isinstance(element, DipoleElements):
+                points = element.get_points(coil_matrix)
+                vectors = element.get_values(coil_matrix)    
+                visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0, ShowScale=0)  
+                mesh_io.write_geo_vectors(
+                    points,
+                    vectors,
+                    goe_fn,
+                    name=f"{i+1}-dipoles",
+                    mode="ba"
+                )
+            elif isinstance(element, LineSegmentElements):
+                points = element.get_points(coil_matrix)
+                vectors = element.get_values(coil_matrix)    
+                vector_lengths = np.linalg.norm(vectors, axis=1)
+                visualization.add_view(
+                    VectorType=2,
+                    RangeType=2,
+                    CenterGlyphs=0,
+                    GlyphLocation=2,
+                    ShowScale=0,
+                    CustomMin=np.min(vector_lengths),
+                    CustomMax=np.max(vector_lengths),
+                    ArrowSizeMax=30,
+                    ArrowSizeMin=30,
+                )
+                mesh_io.write_geo_vectors(
+                    points,
+                    vectors,
+                    goe_fn,
+                    name=f"{i+1}-line_segments",
+                    mode="ba"
+                )
+            elif isinstance(element, SampledGridPointElements):
+                y_axis = np.arange(1, 10, dtype=float)[:, None] * (0, 1, 0)
+                z_axis = np.arange(1, 30, dtype=float)[:, None] * (0, 0, 1)
+                pos = np.vstack((((0, 0, 0)), y_axis, z_axis))
+                pos = (coil_matrix[:3, :3].dot(pos.T) + coil_matrix[:3, 3][:, None]).T
+                directions = pos[1:] - pos[:-1]
+                directions = np.vstack((directions, np.zeros(3)))
+                points = pos
+                vectors = directions
+                visualization.add_view(ShowScale=0)
+                mesh_io.write_geo_vectors(
+                    points,
+                    vectors,
+                    goe_fn,
+                    name=f"{i+1}-sampled_grid_points",
+                    mode="ba"
+                )
+
+        casings = self.get_mesh(
+            coil_affine=coil_matrix,
+            apply_deformation=True,
+            include_optimization_points=False,
+            include_coil_elements=False,
+        )
+        if casings.nodes.nr != 0:
+            index_offset = 0 if self.casing is not None else 1
+            for i, tag in enumerate(np.unique(casings.elm.tag1)):
+                casing = casings.crop_mesh(tags=[tag])
+
+                idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
+                if len(idx_inside):
+                    casing.elm.tag1[:]=0
+                    idx_hlp = np.zeros((casing.nodes.nr, 1), dtype=bool)
+                    idx_hlp[idx_inside] = True
+                    idx_hlp = np.any(np.squeeze(idx_hlp[casing.elm[:,:3]-1]), axis=1)
+                    casing.elm.tag1[idx_hlp & (casing.elm.tag1 == 0)] = 1
+
+                mesh_io.write_geo_triangles(
+                    casing.elm.node_number_list - 1,
+                    casing.nodes.node_coord,
+                    goe_fn,
+                    values=casing.elm.tag1,
+                    name=f"{i+index_offset}-coil_casing",
+                    mode="ba",
+                )
+                visualization.add_view(ColorTable=_gray_red_lightblue_blue_cm(),
+                    Visible=1, ShowScale=0, CustomMin=-0.5,
+                    CustomMax=3.5, RangeType=2)
 
     def get_casing_coordinates(
         self,
@@ -678,7 +766,7 @@ class TmsCoil(TcdElement):
 
         stimulator = TmsStimulator(
             header_dict.get("stimulator"),
-            max_di_dt=header_dict.get("dIdtmax"),
+            max_di_dt= None if header_dict.get("dIdtmax") is None else header_dict["dIdtmax"] * 1e6,
             waveforms=waveforms,
         )
 

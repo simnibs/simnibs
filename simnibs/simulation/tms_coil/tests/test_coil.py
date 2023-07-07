@@ -156,7 +156,7 @@ class TestReadCoil:
         assert np.allclose(coil.resolution, (10, 10, 10))
         assert coil.name == "Test coil"
         assert dipole_elements.stimulator is not None
-        assert dipole_elements.stimulator.max_di_dt == 100.0
+        assert dipole_elements.stimulator.max_di_dt == 100000000.0
         assert coil.brand == "None"
         assert dipole_elements.stimulator.name == "None"
         assert np.allclose(
@@ -189,7 +189,7 @@ class TestReadCoil:
         assert np.allclose(coil.resolution, (10, 10, 10))
         assert coil.name == "Test coil"
         assert dipole_elements.stimulator is not None
-        assert dipole_elements.stimulator.max_di_dt == 100.0
+        assert dipole_elements.stimulator.max_di_dt == 100000000.0
         assert coil.brand == "None"
         assert dipole_elements.stimulator.name == "None"
         assert np.allclose(
@@ -513,7 +513,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, LineSegmentElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -586,7 +586,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, LineSegmentElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values, coil_mesh_node_coord
+                    coil_element.points, coil_mesh_node_coord
                 )
 
             if isinstance(coil_element, SampledGridPointElements):
@@ -647,7 +647,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, LineSegmentElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
@@ -712,7 +712,7 @@ class TestCoilMesh:
 
             if isinstance(coil_element, LineSegmentElements):
                 assert is_close_subset_of(
-                    coil_element.points + coil_element.values,
+                    coil_element.points,
                     coil_mesh.nodes.node_coord,
                 )
 
