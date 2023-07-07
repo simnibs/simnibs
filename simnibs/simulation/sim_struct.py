@@ -2847,16 +2847,16 @@ def _field_preferences(postprocess):
 
 def _surf_preferences(mesh):
     if ElementTags.GM_TH_SURFACE in mesh.elm.tag1:
-        return [ElementTags.GM_TH_SURFACE]
+        return [ElementTags.GM_TH_SURFACE.value]
     elif ElementTags.GM in mesh.elm.tag1:
-        return [ElementTags.GM]
+        return [ElementTags.GM.value]
     else:
         return None
 
 
 def _volume_preferences(mesh):
     if ElementTags.GM in mesh.elm.tag1:
-        return [ElementTags.GM]
+        return [ElementTags.GM.value]
     else:
         return None
 

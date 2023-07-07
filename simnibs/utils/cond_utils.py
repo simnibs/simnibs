@@ -75,6 +75,7 @@ def _fix_zeros(tensors, c):
 
 def _fix_eigv(eig_val, max_value, max_ratio, c):
     negative = np.all(eig_val <= 0.0, axis=1)
+    negative += np.all(np.isclose(eig_val, 0),axis=1)
     eig_val[negative] = c
     frac = np.sum(negative)/len(eig_val)
     if frac > .1:
