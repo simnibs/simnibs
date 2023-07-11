@@ -1,6 +1,6 @@
 import base64
-from typing import Optional
 import warnings
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -165,7 +165,8 @@ class TmsStimulator:
             value < -self.max_di_dt or value > self.max_di_dt
         ):
             warnings.warn(
-                f'dI/dt ({value}) outside of stimulator range ({-self.max_di_dt}, {self.max_di_dt})')
+                f"dI/dt ({value}) outside of stimulator range ({-self.max_di_dt}, {self.max_di_dt})"
+            )
         self._di_dt = value
 
     def to_tcd(self, ascii_mode: bool = False) -> dict:

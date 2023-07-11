@@ -1,6 +1,6 @@
 class TcdElement:
-    """Represents a part of a tcd file
-    """
+    """Represents a part of a tcd file"""
+
     def to_tcd(self, ascii_mode: bool = False) -> dict:
         """Turns the element into a tcd like dictionary
 

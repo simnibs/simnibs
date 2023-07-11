@@ -414,7 +414,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
             raise ValueError(
                 f"Expected 'values' to have the shape (N, 3) but shape was {self.values.shape}"
             )
-        
+
         if len(self.values) != len(self.points):
             raise ValueError(
                 f"Expected the same amount of 'points' and 'values' ({len(self.values)} != {len(self.points)})"
@@ -731,12 +731,9 @@ class LineSegmentElements(PositionalTmsCoilElements):
         transformed_points = self.get_points(affine_matrix, apply_deformation)
         transformed_values = self.get_values(affine_matrix, apply_deformation)
 
-
         point_mesh = Msh(
             Nodes(transformed_points),
-            Elements(
-                points=np.arange(len(transformed_points)) + 1
-            ),
+            Elements(points=np.arange(len(transformed_points)) + 1),
         )
 
         point_mesh.add_node_field(

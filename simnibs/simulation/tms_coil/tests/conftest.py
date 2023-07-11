@@ -31,13 +31,31 @@ def sphere3_msh():
 
 @pytest.fixture(scope="module")
 def minimal_tcd_coil_dict() -> dict[str, Any]:
-    coil_dict = {"coilElementList": [{"stimulator":0, "type": 1, "points": [[1.0, 2.0, 3.0]], "values":[[4.0,5.0,6.0]]}], "stimulatorList": [{"name": "SimNIBS-Stimulator"}]}
+    coil_dict = {
+        "coilElementList": [
+            {
+                "stimulator": 0,
+                "type": 1,
+                "points": [[1.0, 2.0, 3.0]],
+                "values": [[4.0, 5.0, 6.0]],
+            }
+        ],
+        "stimulatorList": [{"name": "SimNIBS-Stimulator"}],
+    }
     return coil_dict
 
 
 @pytest.fixture(scope="module")
 def minimal_tcd_coil() -> TmsCoil:
-    coil = TmsCoil([DipoleElements(TmsStimulator("SimNIBS-Stimulator", None, None, None), np.array([[1, 2, 3]]), np.array([[4, 5, 6]]))])
+    coil = TmsCoil(
+        [
+            DipoleElements(
+                TmsStimulator("SimNIBS-Stimulator", None, None, None),
+                np.array([[1, 2, 3]]),
+                np.array([[4, 5, 6]]),
+            )
+        ]
+    )
     return coil
 
 
@@ -63,11 +81,19 @@ def medium_tcd_coil_dict() -> dict[str, Any]:
                 "stimulator": 0,
                 "type": 3,
                 "data": [[[[1.0, 2.0, 3.0]]]],
-                "affine": [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                "affine": [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ],
             },
         ],
         "stimulatorList": [
-            {"maxdIdt": 1, "waveformList": [{"time": [0.0, 100.0], "signal": [0.0, 0.99]}]}
+            {
+                "maxdIdt": 1,
+                "waveformList": [{"time": [0.0, 100.0], "signal": [0.0, 0.99]}],
+            }
         ],
         "deformList": [
             {"initial": -75, "range": [-100.0, -50.0], "type": "x"},
@@ -82,7 +108,10 @@ def medium_tcd_coil_dict() -> dict[str, Any]:
             },
         ],
         "coilModels": [
-            {"points": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], "faces": [[0, 1, 2]]}
+            {
+                "points": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
+                "faces": [[0, 1, 2]],
+            }
         ],
     }
     return coil_dict
@@ -117,18 +146,23 @@ def medium_tcd_coil() -> TmsCoil:
                 stimulator,
                 np.array([[1, 2, 3]]),
                 np.array([[0, 1, 2]]),
-                deformations=[deformations[0], deformations[1], deformations[2], deformations[3]],
+                deformations=[
+                    deformations[0],
+                    deformations[1],
+                    deformations[2],
+                    deformations[3],
+                ],
             ),
             LineSegmentElements(
                 stimulator,
                 np.array([[1, 2, 3]]),
                 np.array([[0, 1, 2]]),
-                casing=coil_casings[0]
+                casing=coil_casings[0],
             ),
             SampledGridPointElements(
                 stimulator,
-                 np.array([[[[1, 2, 3]]]]),
-                np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+                np.array([[[[1, 2, 3]]]]),
+                np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]),
             ),
         ],
     )
@@ -170,7 +204,12 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "deformations": [2, 3],
                 "type": 3,
                 "data": [[[[1.4, 2.4, 3.4]]]],
-                "affine": [[1.0, 0.0, 0.0, 1.4], [0.0, 1.0, 0.0, 1.4], [0.0, 0.0, 1.0, 1.4], [0.0, 0.0, 0.0, 1.0]],
+                "affine": [
+                    [1.0, 0.0, 0.0, 1.4],
+                    [0.0, 1.0, 0.0, 1.4],
+                    [0.0, 0.0, 1.0, 1.4],
+                    [0.0, 0.0, 0.0, 1.0],
+                ],
             },
         ],
         "stimulatorList": [
@@ -264,7 +303,7 @@ def full_tcd_coil() -> TmsCoil:
             ),
             np.array([[-9, -10, -11]]),
             np.array([[4, 4, 4]]),
-        )
+        ),
     ]
     deformations = [
         TmsCoilTranslation(-75, (-100, -50), 0),
@@ -298,16 +337,17 @@ def full_tcd_coil() -> TmsCoil:
                 np.array([[100.2, 101.2, 102.2]]),
                 "Line Elements",
                 coil_casings[2],
-                [deformations[0], deformations[1]], 
+                [deformations[0], deformations[1]],
             ),
             SampledGridPointElements(
                 stimulator,
                 np.array([[[[1.4, 2.4, 3.4]]]]),
-                np.array([[1, 0, 0, 1.4], [0, 1, 0, 1.4], [0, 0, 1, 1.4], [0, 0, 0, 1]]),
+                np.array(
+                    [[1, 0, 0, 1.4], [0, 1, 0, 1.4], [0, 0, 1, 1.4], [0, 0, 0, 1]]
+                ),
                 "Digitized Grid Elements",
                 coil_casings[3],
                 [deformations[2], deformations[3]],
-                
             ),
         ],
         "SimNIBS-TMS-Coil",
@@ -319,15 +359,14 @@ def full_tcd_coil() -> TmsCoil:
     )
     return coil
 
+
 @pytest.fixture(scope="module")
-def small_functional_3_element_coil()  -> TmsCoil:
+def small_functional_3_element_coil() -> TmsCoil:
     casings = [
         TmsCoilModel(
             Msh(
                 Nodes(
-                    np.array(
-                        [[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]]
-                    )
+                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]])
                 ),
                 Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
             ),
@@ -337,9 +376,7 @@ def small_functional_3_element_coil()  -> TmsCoil:
         TmsCoilModel(
             Msh(
                 Nodes(
-                    np.array(
-                        [[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]]
-                    )
+                    np.array([[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]])
                 ),
                 Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
             ),
@@ -348,9 +385,7 @@ def small_functional_3_element_coil()  -> TmsCoil:
         ),
         TmsCoilModel(
             Msh(
-                Nodes(
-                    np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])
-                ),
+                Nodes(np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])),
                 Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
             ),
             None,
@@ -366,13 +401,13 @@ def small_functional_3_element_coil()  -> TmsCoil:
             np.array([0, 20, 0]),
         ),
     ]
-    stimulator = TmsStimulator(
-        "SimNIBS-Stimulator"
-    )
+    stimulator = TmsStimulator("SimNIBS-Stimulator")
     coil = TmsCoil(
         [
             LineSegmentElements(
-                stimulator, np.array([[0, -10, 0], [10, 10, 0], [-10, 10, 0]]), casing=casings[0]
+                stimulator,
+                np.array([[0, -10, 0], [10, 10, 0], [-10, 10, 0]]),
+                casing=casings[0],
             ),
             LineSegmentElements(
                 stimulator,

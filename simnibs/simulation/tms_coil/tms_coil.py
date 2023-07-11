@@ -10,13 +10,14 @@ import nibabel as nib
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize as opt
-from scipy.spatial import KDTree
 from scipy import ndimage
+from scipy.spatial import KDTree
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.gmsh_view import Visualization, _gray_red_lightblue_blue_cm
 from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
+from simnibs.segmentation.marching_cube import marching_cubes_lewiner
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
@@ -33,7 +34,7 @@ from simnibs.simulation.tms_coil.tms_coil_element import (
 from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator, TmsWaveform
 from simnibs.utils import file_finder
-from simnibs.segmentation.marching_cube import marching_cubes_lewiner
+
 
 class TmsCoil(TcdElement):
     """A representation of a coil used for TMS
@@ -110,7 +111,11 @@ class TmsCoil(TcdElement):
             raise ValueError(
                 f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but shape was {self.limits.shape} ({self.limits})"
             )
-        elif self.limits is not None and (self.limits[0,0] >= self.limits[0,1] or self.limits[1,0] >= self.limits[1,1] or self.limits[2,0] >= self.limits[2,1]):
+        elif self.limits is not None and (
+            self.limits[0, 0] >= self.limits[0, 1]
+            or self.limits[1, 0] >= self.limits[1, 1]
+            or self.limits[2, 0] >= self.limits[2, 1]
+        ):
             raise ValueError(
                 f"Expected 'limits' to be in the format [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] but min was greater or equals than max ({self.limits})"
             )
@@ -121,7 +126,11 @@ class TmsCoil(TcdElement):
             raise ValueError(
                 f"Expected 'resolution' to be in the format [rx,ry,rz] but shape was {self.resolution.shape} ({self.resolution})"
             )
-        elif self.resolution is not None and (self.resolution[0] <= 0 or self.resolution[1] <= 0 or self.resolution[2] <= 0):
+        elif self.resolution is not None and (
+            self.resolution[0] <= 0
+            or self.resolution[1] <= 0
+            or self.resolution[2] <= 0
+        ):
             raise ValueError(
                 f"Expected 'resolution' to have values greater than 0 ({self.resolution})"
             )
@@ -368,24 +377,28 @@ class TmsCoil(TcdElement):
         visualization.mesh.write(os.path.join(folder_path, f"{base_file_name}.msh"))
         visualization.write_opt(os.path.join(folder_path, f"{base_file_name}.msh"))
 
-    def append_simulation_visualization(self, visualization: Visualization, goe_fn:str, msh_skin:Msh, coil_matrix:npt.NDArray[np.float_]):
+    def append_simulation_visualization(
+        self,
+        visualization: Visualization,
+        goe_fn: str,
+        msh_skin: Msh,
+        coil_matrix: npt.NDArray[np.float_],
+    ):
         for i, element in enumerate(self.elements):
             points = []
             vectors = []
             if isinstance(element, DipoleElements):
                 points = element.get_points(coil_matrix)
-                vectors = element.get_values(coil_matrix)    
-                visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0, ShowScale=0)  
+                vectors = element.get_values(coil_matrix)
+                visualization.add_view(
+                    Visible=1, VectorType=2, CenterGlyphs=0, ShowScale=0
+                )
                 mesh_io.write_geo_vectors(
-                    points,
-                    vectors,
-                    goe_fn,
-                    name=f"{i+1}-dipoles",
-                    mode="ba"
+                    points, vectors, goe_fn, name=f"{i+1}-dipoles", mode="ba"
                 )
             elif isinstance(element, LineSegmentElements):
                 points = element.get_points(coil_matrix)
-                vectors = element.get_values(coil_matrix)    
+                vectors = element.get_values(coil_matrix)
                 vector_lengths = np.linalg.norm(vectors, axis=1)
                 visualization.add_view(
                     VectorType=2,
@@ -399,11 +412,7 @@ class TmsCoil(TcdElement):
                     ArrowSizeMin=30,
                 )
                 mesh_io.write_geo_vectors(
-                    points,
-                    vectors,
-                    goe_fn,
-                    name=f"{i+1}-line_segments",
-                    mode="ba"
+                    points, vectors, goe_fn, name=f"{i+1}-line_segments", mode="ba"
                 )
             elif isinstance(element, SampledGridPointElements):
                 y_axis = np.arange(1, 10, dtype=float)[:, None] * (0, 1, 0)
@@ -420,7 +429,7 @@ class TmsCoil(TcdElement):
                     vectors,
                     goe_fn,
                     name=f"{i+1}-sampled_grid_points",
-                    mode="ba"
+                    mode="ba",
                 )
 
         casings = self.get_mesh(
@@ -435,11 +444,11 @@ class TmsCoil(TcdElement):
                 casing = casings.crop_mesh(tags=[tag])
 
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
+                casing.elm.tag1[:] = 0
                 if len(idx_inside):
-                    casing.elm.tag1[:]=0
                     idx_hlp = np.zeros((casing.nodes.nr, 1), dtype=bool)
                     idx_hlp[idx_inside] = True
-                    idx_hlp = np.any(np.squeeze(idx_hlp[casing.elm[:,:3]-1]), axis=1)
+                    idx_hlp = np.any(np.squeeze(idx_hlp[casing.elm[:, :3] - 1]), axis=1)
                     casing.elm.tag1[idx_hlp & (casing.elm.tag1 == 0)] = 1
 
                 mesh_io.write_geo_triangles(
@@ -450,9 +459,14 @@ class TmsCoil(TcdElement):
                     name=f"{i+index_offset}-coil_casing",
                     mode="ba",
                 )
-                visualization.add_view(ColorTable=_gray_red_lightblue_blue_cm(),
-                    Visible=1, ShowScale=0, CustomMin=-0.5,
-                    CustomMax=3.5, RangeType=2)
+                visualization.add_view(
+                    ColorTable=_gray_red_lightblue_blue_cm(),
+                    Visible=1,
+                    ShowScale=0,
+                    CustomMin=-0.5,
+                    CustomMax=3.5,
+                    RangeType=2,
+                )
 
     def get_casing_coordinates(
         self,
@@ -520,7 +534,9 @@ class TmsCoil(TcdElement):
 
         for element in self.elements:
             if element.stimulator is None:
-                raise ValueError("Every coil element needs to have a stimulator attached!")
+                raise ValueError(
+                    "Every coil element needs to have a stimulator attached!"
+                )
             if element.stimulator in stimulators:
                 elements_by_stimulators[element.stimulator].append(element)
                 continue
@@ -766,7 +782,9 @@ class TmsCoil(TcdElement):
 
         stimulator = TmsStimulator(
             header_dict.get("stimulator"),
-            max_di_dt= None if header_dict.get("dIdtmax") is None else header_dict["dIdtmax"] * 1e6,
+            max_di_dt=None
+            if header_dict.get("dIdtmax") is None
+            else header_dict["dIdtmax"] * 1e6,
             waveforms=waveforms,
         )
 
@@ -1330,9 +1348,11 @@ class TmsCoil(TcdElement):
                 self.casing,
             )
         )
-    
-    def generate_element_casings(self, distance:float, grid_spacing:float, override:bool=False):
-        """Generates coil element casings for all coil elements except sampled elements. 
+
+    def generate_element_casings(
+        self, distance: float, grid_spacing: float, override: bool = False
+    ):
+        """Generates coil element casings for all coil elements except sampled elements.
         The casing will have the specified distance from the coil element points.
         If override is true, all element casings will be overridden by the generated ones.
 
@@ -1346,20 +1366,33 @@ class TmsCoil(TcdElement):
             Whether or not to override existing coil casings, by default False
         """
         for element in self.elements:
-            if isinstance(element, PositionalTmsCoilElements) and (element.casing is None or override):
+            if isinstance(element, PositionalTmsCoilElements) and (
+                element.casing is None or override
+            ):
                 limits = [
-                    [np.min(element.points[:, 0]) - 3 * distance - grid_spacing, np.max(element.points[:, 0]) + 3 * distance + grid_spacing],
-                    [np.min(element.points[:, 1]) - 3 * distance - grid_spacing, np.max(element.points[:, 1]) + 3 * distance + grid_spacing],
-                    [np.min(element.points[:, 2]) - 3 * distance - grid_spacing, np.max(element.points[:, 2]) + 3 * distance + grid_spacing],
+                    [
+                        np.min(element.points[:, 0]) - 3 * distance - grid_spacing,
+                        np.max(element.points[:, 0]) + 3 * distance + grid_spacing,
+                    ],
+                    [
+                        np.min(element.points[:, 1]) - 3 * distance - grid_spacing,
+                        np.max(element.points[:, 1]) + 3 * distance + grid_spacing,
+                    ],
+                    [
+                        np.min(element.points[:, 2]) - 3 * distance - grid_spacing,
+                        np.max(element.points[:, 2]) + 3 * distance + grid_spacing,
+                    ],
                 ]
 
                 grid_x = np.arange(limits[0][0], limits[0][1], grid_spacing)
                 grid_y = np.arange(limits[1][0], limits[1][1], grid_spacing)
-                grid_z =  np.arange(limits[2][0], limits[2][1], grid_spacing)
-                grid_points = np.stack(np.meshgrid(grid_x, grid_y, grid_z, indexing='ij'), axis=-1).reshape(-1, 3)
+                grid_z = np.arange(limits[2][0], limits[2][1], grid_spacing)
+                grid_points = np.stack(
+                    np.meshgrid(grid_x, grid_y, grid_z, indexing="ij"), axis=-1
+                ).reshape(-1, 3)
 
-                #volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
-                #volume_data.fill(0)
+                # volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
+                # volume_data.fill(0)
 
                 tree = KDTree(element.points)
                 distances, _ = tree.query(grid_points, k=1)
@@ -1367,13 +1400,22 @@ class TmsCoil(TcdElement):
 
                 volume_data = ndimage.gaussian_filter(volume_data, sigma=1)
 
-                vertices, faces, _, _ = marching_cubes_lewiner(volume_data, level=distance,
-                                                            spacing=tuple(np.array(
-                                                                [grid_spacing, grid_spacing, grid_spacing], dtype='float32')),
-                                                            step_size=1, allow_degenerate=False)
+                vertices, faces, _, _ = marching_cubes_lewiner(
+                    volume_data,
+                    level=distance,
+                    spacing=tuple(
+                        np.array(
+                            [grid_spacing, grid_spacing, grid_spacing], dtype="float32"
+                        )
+                    ),
+                    step_size=1,
+                    allow_degenerate=False,
+                )
                 vertices += [limits[0][0], limits[1][0], limits[2][0]]
 
-                casing = mesh_io.Msh(mesh_io.Nodes(vertices), mesh_io.Elements(faces + 1))
+                casing = mesh_io.Msh(
+                    mesh_io.Nodes(vertices), mesh_io.Elements(faces + 1)
+                )
                 casing.smooth_surfaces(40)
 
                 element.casing = TmsCoilModel(casing)

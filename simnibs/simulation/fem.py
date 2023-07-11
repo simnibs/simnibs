@@ -1461,10 +1461,6 @@ def tms_coil(mesh, cond, cond_list, fn_coil, fields, matsimnibs_list, didt_list,
     n_sims = len(matsimnibs_list)
     n_workers = min(n_sims, n_workers)
 
-    print(cond)
-    print('-------------------------------')
-    print(cond_list)
-
     if geo_names is None:
         geo_names = [None for i in range(n_sims)]
 
@@ -1526,7 +1522,7 @@ def _run_tms(mesh, cond, cond_list, fn_coil, fields, matsimnibs, didt, fn_out, f
             visible_tags=[ElementTags.GM_TH_SURFACE.value],
             visible_fields=['magnE'],
             cond_list=cond_list)
-        tms_coil.append_simulation_visualization(v, fn_geo, skin_mesh, matsimnibs)
+        TmsCoil.from_file(fn_coil).append_simulation_visualization(v, fn_geo, skin_mesh, matsimnibs)
 
         mesh_io.write_geo_triangles(skin_mesh.elm.node_number_list - 1,
                                         skin_mesh.nodes.node_coord, fn_geo,

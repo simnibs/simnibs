@@ -9,43 +9,44 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
 
 class TestInit:
     def test_wrong_shape_range(self):
-        with pytest.raises(ValueError): 
-            TmsCoilTranslation(0, [0,2, 3], 0)
+        with pytest.raises(ValueError):
+            TmsCoilTranslation(0, [0, 2, 3], 0)
 
-        with pytest.raises(ValueError): 
-            TmsCoilTranslation(0, [[0,2, 3]], 0)
+        with pytest.raises(ValueError):
+            TmsCoilTranslation(0, [[0, 2, 3]], 0)
 
     def test_min_greater_max_range(self):
-        with pytest.raises(ValueError): 
+        with pytest.raises(ValueError):
             TmsCoilTranslation(0, [0, -3], 0)
 
     def test_initial_out_of_range(self):
-        with pytest.raises(ValueError): 
+        with pytest.raises(ValueError):
             TmsCoilTranslation(0, [1, 5], 0)
 
     def test_axis_out_of_range(self):
-        with pytest.raises(ValueError): 
+        with pytest.raises(ValueError):
             TmsCoilTranslation(3, [1, 5], 4)
 
     def test_shape_point_1(self):
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [], [3,4,5])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [], [3, 4, 5])
 
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [1,2], [3,4,5])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [1, 2], [3, 4, 5])
 
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [1,2,4,4], [3,4,5])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [1, 2, 4, 4], [3, 4, 5])
 
     def test_shape_point_2(self):
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [3,4,5], [])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [3, 4, 5], [])
 
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [1,2,3], [4,5])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [1, 2, 3], [4, 5])
 
-        with pytest.raises(ValueError): 
-            TmsCoilRotation(3, [1, 5], [1,2,4], [3,4,5,6])
+        with pytest.raises(ValueError):
+            TmsCoilRotation(3, [1, 5], [1, 2, 4], [3, 4, 5, 6])
+
 
 class TestCurrent:
     def test_reset(self):
@@ -56,7 +57,7 @@ class TestCurrent:
 
     def test_current_out_of_range(self):
         trans = TmsCoilTranslation(3, [1, 5], 0)
-        with pytest.raises(ValueError): 
+        with pytest.raises(ValueError):
             trans.current = 5.1
 
 

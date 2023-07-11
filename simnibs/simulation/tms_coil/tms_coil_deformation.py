@@ -33,12 +33,18 @@ class TmsCoilDeformation(ABC, TcdElement):
         self.range = np.array(range, dtype=np.float64)
 
         if self.range.ndim != 1 or self.range.shape[0] != 2:
-            raise ValueError(f"Expected 'range' to be in the format [min, max] ({self.range})")
+            raise ValueError(
+                f"Expected 'range' to be in the format [min, max] ({self.range})"
+            )
         elif self.range[0] > self.range[1]:
-            raise ValueError(f"Expected 'range' to be in the format [min, max] but min was greater than max ({self.range})")
+            raise ValueError(
+                f"Expected 'range' to be in the format [min, max] but min was greater than max ({self.range})"
+            )
 
         if self.initial < self.range[0] or self.initial > self.range[1]:
-            raise ValueError(f"Expected 'initial' to be in the range of 'range' ({initial}, {self.range})")
+            raise ValueError(
+                f"Expected 'initial' to be in the range of 'range' ({initial}, {self.range})"
+            )
 
     def reset(self):
         self.current = self.initial
@@ -50,9 +56,7 @@ class TmsCoilDeformation(ABC, TcdElement):
     @current.setter
     def current(self, value):
         if value < self.range[0] or value > self.range[1]:
-            raise ValueError(
-                f"Value must be within the range ({value}, {self.range})"
-            )
+            raise ValueError(f"Value must be within the range ({value}, {self.range})")
         else:
             self._current = value
 
