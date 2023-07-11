@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 from .current_estimator import CurrentEstimator
+from .sim_struct import SESSION
 
 
 class Electrode():
@@ -1440,3 +1441,73 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
 
         # update geometry
         self.update_geometry()
+
+
+def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
+    """
+    Create a sim_struct.SESSION including a TDCSLIST object with ELECTRODE instances for regular TDCS
+    simulations including electrode meshing etc. for reference simulations.
+    Returns the SESSION object "s", which can be run with run_simnibs(s)
+
+    Parameters
+    ----------
+    fnamehead : str
+        Path to headmodel .msh file
+    pathfem : str
+        Output folder of simulation data
+
+    Returns
+    -------
+    s : simnibs.sim_struct.SESSION() object
+        SESSION object, which includes a TDCSLIST and the corresponding ELECTRODE instances.
+        Can be run with simnibs.run_simnibs(s).
+    """
+    # Initalize a session
+    s = SESSION()
+    # Name of head mesh
+    s.fnamehead = fnamehead
+    # Output folder
+    s.pathfem = pathfem
+
+    # Initialize a tDCS simulation
+    tdcslist = s.add_tdcslist()
+
+    # Set currents
+    tdcslist.currents = ElectrodeArray.current_channel
+
+    # Initialize the electrodes
+    for i_array, _electrode_array in enumerate(ElectrodeArray.electrode_arrays):
+
+        for _electrode in _electrode_array.electrodes:
+            # add new electrode
+            electrode = tdcslist.add_electrode()
+
+            if _electrode.type == "spherical":
+                # Circular shape
+                electrode.shape = 'ellipse'
+
+                # Electrode dimension
+                electrode.dimensions = [2*_electrode.radius, 2*_electrode.radius]
+
+            elif _electrode.type == "rectangular":
+                # Rectangular shape
+                electrode.shape = 'rect'
+
+                # Electrode dimension
+                electrode.dimensions = [_electrode.length_x, _electrode.length_y]
+            else:
+                raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
+
+            # Connect electrode to first channel (-1e-3 mA, cathode)
+            electrode.channelnr = _electrode.channel_id
+
+            # 5mm thickness
+            electrode.thickness = 5
+
+            # Electrode Position
+            electrode.centre = _electrode.posmat[:3, 3]
+
+            # Electrode direction
+            electrode.pos_ydir = _electrode.posmat[:3, 1]
+
+    return s
