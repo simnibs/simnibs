@@ -492,8 +492,10 @@ def run(
             hierarchy = None
         smooth_steps = mesh_settings["smooth_steps"]
         skin_care = mesh_settings["skin_care"]
+        mmg_noinsert = mesh_settings["mmg_noinsert"]
 
         # Meshing
+        debug=True
         DEBUG_FN = None
         if debug:
             DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
@@ -511,7 +513,7 @@ def run(
             hierarchy=hierarchy,
             smooth_steps=smooth_steps,
             skin_care=skin_care,
-            DEBUG_FN=DEBUG_FN,
+            mmg_noinsert=mmg_noinsert
         )
 
         logger.info("Writing mesh")
