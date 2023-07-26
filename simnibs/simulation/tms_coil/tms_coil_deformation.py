@@ -79,7 +79,7 @@ class TmsCoilDeformation(ABC, TcdElement):
 
     @abstractmethod
     def as_matrix(self) -> npt.NDArray[np.float_]:
-        """A affine matrix representation of the deformation
+        """An affine matrix representation of the deformation
 
         Returns
         -------

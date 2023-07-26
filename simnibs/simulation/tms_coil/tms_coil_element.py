@@ -472,7 +472,6 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
             affine_matrix = self.get_combined_transformation(affine_matrix)
         return self.values @ affine_matrix[:3, :3].T
 
-
 class DipoleElements(PositionalTmsCoilElements):
     def get_a_field(
         self,

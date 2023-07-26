@@ -5118,7 +5118,18 @@ def _read_msh_2(fn, m):
                             10, 27, 18, 14, 1, 8, 20, 15, 13]
             while current_element < elm_nr:
                 elm_type, nr, _ = np.fromfile(f, 'int32', 3)
-                if elm_type == 2:
+                if elm_type == 1:
+                    tmp = np.fromfile(f, 'int32', nr * 5).reshape(-1, 5)
+
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        1 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :2] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
+
+                elif elm_type == 2:
                     tmp = np.fromfile(f, 'int32', nr * 6).reshape(-1, 6)
 
                     m.elm.elm_type[current_element:current_element+nr] = \
@@ -5139,7 +5150,17 @@ def _read_msh_2(fn, m):
                     m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
                     m.elm.node_number_list[current_element:current_element+nr] = tmp[:, 3:]
                     read[current_element:current_element+nr] = 1
+                
+                elif elm_type == 15:
+                    tmp = np.fromfile(f, 'int32', nr * 4).reshape(-1, 4)
 
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        15 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :1] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
                 else:
                     warnings.warn('element of type {0} '
                                   'cannot be read, ignoring it'.format(elm_type))
@@ -5164,6 +5185,12 @@ def _read_msh_2(fn, m):
 
             for ii in range(elm_nr):
                 line = f.readline().decode().strip().split()
+                if line[1] == '1':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :2] = [int(i) for i in line[5:]]
                 if line[1] == '2':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
@@ -5176,6 +5203,12 @@ def _read_msh_2(fn, m):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii] = [int(i) for i in line[5:]]
+                if line[1] == '15':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :1] = [int(i) for i in line[5:]]
                 else:
                     read[ii] = 0
                     warnings.warn('element of type {0} '

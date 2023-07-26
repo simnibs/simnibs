@@ -637,7 +637,7 @@ class TmsCoil(TcdElement):
                 os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii.gz")
             )
             return coil
-        except (nib.filebasedimages.ImageFileError):
+        except nib.filebasedimages.ImageFileError:
             pass
         finally:
             if os.path.exists(
@@ -705,11 +705,21 @@ class TmsCoil(TcdElement):
         with open(fn, "r") as f:
             header = f.readline()
 
+        if fn_coil_casing is None:
+            fn_coil_casing = f"{os.path.splitext(fn)[0]}.stl"
+            if not os.path.exists(fn_coil_casing):
+                fn_coil_casing = None
+
         coil_casing = None
         if fn_coil_casing is not None:
             coil_casing_mesh = mesh_io.read_stl(fn_coil_casing)
             coil_casing = TmsCoilModel(coil_casing_mesh, None, None)
 
+        if fn_waveform_file is None:
+            fn_waveform_file = f"{os.path.splitext(fn)[0]}.tsv"
+            if not os.path.exists(fn_waveform_file):
+                fn_waveform_file = None
+                
         waveforms = None
         if fn_waveform_file is not None:
             waveform_data = np.genfromtxt(
@@ -1350,7 +1360,11 @@ class TmsCoil(TcdElement):
         )
 
     def generate_element_casings(
-        self, distance: float, grid_spacing: float, override: bool = False
+        self,
+        distance: float,
+        grid_spacing: float,
+        add_intersection_points: bool,
+        override: bool = False,
     ):
         """Generates coil element casings for all coil elements except sampled elements.
         The casing will have the specified distance from the coil element points.
@@ -1362,6 +1376,11 @@ class TmsCoil(TcdElement):
             The minimum distance of the casing to the element points
         grid_spacing : float
             The spacing of the discretization grid used to generate the casing
+        add_intersection_points : bool
+            Whether or not to add intersection points based on the origin of the coil
+        update_origin: bool
+            Whether or not to update the origin of the coil to be the most outside casing point in 
+            the -z direction
         override : bool, optional
             Whether or not to override existing coil casings, by default False
         """
@@ -1391,9 +1410,6 @@ class TmsCoil(TcdElement):
                     np.meshgrid(grid_x, grid_y, grid_z, indexing="ij"), axis=-1
                 ).reshape(-1, 3)
 
-                # volume_data = np.empty((len(grid_x), len(grid_y), len(grid_z)))
-                # volume_data.fill(0)
-
                 tree = KDTree(element.points)
                 distances, _ = tree.query(grid_points, k=1)
                 volume_data = distances.reshape((len(grid_x), len(grid_y), len(grid_z)))
@@ -1418,7 +1434,25 @@ class TmsCoil(TcdElement):
                 )
                 casing.smooth_surfaces(40)
 
-                element.casing = TmsCoilModel(casing)
+                intersection_points = None
+                if add_intersection_points:
+                    intersection_points = np.copy(casing.nodes.node_coord)
+                    points_facing_origin = np.zeros((len(intersection_points)), dtype=bool)
+                    for offset in [np.array([0, 0, 1]), np.array([0, 0, 50])]:
+                        location_vectors = (intersection_points - offset) / np.linalg.norm(intersection_points - offset, axis=1)[:, np.newaxis]
+                        intersection_point_normals = casing.nodes_normals().value
+                        points_facing_origin = np.logical_or(points_facing_origin, 
+                            np.einsum(
+                                "ij,ij->i",
+                                location_vectors,
+                                intersection_point_normals,
+                            )
+                            < 0)
+                    intersection_points = intersection_points[points_facing_origin]
+
+                element.casing = TmsCoilModel(
+                    casing, intersect_points=intersection_points
+                )
 
     def optimize_deformations(
         self,
