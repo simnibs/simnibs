@@ -687,6 +687,7 @@ class TmsCoil(TcdElement):
         fn_waveform_file: Optional[str] = None,
     ):
         """Loads a ccd coil file with the optional addition of a coil casing as an stl file and waveform information from a tsv file
+        If the additional files are None, files with the same name as the coil file are tried to be loaded. 
 
         Parameters
         ----------
@@ -997,20 +998,35 @@ class TmsCoil(TcdElement):
         with open(fn, "w") as json_file:
             json.dump(self.to_tcd(ascii_mode), json_file, indent=4)
 
+
+    
     @classmethod
-    def from_nifti(cls, fn: str):
-        """Loads coil information from a NIfTI file
+    def from_nifti(cls, fn: str, fn_coil_casing: Optional[str] = None):
+        """Loads coil information from a NIfTI file with the optional addition of a coil casing as an stl file and waveform information from a tsv file
+        If the additional files are None, files with the same name as the coil file are tried to be loaded. 
 
         Parameters
         ----------
         fn : str
             The path to the coil NIfTI file
+        fn_coil_casing : Optional[str], optional
+            The path to a stl coil casing file, by default None
 
         Returns
         -------
         TmsCoil
             The TMS coil loaded from the NIfTI file
         """
+        if fn_coil_casing is None:
+            fn_coil_casing = f"{os.path.splitext(fn)[0]}.stl"
+            if not os.path.exists(fn_coil_casing):
+                fn_coil_casing = None
+
+        coil_casing = None
+        if fn_coil_casing is not None:
+            coil_casing_mesh = mesh_io.read_stl(fn_coil_casing)
+            coil_casing = TmsCoilModel(coil_casing_mesh, None, None)
+
         nifti = nib.load(fn)
         data = nifti.get_fdata()
         affine = nifti.affine
@@ -1068,7 +1084,7 @@ class TmsCoil(TcdElement):
                 "NIfTI file needs to at least contain one 3D vector per voxel!"
             )
 
-        return cls(coil_elements, limits=limits, resolution=resolution)
+        return cls(coil_elements, limits=limits, resolution=resolution, casing=coil_casing)
 
     def write_nifti(
         self,

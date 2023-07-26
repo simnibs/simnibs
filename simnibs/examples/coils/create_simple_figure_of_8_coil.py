@@ -12,7 +12,7 @@ from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator
 
 def spiral(outer_diam: float, inner_diam: float, wire_diam: float, segment_count: int):
     """Creates a spiral path based on the inner and outer diameter of the coil as well as
-    the diameter of the wire and the segment count. 
+    the diameter of the wire and the segment count.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def spiral(outer_diam: float, inner_diam: float, wire_diam: float, segment_count
     -------
         The wire path of the spiral
     """
-    # Calculates the maximal spiral angle 
+    # Calculates the maximal spiral angle
     phi_max = 2 * np.pi * (outer_diam / 2 - inner_diam / 2) / (wire_diam / 2)
 
     # Evenly spaced angles between 30 degrees and phi_max
@@ -51,7 +51,7 @@ def figure_of_8_wire_path(
     outer_diam: float,
     inner_diam: float,
     element_distance: float,
-    winding_casing_distance: float
+    winding_casing_distance: float,
 ):
     """Generates the windings of a figure of 8 coil
 
@@ -78,7 +78,9 @@ def figure_of_8_wire_path(
     """
     # Generate left spiral of the coil
     path = spiral(outer_diam, inner_diam, wire_diam, segment_count)
-    spiral_1 = path + np.array((-element_distance / 2, 0, -winding_casing_distance))[:, None]
+    spiral_1 = (
+        path + np.array((-element_distance / 2, 0, -winding_casing_distance))[:, None]
+    )
 
     # Generate right spiral of the coil
     path[1] = -path[1]
@@ -89,11 +91,15 @@ def figure_of_8_wire_path(
 
     # Generate incoming wire to the coil inside handle
     initial_wire_path = np.linspace(
-        (0.1, -outer_diam / 2, -winding_casing_distance), (0, 0, -winding_casing_distance), connection_segment_count
+        (0.1, -outer_diam / 2, -winding_casing_distance),
+        (0, 0, -winding_casing_distance),
+        connection_segment_count,
     ).T
     # Generate outgoing wire from the coil inside handle
     ending_wire_path = np.linspace(
-        (-0.1, 0, -winding_casing_distance), (0, -outer_diam / 2, -winding_casing_distance), connection_segment_count
+        (-0.1, 0, -winding_casing_distance),
+        (0, -outer_diam / 2, -winding_casing_distance),
+        connection_segment_count,
     ).T
 
     # Generate the connection from the incoming wire to the right spiral center
@@ -139,7 +145,7 @@ wire_path = figure_of_8_wire_path(
     outer_diam,
     inner_diam,
     element_distance,
-    winding_casing_distance
+    winding_casing_distance,
 )
 
 # The limits of the a field of the coil, used for the transformation into nifti format
@@ -152,13 +158,15 @@ stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122
 
 # Creating the line segments from a list of wire path points
 line_element = LineSegmentElements(stimulator, wire_path, name="Figure_of_8")
-# Creating the TMS coil with its element, a name, a brand, a version, the limits and the resolution 
+# Creating the TMS coil with its element, a name, a brand, a version, the limits and the resolution
 tms_coil = TmsCoil(
     [line_element], "Example Coil", "Example Coil Brand", "V1.0", limits, resolution
 )
 
 # Generating a coil casing that has a specified distance from the coil windings
-tms_coil.generate_element_casings(winding_casing_distance, winding_casing_distance / 20, True)
+tms_coil.generate_element_casings(
+    winding_casing_distance, winding_casing_distance / 20, True
+)
 
 # Write the coil to a tcd file
-tms_coil.write("example_coil.tcd")
+tms_coil.write("figure_of_8_example_coil.tcd")
