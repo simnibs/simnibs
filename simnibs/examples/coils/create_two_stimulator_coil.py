@@ -1,5 +1,6 @@
 """
-Example of how to create a simple parametric figure of 8 TMS coil and save it in the tcd format.
+Example of how to create a simple parametric TMS coil consisting of a circular and a figure of 8 coil stacked.
+The TMS coil is than saved in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
 """
 
@@ -135,10 +136,12 @@ segment_count = 1000
 connection_segment_count = 20
 outer_diam = 80
 inner_diam = 20
+circular_diam = 60
 element_distance = 90
 winding_casing_distance = 4
+figure_of_8_to_circular_distance = 0.5
 
-wire_path = figure_of_8_wire_path(
+wire_path_figure_of_8 = figure_of_8_wire_path(
     wire_diam,
     segment_count,
     connection_segment_count,
@@ -148,25 +151,39 @@ wire_path = figure_of_8_wire_path(
     winding_casing_distance,
 )
 
+# Generating the angles of the circle points
+angles = np.linspace(0, 2 * np.pi, segment_count, endpoint=False)
+# Generating the cartesian coordinates of the circle points
+wire_path_circular = np.array(
+    [
+        circular_diam / 2 * np.cos(angles),
+        circular_diam / 2 * np.sin(angles),
+        np.full_like(angles, -winding_casing_distance - figure_of_8_to_circular_distance),
+    ]
+).T
+
 # The limits of the a field of the coil, used for the transformation into nifti format
 limits = [[-300.0, 300.0], [-200.0, 200.0], [-100.0, 300.0]]
 # The resolution used when sampling to transform into nifti format
 resolution = [1, 1, 1]
 
-# Creating a example stimulator with a name, a brand and a maximum dI/dt
-stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122.22e6)
+# Creating two example stimulator with a name, a brand and a maximum dI/dt
+stimulator_1 = TmsStimulator("Example Stimulator 1", "Example Stimulator Brand", 122.22e6)
+stimulator_2 = TmsStimulator("Example Stimulator 2", "Example Stimulator Brand", 102.45e6)
 
 # Creating the line segments from a list of wire path points
-line_element = LineSegmentElements(stimulator, wire_path, name="Figure_of_8")
+line_element_figure_of_8 = LineSegmentElements(stimulator_1, wire_path_figure_of_8, name="Figure_of_8")
+line_element_circular = LineSegmentElements(stimulator_2, wire_path_circular, name="Circular")
+
 # Creating the TMS coil with its element, a name, a brand, a version, the limits and the resolution
 tms_coil = TmsCoil(
-    [line_element], "Example Coil", "Example Coil Brand", "V1.0", limits, resolution
+    [line_element_figure_of_8, line_element_circular], "Example Coil", "Example Coil Brand", "V1.0", limits, resolution
 )
 
 # Generating a coil casing that has a specified distance from the coil windings
 tms_coil.generate_element_casings(
-    winding_casing_distance, winding_casing_distance / 5, True
+    winding_casing_distance, winding_casing_distance / 5, True, combined_casing=True
 )
 
 # Write the coil to a tcd file
-tms_coil.write("figure_of_8_example_coil.tcd")
+tms_coil.write("two_stimulator_example_coil.tcd")

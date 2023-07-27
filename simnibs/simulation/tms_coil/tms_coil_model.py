@@ -4,6 +4,10 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
+from scipy import ndimage
+from scipy.spatial import KDTree
+
+from simnibs.segmentation.marching_cube import marching_cubes_lewiner
 
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
@@ -289,6 +293,93 @@ class TmsCoilModel(TcdElement):
                 ).decode("ascii")
 
         return tcd_coil_model
+
+    @classmethod
+    def from_points(
+        cls,
+        points: npt.ArrayLike,
+        distance: float,
+        grid_spacing: float,
+        add_intersection_points: bool,
+    ):
+        """Creates a coil model by generating a casing based on the distance from the points.
+
+        Parameters
+        ----------
+        points : npt.ArrayLike (N, 3)
+            The points the casing is generated from
+        distance : float
+            The distance of the casings to the points
+        grid_spacing : float
+            The spacing of the discretization grid used to generate the casing.
+            Should be smaller than distance. Determines the resolution of the casing.
+        add_intersection_points : bool
+            Whether or not to add intersection points based on the origin of the coil
+        """
+        points = np.array(points, dtype=np.float64)
+        limits = [
+            [
+                np.min(points[:, 0]) - 3 * distance - grid_spacing,
+                np.max(points[:, 0]) + 3 * distance + grid_spacing,
+            ],
+            [
+                np.min(points[:, 1]) - 3 * distance - grid_spacing,
+                np.max(points[:, 1]) + 3 * distance + grid_spacing,
+            ],
+            [
+                np.min(points[:, 2]) - 3 * distance - grid_spacing,
+                np.max(points[:, 2]) + 3 * distance + grid_spacing,
+            ],
+        ]
+
+        grid_x = np.arange(limits[0][0], limits[0][1], grid_spacing)
+        grid_y = np.arange(limits[1][0], limits[1][1], grid_spacing)
+        grid_z = np.arange(limits[2][0], limits[2][1], grid_spacing)
+        grid_points = np.stack(
+            np.meshgrid(grid_x, grid_y, grid_z, indexing="ij"), axis=-1
+        ).reshape(-1, 3)
+
+        tree = KDTree(points)
+        distances, _ = tree.query(grid_points, k=1)
+        volume_data = distances.reshape((len(grid_x), len(grid_y), len(grid_z)))
+
+        volume_data = ndimage.gaussian_filter(volume_data, sigma=1)
+
+        vertices, faces, _, _ = marching_cubes_lewiner(
+            volume_data,
+            level=distance,
+            spacing=tuple(
+                np.array([grid_spacing, grid_spacing, grid_spacing], dtype="float32")
+            ),
+            step_size=1,
+            allow_degenerate=False,
+        )
+        vertices += [limits[0][0], limits[1][0], limits[2][0]]
+
+        casing = Msh(Nodes(vertices), Elements(faces + 1))
+        casing.smooth_surfaces(40)
+
+        intersection_points = None
+        if add_intersection_points:
+            intersection_points = np.copy(casing.nodes.node_coord)
+            points_facing_origin = np.zeros((len(intersection_points)), dtype=bool)
+            for offset in [np.array([0, 0, 1]), np.array([0, 0, 50])]:
+                location_vectors = (intersection_points - offset) / np.linalg.norm(
+                    intersection_points - offset, axis=1
+                )[:, np.newaxis]
+                intersection_point_normals = casing.nodes_normals().value
+                points_facing_origin = np.logical_or(
+                    points_facing_origin,
+                    np.einsum(
+                        "ij,ij->i",
+                        location_vectors,
+                        intersection_point_normals,
+                    )
+                    < 0,
+                )
+            intersection_points = intersection_points[points_facing_origin]
+
+        return cls(casing, intersect_points=intersection_points)
 
     @classmethod
     def from_tcd_dict(cls, tcd_coil_model: dict):

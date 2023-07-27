@@ -26,6 +26,7 @@ import glob
 import gc
 import logging
 import functools
+from typing import Union
 
 import numpy as np
 import scipy.io
@@ -1270,7 +1271,7 @@ class POSITION(object):
         4x4 matrix defining coil center and orientation
         in simnibs coordinate system.
         HAS PREFERENCE OVER (centre, pos_y, distance)
-    dIdt: float
+    dIdt: Union[float, list[float]]
         Change of current in coil, in A/s
     fnamefem: str
         Name of simulation output
@@ -1292,7 +1293,7 @@ class POSITION(object):
         self.name = ''
         self.date = None
         self.matsimnibs = None
-        self.didt = 1e6  # corresponding to 1 A/us
+        self.didt: Union[float, list[float]] = 1e6  # corresponding to 1 A/us
         self.fnamefem = ''
         self.centre = None
         self.pos_ydir = None

@@ -10,14 +10,11 @@ import nibabel as nib
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize as opt
-from scipy import ndimage
-from scipy.spatial import KDTree
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.gmsh_view import Visualization, _gray_red_lightblue_blue_cm
 from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
-from simnibs.segmentation.marching_cube import marching_cubes_lewiner
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
@@ -687,7 +684,7 @@ class TmsCoil(TcdElement):
         fn_waveform_file: Optional[str] = None,
     ):
         """Loads a ccd coil file with the optional addition of a coil casing as an stl file and waveform information from a tsv file
-        If the additional files are None, files with the same name as the coil file are tried to be loaded. 
+        If the additional files are None, files with the same name as the coil file are tried to be loaded.
 
         Parameters
         ----------
@@ -720,7 +717,7 @@ class TmsCoil(TcdElement):
             fn_waveform_file = f"{os.path.splitext(fn)[0]}.tsv"
             if not os.path.exists(fn_waveform_file):
                 fn_waveform_file = None
-                
+
         waveforms = None
         if fn_waveform_file is not None:
             waveform_data = np.genfromtxt(
@@ -998,12 +995,10 @@ class TmsCoil(TcdElement):
         with open(fn, "w") as json_file:
             json.dump(self.to_tcd(ascii_mode), json_file, indent=4)
 
-
-    
     @classmethod
     def from_nifti(cls, fn: str, fn_coil_casing: Optional[str] = None):
         """Loads coil information from a NIfTI file with the optional addition of a coil casing as an stl file and waveform information from a tsv file
-        If the additional files are None, files with the same name as the coil file are tried to be loaded. 
+        If the additional files are None, files with the same name as the coil file are tried to be loaded.
 
         Parameters
         ----------
@@ -1084,7 +1079,9 @@ class TmsCoil(TcdElement):
                 "NIfTI file needs to at least contain one 3D vector per voxel!"
             )
 
-        return cls(coil_elements, limits=limits, resolution=resolution, casing=coil_casing)
+        return cls(
+            coil_elements, limits=limits, resolution=resolution, casing=coil_casing
+        )
 
     def write_nifti(
         self,
@@ -1381,6 +1378,7 @@ class TmsCoil(TcdElement):
         grid_spacing: float,
         add_intersection_points: bool,
         override: bool = False,
+        combined_casing: bool = False,
     ):
         """Generates coil element casings for all coil elements except sampled elements.
         The casing will have the specified distance from the coil element points.
@@ -1394,81 +1392,30 @@ class TmsCoil(TcdElement):
             The spacing of the discretization grid used to generate the casing
         add_intersection_points : bool
             Whether or not to add intersection points based on the origin of the coil
-        update_origin: bool
-            Whether or not to update the origin of the coil to be the most outside casing point in 
-            the -z direction
         override : bool, optional
             Whether or not to override existing coil casings, by default False
+        combined_casing : bool, optional
+            Whether or not to combine the element casings into one coil casing, by default False
         """
-        for element in self.elements:
-            if isinstance(element, PositionalTmsCoilElements) and (
-                element.casing is None or override
-            ):
-                limits = [
-                    [
-                        np.min(element.points[:, 0]) - 3 * distance - grid_spacing,
-                        np.max(element.points[:, 0]) + 3 * distance + grid_spacing,
-                    ],
-                    [
-                        np.min(element.points[:, 1]) - 3 * distance - grid_spacing,
-                        np.max(element.points[:, 1]) + 3 * distance + grid_spacing,
-                    ],
-                    [
-                        np.min(element.points[:, 2]) - 3 * distance - grid_spacing,
-                        np.max(element.points[:, 2]) + 3 * distance + grid_spacing,
-                    ],
-                ]
-
-                grid_x = np.arange(limits[0][0], limits[0][1], grid_spacing)
-                grid_y = np.arange(limits[1][0], limits[1][1], grid_spacing)
-                grid_z = np.arange(limits[2][0], limits[2][1], grid_spacing)
-                grid_points = np.stack(
-                    np.meshgrid(grid_x, grid_y, grid_z, indexing="ij"), axis=-1
-                ).reshape(-1, 3)
-
-                tree = KDTree(element.points)
-                distances, _ = tree.query(grid_points, k=1)
-                volume_data = distances.reshape((len(grid_x), len(grid_y), len(grid_z)))
-
-                volume_data = ndimage.gaussian_filter(volume_data, sigma=1)
-
-                vertices, faces, _, _ = marching_cubes_lewiner(
-                    volume_data,
-                    level=distance,
-                    spacing=tuple(
-                        np.array(
-                            [grid_spacing, grid_spacing, grid_spacing], dtype="float32"
-                        )
-                    ),
-                    step_size=1,
-                    allow_degenerate=False,
-                )
-                vertices += [limits[0][0], limits[1][0], limits[2][0]]
-
-                casing = mesh_io.Msh(
-                    mesh_io.Nodes(vertices), mesh_io.Elements(faces + 1)
-                )
-                casing.smooth_surfaces(40)
-
-                intersection_points = None
-                if add_intersection_points:
-                    intersection_points = np.copy(casing.nodes.node_coord)
-                    points_facing_origin = np.zeros((len(intersection_points)), dtype=bool)
-                    for offset in [np.array([0, 0, 1]), np.array([0, 0, 50])]:
-                        location_vectors = (intersection_points - offset) / np.linalg.norm(intersection_points - offset, axis=1)[:, np.newaxis]
-                        intersection_point_normals = casing.nodes_normals().value
-                        points_facing_origin = np.logical_or(points_facing_origin, 
-                            np.einsum(
-                                "ij,ij->i",
-                                location_vectors,
-                                intersection_point_normals,
-                            )
-                            < 0)
-                    intersection_points = intersection_points[points_facing_origin]
-
-                element.casing = TmsCoilModel(
-                    casing, intersect_points=intersection_points
-                )
+        if combined_casing and (self.casing is None or override):
+            all_points = []
+            for element in self.elements:
+                if isinstance(element, PositionalTmsCoilElements):
+                    all_points.append(element.points)
+            self.casing = TmsCoilModel.from_points(
+                np.concatenate(all_points, axis=0),
+                distance,
+                grid_spacing,
+                add_intersection_points,
+            )
+        else:
+            for element in self.elements:
+                if isinstance(element, PositionalTmsCoilElements) and (
+                    element.casing is None or override
+                ):
+                    element.casing = TmsCoilModel.from_points(
+                        element.points, distance, grid_spacing, add_intersection_points
+                    )
 
     def optimize_deformations(
         self,

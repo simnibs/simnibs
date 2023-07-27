@@ -1,5 +1,5 @@
 """
-Example of how to create a simple parametric TMS coil and save it in the tcd format.
+Example of how to create a simple parametric circular TMS coil and save it in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
 """
 
@@ -19,7 +19,7 @@ winding_casing_distance = 4
 # Generating the angles of the circle points
 angles = np.linspace(0, 2 * np.pi, segment_count, endpoint=False)
 # Generating the cartesian coordinates of the circle points
-wire_path = path = np.array(
+wire_path = np.array(
     [
         diam / 2 * np.cos(angles),
         diam / 2 * np.sin(angles),
@@ -33,7 +33,7 @@ limits = [[-300.0, 300.0], [-200.0, 200.0], [-100.0, 300.0]]
 resolution = [1, 1, 1]
 
 # Creating a example stimulator with a name, a brand and a maximum dI/dt
-stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122.22)
+stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122.22e6)
 
 # Creating the line segments from a list of wire path points
 line_element = LineSegmentElements(stimulator, wire_path, name="Circular")

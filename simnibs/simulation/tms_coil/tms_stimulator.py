@@ -119,7 +119,7 @@ class TmsStimulator:
     brand : Optional[str], optional
         the brand of the stimulator, by default None
     max_di_dt :  Optional[float], optional
-        Maximum dI/dt values for the stimulator, by default None
+        Maximum dI/dt value in A/s for the stimulator, by default None
     waveforms : Optional[list[TmsWaveform]], optional
         A list of waveforms that can be generated with this stimulator, by default None
 
