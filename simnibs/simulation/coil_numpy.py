@@ -213,7 +213,7 @@ def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='aut
         Precision. The default is 1e-3
     direct : bool
         Set to true to force using direct (naive) approach or False to force use of FMM.
-        If set to auto direct method is used for less than 300 dipoles which appears to be faster i these cases.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster in these cases.
         The default is 'auto'
 
     Returns
@@ -430,6 +430,8 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
     # bring everything to SI
     d_position *= 1e-3
     pos = msh.nodes[:] * 1e-3
+    print("d_pos", d_position)
+    print("m_pos", pos)
     A = np.zeros((len(pos), 3), dtype=float)
     out = fmm3dpy.lfmm3d(
             eps=eps,
@@ -453,6 +455,17 @@ def _calculate_dadt_ccd_FMM(msh, ccd_file, coil_matrix, didt, geo_fn, eps=1e-3):
         )
 
     return mesh_io.NodeData(A)
+
+
+def _calculate_dadt_tcd(msh, coil, coil_matrix, didt, eps=1e-3, parameters=None):
+    from simnibs.simulation import tcd_utils
+    if not isinstance(coil, dict):
+        coil = tcd_utils.read_tcd(coil)
+    pos = msh.nodes[:] * 1e-3
+    A = tcd_utils.get_Afield(coil, pos.T, affine=coil_matrix, dIdt=didt, eps=eps,
+                             parameters=parameters)
+    msh_stl = tcd_utils.get_coil_msh(coil, parameters=parameters, affine=np.identity(4))
+    return mesh_io.NodeData(A), msh_stl
 
 
 def _calculate_dadt_nifti(msh, nifti_image, coil_matrix, didt, geo_fn):
@@ -589,15 +602,28 @@ def _transform_coil_surface(msh_stl, coil_matrix, msh_skin=None, add_logo=False)
 
 
 def set_up_tms_dAdt(msh, coil_file, coil_matrix, didt=1e6, fn_geo=None, fn_stl=None):
-
-    add_logo = True # add simnibs logo to coil surface visulization
+    # add simnibs logo to coil surface visulization
+    add_logo = True
 
     coil_matrix = np.array(coil_matrix)
     if isinstance(coil_file, nib.nifti1.Nifti1Image) or\
-        coil_file.endswith('.nii.gz') or\
-        coil_file.endswith('.nii'):
+        (isinstance(coil_file, str) and (coil_file.endswith('.nii.gz') or
+                                         coil_file.endswith('.nii'))):
         dadt = _calculate_dadt_nifti(msh, coil_file,
                                      coil_matrix, didt, fn_geo)
+    elif isinstance(coil_file, dict) or coil_file.endswith('.tcd'):
+        dadt, msh_stl = _calculate_dadt_tcd(msh, coil_file,
+                                            coil_matrix, didt)
+        if fn_geo is not None:
+            idx = (msh.elm.elm_type == 2) & ((msh.elm.tag1 == 1005) |
+                                             (msh.elm.tag1 == 5))
+            msh_skin = msh.crop_mesh(elements=msh.elm.elm_number[idx])
+            msh_stl = _transform_coil_surface(msh_stl,
+                                              coil_matrix, msh_skin, add_logo)
+            mesh_io.write_geo_triangles(msh_stl.elm[:, :3] - 1,
+                                        msh_stl.nodes[:],
+                                        fn_geo, values=msh_stl.elm.tag1,
+                                        name='coil_casing', mode='ba')
     elif coil_file.endswith('.ccd'):
         if FMM3D:
             dadt = _calculate_dadt_ccd_FMM(
