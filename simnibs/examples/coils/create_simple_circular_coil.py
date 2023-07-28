@@ -30,7 +30,7 @@ wire_path = np.array(
 # The limits of the a field of the coil, used for the transformation into nifti format
 limits = [[-300.0, 300.0], [-200.0, 200.0], [-100.0, 300.0]]
 # The resolution used when sampling to transform into nifti format
-resolution = [1, 1, 1]
+resolution = [2, 2, 2]
 
 # Creating a example stimulator with a name, a brand and a maximum dI/dt
 stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122.22e6)
@@ -44,7 +44,7 @@ tms_coil = TmsCoil(
 
 # Generating a coil casing that has a specified distance from the coil windings
 tms_coil.generate_element_casings(
-    winding_casing_distance, winding_casing_distance / 20, True
+    winding_casing_distance, winding_casing_distance / 2, False
 )
 
 # Write the coil to a tcd file
