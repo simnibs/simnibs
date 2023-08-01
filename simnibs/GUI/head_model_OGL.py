@@ -27,6 +27,8 @@ import math
 import sys
 import numpy
 
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+
 from ..simulation import coil_numpy as coil
 from ..mesh_tools import surface, mesh_io
 from ..utils.csv_reader import read_csv_positions
@@ -762,9 +764,9 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         if fn_coil.endswith('.nii') or fn_coil.endswith('.nii.gz'):
             M = numpy.array(matsimnibs)
             if self.skin_surf is not None:
-                field_skin = coil._get_field(fn_coil, self.skin_surf.nodes, M, get_norm=True)*1e7
+                field_skin = numpy.linalg.norm(TmsCoil.from_file(fn_coil).get_a_field(numpy.array(self.skin_surf.nodes), M), axis=1)*1e7
             if self.gm_surf is not None:
-                field_gm = coil._get_field(fn_coil, self.gm_surf.nodes, M, get_norm=True)*1e7
+                field_gm = numpy.linalg.norm(TmsCoil.from_file(fn_coil).get_a_field(numpy.array(self.gm_surf.nodes), M), axis=1)*1e7
 
             self.hasField = True
             if self.skin_surf is not None:

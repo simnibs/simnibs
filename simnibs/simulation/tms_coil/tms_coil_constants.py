@@ -1,0 +1,12 @@
+from enum import IntEnum
+
+
+class TmsCoilElementTag(IntEnum):
+    COIL_CASING = 1
+    COIL_CASING_MIN_DISTANCE_POINTS = 2
+    COIL_CASING_INTERSECT_POINTS = 3
+    DIPOLES = 4
+    LINE_ELEMENTS = 5
+    SAMPLED_GRID_ELEMENTS = 6
+    INDEX_OFFSET = 100
+    BOUNDING_BOX = 99999
