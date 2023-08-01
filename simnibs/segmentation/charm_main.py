@@ -498,6 +498,11 @@ def run(
         if debug:
             DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
 
+        #if num_threads is zero or less
+        #set it to something fairly large
+        if num_threads <= 0:
+            num_threads = 32
+
         final_mesh = create_mesh(
             label_buffer,
             label_affine,

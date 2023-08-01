@@ -9,6 +9,7 @@
 #ifdef CGAL_CONCURRENT_MESH_3
 #include "tbb/task_arena.h"
 #include "tbb/task_group.h"
+#include "tbb/global_control.h"
 #endif
 
 #include <cstdlib>
@@ -40,7 +41,7 @@ int _mesh_image(
   char *fn_image, char *fn_out,
   float facet_angle, float facet_size, float facet_distance,
   float cell_radius_edge_ratio, float cell_size,
-  bool optimize
+  bool optimize, int num_threads
 )
 {
   /// Load image
@@ -49,6 +50,10 @@ int _mesh_image(
     std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
     return EXIT_FAILURE;
   }
+
+  // Set max number of threads
+  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
 
@@ -122,7 +127,7 @@ int _mesh_image_sizing_field(
   char *fn_image, char *fn_out,
   float facet_angle, float *facet_size, float *facet_distance,
   float cell_radius_edge_ratio, float *cell_size,
-  bool optimize
+  bool optimize, int num_threads
 )
 {
   /// Load image
@@ -131,6 +136,10 @@ int _mesh_image_sizing_field(
     std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
     return EXIT_FAILURE;
   }
+
+  // Set max number of threads
+  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
 

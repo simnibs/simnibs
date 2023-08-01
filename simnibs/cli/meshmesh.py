@@ -73,6 +73,8 @@ use custom .ini-file to control tetrahedra sizes:
                         nargs=1, metavar="size_field.nii.gz", 
                         help="""optional sizing field to locally control element 
                         sizes""")
+    parser.add_argument('--nthreads', type=int,  dest='nthreads', default=1,
+                        help="""Number of threads to be used for the meshing.""")
     parser.add_argument('-v','--version', action='version', version=__version__)
     
     args=parser.parse_args(argv)
@@ -96,7 +98,7 @@ def main():
         settings['skin_tag'] = None
     if not settings['hierarchy']:
         settings['hierarchy'] = None
-     
+
     # load label image
     label_nifti = nib.load(args.label_image)
     label_image = np.squeeze(label_nifti.get_fdata().astype(np.uint16)) # Cast to uint16, otherwise meshing complains
@@ -156,7 +158,8 @@ def main():
                             skin_tag=settings['skin_tag'],
                             hierarchy= settings['hierarchy'],
                             smooth_steps=settings['smooth_steps'],
-                            sizing_field=sf_image)
+                            sizing_field=sf_image,
+                            num_threads=args.nthreads)
 
     # write out mesh, .opt-file with some visualization settings and .ini-file with settings
     if not args.mesh_name.lower().endswith('.msh'):
