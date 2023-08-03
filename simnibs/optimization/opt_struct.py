@@ -2663,7 +2663,7 @@ def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
 
 class TESoptimize():
     """
-    Defines a TES optimization problem using a direct approach
+    Defines a TES optimization problem using node-wise current sources.
 
     Parameters
     --------------

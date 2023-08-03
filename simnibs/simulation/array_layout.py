@@ -1508,6 +1508,6 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
             electrode.centre = _electrode.posmat[:3, 3]
 
             # Electrode direction
-            electrode.pos_ydir = _electrode.posmat[:3, 1]
+            electrode.pos_ydir = electrode.centre + 20*_electrode.posmat[:3, 1]
 
     return s

@@ -6375,15 +6375,23 @@ def read_medit(fn):
         Mesh class
     '''
     with open(fn, 'r') as f:
-        n_vertices = 0
         if not f.readline().startswith('MeshVersionFormatted'):
             raise IOError('invalid mesh format')
         if f.readline().strip() != 'Dimension 3':
             raise IOError('Can only read 3D meshes')
-        if f.readline().strip() not in ['Vertices', '# CGAL::Mesh_complex_3_in_triangulation_3']:
+        if f.readline().strip() != 'Vertices':
             raise IOError('invalid mesh format')
-        if f.readline().strip() == 'Vertices':
-            n_vertices = int(f.readline().strip())
+        n_vertices = int(f.readline().strip())
+        # for CGAL > 5.4 the reader has to be adapted because the medit files are written differently from CGAL
+        # n_vertices = 0
+        # if not f.readline().startswith('MeshVersionFormatted'):
+        #     raise IOError('invalid mesh format')
+        # if f.readline().strip() != 'Dimension 3':
+        #     raise IOError('Can only read 3D meshes')
+        # if f.readline().strip() not in ['Vertices', '# CGAL::Mesh_complex_3_in_triangulation_3']:
+        #     raise IOError('invalid mesh format')
+        # if f.readline().strip() == 'Vertices':
+        #     n_vertices = int(f.readline().strip())
         assert n_vertices > 0
         vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)

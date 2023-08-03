@@ -275,8 +275,10 @@ class OnlineFEM:
                 for _ele in _electrode_array.electrodes:
                     if _ele.node_current is not None:
                         currents.append(_ele.node_current)
+                        self.fem.weigh_by_area = False
                     else:
                         currents.append(_ele.ele_current)
+                        self.fem.weigh_by_area = True
                     electrodes.append(_ele.node_idx + 1)
 
             b = self.fem.assemble_rhs(electrodes=electrodes,       # list of node indices of electrodes
