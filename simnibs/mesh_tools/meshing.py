@@ -54,7 +54,7 @@ def _write_inr(image, voxel_dims, fn_out):
 def _mesh_image(image, voxel_dims, facet_angle,
                 facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
-                optimize):
+                optimize, num_threads):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         fn_image = os.path.join(tmpdir, 'image.inr')
@@ -65,14 +65,14 @@ def _mesh_image(image, voxel_dims, facet_angle,
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize
+                    optimize, num_threads
                  )
         else:
             ret = cgal.mesh_image(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize
+                    optimize, num_threads
                  )
 
         if ret != 0:
@@ -133,7 +133,7 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=False):
+               optimize=False, num_threads=2):
     ''' Creates a mesh from a 3D image
 
     Parameters
@@ -230,7 +230,7 @@ def image2mesh(image, affine, facet_angle=30,
         image, voxel_dims,
         facet_angle, facet_size, facet_distance,
         cell_radius_edge_ratio, cell_size,
-        optimize
+        optimize, num_threads
     )
     # Rotate nodes
     mesh.nodes.node_coord = rot.dot(mesh.nodes.node_coord.T).T
@@ -1453,7 +1453,7 @@ def create_mesh(label_img, affine,
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
                 hierarchy=None, smooth_steps=5, skin_care=20, 
-                sizing_field=None, mmg_noinsert=False, debug=False):
+                sizing_field=None, mmg_noinsert=False, debug=False, num_threads=2):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1525,6 +1525,8 @@ def create_mesh(label_img, affine,
     mmg_noinsert : bool, optional, default: False
         Set this flag to constrain the mesh improvement algorithm of MMG to not insert additional points.
         In this way, the number of elements of the mesh is not increased. (not recommended)
+    num_threads: int (optional)
+        Number of threads used for meshing. Default: 2
 
     Returns
     -------
@@ -1606,10 +1608,7 @@ def create_mesh(label_img, affine,
         del tmp_nii
     
     # Run meshing
-    logger.info('Meshing')
-    logger.info('================================')
-    logger.info('USING cell_radius_edge_ratio=2.1')
-    logger.info('================================')
+
     start = time.time()
     m = image2mesh(
         label_img,
@@ -1618,7 +1617,7 @@ def create_mesh(label_img, affine,
         facet_distance=distance_field,
         cell_size=size_field,
         optimize=optimize,
-        cell_radius_edge_ratio=2.1
+        num_threads=num_threads
     )
 
     del size_field, distance_field

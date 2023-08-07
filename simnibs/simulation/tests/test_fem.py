@@ -597,25 +597,24 @@ class TestTMS:
         assert rdm(E, E_analytical) < .2
         assert np.abs(mag(E, E_analytical)) < np.log(1.1)
 
-    @patch.object(coil_lib, 'set_up_tms')
+    @patch.object(fem, '_get_da_dt_from_coil')
     def test_tms_coil(self, mock_set_up, tms_sphere):
         m, cond, dAdt, E_analytical = tms_sphere
         mock_set_up.return_value = dAdt.node_data2elm_data()
         matsimnibs = 'MATSIMNIBS'
         didt = 6
         fn_out = tempfile.NamedTemporaryFile(delete=False).name
-        fem.tms_coil(m, cond, 'coil.ccd',
+        fem.tms_coil(m, cond, None, 'coil.ccd',
                      'EJ', [matsimnibs],
                      [didt], [fn_out])
         E = mesh_io.read_msh(fn_out).field['E'].value
         os.remove(fn_out)
-        mock_set_up.assert_called_once_with(m, 'coil.ccd',
-                                            matsimnibs, didt,
-                                            fn_geo=None,fn_stl=None)
+        mock_set_up.assert_called_once_with('coil.ccd', m,
+                                            didt, matsimnibs)
         assert rdm(E, E_analytical) < .2
         assert np.abs(mag(E, E_analytical)) < np.log(1.1)
 
-    @patch.object(coil_lib, 'set_up_tms')
+    @patch.object(fem, '_get_da_dt_from_coil')
     def test_tms_coil_parallel(self, mock_set_up, tms_sphere):
         if sys.platform in ['win32', 'darwin']:
             '''Won't run on windows or MacOS because Mock does not work through multiprocessing '''
@@ -626,7 +625,7 @@ class TestTMS:
         matsimnibs = 'MATSIMNIBS'
         didt = 6
         fn_out = [tempfile.NamedTemporaryFile(delete=False).name for i in range(4)]
-        fem.tms_coil(m, cond, 'coil.ccd',
+        fem.tms_coil(m, cond, None, 'coil.ccd',
                      'EJ', 4*[matsimnibs],
                      4*[didt], fn_out, n_workers=2)
         for f in fn_out:

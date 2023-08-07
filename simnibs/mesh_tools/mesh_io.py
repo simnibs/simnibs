@@ -209,12 +209,30 @@ class Elements:
 
     """
 
-    def __init__(self, triangles=None, tetrahedra=None):
+    def __init__(self, triangles=None, tetrahedra=None, points=None, lines=None):
         # gmsh fields
         self.elm_type = np.zeros(0, 'int8')
         self.tag1 = np.zeros(0, dtype='int16')
         self.tag2 = np.zeros(0, dtype='int16')
         self.node_number_list = np.zeros((0, 4), dtype='int32')
+
+        if points is not None:
+            assert len(points.shape) == 1
+            assert np.all(points > 0), "Node count should start at 1"
+            self.node_number_list = np.zeros(
+                (points.shape[0], 4), dtype='int32')
+            self.node_number_list[:, 0] = points.astype('int32')
+            self.node_number_list[:, 1:] = -1
+            self.elm_type = np.ones((self.nr,), dtype='int32') * 15
+
+        if lines is not None:
+            assert lines.shape[1] == 2
+            assert np.all(lines > 0), "Node count should start at 1"
+            self.node_number_list = np.zeros(
+                (lines.shape[0], 4), dtype='int32')
+            self.node_number_list[:, :2] = lines.astype('int32')
+            self.node_number_list[:, 2:] = -1
+            self.elm_type = np.ones((self.nr,), dtype='int32') * 1
 
         if triangles is not None:
             assert triangles.shape[1] == 3
@@ -855,6 +873,8 @@ class Msh:
         """
         if self.nodes.nr == 0:
             return copy.deepcopy(other)
+        elif other.nodes.nr == 0:
+            return copy.deepcopy(self)
 
         joined = copy.deepcopy(self)
         joined.elmdata = []
@@ -869,14 +889,18 @@ class Msh:
         joined.elm.tag1 = np.hstack([joined.elm.tag1, other.elm.tag1])
         joined.elm.tag2 = np.hstack([joined.elm.tag2, other.elm.tag2])
         joined.elm.elm_type = np.hstack([joined.elm.elm_type, other.elm.elm_type])
+        lines = np.where(joined.elm.elm_type == 1)[0]
+        points = np.where(joined.elm.elm_type == 15)[0]
         triangles = np.where(joined.elm.elm_type == 2)[0]
-        tetrahedra = np.where(joined.elm.elm_type != 2)[0]
-        new_elm_order = np.hstack([triangles, tetrahedra])
+        tetrahedra = np.where(joined.elm.elm_type == 4)[0]
+        new_elm_order = np.hstack([points, lines, triangles, tetrahedra])
         joined.elm.node_number_list = joined.elm.node_number_list[new_elm_order]
         joined.elm.tag1 = joined.elm.tag1[new_elm_order]
         joined.elm.tag2 = joined.elm.tag2[new_elm_order]
         joined.elm.elm_type = joined.elm.elm_type[new_elm_order]
         joined.elm.node_number_list[joined.elm.elm_type == 2, 3] = -1
+        joined.elm.node_number_list[joined.elm.elm_type == 1, 2:] = -1
+        joined.elm.node_number_list[joined.elm.elm_type == 15, 1:] = -1
 
         for nd in self.nodedata:
             assert len(nd.value) == self.nodes.nr
@@ -5136,7 +5160,18 @@ def _read_msh_2(fn, m, skip_data=False):
                             10, 27, 18, 14, 1, 8, 20, 15, 13]
             while current_element < elm_nr:
                 elm_type, nr, _ = np.fromfile(f, 'int32', 3)
-                if elm_type == 2:
+                if elm_type == 1:
+                    tmp = np.fromfile(f, 'int32', nr * 5).reshape(-1, 5)
+
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        1 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :2] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
+
+                elif elm_type == 2:
                     tmp = np.fromfile(f, 'int32', nr * 6).reshape(-1, 6)
 
                     m.elm.elm_type[current_element:current_element+nr] = \
@@ -5157,7 +5192,17 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
                     m.elm.node_number_list[current_element:current_element+nr] = tmp[:, 3:]
                     read[current_element:current_element+nr] = 1
+                
+                elif elm_type == 15:
+                    tmp = np.fromfile(f, 'int32', nr * 4).reshape(-1, 4)
 
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        15 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :1] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
                 else:
                     warnings.warn('element of type {0} '
                                   'cannot be read, ignoring it'.format(elm_type))
@@ -5182,6 +5227,12 @@ def _read_msh_2(fn, m, skip_data=False):
 
             for ii in range(elm_nr):
                 line = f.readline().decode().strip().split()
+                if line[1] == '1':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :2] = [int(i) for i in line[5:]]
                 if line[1] == '2':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
@@ -5194,6 +5245,12 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii] = [int(i) for i in line[5:]]
+                if line[1] == '15':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :1] = [int(i) for i in line[5:]]
                 else:
                     read[ii] = 0
                     warnings.warn('element of type {0} '
@@ -5675,6 +5732,12 @@ def write_msh(msh, file_name=None, mode='binary'):
                 elif msh.elm.elm_type[ii] == 4:
                     line += str(msh.elm.node_number_list[ii, :]
                                 ).translate(None, '[](),') + '\n'
+                elif msh.elm.elm_type[ii] == 15:
+                    line += str(msh.elm.node_number_list[ii, :1]
+                                ).translate(None, '[](),') + '\n'
+                elif msh.elm.elm_type[ii] == 1:
+                    line += str(msh.elm.node_number_list[ii, :2]
+                                ).translate(None, '[](),') + '\n'
                 else:
                     raise IOError(
                         "ERROR: cant write meshes with elements of type",
@@ -5683,6 +5746,32 @@ def write_msh(msh, file_name=None, mode='binary'):
                 f.write(line.encode('ascii'))
 
         elif mode == 'binary':
+            points = np.where(msh.elm.elm_type == 15)[0]
+            if len(points > 0):
+                points_header = np.array((15, len(points), 2), 'int32')
+                points_number = msh.elm.elm_number[points].astype('int32')
+                points_tag1 = msh.elm.tag1[points].astype('int32')
+                points_tag2 = msh.elm.tag2[points].astype('int32')
+                points_node_list = msh.elm.node_number_list[
+                    points, :1].astype('int32')
+                f.write(points_header.tobytes())
+                f.write(np.concatenate((points_number[:, np.newaxis],
+                                        points_tag1[:, np.newaxis],
+                                        points_tag2[:, np.newaxis],
+                                        points_node_list), axis=1).tobytes())
+            lines = np.where(msh.elm.elm_type == 1)[0]
+            if len(lines > 0):
+                lines_header = np.array((1, len(lines), 2), 'int32')
+                lines_number = msh.elm.elm_number[lines].astype('int32')
+                lines_tag1 = msh.elm.tag1[lines].astype('int32')
+                lines_tag2 = msh.elm.tag2[lines].astype('int32')
+                lines_node_list = msh.elm.node_number_list[
+                    lines, :2].astype('int32')
+                f.write(lines_header.tobytes())
+                f.write(np.concatenate((lines_number[:, np.newaxis],
+                                        lines_tag1[:, np.newaxis],
+                                        lines_tag2[:, np.newaxis],
+                                        lines_node_list), axis=1).tobytes())
             triangles = np.where(msh.elm.elm_type == 2)[0]
             if len(triangles > 0):
                 triangles_header = np.array((2, len(triangles), 2), 'int32')
