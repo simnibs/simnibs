@@ -1443,7 +1443,8 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
         self.update_geometry()
 
 
-def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
+def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem, thickness=None,
+                                   plug_center=None, plug_dimensions=None, rubber_size=None):
     """
     Create a sim_struct.SESSION including a TDCSLIST object with ELECTRODE instances for regular TDCS
     simulations including electrode meshing etc. for reference simulations.
@@ -1451,10 +1452,27 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
 
     Parameters
     ----------
+    ElectrodeArray : CircularArray or Electrode object
+
     fnamehead : str
         Path to headmodel .msh file
     pathfem : str
         Output folder of simulation data
+    thickness : list of float [1-3]
+        Can have up to 3 arguments. 1st argument is the lower part of the electrode, 2nd arrgument is the rubber;
+        3rd is the upper part. Examples:
+        - thickness = [1] simple electrode with 1 mm gel
+        - thickness = [1, 2] 1 mm gel and 2 mm rubber (good conductor)
+        - thickness = [3.5, 1, 3.5] 3.5 mm sponge, 1 mm rubber (good conductor), 3.5 mm sponge
+        If a sponge electrode is defined, the size of the sponge is the size of the given electrode. The
+        size of the rubber inside the two sponge layers has to be specified separately using the rubber_size parameter.
+    plug_center : list of float [2]
+        If provided, a plug will be added to the electrode where the current is injected. The location can be provided
+        in relative coordinates in mm with respect to the center of the electrode.
+    plug_dimensions : list of float [2]
+        Size of the plug in mm. If not provided, the default value of [10, 10] will be used.
+    rubber_size : list of float [2]
+        Size of the rubber in mm in case of sponge electrodes with len(thickness) = 3
 
     Returns
     -------
@@ -1462,12 +1480,18 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
         SESSION object, which includes a TDCSLIST and the corresponding ELECTRODE instances.
         Can be run with simnibs.run_simnibs(s).
     """
+
+    if thickness is None:
+        thickness = [1, 1]
+
     # Initalize a session
     s = SESSION()
     # Name of head mesh
     s.fnamehead = fnamehead
     # Output folder
     s.pathfem = pathfem
+    # disable visualization
+    s.open_in_gmsh = False
 
     # Initialize a tDCS simulation
     tdcslist = s.add_tdcslist()
@@ -1477,8 +1501,7 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
 
     # Initialize the electrodes
     for i_array, _electrode_array in enumerate(ElectrodeArray.electrode_arrays):
-
-        for _electrode in _electrode_array.electrodes:
+        for i_ele, _electrode in enumerate(_electrode_array.electrodes):
             # add new electrode
             electrode = tdcslist.add_electrode()
 
@@ -1486,23 +1509,42 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem):
                 # Circular shape
                 electrode.shape = 'ellipse'
 
-                # Electrode dimension
-                electrode.dimensions = [2*_electrode.radius, 2*_electrode.radius]
+                # Electrode (rubber) and Sponge dimension
+                if len(thickness) == 3:
+                    electrode.dimensions_sponge = [2 * _electrode.radius, 2 * _electrode.radius]
+                    electrode.dimensions = rubber_size[i_ele]
+                else:
+                    electrode.dimensions = [2*_electrode.radius, 2*_electrode.radius]
 
             elif _electrode.type == "rectangular":
                 # Rectangular shape
                 electrode.shape = 'rect'
 
-                # Electrode dimension
-                electrode.dimensions = [_electrode.length_x, _electrode.length_y]
+                # Electrode (rubber) and Sponge dimension
+                if len(thickness) == 3:
+                    electrode.dimensions_sponge = [_electrode.length_x, _electrode.length_y]
+                    electrode.dimensions = rubber_size[i_ele]
+                else:
+                    electrode.dimensions = [_electrode.length_x, _electrode.length_y]
+
             else:
                 raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
+
+            # add plug
+            if plug_center is not None:
+                plug = electrode.add_plug()
+                plug.centre = plug_center
+                plug.shape = electrode.shape
+                plug.dimensions = [10, 10]
+
+                if plug_dimensions is not None:
+                    plug.dimensions = plug_dimensions
 
             # Connect electrode to first channel (-1e-3 mA, cathode)
             electrode.channelnr = _electrode.channel_id
 
-            # 5mm thickness
-            electrode.thickness = 5
+            # electrode thickness
+            electrode.thickness = thickness  # 1: gel; 2: gel + conductive rubber; 3: sponge + rubber + sponge
 
             # Electrode Position
             electrode.centre = _electrode.posmat[:3, 3]

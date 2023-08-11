@@ -412,7 +412,7 @@ class OnlineFEM:
             Corrected solution (including the Dirichlet node at the right position)
         """
         if electrode.dirichlet_correction_detailed:
-            th_maxrelerr = 0.02
+            th_maxrelerr = 0.01
         else:
             th_maxrelerr = 0.01
 
@@ -717,6 +717,11 @@ class OnlineFEM:
 
         # TODO: also use the new TMSFEM class here for TMS but implement the fast RHS calculations from here in it
         if self.method == "TMS":
+
+            # self.fem = TMSFEM(mesh, cond, solver_options=self.solver_options, store_G=True)
+            # self.fem.prepare_solver()
+            # self.solver = self.fem._solver
+
             self.cond = self.cond.value.squeeze()
 
             if self.cond.ndim == 2:
@@ -748,11 +753,6 @@ class OnlineFEM:
             # get gradient operator
             self.gradient = _get_gradient(local_dist)
 
-            # get the conductivity values of each tetrahedron
-            # tag1 indexes starting from 1, the array cond_table indexes starting from 0
-            # Use isotropic conductivities
-            # conductivity = np.array([float(c.value) for c in standard_cond()])[tag1 - 1]
-
             # set the force integrals. We use the force integrals to assemble the right hand side force vector
             if self.cond.ndim == 1:
                 self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
@@ -777,24 +777,8 @@ class OnlineFEM:
             # Calculate node areas for whole mesh
             # self.msh_nodes_areas = self.mesh.nodes_areas()
 
-            # prepare FEM
-            self.simulist = SimuList(mesh=self.mesh)
-            self.simulist.anisotropy_type = self.anisotropy_type
-            self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
-            cond = self.simulist.cond2elmdata()
-
-            # === INSERT NEW STUFF HERE ===
-            # self.fem = FEMSystem.tdcs_neumann(mesh=self.mesh,
-            #                                   cond=cond,
-            #                                   ground_electrode=self.dirichlet_node,
-            #                                   solver_options=self.solver_options,
-            #                                   input_type='node')
-            # self.fem.prepare_solver()
-            # self.solver = self.fem._solver
-
-            # === NEW ===
             self.fem = TDCSFEMNeumann(mesh=self.mesh,
-                                      cond=cond,
+                                      cond=self.cond,
                                       ground_electrode=self.dirichlet_node,
                                       input_type="nodes",
                                       solver_options=self.solver_options)

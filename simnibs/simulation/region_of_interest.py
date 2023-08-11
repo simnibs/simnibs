@@ -92,6 +92,9 @@ class RegionOfInterest:
         If not provided, all elements will have the same area/volume.
     domains : int or list of int or np.ndarray of int
         Domain indices the ROI is defined for (1: WM, 2: GM, 3: CSF, etc.)
+    out_fill : float or None
+        Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value;
+        otherwise assign to out_fill, for example 0)
 
     Attributes
     ----------
@@ -119,7 +122,7 @@ class RegionOfInterest:
     vol : float
         Volume or area of ROI elements
     """
-    def __init__(self, mesh, center=None, nodes=None, con=None, gradient=None, out_fill=0, domains=None):
+    def __init__(self, mesh, center=None, nodes=None, con=None, gradient=None, out_fill=1, domains=None):
         """
         Initializes RegionOfInterest class instance
         """
