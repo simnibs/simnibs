@@ -2696,6 +2696,7 @@ class Msh:
         # read sizing image
         if type(sizing_field) is str:
             sizing_image = nibabel.load(sizing_field)
+            affine = sizing_image.affine
             sizing_field = sizing_image.get_fdata()
         # if an image is passed read the sizing field data out of it
         elif type(sizing_field) is nibabel.nifti1.Nifti1Image:
@@ -2706,16 +2707,16 @@ class Msh:
             raise ValueError("Please provide affine for sizing field.")
 
         # create a NodeData field containiong the sizing field with ":metric" tag for mmg
-        sizing_field_NodeData = NodeData.from_data_grid(mesh=self,
-                                                        data_grid=sizing_field,
-                                                        affine=affine,
-                                                        field_name='sizing_field:metric')
+        sizing_field_node_data = NodeData.from_data_grid(mesh=self,
+                                                         data_grid=sizing_field,
+                                                         affine=affine,
+                                                         field_name='sizing_field:metric')
 
         # ensure positive element sizes
-        sizing_field_NodeData.value = np.abs(sizing_field_NodeData.value)
+        sizing_field_node_data.value = np.abs(sizing_field_node_data.value)
 
         # add NodeData with sizing field to mesh
-        self.nodedata.append(sizing_field_NodeData)
+        self.nodedata.append(sizing_field_node_data)
 
     def reconstruct_surfaces(self, tags=None):
         ''' Reconstruct the mesh surfaces for each label/connected component individually
@@ -4889,7 +4890,7 @@ class NodeData(Data):
 
 
 
-    def append_to_mesh(self, fn, mode='binary'):
+    def append_to_mesh(self, fn, mode='binary', mmg_fix=False):
         """Appends this NodeData fields to a file
 
         Parameters
@@ -4908,11 +4909,17 @@ class NodeData(Data):
             f.write((str(1) + '\n').encode('ascii'))
             f.write((str(0) + '\n').encode('ascii'))
 
-            f.write((str(4) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
-            f.write((str(self.nr_comp) + '\n').encode('ascii'))
-            f.write((str(self.nr) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
+            if mmg_fix:
+                f.write((str(3) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+            else:
+                f.write((str(4) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
 
             if mode == 'ascii':
                 for ii in range(self.nr):
@@ -5233,7 +5240,7 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii, :2] = [int(i) for i in line[5:]]
-                if line[1] == '2':
+                elif line[1] == '2':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
                     m.elm.tag1[ii] = line[3]
@@ -5245,7 +5252,7 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii] = [int(i) for i in line[5:]]
-                if line[1] == '15':
+                elif line[1] == '15':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
                     m.elm.tag1[ii] = line[3]
@@ -5663,7 +5670,7 @@ def _read_msh_4(fn, m, skip_data=False):
 
 
 # write msh to mesh file
-def write_msh(msh, file_name=None, mode='binary'):
+def write_msh(msh, file_name=None, mode='binary', mmg_fix=False):
     """ Writes a gmsh 'msh' file
 
     Parameters
@@ -5804,7 +5811,7 @@ def write_msh(msh, file_name=None, mode='binary'):
 
     # write nodeData, if existent
     for nd in msh.nodedata:
-        nd.append_to_mesh(fn, mode)
+        nd.append_to_mesh(fn, mode, mmg_fix)
 
     for eD in msh.elmdata:
         eD.append_to_mesh(fn, mode)
