@@ -5,6 +5,7 @@ import shutil
 from copy import deepcopy
 from typing import Optional
 
+import jsonschema
 import nibabel as nib
 import numpy as np
 import numpy.typing as npt
@@ -908,7 +909,6 @@ class TmsCoil(TcdElement):
             Raised if validate is true and the dictionary is not valid to the tcd coil json schema
         """
         if validate:
-            import jsonschema
             with open(file_finder.templates.tcd_json_schema, "r") as fid:
                 tcd_schema = json.loads(fid.read())
 
