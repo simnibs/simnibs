@@ -495,13 +495,13 @@ def run(
         mmg_noinsert = mesh_settings["mmg_noinsert"]
 
         # Meshing
-        debug=True
-        DEBUG_FN = None
-        if debug:
-            DEBUG_FN = os.path.join(sub_files.subpath, "before_despike.msh")
 
-        #if num_threads is zero or less
-        #set it to something fairly large
+        debug_path = None
+        if debug:
+            debug_path = sub_files.subpath
+
+        # if num_threads is zero or less
+        # set it to something fairly large
         if num_threads <= 0:
             num_threads = 32
 
@@ -518,7 +518,10 @@ def run(
             hierarchy=hierarchy,
             smooth_steps=smooth_steps,
             skin_care=skin_care,
-            mmg_noinsert=mmg_noinsert
+            num_threads=num_threads,
+            mmg_noinsert=mmg_noinsert,
+            debug_path=debug_path,
+            debug=debug
         )
 
         logger.info("Writing mesh")

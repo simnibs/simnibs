@@ -177,28 +177,28 @@ int _mesh_image_sizing_field(
   std::cout << "Began meshing \n";
   C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
  
-  std::cout << "Lloyd \n";
+  //std::cout << "Lloyd \n";
   // Run Lloyd optimization using single core as it often fails in parallel
   // https://github.com/CGAL/cgal/issues/4566
   // When the bug gets fixed, please remove this whole block and only keep the simple version
   // if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #ifdef CGAL_CONCURRENT_MESH_3
-    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
-    tbb::task_group tg;
-    limited.execute([&]{ // Use at most 2 threads for this job.
-        tg.run([&]{ // run in task group
-            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-        });
-    });
-    // Wait for completion of the task group in the limited arena.
-    limited.execute([&]{ tg.wait(); });
-  #else
-    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #endif
-  std::cout << "Perturb \n";
-  CGAL::perturb_mesh_3(c3t3, domain);
-  std::cout << "Exude \n";
-  CGAL::exude_mesh_3(c3t3);
+  //#ifdef CGAL_CONCURRENT_MESH_3
+  //  tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+  //  tbb::task_group tg;
+  //  limited.execute([&]{ // Use at most 2 threads for this job.
+  //      tg.run([&]{ // run in task group
+  //          if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  //      });
+  //  });
+  //  // Wait for completion of the task group in the limited arena.
+  //  limited.execute([&]{ tg.wait(); });
+  //#else
+  //  if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+  //#endif
+  //std::cout << "Perturb \n";
+  //CGAL::perturb_mesh_3(c3t3, domain);
+  //std::cout << "Exude \n";
+  //CGAL::exude_mesh_3(c3t3);
   
 
   // Output
