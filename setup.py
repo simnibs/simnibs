@@ -477,40 +477,11 @@ class build_ext_(build_ext):
 
 
 setup(name='simnibs',
-      version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
-      description='www.simnibs.org',
-      author='SimNIBS developers',
-      author_email='support@simnibs.org',
-      packages=find_namespace_packages(),
-      license='GPL3',
       ext_modules=extensions,
-      include_package_data=True,
       cmdclass={
           'build_ext': build_ext_
           },
-      entry_points={
-          'console_scripts': console_scripts,
-          'gui_scripts': gui_scripts
-      },
-      install_requires=[
-          'numpy>=1.16',
-          'scipy>=1.2',
-          'h5py>=2.9',
-          'nibabel>=2.3',
-          'packaging',
-          'requests',
-          'charm-gems',
-          'fmm3dpy'
-      ],
-      extras_require={
-          'GUI': ['pyqt5', 'pyopengl']
-      },
-      setup_requires=[
-          'numpy>=1.16',
-          'cython'
-      ],
-      tests_require=['pytest', 'mock'],
-      zip_safe=False)
+      )
 
 
 script_dir = shutil.which('simnibs')
