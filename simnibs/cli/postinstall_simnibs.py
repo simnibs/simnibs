@@ -87,7 +87,7 @@ def create_scripts(dest_dir):
             _write_unix_sh(s, bash_name)
 
     # meshfix and gmsh binaries
-    for basename in ['meshfix', 'gmsh']:
+    for basename in ['meshfix', 'gmsh', "mmg3d_O3"]:
         bash_name = os.path.join(dest_dir, basename)
         if sys.platform == 'win32':
             with open(bash_name + '.cmd', 'w') as f:
