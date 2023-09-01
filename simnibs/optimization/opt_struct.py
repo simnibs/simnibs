@@ -47,6 +47,7 @@ from ..simulation import fem
 from ..utils import cond_utils
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct, ELECTRODE
 from ..simulation.fem import get_dirichlet_node_index_cog
+from ..simulation.array_layout import create_tdcs_session_from_array
 from ..simulation.onlinefem import OnlineFEM, postprocess_e
 from ..mesh_tools import mesh_io, gmsh_view, Msh, surface
 from ..utils import transformations
@@ -58,6 +59,8 @@ from ..utils.transformations import subject2mni_coords
 from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ..utils.TI_utils import get_maxTI, get_dirTI
 from ..utils.measures import AUC, integral_focality, ROC
+from simnibs import run_simnibs
+
 
 class TMSoptimize():
     """
@@ -2722,8 +2725,8 @@ class TESoptimize():
           [n_channel_stim][n_roi] containing np.array with e-field
     track_focality : bool, optional, default: False
         Tracks focality for each goal function value (requires ROI and non-ROI definition)
-    current_outlier_correction : bool, optional, default: True
-        Apply current outlier correction after node-wise dirichlet approximation.
+    run_final_electrode_simulation : bool, optional, default: True
+        Runs final simulation with optimized parameters using real electrode model including remeshing.
 
     Attributes
     --------------
@@ -2762,7 +2765,7 @@ class TESoptimize():
                  optimize_init_vals=True,
                  e_postproc="norm",
                  track_focality=False,
-                 current_outlier_correction=True):
+                 run_final_electrode_simulation=True):
         """
         Constructor of TESoptimize class instance
         """
@@ -2773,6 +2776,7 @@ class TESoptimize():
         self.plot_folder = os.path.join(self.output_folder, "plots")
         self.plot = plot
         self.fn_results_hdf5 = os.path.join(self.output_folder, "opt.hdf5")
+        self.fn_final_sim = []
 
         if not os.path.exists(self.output_folder):
             os.makedirs(self.output_folder)
@@ -3067,6 +3071,8 @@ class TESoptimize():
 
         # setup FEM
         ################################################################################################################
+        self.run_final_electrode_simulation = run_final_electrode_simulation
+
         # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
         self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh, roi=self.roi)
 
@@ -3993,6 +3999,15 @@ class TESoptimize():
                     fn_out = os.path.join(self.plot_folder, f"e_roi_{i_roi}")
                     plot_roi_field(e=e_plot[i_roi], roi=self.roi[i_roi], e_label=e_plot_label[i_roi], fn_out=fn_out)
 
+        # run final simulation with real electrode including remeshing
+        ################################################################################################################
+        if self.run_final_electrode_simulation:
+            for i_channel_stim in range(self.n_channel_stim):
+                s = create_tdcs_session_from_array(ElectrodeArray=self.electrode[i_channel_stim],
+                                                   fnamehead=self.mesh.fn,
+                                                   pathfem=os.path.join(self.output_folder, f"final_sim_{i_channel_stim}"))
+                self.fn_final_sim.append(run_simnibs(s)[0])
+
         # print optimization summary
         save_optimization_results(fname=os.path.join(self.output_folder, "summary"),
                                   optimizer=self.optimizer,
@@ -4202,8 +4217,8 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
         # electric field in ROIs
         for i_stim in range(len(e)):
             for i_roi in range(len(e[i_stim])):
-                f.create_dataset(data=e[i_stim][i_roi].flatten(), name=f"e/channel_{i_stim}/e_roi_{i_roi}")
-                f.create_dataset(data=e_pp[i_stim][i_roi].flatten(), name=f"e_pp/channel_{i_stim}/e_roi_{i_roi}")
+                f.create_dataset(data=e[i_stim][i_roi], name=f"e/channel_{i_stim}/e_roi_{i_roi}")
+                f.create_dataset(data=e_pp[i_stim][i_roi], name=f"e_pp/channel_{i_stim}/e_roi_{i_roi}")
 
 
 def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance=0.):

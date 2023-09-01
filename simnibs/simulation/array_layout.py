@@ -617,8 +617,12 @@ class ElectrodeArray():
             Filename of output.png file
         """
         import matplotlib
-        matplotlib.use('Qt5Agg')
         import matplotlib.pyplot as plt
+
+        try:
+            matplotlib.use('Qt5Agg')
+        except:
+            pass
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -626,6 +630,7 @@ class ElectrodeArray():
         if len(colors) < np.max(self.channel_id):
             colors = colors * int(np.ceil(colors/np.max(self.channel_id)))
 
+        plt.ioff()
         fig = plt.figure()
         ax = fig.add_subplot(111)
         i_ele = 0
@@ -1436,7 +1441,7 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem, thickness
     """
 
     if thickness is None:
-        thickness = [1, 1]
+        thickness = [1, 2]
 
     # Initalize a session
     s = SESSION()
