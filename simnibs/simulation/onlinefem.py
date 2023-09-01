@@ -75,25 +75,6 @@ class OnlineFEM:
         self.electrode = electrode                  # TES electrode
         self.n_iter_dirichlet_correction = 0        # number of iterations required for dirichlet correction
 
-        if self.electrode is not None:
-            if type(electrode) is list:
-                self.dirichlet_correction = []
-                self.dirichlet_correction_detailed = []
-                
-                for _electrode in electrode:
-                    self.dirichlet_correction.append(_electrode.dirichlet_correction)
-                    self.dirichlet_correction_detailed.append(_electrode.dirichlet_correction_detailed)
-            else:
-                self.dirichlet_correction = [electrode.dirichlet_correction]
-                self.dirichlet_correction_detailed = [electrode.dirichlet_correction_detailed]
-
-        else:
-            self.dirichlet_correction = False
-            self.dirichlet_correction_detailed = False
-
-        self.dirichlet_correction = np.array(self.dirichlet_correction).any()
-        self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
-
         if type(self.roi) is not list:
             self.roi = [self.roi]
 
@@ -130,7 +111,7 @@ class OnlineFEM:
 
         # get Dirichlet node index where V=0 (close to center of gravity of mesh but not on a surface)
         if dirichlet_node is None:
-            self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)  # self.mesh.nodes.node_number[self.mesh.nodes.node_coord[:, 2].argmin()] #   # mesh.nodes.nr
+            self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh)  # self.mesh.nodes.node_number[self.mesh.nodes.node_coord[:, 2].argmin()]
         else:
             self.dirichlet_node = dirichlet_node
 
@@ -161,13 +142,13 @@ class OnlineFEM:
         if method == "TES" and electrode is None:
             raise AssertionError("Please provide TES electrode object for TES simulations.")
 
-    def update_field(self, electrodes=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None):
+    def update_field(self, electrode=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None):
         """
         Calculating and updating electric field for given coil position (matsimnibs) for TMS or electrode position (TES)
 
         Parameters
         ----------
-        electrodes : list of list of np.ndarray [n_sims][n_electrodes]
+        electrode : list of list of np.ndarray [n_sims][n_electrodes]
             List of list of the surface tags or nodes where the currents to be applied for multiple simulations.
         currents : list of list of np.ndarray [n_sims][n_electrodes]
             List of list of the currents in each surface for multiple simulations.
@@ -188,12 +169,15 @@ class OnlineFEM:
             Electric field for queried simulations in ROIs.
         """
 
+        if type(electrode) is not list:
+            electrode = [electrode]
+
         if self.method == "TMS":
             if matsimnibs.ndim < 3:
                 matsimnibs = matsimnibs[:, :, np.newaxis]
             n_sim = matsimnibs.shape[2]
         else:
-            n_sim = len(electrodes)
+            n_sim = len(electrode)
 
         self.e = [[0 for _ in range(self.n_roi)] for _ in range(n_sim)]
 
@@ -207,13 +191,13 @@ class OnlineFEM:
                 self.b = self.set_rhs(matsimnibs=matsimnibs[:, :, i_sim])
 
             elif self.method == "TES":
-                self.b = self.set_rhs(electrode=electrodes[i_sim])
+                self.b = self.set_rhs(electrode=electrode[i_sim])
 
             # solve for potential
             ############################################################################################################
             if self.method == "TES" and self.dirichlet_correction:
                 self.v = self.solve_dirichlet_correction(b=self.b,
-                                                         electrode=self.electrode[i_sim],
+                                                         electrode=electrode[i_sim],
                                                          fn_electrode_txt=fn_electrode_txt)
             else:
                 self.v = self.solve(b=self.b)
@@ -390,9 +374,12 @@ class OnlineFEM:
             v_ele_norm[i_channel] = (v_mean_ele[i_channel] - np.mean(v_mean_ele[i_channel])) / std_scale
             currents_ele_norm[i_channel] = (currents[i_channel] - np.mean(currents[i_channel])) / np.mean(currents[i_channel])
 
+            if (np.isnan(v_ele_norm[i_channel])).any() or (np.isnan(currents_ele_norm[i_channel])).any():
+                te = 1
+
         return v_ele_norm, currents_ele_norm
 
-    def solve_dirichlet_correction(self, b, electrode, fn_electrode_txt=None):
+    def solve_dirichlet_correction(self, electrode, fn_electrode_txt=None):
         """
         Solve system of equations Ax=b and corrects input currents such that the electrodes with the same channel ID
         have the same potential. Finally, add Dirichlet node (V=0) to solution.
@@ -411,10 +398,20 @@ class OnlineFEM:
         v : np.array of float [n_nodes]
             Corrected solution (including the Dirichlet node at the right position)
         """
-        if electrode.dirichlet_correction_detailed:
-            th_maxrelerr = 0.01
-        else:
-            th_maxrelerr = 0.01
+
+        # for _electrode_array in electrode.electrode_arrays:
+        #     for _ele in _electrode_array.electrodes:
+        #         _ele.ele_current = _ele.ele_current_init
+
+        electrode.compile_node_arrays()
+
+        n_nodes_total = electrode.node_coords.shape[0]
+
+        # update rhs
+        b = self.set_rhs(electrode=electrode)
+
+        th_maxrelerr = 0.01
+        th_wrong_current_sign = 0.01
 
         maxiter = 1000
 
@@ -451,7 +448,7 @@ class OnlineFEM:
                 I_sign[i_channel] = electrode.node_current_sign[electrode.node_channel_id == _channel_id]
 
                 # mean current over electrodes [n_channel]
-                I_mean[i_channel] = electrode.current[i_channel] / np.sum(electrode.node_channel_id == _channel_id)
+                I_mean[i_channel] = electrode.current_channel[i_channel] / np.sum(electrode.node_channel_id == _channel_id)
 
             else:
                 # take total electrode current (sum nodal current up)
@@ -486,9 +483,20 @@ class OnlineFEM:
 
         j = 0
         maxrelerr = np.max([np.max(np.abs(v_norm[k][-1])) for k in range(n_channel)])
-        while maxrelerr > th_maxrelerr:
-            print(f"iter: {j:03}, error: {maxrelerr:.3f}")
+        denom_factor = 100
+        n_wrong_current_signs = [0]
+
+        while maxrelerr > th_maxrelerr or n_wrong_current_signs[-1] / n_nodes_total > th_wrong_current_sign:
+            if j == 0:
+                print(
+                    f"iter: {j:03}, err: {maxrelerr:.3f}, df={denom_factor:.3f}")
+            else:
+                print(f"iter: {j:03}, err: {maxrelerr:.3f}, wcs: {n_wrong_current_signs[-1] / n_nodes_total:.3f}, df={denom_factor:.3f}")
+
             j += 1
+
+            if j == maxiter:
+                break
 
             if j > maxiter:
                 print('warning: did not converge after ' + str(maxiter) + ' iterations')
@@ -500,29 +508,72 @@ class OnlineFEM:
 
                 electrode.compile_node_arrays()
 
-                return None
+                # return None
 
             if j == 1:
                 # It 1: make small step hopefully in the right direction
                 I = []
-                for i_channel in range(n_channel):
-                    if len(I_norm[i_channel][-1, :]) == 1:
-                        I.append(np.array([I_mean[i_channel]]))
-                    else:
-                        I.append(-0.1 * np.sign(I_mean[i_channel]) * v_norm[i_channel][0, :] / np.max(np.abs(v_norm[i_channel][0, :])))
+                all_pos = False
+                step_size_factor = -0.1
+
+                while not all_pos:
+                    for i_channel in range(n_channel):
+                        if len(I_norm[i_channel][-1, :]) == 1:
+                            I.append(np.array([I_mean[i_channel]]))
+                            all_pos = True
+                        else:
+                            I.append(step_size_factor * np.sign(I_mean[i_channel]) * v_norm[i_channel][0, :] / np.max(np.abs(v_norm[i_channel][0, :])))
+
+                            if ((I[i_channel] - np.mean(I[i_channel]) + 1) < 0).any():
+                                step_size_factor /= 10
+                                print(f"Decreasing step size factor to {step_size_factor}")
+                                all_pos = False
+                                break
+
+                            all_pos = True
 
             else:
-                # It 2 ... use gradient descent
+                # all_pos = False
+                # denom_factor = 15
+                #
+                # # It 2 ... use gradient descent
+                # while not all_pos:
+                n_wrong_current_signs.append(0)
                 for i_channel in range(n_channel):
                     if len(I_norm[i_channel][-1, :]) == 1:
                         I[i_channel] = I[i_channel]
                     else:
                         denom = (v_norm[i_channel][-1, :] - v_norm[i_channel][-2, :])
-                        denom += np.sign(denom) * maxrelerr / 15  # regularize: avoid too small denominators to gain stability
+                        denom += np.sign(denom) * maxrelerr / denom_factor  # regularize: avoid too small denominators to gain stability
+                        denom[denom == 0] = 1e-12
                         I[i_channel] = I_norm[i_channel][-1] - (I_norm[i_channel][-1, :] - I_norm[i_channel][-2, :]) / denom * v_norm[i_channel][-1, :]
+                        n_wrong_current_signs[-1] += np.sum(((I[i_channel] - np.mean(I[i_channel]) + 1) < 0))
+                        # print(f"Channel: {i_channel}: {n_wrong_current_signs[i_channel]}/{len(I[i_channel])} wrong current signs.")
+
+                if (np.array(n_wrong_current_signs[-3:]) == n_wrong_current_signs[-1]).all():
+                    denom_factor = np.random.rand(1)[0] * 20
+                elif n_wrong_current_signs[-1] == 0:
+                    denom_factor = 15
+                else:
+                    denom_factor = 100 * n_wrong_current_signs[-1] / n_nodes_total
+
+                            # if ((I[i_channel] - np.mean(I[i_channel]) + 1) < 0).any():
+                            #     denom_factor /= 2
+                            #     print(f"Found {np.sum(((I[i_channel] - np.mean(I[i_channel]) + 1) < 0))}/{len(I[i_channel])} wrong current signs. Decreasing denom factor to {denom_factor}")
+                            #     all_pos = False
+                            #     break
+                            #
+                            # all_pos = True
+
+            # I_test = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
+            # if (np.isnan(I_test[0])).any() or (np.isnan(I_test[1])).any():
+            #     print("INF AGAIN")
+            #     te = 1
 
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
+
+            # print(f"sum current: sum(I[0]) = {np.sum(I[0])}   sum(I[1]) = {np.sum(I[1])}")
 
             # write currents in electrodes
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
@@ -552,6 +603,9 @@ class OnlineFEM:
                                                        node_area=electrode.node_area,
                                                        currents=I,
                                                        electrode=electrode)
+
+            # if (np.isnan(_I_norm[0])).any() or (np.isnan(_I_norm[1])).any() or (np.isnan(_v_norm[0])).any() or (np.isnan(_v_norm[1])).any():
+            #     te = 1
 
             # append
             for i_channel in range(n_channel):
@@ -594,11 +648,16 @@ class OnlineFEM:
             # update electrodes from node arrays
             electrode.update_electrode_from_node_arrays()
 
+            # apply current outlier correction
+            if electrode.current_outlier_correction:
+                electrode.apply_current_outlier_correction()
+
             # update rhs
             b = self.set_rhs(electrode=electrode)
 
             # solve
             v = self.solve(b)
+            v_nodes = v[electrode.node_idx]
 
             # normalize
             _v_norm, _ = self.normalize_solution(v_nodes=v_nodes,
@@ -634,41 +693,6 @@ class OnlineFEM:
 
         if fn_electrode_txt is not None:
             np.savetxt(fn_electrode_txt, np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
-
-        # # reset to original currents
-        # for _electrode_array in electrode.electrode_arrays:
-        #     for _ele in _electrode_array.electrodes:
-        #         _ele.ele_current = _ele.ele_current_init
-        #
-        # electrode.compile_node_arrays()
-
-        # np.savetxt("/data/pt_01756/studies/ttf/plots/electrode_coords_nodes_subject_0.txt", np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
-        # np.savetxt("/data/pt_01756/studies/ttf/plots/electrode_coords_nodes_subject_0.txt", np.hstack((electrode.node_coords, np.hstack(I)[:, np.newaxis])))
-        #
-        # import matplotlib.pyplot as plt
-        # import matplotlib
-        # matplotlib.use("Qt5Agg")
-        #
-        # t = np.arange(j + 1)
-        # for i_channel in range(n_channel):
-        #     v_normP = v_norm[i_channel]
-        #     I_normP = I_norm[i_channel]
-        #
-        #     fig, axs = plt.subplots(5, 1)
-        #     for i in range(electrode.n_ele_per_channel[i_channel]):
-        #         axs[0].plot(t, v_normP[:, i])
-        #         axs[1].plot(t, I_normP[:, i])
-        #     axs[2].plot(t, np.log10(np.mean(np.abs(v_normP), axis=1)))
-        #     axs[2].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-        #
-        #     axs[3].plot(t, np.log10(np.max(np.abs(v_normP), axis=1)))
-        #
-        #     axs[0].set_title('v_norm')
-        #     axs[1].set_title('I_norm')
-        #     axs[2].set_title('max and mean relative error of v_norm (log10)')
-        #
-        #     fig.tight_layout()
-        #     plt.show()
 
         return np.squeeze(v)
 

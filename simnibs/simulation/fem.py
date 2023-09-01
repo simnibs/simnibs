@@ -898,7 +898,7 @@ class TDCSFEMNeumann(FEMSystem):
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         ix = self.dof_map[nodes]
         b[ix] = current
-        if self.weigh_by_area: # self.areas is not None
+        if self.weigh_by_area:  # self.areas is not None
             b[ix] *= self.areas[nodes] / self.areas[nodes].sum()
         return b
 

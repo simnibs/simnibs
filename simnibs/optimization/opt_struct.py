@@ -2720,12 +2720,10 @@ class TESoptimize():
         - "focality_inv": Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
         - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float
           [n_channel_stim][n_roi] containing np.array with e-field
-    dirichlet_correction : bool, optional, default: True
-        Apply dirichlet correction of nodal currents for each electrode (electrode wise, not node wise).
-        If you want to apply the dirichlet corrrection node wise, please specify it when initializing the electrodes
-        (dirichlet_correction_detailed = True)
     track_focality : bool, optional, default: False
         Tracks focality for each goal function value (requires ROI and non-ROI definition)
+    current_outlier_correction : bool, optional, default: True
+        Apply current outlier correction after node-wise dirichlet approximation.
 
     Attributes
     --------------
@@ -2763,8 +2761,8 @@ class TESoptimize():
                  polish=True,
                  optimize_init_vals=True,
                  e_postproc="norm",
-                 dirichlet_correction=None,
-                 track_focality=False):
+                 track_focality=False,
+                 current_outlier_correction=True):
         """
         Constructor of TESoptimize class instance
         """
@@ -2912,32 +2910,6 @@ class TESoptimize():
         # collect all electrode currents in list of np.array [i_channel_stim][i_channel_ele]
         self.current = [np.zeros(len(np.unique(self.electrode[i_channel_stim].channel_id)))
                         for i_channel_stim in range(self.n_channel_stim)]
-
-        # if nothing is provided, the dirichlet correction will be applied on the electrode level
-        if dirichlet_correction or dirichlet_correction is None:
-            # first we set it to false
-            self.dirichlet_correction = [False] * self.n_channel_stim
-            self.dirichlet_correction_detailed = [False] * self.n_channel_stim
-
-            # now we check if multiple channels are connected together and a dirichlet correction is required
-            for i_channel_stim in range(self.n_channel_stim):
-                for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
-                    if _electrode_array.dirichlet_correction or self.electrode[
-                        i_channel_stim].dirichlet_correction_detailed:
-                        self.dirichlet_correction[i_channel_stim] = True
-
-                        # check if node wise dirichlet correction is defined in the electrode
-                        if self.electrode[i_channel_stim].dirichlet_correction_detailed:
-                            self.dirichlet_correction_detailed[i_channel_stim] = True
-
-                    for _electrode in _electrode_array.electrodes:
-                        self.current[i_channel_stim][_electrode.channel_id] += _electrode.ele_current
-
-            self.dirichlet_correction = np.array(self.dirichlet_correction).any()
-            self.dirichlet_correction_detailed = np.array(self.dirichlet_correction_detailed).any()
-        else:
-            self.dirichlet_correction = [False] * self.n_channel_stim
-            self.dirichlet_correction_detailed = [False] * self.n_channel_stim
 
         # set initial positions of electrodes if nothing is provided
         assert self.n_channel_stim <= len(init_pos_list), "Please provide initial electrode positions."
@@ -3129,8 +3101,9 @@ class TESoptimize():
         self.logger.log(25, f"fn_eeg_cap:                       {self.fn_eeg_cap}")
         self.logger.log(25, f"fn_electrode_mask:                {self.fn_electrode_mask}")
         self.logger.log(25, f"FEM solver options:               {self.ofem.solver_options}")
-        self.logger.log(25, f"dirichlet_correction:             {self.dirichlet_correction}")
-        self.logger.log(25, f"dirichlet_correction_detailed:    {self.dirichlet_correction_detailed}")
+        self.logger.log(25, f"dirichlet_correction:             {self.electrode[0].dirichlet_correction}")
+        self.logger.log(25, f"dirichlet_correction_detailed:    {self.electrode[0].dirichlet_correction_detailed}")
+        self.logger.log(25, f"current_outlier_correction:       {self.electrode[0].current_outlier_correction}")
         self.logger.log(25, f"optimizer:                        {self.optimizer}")
         self.logger.log(25, f"goal:                             {self.goal}")
         self.logger.log(25, f"e_postproc:                       {self.e_postproc}")
@@ -3653,15 +3626,14 @@ class TESoptimize():
             b = self.ofem.set_rhs(electrode=self.electrode[i_channel_stim])
 
             # solve system
-            if self.dirichlet_correction:
+            if self.electrode[i_channel_stim].dirichlet_correction:
                 if plot:
                     fn_electrode_txt = os.path.join(self.plot_folder,
                                                     f"electrode_coords_nodes_subject_{i_channel_stim}.txt")
                 else:
                     fn_electrode_txt = None
 
-                v = self.ofem.solve_dirichlet_correction(b=b,
-                                                         electrode=self.electrode[i_channel_stim],
+                v = self.ofem.solve_dirichlet_correction(electrode=self.electrode[i_channel_stim],
                                                          fn_electrode_txt=fn_electrode_txt)
 
                 # store number of dirichlet iterations for convergence analysis
@@ -3806,10 +3778,10 @@ class TESoptimize():
             elif "focality_inv" in self.goal:
                 # TI focality (total field was previously calculated by the 2 channels, no loop over channel_stim here)
                 if "max_TI" in self.e_postproc or "dir_TI" in self.e_postproc:
-                    y[:, :] = -100 * (np.sqrt(2) - ROC(e1=e[0][0],  # e-field in ROI
-                                                       e2=e[0][1],  # e-field in non-ROI
-                                                       threshold=self.threshold,
-                                                       focal=False))
+                    y[:, :] = -100 * ROC(e1=e[0][0],  # e-field in ROI
+                                         e2=e[0][1],  # e-field in non-ROI
+                                         threshold=self.threshold,
+                                         focal=False)
 
                 # General focality (can be different for each channel for e.g. TTF)
                 else:
@@ -3938,6 +3910,8 @@ class TESoptimize():
 
         self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
         fopt_before_polish = result.fun
+        stop = time.time()
+        t_optimize = stop - start
 
         # polish optimization
         ################################################################################################################
@@ -3971,14 +3945,10 @@ class TESoptimize():
         fopt = result.fun
         nfev = result.nfev
 
-        stop = time.time()
-        t_optimize = stop - start
-
         # plot final solution and electrode position (with node-wise dirichlet correction)
         ################################################################################################################
-        self.dirichlet_correction = True
-
         for _electrode in self.electrode:
+            _electrode.dirichlet_correction = True
             _electrode.dirichlet_correction_detailed = True
 
         # compute best e-field again, plot field and electrode position

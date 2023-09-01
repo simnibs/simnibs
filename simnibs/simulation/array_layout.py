@@ -4,6 +4,186 @@ from .current_estimator import CurrentEstimator
 from .sim_struct import SESSION
 
 
+class ElectrodeMaster():
+    """
+    ElectrodeMaster class containing attributes and methods for ElectrodeArrayPair and CircularArray
+    """
+
+    def __init__(self, dirichlet_correction, dirichlet_correction_detailed, current_outlier_correction,
+                 current_estimator):
+        """
+        Initializes ElectrodeMaster class
+        """
+        # global nodal arrays (set by compile_node_arrays)
+        self.node_channel_id = None
+        self.node_array_id = None
+        self.node_ele_id = None
+        self.node_coords = None
+        self.node_idx = None
+        self.node_current = None
+        self.node_current_sign = None
+        self.node_voltage = None
+        self.node_voltage_sign = None
+        self.node_area = None
+
+        self.electrode_arrays = None
+
+        self.dirichlet_correction = dirichlet_correction
+        self.dirichlet_correction_detailed = dirichlet_correction_detailed
+        self.current_outlier_correction = current_outlier_correction
+        self.current_estimator = current_estimator
+
+    def estimate_currents(self, electrode_pos):
+        """
+        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
+        Writes current in self.current.
+
+        Parameters
+        ----------
+        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
+            Positions and orientations of ElectrodeArrayPair or CircularArray
+        """
+        if self.current_estimator.current is None:
+            return
+        return self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
+
+    def compile_node_arrays(self):
+        """
+        Gathers all information from the nodes of the electrode arrays and the containing electrodes
+        and collect them in global arrays
+        """
+        _node_channel_id = []
+        _node_array_id = []
+        _node_ele_id = []
+        _node_coords = []
+        _node_idx = []
+        _node_current = []
+        _node_current_sign = []
+        _node_voltage = []
+        _node_voltage_sign = []
+        _node_area = []
+
+        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+            for i_ele, _ele in enumerate(_electrode_array.electrodes):
+                if _ele.node_coords is None:
+                    self.node_channel_id = None
+                    self.node_array_id = None
+                    self.node_ele_id = None
+                    self.node_coords = None
+                    self.node_idx = None
+                    self.node_current = None
+                    self.node_current_sign = None
+                    self.node_voltage = None
+                    self.node_voltage_sign = None
+                    self.node_area = None
+                    return
+
+                _node_channel_id.append(_ele.channel_id * np.ones(_ele.n_nodes))
+                _node_array_id.append(i_array * np.ones(_ele.n_nodes))
+                _node_ele_id.append(_ele.ele_id * np.ones(_ele.n_nodes))
+                _node_coords.append(_ele.node_coords)
+                _node_idx.append(_ele.node_idx)
+                _node_current.append(_ele.node_current)
+                _node_voltage.append(_ele.node_voltage)
+                _node_area.append(_ele.node_area)
+
+                if _ele.ele_voltage_sign is not None:
+                    _node_voltage_sign.append(_ele.ele_voltage_sign * np.ones(_ele.n_nodes))
+                else:
+                    _node_voltage_sign = None
+
+                if _ele.ele_current_sign is not None:
+                    _node_current_sign.append(_ele.ele_current_sign * np.ones(_ele.n_nodes))
+                else:
+                    _node_current_sign = None
+
+        self.node_channel_id = np.hstack(_node_channel_id)
+        self.node_array_id = np.hstack(_node_array_id)
+        self.node_ele_id = np.hstack(_node_ele_id)
+        self.node_coords = np.vstack(_node_coords)
+        self.node_idx = np.hstack(_node_idx)
+        self.node_current = np.hstack(_node_current)
+        self.node_voltage = np.hstack(_node_voltage)
+        self.node_area = np.hstack(_node_area)
+
+        if _node_voltage_sign is not None:
+            self.node_voltage_sign = np.hstack(_node_voltage_sign)
+
+        if _node_current_sign is not None:
+            self.node_current_sign = np.hstack(_node_current_sign)
+
+    def update_electrode_from_node_arrays(self):
+        """
+        Updates information from the node arrays and writes information to the electrode instances
+        of the electrode arrays (inverse of compile_node_arrays)
+        """
+        for _electrode_array in self.electrode_arrays:
+            for _ele in _electrode_array.electrodes:
+                mask = (_ele.ele_id == self.node_ele_id) * (_ele.channel_id == self.node_channel_id)
+
+                _ele.node_idx = self.node_idx[mask]
+                _ele.node_area = self.node_area[mask]
+                _ele.node_coords = self.node_coords[mask]
+
+                if self.node_voltage[0] is not None:
+                    _ele.node_voltage = self.node_voltage[mask]
+
+                if self.node_current[0] is not None:
+                    _ele.node_current = self.node_current[mask]
+
+    def export_node_coords(self, fn_out):
+        """
+        Export node coordinates and node currents on subject skin surface to .txt file.
+        The first 3 columns are the x, y, and z coordinates and the last column is the coil current.
+
+        Parameters
+        ----------
+        fn_out : str
+            Filename of output .txt file.
+        """
+        np.savetxt(fn_out, np.hstack((self.node_coords, self.node_current[:, np.newaxis])))
+
+    def apply_current_outlier_correction(self):
+        """
+        Perform current outlier correction. Modifies self.node_current in place.
+        """
+        for channel_id in np.unique(self.node_channel_id):
+            mask = (channel_id == self.node_channel_id).flatten()
+            node_current_abs = np.abs(self.node_current[mask])
+            c_min = np.mean(node_current_abs) - 8 * np.std(node_current_abs)
+            c_max = np.mean(node_current_abs) + 8 * np.std(node_current_abs)
+            outlier_mask = np.logical_not(np.logical_and(c_min < node_current_abs, c_max > node_current_abs))
+            outlier_idx = np.where(outlier_mask)[0]
+
+            print(f"Current outlier correction: corrected {len(outlier_idx)} outlier(s) in channel {int(channel_id)}.")
+            for _idx in outlier_idx:
+                # find 8 next neighbors
+                neighbor_idx = np.argsort(
+                    np.linalg.norm(self.node_coords[mask, :] - self.node_coords[mask, :][_idx, :], axis=1))[1:9]
+
+                # filter out outliers in the neighbors
+                neighbor_idx_valid = np.array([i for i in neighbor_idx if i not in outlier_idx])
+
+                # set new current to maximal current of one of the neighbors
+                current_outlier = node_current_abs[_idx]
+
+                if len(neighbor_idx_valid) > 0:
+                    current_new = np.max(node_current_abs[neighbor_idx_valid])
+                else:
+                    current_new = np.mean(node_current_abs)
+
+                node_current_abs[_idx] = current_new
+
+                # distribute the remaining current to all other nodes
+                current_diff = current_outlier - current_new
+                node_current_abs += current_diff * self.node_area[mask] / np.sum(self.node_area[mask])
+
+            # write new current with correct sign into array again
+            self.node_current[mask] = self.node_current_sign[mask] * node_current_abs
+
+        self.update_electrode_from_node_arrays()
+
+
 class Electrode():
     """
     Electrode class.
@@ -362,12 +542,6 @@ class ElectrodeArray():
         self.transmat = None
         self.electrode_pos = None
 
-        # apply Dirichlet correction step in fast TES calculations if electrodes share the same channel
-        if self.n_ele != len(np.unique(self.channel_id)):
-            self.dirichlet_correction = True
-        else:
-            self.dirichlet_correction = False
-
         if current is None:
             self.current = 1/self.n_ele * np.ones(self.n_ele)
         else:
@@ -492,7 +666,7 @@ class ElectrodeArray():
         plt.close()
 
 
-class ElectrodeArrayPair():
+class ElectrodeArrayPair(ElectrodeMaster):
     """
     Symmetric pair of electrode arrays with n_x * n_y electrodes each.
     Contains 2 ElectrodeArray instances with n_x * n_y Electrode instances each.
@@ -528,9 +702,14 @@ class ElectrodeArrayPair():
         Method to estimate the electrode currents:
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
+    dirichlet_correction : bool, optional, default: True
+        If electrodes are connected to the same channel, they have to have the same voltage. This is ensured by
+        setting this flag.
     dirichlet_correction_detailed : bool, optional, default: False
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
+    current_outlier_correction : bool, optional, default: False
+        Apply current outlier correction after node-wise dirichlet approximation (dirichlet_correction_detailed=True).
 
     Attributes
     ----------
@@ -545,7 +724,8 @@ class ElectrodeArrayPair():
     """
 
     def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
-                 current_estimator_method="gpc", dirichlet_correction_detailed=False):
+                 current_estimator_method="gpc", dirichlet_correction=True, dirichlet_correction_detailed=False,
+                 current_outlier_correction=False):
 
         # check free and fixed parameters
         if isinstance(radius, list):
@@ -583,7 +763,6 @@ class ElectrodeArrayPair():
         self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
-        self.dirichlet_correction_detailed = dirichlet_correction_detailed
         self.ele_id = np.arange(self.n_ele)
 
         # order of free parameters
@@ -597,23 +776,6 @@ class ElectrodeArrayPair():
         self.geo_para_mean = np.hstack((self.radius,
                                         self.length_x,
                                         self.length_y))
-
-        # global nodal arrays (set by compile_node_arrays)
-        self.node_channel_id = None
-        self.node_array_id = None
-        self.node_ele_id = None
-        self.node_coords = None
-        self.node_idx = None
-        self.node_current = None
-        self.node_current_sign = None
-        self.node_voltage = None
-        self.node_voltage_sign = None
-        self.node_area = None
-
-        if len(self.channel_id) != len(self.channel_id_unique):
-            self.dirichlet_correction = True
-        else:
-            self.dirichlet_correction = False
 
         if current is None:
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
@@ -639,13 +801,18 @@ class ElectrodeArrayPair():
 
         # initialize current estimator for fake Dirichlet BC
         if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
-            self.current_estimator = None
+            current_estimator = None
         else:
-            self.current_estimator = CurrentEstimator(method=current_estimator_method,
-                                                      channel_id=self.channel_id,
-                                                      ele_id=self.ele_id,
-                                                      current_sign=np.sign(self.current),
-                                                      current_total=self.current_total)
+            current_estimator = CurrentEstimator(method=current_estimator_method,
+                                                 channel_id=self.channel_id,
+                                                 ele_id=self.ele_id,
+                                                 current_sign=np.sign(self.current),
+                                                 current_total=self.current_total)
+
+        super(ElectrodeArrayPair, self).__init__(dirichlet_correction=dirichlet_correction,
+                                                 dirichlet_correction_detailed=dirichlet_correction_detailed,
+                                                 current_outlier_correction=current_outlier_correction,
+                                                 current_estimator=current_estimator)
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
@@ -762,118 +929,8 @@ class ElectrodeArrayPair():
                                                 ele_id=self.ele_id[self.channel_id == self.channel_id_unique[i]],
                                                 current=self.current[self.channel_id == self.channel_id_unique[i]]) for i in range(2)]
 
-    def estimate_currents(self, electrode_pos):
-        """
-        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
-        Writes current in self.current.
 
-        Parameters
-        ----------
-        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
-            Positions and orientations of ElectrodeArrayPair or CircularArray
-        """
-        if self.current_estimator.current is None:
-            return
-        return self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
-
-    def compile_node_arrays(self):
-        """
-        Gathers all information from the nodes of the electrode arrays and the containing electrodes
-        and collect them in global arrays
-        """
-        _node_channel_id = []
-        _node_array_id = []
-        _node_ele_id = []
-        _node_coords = []
-        _node_idx = []
-        _node_current = []
-        _node_current_sign = []
-        _node_voltage = []
-        _node_voltage_sign = []
-        _node_area = []
-
-        for i_array, _electrode_array in enumerate(self.electrode_arrays):
-            for i_ele, _ele in enumerate(_electrode_array.electrodes):
-                if _ele.node_coords is None:
-                    self.node_channel_id = None
-                    self.node_array_id = None
-                    self.node_ele_id = None
-                    self.node_coords = None
-                    self.node_idx = None
-                    self.node_current = None
-                    self.node_current_sign = None
-                    self.node_voltage = None
-                    self.node_voltage_sign = None
-                    self.node_area = None
-                    return
-
-                _node_channel_id.append(_ele.channel_id * np.ones(_ele.n_nodes))
-                _node_array_id.append(i_array * np.ones(_ele.n_nodes))
-                _node_ele_id.append(_ele.ele_id * np.ones(_ele.n_nodes))
-                _node_coords.append(_ele.node_coords)
-                _node_idx.append(_ele.node_idx)
-                _node_current.append(_ele.node_current)
-                _node_voltage.append(_ele.node_voltage)
-                _node_area.append(_ele.node_area)
-
-                if _ele.ele_voltage_sign is not None:
-                    _node_voltage_sign.append(_ele.ele_voltage_sign * np.ones(_ele.n_nodes))
-                else:
-                    _node_voltage_sign = None
-
-                if _ele.ele_current_sign is not None:
-                    _node_current_sign.append(_ele.ele_current_sign * np.ones(_ele.n_nodes))
-                else:
-                    _node_current_sign = None
-
-        self.node_channel_id = np.hstack(_node_channel_id)
-        self.node_array_id = np.hstack(_node_array_id)
-        self.node_ele_id = np.hstack(_node_ele_id)
-        self.node_coords = np.vstack(_node_coords)
-        self.node_idx = np.hstack(_node_idx)
-        self.node_current = np.hstack(_node_current)
-        self.node_voltage = np.hstack(_node_voltage)
-        self.node_area = np.hstack(_node_area)
-
-        if _node_voltage_sign is not None:
-            self.node_voltage_sign = np.hstack(_node_voltage_sign)
-
-        if _node_current_sign is not None:
-            self.node_current_sign = np.hstack(_node_current_sign)
-
-    def update_electrode_from_node_arrays(self):
-        """
-        Updates information from the node arrays and writes information to the electrode instances
-        of the electrode arrays (inverse of compile_node_arrays)
-        """
-        for _electrode_array in self.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                mask = (_ele.ele_id == self.node_ele_id) * (_ele.channel_id == self.node_channel_id)
-
-                _ele.node_idx = self.node_idx[mask]
-                _ele.node_area = self.node_area[mask]
-                _ele.node_coords = self.node_coords[mask]
-
-                if self.node_voltage[0] is not None:
-                    _ele.node_voltage = self.node_voltage[mask]
-
-                if self.node_current[0] is not None:
-                    _ele.node_current = self.node_current[mask]
-
-    def export_node_coords(self, fn_out):
-        """
-        Export node coordinates and node currents on subject skin surface to .txt file.
-        The first 3 columns are the x, y, and z coordinates and the last column is the coil current.
-
-        Parameters
-        ----------
-        fn_out : str
-            Filename of output .txt file.
-        """
-        np.savetxt(fn_out, np.hstack((self.node_coords, self.node_current[:, np.newaxis])))
-
-
-class CircularArray():
+class CircularArray(ElectrodeMaster):
     """
     Generates a circular electrode array with one center electrode and n_outer equally spaced electrodes.
     Generates one ElectrodeArray instance because it can only be moved together.
@@ -895,9 +952,14 @@ class CircularArray():
         Method to estimate the electrode currents:
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
+    dirichlet_correction : bool, optional, default: True
+        If electrodes are connected to the same channel, they have to have the same voltage. This is ensured by
+        setting this flag.
     dirichlet_correction_detailed : bool, optional, default: False
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
+    current_outlier_correction : bool, optional, default: False
+        Apply current outlier correction after node-wise dirichlet approximation (dirichlet_correction_detailed=True).
 
     Attributes
     ----------
@@ -912,7 +974,8 @@ class CircularArray():
     """
     def __init__(self,
                  radius_inner, distance, n_outer=4, radius_outer=None,
-                 current=None, current_estimator_method="gpc", dirichlet_correction_detailed=False):
+                 current=None, current_estimator_method="gpc",
+                 dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
 
         if radius_outer is None:
             radius_outer = radius_inner
@@ -972,20 +1035,6 @@ class CircularArray():
         self.channel_id = np.array([0] + [1] * self.n_outer)
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
-        self.dirichlet_correction = True
-        self.dirichlet_correction_detailed = dirichlet_correction_detailed
-
-        # global nodal arrays (set by compile_node_arrays)
-        self.node_channel_id = None
-        self.node_array_id = None
-        self.node_ele_id = None
-        self.node_coords = None
-        self.node_idx = None
-        self.node_current = None
-        self.node_current_sign = None
-        self.node_voltage = None
-        self.node_voltage_sign = None
-        self.node_area = None
 
         # global electrode arrays (set by compile_electrode_arrays)
         self.ele_id = np.arange(self.n_ele)
@@ -1030,13 +1079,18 @@ class CircularArray():
 
         # initialize current estimator for fake Dirichlet BC
         if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
-            self.current_estimator = None
+            current_estimator = None
         else:
-            self.current_estimator = CurrentEstimator(method=current_estimator_method,
-                                                      channel_id=self.channel_id,
-                                                      ele_id=self.ele_id,
-                                                      current_sign=np.sign(self.current),
-                                                      current_total=self.current_total)
+            current_estimator = CurrentEstimator(method=current_estimator_method,
+                                                 channel_id=self.channel_id,
+                                                 ele_id=self.ele_id,
+                                                 current_sign=np.sign(self.current),
+                                                 current_total=self.current_total)
+
+        super(CircularArray, self).__init__(dirichlet_correction=dirichlet_correction,
+                                            dirichlet_correction_detailed=dirichlet_correction_detailed,
+                                            current_outlier_correction=current_outlier_correction,
+                                            current_estimator=current_estimator)
 
         # initialize freely movable electrode arrays
         self.electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
@@ -1049,18 +1103,6 @@ class CircularArray():
 
         # compile node arrays
         self.compile_node_arrays()
-
-    def export_node_coords(self, fn_out):
-        """
-        Export node coordinates and node currents on subject skin surface to .txt file.
-        The first 3 columns are the x, y, and z coordinates and the last column is the coil current.
-
-        Parameters
-        ----------
-        fn_out : str
-            Filename of output .txt file.
-        """
-        np.savetxt(fn_out, np.hstack((self.node_coords, self.node_current[:, np.newaxis])))
 
     def set_geometrical_parameters_optimization(self, params):
         """
@@ -1151,104 +1193,6 @@ class CircularArray():
                                                 length_y=self.length_y,
                                                 current=self.current)]
 
-    def estimate_currents(self, electrode_pos):
-        """
-        Estimate electrode currents for fake Dirichlet BC using the CurrentEstimator class.
-        Writes current in self.current.
-
-        Parameters
-        ----------
-        electrode_pos : list of np.ndarray of float [n_array_free][n_pos x 3]
-            Positions and orientations of ElectrodeArrayPair or CircularArray
-        """
-        if self.current_estimator.current is None:
-            return
-        return self.current_estimator.estimate_current(electrode_pos=np.hstack(electrode_pos))
-
-    def compile_node_arrays(self):
-        """
-        Gathers all information from the nodes of the electrode arrays and the containing electrodes
-        and collect them in global arrays
-        """
-        _node_channel_id = []
-        _node_array_id = []
-        _node_ele_id = []
-        _node_coords = []
-        _node_idx = []
-        _node_current = []
-        _node_current_sign = []
-        _node_voltage = []
-        _node_voltage_sign = []
-        _node_area = []
-
-        for i_array, _electrode_array in enumerate(self.electrode_arrays):
-            for i_ele, _ele in enumerate(_electrode_array.electrodes):
-                if _ele.node_coords is None:
-                    self.node_channel_id = None
-                    self.node_array_id = None
-                    self.node_ele_id = None
-                    self.node_coords = None
-                    self.node_idx = None
-                    self.node_current = None
-                    self.node_current_sign = None
-                    self.node_voltage = None
-                    self.node_voltage_sign = None
-                    self.node_area = None
-                    return
-
-                _node_channel_id.append(_ele.channel_id * np.ones(_ele.n_nodes))
-                _node_array_id.append(i_array * np.ones(_ele.n_nodes))
-                _node_ele_id.append(_ele.ele_id * np.ones(_ele.n_nodes))
-                _node_coords.append(_ele.node_coords)
-                _node_idx.append(_ele.node_idx)
-                _node_current.append(_ele.node_current)
-                _node_voltage.append(_ele.node_voltage)
-                _node_area.append(_ele.node_area)
-
-                if _ele.ele_voltage_sign is not None:
-                    _node_voltage_sign.append(_ele.ele_voltage_sign * np.ones(_ele.n_nodes))
-                else:
-                    _node_voltage_sign = None
-
-                if _ele.ele_current_sign is not None:
-                    _node_current_sign.append(_ele.ele_current_sign * np.ones(_ele.n_nodes))
-                else:
-                    _node_current_sign = None
-
-        self.node_channel_id = np.hstack(_node_channel_id)
-        self.node_array_id = np.hstack(_node_array_id)
-        self.node_ele_id = np.hstack(_node_ele_id)
-        self.node_coords = np.vstack(_node_coords)
-        self.node_idx = np.hstack(_node_idx)
-        self.node_current = np.hstack(_node_current)
-        self.node_voltage = np.hstack(_node_voltage)
-        self.node_area = np.hstack(_node_area)
-
-        if _node_voltage_sign is not None:
-            self.node_voltage_sign = np.hstack(_node_voltage_sign)
-
-        if _node_current_sign is not None:
-            self.node_current_sign = np.hstack(_node_current_sign)
-
-    def update_electrode_from_node_arrays(self):
-        """
-        Updates information from the node arrays and writes information to the electrode instances
-        of the electrode arrays (inverse of compile_node_arrays)
-        """
-        for _electrode_array in self.electrode_arrays:
-            for _ele in _electrode_array.electrodes:
-                mask = (_ele.ele_id == self.node_ele_id) * (_ele.channel_id == self.node_channel_id)
-
-                _ele.node_idx = self.node_idx[mask]
-                _ele.node_area = self.node_area[mask]
-                _ele.node_coords = self.node_coords[mask]
-
-                if self.node_voltage[0] is not None:
-                    _ele.node_voltage = self.node_voltage[mask]
-
-                if self.node_current[0] is not None:
-                    _ele.node_current = self.node_current[mask]
-
 
 class ElectrodeArrayPairOpt(ElectrodeArrayPair):
     """
@@ -1270,9 +1214,14 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
         Method to estimate the electrode currents:
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
+    dirichlet_correction : bool, optional, default: True
+        If electrodes are connected to the same channel, they have to have the same voltage. This is ensured by
+        setting this flag.
     dirichlet_correction_detailed : bool, optional, default: False
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
+    current_outlier_correction : bool, optional, default: False
+        Apply current outlier correction after node-wise dirichlet approximation (dirichlet_correction_detailed=True).
 
     Attributes
     ----------
@@ -1280,7 +1229,7 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
     """
 
     def __init__(self, n_ele_x, n_ele_y, separation_distance, radius, current_estimator_method="gpc",
-                 dirichlet_correction_detailed=False):
+                 dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
         """
         Initializes ElectrodeArrayPairOpt
         """
@@ -1328,7 +1277,9 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
             self.OPT_radius = radius
 
         self.current_estimator_method = current_estimator_method
+        self.dirichlet_correction = dirichlet_correction
         self.dirichlet_correction_detailed = dirichlet_correction_detailed
+        self.current_outlier_correction = current_outlier_correction
 
         n_ele = self.OPT_n_ele_x * self.OPT_n_ele_y
         extent_x = 2 * self.OPT_radius + (self.OPT_n_ele_x - 1) * self.OPT_separation_distance
@@ -1345,6 +1296,7 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
                                                     length_x=np.zeros(n_ele),
                                                     length_y=np.zeros(n_ele),
                                                     current_estimator_method=current_estimator_method,
+                                                    dirichlet_correction=dirichlet_correction,
                                                     dirichlet_correction_detailed=dirichlet_correction_detailed)
 
         # order of free parameters
@@ -1405,6 +1357,7 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
                                                     length_x=np.zeros(n_ele),
                                                     length_y=np.zeros(n_ele),
                                                     current_estimator_method=self.current_estimator_method,
+                                                    dirichlet_correction=self.dirichlet_correction,
                                                     dirichlet_correction_detailed=self.dirichlet_correction_detailed)
 
     def set_geometrical_parameters_optimization(self, params):
@@ -1444,7 +1397,8 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
 
 
 def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem, thickness=None,
-                                   plug_center=None, plug_dimensions=None, rubber_size=None):
+                                   plug_center=None, plug_dimensions=None, rubber_size=None,
+                                   sigma_rubber=None, sigma_saline=None):
     """
     Create a sim_struct.SESSION including a TDCSLIST object with ELECTRODE instances for regular TDCS
     simulations including electrode meshing etc. for reference simulations.
@@ -1495,6 +1449,12 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem, thickness
 
     # Initialize a tDCS simulation
     tdcslist = s.add_tdcslist()
+
+    if sigma_rubber is not None:
+        tdcslist.cond[99].value = sigma_rubber
+
+    if sigma_saline is not None:
+        tdcslist.cond[499].value = sigma_saline
 
     # Set currents
     tdcslist.currents = ElectrodeArray.current_channel
