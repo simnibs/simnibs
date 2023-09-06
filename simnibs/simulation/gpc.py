@@ -287,7 +287,7 @@ class gPC_regression(pygpc.RegularizedRegression):
                 f.create_dataset(
                     'mesh_roi/data_matrices/' + name + '_samples',
                     data=data, compression='gzip')
-            except (RuntimeError, OSError):
+            except (RuntimeError, OSError, ValueError):
                 pass
 
         data_dims = data.shape[1:]
