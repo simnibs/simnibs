@@ -1118,7 +1118,7 @@ class CoilTable (QtWidgets.QWidget):
 
         dialog = QtWidgets.QFileDialog(self)
         dialog.setWindowTitle('Open Coil Definition File')
-        dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz)')
+        dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz *.tcd)')
         dialog.setDirectory(ccd_folder)
         dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
