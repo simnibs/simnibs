@@ -504,7 +504,7 @@ class Elements:
                 adj_th[self.tetrahedra - 1, i] = adj[adj != th_indexing]
 
         # tranform from th indexing to element indexing
-        adj_th[adj_th > 0] = self.tetrahedra[adj_th[adj_th > 0]]
+        adj_th[adj_th >= 0] = self.tetrahedra[adj_th[adj_th >= 0]]
         return adj_th
 
 
@@ -6061,7 +6061,7 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
 
     '''
     vertex_coords, faces, meta = nibabel.freesurfer.io.read_geometry(
-        '/mnt/c/Users/torwo/Documents/Projects/simnibs4_examples/m2m_ernie/0/surf/lh.white',
+        fn,
         read_metadata=True
     )
 
