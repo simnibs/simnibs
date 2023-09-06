@@ -14,11 +14,11 @@ How to use
 -----------
 
 Exporting from Brainsight
-######################
+#########################
 Choose `NIfTI:Aligned` coordinate systems while exporting the coil data.
 
 Importing to SimNIBS
-#################
+####################
 :code:`simnibs.brainsight.read(fn)` reads exported coil position information files from Brainsight and returns two :code:`simnibs.TMSLIST()` objects: One for `Targets` and one for `Samples`. The conversion of the different coil axes definitions is performed automatically.
 
 
@@ -36,13 +36,14 @@ Importing to SimNIBS
     tms_list.pos[0].name  # <- name is filled with data from .txt.
 
 Exporting from SimNIBS
-###################
+######################
 :code:`simnibs.brainsight.write(obj, fn)` writes a .txt file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.
 
 
 .. code-block:: python
     :caption: Export a file for precomputed positions/orientations
 
+	import numpy as np
     from simnibs import sim_struct, opt_struct, brainsight
     fn = "precomuted_coilpos.xml"
 
@@ -61,7 +62,7 @@ Exporting from SimNIBS
     opt = opt_struct.TMSoptimize()
     # ... prepare optmization ...
     opt_mat = opt.run() # get optimal position
-    brainsight().write(opt_mat, fn)
+    brainsight().write(np.squeeze(opt_mat), fn)
 
 Notes
 -----
