@@ -16,6 +16,7 @@
       ~Msh.__init__
       ~Msh.add_element_field
       ~Msh.add_node_field
+      ~Msh.add_sizing_field
       ~Msh.any_pts_inside_surface
       ~Msh.calc_matsimnibs
       ~Msh.compact_ordering

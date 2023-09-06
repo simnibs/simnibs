@@ -20,6 +20,7 @@
 '''
 from __future__ import division
 from __future__ import print_function
+import tempfile
 import os
 import struct
 import copy
@@ -27,7 +28,6 @@ import datetime
 import warnings
 import gc
 import hashlib
-import tempfile
 import subprocess
 import threading
 from typing import Union
@@ -504,7 +504,7 @@ class Elements:
                 adj_th[self.tetrahedra - 1, i] = adj[adj != th_indexing]
 
         # tranform from th indexing to element indexing
-        adj_th[adj_th > 0] = self.tetrahedra[adj_th[adj_th > 0]]
+        adj_th[adj_th >= 0] = self.tetrahedra[adj_th[adj_th >= 0]]
         return adj_th
 
 
@@ -2677,13 +2677,54 @@ class Msh:
 
         return string
 
+    def add_sizing_field(self, sizing_field, affine=None):
+        """
+        Add sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg.
+        Each node gets a target element size associated, which will be considered by mmg during remeshing.
+        Sizing field can be provided as a filename of a nifti image, the nifti image itself or 3D ndarray with
+        affine. The data will be applied to the nodes of the mesh and written to a NodeData field "sizing_field:metric".
+
+        Parameters
+        ----------
+        sizing_field : str or nifti image or np.ndarray
+            Filename of nifti image or nifti image of sizing field, or 3D numpy array with the same shape as
+            label_img.shape, which will be applied to the nodes.
+        affine : 4x4 ndarray
+            Array describing the affine transformation from the data grid to the mesh space.
+        """
+
+        # read sizing image
+        if type(sizing_field) is str:
+            sizing_image = nibabel.load(sizing_field)
+            affine = sizing_image.affine
+            sizing_field = sizing_image.get_fdata()
+        # if an image is passed read the sizing field data out of it
+        elif type(sizing_field) is nibabel.nifti1.Nifti1Image:
+            affine = sizing_field.affine
+            sizing_field = sizing_field.get_fdata()
+
+        if affine is None:
+            raise ValueError("Please provide affine for sizing field.")
+
+        # create a NodeData field containiong the sizing field with ":metric" tag for mmg
+        sizing_field_node_data = NodeData.from_data_grid(mesh=self,
+                                                         data_grid=sizing_field,
+                                                         affine=affine,
+                                                         field_name='sizing_field:metric')
+
+        # ensure positive element sizes
+        sizing_field_node_data.value = np.abs(sizing_field_node_data.value)
+
+        # add NodeData with sizing field to mesh
+        self.nodedata.append(sizing_field_node_data)
+
     def reconstruct_surfaces(self, tags=None):
         ''' Reconstruct the mesh surfaces for each label/connected component individually
         This function acts in-place, and will keep any surfaces already present in the
         mesh
 
         Parameters
-        ------------
+        ----------
         tags: list of ints or None (optional)
             List of tags where we should reconstruct the surface off. Defaut: all volume tags in the
             mesh
@@ -4849,7 +4890,7 @@ class NodeData(Data):
 
 
 
-    def append_to_mesh(self, fn, mode='binary'):
+    def append_to_mesh(self, fn, mode='binary', mmg_fix=False):
         """Appends this NodeData fields to a file
 
         Parameters
@@ -4868,11 +4909,17 @@ class NodeData(Data):
             f.write((str(1) + '\n').encode('ascii'))
             f.write((str(0) + '\n').encode('ascii'))
 
-            f.write((str(4) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
-            f.write((str(self.nr_comp) + '\n').encode('ascii'))
-            f.write((str(self.nr) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
+            if mmg_fix:
+                f.write((str(3) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+            else:
+                f.write((str(4) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
 
             if mode == 'ascii':
                 for ii in range(self.nr):
@@ -4944,7 +4991,7 @@ class NodeData(Data):
             f.write(b'$EndNodeData\n')
 
 
-def read_msh(fn, m=None):
+def read_msh(fn, m=None, skip_data=False):
     ''' Reads a gmsh '.msh' file
 
     Parameters
@@ -4953,6 +5000,8 @@ def read_msh(fn, m=None):
         File name
     m: simnibs.msh.Msh (optional)
         Mesh structure to be overwritten. If unset, will create a new structure
+    skip_data: bool (optional)
+        If True, reading of NodeData and ElementData will be skipped (Default: False)
 
     Returns
     --------
@@ -4969,10 +5018,10 @@ def read_msh(fn, m=None):
 
     version_number = _find_mesh_version(fn)
     if version_number == 2:
-        m = _read_msh_2(fn, m)
+        m = _read_msh_2(fn, m, skip_data)
 
     elif version_number == 4:
-        m = _read_msh_4(fn, m)
+        m = _read_msh_4(fn, m, skip_data)
 
     else:
         raise IOError('Unrecgnized Mesh file version : {}'.format(version_number))
@@ -4999,7 +5048,7 @@ def _find_mesh_version(fn):
     return version_number
 
 
-def _read_msh_2(fn, m):
+def _read_msh_2(fn, m, skip_data=False):
     m.fn = fn
 
     # file open
@@ -5191,7 +5240,7 @@ def _read_msh_2(fn, m):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii, :2] = [int(i) for i in line[5:]]
-                if line[1] == '2':
+                elif line[1] == '2':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
                     m.elm.tag1[ii] = line[3]
@@ -5203,7 +5252,7 @@ def _read_msh_2(fn, m):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii] = [int(i) for i in line[5:]]
-                if line[1] == '15':
+                elif line[1] == '15':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
                     m.elm.tag1[ii] = line[3]
@@ -5212,7 +5261,7 @@ def _read_msh_2(fn, m):
                 else:
                     read[ii] = 0
                     warnings.warn('element of type {0} '
-                                  'cannot be read, ignoring it'.format(elm_type))
+                                  'cannot be read, ignoring it'.format(line[1]))
 
             elm_number = elm_number[read]
             m.elm.elm_type = m.elm.elm_type[read]
@@ -5332,12 +5381,13 @@ def _read_msh_2(fn, m):
             read_next_section()
             return
 
-        read_next_section()
+        if not skip_data:
+            read_next_section()
     m.compact_ordering(node_number)
     return m
 
 
-def _read_msh_4(fn, m):
+def _read_msh_4(fn, m, skip_data=False):
     m.fn = fn
     # file open
     with open(fn, 'rb') as f:
@@ -5613,13 +5663,14 @@ def _read_msh_4(fn, m):
             read_next_section()
             return
 
-        read_next_section()
+        if not skip_data:
+            read_next_section()
     m.compact_ordering(node_number)
     return m
 
 
 # write msh to mesh file
-def write_msh(msh, file_name=None, mode='binary'):
+def write_msh(msh, file_name=None, mode='binary', mmg_fix=False):
     """ Writes a gmsh 'msh' file
 
     Parameters
@@ -5760,7 +5811,7 @@ def write_msh(msh, file_name=None, mode='binary'):
 
     # write nodeData, if existent
     for nd in msh.nodedata:
-        nd.append_to_mesh(fn, mode)
+        nd.append_to_mesh(fn, mode, mmg_fix)
 
     for eD in msh.elmdata:
         eD.append_to_mesh(fn, mode)
@@ -6010,7 +6061,7 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
 
     '''
     vertex_coords, faces, meta = nibabel.freesurfer.io.read_geometry(
-        '/mnt/c/Users/torwo/Documents/Projects/simnibs4_examples/m2m_ernie/0/surf/lh.white',
+        fn,
         read_metadata=True
     )
 

@@ -208,7 +208,7 @@ def main():
         charm_main.run(subject_dir, None, None, False, False,
                        False, False, True, args.usesettings, False,
                        None, None, False, False,
-                       " ".join(sys.argv[1:]), False)
+                       " ".join(sys.argv[1:]), args.debug)
 
 
 if __name__ == '__main__':
