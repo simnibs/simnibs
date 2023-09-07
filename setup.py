@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 import os
 import sys
 import glob
@@ -8,7 +8,6 @@ import tempfile
 import zipfile
 import tarfile
 from setuptools.command.build_ext import build_ext
-from setuptools import find_namespace_packages
 from distutils.dep_util import newer_group
 import numpy as np
 
@@ -293,19 +292,19 @@ petsc_solver = Extension(
 # I separated the CGAL functions into several files for two reasons
 # 1. Reduce memory consumption during compilation in Linux
 # 2. Fix some compilation problems in Windows
-create_mesh_surf = Extension(
-    'simnibs.mesh_tools.cgal.create_mesh_surf',
-    sources=["simnibs/mesh_tools/cgal/create_mesh_surf.pyx"],
-    depends=["simnibs/mesh_tools/cgal/_mesh_surfaces.cpp"],
-    language='c++',
-    include_dirs=cgal_include,
-    libraries=cgal_libs,
-    library_dirs=cgal_dirs,
-    runtime_library_dirs=cgal_runtime,
-    extra_compile_args=cgal_compile_args,
-    extra_link_args=cgal_link_args,
-    define_macros=cgal_mesh_macros
-)
+# create_mesh_surf = Extension(
+#     'simnibs.mesh_tools.cgal.create_mesh_surf',
+#     sources=["simnibs/mesh_tools/cgal/create_mesh_surf.pyx"],
+#     depends=["simnibs/mesh_tools/cgal/_mesh_surfaces.cpp"],
+#     language='c++',
+#     include_dirs=cgal_include,
+#     libraries=cgal_libs,
+#     library_dirs=cgal_dirs,
+#     runtime_library_dirs=cgal_runtime,
+#     extra_compile_args=cgal_compile_args,
+#     extra_link_args=cgal_link_args,
+#     define_macros=cgal_mesh_macros
+# )
 create_mesh_vol = Extension(
     'simnibs.mesh_tools.cgal.create_mesh_vol',
     sources=["simnibs/mesh_tools/cgal/create_mesh_vol.pyx"],
@@ -338,7 +337,7 @@ extensions = [
     cat_c_utils,
     thickness,
     petsc_solver,
-    create_mesh_surf,
+    # create_mesh_surf,
     create_mesh_vol,
     cgal_misc
 ]
@@ -416,11 +415,11 @@ class build_ext_(build_ext):
         self.extension = cythonize(self.extensions)
         ## Download requirements
         changed_meshing = (
-            newer_group(
-                create_mesh_surf.sources + create_mesh_surf.depends,
-                self.get_ext_fullpath(create_mesh_surf.name),
-                'newer'
-            ) or
+            # newer_group(
+            #     create_mesh_surf.sources + create_mesh_surf.depends,
+            #     self.get_ext_fullpath(create_mesh_surf.name),
+            #     'newer'
+            # ) or
             newer_group(
                 create_mesh_vol.sources + create_mesh_vol.depends,
                 self.get_ext_fullpath(create_mesh_vol.name),
