@@ -76,6 +76,7 @@ MANUAL EDITING:
     add_argument(parser, args_charm.force_qform)
     add_argument(parser, args_charm.force_sform)
     add_argument(parser, args_charm.use_transform)
+    add_argument(parser, args_charm.fs_subjects_dir)
     add_argument(parser, args_general.debug)
 
     args = parser.parse_args(argv)
@@ -130,7 +131,7 @@ def main():
 
     charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
                    args.segment, args.surfaces, args.mesh, args.usesettings, args.noneck,
-                   args.inittransform, args.usetransform, args.forceqform, args.forcesform,
+                   args.inittransform, args.usetransform, args.forceqform, args.forcesform, args.fs_dir,
                    " ".join(sys.argv[1:]), args.debug)
 
     # mesh vs mesh_image

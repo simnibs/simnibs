@@ -32,6 +32,7 @@ import subprocess
 import threading
 from typing import Union
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 from numpy.lib import recfunctions
@@ -6663,3 +6664,28 @@ def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
         h: read_gifti_surface(get_reference_surf(h, surface, resolution))
         for h in HEMISPHERES
     }
+
+
+def load_freesurfer_surfaces(fs_dir, surface: str, coord: str = "surface ras"):
+    """Load surfaces from a FreeSurfer subject directory.
+
+    Parameters
+    ----------
+    fs_dir :
+        FreeSurfer subject directory.
+    surface : str
+        The surface to load.
+    coord : str
+        The coordinate system in which to return the surface. `surface ras`
+        will load the surface unmodified whereas `ras` will apply the
+        transformation from surface ras to (scanner) ras.
+
+    Returns
+    -------
+    surfaces : dict
+    """
+    assert coord in {"ras", "surface ras"}
+
+    apply_transform = True if coord == "ras" else False
+    fs_surf_dir = Path(fs_dir) / "surf"
+    return {h: read_freesurfer_surface(fs_surf_dir / f"{h}.{surface}", apply_transform) for h in HEMISPHERES}

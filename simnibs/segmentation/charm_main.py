@@ -9,6 +9,7 @@ import sys
 import tempfile
 import re
 import numpy as np
+from pathlib import Path
 
 from simnibs import SIMNIBSDIR
 
@@ -23,7 +24,9 @@ from ..utils.transformations import crop_vol
 from ..utils.spawn_process import spawn_process
 from ..mesh_tools.meshing import create_mesh
 from ..mesh_tools.mesh_io import (
+    load_freesurfer_surfaces,
     read_gifti_surface,
+    write_gifti_surface,
     write_msh,
     read_off,
     write_off,
@@ -31,11 +34,11 @@ from ..mesh_tools.mesh_io import (
     ElementData,
 )
 from ..utils import cond_utils
-from ..utils import plotting, html_writer
-
+from ..utils import html_writer
+from simnibs.segmentation import brain_surface
 
 def run(
-    subject_dir=None,
+    subject_dir: str,
     T1=None,
     T2=None,
     registerT2=False,
@@ -49,6 +52,7 @@ def run(
     use_transform=None,
     force_qform=False,
     force_sform=False,
+    fs_dir = None,
     options_str=None,
     debug=False,
 ):
@@ -305,161 +309,203 @@ def run(
         shutil.copyfile(file_finder.templates.final_tissues_LUT, fn_LUT)
 
     if create_surfaces:
-        # Create surfaces ala CAT12
-        logger.info("Starting surface creation")
-        starttime = time.time()
-        fsavgDir = file_finder.Templates().freesurfer_templates
-
         surface_settings = settings["surfaces"]
-        nprocesses = surface_settings["processes"]
-        surf = surface_settings["surf"]
-        pial = surface_settings["pial"]
-        vdist = surface_settings["vdist"]
-        voxsize_pbt = surface_settings["voxsize_pbt"]
-        voxsize_refineCS = surface_settings["voxsize_refinecs"]
-        th_initial = surface_settings["th_initial"]
-        no_selfintersections = surface_settings["no_selfintersections"]
-        fillin_gm_from_surf = surface_settings["fillin_gm_from_surf"]
-        open_sulci_from_surf = surface_settings["open_sulci_from_surf"]
-        exclusion_tissues_fillinGM = surface_settings["exclusion_tissues_fillin_gm"]
-        exclusion_tissues_openCSF = surface_settings["exclusion_tissues_open_csf"]
+        tissue_map_simnibs = atlas_settings["conductivity_mapping"]["simnibs_tissues"]
 
-        multithreading_script = [
-            os.path.join(SIMNIBSDIR, "segmentation", "run_cat_multiprocessing.py")
-        ]
-        # fmt: off
-        argslist = (
-            [
-                "--Ymf", sub_files.norm_image,
-                "--Yleft_path", sub_files.hemi_mask,
-                "--Ymaskhemis_path", sub_files.cereb_mask,
-                "--surface_folder", sub_files.surface_folder,
-                "--fsavgdir", fsavgDir,
-                "--surf",
-            ]
-            + surf
-            + ["--pial"]
-            + pial
-            + [
-                "--vdist", str(vdist[0]), str(vdist[1]),
-                "--voxsize_pbt", str(voxsize_pbt[0]), str(voxsize_pbt[1]),
-                "--voxsizeCS", str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
-                "--th_initial", str(th_initial),
-                "--no_intersect", str(no_selfintersections),
-                "--nprocesses", str(nprocesses),
-            ]
-        )
-        if debug:
-            argslist += ["--debug"]
-        # fmt: on
+        if fs_dir:
+            logger.info("Starting surface creation")
+            t_start = time.perf_counter()
 
-        proc = subprocess.run(
-            [sys.executable] + multithreading_script + argslist, stderr=subprocess.PIPE
-        )  # stderr: standard stream for simnibs logger
-        logger.debug(proc.stderr.decode("ASCII", errors="ignore").replace("\r", ""))
-        proc.check_returncode()
-        elapsed = time.time() - starttime
-        logger.info("Total time surface creation (HH:MM:SS):")
-        logger.info(time.strftime("%H:%M:%S", time.gmtime(elapsed)))
+            logger.info("Using surfaces from FreeSurfer")
+            logger.info(f"FreeSurfer subject directory is {fs_dir}")
+            surfaces = {
+                "white" : load_freesurfer_surfaces(fs_dir, "white", coord="ras"),
+                "pial" : load_freesurfer_surfaces(fs_dir, "pial", coord="ras"),
+                "sphere" : load_freesurfer_surfaces(fs_dir, "sphere"),
+                "sphere.reg" : load_freesurfer_surfaces(fs_dir, "sphere.reg"),
+            }
 
-        sub_files = file_finder.SubjectFiles(subpath=subject_dir)
-        if fillin_gm_from_surf or open_sulci_from_surf:
-            logger.info("Improving GM from surfaces")
-            starttime = time.time()
-            # original tissue mask used for mesh generation
-            if debug:
-                shutil.copyfile(
-                    sub_files.tissue_labeling_upsampled,
-                    os.path.join(sub_files.label_prep_folder, "before_surfmorpho.nii.gz"),
+            logger.info("Estimating the central gray matter surface")
+            surfaces["central"] = {
+                h: brain_surface.estimate_central_surface(
+                    surfaces["white"][h], surfaces["pial"][h]
+                )
+                for h in sub_files.hemispheres
+            }
+
+            # Write the surfaces
+            for surface, v in surfaces.items():
+                for hemi, mesh in v.items():
+                    write_gifti_surface(mesh, sub_files.get_surface(hemi, surface))
+
+            if surface_settings["update_segmentation_from_surfaces"]:
+                logger.info("Updating the segmentation using the reconstructed surfaces")
+
+                charm_utils.update_labeling_from_cortical_surfaces(
+                    sub_files,
+                    surface_settings["protect"],
+                    tissue_map_simnibs,
                 )
 
-            label_nii = nib.load(sub_files.tissue_labeling_upsampled)
-            label_img = np.asanyarray(label_nii.dataobj)
-            label_affine = label_nii.affine
+            t_end = time.perf_counter()
+            time_elapsed = time.strftime("%H:%M:%S", time.gmtime(t_end - t_start))
+            logger.info(f"Surface creation : {time_elapsed}")
+        else:
+            # Create surfaces ala CAT12
+            logger.info("Starting surface creation")
+            starttime = time.time()
 
-            # orginal label mask
-            label_nii = nib.load(sub_files.labeling)
-            labelorg_img = np.asanyarray(label_nii.dataobj)
-            labelorg_affine = label_nii.affine
+            fsavgDir = file_finder.Templates().freesurfer_templates
 
-            if fillin_gm_from_surf:
-                # GM central surfaces
-                m = Msh()
-                if "lh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("lh", "central")))
-                if "rh" in surf:
-                    m = m.join_mesh(read_gifti_surface(sub_files.get_surface("rh", "central")))
-                    # fill in GM and save updated mask
-                if m.nodes.nr > 0:
-                    label_img = charm_utils._fillin_gm_layer(
-                        label_img,
-                        label_affine,
-                        labelorg_img,
-                        labelorg_affine,
-                        m,
-                        exclusion_tissues=exclusion_tissues_fillinGM,
-                    )
+            nprocesses = surface_settings["processes"]
+            surf = surface_settings["surf"]
+            pial = surface_settings["pial"]
+            vdist = surface_settings["vdist"]
+            voxsize_pbt = surface_settings["voxsize_pbt"]
+            voxsize_refineCS = surface_settings["voxsize_refinecs"]
+            th_initial = surface_settings["th_initial"]
+            no_selfintersections = surface_settings["no_selfintersections"]
+            fillin_gm_from_surf = surface_settings["fillin_gm_from_surf"]
+            open_sulci_from_surf = surface_settings["open_sulci_from_surf"]
+            exclusion_tissues_fillinGM = surface_settings["exclusion_tissues_fillin_gm"]
+            exclusion_tissues_openCSF = surface_settings["exclusion_tissues_open_csf"]
 
-                    label_nii = nib.Nifti1Image(label_img, label_affine)
-                    nib.save(label_nii, sub_files.tissue_labeling_upsampled)
-                else:
-                    logger.warning(
-                        "Neither lh nor rh reconstructed. Filling in from GM surface skipped"
-                    )
+            multithreading_script = [
+                os.path.join(SIMNIBSDIR, "segmentation", "run_cat_multiprocessing.py")
+            ]
+            # fmt: off
+            argslist = (
+                [
+                    "--Ymf", sub_files.norm_image,
+                    "--Yleft_path", sub_files.hemi_mask,
+                    "--Ymaskhemis_path", sub_files.cereb_mask,
+                    "--surface_folder", sub_files.surface_folder,
+                    "--fsavgdir", fsavgDir,
+                    "--surf",
+                ]
+                + surf
+                + ["--pial"]
+                + pial
+                + [
+                    "--vdist", str(vdist[0]), str(vdist[1]),
+                    "--voxsize_pbt", str(voxsize_pbt[0]), str(voxsize_pbt[1]),
+                    "--voxsizeCS", str(voxsize_refineCS[0]), str(voxsize_refineCS[1]),
+                    "--th_initial", str(th_initial),
+                    "--no_intersect", str(no_selfintersections),
+                    "--nprocesses", str(nprocesses),
+                ]
+            )
+            if debug:
+                argslist += ["--debug"]
+            # fmt: on
 
-            if open_sulci_from_surf:
-                # GM pial surfaces
-                m = Msh()
-                if "lh" in pial:
-                    m2 = read_gifti_surface(
-                        sub_files.get_surface("lh", "pial")
-                    )
-                    # remove self-intersections using meshfix
-                    with tempfile.NamedTemporaryFile(suffix=".off") as f:
-                        mesh_fn = f.name
-                    write_off(m2, mesh_fn)
-                    cmd = [file_finder.path2bin("meshfix"), mesh_fn, "-o", mesh_fn]
-                    spawn_process(cmd, lvl=logging.DEBUG)
-                    m = m.join_mesh(read_off(mesh_fn))
-                    if os.path.isfile(mesh_fn):
-                        os.remove(mesh_fn)
-                    if os.path.isfile("meshfix_log.txt"):
-                        os.remove("meshfix_log.txt")
-                if "rh" in pial:
-                    m2 = read_gifti_surface(
-                        sub_files.get_surface("rh", "pial")
-                    )
-                    # remove self-intersections using meshfix
-                    with tempfile.NamedTemporaryFile(suffix=".off") as f:
-                        mesh_fn = f.name
-                    write_off(m2, mesh_fn)
-                    cmd = [file_finder.path2bin("meshfix"), mesh_fn, "-o", mesh_fn]
-                    spawn_process(cmd, lvl=logging.DEBUG)
-                    m = m.join_mesh(read_off(mesh_fn))
-                    if os.path.isfile(mesh_fn):
-                        os.remove(mesh_fn)
-                    if os.path.isfile("meshfix_log.txt"):
-                        os.remove("meshfix_log.txt")
-                if m.nodes.nr > 0:
-                    charm_utils._open_sulci(
-                        label_img,
-                        label_affine,
-                        labelorg_img,
-                        labelorg_affine,
-                        m,
-                        exclusion_tissues=exclusion_tissues_openCSF,
-                    )
-                    label_nii = nib.Nifti1Image(label_img, label_affine)
-                    nib.save(label_nii, sub_files.tissue_labeling_upsampled)
-                else:
-                    logger.warning(
-                        "Neither lh nor rh pial reconstructed. Opening up of sulci skipped."
-                    )
-
-            # print time duration
+            proc = subprocess.run(
+                [sys.executable] + multithreading_script + argslist, stderr=subprocess.PIPE
+            )  # stderr: standard stream for simnibs logger
+            logger.debug(proc.stderr.decode("ASCII", errors="ignore").replace("\r", ""))
+            proc.check_returncode()
             elapsed = time.time() - starttime
-            logger.info("Total time cost for GM imrpovements in (HH:MM:SS):")
+            logger.info("Total time surface creation (HH:MM:SS):")
             logger.info(time.strftime("%H:%M:%S", time.gmtime(elapsed)))
+
+            sub_files = file_finder.SubjectFiles(subpath=subject_dir)
+            if fillin_gm_from_surf or open_sulci_from_surf:
+                logger.info("Improving GM from surfaces")
+                starttime = time.time()
+                # original tissue mask used for mesh generation
+                if debug:
+                    shutil.copyfile(
+                        sub_files.tissue_labeling_upsampled,
+                        os.path.join(sub_files.label_prep_folder, "before_surfmorpho.nii.gz"),
+                    )
+
+                label_nii = nib.load(sub_files.tissue_labeling_upsampled)
+                label_img = np.asanyarray(label_nii.dataobj)
+                label_affine = label_nii.affine
+
+                # orginal label mask
+                label_nii = nib.load(sub_files.labeling)
+                labelorg_img = np.asanyarray(label_nii.dataobj)
+                labelorg_affine = label_nii.affine
+
+                if fillin_gm_from_surf:
+                    # GM central surfaces
+                    m = Msh()
+                    if "lh" in surf:
+                        m = m.join_mesh(read_gifti_surface(sub_files.get_surface("lh", "central")))
+                    if "rh" in surf:
+                        m = m.join_mesh(read_gifti_surface(sub_files.get_surface("rh", "central")))
+                        # fill in GM and save updated mask
+                    if m.nodes.nr > 0:
+                        label_img = charm_utils._fillin_gm_layer(
+                            label_img,
+                            label_affine,
+                            labelorg_img,
+                            labelorg_affine,
+                            m,
+                            exclusion_tissues=exclusion_tissues_fillinGM,
+                        )
+
+                        label_nii = nib.Nifti1Image(label_img, label_affine)
+                        nib.save(label_nii, sub_files.tissue_labeling_upsampled)
+                    else:
+                        logger.warning(
+                            "Neither lh nor rh reconstructed. Filling in from GM surface skipped"
+                        )
+
+                if open_sulci_from_surf:
+                    # GM pial surfaces
+                    m = Msh()
+                    if "lh" in pial:
+                        m2 = read_gifti_surface(
+                            sub_files.get_surface("lh", "pial")
+                        )
+                        # remove self-intersections using meshfix
+                        with tempfile.NamedTemporaryFile(suffix=".off") as f:
+                            mesh_fn = f.name
+                        write_off(m2, mesh_fn)
+                        cmd = [file_finder.path2bin("meshfix"), mesh_fn, "-o", mesh_fn]
+                        spawn_process(cmd, lvl=logging.DEBUG)
+                        m = m.join_mesh(read_off(mesh_fn))
+                        if os.path.isfile(mesh_fn):
+                            os.remove(mesh_fn)
+                        if os.path.isfile("meshfix_log.txt"):
+                            os.remove("meshfix_log.txt")
+                    if "rh" in pial:
+                        m2 = read_gifti_surface(
+                            sub_files.get_surface("rh", "pial")
+                        )
+                        # remove self-intersections using meshfix
+                        with tempfile.NamedTemporaryFile(suffix=".off") as f:
+                            mesh_fn = f.name
+                        write_off(m2, mesh_fn)
+                        cmd = [file_finder.path2bin("meshfix"), mesh_fn, "-o", mesh_fn]
+                        spawn_process(cmd, lvl=logging.DEBUG)
+                        m = m.join_mesh(read_off(mesh_fn))
+                        if os.path.isfile(mesh_fn):
+                            os.remove(mesh_fn)
+                        if os.path.isfile("meshfix_log.txt"):
+                            os.remove("meshfix_log.txt")
+                    if m.nodes.nr > 0:
+                        charm_utils._open_sulci(
+                            label_img,
+                            label_affine,
+                            labelorg_img,
+                            labelorg_affine,
+                            m,
+                            exclusion_tissues=exclusion_tissues_openCSF,
+                        )
+                        label_nii = nib.Nifti1Image(label_img, label_affine)
+                        nib.save(label_nii, sub_files.tissue_labeling_upsampled)
+                    else:
+                        logger.warning(
+                            "Neither lh nor rh pial reconstructed. Opening up of sulci skipped."
+                        )
+
+                # print time duration
+                elapsed = time.time() - starttime
+                logger.info("Total time cost for GM imrpovements in (HH:MM:SS):")
+                logger.info(time.strftime("%H:%M:%S", time.gmtime(elapsed)))
 
     if mesh_image:
         # create mesh from label image
