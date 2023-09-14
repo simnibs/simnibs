@@ -142,7 +142,7 @@ def run(
 
     # Specify the maximum number of threads the GEMS code will use
     # by default this is all, but can be changed in the .ini
-    num_threads = samseg_settings["threads"]
+    num_threads = settings["general"]["threads"]
     if isinstance(num_threads, int) and num_threads > 0:
         samseg.setGlobalDefaultNumberOfThreads(num_threads)
         logger.info("Using %d threads, instead of all available." % num_threads)
