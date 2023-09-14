@@ -27,9 +27,10 @@ import shutil
 import sys
 import textwrap
 import time
-from simnibs import __version__
-from simnibs.segmentation import charm_main
 
+from simnibs.segmentation import charm_main
+from simnibs.cli.utils.helpers import add_argument
+from simnibs.cli.utils import args_general, args_charm
 
 
 def parseArguments(argv):
@@ -40,7 +41,7 @@ CREATE HEAD MESH:
     charm subID T1 {T2}
 
 VISUAL CHECK OF RESULTS:
-    open the m2m_{subID}\results.html
+    open the m2m_{subID}/results.html
 
 RUN ONLY PARTS OF CHARM:
     charm subID T1 T2 --registerT2  (registration of T2 to T1)
@@ -56,64 +57,28 @@ MANUAL EDITING:
 
     ''')
 
-    parser = argparse.ArgumentParser(
-        prog="charm",usage=usage_text)
+    parser = argparse.ArgumentParser(prog="charm", usage=usage_text)
 
-    parser.add_argument('subID',nargs='?',help="""Subject ID. Charm will create
-               the folder m2m_{sub_ID} in the current working directory to
-               store the result files.""")
-    parser.add_argument('T1',nargs='?',help="T1-weighted image")
-    parser.add_argument('T2',nargs='?',help="T2-weighted image (optional)")
+    add_argument(parser, args_charm.subid) # NB
+    add_argument(parser, args_general.version)
+    add_argument(parser, args_charm.primary_image)
+    add_argument(parser, args_charm.secondary_image)
+    add_argument(parser, args_charm.register_t2)
+    add_argument(parser, args_charm.init_atlas)
+    add_argument(parser, args_charm.segment)
+    add_argument(parser, args_charm.mesh)
+    add_argument(parser, args_charm.surfaces)
+    add_argument(parser, args_charm.forcerun)
+    add_argument(parser, args_charm.skip_register_t2)
+    add_argument(parser, args_charm.use_settings)
+    add_argument(parser, args_charm.no_neck)
+    add_argument(parser, args_charm.init_transform)
+    add_argument(parser, args_charm.force_qform)
+    add_argument(parser, args_charm.force_sform)
+    add_argument(parser, args_charm.use_transform)
+    add_argument(parser, args_general.debug)
 
-    parser.add_argument('-v','--version', action='version', version=__version__)
-
-    parser.add_argument('--registerT2',action='store_true',default=False,
-                        help="Register T2- to T1-weighted image")
-    parser.add_argument('--initatlas',action='store_true',default=False,
-                        help="""Affine registration of atlas to input images
-                        (Note:T1-weighted image has to be supplied if no
-                        T2-weighted image is used and --registerT2 is thus
-                        skipped)""")
-    parser.add_argument('--segment',action='store_true',default=False,
-                        help="""Run segmentation to create label image,
-                        reconstruct the middle cortical surfaces, and create
-                        the registrations to the fsaverage and MNI templates""")
-    parser.add_argument('--mesh',action='store_true',default=False,
-                        help="Create the head mesh from the label image")
-
-    parser.add_argument('--surfaces', action='store_true', default=False,
-                        help="Create central cortical surfaces from the label image")
-
-    parser.add_argument('--forcerun',action='store_true',default=False,
-                        help="""Overwrite existing m2m_{subID} folder instead
-                        of throwing an error""")
-    parser.add_argument('--skipregisterT2',action='store_true',default=False,
-                        help="""Copy T2-weighted image instead of registering
-                        it to the T1-weighted image""")
-    parser.add_argument('--usesettings',nargs=1,metavar="settings.ini",
-                        help="""ini-file with settings (default: charm.ini in
-                        simnibs folder)""")
-    parser.add_argument('--noneck', action='store_true', default=False,
-                        help="""Inform the segmentation that there's no neck in the scan.""")
-    parser.add_argument('--inittransform',  help="""Transformation matrix used
-                        to initialize the affine registration of the MNI
-                        template to the subject MRI, i.e., it takes the MNI
-                        template *to* subject space. Supplied as a path to a
-                        space delimited .txt file containing a 4x4
-                        transformation matrix (default = None).""")
-    parser.add_argument('--forceqform', action='store_true', default=False,
-                        help="""Replace sform with qform.""")
-    parser.add_argument('--forcesform', action='store_true', default=False,
-                        help="""Replace qform with sform. Note: strips shears.""")
-    parser.add_argument('--usetransform',  help="""Transformation matrix used
-                        instead of doing affine registration of the MNI
-                        template to the subject MRI, i.e., it takes the MNI
-                        template *to* subject space. Supplied as a path to a
-                        space delimited .txt file containing a 4x4
-                        transformation matrix (default = None).""")
-    parser.add_argument('--debug', action='store_true', default=False,
-        help="""Write results from intermediate steps to disk.""")
-    args=parser.parse_args(argv)
+    args = parser.parse_args(argv)
 
     # subID is required, otherwise print help and exit (-v and -h handled by parser)
     if args.subID is None:
@@ -121,7 +86,6 @@ MANUAL EDITING:
         exit()
 
     return args
-
 
 
 def main():
@@ -169,6 +133,9 @@ def main():
                    args.inittransform, args.usetransform, args.forceqform, args.forcesform,
                    " ".join(sys.argv[1:]), args.debug)
 
+    # mesh vs mesh_image
+    # options_str = " ".join(sys.argv[1:])
+    # charm_main.run(**args.__dict__, options_str=options_str)
 
 if __name__ == '__main__':
     main()
