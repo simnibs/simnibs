@@ -695,6 +695,12 @@ class Elements:
         s += 'node list: {0}'.format(self.node_number_list)
         return s
 
+
+def make_surface_mesh(vertices, faces):
+    """Convenience function for constructing a triangulated surface mesh. """
+    return Msh(Nodes(vertices), Elements(faces))
+
+
 class Msh:
     """class to handle the meshes.
     Gathers Nodes, Elements and Data
@@ -5199,7 +5205,7 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
                     m.elm.node_number_list[current_element:current_element+nr] = tmp[:, 3:]
                     read[current_element:current_element+nr] = 1
-                
+
                 elif elm_type == 15:
                     tmp = np.fromfile(f, 'int32', nr * 4).reshape(-1, 4)
 
@@ -6051,7 +6057,7 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
     fn: str
         File name
     apply_transform : bool, optional
-        Apply transformation from Vertex RAS to Scanner RAS. 
+        Apply transformation from Vertex RAS to Scanner RAS.
         This is needed when importing surfaces created by Freesurfer to align Freesurfer surfaces with SimNIBS head models, by default False
 
     Returns
@@ -6068,10 +6074,7 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
     if apply_transform:
         vertex_coords = vertex_coords + meta['cras']
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertex_coords)
-    return msh
+    return make_surface_mesh(vertex_coords, faces + 1)
 
 def write_freesurfer_surface(msh, fn, write_standard_header : bool = True):
     ''' Writes a FreeSurfer surface
@@ -6128,12 +6131,9 @@ def read_gifti_surface(fn):
         mesh structure with geometrical information
     '''
     s = nibabel.load(fn)
-    faces = s.get_arrays_from_intent('NIFTI_INTENT_TRIANGLE')[0].data
-    nodes = s.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].data
-    msh = Msh()
-    msh.elm = Elements(triangles=np.array(faces + 1, dtype=int))
-    msh.nodes = Nodes(np.array(nodes, dtype=float))
-    return msh
+    faces = np.array(s.get_arrays_from_intent('NIFTI_INTENT_TRIANGLE')[0].data, dtype=int)
+    nodes = np.array(s.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].data, dtype=float)
+    return make_surface_mesh(nodes, faces + 1)
 
 def write_gifti_surface(msh, fn, ref_image=None):
     ''' Writes mesh surfaces as a gifti file
@@ -6311,10 +6311,7 @@ def read_stl(fn):
     vertices = mesh_flat[uidx[q]]
     faces = np.argsort(q)[iidx].reshape(-1, 3)
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertices)
-    return msh
+    return make_surface_mesh(vertices, faces+1)
 
 
 def read_off(fn):
@@ -6349,10 +6346,7 @@ def read_off(fn):
         faces = np.fromfile(f, dtype=int, count=4*n_faces, sep=' ')
         faces = faces.reshape(n_faces, 4)[:, 1:]
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertices)
-    return msh
+    return make_surface_mesh(vertices, faces+1)
 
 def read(fn):
     """Read a mesh from disk. Reads gii,[ mesh,] msh, off, stl, and freesurface
