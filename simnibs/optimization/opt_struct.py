@@ -47,7 +47,7 @@ from ..simulation import fem
 from ..utils import cond_utils
 from ..simulation.sim_struct import SESSION, TMSLIST, SimuList, save_matlab_sim_struct, ELECTRODE
 from ..simulation.fem import get_dirichlet_node_index_cog
-from ..simulation.array_layout import create_tdcs_session_from_array
+from ..simulation.array_layout import create_tdcs_session_from_array, CircularArray, ElectrodeArrayPair, ElectrodeArrayPairOpt
 from ..simulation.onlinefem import OnlineFEM, postprocess_e
 from ..mesh_tools import mesh_io, gmsh_view, Msh, surface
 from ..utils import transformations
@@ -2892,7 +2892,15 @@ class TESoptimize():
         self.n_ele_free = [len(ele.electrode_arrays) for ele in self.electrode]
 
         # list containing beta, lambda, alpha for each freely movable array and for each stimulation channel
-        self.electrode_pos = [[np.zeros(3) for _ in range(n_ele_free)] for n_ele_free in self.n_ele_free]
+        # self.electrode_pos = [[np.zeros(3) for _ in range(n_ele_free)] for n_ele_free in self.n_ele_free]
+        self.electrode_pos = [[0 for _ in range(n_ele_free)] for n_ele_free in self.n_ele_free]
+
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
+                if _electrode_array.optimize_alpha:
+                    self.electrode_pos[i_channel_stim][i_array] = np.zeros(3)
+                else:
+                    self.electrode_pos[i_channel_stim][i_array] = np.zeros(2)
 
         # set initial positions
         if self.n_channel_stim > 1 and type(init_pos) is str:
@@ -2954,7 +2962,8 @@ class TESoptimize():
                             ellipsoid=self.ellipsoid)))
 
                 # set initial orientation alpha to zero
-                self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
+                if len(self.electrode_pos[i_channel_stim][i_ele_free]) > 2:
+                    self.electrode_pos[i_channel_stim][i_ele_free][2] = 0.
 
         # compile node arrays
         for _electrode in self.electrode:
@@ -3044,12 +3053,21 @@ class TESoptimize():
         # define gpc parameters for current estimator
         if self.electrode[0].current_estimator is not None:
             if self.electrode[0].current_estimator.method == "gpc":
-                n_max = 0
+                min_idx = 0
+                max_idx = 0
+
                 for i_channel_stim in range(self.n_channel_stim):
+                    for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                        if _electrode_array.optimize_alpha:
+                            max_idx += 3
+                        else:
+                            max_idx += 2
+
                     self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
-                        lb=bounds.lb[n_max:(n_max + self.n_ele_free[i_channel_stim] * 3)],
-                        ub=bounds.ub[n_max:(n_max + self.n_ele_free[i_channel_stim] * 3)])
-                    n_max += self.n_ele_free[i_channel_stim] * 3
+                        lb=bounds.lb[min_idx:max_idx],
+                        ub=bounds.ub[min_idx:max_idx])
+
+                    min_idx = max_idx
 
         # determine initial values
         x0 = self.get_init_vals(bounds=bounds, optimize=self.optimize_init_vals)
@@ -3087,7 +3105,7 @@ class TESoptimize():
 
         # prepare FEM
         self.ofem = OnlineFEM(mesh=self.mesh,
-                              electrode=electrode,
+                              electrode=self.electrode,
                               method="TES",
                               roi=self.roi,
                               anisotropy_type=anisotropy_type,
@@ -3252,6 +3270,18 @@ class TESoptimize():
             lb = np.array([-np.pi / 2, -np.pi, -np.pi] * np.sum(self.n_ele_free))
             ub = np.array([np.pi / 2, np.pi, np.pi] * np.sum(self.n_ele_free))
 
+        # check if optimize_alpha is set for movable electrode_arrays, if not, remove alpha from the bounds
+        i_para = 2
+        idx_alpha_remove = []
+        for i_channel_stim in range(self.n_channel_stim):
+            for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                if not _electrode_array.optimize_alpha:
+                    idx_alpha_remove.append(i_para)
+                i_para += 3
+        lb = np.delete(lb, idx_alpha_remove)
+        ub = np.delete(ub, idx_alpha_remove)
+
+        # TODO: think this works only for one channel_stim right now (HDTES), test with 2 channel stim and adapt
         # add bounds of geometry parameters of electrode (if any)
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim].any_free_geometry:
@@ -3293,22 +3323,8 @@ class TESoptimize():
             para_test_grid_orig = copy.deepcopy(para_test_grid)
 
             for i in range(n_max):
-                # extract electrode positions from optimal parameters
-                electrode_pos = [[] for _ in range(self.n_channel_stim)]
-
-                i_para = 0
-                for i_channel_stim in range(self.n_channel_stim):
-                    for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                        electrode_pos[i_channel_stim].append(para_test_grid[i, i_para:(i_para + 3)])
-                        i_para += 3
-
-                # extract geometrical electrode parameters from test set of parameters and update electrode
-                for i_channel_stim in range(self.n_channel_stim):
-                    if self.electrode[i_channel_stim].any_free_geometry:
-                        n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
-                        self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
-                            para_test_grid[i, i_para:(i_para + n_free_parameters)])
-                        i_para += n_free_parameters
+                # transform electrode pos from array to list of list
+                electrode_pos = self.get_electrode_pos_from_array(para_test_grid[i, :])
 
                 # test position
                 node_idx_dict = self.get_nodes_electrode(electrode_pos=electrode_pos)
@@ -3321,12 +3337,17 @@ class TESoptimize():
                     i_para = 0
                     for i_channel_stim in range(self.n_channel_stim):
                         for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                            if self.electrode[i_channel_stim].electrode_arrays[i_ele_free].optimize_alpha:
+                                i_para_increment = 3
+                            else:
+                                i_para_increment = 2
+
                             if electrode_pos_valid[i_channel_stim][i_ele_free] is not None:
-                                para_test_grid[i:, i_para:(i_para + 3)] = electrode_pos_valid[i_channel_stim][
+                                para_test_grid[i:, i_para:(i_para + i_para_increment)] = electrode_pos_valid[i_channel_stim][
                                     i_ele_free]
                             else:
-                                para_test_grid[:, i_para:(i_para + 3)] = para_test_grid_orig[:, i_para:(i_para + 3)]
-                            i_para += 3
+                                para_test_grid[:, i_para:(i_para + i_para_increment)] = para_test_grid_orig[:, i_para:(i_para + i_para_increment)]
+                            i_para += i_para_increment
                 else:
                     valid = True
 
@@ -3340,6 +3361,49 @@ class TESoptimize():
 
         return np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
 
+    def get_electrode_pos_from_array(self, electrode_pos_array):
+        """
+        Transforms an electrode_pos in array (1D) format to a list [n_channel_stim] of list [n_electrode_arrays] of
+        numpy arrays (2 or 3, i.e. with or without alpha optimization).
+        Changes electrode geometry in place in self.electrode in case of geometrical optimization.
+
+        Parameters:
+        -----------
+        electrode_pos_array : np.array of float
+            Electrode position in array format
+
+        Returns
+        -------
+        electrode_pos : list of list of np.ndarray of float [2 or 3] of length [n_channel_stim][n_ele_free]
+            Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
+                      electrode array 1                        electrode array 2
+            [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
+        """
+
+        # extract electrode positions from optimal parameters
+        electrode_pos = [[] for _ in range(self.n_channel_stim)]
+
+        i_para = 0
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+                if self.electrode[i_channel_stim].electrode_arrays[i_ele_free].optimize_alpha:
+                    i_para_increment = 3
+                else:
+                    i_para_increment = 2
+                electrode_pos[i_channel_stim].append(electrode_pos_array[i_para:(i_para + i_para_increment)])
+                i_para += i_para_increment
+
+        # TODO: same here I think it only works for one channel_stim
+        # extract geometrical electrode parameters from optimal parameters and update electrode
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim].any_free_geometry:
+                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+                self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
+                    electrode_pos_array[i_para:(i_para + n_free_parameters)])
+                i_para += n_free_parameters
+
+        return electrode_pos
+
     def get_nodes_electrode(self, electrode_pos):
         """
         Assigns the skin points of the electrodes in electrode array and writes the points in
@@ -3348,7 +3412,7 @@ class TESoptimize():
 
         Parameters
         ----------
-        electrode_pos : list of list of np.ndarray of float [3] of length [n_channel_stim][n_ele_free]
+        electrode_pos : list of list of np.ndarray of float [2 or 3] of length [n_channel_stim][n_ele_free]
             Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
                       electrode array 1                        electrode array 2
             [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
@@ -3394,9 +3458,12 @@ class TESoptimize():
                 a[i_array, :] /= np.linalg.norm(a[i_array, :])
                 b[i_array, :] /= np.linalg.norm(b[i_array, :])
 
-                start_shifted_[i_array, :] = c0 + (
-                            1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_channel_stim][i_array][2]) +
-                                    (b[i_array, :]) * np.sin(electrode_pos[i_channel_stim][i_array][2])))
+                if len(electrode_pos[i_channel_stim][i_array]) > 2:
+                    start_shifted_[i_array, :] = c0 + (
+                                1e-3 * ((a[i_array, :]) * np.cos(electrode_pos[i_channel_stim][i_array][2]) +
+                                        (b[i_array, :]) * np.sin(electrode_pos[i_channel_stim][i_array][2])))
+                else:
+                    start_shifted_[i_array, :] = c0 + 1e-3 * a[i_array, :]
 
                 cy[i_channel_stim][i_array, :] = start_shifted_[i_array, :] - start[i_array, :]
                 cy[i_channel_stim][i_array, :] /= np.linalg.norm(cy[i_channel_stim][i_array, :])
@@ -3404,7 +3471,10 @@ class TESoptimize():
                 cx[i_channel_stim][i_array, :] /= np.linalg.norm(cx[i_channel_stim][i_array, :])
 
                 distance.append(_electrode_array.distance)
-                alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
+                if _electrode_array.optimize_alpha:
+                    alpha.append(electrode_pos[i_channel_stim][i_array][2] + _electrode_array.angle)
+                else:
+                    alpha.append(_electrode_array.angle)
 
             distance = np.array(distance).flatten()
             alpha = np.array(alpha).flatten()
@@ -3497,7 +3567,7 @@ class TESoptimize():
                     _electrode.node_area = self.skin_surface.nodes_areas[mask]
 
                     # total effective area of all nodes
-                    _electrode.area_skin = np.sum(_electrode.node_area)
+                    _electrode.area_skin = _electrode.node_area_total
 
                     # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
                     if _electrode.area_skin < 0.90 * _electrode.area:
@@ -3512,7 +3582,7 @@ class TESoptimize():
                     _electrode.node_coords = self.skin_surface.nodes[mask]
 
                     # save number of nodes assigned to this electrode
-                    _electrode.n_nodes = len(_electrode.node_idx)
+                    # _electrode.n_nodes = len(_electrode.node_idx)
 
                     node_coords_list[i_array_global].append(_electrode.node_coords)
 
@@ -3564,7 +3634,7 @@ class TESoptimize():
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
-        # estimate optimal electrode currents based on previous simulations
+        # estimate optimal electrode currents from previous simulations
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim].current_estimator is not None:
 
@@ -3686,22 +3756,29 @@ class TESoptimize():
         parameters_str = f"Parameters: {parameters}"
         self.logger.log(20, parameters_str)
 
-        # extract electrode positions from parameters
-        self.electrode_pos = [[] for _ in range(self.n_channel_stim)]
+        # transform electrode pos from array to list of list
+        self.electrode_pos = self.get_electrode_pos_from_array(parameters)
 
-        i_para = 0
-        for i_channel_stim in range(self.n_channel_stim):
-            for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                self.electrode_pos[i_channel_stim].append(parameters[i_para:(i_para + 3)])
-                i_para += 3
-
-        # extract geometrical electrode parameters from optimal parameters and update electrode
-        for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].any_free_geometry:
-                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
-                self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
-                    parameters[i_para:(i_para + n_free_parameters)])
-                i_para += n_free_parameters
+        # # extract electrode positions from parameters
+        # self.electrode_pos = [[] for _ in range(self.n_channel_stim)]
+        #
+        # i_para = 0
+        # for i_channel_stim in range(self.n_channel_stim):
+        #     for i_ele_free in range(self.n_ele_free[i_channel_stim]):
+        #         if self.electrode[i_channel_stim].electrode_arrays[i_ele_free].optimize_alpha:
+        #             i_para_increment = 3
+        #         else:
+        #             i_para_increment = 2
+        #         self.electrode_pos[i_channel_stim].append(parameters[i_para:(i_para + i_para_increment)])
+        #         i_para += i_para_increment
+        #
+        # # extract geometrical electrode parameters from optimal parameters and update electrode
+        # for i_channel_stim in range(self.n_channel_stim):
+        #     if self.electrode[i_channel_stim].any_free_geometry:
+        #         n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+        #         self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
+        #             parameters[i_para:(i_para + n_free_parameters)])
+        #         i_para += n_free_parameters
 
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
@@ -3931,22 +4008,8 @@ class TESoptimize():
                               options={"finite_diff_rel_step": 0.01})
             self.logger.log(20, f"Optimization finished! Best electrode position: {result.x}")
 
-        # extract electrode positions from optimal parameters
-        self.electrode_pos_opt = [[] for _ in range(self.n_channel_stim)]
-
-        i_para = 0
-        for i_channel_stim in range(self.n_channel_stim):
-            for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-                self.electrode_pos_opt[i_channel_stim].append(result.x[i_para:(i_para + 3)])
-                i_para += 3
-
-        # extract geometrical electrode parameters from optimal parameters and update electrode
-        for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].any_free_geometry:
-                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
-                self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
-                    result.x[i_para:(i_para + n_free_parameters)])
-                i_para += n_free_parameters
+        # transform electrode pos from array to list of list
+        self.electrode_pos_opt = self.get_electrode_pos_from_array(result.x)
 
         fopt = result.fun
         nfev = result.nfev
@@ -4112,7 +4175,17 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
                 f.write(f"Array {i}:\n")
                 f.write(f"\tbeta:   {sep(p[0])}{p[0]:.3f}\n")
                 f.write(f"\tlambda: {sep(p[1])}{p[1]:.3f}\n")
-                f.write(f"\talpha:  {sep(p[2])}{p[2]:.3f}\n")
+                if len(p) > 2:
+                    f.write(f"\talpha:  {sep(p[2])}{p[2]:.3f}\n")
+                else:
+                    f.write(f"\talpha:  {sep(0.000)}{0.000}\n")
+
+                if type(electrode[i_stim]) is CircularArray:
+                    f.write(f"\tradius_inner:  {sep(electrode[i_stim].radius_inner)}{electrode[i_stim].radius_inner}\n")
+                    f.write(f"\tradius_outer:  {sep(electrode[i_stim].radius_outer)}{electrode[i_stim].radius_outer}\n")
+                    f.write(f"\tdistance:  {sep(electrode[i_stim].distance)}{electrode[i_stim].distance}\n")
+                    f.write(f"\tn_outer:  {sep(electrode[i_stim].n_outer)}{electrode[i_stim].n_outer}\n")
+
         f.write(f"\n")
         f.write(f"Subject space (Cartesian coordinates):\n")
         f.write(f"--------------------------------------\n")
@@ -4202,13 +4275,23 @@ def save_optimization_results(fname, optimizer, optimizer_options, fopt, fopt_be
             f.create_dataset(data=electrode[i_stim].length_y, name=f"electrode/channel_{i_stim}/length_y")
             f.create_dataset(data=electrode[i_stim].current, name=f"electrode/channel_{i_stim}/current")
 
+            if type(electrode[i_stim]) is CircularArray:
+                f.create_dataset(data=electrode[i_stim].radius_inner, name=f"electrode/channel_{i_stim}/radius_inner")
+                f.create_dataset(data=electrode[i_stim].radius_outer, name=f"electrode/channel_{i_stim}/radius_outer")
+                f.create_dataset(data=electrode[i_stim].distance, name=f"electrode/channel_{i_stim}/distance")
+                f.create_dataset(data=electrode[i_stim].n_outer, name=f"electrode/channel_{i_stim}/n_outer")
+
             for i_array, _electrode_array in enumerate(electrode[i_stim].electrode_arrays):
                 f.create_dataset(data=popt[i_stim][i_array][0],
                                  name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/beta")
                 f.create_dataset(data=popt[i_stim][i_array][1],
                                  name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/lambda")
-                f.create_dataset(data=popt[i_stim][i_array][2],
-                                 name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/alpha")
+                if len(popt[i_stim][i_array]) > 2:
+                    f.create_dataset(data=popt[i_stim][i_array][2],
+                                     name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/alpha")
+                else:
+                    f.create_dataset(data=0.0,
+                                     name=f"electrode/channel_{i_stim}/popt/electrode_array_{i_array}/alpha")
 
                 for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
                     f.create_dataset(data=_electrode.posmat,

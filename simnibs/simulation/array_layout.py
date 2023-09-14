@@ -204,10 +204,20 @@ class Electrode():
         Electrode extension in x-direction (rectangular electrode), None in case of circular electrodes (in mm)
     length_y : float, optional, default: None
         Electrode extension in y-direction (rectangular electrode), None in case of circular electrodes (in mm)
-    current : float, optional, default: None
+    ele_current : float, optional, default: None
         Current assigned to electrode
-    voltage : float, optional, default: None
+    ele_voltage : float, optional, default: None
         Voltage assigned to electrode
+    node_current : np.ndarray of float [n_points]
+        Associated current of nodes
+    node_voltage : float, optional, default: None
+        Associated voltages of nodes
+    node_area : np.ndarray of float [n_points]
+        Associated area of the nodes
+    node_idx : np.ndarray of int [n_nodes]
+        Node indices assigned to electrode on subject skin surface (referring to global mesh)
+    node_coords : np.ndarray of int [n_nodes x 3]
+        Node coordinates assigned to electrode on subject skin surface
 
     Attributes
     ----------
@@ -239,10 +249,8 @@ class Electrode():
         Node indices assigned to electrode on subject skin surface (referring to global mesh)
     node_coords : np.ndarray of int [n_nodes x 3]
         Node coordinates assigned to electrode on subject skin surface
-    current : float, optional, default: None
-        Current assigned to electrode
-    voltage : float, optional, default: None
-        Voltage assigned to electrode
+    node_voltage : float, optional, default: None
+        Associated voltages of nodes
     type : str
         Type of electrode ("spherical", "rectangular")
     """
@@ -371,7 +379,7 @@ class Electrode():
 
             # set ele current according to the node area
             if self.node_area is not None and len(self.node_area) == len(value):
-                self._ele_current = np.sum(value * self.node_area / self.node_area_total)
+                self._ele_current = np.sum(value)
         else:
             self._node_current = None
 
@@ -399,8 +407,8 @@ class Electrode():
             self._node_voltage = value
 
             # also set ele voltage (average voltage over all nodes)
-            if self.node_area is not None:
-                self._ele_voltage = np.sum(value * self.node_area / self.node_area_total)
+            # if self.node_area is not None:
+            self._ele_voltage = np.mean(value)  # * self.node_area / self.node_area_total)
         else:
             self._node_voltage = None
 
@@ -417,6 +425,7 @@ class Electrode():
             self.node_area_total = np.sum(value)
             self.n_nodes = len(value)
 
+            # update node currents
             if self._node_current is None or len(self.node_current) != len(value):
                 self._node_current = self.ele_current * self.node_area / self.node_area_total
 
@@ -520,6 +529,9 @@ class ElectrodeArray():
         Angle between connection line electrodes <-> array center and principal direction axis of array (0, 1, 0)
     electrode_pos : np.ndarray of float [3]
         Position and orientation of electrode array in ellipsoidal coordinates [beta, lambda, alpha]
+    optimize_alpha : bool
+        Flag to indicate if rotation angle of electrode array is also optimized. Generally yes but in case of single
+        circular electrodes, the angle will not be optimized.
     """
 
     def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
@@ -590,6 +602,12 @@ class ElectrodeArray():
                                              length_x=self.length_x[i_ele],
                                              length_y=self.length_y[i_ele],
                                              ele_current=self.current[i_ele]))
+
+        # check if only one spherical electrode is present, if yes, do not optimize rotation angle
+        if len(self.electrodes) == 1 and self.electrodes[0].type == "spherical":
+            self.optimize_alpha = False
+        else:
+            self.optimize_alpha = True
 
     def transform(self, transmat):
         """
@@ -1173,7 +1191,7 @@ class CircularArray(ElectrodeMaster):
 
         self.n_ele = self.n_outer + 1
         self.ele_id = np.arange(self.n_ele)
-        self.current = np.hstack((1, -1 / (self.n_ele - 1) * np.ones(self.n_ele - 1)))
+        self.current = np.hstack((self.current_total, -self.current_total / (self.n_ele - 1) * np.ones(self.n_ele - 1)))
 
         if self.radius_outer is None:
             self.radius_outer = self.radius_inner

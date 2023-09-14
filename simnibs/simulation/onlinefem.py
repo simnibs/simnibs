@@ -411,7 +411,7 @@ class OnlineFEM:
         b = self.set_rhs(electrode=electrode)
 
         th_maxrelerr = 0.01
-        th_wrong_current_sign = 0.01
+        th_wrong_current_sign = 0.02
 
         maxiter = 1000
 
