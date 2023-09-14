@@ -277,3 +277,146 @@ def test_segmentation(tmpdir, testcube_nii, testcubenoise_nii, testcubeatlas_pat
     dice = _calc_dice(orig_cube.get_fdata()==1, est_cube.get_fdata()==1)
     print("Dice score: "+str(dice))
     assert dice > 0.95
+
+
+def test_update_labeling_from_cortical_surfaces_():
+    """Currently, this does not test the CSF/bone protection (from being
+    labeled gray matter).
+    """
+
+    # I do this in 2D so that I can plot it and see that it actually makes sense
+    shape = np.array([51,51])
+    protect = {
+        "gm_to_csf": [10],
+        "wm_to_gm": [11],
+        "gm_to_wm": [12],
+        "csf_to_gm": [13]
+    }
+    tissue_mapping = {"WM": 1, "GM": 2, "CSF": 3, "Compact_bone": 4, "Spongy_bone": 5}
+
+    # For making segmentation and protection regions
+    center = np.array((shape-1)/2, dtype=int)
+    max_dist = np.sqrt(np.sum(center**2))
+    radius = dict(
+        white=0.5*max_dist, pial=0.6*max_dist, csf=0.7*max_dist, bone=0.8*max_dist
+    )
+    grid = np.meshgrid(*[np.arange(-c, c+1) for c in center])
+    grid = np.array(grid)
+    dist_to_center = np.linalg.norm(grid, axis=0)
+
+    # make segmentation
+    sm_labeling = np.zeros(shape, dtype=int)
+    sm_labeling[dist_to_center <= radius["bone"]] = tissue_mapping["Compact_bone"]
+    sm_labeling[dist_to_center <= radius["csf"]] = tissue_mapping["CSF"]
+    sm_labeling[dist_to_center <= radius["pial"]] = tissue_mapping["GM"]
+    sm_labeling[dist_to_center <= radius["white"]] = tissue_mapping["WM"]
+
+    # make surface masks
+    wm_surf_mask = dist_to_center <= radius["white"]
+    gm_surf_mask = dist_to_center <= radius["pial"]
+
+    # create some regions which need protection
+    protect_stuff = dist_to_center <= 0.2*max_dist
+
+    x0n = protect_stuff & (grid[0]<0)
+    x1n = protect_stuff & (grid[1]<0)
+    x1p = protect_stuff & (grid[1]>0)
+
+    wm_outside_white = np.zeros(shape, dtype=bool)
+    wm_outside_white[:4, -4:] = True
+    gm_outside_pial = np.zeros(shape, dtype=bool)
+    gm_outside_pial[:4, :4] = True
+
+    gm_inside_white = x0n & x1n # e.g., subcortical
+    csf_inside_gray = x0n & x1p # e.g., ventricle
+
+    # labels should map correctly to `protect`!
+    fs_labeling = np.zeros_like(sm_labeling)
+    fs_labeling[gm_outside_pial] = 10 # gm to csf
+    fs_labeling[wm_outside_white] = 11 # wm to gm
+    fs_labeling[gm_inside_white] = 12 # gm to wm
+    fs_labeling[csf_inside_gray] = 13 # csf to gm
+
+    sm_labeling_clean = sm_labeling.copy()
+
+    sm_labeling = sm_labeling.ravel()
+
+    # add some noise
+    rng = np.random.default_rng(seed=0)
+    x = rng.permutation(np.where(sm_labeling == 1)[0])
+    wrong_wm_as_gm = x[:100]
+    x = rng.permutation(np.where(sm_labeling == 2)[0])
+    wrong_gm_as_wm = x[:100]
+    x = rng.permutation(np.where(sm_labeling == 3)[0])
+    wrong_csf_as_gm = x[:100]
+    x = rng.permutation(np.where(sm_labeling == 2)[0])
+    wrong_gm_as_csf = x[:100]
+
+    sm_labeling[wrong_wm_as_gm] = tissue_mapping["GM"]
+    sm_labeling[wrong_gm_as_wm] = tissue_mapping["WM"]
+    sm_labeling[wrong_csf_as_gm] = tissue_mapping["GM"]
+    sm_labeling[wrong_gm_as_csf] = tissue_mapping["CSF"]
+
+    # back to image shape
+    sm_labeling = sm_labeling.reshape(shape)
+    fs_labeling = fs_labeling.reshape(shape)
+
+    # set the stuff which needs to be protected
+    sm_labeling[wm_outside_white] = tissue_mapping["WM"]
+    sm_labeling[gm_outside_pial] = tissue_mapping["GM"]
+    sm_labeling[gm_inside_white] = tissue_mapping["GM"]
+    sm_labeling[csf_inside_gray] = tissue_mapping["CSF"]
+
+    sm_labeling_clean[wm_outside_white] = tissue_mapping["WM"]
+    sm_labeling_clean[gm_outside_pial] = tissue_mapping["GM"]
+    sm_labeling_clean[gm_inside_white] = tissue_mapping["GM"]
+    sm_labeling_clean[csf_inside_gray] = tissue_mapping["CSF"]
+
+    sm_labeling_orig = sm_labeling.copy()
+
+    charm_utils.update_labeling_from_cortical_surfaces_(
+        sm_labeling, fs_labeling, wm_surf_mask, gm_surf_mask, protect, tissue_mapping
+    )
+    with_protect = sm_labeling
+
+    sm_labeling = sm_labeling_orig.copy()
+
+    # no protection
+    protect = {"gm_to_csf": [], "wm_to_gm": [], "gm_to_wm": [], "csf_to_gm": []}
+    charm_utils.update_labeling_from_cortical_surfaces_(
+        sm_labeling, fs_labeling, wm_surf_mask, gm_surf_mask, protect, tissue_mapping
+    )
+    without_protect = sm_labeling
+    sm_labeling = sm_labeling_orig.copy()
+
+    # (1) Check protection
+
+    # labels remain due to protection
+    assert np.all(with_protect[gm_outside_pial] == tissue_mapping["GM"])
+    assert np.all(with_protect[wm_outside_white] == tissue_mapping["WM"])
+    assert np.all(with_protect[gm_inside_white] == tissue_mapping["GM"])
+    assert np.all(with_protect[csf_inside_gray] == tissue_mapping["CSF"])
+
+    # labels changed due to lack of protection
+    assert np.all(without_protect[gm_outside_pial] == tissue_mapping["CSF"])
+    assert np.all(without_protect[wm_outside_white] == tissue_mapping["GM"])
+    assert np.all(without_protect[gm_inside_white] == tissue_mapping["WM"])
+    # this one is actually still okay because it is compared in the white
+    # matter surface mask!
+    assert np.all(without_protect[csf_inside_gray] == tissue_mapping["CSF"])
+
+    # (2) Check cleaning with protection
+    comp = with_protect == sm_labeling_clean
+
+    # Errors due to the morphological operations on the masks...
+    # these are due to the opening (smoothing) of, in this case, the gray
+    # matter surface mask
+    OK_error1 = (10,10,40), (10,40,40)
+    # these are due to the dilation of, in this case, the "protection" masks
+    OK_error2 = (17, 22, 24, 25), (23, 18, 25, 19)
+    OK_error_img = np.zeros_like(comp)
+    OK_error_img[OK_error1] = True
+    OK_error_img[OK_error2] = True
+
+    # the correction worked, except for a few placed
+    assert np.all(comp | OK_error_img)

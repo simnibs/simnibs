@@ -1,25 +1,25 @@
-#import logging
 import os
 import shutil
 import nibabel as nib
+import nibabel.processing
 import numpy as np
+import numpy.typing as npt
 from functools import partial
 from scipy import ndimage
 from scipy.ndimage import gaussian_filter, binary_dilation, binary_erosion, binary_fill_holes, binary_opening
 from scipy.ndimage import affine_transform
 from scipy.ndimage import label
 from scipy.io import loadmat
-#import tempfile
 
 from . import samseg
 from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
-#from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.transformations import resample_vol, volumetric_affine
-#from ..utils.spawn_process import spawn_process
-#from ..mesh_tools.mesh_io import read_off, write_off
+from simnibs.utils.file_finder import SubjectFiles
+
+from simnibs.mesh_tools.mesh_io import load_subject_surfaces
 
 
 def _register_atlas_to_input_affine(
@@ -862,6 +862,129 @@ def _open_sulci(
     ] = tissue_labels["CSF"]
 
     return label_img
+
+
+def update_labeling_from_cortical_surfaces(
+        m2m: SubjectFiles,
+        protect: dict[str, npt.ArrayLike],
+        tissue_mapping: dict[str, int],
+    ):
+    """
+
+    Generate a gray matter mask based on the estimated pial surfaces and use
+    this to update the gray matter segmentation by relabeling to CSF all voxels
+    labeled as gray matter but which are not inside the pial surface.
+
+    To avoid relabeling subcortical structures and cerebellum, we add these to
+    the gray matter mask as well.
+
+
+    Parameters
+    ----------
+    m2m : SubjectFiles
+        SubjectFiles object of the subject directory.
+    protect : dict
+        The following keys are required (as strings)
+            gm_to_csf
+                Tissues to protect when relabeling gray matter outside pial
+                surface to CSF
+            wm_to_gm
+                Tissues to protect when relabeling white matter outside white
+                matter surface to gray matter.
+            gm_to_wm
+                Tissues to protect when relabeling gray matter inside white
+                matter surface to white matter.
+            csf_to_gm
+                Tissues to protect when relabeling CSF inside pial surface to
+                gray matter.
+    tissue_mapping : dict
+        The mapping of SimNIBS tissue names to numbers.
+    """
+    # SimNIBS label image (to update)
+    sm_label_img = nib.load(m2m.tissue_labeling_upsampled)
+    sm_label_data = np.asanyarray(sm_label_img.dataobj)
+
+    # full SAMSEG labeling image (used to protect)
+    fs_label_img = nib.load(m2m.labeling)
+    fs_label_img = nibabel.processing.resample_from_to(
+        fs_label_img, sm_label_img, order=0
+    )
+    fs_label_data = np.asanyarray(fs_label_img.dataobj)
+
+    # Rasterize surface masks
+    white = load_subject_surfaces(m2m, "white")
+    white = white["lh"].join_mesh(white["rh"])
+    white_surf_mask = mask_from_surface(
+        white.nodes[:], white.elm[:,:3]-1, sm_label_img.affine, sm_label_img.shape
+    )
+    pial = load_subject_surfaces(m2m, "pial")
+    pial = pial["lh"].join_mesh(pial["rh"])
+    pial_surf_mask = mask_from_surface(
+        pial.nodes[:], pial.elm[:,:3]-1, sm_label_img.affine, sm_label_img.shape
+    )
+
+    # Update using morphological operations
+    sm_label_data = update_labeling_from_cortical_surfaces_(
+        sm_label_data,
+        fs_label_data,
+        white_surf_mask,
+        pial_surf_mask,
+        protect,
+        tissue_mapping,
+    )
+
+    # overwrite original image
+    sm_label_img_updated = nib.Nifti1Image(sm_label_data, sm_label_img.affine)
+    sm_label_img_updated.to_filename(m2m.tissue_labeling_upsampled)
+
+
+def update_labeling_from_cortical_surfaces_(
+        sm_labeling, fs_labeling, wm_surf_mask, gm_surf_mask, protect, tissue_mapping
+    ):
+    ndim = sm_labeling.ndim
+
+    # (1) Build masks
+
+    # cortical WM mask
+    wm_surf_mask = mrph.binary_opening(wm_surf_mask, iterations=1)
+
+    wm_extra_mask = np.isin(fs_labeling, protect["wm_to_gm"])
+    wm_extra_mask = mrph.binary_dilation(wm_extra_mask, iterations=2)
+
+    # cortical GM mask
+    gm_surf_mask = mrph.binary_opening(gm_surf_mask, iterations=1)
+
+    gm_extra_mask = np.isin(fs_labeling, protect["gm_to_csf"])
+    gm_extra_mask = mrph.binary_dilation(gm_extra_mask, iterations=2)
+
+    # relabel GM inside of white surfaces to WM
+    # structures to protect from becoming WM (subcortical structures, cerebellum)
+    wm_ignore_mask = np.isin(fs_labeling, protect["gm_to_wm"])
+    wm_ignore_mask = mrph.binary_dilation(wm_ignore_mask, iterations=2)
+
+    # Ensure a layer of CSF
+    bone = np.isin(sm_labeling, (tissue_mapping["Compact_bone"], tissue_mapping["Spongy_bone"]))
+    se = ndimage.generate_binary_structure(ndim, ndim)
+    dilated_bone = mrph.binary_dilation(bone, se)
+    csf_mask_shrunk = (sm_labeling == tissue_mapping["CSF"]) & ~dilated_bone
+    csf_ignore_mask = np.isin(fs_labeling, protect["csf_to_gm"])
+
+    # (2) Apply
+
+    # GM to CSF
+    replace = (sm_labeling == tissue_mapping['GM']) & ~(gm_surf_mask | gm_extra_mask)
+    sm_labeling[replace] = tissue_mapping['CSF']
+    # WM to GM
+    replace = (sm_labeling == tissue_mapping['WM']) & ~(wm_surf_mask | wm_extra_mask)
+    sm_labeling[replace] = tissue_mapping['GM']
+    # GM to WM
+    replace = (sm_labeling == tissue_mapping['GM']) & wm_surf_mask & ~wm_ignore_mask
+    sm_labeling[replace] = tissue_mapping['WM']
+    # CSF to GM
+    replace = csf_mask_shrunk & gm_surf_mask & ~wm_surf_mask & ~csf_ignore_mask
+    sm_labeling[replace] = tissue_mapping["GM"]
+
+    return sm_labeling
 
 
 def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
