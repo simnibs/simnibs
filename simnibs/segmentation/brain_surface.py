@@ -1328,8 +1328,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     Psphere=os.path.join(surffolder,actualsurf+'.sphere.gii')
     Pspherereg=os.path.join(surffolder,actualsurf+'.sphere.reg.gii')
 
-    Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.freesurfer.gii')
-    Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.freesurfer.gii')
+    Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.gii')
+    Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.gii')
 
     # if debug:
         # Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
