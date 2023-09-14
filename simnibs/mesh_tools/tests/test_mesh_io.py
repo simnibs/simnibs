@@ -2022,5 +2022,4 @@ class TestAABBTree:
         assert(insideidx==[0,2])
         assert(tree.any_point_inside(np.array(((0,0,0),(50,30,25)))))
         assert(tree.any_point_inside(np.array((50,30,25))==False))
-        tree.__del__()
         del tree
