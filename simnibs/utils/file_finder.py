@@ -178,7 +178,7 @@ def get_atlas(atlas_name, hemi="both"):
 
     if hemi in ["lh", "rh"]:
         fn_atlas = os.path.join(
-            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.freesurfer.annot"
+            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.annot"
         )
         labels, _, names = nibabel.freesurfer.io.read_annot(fn_atlas)
         atlas = {}
@@ -210,10 +210,10 @@ def get_reference_surf(
 
     Parameters
     -----------
-    region: 'lh', 'rh', 'lc' or 'rc'
-        Name of the region of interest
-    surf_type: 'central', 'sphere', 'inflated' (optional)
-        Surface type. Default: central
+    region: str
+        Name of the region of interest. Valid regions are `lh` and `rh`.
+    surf_type: str
+        Surface type. 'central', 'sphere', 'inflated' Default: central
 
     Returns
     --------
@@ -228,7 +228,7 @@ def get_reference_surf(
     assert resolution in fs_resolutions, f"{resolution} is not a valid fsaverage resolution; please choose one of {fs_resolutions}"
     fn_surf = os.path.join(
         getattr(templates, f"freesurfer_templates{fs_res_mapper[resolution]}"),
-        f"{region}.{surf_type}.freesurfer.gii",
+        f"{region}.{surf_type}.gii",
     )
     if os.path.isfile(fn_surf):
         return fn_surf
@@ -468,6 +468,9 @@ class SubjectFiles:
         self.template_coregistered = os.path.join(
             self.segmentation_folder, "template_coregistered.mgz"
         )
+        self.t1_synth = os.path.join(
+            self.segmentation_folder, "T1_synth.nii.gz"
+        )
 
         # labels
 
@@ -499,7 +502,7 @@ class SubjectFiles:
         self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
         self.surfaces = {s: {h: self.get_surface(h, s) for h in self.hemispheres} for s in self._standard_surfaces}
 
-        self._standard_morph_data = ("thickness", )
+        self._standard_morph_data = tuple() # e.g., "thickness",
         self.morph_data = {d: {h: self.get_morph_data(h, d) for h in self.hemispheres} for d in self._standard_morph_data}
 
         # eeg
