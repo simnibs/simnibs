@@ -227,7 +227,7 @@ def run(
             segment_settings,
             gmm_parameters,
             visualizer,
-            gmm_params_path=sub_files.segmentation_folder if debug else None
+            parameter_filename = os.path.join(sub_files.segmentation_folder, "parameters.p") if debug else None,
         )
 
         # Okay now the parameters have been estimated, and we can segment the

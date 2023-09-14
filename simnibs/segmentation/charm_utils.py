@@ -158,7 +158,7 @@ def _estimate_parameters(
     visualizer,
     user_optimization_options=None,
     user_model_specifications=None,
-    gmm_params_path=None,
+    parameter_filename=None,
 ):
 
     ds_targets = segment_settings["downsampling_targets"]
@@ -229,7 +229,7 @@ def _estimate_parameters(
             % (multiResolutionLevel, item["numberOfIterations"], item["perVoxelCost"])
         )
 
-    return samsegment.saveParametersAndInput(gmm_params_path)
+    return samsegment.saveParametersAndInput(parameter_filename)
 
 
 def _post_process_segmentation(
