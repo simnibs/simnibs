@@ -754,6 +754,18 @@ def _get_largest_components(vol, se, vol_limit=0, num_limit=-1, return_sizes=Fal
 
 def _registerT1T2(fixed_image, moving_image, output_image):
     registerer = samseg.gems.KvlRigidRegistration()
+    # linear interpolation
+    # registerer = samseg.gems.KvlRigidRegistration(
+    #     translationScale=-100.,
+    #     numberOfIterations=100,
+    #     numberOfHistogramBins=50,
+    #     shrinkScales=[2.0, 1.0, 0.0],
+    #     backgroundGrayLevel=0.,
+    #     smoothingSigma=[4.0, 2.0, 0.0],
+    #     useCenterOfMassInitialization=False,
+    #     samplingRate=0.5,
+    #     interpolator="l",
+    # )
     registerer.read_images(fixed_image, moving_image)
     registerer.initialize_transform()
     registerer.register()
