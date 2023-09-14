@@ -339,7 +339,7 @@ def run(
                     write_gifti_surface(mesh, sub_files.get_surface(hemi, surface))
 
             if surface_settings["update_segmentation_from_surfaces"]:
-                logger.info("Updating the segmentation using the reconstructed surfaces")
+                logger.info("Updating the segmentation using the cortical surfaces")
 
                 charm_utils.update_labeling_from_cortical_surfaces(
                     sub_files,
