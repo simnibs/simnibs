@@ -2376,13 +2376,14 @@ class Msh:
         """
         directions = np.zeros_like(pts)
         directions[:,2] = 1
-        idx_inside, _ = self.intersect_ray(pts, directions, AABBTree)
-
-
-        if len(idx_inside):
-            return np.unique(idx_inside[:,0])
-        else:
+        indices, _ = self.intersect_ray(pts, directions, AABBTree)
+        if len(indices) == 0:
             return []
+        else:
+            # unequal number of intersections = inside
+            i,counts = np.unique(indices[:, 0], return_counts=True)
+            return i[counts % 2 != 0]
+
 
     def any_pts_inside_surface(self, pts, AABBTree):
         """
