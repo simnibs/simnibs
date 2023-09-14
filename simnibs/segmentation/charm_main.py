@@ -123,7 +123,7 @@ def run(
         use_transform = _read_transform(use_transform)
 
     _prepare_t1(T1, sub_files.reference_volume, force_qform, force_sform)
-    _prepare_t2(T1, T2, registerT2, sub_files.T2_reg, force_qform, force_sform)
+    _prepare_t2(sub_files.reference_volume, T2, registerT2, sub_files.T2_reg, force_qform, force_sform)
 
     # -------------------------PIPELINE STEPS---------------------------------
     # TODO: denoise T1 here with the sanlm filter, T2 denoised after coreg.
@@ -135,7 +135,7 @@ def run(
     os.makedirs(sub_files.segmentation_folder, exist_ok=True)
 
     if do_denoise:
-        _denoise_inputs(T1, T2, sub_files)
+        _denoise_inputs(sub_files.reference_volume, sub_files.T2_reg, sub_files)
 
     # Set-up samseg related things before calling the affine registration
     # and/or segmentation
@@ -167,7 +167,7 @@ def run(
         # initial affine registration of atlas to input images,
         # including break neck
         logger.info("Starting affine registration and neck correction.")
-        inputT1 = sub_files.T1_denoised if do_denoise else T1
+        inputT1 = sub_files.T1_denoised if do_denoise else sub_files.reference_volume
 
         if use_transform is not None:
             logger.info("Using world-to-world transform provided by user.")
@@ -211,7 +211,7 @@ def run(
         # for further post-processing
         # The bias field kernel size has to be changed based on input
         input_images = []
-        input_images.append(sub_files.T1_denoised if do_denoise else T1)
+        input_images.append(sub_files.T1_denoised if do_denoise else sub_files.reference_volume)
         if os.path.exists(sub_files.T2_reg):
             input_images.append(
                 sub_files.T2_reg_denoised if do_denoise else sub_files.T2_reg
