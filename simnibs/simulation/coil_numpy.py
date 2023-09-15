@@ -8,6 +8,8 @@ import nibabel as nib
 import os
 import re
 
+from scipy.ndimage import map_coordinates
+
 from simnibs.utils.mesh_element_properties import ElementTags
 from .. import __version__
 from ..mesh_tools import mesh_io
@@ -497,7 +499,6 @@ def _calculate_dadt_nifti(msh, nifti_image, coil_matrix, didt, geo_fn):
 
 def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
     ''' This function is also used in the GUI '''
-    from scipy.ndimage import interpolation
     if isinstance(nifti_image, str):
         nifti_image = nib.load(nifti_image)
     elif isinstance(nifti_image, nib.nifti1.Nifti1Image):
@@ -513,7 +514,7 @@ def _get_field(nifti_image, coords, coil_matrix, get_norm=False):
     # Interpolates the values of the field in the given coordinates
     out = np.zeros((3, voxcoords.shape[1]))
     for dim in range(3):
-        out[dim] = interpolation.map_coordinates(
+        out[dim] = map_coordinates(
             np.asanyarray(nifti_image.dataobj)[..., dim],
             voxcoords, order=1
         )

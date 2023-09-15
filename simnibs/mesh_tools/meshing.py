@@ -507,9 +507,9 @@ def _get_elm_and_new_tag(tag, adj_tets, nr_diff, return_diffmat = False):
     adj_labels = adj_labels[adj_diff[idx_elm]].reshape((-1,nr_diff))
     
     if nr_diff == 4:
-        new_tag = scipy.stats.mode(adj_labels, axis=1)[0].flatten()
+        new_tag = scipy.stats.mode(adj_labels, axis=1, keepdims=True)[0].flatten()
     elif nr_diff == 3:
-        new_tag, n_occ = scipy.stats.mode(adj_labels, axis=1)
+        new_tag, n_occ = scipy.stats.mode(adj_labels, axis=1, keepdims=True)
         # ensure that at least 2 neighbors have the same label
         idx_relabel = (n_occ > 1).flatten() 
         idx_elm = idx_elm[idx_relabel]
@@ -579,7 +579,7 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
         # get the node that is shared by the three tet faces facing the different neighbor tets
         faces_elm = tet_faces[idx_elm]
         faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,3))
-        idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1)[0]
+        idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1, keepdims=True)[0]
         if len(idx_node) > 0:
             idx_test_nodes[idx_node] = True
         
@@ -1711,14 +1711,14 @@ def apply_cream_layer(label_img, size_field, distance_field, cream_thickness):
                            [0, 0, 0]]])
     for i in range(cream_thickness):
         mask = label_img > 0
-        mask_dil = scipy.ndimage.morphology.binary_dilation(mask, iterations=1)
+        mask_dil = scipy.ndimage.binary_dilation(mask, iterations=1)
         mask_dil ^= mask
         skin_and_cream_size_field = np.where(label_img == 0, -1, size_field)
         skin_and_cream_distance_field = np.where(label_img == 0, -1, distance_field)
-        size_field[mask_dil] = scipy.ndimage.morphology.grey_dilation(skin_and_cream_size_field, footprint=footprint)[
+        size_field[mask_dil] = scipy.ndimage.grey_dilation(skin_and_cream_size_field, footprint=footprint)[
             mask_dil]
         distance_field[mask_dil] = \
-        scipy.ndimage.morphology.grey_dilation(skin_and_cream_distance_field, footprint=footprint)[mask_dil]
+        scipy.ndimage.grey_dilation(skin_and_cream_distance_field, footprint=footprint)[mask_dil]
         label_img[mask_dil] = ElementTags.CREAM
 
 # def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b, 

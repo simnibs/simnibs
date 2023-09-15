@@ -5,10 +5,9 @@ import nibabel as nib
 import numpy as np
 from functools import partial
 from scipy import ndimage
-import scipy.ndimage.morphology as mrph
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter, binary_dilation, binary_erosion, binary_fill_holes, binary_opening
 from scipy.ndimage import affine_transform
-from scipy.ndimage.measurements import label
+from scipy.ndimage import label
 from scipy.io import loadmat
 #import tempfile
 
@@ -295,9 +294,9 @@ def _clean_brain(label_img, tissues, unass, se, se_n, vol_limit=10):
     # Do some clean-ups, mainly CSF and skull
     # First combine the WM and GM
     brain = (label_img == tissues["WM"]) | (label_img == tissues["GM"])
-    dil = mrph.binary_dilation(
+    dil = binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(brain, se_n, 1), se, vol_limit
+            binary_erosion(brain, se_n, 1), se, vol_limit
         ),
         se,
         1,
@@ -309,9 +308,9 @@ def _clean_brain(label_img, tissues, unass, se, se_n, vol_limit=10):
     csf = label_img == tissues["CSF"]
     brain_csf = brain | csf
     # Vol limit in voxels
-    dil = mrph.binary_dilation(
+    dil = binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(brain_csf, se, 1), se_n, vol_limit=80
+            binary_erosion(brain_csf, se, 1), se_n, vol_limit=80
         ),
         se,
         1,
@@ -333,19 +332,19 @@ def _get_skull(label_img, brain_csf, tissues, se_n, se, num_iter=2, vol_limit=50
     eyes = label_img == tissues["Eyes"]
     # Use scalp to clean out noisy skull bits within the scalp
     skull_outer = brain_csf | bone | veins | air_pockets
-    skull_outer = mrph.binary_fill_holes(skull_outer, se_n)
-    skull_outer = mrph.binary_dilation(
+    skull_outer = binary_fill_holes(skull_outer, se_n)
+    skull_outer = binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(skull_outer, se, num_iter), se_n, vol_limit
+            binary_erosion(skull_outer, se, num_iter), se_n, vol_limit
         ),
         se,
         num_iter,
     )
     skull_inner = bone | scalp | air_pockets | muscle | eyes
-    skull_inner = mrph.binary_fill_holes(skull_inner, se_n)
-    skull_inner = mrph.binary_dilation(
+    skull_inner = binary_fill_holes(skull_inner, se_n)
+    skull_inner = binary_dilation(
         _get_largest_components(
-            mrph.binary_erosion(skull_inner, se, num_iter), se_n, vol_limit
+            binary_erosion(skull_inner, se, num_iter), se_n, vol_limit
         ),
         se,
         num_iter)
@@ -357,8 +356,8 @@ def _get_skull(label_img, brain_csf, tissues, se_n, se, num_iter=2, vol_limit=50
 def _clean_veins(label_img, unass, tissues, se, se_n, num_iter=1, vol_limit=10):
     # Open the veins
     veins = label_img == tissues["Blood"]
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(veins, se, num_iter), se_n, vol_limit),
+    dil = binary_dilation(
+        _get_largest_components(binary_erosion(veins, se, num_iter), se_n, vol_limit),
         se,
         num_iter,
     )
@@ -368,19 +367,19 @@ def _clean_veins(label_img, unass, tissues, se, se_n, num_iter=1, vol_limit=10):
 def _clean_eyes(label_img, unass, tissues, se, se_n, num_iter=1, vol_limit=10):
     # Clean the eyes
     eyes = label_img == tissues["Eyes"]
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(eyes, se, num_iter), se_n, vol_limit),
+    dil = binary_dilation(
+        _get_largest_components(binary_erosion(eyes, se, num_iter), se_n, vol_limit),
         se,
         num_iter,
     )
-    # dil = mrph.binary_opening(eyes, se, 1)
+    # dil = binary_opening(eyes, se, 1)
     unass |= dil ^ eyes
 
 
 def _clean_muscles(label_img, unass, tissues, se, num_iter=1):
     # Clean muscles
     muscle = label_img == tissues["Muscle"]
-    dil = mrph.binary_opening(muscle, se, num_iter)
+    dil = binary_opening(muscle, se, num_iter)
     unass |= dil ^ muscle
 
 
@@ -390,8 +389,8 @@ def _clean_scalp(label_img, unass, skull_outer, tissues, se, se_n, num_iter=2, n
     eyes = label_img == tissues["Eyes"]
     muscle = label_img == tissues["Muscle"]
     head = scalp | skull_outer | eyes | muscle
-    dil = mrph.binary_dilation(
-        _get_largest_components(mrph.binary_erosion(head, se, num_iter), se_n, num_limit),
+    dil = binary_dilation(
+        _get_largest_components(binary_erosion(head, se, num_iter), se_n, num_limit),
         se,
         num_iter,
     )
@@ -408,16 +407,16 @@ def _ensure_csf(label_img, tissues, upper_part, se, num_iter1=1, num_iter2=6):
     S_BONE = label_img == tissues["Spongy_bone"]
     U_SKIN = (label_img == tissues["Scalp"]) & upper_part
 
-    brain_dilated = mrph.binary_dilation(brain_gm, se, num_iter1)
+    brain_dilated = binary_dilation(brain_gm, se, num_iter1)
     overlap = brain_dilated & (C_BONE | S_BONE | U_SKIN)
     label_img[overlap] = tissues["CSF"]
 
     S_BONE = label_img == tissues["Spongy_bone"]
 
     CSF_brain = brain_gm | (label_img == tissues["CSF"])
-    CSF_brain_dilated = mrph.binary_dilation(CSF_brain, se, num_iter1)
+    CSF_brain_dilated = binary_dilation(CSF_brain, se, num_iter1)
     spongy_csf = CSF_brain_dilated & S_BONE
-    upper_part = mrph.binary_erosion(upper_part, se, num_iter2)
+    upper_part = binary_erosion(upper_part, se, num_iter2)
     skin_csf = CSF_brain_dilated & (label_img == tissues["Scalp"]) & upper_part
     label_img[spongy_csf] = tissues["Compact_bone"]
     label_img[skin_csf] = tissues["Compact_bone"]
@@ -427,7 +426,7 @@ def _ensure_skull(label_img, tissues, se, num_iter=1):
     # Ensure the outer skull label is compact bone
     C_BONE = label_img == tissues["Compact_bone"]
     S_BONE = label_img == tissues["Spongy_bone"]
-    SKULL_outer = (C_BONE | S_BONE) & ~mrph.binary_erosion((C_BONE | S_BONE), se, num_iter)
+    SKULL_outer = (C_BONE | S_BONE) & ~binary_erosion((C_BONE | S_BONE), se, num_iter)
     label_img[SKULL_outer] = tissues["Compact_bone"]
     # Relabel air pockets to air
     label_img[label_img == tissues["Air_pockets"]] = 0
@@ -788,16 +787,16 @@ def _fillin_gm_layer(
     an exclusion mask is used to prevent relabelign in central brain regions
     """
     # generate exclusion mask: estimate corpus callossum
-    exclude_img = mrph.binary_dilation(
+    exclude_img = binary_dilation(
         labelorg_img == exclusion_tissues["left_cerebral_wm"], iterations=2
     )
-    exclude_img *= mrph.binary_dilation(
+    exclude_img *= binary_dilation(
         labelorg_img == exclusion_tissues["right_cerebral_wm"], iterations=2
     )
     # add other tissues
     for i in exclusion_tissues["stuff_to_exclude"]:
         exclude_img += labelorg_img == i
-    exclude_img = mrph.binary_dilation(exclude_img, iterations=8)
+    exclude_img = binary_dilation(exclude_img, iterations=8)
     # upsample exclude_img
     iM = np.linalg.inv(labelorg_affine).dot(label_affine)
     exclude_img = affine_transform(
@@ -808,7 +807,7 @@ def _fillin_gm_layer(
     mask = mask_from_surface(
         m.nodes[:], m.elm[:, :3] - 1, label_affine, label_img.shape
     )
-    mask = mrph.binary_dilation(mask, iterations=1) * ~mrph.binary_erosion(
+    mask = binary_dilation(mask, iterations=1) * ~binary_erosion(
         mask, iterations=1
     )
     mask[exclude_img] = 0
@@ -833,10 +832,10 @@ def _open_sulci(
     mask = mask_from_surface(
         m.nodes[:], m.elm[:, :3] - 1, label_affine, label_img.shape
     )
-    # mask2 = mrph.binary_dilation(mask,iterations=4)
-    # mask2 = mrph.binary_erosion(mask2,iterations=5)
-    mask2 = mrph.binary_dilation(mask, iterations=2)
-    mask2 = mrph.binary_erosion(mask2, iterations=3)
+    # mask2 = binary_dilation(mask,iterations=4)
+    # mask2 = binary_erosion(mask2,iterations=5)
+    mask2 = binary_dilation(mask, iterations=2)
+    mask2 = binary_erosion(mask2, iterations=3)
     mask2[mask] = 0
 
     # protect hippocampi and amydalae
@@ -854,8 +853,8 @@ def _open_sulci(
 
     # open up remaining thin GM bridges at brain surface
     mask2 = (label_img == tissue_labels["GM"]) | (label_img == tissue_labels["WM"])
-    # mask2 = mrph.binary_erosion(mask2,iterations=2)
-    # mask2 = mrph.binary_dilation(mask2,iterations=2)
+    # mask2 = binary_erosion(mask2,iterations=2)
+    # mask2 = binary_dilation(mask2,iterations=2)
     # label_img[ (label_img == tissue_labels['GM'])* ~mask2 ] = tissue_labels['CSF']
     brainthickness = _calc_thickness(mask2)
     label_img[
@@ -905,7 +904,7 @@ def _cut_and_combine_labels(fn_tissue_labeling_upsampled, fn_mni_template,
                                   target_space_affine=label_affine,
                                   target_dimensions=label_image.shape,
                                   intorder=0)
-    upperhead = mrph.binary_dilation(upperhead, iterations=n_dil)
+    upperhead = binary_dilation(upperhead, iterations=n_dil)
     label_buffer[~upperhead] = 0
 
     # combine labels

@@ -64,7 +64,7 @@ def _tikhonov(A, b, alpha):
     AtA = A.T.dot(A)
     Atb = A.T.dot(b)
     AtA.flat[::n_features + 1] += alpha
-    return scipy.linalg.solve(AtA, Atb, sym_pos=True,
+    return scipy.linalg.solve(AtA, Atb, assume_a="pos",
                               overwrite_a=True)
 
 

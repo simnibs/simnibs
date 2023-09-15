@@ -294,10 +294,10 @@ class Affine:
             else:
                 head = np.sum(priors[:, :, :, 1:], axis=3)
 
-            centerOfGravityTemplate = np.array( scipy.ndimage.measurements.center_of_mass( head ) ) # in image space
+            centerOfGravityTemplate = np.array( scipy.ndimage.center_of_mass( head ) ) # in image space
 
             centerOfGravityImage = np.array( 
-                scipy.ndimage.measurements.center_of_mass( self.image.getImageBuffer() ) ) # in image space
+                scipy.ndimage.center_of_mass( self.image.getImageBuffer() ) ) # in image space
             tmp = self.getTransformMatrix()
             tmp = tmp @ self.templateImageToWorldTransformMatrix
             centerOfGravityTemplate = tmp[ 0:3, 0:3 ] @ centerOfGravityTemplate + \

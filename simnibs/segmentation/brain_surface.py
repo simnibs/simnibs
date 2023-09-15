@@ -18,8 +18,7 @@ import scipy.sparse
 from scipy.spatial import cKDTree, ConvexHull
 #from scipy.special import erf
 import scipy.ndimage as ndimage
-import scipy.ndimage.morphology as mrph
-from scipy.ndimage.measurements import label
+from scipy.ndimage import label, binary_dilation
 #from subprocess import Popen, PIPE
 import sys
 #from threading import Thread
@@ -1514,7 +1513,7 @@ def dilate(image,n):
     image[nan_inds] = 0
     image = image > 0.5
     se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
-    return mrph.binary_dilation(image,se)>0
+    return binary_dilation(image,se)>0
 
 
 def erosion(image,n):
