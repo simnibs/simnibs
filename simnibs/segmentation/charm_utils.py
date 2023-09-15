@@ -958,26 +958,26 @@ def update_labeling_from_cortical_surfaces_(
     # (1) Build masks
 
     # cortical WM mask
-    wm_surf_mask = mrph.binary_opening(wm_surf_mask, iterations=1)
+    wm_surf_mask = binary_opening(wm_surf_mask, iterations=1)
 
     wm_extra_mask = np.isin(fs_labeling, protect["wm_to_gm"])
-    wm_extra_mask = mrph.binary_dilation(wm_extra_mask, iterations=2)
+    wm_extra_mask = binary_dilation(wm_extra_mask, iterations=2)
 
     # cortical GM mask
-    gm_surf_mask = mrph.binary_opening(gm_surf_mask, iterations=1)
+    gm_surf_mask = binary_opening(gm_surf_mask, iterations=1)
 
     gm_extra_mask = np.isin(fs_labeling, protect["gm_to_csf"])
-    gm_extra_mask = mrph.binary_dilation(gm_extra_mask, iterations=2)
+    gm_extra_mask = binary_dilation(gm_extra_mask, iterations=2)
 
     # relabel GM inside of white surfaces to WM
     # structures to protect from becoming WM (subcortical structures, cerebellum)
     wm_ignore_mask = np.isin(fs_labeling, protect["gm_to_wm"])
-    wm_ignore_mask = mrph.binary_dilation(wm_ignore_mask, iterations=2)
+    wm_ignore_mask = binary_dilation(wm_ignore_mask, iterations=2)
 
     # Ensure a layer of CSF
     bone = np.isin(sm_labeling, (tissue_mapping["Compact_bone"], tissue_mapping["Spongy_bone"]))
     se = ndimage.generate_binary_structure(ndim, ndim)
-    dilated_bone = mrph.binary_dilation(bone, se)
+    dilated_bone = binary_dilation(bone, se)
     csf_mask_shrunk = (sm_labeling == tissue_mapping["CSF"]) & ~dilated_bone
     csf_ignore_mask = np.isin(fs_labeling, protect["csf_to_gm"])
 
