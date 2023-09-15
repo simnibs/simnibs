@@ -7,6 +7,8 @@ import scipy.sparse
 import scipy.ndimage
 import time
 
+from simnibs.utils import transformations
+
 from simnibs.utils.mesh_element_properties import ElementTags
 
 from . import mesh_io
@@ -1438,7 +1440,7 @@ def create_mesh(label_img, affine,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
                 optimize=True, remove_spikes=True, skin_tag=1005,
-                hierarchy=None, smooth_steps=5, skin_care=20, 
+                hierarchy=None, apply_cream=True,  smooth_steps=5, skin_care=20,
                 sizing_field=None, mmg_noinsert=False, debug=False, debug_path="", num_threads=2):
     """Create a mesh from a labeled image.
 
@@ -1499,7 +1501,9 @@ def create_mesh(label_img, affine,
         List of surface tags that determines the order in which triangles 
         are kept for twin pairs (for remove_twins=True). Default for hierarchy=None:
         (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
-        i.e. WM (1) has highest priority, GM (2) comes next, etc; 
+        i.e. WM (1) has highest priority, GM (2) comes next, etc;
+    apply_cream: bool (optional)
+        Whether to apply a cream layer around the outside of the head to remove spikes on the outside of the head
     smooth_steps: int (optional)
         Number of smoothing steps applied to the final mesh surfaces. Default: 5
     skin_care: int (optional)
@@ -1530,6 +1534,9 @@ def create_mesh(label_img, affine,
     if not 'standard' in facet_distances:
         raise ValueError('facet_distances needs a \"standard\" entry')
 
+    if apply_cream:
+        label_img, affine = transformations.pad_vol(label_img, affine, 30)
+
     # Calculate thickness
     logger.info('Calculating tissue thickness')
     start = time.time()
@@ -1549,7 +1556,11 @@ def create_mesh(label_img, affine,
         label_img, thickness, facet_distances
     )
     del thickness
-    
+
+    if apply_cream:
+        logger.info('Applying cream mask')
+        apply_cream_layer(label_img, size_field, distance_field, 20)
+
     # Smooth size field a bit to reduce effect of a few outliers in the thickness
     # map on the mesh; the outliers show up as localized small thickness values at 
     # some of the tissue boundaries
@@ -1565,8 +1576,8 @@ def create_mesh(label_img, affine,
     
     # Control triangle size of outer surface to ensure eletrode meshing works OK
     if skin_facet_size is not None:      
-        boundary = (label_img > 0).astype('int8')
-        boundary = boundary-erosion(boundary,1)
+        boundary = ((label_img > 0) & (label_img != ElementTags.CREAM)).astype('int8')
+        boundary = boundary-erosion(boundary, 1)
         if skin_tag is not None:
             # keep boundary only at regions with label skin_tag-1000
             # to save some tetrahedra
@@ -1579,7 +1590,9 @@ def create_mesh(label_img, affine,
         size_field = size_field.flatten()
         size_field[boundary.flatten()] = skin_facet_size
         size_field = size_field.reshape(label_img.shape)
+        size_field[label_img == ElementTags.CREAM] = skin_facet_size
         del boundary
+
     logger.info(
         'Time to prepare meshing: ' +
         format_time(time.time()-start)
@@ -1589,12 +1602,14 @@ def create_mesh(label_img, affine,
     if sizing_field is not None:
         assert sizing_field.shape == label_img.shape
         size_field[sizing_field>0] = sizing_field[sizing_field>0]
-    
+
     if debug:
         tmp_nii = nib.Nifti1Image(size_field, affine)
         nib.save(tmp_nii, os.path.join(debug_path, 'size_field.nii.gz'))
         tmp_nii = nib.Nifti1Image(distance_field, affine)
         nib.save(tmp_nii, os.path.join(debug_path, 'distance_field.nii.gz'))
+        tmp_nii = nib.Nifti1Image(label_img, affine)
+        nib.save(tmp_nii, os.path.join(debug_path, 'label_img.nii.gz'))
         del tmp_nii
     
     # Run meshing
@@ -1634,6 +1649,12 @@ def create_mesh(label_img, affine,
     # remove spikes from mesh
     if remove_spikes:
         m = _remove_spikes(m, label_img, affine, label_GM=2, label_CSF=3)
+        
+    # Remove cream mask (optional)
+    if apply_cream:
+        logger.info('Remove cream mask')
+        tags_keep = np.setdiff1d(np.unique(m.elm.tag1), ElementTags.CREAM)
+        m = m.crop_mesh(tags=tags_keep)
 
     # keep only largest component
     idx = m.elm.connected_components()
@@ -1643,6 +1664,9 @@ def create_mesh(label_img, affine,
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
     m.reconstruct_unique_surface(hierarchy=hierarchy, add_outer_as=skin_tag)
+
+    if debug:
+        mesh_io.write_msh(m, os.path.join(debug_path, 'before_smooth.msh'))
 
     m = _run_mmg(m, 1, mmg_noinsert)
 
@@ -1673,6 +1697,29 @@ def create_mesh(label_img, affine,
         format_time(time.time()-start)
     )
     return m
+
+
+def apply_cream_layer(label_img, size_field, distance_field, cream_thickness):
+    footprint = np.array([[[0, 0, 0],
+                           [0, 1, 0],
+                           [0, 0, 0]],
+                          [[0, 1, 0],
+                           [1, 1, 1],
+                           [0, 1, 0]],
+                          [[0, 0, 0],
+                           [0, 1, 0],
+                           [0, 0, 0]]])
+    for i in range(cream_thickness):
+        mask = label_img > 0
+        mask_dil = scipy.ndimage.morphology.binary_dilation(mask, iterations=1)
+        mask_dil ^= mask
+        skin_and_cream_size_field = np.where(label_img == 0, -1, size_field)
+        skin_and_cream_distance_field = np.where(label_img == 0, -1, distance_field)
+        size_field[mask_dil] = scipy.ndimage.morphology.grey_dilation(skin_and_cream_size_field, footprint=footprint)[
+            mask_dil]
+        distance_field[mask_dil] = \
+        scipy.ndimage.morphology.grey_dilation(skin_and_cream_distance_field, footprint=footprint)[mask_dil]
+        label_img[mask_dil] = ElementTags.CREAM
 
 # def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b, 
 #                    target_label, labels, nodes_label, adj_th, adj_threshold=2,

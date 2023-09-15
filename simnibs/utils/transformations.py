@@ -1351,35 +1351,45 @@ def crop_vol(vol, affine, mask, thickness_boundary=0):
     new_affine[:3, 3] += affine[:3, :3].dot(bound_box[:, 0])
     return cropped_vol, new_affine, bound_box
 
+def pad_vol(vol, affine, voxel_pad):
+    ''' Pads a volume from vol based on the voxel_pad
+        Also fixes the affine transformation
 
-def paste_vol(vol, target_size, bound_box):
-    ''' Pastes a volume in a larger empty image
+        Parameters
+        ------------
+        vol: 3D np.ndarray
+            Volume to be padded
 
-    Parameters
-    -----------
-    vol: 3D np.ndarray
-        Volume to be pasted
+        Affine: 4x4 np.ndarray
+            Affine transfromation from the original volume to world space
 
-    target_size: tuple
-        Dimensions of the target image
+        voxel_pad: int
+            The number of voxels the volume will be padded with all around
 
-    bound_box: 3x2 ndarray
-        Box indication the position where the volume should be placed
+        Returns
+        ---------
+        padded_vol: 3D np.ndarray
+            Padded volume
 
-    Returns
-    ---------
-    pasted_vol: 3D np.ndarray
-        volume of size target_size with the volume pasted in the positions indicated by
-        the bounding box
-    '''
-    paste_vol = np.zeros(target_size, dtype=vol.dtype)
-    paste_vol[
-        bound_box[0, 0]:bound_box[0, 1] + 1,
-        bound_box[1, 0]:bound_box[1, 1] + 1,
-        bound_box[2, 0]:bound_box[2, 1] + 1
+        new_affine: 4x4 np.ndarray
+            Affine transformation from the padded volume to world space
+        '''
+    padded_shape = (
+        vol.shape[0] + 2 * voxel_pad,
+        vol.shape[1] + 2 * voxel_pad,
+        vol.shape[2] + 2 * voxel_pad
+    )
+    padded_vol = np.zeros(padded_shape, dtype=vol.dtype)
+    padded_vol[
+        voxel_pad:voxel_pad + vol.shape[0],
+        voxel_pad:voxel_pad + vol.shape[1],
+        voxel_pad:voxel_pad + vol.shape[2]
     ] = vol
-    return paste_vol
 
+    new_affine = np.copy(affine)
+    new_affine[:3, 3] = affine[:3, :3] @ [-voxel_pad, -voxel_pad, -voxel_pad] + affine[:3, 3]
+
+    return padded_vol, new_affine
 
 def resample_vol(vol, affine, target_res, order=1, mode='nearest'):
     ''' Change the resolution of the volume
