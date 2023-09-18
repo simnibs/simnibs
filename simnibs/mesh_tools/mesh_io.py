@@ -6666,13 +6666,13 @@ def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     }
 
 
-def load_freesurfer_surfaces(fs_dir, surface: str, coord: str = "surface ras"):
+def load_freesurfer_surfaces(fs_sub, surface: str, coord: str = "surface ras"):
     """Load surfaces from a FreeSurfer subject directory.
 
     Parameters
     ----------
-    fs_dir :
-        FreeSurfer subject directory.
+    fs_sub :
+        FreeSurfer subject object.
     surface : str
         The surface to load.
     coord : str
@@ -6687,5 +6687,4 @@ def load_freesurfer_surfaces(fs_dir, surface: str, coord: str = "surface ras"):
     assert coord in {"ras", "surface ras"}
 
     apply_transform = True if coord == "ras" else False
-    fs_surf_dir = Path(fs_dir) / "surf"
-    return {h: read_freesurfer_surface(fs_surf_dir / f"{h}.{surface}", apply_transform) for h in HEMISPHERES}
+    return {h: read_freesurfer_surface(s, apply_transform) for h,s in fs_sub.get_surfaces(surface).items()}
