@@ -910,7 +910,7 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
         idx_orgtets = np.where( np.any(node_number_list == idx_n1,axis=1) * 
                                 np.any(node_number_list == idx_n2,axis=1) )[0]
         if len(idx_orgtets) == 0:
-            raise ValueError("The two nodes are not connected!")
+            raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
             
         if np.max(tag_org[idx_orgtets]) != np.min(tag_org[idx_orgtets]):
             # this can happen when the 2nd node is part of the "ring" of surface nodes connected to the first node
