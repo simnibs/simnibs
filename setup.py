@@ -292,19 +292,19 @@ petsc_solver = Extension(
 # I separated the CGAL functions into several files for two reasons
 # 1. Reduce memory consumption during compilation in Linux
 # 2. Fix some compilation problems in Windows
-# create_mesh_surf = Extension(
-#     'simnibs.mesh_tools.cgal.create_mesh_surf',
-#     sources=["simnibs/mesh_tools/cgal/create_mesh_surf.pyx"],
-#     depends=["simnibs/mesh_tools/cgal/_mesh_surfaces.cpp"],
-#     language='c++',
-#     include_dirs=cgal_include,
-#     libraries=cgal_libs,
-#     library_dirs=cgal_dirs,
-#     runtime_library_dirs=cgal_runtime,
-#     extra_compile_args=cgal_compile_args,
-#     extra_link_args=cgal_link_args,
-#     define_macros=cgal_mesh_macros
-# )
+create_mesh_surf = Extension(
+    'simnibs.mesh_tools.cgal.create_mesh_surf',
+    sources=["simnibs/mesh_tools/cgal/create_mesh_surf.pyx"],
+    depends=["simnibs/mesh_tools/cgal/_mesh_surfaces.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
+    define_macros=cgal_mesh_macros
+)
 create_mesh_vol = Extension(
     'simnibs.mesh_tools.cgal.create_mesh_vol',
     sources=["simnibs/mesh_tools/cgal/create_mesh_vol.pyx"],
@@ -337,7 +337,7 @@ extensions = [
     cat_c_utils,
     thickness,
     petsc_solver,
-    # create_mesh_surf,
+    create_mesh_surf,
     create_mesh_vol,
     cgal_misc
 ]
@@ -483,10 +483,9 @@ setup(name='simnibs',
       )
 
 
-script_dir = shutil.which('simnibs')
-if script_dir is None:
-    raise IOError('could not locate folder with console-scripts')
-else:
-    script_dir = os.path.dirname(script_dir)
-    add_symlinks_or_cmd(external_progs,script_dir)
-    
+# script_dir = shutil.which('simnibs')
+# if script_dir is None:
+#     raise IOError('could not locate folder with console-scripts')
+# else:
+#     script_dir = os.path.dirname(script_dir)
+#     add_symlinks_or_cmd(external_progs,script_dir)
