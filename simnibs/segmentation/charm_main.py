@@ -322,10 +322,10 @@ def run(
 
             surfaces = {
                 "white" : load_freesurfer_surfaces(fs_sub, "white", coord="ras"),
-                "pial" : load_freesurfer_surfaces(fs_sub, "pial", coord="ras"),
                 "sphere" : load_freesurfer_surfaces(fs_sub, "sphere"),
                 "sphere.reg" : load_freesurfer_surfaces(fs_sub, "sphere.reg"),
             }
+            surfaces["pial"] = _load_freesurfer_pial_surface(fs_sub)
 
             logger.info("Estimating the central gray matter surface")
             surfaces["central"] = {
@@ -814,3 +814,18 @@ def _read_transform(transform_file):
     # Change from RAS to LPS. ITK uses LPS internally
     RAS2LPS = np.diag([-1, -1, 1, 1])
     return RAS2LPS @ transform @ RAS2LPS
+
+
+def _load_freesurfer_pial_surface(fs_sub):
+    # The pial surfaces (?h.pial) are symlinks to either ?h.pial.T1 or
+    # ?h.pial.T2 depending on whether the `-T2pial` flag was used when
+    # invoking recon-all. Symlinks created in WSL on Windows do not
+    # seem to work currently, hence this workaround
+    try:
+        m = load_freesurfer_surfaces(fs_sub, "pial", coord="ras")
+    except OSError: # invalid argument
+        try:
+            m = load_freesurfer_surfaces(fs_sub, "pial.T2", coord="ras")
+        except FileNotFoundError: # -T2pial was not used
+            m = load_freesurfer_surfaces(fs_sub, "pial.T1", coord="ras")
+    return m
