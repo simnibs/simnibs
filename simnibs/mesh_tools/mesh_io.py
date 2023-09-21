@@ -30,6 +30,7 @@ import gc
 import hashlib
 import subprocess
 import threading
+from itertools import combinations
 from typing import Union
 from functools import partial
 from pathlib import Path
@@ -43,8 +44,10 @@ import scipy.sparse.csgraph
 import scipy.interpolate
 import nibabel
 import h5py
+from simnibs.utils import file_finder
 
 from simnibs.utils.mesh_element_properties import ElementTags
+from ..utils.spawn_process import spawn_process
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
@@ -6668,13 +6671,13 @@ def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     }
 
 
-def load_freesurfer_surfaces(fs_dir, surface: str, coord: str = "surface ras"):
+def load_freesurfer_surfaces(fs_sub, surface: str, coord: str = "surface ras"):
     """Load surfaces from a FreeSurfer subject directory.
 
     Parameters
     ----------
-    fs_dir :
-        FreeSurfer subject directory.
+    fs_sub :
+        FreeSurfer subject object.
     surface : str
         The surface to load.
     coord : str
@@ -6689,5 +6692,101 @@ def load_freesurfer_surfaces(fs_dir, surface: str, coord: str = "surface ras"):
     assert coord in {"ras", "surface ras"}
 
     apply_transform = True if coord == "ras" else False
-    fs_surf_dir = Path(fs_dir) / "surf"
-    return {h: read_freesurfer_surface(fs_surf_dir / f"{h}.{surface}", apply_transform) for h in HEMISPHERES}
+    return {h: read_freesurfer_surface(s, apply_transform) for h,s in fs_sub.get_surfaces(surface).items()}
+
+
+def split(m: Msh, iterations: int = 1, hierarchy: tuple[int] = None, skin_tag: int = ElementTags.SCALP) -> Msh:
+    """Splits every edge in the mesh in its middle. Surface triangles are split into 4 new triangles,
+    tetrahedra are split into 8 new tetrahedra. To reduce tetrahedra count and increase tetrahedra quality, mmg is used.
+    The final mesh will have old_triangle_count * 4 * iterations triangles and between
+    old_tetrahedra_count * 4 * iterations and old_tetrahedra_count * 8 * iterations tetrahedra.
+    The quality of the surface triangles stays unchanged.
+
+    Parameters
+    ----------
+    m : Msh
+        The mesh that will be split
+    iterations : int
+        The number of splitting iterations
+    hierarchy : tuple[int]
+        The hierarchy used to reconstruct the surface after splitting.
+    skin_tag : int
+        The skin tag to be used for the surface reconstruction after splitting
+
+    Returns
+    -------
+    Msh
+        The resulting splitted mesh
+    """
+    if hierarchy is None:
+        hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
+
+    m = m.crop_mesh(elm_type=4)
+
+    for _ in range(iterations):
+        edge_to_new_node_idx = {}
+        new_node_coord = []
+        new_tetra = []
+        tetra_tags = []
+
+        for tetra_indx in m.elm.tetrahedra - 1:
+            node_indxs = m.elm.node_number_list[tetra_indx] - 1
+            tetra_tags.extend([m.elm.tag1[tetra_indx]] * 8)
+
+            for edge in combinations(node_indxs, 2):
+                if edge in edge_to_new_node_idx:
+                    continue
+
+                new_node_coord.append((m.nodes.node_coord[edge[0]] + m.nodes.node_coord[edge[1]]) / 2.0)
+                edge_to_new_node_idx[edge] = len(new_node_coord) + m.nodes.nr - 1
+                edge_to_new_node_idx[edge[::-1]] = edge_to_new_node_idx[edge]
+
+            for new_tetra_nodes in [[node_indxs[0], node_indxs[1], node_indxs[2], node_indxs[3]],
+                                    [node_indxs[1], node_indxs[2], node_indxs[3], node_indxs[0]],
+                                    [node_indxs[2], node_indxs[3], node_indxs[0], node_indxs[1]],
+                                    [node_indxs[3], node_indxs[0], node_indxs[1], node_indxs[2]]]:
+                new_tetra.append([new_tetra_nodes[0],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[1])],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[2])],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[3])],
+                                  ])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[1])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[1])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[3])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[2], node_indxs[3])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[2], node_indxs[3])]])
+
+        m.nodes.node_coord = np.concatenate((m.nodes.node_coord, new_node_coord), axis=0)
+        m.elm.node_number_list = np.array(new_tetra) + 1
+        m.elm.elm_type = 4 * np.ones(len(new_tetra), dtype=int)
+        m.elm.tag1 = np.array(tetra_tags)
+        m.elm.tag2 = m.elm.tag1
+
+        m.fix_th_node_ordering()
+
+    tmp_file = tempfile.NamedTemporaryFile(suffix=".msh")
+    write_msh(m, tmp_file.name, mmg_fix=True)
+
+    cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "0", "-rmc", "-nofem", "-hgrad",
+           "-1", "-nosurf", "-in", tmp_file.name, "-out", tmp_file.name]
+
+    spawn_process(cmd)
+
+    m: Msh = read_msh(tmp_file.name)
+    m = m.crop_mesh(elm_type=4)
+    m.reconstruct_unique_surface(hierarchy=hierarchy, add_outer_as=skin_tag)
+
+    tmp_file.close()
+
+    return m

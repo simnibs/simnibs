@@ -2023,3 +2023,14 @@ class TestAABBTree:
         assert(tree.any_point_inside(np.array(((0,0,0),(50,30,25)))))
         assert(tree.any_point_inside(np.array((50,30,25))==False))
         del tree
+
+class TestSplit:
+    def test_split(self, sphere3_msh):
+        res = mesh_io.split(sphere3_msh)
+
+        assert len(res.elm.triangles) == len(sphere3_msh.elm.triangles) * 4
+        assert len(res.elm.tetrahedra) > len(sphere3_msh.elm.tetrahedra) * 4
+        assert len(res.elm.tetrahedra) < len(sphere3_msh.elm.tetrahedra) * 8
+
+        assert np.all(np.unique(res.elm.tag1[res.elm.elm_type == 2], return_counts=True)[1] ==
+                      np.unique(sphere3_msh.elm.tag1[sphere3_msh.elm.elm_type == 2], return_counts=True)[1] * 4)

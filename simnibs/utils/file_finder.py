@@ -547,6 +547,55 @@ class SubjectFiles:
     def _parse_subsampling(subsampling: Union[None, int]) -> str:
         return str(subsampling) if subsampling else ""
 
+class FreeSurferSubject:
+    def __init__(self, subject_dir) -> None:
+        self.hemispheres = HEMISPHERES
+
+        self.root = Path(subject_dir)
+        self.mri = self.root / "mri"
+        self.surf = self.root / "surf"
+        self.label = self.root / "label"
+
+
+    def get_volume(self, name: str):
+        """Get volume.
+
+        name : str
+            Filename without `mgz`.
+
+        """
+        return self.mri / f"{name}.mgz"
+
+
+    def get_surface(self, hemi: str, name: str):
+        """Get surface for a single hemisphere."""
+        return self.surf / f"{hemi}.{name}"
+
+
+    def get_surfaces(self, name: str):
+        """Get surfaces for both hemispheres."""
+        return {hemi: self.get_surface(hemi, name) for hemi in self.hemispheres}
+
+
+    def get_annot(self, hemi: str, name: str):
+        """Get annotation for a single hemisphere."""
+        return self.label / f"{hemi}.{name}.annot"
+
+
+    def get_annots(self, name: str):
+        """Get annotation for both hemispheres."""
+        return {hemi: self.get_annot(hemi, name) for hemi in self.hemispheres}
+
+
+    def get_label(self, hemi: str, name: str):
+        """Get label for a single hemisphere."""
+        return self.label / f"{hemi}.{name}.label"
+
+
+    def get_labels(self, name: str):
+        """Get label for both hemispheres."""
+        return {hemi: self.get_label(hemi, name) for hemi in self.hemispheres}
+
 
 def path2bin(program):
     """Return the full path to a specified program contained within the SIMNIBS

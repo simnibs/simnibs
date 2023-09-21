@@ -14,7 +14,7 @@ import numpy as np
 
 
 ####################################################
-# add all scripts in the cli folder as 
+# add all scripts in the cli folder as
 # console_scripts or gui_scripts
 ####################################################
 
@@ -55,9 +55,9 @@ else:
 for i in range(len(external_progs)):
     external_progs[i] = os.path.join(bin_dir, external_progs[i]+ending)
 
-if not sys.platform == 'win32':        
+if not sys.platform == 'win32':
     external_progs.append(os.path.join('simnibs','external','dwi2cond'))
-           
+
 
 ''' C extensions
 
@@ -180,7 +180,7 @@ if sys.platform == 'win32':
         '/D _MBCS'
     ]
     cgal_link_args = None
-    
+
     cat_compile_args = None
 
 elif sys.platform == 'linux':
@@ -215,7 +215,7 @@ elif sys.platform == 'linux':
     ]
     cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
-    
+
     cat_compile_args = [
       '-std=gnu99',
     ]
@@ -253,7 +253,7 @@ elif sys.platform == 'darwin':
         '-stdlib=libc++',
         '-Wl,-rpath,@loader_path/../../external/lib/osx'
     ]
-    
+
     cat_compile_args = None
 
 else:
@@ -331,6 +331,18 @@ cgal_misc = Extension(
     extra_compile_args=cgal_compile_args,
     extra_link_args=cgal_link_args,
 )
+cgal_pmp = Extension(
+    "simnibs.mesh_tools.cgal.polygon_mesh_processing",
+    sources = ["simnibs/mesh_tools/cgal/polygon_mesh_processing.pyx"],
+    depends = ["simnibs/mesh_tools/cgal/polygon_mesh_processing_src.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
+)
 
 extensions = [
     cython_msh,
@@ -340,7 +352,8 @@ extensions = [
     petsc_solver,
     create_mesh_surf,
     create_mesh_vol,
-    cgal_misc
+    cgal_misc,
+    cgal_pmp,
 ]
 
 
@@ -519,4 +532,3 @@ if script_dir is None:
 else:
     script_dir = os.path.dirname(script_dir)
     add_symlinks_or_cmd(external_progs,script_dir)
-    

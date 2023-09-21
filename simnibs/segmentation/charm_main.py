@@ -9,7 +9,6 @@ import sys
 import tempfile
 import re
 import numpy as np
-from pathlib import Path
 
 from simnibs import SIMNIBSDIR
 
@@ -316,13 +315,16 @@ def run(
             logger.info("Starting surface creation")
             t_start = time.perf_counter()
 
+            fs_sub = file_finder.FreeSurferSubject(fs_dir)
+
             logger.info("Using surfaces from FreeSurfer")
-            logger.info(f"FreeSurfer subject directory is {fs_dir}")
+            logger.info(f"FreeSurfer subject directory is {fs_sub.root.resolve()}")
+
             surfaces = {
-                "white" : load_freesurfer_surfaces(fs_dir, "white", coord="ras"),
-                "pial" : load_freesurfer_surfaces(fs_dir, "pial", coord="ras"),
-                "sphere" : load_freesurfer_surfaces(fs_dir, "sphere"),
-                "sphere.reg" : load_freesurfer_surfaces(fs_dir, "sphere.reg"),
+                "white" : load_freesurfer_surfaces(fs_sub, "white", coord="ras"),
+                "pial" : load_freesurfer_surfaces(fs_sub, "pial", coord="ras"),
+                "sphere" : load_freesurfer_surfaces(fs_sub, "sphere"),
+                "sphere.reg" : load_freesurfer_surfaces(fs_sub, "sphere.reg"),
             }
 
             logger.info("Estimating the central gray matter surface")
