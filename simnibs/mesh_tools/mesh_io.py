@@ -51,7 +51,7 @@ from ..utils.spawn_process import spawn_process
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
+from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles, FreeSurferSubject
 from . import cython_msh
 from . import cgal
 
@@ -6671,7 +6671,7 @@ def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
     }
 
 
-def load_freesurfer_surfaces(fs_sub, surface: str, coord: str = "surface ras"):
+def load_freesurfer_surfaces(fs_sub: FreeSurferSubject, surface: str, coord: str = "surface ras") -> dict[str, Msh]:
     """Load surfaces from a FreeSurfer subject directory.
 
     Parameters
