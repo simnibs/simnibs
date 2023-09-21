@@ -2238,6 +2238,8 @@ class Msh:
         ''' Finds the triangle (if any) that intersects with the rays starting
             at points and pointing into directions
 
+        NOTE: triangle indices are not corresponding to msh indices!
+
         Parameters
         ------------
         points: (N, 3) array
