@@ -12,28 +12,6 @@ from distutils.dep_util import newer_group
 import numpy as np
 
 
-####################################################
-# add all scripts in the cli folder as 
-# console_scripts or gui_scripts
-####################################################
-
-# IMPORTANT: For the postinstall script to also work
-# ALL scripts should be in the simnibs/cli folder and have
-# a if __name__ == '__main__' clause
-
-script_names = [os.path.splitext(os.path.basename(s))[0]
-                for s in glob.glob('simnibs/cli/*.py')]
-
-console_scripts = []
-for s in script_names:
-    if s not in ['__init__', 'simnibs_gui']:
-        console_scripts.append(f'{s}=simnibs.cli.{s}:main')
-console_scripts.append(f'simnibs=simnibs.cli.run_simnibs:main')
-
-gui_scripts = [
-    'simnibs_gui=simnibs.cli.simnibs_gui:main',
-]
-
 
 ########################################################################################################
 # external stuff for which symlinks or .cmd should be added to the scripts folder
@@ -483,9 +461,9 @@ setup(name='simnibs',
       )
 
 
-# script_dir = shutil.which('simnibs')
-# if script_dir is None:
-#     raise IOError('could not locate folder with console-scripts')
-# else:
-#     script_dir = os.path.dirname(script_dir)
-#     add_symlinks_or_cmd(external_progs,script_dir)
+script_dir = shutil.which('simnibs')
+if script_dir is None:
+    raise IOError('could not locate folder with console-scripts')
+else:
+    script_dir = os.path.dirname(script_dir)
+    add_symlinks_or_cmd(external_progs,script_dir)
