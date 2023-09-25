@@ -28,7 +28,7 @@ dependencies =[
 "Source" = "https://github.com/simnibs/simnibs/"
 
 [build-system]
-requires = ['setuptools', 'wheel', 'build', 'numpy', 'cython']
+requires = ['setuptools', 'wheel', 'build', 'numpy', 'cython','setuptools-scm']
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
@@ -38,6 +38,9 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["packing"]
+
+[tool.setuptools_scm]
+version_file = "simnibs/_version.py"
 
 [project.scripts]
     charm = "simnibs.cli.charm:main"
