@@ -1399,38 +1399,41 @@ def _run_mmg(m, repeats=2, mmg_noinsert=True):
         Mesh structure.
     """
     logger.info('Improving Mesh Quality')
-    tmp_in = tempfile.NamedTemporaryFile(suffix=".msh")
-    tmp_out = tempfile.NamedTemporaryFile(suffix=".msh")
+    with tempfile.NamedTemporaryFile(suffix=".msh", delete=False) as tmpfile:
+        tmp_in = tmpfile.name
+    with tempfile.NamedTemporaryFile(suffix=".msh", delete=False) as tmpfile:
+        tmp_out = tmpfile.name
     containing_sizing_field = any(':metric' in key for key in m.field.keys())
 
     # set MMG command
     if mmg_noinsert:
         cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc", "-noinsert",
-               "-in", tmp_in.name, "-out", tmp_out.name]
+               "-in", tmp_in, "-out", tmp_out]
     else:
         if containing_sizing_field:
             # hsiz is now coming from the sizing field
             cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
-                   "-hmin", "1.3", "-in", tmp_in.name, "-out", tmp_out.name]
+                   "-hmin", "1.3", "-in", tmp_in, "-out", tmp_out]
         else:
             cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
-                   "-hsiz", "100.0", "-hmin", "1.3", "-in", tmp_in.name, "-out", tmp_out.name]
+                   "-hsiz", "100.0", "-hmin", "1.3", "-in", tmp_in, "-out", tmp_out]
         
     # run MMG to improve mesh
     for i in range(repeats):
-        mesh_io.write_msh(m, tmp_in.name, mmg_fix=True)
+        mesh_io.write_msh(m, tmp_in, mmg_fix=True)
         del m
         spawn_process(cmd, lvl=logging.DEBUG)
 
         # read mesh written by MMG (msh in ascii format)
-        m = mesh_io.read_msh(tmp_out.name, skip_data=True)
+        m = mesh_io.read_msh(tmp_out, skip_data=True)
         m = m.crop_mesh(elm_type=[2, 4])
         logger.info(f'Tetraedras after remeshing run {i + 1}: {len(m.elm.tetrahedra)}')
 
     # remove tmp-files
-    tmp_in.close()
-    tmp_out.close()
-        
+    if os.path.exists(tmp_in):
+        os.remove(tmp_in)
+    if os.path.exists(tmp_out):
+        os.remove(tmp_out)
     return m
     
 
