@@ -1,0 +1,83 @@
+[project]
+name = "simnibs"
+authors = [
+  {name = "SimNIBS developers", email = "support@simnibs.org" } # Optional
+]
+maintainers = [
+  {name = "SimNIBS developers", email = "support@simnibs.org" }
+]
+license = {text = "GPL3"}
+description = "Simulation of Non-Invasive Brain Stimulation"
+# long_description = file: README.md
+# long_description_content_type = text/markdown
+dynamic = ["version"]
+# version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
+#version = v4.1
+requires-python = ">=3.9"
+
+dependencies =[
+    "numpy==1.21.5",
+    "scipy>=1.9",
+    "h5py==3.6.0",
+    "nibabel>=2.3",
+    "packaging==21.3"]
+
+[project.urls]  # Optional
+"Homepage" = "simnibs.org"
+"Bug Reports" = "https://github.com/simnibs/simnibs/issues"
+"Source" = "https://github.com/simnibs/simnibs/"
+
+[build-system]
+requires = ['setuptools', 'wheel', 'build', 'numpy', 'cython','setuptools-scm']
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["packing"]
+
+[tool.setuptools_scm]
+version_file = "simnibs/_version.py"
+
+[project.scripts]
+    charm = "simnibs.cli.charm:main"
+    add_tissues_to_upsampled = "simnibs.cli.add_tissues_to_upsampled:main"
+    calc_B = "simnibs.cli.calc_B:main"
+    ccd2nifti = "simnibs.cli.ccd2nifti:main"
+    charm_tms = "simnibs.cli.charm_tms:main"
+    convert_3_to_4 = "simnibs.cli.convert_3_to_4:main"
+    download_coils = "simnibs.cli.download_coils:main"
+    eeg_positions = "simnibs.cli.eeg_positions:main"
+    expand_to_center_surround = "simnibs.cli.expand_to_center_surround:main"
+    get_eeg_positions = "simnibs.cli.get_eeg_positions:main"
+    get_fields_at_coordinates = "simnibs.cli.get_fields_at_coordinates:main"
+    maskmesh = "simnibs.cli.maskmesh:main"
+    meshmesh = "simnibs.cli.meshmesh:main"
+    mni2subject_coords = "simnibs.cli.mni2subject_coords:main"
+    mni2subject = "simnibs.cli.mni2subject:main"
+    msh2cortex = "simnibs.cli.msh2cortex:main"
+    msh2nii = "simnibs.cli.msh2nii:main"
+    nii2msh = "simnibs.cli.nii2msh:main"
+    postinstall_simnibs = "simnibs.cli.postinstall_simnibs:main"
+    prepare_eeg_forward = "simnibs.cli.prepare_eeg_forward:main"
+    prepare_eeg_montage = "simnibs.cli.prepare_eeg_montage:main"
+    prepare_tdcs_leadfield = "simnibs.cli.prepare_tdcs_leadfield:main"
+    register = "simnibs.cli.register:main"
+    simnibs = "simnibs.cli.run_simnibs:main"
+    simnibs_gui = "simnibs.cli.simnibs_gui:main"
+    subject2mni_coords = "simnibs.cli.subject2mni_coords:main"
+    subject2mni = "simnibs.cli.subject2mni:main"
+    subject_atlas = "simnibs.cli.subject_atlas:main"
+
+[project.optional-dependencies]
+test =[
+    "pytest==7.1.1",
+    "mock==4.0.3"
+]
+GUI =[
+    "pyqt5",
+    "pyopengl==3.1.1a1"
+]
