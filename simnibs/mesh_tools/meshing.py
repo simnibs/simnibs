@@ -904,13 +904,17 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
 
     """
     splitlist = []
+    found_unconnected = False # DEBUG, remove again
     for sp in splittest:
         idx_n1 = sp[0]
         idx_n2 = sp[1]
         idx_orgtets = np.where( np.any(node_number_list == idx_n1,axis=1) * 
                                 np.any(node_number_list == idx_n2,axis=1) )[0]
         if len(idx_orgtets) == 0:
-            raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
+            logger.warn(f"_select_splits_from_candidates: The two nodes {idx_n1} {idx_n2} are not connected!")
+            found_unconnected = True # DEBUG, remove again
+            continue
+            # raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
             
         if np.max(tag_org[idx_orgtets]) != np.min(tag_org[idx_orgtets]):
             # this can happen when the 2nd node is part of the "ring" of surface nodes connected to the first node
@@ -928,7 +932,7 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
         if np.all(np.abs(cosalpha-0.5) < 0.3): # 0.3 is a magic number determined during initial testing
             splitlist.append(sp)
         
-    return splitlist
+    return splitlist, found_unconnected # DEBUG, remove again
 
 
 def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
@@ -1241,8 +1245,10 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
         splittest, sp2_tets, sp2_uniquenodes = _get_candidates_for_splitting(sp_dat, m.elm.node_number_list, 
                                                                              idx_surf_nodes)
         #   step 2: determine the spikes that will be split from the candidates
-        splitlist = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
+        splitlist, found_unconnected = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
                                                    m.nodes.node_coord, tag_buff)
+        if found_unconnected:
+            mesh_io.write_msh(m,"DEBUG_2node.msh")
         
         #   step 3: at thin interfaces, two spikes with each 2 tets can be directly next
         #   to each other --> combine to a common spike with 4 tets that will be split
