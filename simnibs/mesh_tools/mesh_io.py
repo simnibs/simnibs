@@ -5953,8 +5953,8 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
     ------------
     positions: nx3 ndarray:
         position of vecrors
-    values: nx3 ndarray  (optional)
-        values to be assigned to the vectors. Default: 1
+    values: nx3 ndarray
+        values to be assigned to the vectors.
     fn: str
         name of file to be written
     name: str (optional)
@@ -5985,6 +5985,57 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
         f.write(b"};\n")
 
 
+def write_geo_lines(pos_start, pos_end, fn, values=None, name="", mode='bw'):
+    """ Writes a .geo file with lines between pos_start and pos_end
+
+    Parameters
+    ------------
+    pos_start: nx3 ndarray:
+        start positions of lines
+    pos_end: nx3 ndarray:
+        end positions of lines
+    fn: str
+        name of file to be written
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+    values: nx2 ndarray  (optional)
+        values to be assigned to the vectors. Default: 0s
+    """
+    
+    if values is None:
+        values = np.zeros((len(pos_start), 2))
+    values = np.array(values)
+    pos_start = np.array(pos_start)
+    pos_end = np.array(pos_end)
+    
+    if pos_start.shape[1] != 3:
+        raise ValueError('Positions vector must have size (Nx3)')
+    if pos_end.shape[1] != 3:
+            raise ValueError('Positions vector must have size (Nx3)')
+    if values.shape[1] != 2:
+        raise ValueError('Values must have size (Nx2)')
+
+    if len(pos_end) != len(pos_start):
+        raise ValueError(
+            'The length of the vector of start positions is different from the'
+            ' length of the vector of end positions')
+    if len(values) != len(pos_start):
+        raise ValueError(
+            'The length of the vector of positions is different from the'
+            ' length of the vector of values')
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for ps, pe, v in zip(pos_start, pos_end, values):
+            f.write(
+                ("SL(" + ", ".join([str(i) for i in ps]) +
+                 ", "  + ", ".join([str(i) for i in pe]) + ")" +
+                 "{"   + ", ".join([str(i) for i in v])  + "};\n").encode('ascii'))
+        f.write(b"};\n")
+        
+        
 def write_geo_text(positions, text, fn, name="", mode='bw'):
     """ Writes a .geo file with text in specified positions
 
