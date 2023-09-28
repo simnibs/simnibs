@@ -4,5 +4,5 @@ TYPE_CHECKING = False
 if TYPE_CHECKING:
     from typing import Tuple
 
-__version__ = version = '3.2.4.dev953+geb3ca739.d20230925'  # type: str
-__version_tuple__ = version_tuple = (3, 2, 4, 'dev953', 'geb3ca739.d20230925')  # type: Tuple[int | str, ...]
+__version__ = version = '3.2.4.dev988+geb8eaf45.d20230928'  # type: str
+__version_tuple__ = version_tuple = (3, 2, 4, 'dev988', 'geb8eaf45.d20230928')  # type: Tuple[int | str, ...]
