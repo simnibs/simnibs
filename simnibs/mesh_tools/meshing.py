@@ -977,7 +977,10 @@ def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
             # get the correct tags and append to splitlist
             _, sp_dat_hlp = _get_new_tag_for_spikes(idx_sp_nodes-1, adj_tets, node_number_list,
                                                     tag_org, nr_nodes)
-            splitlist.append((idx_sp_nodes[0], idx_sp_nodes[1], sp_dat_hlp[1][3], sp_dat_hlp[0][3]))
+            if sp_dat_hlp[1][3] != sp_dat_hlp[0][3]: # new and old tags need to be different
+                splitlist.append((idx_sp_nodes[0], idx_sp_nodes[1], sp_dat_hlp[1][3], sp_dat_hlp[0][3]))
+            else:
+                logger.debug(f"combination of small spikes skipped (node idx {idx_sp_nodes[0]} {idx_sp_nodes[1]}) ")
     
     return splitlist
 
