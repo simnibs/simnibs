@@ -1279,7 +1279,7 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
                                            m.elm.node_number_list, tag_buff, m.nodes.nr)
         
         # DEBUGGING ---> REMOVE AGAIN
-        logger.debug("splitting after step2")
+        logger.debug("splitting after step3")
         for sp in splitlist:
             idx_n1 = sp[0]
             idx_n2 = sp[1]            
