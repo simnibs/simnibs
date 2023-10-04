@@ -904,17 +904,13 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
 
     """
     splitlist = []
-    found_unconnected = False # DEBUG, remove again
     for sp in splittest:
         idx_n1 = sp[0]
         idx_n2 = sp[1]
         idx_orgtets = np.where( np.any(node_number_list == idx_n1,axis=1) * 
                                 np.any(node_number_list == idx_n2,axis=1) )[0]
         if len(idx_orgtets) == 0:
-            logger.warn(f"_select_splits_from_candidates: The two nodes {idx_n1} {idx_n2} are not connected!")
-            found_unconnected = True # DEBUG, remove again
-            continue
-            # raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
+            raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
             
         if np.max(tag_org[idx_orgtets]) != np.min(tag_org[idx_orgtets]):
             # this can happen when the 2nd node is part of the "ring" of surface nodes connected to the first node
@@ -932,7 +928,7 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
         if np.all(np.abs(cosalpha-0.5) < 0.3): # 0.3 is a magic number determined during initial testing
             splitlist.append(sp)
         
-    return splitlist, found_unconnected # DEBUG, remove again
+    return splitlist
 
 
 def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
@@ -977,11 +973,8 @@ def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
             # get the correct tags and append to splitlist
             _, sp_dat_hlp = _get_new_tag_for_spikes(idx_sp_nodes-1, adj_tets, node_number_list,
                                                     tag_org, nr_nodes)
-            #if sp_dat_hlp[1][3] != sp_dat_hlp[0][3]: # new and old tags need to be different
             splitlist.append((idx_sp_nodes[0], idx_sp_nodes[1], sp_dat_hlp[1][3], sp_dat_hlp[0][3]))
-            #else:
-            #    logger.debug(f"combination of small spikes skipped (node idx {idx_sp_nodes[0]} {idx_sp_nodes[1]}) ")
-    
+
     return splitlist
 
 
@@ -1003,21 +996,19 @@ def _split_spikes(m, splitlist):
         indices of the split tets (for visualization and debugging)
 
     """
+    # remove doublets
+    splitlist[:,:2] = np.sort(splitlist[:,:2], axis=1)
+    idx = np.unique(splitlist[:,:2],return_index=True, axis=0)[1]
+    splitlist = splitlist[idx]
+    
+    # split
     idx_splittets = np.empty((0),dtype='int32')
     for sp in splitlist:
         idx_n1 = sp[0]
         idx_n2 = sp[1]
         old_tag = sp[2]
         new_tag = sp[3]
-        
-        # DEBUGGING
-        idx_orgtets = np.where( np.any(m.elm.node_number_list == idx_n1,axis=1) *
-                                np.any(m.elm.node_number_list == idx_n2,axis=1)
-                                    )[0]
-        if len(idx_orgtets) == 0:
-                logger.debug(f"inside split_spikes: node idx {idx_n1} {idx_n2} not connected")
-        # DEBUGGING
-        
+                
         idx_tets1, idx_tets2 = m.split_tets_along_line(idx_n1,idx_n2,return_tetindices = True)
         m.elm.tag1[idx_tets1-1] = new_tag
         m.elm.tag1[idx_tets2-1] = old_tag
@@ -1256,40 +1247,14 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
         splittest, sp2_tets, sp2_uniquenodes = _get_candidates_for_splitting(sp_dat, m.elm.node_number_list, 
                                                                              idx_surf_nodes)
         #   step 2: determine the spikes that will be split from the candidates
-        splitlist, found_unconnected = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
+        splitlist = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
                                                    m.nodes.node_coord, tag_buff)
-        if found_unconnected:
-            mesh_io.write_msh(m,"DEBUG_2node.msh")
-        
-        # DEBUGGING ---> REMOVE AGAIN
-        logger.debug("splitting after step2")
-        for sp in splitlist:
-            idx_n1 = sp[0]
-            idx_n2 = sp[1]            
-            idx_orgtets = np.where( np.any(m.elm.node_number_list == idx_n1,axis=1) *
-                                    np.any(m.elm.node_number_list == idx_n2,axis=1)
-                                    )[0]
-            if len(idx_orgtets) == 0:
-                logger.debug(f"node idx {idx_n1} {idx_n2} not connected")
-        # DEBUGGING
 
         #   step 3: at thin interfaces, two spikes with each 2 tets can be directly next
         #   to each other --> combine to a common spike with 4 tets that will be split
         splitlist += _combine_small_spikes(sp2_uniquenodes, sp2_tets, adj_tets, 
                                            m.elm.node_number_list, tag_buff, m.nodes.nr)
-        
-        # DEBUGGING ---> REMOVE AGAIN
-        logger.debug("splitting after step3")
-        for sp in splitlist:
-            idx_n1 = sp[0]
-            idx_n2 = sp[1]            
-            idx_orgtets = np.where( np.any(m.elm.node_number_list == idx_n1,axis=1) *
-                                    np.any(m.elm.node_number_list == idx_n2,axis=1)
-                                    )[0]
-            if len(idx_orgtets) == 0:
-                logger.debug(f"node idx {idx_n1} {idx_n2} not connected")
-        # DEBUGGING
-        
+                
         #   step 4: split (updates the mesh in place)
         n_tet_pre = m.elm.nr
         idx_splittets = _split_spikes(m, splitlist)
