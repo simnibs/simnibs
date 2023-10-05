@@ -1386,7 +1386,7 @@ def _relabel_microtets(m, el_max = 0.0001):
     return m
 
 
-def _run_mmg(m, repeats=2, mmg_noinsert=True):
+def _run_mmg(m, repeats=2, mmg_noinsert=True, sizing_field=None, affine=None):
     """
     Wrapper around mmg command line call to improve mesh quality.
 
@@ -1399,6 +1399,10 @@ def _run_mmg(m, repeats=2, mmg_noinsert=True):
         The number of times mmg is supposed to be run.
     mmg_noinsert : bool, optional
         set -noinsert flag to prevent mmg from adding nodes. The default is True.
+    sizing_field :
+        The sizing field to be used for mmg
+    affine :
+        The affine for the sizing field
 
     Returns
     -------
@@ -1410,23 +1414,29 @@ def _run_mmg(m, repeats=2, mmg_noinsert=True):
         tmp_in = tmpfile.name
     with tempfile.NamedTemporaryFile(suffix=".msh", delete=False) as tmpfile:
         tmp_out = tmpfile.name
-    containing_sizing_field = any(':metric' in key for key in m.field.keys())
 
     # set MMG command
     if mmg_noinsert:
         cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc", "-noinsert",
                "-in", tmp_in, "-out", tmp_out]
     else:
-        if containing_sizing_field:
+        if sizing_field is not None:
             # hsiz is now coming from the sizing field
             cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
-                   "-hmin", "1.3", "-in", tmp_in, "-out", tmp_out]
+                   "-in", tmp_in, "-out", tmp_out]
         else:
             cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
                    "-hsiz", "100.0", "-hmin", "1.3", "-in", tmp_in, "-out", tmp_out]
         
     # run MMG to improve mesh
     for i in range(repeats):
+        # add user defined sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg
+        if sizing_field is not None:
+            mmg_sizing_field = np.copy(sizing_field)
+            mmg_sizing_field[mmg_sizing_field <= 0] = 100.0
+            m.add_sizing_field(sizing_field=mmg_sizing_field, affine=affine)
+            del mmg_sizing_field
+
         mesh_io.write_msh(m, tmp_in, mmg_fix=True)
         del m
         spawn_process(cmd, lvl=logging.DEBUG)
@@ -1434,6 +1444,7 @@ def _run_mmg(m, repeats=2, mmg_noinsert=True):
         # read mesh written by MMG (msh in ascii format)
         m = mesh_io.read_msh(tmp_out, skip_data=True)
         m = m.crop_mesh(elm_type=[2, 4])
+
         logger.info(f'Tetraedras after remeshing run {i + 1}: {len(m.elm.tetrahedra)}')
 
     # remove tmp-files
@@ -1545,6 +1556,9 @@ def create_mesh(label_img, affine,
         raise ValueError('facet_distances needs a \"standard\" entry')
 
     if apply_cream:
+        if sizing_field is not None:
+            sizing_field, _ = transformations.pad_vol(sizing_field, affine, 30)
+
         label_img, affine = transformations.pad_vol(label_img, affine, 30)
 
     # Calculate thickness
@@ -1690,17 +1704,10 @@ def create_mesh(label_img, affine,
         m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
 
     if debug:
-        mesh_io.write_msh(m, os.path.join(debug_path, 'before_mmg.msh'))
-
-    # add user defined sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg
-    if sizing_field is not None:
-        mmg_sizing_field = np.copy(sizing_field)
-        mmg_sizing_field[mmg_sizing_field <= 0] = 100.0
-        m.add_sizing_field(sizing_field=mmg_sizing_field, affine=affine)
-        del mmg_sizing_field
+        mesh_io.write_msh(m, os.path.join(debug_path, 'before_mmg.msh'), mmg_fix=True)
 
     # improve mesh quality using mmg
-    m = _run_mmg(m, 2, mmg_noinsert)
+    m = _run_mmg(m, 2, mmg_noinsert, sizing_field=sizing_field, affine=affine)
 
     logger.info(
         'Time to post-process mesh: ' +
