@@ -2360,6 +2360,127 @@ class Msh:
 
         return np.where(has_far)[0], far
 
+    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None, return_inside: bool = False):
+        """Generates a distance field on a grid to the mesh surface
+
+        Parameters
+        ----------
+        resolution : float, optional
+            The resolution of the grid, by default 1.0
+        AABBTree : pyAABBTree, optional
+            A pre-calculated AABBTree, will be generated if None, by default None
+        return_inside : bool, optional
+            Weather to return the inside distance seperatly, by default False
+
+        Returns
+        -------
+        Callable
+            The gridded distance field function
+        Callable
+            The gridded inside distance field function (if return_inside is True)
+        pyAABBTree
+            The AABBTree used
+        """
+
+        if AABBTree is None:
+            AABBTree = self.get_AABBTree()
+        xmin = self.nodes.node_coord.min(0)
+        xmax = self.nodes.node_coord.max(0)
+        xyz = np.meshgrid(
+            *[
+                np.arange(np.floor(x[0]), x[1], resolution)
+                for x in zip(xmin - 3, xmax + 3)
+            ],
+            indexing="ij",
+        )
+        xyzc = np.array(xyz).reshape(3, -1).T
+
+        M = np.identity(4) * resolution
+        M[3, 3] = 1
+        M[:3, 3] = np.floor(xmin)
+        iM = np.linalg.inv(M)
+
+        grid = np.zeros(xyz[0].shape, dtype="bool")
+
+        np.put(grid, AABBTree.points_inside(xyzc), 1)
+        grid = scipy.ndimage.binary_closing(grid, iterations=3)
+        inside = scipy.ndimage.distance_transform_edt(grid)
+        outside = scipy.ndimage.distance_transform_edt(1 - grid)
+        grid = inside + outside
+
+        def min_distance_on_grid(x):
+            x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
+            width, height, depth = grid.shape
+
+            # Filter coordinates that are inside the image boundaries
+            inside_image_mask = (
+                    (x_coords >= 0)
+                    & (x_coords < width)
+                    & (y_coords >= 0)
+                    & (y_coords < height)
+                    & (z_coords >= 0)
+                    & (z_coords < depth)
+            )
+
+            mapped_values_inside = scipy.ndimage.map_coordinates(
+                grid,
+                (
+                    x_coords[inside_image_mask],
+                    y_coords[inside_image_mask],
+                    z_coords[inside_image_mask],
+                ),
+                order=1,
+            )
+
+            outside_image_indices = ~inside_image_mask
+            outside_x = x_coords[outside_image_indices]
+            outside_y = y_coords[outside_image_indices]
+            outside_z = z_coords[outside_image_indices]
+
+            x1 = np.clip(np.floor(outside_x), 0, width - 1).astype(np.int_)
+            x2 = np.clip(np.floor(outside_x), 1, width - 2).astype(np.int_)
+            x2[np.floor(outside_x) == 0] = 0
+            x2[np.floor(width - 1) == 0] = width - 1
+            y1 = np.clip(np.floor(outside_y), 0, height - 1).astype(np.int_)
+            y2 = np.clip(np.floor(outside_y), 1, height - 2).astype(np.int_)
+            y2[np.floor(outside_y) == 0] = 0
+            y2[np.floor(height - 1) == 0] = height - 1
+            z1 = np.clip(np.floor(outside_z), 0, depth - 1).astype(np.int_)
+            z2 = np.clip(np.floor(outside_z), 1, depth - 2).astype(np.int_)
+            z2[np.floor(outside_z) == 0] = 0
+            z2[np.floor(depth - 1) == 0] = depth - 1
+
+            dx = np.abs(outside_x - x1)
+            dy = np.abs(outside_y - y1)
+            dz = np.abs(outside_z - z1)
+
+            extrapolation_values = (
+                    grid[x1, y1, z1]
+                    + dx * (grid[x1, y1, z1] - grid[x2, y1, z1])
+                    + dy * (grid[x1, y1, z1] - grid[x1, y2, z1])
+                    + dz * (grid[x1, y1, z1] - grid[x1, y1, z2])
+            )
+
+            # Create an array for all coordinates with extrapolation
+            mapped_values = np.empty_like(x_coords)
+            mapped_values[inside_image_mask] = mapped_values_inside
+            mapped_values[outside_image_indices] = extrapolation_values
+
+            return mapped_values
+
+        if return_inside:
+            def inside_distance_on_grid(x):
+                return scipy.ndimage.map_coordinates(
+                    inside,
+                    iM[:3, :3] @ x.T + iM[:3, 3, None],
+                    order=1,
+                    mode="constant",
+                    cval=0.0,
+                )
+
+            return min_distance_on_grid, inside_distance_on_grid, AABBTree
+        else:
+            return min_distance_on_grid, AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """

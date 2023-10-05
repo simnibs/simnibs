@@ -492,12 +492,12 @@ class TmsCoil(TcdElement):
         )
         min_distance_points = (
             [self.casing.get_min_distance_points(affine)]
-            if self.casing is not None
+            if self.casing is not None and len(self.casing.min_distance_points) > 0
             else []
         )
         intersect_points = (
             [self.casing.get_intersect_points(affine)]
-            if self.casing is not None
+            if self.casing is not None and len(self.casing.intersect_points) > 0
             else []
         )
 
@@ -1417,11 +1417,11 @@ class TmsCoil(TcdElement):
                         element.points, distance, grid_spacing, add_intersection_points
                     )
 
-    def optimize_deformations(
-        self,
-        optimization_surface: Msh,
-        affine: npt.NDArray[np.float_],
-        coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    def _optimize_deformations_old(
+            self,
+            optimization_surface: Msh,
+            affine: npt.NDArray[np.float_],
+            coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1546,7 +1546,7 @@ class TmsCoil(TcdElement):
                     (
                         intermediate_best_deformation_settings[:i],
                         [xx],
-                        intermediate_best_deformation_settings[i + 1 :],
+                        intermediate_best_deformation_settings[i + 1:],
                     ),
                     axis=None,
                 )
@@ -1560,11 +1560,11 @@ class TmsCoil(TcdElement):
             )
 
         for coil_deformation, deformation_setting in zip(
-            self.deformations, best_deformation_settings
+                self.deformations, best_deformation_settings
         ):
             coil_deformation.current = deformation_setting
 
-        result_affine = affine.astype(float)
+        result_affine = np.eye(4)
 
         if coil_translation_ranges is not None:
             z_translation = self.deformations.pop()
@@ -1572,16 +1572,17 @@ class TmsCoil(TcdElement):
             x_translation = self.deformations.pop()
             for coil_element in self.elements:
                 coil_element.deformations = coil_element.deformations[:-3]
-            result_affine[0, 3] += x_translation.current
-            result_affine[1, 3] += y_translation.current
-            result_affine[2, 3] += z_translation.current
+            result_affine = x_translation.as_matrix() @ result_affine
+            result_affine = y_translation.as_matrix() @ result_affine
+            result_affine = z_translation.as_matrix() @ result_affine
+        result_affine = affine.astype(float) @ result_affine
 
         return initial_abs_mean_dist, min_found_distance, result_affine
 
     def _get_current_deformation_scores(
-        self, cost_surface_tree, affine: npt.NDArray[np.float_]
-    ) -> tuple[bool, float]:
-        """Evaluates whether or not the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
+            self, cost_surface_tree, affine: npt.NDArray[np.float_]
+    ) -> tuple[float, float]:
+        """Evaluates whether the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
         and calculates the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
 
         Parameters
@@ -1593,9 +1594,10 @@ class TmsCoil(TcdElement):
 
         Returns
         -------
-        tuple[bool, float]
-            Whether or not the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
-            and the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
+        float
+            Ratio of intersection points (if not present, the coil casing points) intersecting with the cost_surface_tree
+        float
+            The mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
         """
         (
             casing_points,
@@ -1610,6 +1612,135 @@ class TmsCoil(TcdElement):
             intersect_points if len(intersect_points) > 0 else casing_points
         )
 
-        return cost_surface_tree.any_point_inside(intersect_points), np.mean(
+        return len(cost_surface_tree.points_inside(intersect_points)) / len(intersect_points), np.mean(
             np.sqrt(cost_surface_tree.min_sqdist(min_distance_points))
         )
+
+    def optimize_deformations(
+            self,
+            optimization_surface: Msh,
+            affine: npt.NDArray[np.float_],
+            coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    ) -> tuple[float, float, npt.NDArray[np.float_]]:
+        """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
+        and the min distance points (if not present, the coil casing points) while preventing intersections of the
+        optimization_surface and the intersect points (if not present, the coil casing points)
+
+        Parameters
+        ----------
+        optimization_surface : Msh
+            The surface the deformations have to be optimized for
+        affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+            If the coil position is supposed to be optimized as well, these ranges in the format
+            [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
+            and the updated affine coil transformation is returned, by default None
+
+        Returns
+        -------
+        tuple[float, float, npt.NDArray[np.float_]]
+            The initial mean distance to the surface, the mean distance after optimization
+            and the affine matrix. If coil_translation_ranges is None than it's the input affine,
+            otherwise it is the optimized affine.
+
+        Raises
+        ------
+        ValueError
+            If the coil has no deformations to optimize
+        ValueError
+            If the coil has no coil casing and no min distance points and no intersection points
+        ValueError
+            If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
+        """
+
+        if len(self.deformations) == 0:
+            raise ValueError(
+                "The coil has no deformations to optimize the coil element positions with."
+            )
+
+        if not np.any([np.any(arr) for arr in self.get_casing_coordinates()]):
+            raise ValueError(
+                "The coil has no coil casing or min_distance/intersection points."
+            )
+
+        if coil_translation_ranges is not None:
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1]), 0
+                )
+            )
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1]), 1
+                )
+            )
+            self.deformations.append(
+                TmsCoilTranslation(
+                    0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1]), 2
+                )
+            )
+            for coil_element in self.elements:
+                coil_element.deformations.append(self.deformations[-3])
+                coil_element.deformations.append(self.deformations[-2])
+                coil_element.deformations.append(self.deformations[-1])
+
+        fdist, fcon, cost_surface_tree = optimization_surface.get_min_distance_on_grid(
+            return_inside=True
+        )
+
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in self.deformations]
+        )
+
+        def cost_f_x0_w(x, x0, w):
+            for coil_deformation, deformation_setting in zip(self.deformations, x0 + x):
+                coil_deformation.current = deformation_setting
+            (
+                casing_points,
+                min_distance_points,
+                intersect_points,
+            ) = self.get_casing_coordinates(affine)
+
+            min_distance_points = (
+                min_distance_points if len(min_distance_points) > 0 else casing_points
+            )
+            intersect_points = (
+                intersect_points if len(intersect_points) > 0 else casing_points
+            )
+
+            f = w * fcon(intersect_points).sum() + np.mean(fdist(min_distance_points))
+
+            return f
+
+        deformation_ranges = np.array([deform.range for deform in self.deformations])
+        cost_f = lambda x: cost_f_x0_w(x, initial_deformation_settings, 100)
+        direct = opt.direct(
+            cost_f,
+            bounds=list(
+                deformation_ranges
+                - np.array(initial_deformation_settings)[:, np.newaxis]
+            ),
+        )
+        initial_deformation_settings = initial_deformation_settings + direct.x
+        best_deformation_settings = initial_deformation_settings
+
+        for coil_deformation, deformation_setting in zip(
+                self.deformations, best_deformation_settings
+        ):
+            coil_deformation.current = deformation_setting
+
+        result_affine = np.eye(4)
+
+        if coil_translation_ranges is not None:
+            z_translation = self.deformations.pop()
+            y_translation = self.deformations.pop()
+            x_translation = self.deformations.pop()
+            for coil_element in self.elements:
+                coil_element.deformations = coil_element.deformations[:-3]
+            result_affine = x_translation.as_matrix() @ result_affine
+            result_affine = y_translation.as_matrix() @ result_affine
+            result_affine = z_translation.as_matrix() @ result_affine
+        result_affine = affine.astype(float) @ result_affine
+
+        return 0, 0, result_affine
