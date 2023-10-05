@@ -22,6 +22,8 @@ simnibs/ccd-files/README.md
 # notice the first / (no recursivity)
 /build
 
+simnibs/_version.py
+
 # Object files
 *.o
 
