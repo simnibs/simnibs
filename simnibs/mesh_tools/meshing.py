@@ -997,9 +997,10 @@ def _split_spikes(m, splitlist):
 
     """
     # remove doublets
-    splitlist[:,:2] = np.sort(splitlist[:,:2], axis=1)
-    idx = np.unique(splitlist[:,:2],return_index=True, axis=0)[1]
-    splitlist = splitlist[idx]
+    if len(splitlist) > 0:
+        splitlist[:,:2] = np.sort(splitlist[:,:2], axis=1)
+        idx = np.unique(splitlist[:,:2],return_index=True, axis=0)[1]
+        splitlist = splitlist[idx]
     
     # split
     idx_splittets = np.empty((0),dtype='int32')
