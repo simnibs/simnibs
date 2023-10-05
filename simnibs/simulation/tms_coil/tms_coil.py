@@ -1640,7 +1640,7 @@ class TmsCoil(TcdElement):
         Returns
         -------
         tuple[float, float, npt.NDArray[np.float_]]
-            The initial mean distance to the surface, the mean distance after optimization
+            The initial cost, the cost after optimization
             and the affine matrix. If coil_translation_ranges is None than it's the input affine,
             otherwise it is the optimized affine.
 
@@ -1714,6 +1714,8 @@ class TmsCoil(TcdElement):
             return f
 
         deformation_ranges = np.array([deform.range for deform in self.deformations])
+        initial_cost = cost_f_x0_w(np.zeros_like(initial_deformation_settings), initial_deformation_settings, 100)
+
         cost_f = lambda x: cost_f_x0_w(x, initial_deformation_settings, 100)
         direct = opt.direct(
             cost_f,
@@ -1730,6 +1732,8 @@ class TmsCoil(TcdElement):
         ):
             coil_deformation.current = deformation_setting
 
+        optimized_cost = cost_f_x0_w(np.zeros_like(initial_deformation_settings), initial_deformation_settings, 100)
+
         result_affine = np.eye(4)
 
         if coil_translation_ranges is not None:
@@ -1743,4 +1747,4 @@ class TmsCoil(TcdElement):
             result_affine = z_translation.as_matrix() @ result_affine
         result_affine = affine.astype(float) @ result_affine
 
-        return 0, 0, result_affine
+        return initial_cost, optimized_cost, result_affine
