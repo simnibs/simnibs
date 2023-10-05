@@ -56,7 +56,7 @@ def _write_inr(image, voxel_dims, fn_out):
 def _mesh_image(image, voxel_dims, facet_angle,
                 facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
-                optimize, num_threads):
+                num_threads, do_perturb, do_exude, do_lloyd):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         fn_image = os.path.join(tmpdir, 'image.inr')
@@ -67,14 +67,14 @@ def _mesh_image(image, voxel_dims, facet_angle,
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize, num_threads
+                    num_threads, do_perturb, do_exude, do_lloyd,
                  )
         else:
             ret = cgal.mesh_image(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize, num_threads
+                    num_threads, do_perturb, do_exude, do_lloyd,
                  )
 
         if ret != 0:
@@ -135,7 +135,8 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=False, num_threads=2):
+               num_threads=2, do_perturb=False, do_exude=False, do_lloyd=False
+    ):
     ''' Creates a mesh from a 3D image
 
     Parameters
@@ -179,8 +180,14 @@ def image2mesh(image, affine, facet_angle=30,
         spatially variable scalar field. It provides an upper bound on the circumradii of the
         mesh tetrahedra. Default: minimum voxel size (very low!)
 
-    optimize: bool (optional)
-        Tunrn on Lloyd optimization. Sliver perturbation and exudation is always done. Default: True
+    num_threads : int
+        Number of threads to use with CGAL.
+    do_perturb: bool
+        Apply sliver pertubation in CGAL after meshing (default = False).
+    do_exude: bool
+        Apply exudation in CGAL after meshing (default = False).
+    do_lloyd: bool
+        Apply Lloyd optimization in CGAL after meshing (default = False).
 
     Returns
     ----------
@@ -232,7 +239,7 @@ def image2mesh(image, affine, facet_angle=30,
         image, voxel_dims,
         facet_angle, facet_size, facet_distance,
         cell_radius_edge_ratio, cell_size,
-        optimize, num_threads
+        num_threads, do_perturb, do_exude, do_lloyd
     )
     # Rotate nodes
     mesh.nodes.node_coord = rot.dot(mesh.nodes.node_coord.T).T
@@ -1461,7 +1468,7 @@ def create_mesh(label_img, affine,
                 smooth_size_field=2,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
-                optimize=True, remove_spikes=True, skin_tag=1005,
+                optimize=False, remove_spikes=True, skin_tag=1005,
                 hierarchy=None, apply_cream=True,  smooth_steps=5, skin_care=20,
                 sizing_field=None, mmg_noinsert=False, debug=False, debug_path="", num_threads=2):
     """Create a mesh from a labeled image.
@@ -1510,7 +1517,8 @@ def create_mesh(label_img, affine,
         "slope": Steepness of relationship between thickness and facet_distance.
         Default: {"standard": {"range": [0.1, 3], "slope": 0.5}}
     optimize: bool (optional)
-        Whether to run lloyd optimization on the mesh. Default: True
+        Whether to apply sliver perturbation, exudation, and lloyd optimization
+        to the mesh with CGAL. Default: False
     remove_spikes: bool (optional)
         Whether to remove spikes to create smoother meshes. Default: True
     skin_tag: float (optional)
@@ -1646,8 +1654,10 @@ def create_mesh(label_img, affine,
         facet_size=size_field,
         facet_distance=distance_field,
         cell_size=size_field,
-        optimize=optimize,
-        num_threads=num_threads
+        num_threads=num_threads,
+        do_perturb=optimize,
+        do_exude=optimize,
+        do_lloyd=optimize,
     )
 
     del size_field
