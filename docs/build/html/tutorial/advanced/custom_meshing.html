@@ -1,20 +1,17 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to create and use a custom mesh &#8212; SimNIBS 4.0.2 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <title>How to create and use a custom mesh &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="How to manually edit a head model" href="fix_headmodel.html" />
@@ -51,10 +48,10 @@
           <div class="body" role="main">
             
   <section id="how-to-create-and-use-a-custom-mesh">
-<span id="meshing-tutorial"></span><h1>How to create and use a custom mesh<a class="headerlink" href="#how-to-create-and-use-a-custom-mesh" title="Permalink to this heading">¶</a></h1>
+<span id="meshing-tutorial"></span><h1>How to create and use a custom mesh<a class="headerlink" href="#how-to-create-and-use-a-custom-mesh" title="Link to this heading">¶</a></h1>
 <p>This example demonstrates how to create a mesh from a custom label image and how to set up simulations with the mesh.</p>
 <section id="creating-an-example-label-image">
-<h2>Creating an example label image<a class="headerlink" href="#creating-an-example-label-image" title="Permalink to this heading">¶</a></h2>
+<h2>Creating an example label image<a class="headerlink" href="#creating-an-example-label-image" title="Link to this heading">¶</a></h2>
 <p>To get started, let’s create a nifti file that contains a two-layer sphere with tissue label 5 (corresponding to scalp) for the outer shell and tissue label 2 (gray matter) for the inner part. In addition, let’s add a smaller sphere with tissue type 17 somewhere in the center. Tissue label 17 is not a standard SimNIBS label. It is used here to define a new tissue type (could be a tumor or stroke lesion, for example).</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -103,7 +100,7 @@
 </ul>
 </section>
 <section id="meshing-the-example-label-image">
-<h2>Meshing the example label image<a class="headerlink" href="#meshing-the-example-label-image" title="Permalink to this heading">¶</a></h2>
+<h2>Meshing the example label image<a class="headerlink" href="#meshing-the-example-label-image" title="Link to this heading">¶</a></h2>
 <p>To create a tetrahedral mesh from “myspheres.nii.gz”, run on the command line</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">meshmesh</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">nii</span><span class="o">.</span><span class="n">gz</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">msh</span> <span class="o">--</span><span class="n">voxsize_meshing</span> <span class="mf">0.5</span>
 </pre></div>
@@ -115,7 +112,7 @@
 </div>
 </section>
 <section id="run-simulations-with-the-custom-mesh">
-<h2>Run simulations with the custom mesh<a class="headerlink" href="#run-simulations-with-the-custom-mesh" title="Permalink to this heading">¶</a></h2>
+<h2>Run simulations with the custom mesh<a class="headerlink" href="#run-simulations-with-the-custom-mesh" title="Link to this heading">¶</a></h2>
 <p>Running the simulations is very similar to the standard SimNIBS case. As difference, a m2m_{subID} folder is missing that contains information about the EEG positions, transformations to MNI and fsaverage space, etc. Therefore, the corresponding postprocessing options are not available. Electrode and TMS coil positions have to be supplied as coordinates, as EEG positions are not available. The coordinates can be determined by loading myspheres.nii.gz into a nifti viewer such as freeview.</p>
 <p>A further difference is that we decided to include a custom tissue type with label 17 into the mesh, for which we have to define the conductivity.</p>
 <ul class="simple">
@@ -251,7 +248,7 @@
 </div>
 </section>
 <section id="output">
-<h2>Output<a class="headerlink" href="#output" title="Permalink to this heading">¶</a></h2>
+<h2>Output<a class="headerlink" href="#output" title="Link to this heading">¶</a></h2>
 <p>Windows showing the results, such as the following should appear:</p>
 <img alt="../../_images/custommesh1.png" class="align-center" src="../../_images/custommesh1.png" />
 <p>Making also the tetrahedra visible and cutting shows the field inside the volume, including the custom tissue type. As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength there is weaker in this case:</p>
@@ -360,8 +357,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="../../_sources/tutorial/advanced/custom_meshing.rst.txt"
