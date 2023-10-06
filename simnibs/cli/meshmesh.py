@@ -36,14 +36,12 @@ import logging
 
 from simnibs import __version__
 from simnibs import SIMNIBSDIR
-from .. import utils
 from simnibs.utils import cond_utils, file_finder
 from simnibs.mesh_tools.mesh_io import write_msh
 from simnibs.mesh_tools.meshing import create_mesh
 from simnibs.utils.transformations import resample_vol, crop_vol
 from simnibs.utils.settings_reader import read_ini
-from simnibs.segmentation.charm_main import _read_settings_and_copy
-from simnibs.utils.simnibs_logger import logger
+from simnibs.utils.simnibs_logger import logger, register_excepthook, unregister_excepthook
 
 
 def parseArguments(argv):
@@ -80,8 +78,7 @@ use custom .ini-file to control tetrahedra sizes:
     parser.add_argument('--nthreads', type=int,  dest='nthreads', default=1,
                         help="""Number of threads to be used for the meshing.""")
     parser.add_argument('-v', '--version', action='version', version=__version__)
-    parser.add_argument('--debug', help='Enable debug mode', action='store_true', required=False,
-                        default=False)
+    parser.add_argument('--debug_path', default=None, help="""Debug path to write debug output""")
     
     args=parser.parse_args(argv)
     if args.label_image is None:
@@ -95,24 +92,21 @@ def main():
     order_upsampling = 1;  # 0 [nearest neighbor] or 1 [linear]
 
     # setup logger
-    sub_files = file_finder.SubjectFiles(subpath=os.path.split(args.mesh_name)[0])
-    _setup_logger(sub_files.charm_log)
+    if args.debug_path is not None:
+        _setup_logger(os.path.join(args.debug_path, 'meshmesh_log.html'))
 
     # load settings
     if args.usesettings is None:
         args.usesettings = os.path.join(SIMNIBSDIR, 'charm.ini')  # use standard settings
     if type(args.usesettings) == list:
         args.usesettings = args.usesettings[0]        
-    # settings = read_ini(args.usesettings)['mesh']
-    settings = _read_settings_and_copy(args.usesettings, sub_files.settings)
-    if not settings['mesh']['skin_tag']:
-        settings['mesh']['skin_tag'] = None
-    if not settings['mesh']['hierarchy']:
-        settings['mesh']['hierarchy'] = None
+    settings = read_ini(args.usesettings)['mesh']
+    #settings = _read_settings_and_copy(args.usesettings, sub_files.settings)
+    if not settings['skin_tag']:
+        settings['skin_tag'] = None
+    if not settings['hierarchy']:
+        settings['hierarchy'] = None
 
-    debug_path = None
-    if args.debug:
-        debug_path = sub_files.subpath
 
     # load label image
     label_nifti = nib.load(args.label_image)
@@ -166,19 +160,19 @@ def main():
 
     # meshing
     new_mesh = create_mesh(label_image, label_affine,
-                           elem_sizes=settings['mesh']['elem_sizes'],
-                           smooth_size_field=settings['mesh']['smooth_size_field'],
-                           skin_facet_size=settings['mesh']['skin_facet_size'],
-                           facet_distances=settings['mesh']['facet_distances'],
-                           optimize=settings['mesh']['optimize'],
-                           remove_spikes=settings['mesh']['remove_spikes'],
-                           skin_tag=settings['mesh']['skin_tag'],
-                           hierarchy=settings['mesh']['hierarchy'],
-                           smooth_steps=settings['mesh']['smooth_steps'],
+                           elem_sizes=settings['elem_sizes'],
+                           smooth_size_field=settings['smooth_size_field'],
+                           skin_facet_size=settings['skin_facet_size'],
+                           facet_distances=settings['facet_distances'],
+                           optimize=settings['optimize'],
+                           remove_spikes=settings['remove_spikes'],
+                           skin_tag=settings['skin_tag'],
+                           hierarchy=settings['hierarchy'],
+                           smooth_steps=settings['smooth_steps'],
                            sizing_field=sf_image,
                            num_threads=args.nthreads,
-                           debug=args.debug,
-                           debug_path=debug_path)
+                           debug=args.debug_path is not None,
+                           debug_path=args.debug_path)
 
     # write out mesh, .opt-file with some visualization settings and .ini-file with settings
     if not args.mesh_name.lower().endswith('.msh'):
@@ -190,6 +184,8 @@ def main():
         shutil.copyfile(args.usesettings, args.mesh_name+'.ini')
     except shutil.SameFileError:
         pass
+    if args.debug_path is not None:
+        _stop_logger(os.path.join(args.debug_path, 'meshmesh_log.html'))
 
 
 def _setup_logger(logfile):
@@ -202,14 +198,14 @@ def _setup_logger(logfile):
     fh.setFormatter(formatter)
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
-    utils.simnibs_logger.register_excepthook(logger)
+    register_excepthook(logger)
 
 
 def _stop_logger(logfile):
     """Close down logging"""
     while logger.hasHandlers():
         logger.removeHandler(logger.handlers[0])
-    utils.simnibs_logger.unregister_excepthook()
+    unregister_excepthook()
     logging.shutdown()
     with open(logfile, "r") as f:
         logtext = f.read()
