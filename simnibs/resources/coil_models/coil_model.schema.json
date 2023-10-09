@@ -328,18 +328,10 @@
                 "description": "A single deformation",
                 "type": "object",
                 "properties": {
-                    "initial": {
-                        "description": "The initial value for the deformation",
-                        "type": "number"
-                    },
-                    "range": {
-                        "description": "The allowable range for deformation parameter [minimum, maximum]",
-                        "type": "array",
-                        "items": {
-                            "type": "number"
-                        },
-                        "minItems": 2,
-                        "maxItems": 2
+                    "deformRange": {
+                        "description": "Index of the deformation range used for this deformation",
+                        "type": "integer",
+                        "minimum": 0
                     },
                     "type": {
                         "description": "Either 'x', 'y', 'z', 'rot2p' corresponding to translations in x, y, z or rotation around the axis defined by point1 and point2",
@@ -375,8 +367,6 @@
                         "allOf": [
                             { 
                                 "required": [
-                                    "initial",
-                                    "range",
                                     "type"
                                 ] 
                             },
@@ -392,13 +382,40 @@
                     },
                     {
                         "required": [
-                            "initial",
-                            "range",
                             "type",
                             "point1",
                             "point2"
                         ]
                     }
+                ],
+                "additionalProperties": false
+            },
+            "minItems": 1
+        },
+        "deformRangeList": {
+            "description": "The deformation ranges used for the deformations of this coil",
+            "type": "array",
+            "items": {
+                "description": "A single deformation range",
+                "type": "object",
+                "properties": {
+                    "initial": {
+                        "description": "The initial value for the deformation",
+                        "type": "number"
+                    },
+                    "range": {
+                        "description": "The allowable range for deformation parameter [minimum, maximum]",
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    }
+                },
+                "required": [
+                    "initial",
+                    "range"
                 ],
                 "additionalProperties": false
             },

@@ -19,6 +19,7 @@ from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilDeformation,
+    TmsCoilDeformationRange,
     TmsCoilTranslation,
 )
 from simnibs.simulation.tms_coil.tms_coil_element import (
@@ -132,11 +133,21 @@ class TmsCoil(TcdElement):
                 f"Expected 'resolution' to have values greater than 0 ({self.resolution})"
             )
 
-        self.deformations: list[TmsCoilDeformation] = []
+    def get_deformation_ranges(self) -> list[TmsCoilDeformationRange]:
+        """Returns all deformation ranges of all coil elements of this coil
+
+        Returns
+        -------
+        list[TmsCoilDeformationRange]
+            All deformation ranges of all coil elements of this coil
+        """
+        coil_deformation_ranges = []
         for coil_element in self.elements:
             for coil_deformation in coil_element.deformations:
-                if coil_deformation not in self.deformations:
-                    self.deformations.append(coil_deformation)
+                if coil_deformation.deformation_range not in coil_deformation_ranges:
+                    coil_deformation_ranges.append(coil_deformation.deformation_range)
+
+        return coil_deformation_ranges
 
     def get_da_dt(
         self,
@@ -652,7 +663,7 @@ class TmsCoil(TcdElement):
                 os.path.join(os.path.dirname(fn), f"{os.path.basename(fn)}.nii")
             )
             return coil
-        except (nib.filebasedimages.ImageFileError):
+        except nib.filebasedimages.ImageFileError:
             pass
         finally:
             if os.path.exists(
@@ -828,13 +839,25 @@ class TmsCoil(TcdElement):
             tcd_coil_models.append(self.casing.to_tcd(ascii_mode))
             coil_models.append(self.casing)
 
+        tcd_deform_ranges = []
         tcd_deforms = []
 
         tcd_stimulators = []
         stimulators = []
 
-        for deformation in self.deformations:
-            tcd_deforms.append(deformation.to_tcd(ascii_mode))
+        deformations = []
+        deformation_ranges = []
+        for coil_element in self.elements:
+            for coil_deformation in coil_element.deformations:
+                if coil_deformation not in deformations:
+                    deformations.append(coil_deformation)
+                if coil_deformation.deformation_range not in deformation_ranges:
+                    deformation_ranges.append(coil_deformation.deformation_range)
+
+        for deformation_range in deformation_ranges:
+            tcd_deform_ranges.append(deformation_range.to_tcd(ascii_mode))
+        for deformation in deformations:
+            tcd_deforms.append(deformation.to_tcd(deformation_ranges, ascii_mode))
 
         tcd_coil_elements = []
         for coil_element in self.elements:
@@ -859,9 +882,7 @@ class TmsCoil(TcdElement):
                 tcd_stimulators.append(coil_element.stimulator.to_tcd(ascii_mode))
 
             tcd_coil_elements.append(
-                coil_element.to_tcd(
-                    stimulators, coil_models, self.deformations, ascii_mode
-                )
+                coil_element.to_tcd(stimulators, coil_models, deformations, ascii_mode)
             )
 
         tcd_coil = {}
@@ -882,6 +903,8 @@ class TmsCoil(TcdElement):
             tcd_coil["stimulatorList"] = tcd_stimulators
         if len(tcd_deforms) > 0:
             tcd_coil["deformList"] = tcd_deforms
+        if len(tcd_deform_ranges) > 0:
+            tcd_coil["deformRangeList"] = tcd_deform_ranges
         if len(tcd_coil_models) > 0:
             tcd_coil["coilModels"] = tcd_coil_models
 
@@ -927,9 +950,13 @@ class TmsCoil(TcdElement):
         for coil_model in coil.get("coilModels", []):
             coil_models.append(TmsCoilModel.from_tcd_dict(coil_model))
 
+        deformation_ranges = []
+        for deform_range in coil.get("deformRangeList", []):
+            deformation_ranges.append(TmsCoilDeformationRange.from_tcd(deform_range))
+
         deformations = []
         for deform in coil.get("deformList", []):
-            deformations.append(TmsCoilDeformation.from_tcd(deform))
+            deformations.append(TmsCoilDeformation.from_tcd(deform, deformation_ranges))
 
         stimulators = []
         for stimulator in coil.get("stimulatorList", []):
@@ -1418,10 +1445,10 @@ class TmsCoil(TcdElement):
                     )
 
     def _optimize_deformations_old(
-            self,
-            optimization_surface: Msh,
-            affine: npt.NDArray[np.float_],
-            coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+        self,
+        optimization_surface: Msh,
+        affine: npt.NDArray[np.float_],
+        coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1454,7 +1481,9 @@ class TmsCoil(TcdElement):
         ValueError
             If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
         """
-        if len(self.deformations) == 0:
+        coil_deformation_ranges = self.get_deformation_ranges()
+
+        if len(coil_deformation_ranges) == 0:
             raise ValueError(
                 "The coil has no deformations to optimize the coil element positions with."
             )
@@ -1465,28 +1494,34 @@ class TmsCoil(TcdElement):
             )
 
         if coil_translation_ranges is not None:
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1]), 0
-                )
+            x_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1])
             )
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1]), 1
-                )
+            x_translation = TmsCoilTranslation(x_translation_range, 0)
+
+            y_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1])
             )
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1]), 2
-                )
+            y_translation = TmsCoilTranslation(y_translation_range, 1)
+
+            z_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1])
             )
+            z_translation = TmsCoilTranslation(z_translation_range, 2)
+
+            coil_deformation_ranges.append(x_translation_range)
+            coil_deformation_ranges.append(y_translation_range)
+            coil_deformation_ranges.append(z_translation_range)
+
             for coil_element in self.elements:
-                coil_element.deformations.append(self.deformations[-3])
-                coil_element.deformations.append(self.deformations[-2])
-                coil_element.deformations.append(self.deformations[-1])
+                coil_element.deformations.append(x_translation)
+                coil_element.deformations.append(y_translation)
+                coil_element.deformations.append(z_translation)
 
         cost_surface_tree = optimization_surface.get_AABBTree()
-        deformation_ranges = np.array([deform.range for deform in self.deformations])
+        deformation_ranges = np.array(
+            [deform.range for deform in coil_deformation_ranges]
+        )
 
         intersecting, min_found_distance = self._get_current_deformation_scores(
             cost_surface_tree, affine
@@ -1499,12 +1534,14 @@ class TmsCoil(TcdElement):
             self._get_current_deformation_scores(cost_surface_tree, affine)[1]
         )
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in self.deformations]
+            [coil_deformation.current for coil_deformation in deformation_ranges]
         )
         best_deformation_settings = np.copy(initial_deformation_settings)
 
         def cost_f_x0(x, x0):
-            for coil_deformation, deformation_setting in zip(self.deformations, x0 + x):
+            for coil_deformation, deformation_setting in zip(
+                coil_deformation_ranges, x0 + x
+            ):
                 coil_deformation.current = deformation_setting
             intersecting, distance = self._get_current_deformation_scores(
                 cost_surface_tree, affine
@@ -1546,7 +1583,7 @@ class TmsCoil(TcdElement):
                     (
                         intermediate_best_deformation_settings[:i],
                         [xx],
-                        intermediate_best_deformation_settings[i + 1:],
+                        intermediate_best_deformation_settings[i + 1 :],
                     ),
                     axis=None,
                 )
@@ -1560,16 +1597,13 @@ class TmsCoil(TcdElement):
             )
 
         for coil_deformation, deformation_setting in zip(
-                self.deformations, best_deformation_settings
+            coil_deformation_ranges, best_deformation_settings
         ):
             coil_deformation.current = deformation_setting
 
         result_affine = np.eye(4)
 
         if coil_translation_ranges is not None:
-            z_translation = self.deformations.pop()
-            y_translation = self.deformations.pop()
-            x_translation = self.deformations.pop()
             for coil_element in self.elements:
                 coil_element.deformations = coil_element.deformations[:-3]
             result_affine = x_translation.as_matrix() @ result_affine
@@ -1580,7 +1614,7 @@ class TmsCoil(TcdElement):
         return initial_abs_mean_dist, min_found_distance, result_affine
 
     def _get_current_deformation_scores(
-            self, cost_surface_tree, affine: npt.NDArray[np.float_]
+        self, cost_surface_tree, affine: npt.NDArray[np.float_]
     ) -> tuple[float, float]:
         """Evaluates whether the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
         and calculates the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
@@ -1612,15 +1646,15 @@ class TmsCoil(TcdElement):
             intersect_points if len(intersect_points) > 0 else casing_points
         )
 
-        return len(cost_surface_tree.points_inside(intersect_points)) / len(intersect_points), np.mean(
-            np.sqrt(cost_surface_tree.min_sqdist(min_distance_points))
-        )
+        return len(cost_surface_tree.points_inside(intersect_points)) / len(
+            intersect_points
+        ), np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
 
     def optimize_deformations(
-            self,
-            optimization_surface: Msh,
-            affine: npt.NDArray[np.float_],
-            coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+        self,
+        optimization_surface: Msh,
+        affine: npt.NDArray[np.float_],
+        coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1654,7 +1688,9 @@ class TmsCoil(TcdElement):
             If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
         """
 
-        if len(self.deformations) == 0:
+        coil_deformation_ranges = self.get_deformation_ranges()
+
+        if len(coil_deformation_ranges) == 0:
             raise ValueError(
                 "The coil has no deformations to optimize the coil element positions with."
             )
@@ -1665,36 +1701,40 @@ class TmsCoil(TcdElement):
             )
 
         if coil_translation_ranges is not None:
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1]), 0
-                )
+            x_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1])
             )
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1]), 1
-                )
-            )
-            self.deformations.append(
-                TmsCoilTranslation(
-                    0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1]), 2
-                )
-            )
-            for coil_element in self.elements:
-                coil_element.deformations.append(self.deformations[-3])
-                coil_element.deformations.append(self.deformations[-2])
-                coil_element.deformations.append(self.deformations[-1])
+            x_translation = TmsCoilTranslation(x_translation_range, 0)
 
-        fdist, fcon, cost_surface_tree = optimization_surface.get_min_distance_on_grid(
-            return_inside=True
-        )
+            y_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[1, 0], coil_translation_ranges[1, 1])
+            )
+            y_translation = TmsCoilTranslation(y_translation_range, 1)
+
+            z_translation_range = TmsCoilDeformationRange(
+                0, (coil_translation_ranges[2, 0], coil_translation_ranges[2, 1])
+            )
+            z_translation = TmsCoilTranslation(z_translation_range, 2)
+
+            coil_deformation_ranges.append(x_translation_range)
+            coil_deformation_ranges.append(y_translation_range)
+            coil_deformation_ranges.append(z_translation_range)
+
+            for coil_element in self.elements:
+                coil_element.deformations.append(x_translation)
+                coil_element.deformations.append(y_translation)
+                coil_element.deformations.append(z_translation)
+
+        fdist, cost_surface_tree = optimization_surface.get_min_distance_on_grid()
 
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in self.deformations]
+            [coil_deformation.current for coil_deformation in coil_deformation_ranges]
         )
 
         def cost_f_x0_w(x, x0, w):
-            for coil_deformation, deformation_setting in zip(self.deformations, x0 + x):
+            for coil_deformation, deformation_setting in zip(
+                coil_deformation_ranges, x0 + x
+            ):
                 coil_deformation.current = deformation_setting
             (
                 casing_points,
@@ -1709,12 +1749,23 @@ class TmsCoil(TcdElement):
                 intersect_points if len(intersect_points) > 0 else casing_points
             )
 
-            f = w * fcon(intersect_points).sum() + np.mean(fdist(min_distance_points))
+            f = w * np.abs(np.min(fdist(intersect_points), 0)).sum() + np.mean(
+                np.abs(fdist(min_distance_points))
+            )
+            # f = w * np.abs(np.min(fdist(intersect_points), 0)).sum() + np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
+            # f = w * 100 * (len(cost_surface_tree.points_inside(intersect_points)) / len(intersect_points)) + np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
+            # f = w * 100 * (len(cost_surface_tree.points_inside(intersect_points)) / len(intersect_points)) + np.mean(np.abs(fdist(min_distance_points)))
 
             return f
 
-        deformation_ranges = np.array([deform.range for deform in self.deformations])
-        initial_cost = cost_f_x0_w(np.zeros_like(initial_deformation_settings), initial_deformation_settings, 100)
+        deformation_ranges = np.array(
+            [deform.range for deform in coil_deformation_ranges]
+        )
+        initial_cost = cost_f_x0_w(
+            np.zeros_like(initial_deformation_settings),
+            initial_deformation_settings,
+            100,
+        )
 
         cost_f = lambda x: cost_f_x0_w(x, initial_deformation_settings, 100)
         direct = opt.direct(
@@ -1723,23 +1774,22 @@ class TmsCoil(TcdElement):
                 deformation_ranges
                 - np.array(initial_deformation_settings)[:, np.newaxis]
             ),
+            locally_biased=False,
         )
-        initial_deformation_settings = initial_deformation_settings + direct.x
-        best_deformation_settings = initial_deformation_settings
+        best_deformation_settings = initial_deformation_settings + direct.x
 
         for coil_deformation, deformation_setting in zip(
-                self.deformations, best_deformation_settings
+            coil_deformation_ranges, best_deformation_settings
         ):
             coil_deformation.current = deformation_setting
 
-        optimized_cost = cost_f_x0_w(np.zeros_like(initial_deformation_settings), initial_deformation_settings, 100)
+        optimized_cost = cost_f_x0_w(
+            np.zeros_like(best_deformation_settings), best_deformation_settings, 100
+        )
 
         result_affine = np.eye(4)
 
         if coil_translation_ranges is not None:
-            z_translation = self.deformations.pop()
-            y_translation = self.deformations.pop()
-            x_translation = self.deformations.pop()
             for coil_element in self.elements:
                 coil_element.deformations = coil_element.deformations[:-3]
             result_affine = x_translation.as_matrix() @ result_affine

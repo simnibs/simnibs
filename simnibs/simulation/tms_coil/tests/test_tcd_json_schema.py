@@ -95,7 +95,7 @@ class TestFailJsonSchema:
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
         coil_missing_property = deepcopy(full_tcd_coil_dict)
-        coil_missing_property["deformList"][0].pop("initial")
+        coil_missing_property["deformRangeList"][0].pop("initial")
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_missing_property, tcd_json_schema)
 
@@ -253,12 +253,12 @@ class TestFailJsonSchema:
         self, full_tcd_coil_dict: dict[str, Any], tcd_json_schema: Any
     ):
         coil_wrong_list_sizes = deepcopy(full_tcd_coil_dict)
-        coil_wrong_list_sizes["deformList"][0]["range"] = []
+        coil_wrong_list_sizes["deformRangeList"][0]["range"] = []
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_list_sizes, tcd_json_schema)
 
         coil_wrong_list_sizes = deepcopy(full_tcd_coil_dict)
-        coil_wrong_list_sizes["deformList"][0]["range"] = [0, 10, 20]
+        coil_wrong_list_sizes["deformRangeList"][0]["range"] = [0, 10, 20]
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(coil_wrong_list_sizes, tcd_json_schema)
 

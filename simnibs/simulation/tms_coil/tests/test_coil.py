@@ -70,7 +70,7 @@ class TestReadCoil:
         assert coil.limits is None
         assert coil.casing is None
         assert len(coil.elements) == 1
-        assert len(coil.deformations) == 0
+        assert len(coil.get_deformation_ranges()) == 0
 
         assert isinstance(coil.elements[0], DipoleElements)
         np.testing.assert_array_almost_equal(coil.elements[0].points, [[1, 2, 3]])
@@ -363,8 +363,8 @@ class TestWriteReadCoil:
     ):
         coil = deepcopy(small_functional_3_element_coil)
 
-        coil.elements[1].deformations[0].current = 45
-        coil.elements[2].deformations[0].current = 45
+        coil.elements[1].deformations[0].deformation_range.current = 45
+        coil.elements[2].deformations[0].deformation_range.current = 45
 
         coil.elements[0].stimulator = TmsStimulator("Stim 1")
         coil.elements[1].stimulator = TmsStimulator("Stim 2")
@@ -412,8 +412,8 @@ class TestWriteReadCoil:
     ):
         coil = deepcopy(small_functional_3_element_coil)
 
-        coil.elements[1].deformations[0].current = 45
-        coil.elements[2].deformations[0].current = 45
+        coil.elements[1].deformations[0].deformation_range.current = 45
+        coil.elements[2].deformations[0].deformation_range.current = 45
         stimulator = TmsStimulator("Stim 1")
         coil.elements[0].stimulator = stimulator
         coil.elements[1].stimulator = stimulator
@@ -459,8 +459,8 @@ class TestWriteReadCoil:
     ):
         coil = deepcopy(small_functional_3_element_coil)
 
-        coil.elements[1].deformations[0].current = 45
-        coil.elements[2].deformations[0].current = 45
+        coil.elements[1].deformations[0].deformation_range.current = 45
+        coil.elements[2].deformations[0].deformation_range.current = 45
         stimulator = TmsStimulator("Stim 1")
         coil.elements[0].stimulator = stimulator
         coil.elements[1].stimulator = stimulator
@@ -848,8 +848,6 @@ class TestPositionOptimization:
         for element in coil.elements:
             element.deformations = []
 
-        coil.deformations = []
-
         with pytest.raises(ValueError):
             coil.optimize_deformations(skin_surface, coil_affine)
 
@@ -875,6 +873,10 @@ class TestPositionOptimization:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
 
+        intersection_before, distance_before = small_functional_3_element_coil._get_current_deformation_scores(
+            skin_surface.get_AABBTree(), coil_affine
+        )
+
         (
             before,
             after,
@@ -882,12 +884,14 @@ class TestPositionOptimization:
         ) = small_functional_3_element_coil.optimize_deformations(
             skin_surface, coil_affine
         )
-        assert before > after
-        assert after < 6.1
-        np.testing.assert_allclose(coil_affine, affine_after)
-        assert not small_functional_3_element_coil._get_current_deformation_scores(
+       
+        intersection_after, distance_after = small_functional_3_element_coil._get_current_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
-        )[0]
+        )
+
+        assert distance_before > distance_after
+        assert intersection_after < 0.1
+        np.testing.assert_allclose(coil_affine, affine_after)
 
     def test_optimization_with_global_translation(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
@@ -907,7 +911,7 @@ class TestPositionOptimization:
         )
 
         assert before > after
-        assert after < 1.6
+        assert after < before * 0.05
         assert not np.allclose(coil_affine, affine_after)
         assert not small_functional_3_element_coil._get_current_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
