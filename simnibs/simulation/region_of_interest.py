@@ -71,6 +71,37 @@ def _get_gradient(local_dist):
     return np.swapaxes(gradient, 1, 2)
 
 
+class RegionOfInterestInitializer():
+    """
+    Helper class to catch ROI parameters before initialization
+    """
+
+    def __init__(self):
+        """
+        Initializes RegionOfInterest class instance
+        """
+        self.mesh = None
+        self.center = None
+        self.nodes = None
+        self.con = None
+        self.domains = None
+
+    def initialize(self):
+        """
+        Run ROI initialization and return final RegionOfInterest class instance
+
+        Returns
+        -------
+        roi : RegionOfInterest class instance
+            Region of Interest
+        """
+        return RegionOfInterest(center=self.center,
+                                nodes=self.nodes,
+                                con=self.con,
+                                domains=self.domains,
+                                mesh=self.mesh)
+
+
 class RegionOfInterest:
     """
     Region of interest class containing methods to compute the electric field from the electric potential (fast).
@@ -137,6 +168,9 @@ class RegionOfInterest:
         self.vol = None
         self.n_center = None
         self.gradient = None
+
+        if type(self.center) is list:
+            self.center = np.array(self.center)
 
         # crop mesh that only tetrahedra are included
         mesh_cropped = mesh.crop_mesh(elm_type=4)

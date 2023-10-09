@@ -4,6 +4,68 @@ from .current_estimator import CurrentEstimator
 from .sim_struct import SESSION
 
 
+class ElectrodeInitializer():
+    """
+    Helper class to catch electrode properties before initialization
+    """
+    def __init__(self):
+        """
+        Initializes ElectrodeInitializer class instance
+        """
+
+        # general properties
+        self.type = None        # "ElectrodeArrayPair" or "CircularArray"
+        self.current = None
+
+        # CircularArray properties
+        self.radius_inner = None
+        self.radius_outer = None
+        self.distance = None
+        self.n_outer = None
+
+        # ElectrodeArrayPair properties
+        self.center = None
+        self.radius = None
+        self.length_x = None
+        self.length_y = None
+
+        # simulation properties
+        self.dirichlet_correction = None
+        self.dirichlet_correction_detailed = None
+        self.current_estimator_method = None
+
+    def initialize(self):
+        """
+        Run electrode initialization and return final electrode
+
+        Returns
+        -------
+        electrode : ElectrodeArrayPair or CircularArray class instance
+            Electrode
+        """
+        if self.type == "CircularArray":
+            electrode = CircularArray(radius_inner=self.radius_inner,
+                                      distance=self.distance,
+                                      n_outer=self.n_outer,
+                                      radius_outer=self.radius_outer,
+                                      current_estimator_method=self.current_estimator_method,
+                                      dirichlet_correction=self.dirichlet_correction,
+                                      dirichlet_correction_detailed=self.dirichlet_correction_detailed,
+                                      current=self.current)
+        elif self.type == "ElectrodeArrayPair":
+            electrode = ElectrodeArrayPair(center=self.center,
+                                           radius=self.radius,
+                                           length_x=self.length_x,
+                                           length_y=self.length_y,
+                                           dirichlet_correction=self.dirichlet_correction,
+                                           dirichlet_correction_detailed=self.dirichlet_correction_detailed,
+                                           current=self.current)
+        else:
+            electrode = None
+
+        return electrode
+
+
 class ElectrodeMaster():
     """
     ElectrodeMaster class containing attributes and methods for ElectrodeArrayPair and CircularArray
@@ -747,7 +809,7 @@ class ElectrodeArrayPair(ElectrodeMaster):
     """
 
     def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
-                 current_estimator_method="gpc", dirichlet_correction=True, dirichlet_correction_detailed=False,
+                 current_estimator_method=None, dirichlet_correction=True, dirichlet_correction_detailed=False,
                  current_outlier_correction=False):
 
         # check free and fixed parameters
@@ -997,7 +1059,7 @@ class CircularArray(ElectrodeMaster):
     """
     def __init__(self,
                  radius_inner, distance, n_outer=4, radius_outer=None,
-                 current=None, current_estimator_method="gpc",
+                 current=None, current_estimator_method=None,
                  dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
 
         if radius_outer is None:
@@ -1251,7 +1313,7 @@ class ElectrodeArrayPairOpt(ElectrodeArrayPair):
 
     """
 
-    def __init__(self, n_ele_x, n_ele_y, separation_distance, radius, current_estimator_method="gpc",
+    def __init__(self, n_ele_x, n_ele_y, separation_distance, radius, current_estimator_method=None,
                  dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
         """
         Initializes ElectrodeArrayPairOpt
