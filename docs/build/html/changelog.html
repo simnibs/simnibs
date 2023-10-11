@@ -1,20 +1,17 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Changelog &#8212; SimNIBS 4.0.2 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <link rel="shortcut icon" href="_static/favicon.ico"/>
+    <title>Changelog &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=61addd49"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contact" href="contact.html" />
@@ -51,9 +48,20 @@
           <div class="body" role="main">
             
   <section id="changelog">
-<span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this heading">¶</a></h1>
+<span id="id1"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
 <section id="id2">
-<h2>4.0.0<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
+<h2>4.1.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p>Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>4.0.0<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>New head segmentation and meshing pipeline <em>charm</em> with improved accuracy and robustness</p></li>
@@ -80,31 +88,31 @@
 </dd>
 </dl>
 </section>
-<section id="id3">
-<h2>3.2.6<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
+<section id="id4">
+<h2>3.2.6<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>fixed a bug causing headreco to fail on MacOS</p></li>
 <li><p>Note: On Apple M1s using .ccd coil files does not yet work, please use niftis instead.</p></li>
 </ul>
 </section>
-<section id="id4">
-<h2>3.2.5<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h2>
+<section id="id5">
+<h2>3.2.5<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>added skin smoothing options for TMS optimization</p></li>
 <li><p>more informative matlab error messages</p></li>
 <li><p>small bug fixes</p></li>
 </ul>
 </section>
-<section id="id5">
-<h2>3.2.4<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h2>
+<section id="id6">
+<h2>3.2.4<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Small bug fix related to gmsh options.</p></li>
 </ul>
 </div></blockquote>
 </section>
-<section id="id6">
-<h2>3.2.3<a class="headerlink" href="#id6" title="Permalink to this heading">¶</a></h2>
+<section id="id7">
+<h2>3.2.3<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Gmsh version changed to avoid issues with Big Sur (only MacOS)</p></li>
@@ -113,8 +121,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id7">
-<h2>3.2.2<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h2>
+<section id="id8">
+<h2>3.2.2<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added matlab and python examples for TACSchallenge</p></li>
@@ -142,8 +150,8 @@
 </dd>
 </dl>
 </section>
-<section id="id8">
-<h2>3.2<a class="headerlink" href="#id8" title="Permalink to this heading">¶</a></h2>
+<section id="id9">
+<h2>3.2<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added Auxiliary Dipole Method (ADM) TMS optimization (contributed by Luis Gomez)</p></li>
@@ -157,8 +165,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id9">
-<h2>3.1<a class="headerlink" href="#id9" title="Permalink to this heading">¶</a></h2>
+<section id="id10">
+<h2>3.1<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Added TDCS and TMS Optimization</p></li>
@@ -167,8 +175,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id10">
-<h2>3.0<a class="headerlink" href="#id10" title="Permalink to this heading">¶</a></h2>
+<section id="id11">
+<h2>3.0<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Major update to SimNIBS</p></li>
@@ -184,8 +192,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id11">
-<h2>2.1.2<a class="headerlink" href="#id11" title="Permalink to this heading">¶</a></h2>
+<section id="id12">
+<h2>2.1.2<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on the MATLAB library for SimNIBS</p></li>
@@ -195,8 +203,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id12">
-<h2>2.1.1<a class="headerlink" href="#id12" title="Permalink to this heading">¶</a></h2>
+<section id="id13">
+<h2>2.1.1<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>This upgrade focused on usability of SimNIBS</p></li>
@@ -208,8 +216,8 @@
 </ul>
 </div></blockquote>
 </section>
-<section id="id13">
-<h2>2.1.0<a class="headerlink" href="#id13" title="Permalink to this heading">¶</a></h2>
+<section id="id14">
+<h2>2.1.0<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>2.1.0 is a major update of SimNIBS 2</p></li>
@@ -224,7 +232,7 @@
 </div></blockquote>
 </section>
 <section id="g">
-<h2>2.0.1g<a class="headerlink" href="#g" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1g<a class="headerlink" href="#g" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>More fixes to the GUI</p></li>
@@ -234,7 +242,7 @@
 </div></blockquote>
 </section>
 <section id="f">
-<h2>2.0.1f<a class="headerlink" href="#f" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1f<a class="headerlink" href="#f" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Changed 3dcalc wrapper in Linux</p></li>
@@ -243,7 +251,7 @@
 </div></blockquote>
 </section>
 <section id="e">
-<h2>2.0.1e<a class="headerlink" href="#e" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1e<a class="headerlink" href="#e" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Changed from PySide to PyQt</p></li>
@@ -253,7 +261,7 @@
 </div></blockquote>
 </section>
 <section id="d">
-<h2>2.0.1d<a class="headerlink" href="#d" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1d<a class="headerlink" href="#d" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Fixed the intallation of qt on mac</p></li>
@@ -262,7 +270,7 @@
 </div></blockquote>
 </section>
 <section id="c">
-<h2>2.0.1c<a class="headerlink" href="#c" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1c<a class="headerlink" href="#c" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>freeglut is no longer required</p></li>
@@ -272,7 +280,7 @@
 </div></blockquote>
 </section>
 <section id="b">
-<h2>2.0.1b<a class="headerlink" href="#b" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1b<a class="headerlink" href="#b" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Now SimNIBS gui gives out a warning if there are any spaces in the file path</p></li>
@@ -281,7 +289,7 @@
 </div></blockquote>
 </section>
 <section id="a">
-<h2>2.0.1a<a class="headerlink" href="#a" title="Permalink to this heading">¶</a></h2>
+<h2>2.0.1a<a class="headerlink" href="#a" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>support of conductivity tensors for gray and white matter added to GUI</p></li>
@@ -348,18 +356,19 @@
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors and Funding</a></li>
 <li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id2">4.0.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id3">3.2.6</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id4">3.2.5</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id5">3.2.4</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id6">3.2.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id7">3.2.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id8">3.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id9">3.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id10">3.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id11">2.1.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id12">2.1.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id13">2.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">4.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">4.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">3.2.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">3.2.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">3.2.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">3.2.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">3.2.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id11">3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id12">2.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id13">2.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id14">2.1.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#g">2.0.1g</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#f">2.0.1f</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e">2.0.1e</a></li>
@@ -407,8 +416,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="_sources/changelog.rst.txt"

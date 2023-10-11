@@ -5,7 +5,7 @@ The coil is constructed using line segments which reconstruct the windings of th
 
 import numpy as np
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
-from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilRotation
+from simnibs.simulation.tms_coil.tms_coil_deformation import TmsCoilRotation, TmsCoilDeformationRange
 
 from simnibs.simulation.tms_coil.tms_coil_element import LineSegmentElements
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator
@@ -171,8 +171,8 @@ resolution = [1, 1, 1]
 stimulator = TmsStimulator("Example Stimulator", "Example Stimulator Brand", 122.22e6)
 
 # Creating coil element deformation to rotate the spirals around the y-axis
-rotation_1 = TmsCoilRotation(30, [0, 60], [0, 0, -winding_casing_distance], [0, -1, -winding_casing_distance])
-rotation_2 = TmsCoilRotation(30, [0, 60], [0, 0, -winding_casing_distance], [0, 1, -winding_casing_distance])
+rotation_1 = TmsCoilRotation(TmsCoilDeformationRange(30, [0, 60]), [0, 0, -winding_casing_distance], [0, -1, -winding_casing_distance])
+rotation_2 = TmsCoilRotation(TmsCoilDeformationRange(30, [0, 60]), [0, 0, -winding_casing_distance], [0, 1, -winding_casing_distance])
 
 # Creating the line segment elements from the line segments
 line_element_1 = LineSegmentElements(stimulator, segment_points[:split_idx], wire_dir[:split_idx], name="Figure_of_8_part_1", deformations=[rotation_1])

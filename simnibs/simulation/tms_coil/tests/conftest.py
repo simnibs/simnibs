@@ -8,6 +8,7 @@ import pytest
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
+    TmsCoilDeformationRange,
     TmsCoilRotation,
     TmsCoilTranslation,
 )
@@ -96,15 +97,23 @@ def medium_tcd_coil_dict() -> dict[str, Any]:
             }
         ],
         "deformList": [
-            {"initial": -75, "range": [-100.0, -50.0], "type": "x"},
-            {"initial": 0, "range": [-50.0, 50.0], "type": "y"},
-            {"initial": 75, "range": [50.0, 100.0], "type": "z"},
+            {"deformRange": 0, "type": "x"},
+            {"deformRange": 1, "type": "y"},
+            {"deformRange": 2, "type": "z"},
             {
-                "initial": 180,
-                "range": [0.0, 360.0],
+                "deformRange": 3,
                 "type": "rot2p",
                 "point1": [0.0, 0.0, 0.0],
                 "point2": [0.0, 0.0, 1.0],
+            },
+        ],
+        "deformRangeList": [
+            {"initial": -75, "range": [-100.0, -50.0]},
+            {"initial": 0, "range": [-50.0, 50.0]},
+            {"initial": 75, "range": [50.0, 100.0]},
+            {
+                "initial": 180,
+                "range": [0.0, 360.0],
             },
         ],
         "coilModels": [
@@ -129,11 +138,16 @@ def medium_tcd_coil() -> TmsCoil:
             None,
         ),
     ]
+
     deformations = [
-        TmsCoilTranslation(-75, (-100, -50), 0),
-        TmsCoilTranslation(0, (-50, 50), 1),
-        TmsCoilTranslation(75, (50, 100), 2),
-        TmsCoilRotation(180, (0, 360), np.array([0, 0, 0]), np.array([0, 0, 1])),
+        TmsCoilTranslation(TmsCoilDeformationRange(-75, (-100, -50)), 0),
+        TmsCoilTranslation(TmsCoilDeformationRange(0, (-50, 50)), 1),
+        TmsCoilTranslation(TmsCoilDeformationRange(75, (50, 100)), 2),
+        TmsCoilRotation(
+            TmsCoilDeformationRange(180, (0, 360)),
+            np.array([0, 0, 0]),
+            np.array([0, 0, 1]),
+        ),
     ]
     stimulator = TmsStimulator(
         None,
@@ -228,16 +242,21 @@ def full_tcd_coil_dict() -> dict[str, Any]:
             }
         ],
         "deformList": [
-            {"initial": -75, "range": [-100.0, -50.0], "type": "x"},
-            {"initial": 0, "range": [-50.0, 50.0], "type": "y"},
-            {"initial": 75, "range": [50.0, 100.0], "type": "z"},
+            {"deformRange": 0, "type": "x"},
+            {"deformRange": 1, "type": "y"},
+            {"deformRange": 2, "type": "z"},
             {
-                "initial": 180,
-                "range": [0.0, 360.0],
+                "deformRange": 3,
                 "type": "rot2p",
                 "point1": [0.0, 0.0, 0.0],
                 "point2": [0.0, 0.0, 1.0],
             },
+        ],
+        "deformRangeList": [
+            {"initial": -75, "range": [-100.0, -50.0]},
+            {"initial": 0, "range": [-50.0, 50.0]},
+            {"initial": 75, "range": [50.0, 100.0]},
+            {"initial": 180, "range": [0.0, 360.0]},
         ],
         "coilModels": [
             {
@@ -306,10 +325,14 @@ def full_tcd_coil() -> TmsCoil:
         ),
     ]
     deformations = [
-        TmsCoilTranslation(-75, (-100, -50), 0),
-        TmsCoilTranslation(0, (-50, 50), 1),
-        TmsCoilTranslation(75, (50, 100), 2),
-        TmsCoilRotation(180, (0, 360), np.array([0, 0, 0]), np.array([0, 0, 1])),
+        TmsCoilTranslation(TmsCoilDeformationRange(-75, (-100, -50)), 0),
+        TmsCoilTranslation(TmsCoilDeformationRange(0, (-50, 50)), 1),
+        TmsCoilTranslation(TmsCoilDeformationRange(75, (50, 100)), 2),
+        TmsCoilRotation(
+            TmsCoilDeformationRange(180, (0, 360)),
+            np.array([0, 0, 0]),
+            np.array([0, 0, 1]),
+        ),
     ]
     stimulator = TmsStimulator(
         "SimNIBS-Stimulator",
@@ -393,10 +416,13 @@ def small_functional_3_element_coil() -> TmsCoil:
         ),
     ]
     deformations = [
-        TmsCoilRotation(0, (0, 90), np.array([0, -20, 0]), np.array([40, -20, 0])),
         TmsCoilRotation(
-            0,
-            (0, 90),
+            TmsCoilDeformationRange(0, (0, 90)),
+            np.array([0, -20, 0]),
+            np.array([40, -20, 0]),
+        ),
+        TmsCoilRotation(
+            TmsCoilDeformationRange(0, (0, 90)),
             np.array([40, 20, 0]),
             np.array([0, 20, 0]),
         ),

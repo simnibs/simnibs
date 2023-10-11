@@ -7,8 +7,8 @@ from scipy.spatial.transform import Rotation
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 
 
-class TmsCoilDeformation(ABC, TcdElement):
-    """Represents a deformation
+class TmsCoilDeformationRange(TcdElement):
+    """Represents a deformation range
 
     Parameters
     ----------
@@ -60,6 +60,37 @@ class TmsCoilDeformation(ABC, TcdElement):
         else:
             self._current = value
 
+    def to_tcd(self, ascii_mode: bool = False) -> dict:
+        tcd_deformation = {}
+        tcd_deformation["initial"] = self.initial
+        tcd_deformation["range"] = list(self.range)
+        return tcd_deformation
+
+    @classmethod
+    def from_tcd(cls, tcd_deformation: dict):
+        initial = tcd_deformation["initial"]
+        deform_range = tcd_deformation["range"]
+
+        return TmsCoilDeformationRange(initial, deform_range)
+
+
+class TmsCoilDeformation(ABC, TcdElement):
+    """Represents a deformation
+
+    Parameters
+    ----------
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
+
+    Attributes
+    ----------------------
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
+    """
+
+    def __init__(self, deformation_range: TmsCoilDeformationRange):
+        self.deformation_range = deformation_range
+
     @abstractmethod
     def apply(self, points: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
         """Applies the deformation to every point
@@ -88,26 +119,32 @@ class TmsCoilDeformation(ABC, TcdElement):
         """
         pass
 
-    def to_tcd(self, ascii_mode: bool = False) -> dict:
+    def to_tcd(
+        self,
+        deformation_ranges: list[TmsCoilDeformationRange],
+        ascii_mode: bool = False,
+    ) -> dict:
         tcd_deformation = {}
-        tcd_deformation["initial"] = self.initial
-        tcd_deformation["range"] = list(self.range)
+        tcd_deformation["deformRange"] = deformation_ranges.index(
+            self.deformation_range
+        )
         return tcd_deformation
 
     @classmethod
-    def from_tcd(cls, tcd_deformation: dict):
-        initial = tcd_deformation["initial"]
-        deform_range = tcd_deformation["range"]
+    def from_tcd(
+        cls, tcd_deformation: dict, deformation_ranges: list[TmsCoilDeformationRange]
+    ):
+        deformation_range = deformation_ranges[tcd_deformation["deformRange"]]
         if tcd_deformation["type"] == "x":
-            return TmsCoilTranslation(initial, deform_range, 0)
+            return TmsCoilTranslation(deformation_range, 0)
         elif tcd_deformation["type"] == "y":
-            return TmsCoilTranslation(initial, deform_range, 1)
+            return TmsCoilTranslation(deformation_range, 1)
         elif tcd_deformation["type"] == "z":
-            return TmsCoilTranslation(initial, deform_range, 2)
+            return TmsCoilTranslation(deformation_range, 2)
         elif tcd_deformation["type"] == "rot2p":
             point_1 = np.array(tcd_deformation["point1"])
             point_2 = np.array(tcd_deformation["point2"])
-            return TmsCoilRotation(initial, deform_range, point_1, point_2)
+            return TmsCoilRotation(deformation_range, point_1, point_2)
         else:
             raise ValueError(f"Invalid deformation type: {tcd_deformation['type']}")
 
@@ -117,19 +154,15 @@ class TmsCoilTranslation(TmsCoilDeformation):
 
     Parameters
     ----------
-    initial : float
-        The initial value of the deformation (e.g angle of a rotation deformation)
-    range : npt.ArrayLike
-        The allowed range of the deformation ([min, max])
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
     axis : int
         The axis to be used for the translation
 
     Attributes
     ----------------------
-    initial : float
-        The initial value of the deformation (e.g angle of a rotation deformation)
-    range : npt.NDArray[np.float64]
-        The allowed range of the deformation ([min, max])
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
     current : float
         The current value of the deformation
     axis : int
@@ -138,11 +171,10 @@ class TmsCoilTranslation(TmsCoilDeformation):
 
     def __init__(
         self,
-        initial: float,
-        range: npt.ArrayLike,
+        deformation_range: TmsCoilDeformationRange,
         axis: int,
     ):
-        super().__init__(initial, range)
+        super().__init__(deformation_range)
         self.axis = axis
 
         if self.axis < 0 or self.axis > 2:
@@ -162,7 +194,7 @@ class TmsCoilTranslation(TmsCoilDeformation):
             The translation vector for this coil translation
         """
         translation = np.zeros(3)
-        translation[self.axis] = self.current
+        translation[self.axis] = self.deformation_range.current
         return translation
 
     def as_matrix(self) -> npt.NDArray[np.float_]:
@@ -170,8 +202,12 @@ class TmsCoilTranslation(TmsCoilDeformation):
         affine_matrix[:3, 3] = self.get_translation()
         return affine_matrix
 
-    def to_tcd(self, ascii_mode: bool = False) -> dict:
-        tcd_deformation = super().to_tcd()
+    def to_tcd(
+        self,
+        deformation_ranges: list[TmsCoilDeformationRange],
+        ascii_mode: bool = False,
+    ) -> dict:
+        tcd_deformation = super().to_tcd(deformation_ranges, ascii_mode)
         if self.axis == 0:
             tcd_deformation["type"] = "x"
         elif self.axis == 1:
@@ -188,10 +224,8 @@ class TmsCoilRotation(TmsCoilDeformation):
 
     Parameters
     ----------
-    initial : float
-        The initial value of the deformation (e.g angle of a rotation deformation)
-    range : npt.ArrayLike
-        The allowed range of the deformation ([min, max])
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
     point_1: npt.ArrayLike
         The first point of the rotation axis
     point_2: npt.ArrayLike
@@ -199,10 +233,8 @@ class TmsCoilRotation(TmsCoilDeformation):
 
     Attributes
     ----------------------
-    initial : float
-        The initial value of the deformation (e.g angle of a rotation deformation)
-    range : npt.NDArray[np.float64]
-        The allowed range of the deformation ([min, max])
+    deformation_range : TmsCoilDeformationRange
+            The range, initial and current value of the deformation
     current : float
         The current value of the deformation
     point_1: npt.NDArray[np.float64]
@@ -213,12 +245,11 @@ class TmsCoilRotation(TmsCoilDeformation):
 
     def __init__(
         self,
-        initial: float,
-        range: npt.ArrayLike,
+        deformation_range: TmsCoilDeformationRange,
         point_1: npt.ArrayLike,
         point_2: npt.ArrayLike,
     ):
-        super().__init__(initial, range)
+        super().__init__(deformation_range)
         self.point_1: npt.NDArray[np.float64] = np.array(point_1, dtype=np.float64)
         self.point_2: npt.NDArray[np.float64] = np.array(point_2, dtype=np.float64)
 
@@ -246,7 +277,9 @@ class TmsCoilRotation(TmsCoilDeformation):
         iT = np.identity(4)
         iT[:3, 3] = -self.point_1
         R = np.identity(4)
-        R[:3, :3] = Rotation.from_rotvec(v * self.current, degrees=True).as_matrix()
+        R[:3, :3] = Rotation.from_rotvec(
+            v * self.deformation_range.current, degrees=True
+        ).as_matrix()
         Q = T @ R @ iT
         return Q
 
@@ -258,8 +291,12 @@ class TmsCoilRotation(TmsCoilDeformation):
     def as_matrix(self) -> npt.NDArray[np.float_]:
         return self.get_rotation()
 
-    def to_tcd(self, ascii_mode: bool = False) -> dict:
-        tcd_deformation = super().to_tcd()
+    def to_tcd(
+        self,
+        deformation_ranges: list[TmsCoilDeformationRange],
+        ascii_mode: bool = False,
+    ) -> dict:
+        tcd_deformation = super().to_tcd(deformation_ranges, ascii_mode)
         tcd_deformation["type"] = "rot2p"
         tcd_deformation["point1"] = self.point_1.tolist()
         tcd_deformation["point2"] = self.point_2.tolist()

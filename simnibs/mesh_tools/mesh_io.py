@@ -2360,7 +2360,7 @@ class Msh:
 
         return np.where(has_far)[0], far
 
-    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None, return_inside: bool = False):
+    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None):
         """Generates a distance field on a grid to the mesh surface
 
         Parameters
@@ -2369,15 +2369,11 @@ class Msh:
             The resolution of the grid, by default 1.0
         AABBTree : pyAABBTree, optional
             A pre-calculated AABBTree, will be generated if None, by default None
-        return_inside : bool, optional
-            Weather to return the inside distance seperatly, by default False
 
         Returns
         -------
         Callable
-            The gridded distance field function
-        Callable
-            The gridded inside distance field function (if return_inside is True)
+            The signed gridded distance field function (inside is negative)
         pyAABBTree
             The AABBTree used
         """
@@ -2389,7 +2385,7 @@ class Msh:
         xyz = np.meshgrid(
             *[
                 np.arange(np.floor(x[0]), x[1], resolution)
-                for x in zip(xmin - 3, xmax + 3)
+                for x in zip(xmin - 5, xmax + 5)
             ],
             indexing="ij",
         )
@@ -2397,7 +2393,7 @@ class Msh:
 
         M = np.identity(4) * resolution
         M[3, 3] = 1
-        M[:3, 3] = np.floor(xmin)
+        M[:3, 3] = np.floor(xmin - 5)
         iM = np.linalg.inv(M)
 
         grid = np.zeros(xyz[0].shape, dtype="bool")
@@ -2406,7 +2402,7 @@ class Msh:
         grid = scipy.ndimage.binary_closing(grid, iterations=3)
         inside = scipy.ndimage.distance_transform_edt(grid)
         outside = scipy.ndimage.distance_transform_edt(1 - grid)
-        grid = inside + outside
+        grid = -inside + outside
 
         def min_distance_on_grid(x):
             x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
@@ -2468,19 +2464,7 @@ class Msh:
 
             return mapped_values
 
-        if return_inside:
-            def inside_distance_on_grid(x):
-                return scipy.ndimage.map_coordinates(
-                    inside,
-                    iM[:3, :3] @ x.T + iM[:3, 3, None],
-                    order=1,
-                    mode="constant",
-                    cval=0.0,
-                )
-
-            return min_distance_on_grid, inside_distance_on_grid, AABBTree
-        else:
-            return min_distance_on_grid, AABBTree
+        return min_distance_on_grid, AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
