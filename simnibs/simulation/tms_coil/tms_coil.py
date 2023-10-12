@@ -1,3 +1,4 @@
+import itertools
 import json
 import os
 import re
@@ -39,7 +40,7 @@ class TmsCoil(TcdElement):
 
     Parameters
     ----------
-    elements : list[TmsCoilElement]
+    elements : list[TmsCoilElements]
         The stimulation elements of the coil
     name : Optional[str], optional
         The name of the coil, by default None
@@ -55,10 +56,13 @@ class TmsCoil(TcdElement):
         This follows the structure [rx,ry,rz]
     casing : Optional[TmsCoilModel], optional
         The casing of the coil, by default None
+    self_intersection_test : Optional[list[list[TmsCoilElements]]], optional
+        A list of lists of coil element indexes, each sublist describes a group of coil elements that should not be intersecting
+        (0 is the coil casing, 1 is the first coil element)
 
     Attributes
     ----------------------
-    elements : list[TmsCoilElement]
+    elements : list[TmsCoilElements]
         The stimulation elements of the coil
     name : Optional[str]
         The name of the coil
@@ -76,6 +80,8 @@ class TmsCoil(TcdElement):
         The casing of the coil
     deformations : list[TmsCoilDeformation]
         All deformations used in the stimulation elements of the coil
+    self_intersection_test : Optional[list[list[TmsCoilElements]]], optional
+        A list of lists of coil elements, each sublist describes a group of coil elements that should not be intersecting
     """
 
     def __init__(
@@ -87,6 +93,7 @@ class TmsCoil(TcdElement):
         limits: Optional[npt.ArrayLike] = None,
         resolution: Optional[npt.ArrayLike] = None,
         casing: Optional[TmsCoilModel] = None,
+        self_intersection_test: Optional[list[list[int]]] = None,
     ):
         self.name = name
         self.brand = brand
@@ -97,6 +104,17 @@ class TmsCoil(TcdElement):
         )
         self.casing = casing
         self.elements = elements
+
+        self.self_intersection_test = []
+        if self_intersection_test is not None:
+            for self_intersection_group in self_intersection_test:
+                self.self_intersection_test.append([])
+                for self_intersection_index in self_intersection_group:
+                    if self_intersection_index == 0:
+                        self.self_intersection_test[-1].append(DipoleElements(None, np.zeros((1, 3)), np.zeros((1, 3)), casing=self.casing))
+                    else:
+                        self.self_intersection_test[-1].append(self.elements[self_intersection_index - 1])
+
 
         if len(elements) == 0:
             raise ValueError("Expected at least one coil element but got 0")
@@ -132,6 +150,16 @@ class TmsCoil(TcdElement):
             raise ValueError(
                 f"Expected 'resolution' to have values greater than 0 ({self.resolution})"
             )
+
+        for self_intersection_group in self.self_intersection_test:
+            if len(self_intersection_group) != len(set(self_intersection_group)):
+                raise ValueError(
+                    f"Expected 'self_intersection_test' to have groups of unique indexes, but {self_intersection_group} has duplicates"
+                )
+            if len(self_intersection_group) <= 1:
+                raise ValueError(
+                    f"Expected 'self_intersection_test' to have groups of at least 2 coil element indexes, but {self_intersection_group} has less"
+                )
 
     def get_deformation_ranges(self) -> list[TmsCoilDeformationRange]:
         """Returns all deformation ranges of all coil elements of this coil
@@ -885,6 +913,18 @@ class TmsCoil(TcdElement):
                 coil_element.to_tcd(stimulators, coil_models, deformations, ascii_mode)
             )
 
+        tcd_self_intersection_test = []
+        for self_intersection_group in self.self_intersection_test:
+            tcd_self_intersection_group = []
+            for intersection_element in self_intersection_group:
+                if intersection_element in self.elements:
+                    tcd_self_intersection_group.append(
+                        self.elements.index(intersection_element) + 1
+                    )
+                else:
+                    tcd_self_intersection_group.append(0)
+            tcd_self_intersection_test.append(tcd_self_intersection_group)
+
         tcd_coil = {}
         if self.name is not None:
             tcd_coil["name"] = self.name
@@ -907,6 +947,8 @@ class TmsCoil(TcdElement):
             tcd_coil["deformRangeList"] = tcd_deform_ranges
         if len(tcd_coil_models) > 0:
             tcd_coil["coilModels"] = tcd_coil_models
+        if len(tcd_self_intersection_test) > 0:
+            tcd_coil["selfIntersectionTest"] = tcd_self_intersection_test
 
         return tcd_coil
 
@@ -985,6 +1027,7 @@ class TmsCoil(TcdElement):
             None if coil.get("limits") is None else np.array(coil["limits"]),
             None if coil.get("resolution") is None else np.array(coil["resolution"]),
             coil_casing,
+            coil.get("selfIntersectionTest", []),
         )
 
     @classmethod
@@ -1613,11 +1656,12 @@ class TmsCoil(TcdElement):
 
         return initial_abs_mean_dist, min_found_distance, result_affine
 
-    def _get_current_deformation_scores(
+    def _get_exact_deformation_scores(
         self, cost_surface_tree, affine: npt.NDArray[np.float_]
-    ) -> tuple[float, float]:
-        """Evaluates whether the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree
-        and calculates the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
+    ) -> tuple[float, float, float]:
+        """Evaluates how far the intersection points (if not present, the coil casing points) intersect with the cost_surface_tree. 
+        Calculates the mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points).
+        Calculates how far coil casing points intersect with other coil casings in each intersection group.
 
         Parameters
         ----------
@@ -1629,9 +1673,11 @@ class TmsCoil(TcdElement):
         Returns
         -------
         float
-            Ratio of intersection points (if not present, the coil casing points) intersecting with the cost_surface_tree
+            The mean of the sqrt(distance) inside between intersection points (if not present, the coil casing points) and the cost_surface_tree
         float
             The mean of the sqrt(distance) between cost_surface_tree and the min distance points (if not present, the coil casing points)
+        float
+            The mean of the sqrt(distance) inside between casing points and the cost_surface_tree, based on the self intersection groups
         """
         (
             casing_points,
@@ -1646,9 +1692,29 @@ class TmsCoil(TcdElement):
             intersect_points if len(intersect_points) > 0 else casing_points
         )
 
-        return len(cost_surface_tree.points_inside(intersect_points)) / len(
-            intersect_points
-        ), np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
+        element_casing_trees = {}
+        element_inv_matrixes = {}
+        for intersection_element in list(set(np.array(self.self_intersection_test).flat)):
+            if(intersection_element.casing is not None):
+                element_casing_trees[intersection_element] = intersection_element.casing.mesh.get_AABBTree()
+                element_inv_matrixes[intersection_element] = np.linalg.inv(intersection_element.get_combined_transformation(affine))
+
+        self_intersection_distance = 0
+        for intersection_group in self.self_intersection_test:
+            for intersection_pair in itertools.combinations(intersection_group, 2):
+                coords, _, _ = intersection_pair[1].get_casing_coordinates(affine)
+                iM = element_inv_matrixes[intersection_pair[0]]
+
+                points_inside = element_casing_trees[intersection_pair[0]].points_inside((iM[:3, :3] @ coords.T + iM[:3, 3, None]).T)
+                if len(points_inside) > 0:
+                    self_intersection_distance += np.sum(np.sqrt(element_casing_trees[intersection_pair[0]].min_sqdist((iM[:3, :3] @ coords[points_inside].T + iM[:3, 3, None]).T))) / len(coords)
+        
+        intersection_distance = 0
+        points_inside = cost_surface_tree.points_inside(intersect_points)
+        if len(points_inside) > 0:
+            intersection_distance = np.sum(np.sqrt(cost_surface_tree.min_sqdist(intersect_points[points_inside]))) / len(intersect_points)
+
+        return intersection_distance, np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points))), self_intersection_distance
 
     def optimize_deformations(
         self,
@@ -1700,6 +1766,11 @@ class TmsCoil(TcdElement):
                 "The coil has no coil casing or min_distance/intersection points."
             )
 
+        element_distances = {}
+        for intersection_element in list(set(np.array(self.self_intersection_test).flat)):
+            if(intersection_element.casing is not None):
+                element_distances[intersection_element], _ = intersection_element.casing.mesh.get_min_distance_on_grid()
+
         if coil_translation_ranges is not None:
             x_translation_range = TmsCoilDeformationRange(
                 0, (coil_translation_ranges[0, 0], coil_translation_ranges[0, 1])
@@ -1749,8 +1820,21 @@ class TmsCoil(TcdElement):
                 intersect_points if len(intersect_points) > 0 else casing_points
             )
 
+            element_points = {}
+            element_inv_matrixes = {}
+            for intersection_element in list(set(np.array(self.self_intersection_test).flat)):
+                if(intersection_element.casing is not None):
+                    element_points[intersection_element], _, _ = intersection_element.get_casing_coordinates(affine)
+                    element_inv_matrixes[intersection_element] = np.linalg.inv(intersection_element.get_combined_transformation(affine))
+
+            self_intersection_penalty = 0
+            for intersection_group in self.self_intersection_test:
+                for intersection_pair in itertools.combinations(intersection_group, 2):
+                    iM = element_inv_matrixes[intersection_pair[0]]
+                    self_intersection_penalty += np.abs(np.min(element_distances[intersection_pair[0]]((iM[:3, :3] @ element_points[intersection_pair[1]].T + iM[:3, 3, None]).T), 0)).sum()
+
             f = w * np.abs(np.min(fdist(intersect_points), 0)).sum() + np.mean(
-                np.abs(fdist(min_distance_points))
+                np.abs(fdist(min_distance_points)) + self_intersection_penalty
             )
             # f = w * np.abs(np.min(fdist(intersect_points), 0)).sum() + np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
             # f = w * 100 * (len(cost_surface_tree.points_inside(intersect_points)) / len(intersect_points)) + np.mean(np.sqrt(cost_surface_tree.min_sqdist(min_distance_points)))
@@ -1786,6 +1870,19 @@ class TmsCoil(TcdElement):
         optimized_cost = cost_f_x0_w(
             np.zeros_like(best_deformation_settings), best_deformation_settings, 100
         )
+
+        element_points = {}
+        element_inv_matrixes = {}
+        for intersection_element in list(set(np.array(self.self_intersection_test).flat)):
+            if(intersection_element.casing is not None):
+                element_points[intersection_element], _, _ = intersection_element.get_casing_coordinates(affine)
+                element_inv_matrixes[intersection_element] = np.linalg.inv(intersection_element.get_combined_transformation(affine))
+
+        self_intersection_penalty = 0
+        for intersection_group in self.self_intersection_test:
+            for intersection_pair in itertools.combinations(intersection_group, 2):
+                iM = element_inv_matrixes[intersection_pair[0]]
+                self_intersection_penalty += np.abs(np.min(element_distances[intersection_pair[0]]((iM[:3, :3] @ element_points[intersection_pair[1]].T + iM[:3, 3, None]).T), 0)).sum()
 
         result_affine = np.eye(4)
 

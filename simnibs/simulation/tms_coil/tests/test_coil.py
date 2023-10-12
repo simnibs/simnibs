@@ -873,7 +873,7 @@ class TestPositionOptimization:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
 
-        intersection_before, distance_before = small_functional_3_element_coil._get_current_deformation_scores(
+        intersection_before, distance_before, _ = small_functional_3_element_coil._get_exact_deformation_scores(
             skin_surface.get_AABBTree(), coil_affine
         )
 
@@ -885,7 +885,7 @@ class TestPositionOptimization:
             skin_surface, coil_affine
         )
        
-        intersection_after, distance_after = small_functional_3_element_coil._get_current_deformation_scores(
+        intersection_after, distance_after, _ = small_functional_3_element_coil._get_exact_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
         )
 
@@ -913,7 +913,7 @@ class TestPositionOptimization:
         assert before > after
         assert after < before * 0.05
         assert not np.allclose(coil_affine, affine_after)
-        assert not small_functional_3_element_coil._get_current_deformation_scores(
+        assert not small_functional_3_element_coil._get_exact_deformation_scores(
             skin_surface.get_AABBTree(), affine_after
         )[0]
 
