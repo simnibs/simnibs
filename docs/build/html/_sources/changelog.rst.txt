@@ -3,10 +3,11 @@
 Changelog
 ===========
 
-4.1.0
-------
+4.1.0 Pre-Release
+-----------------
  * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
-* Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
+ * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
+ * Available on GitHub
 
 4.0.0
 ------
