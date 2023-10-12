@@ -16,7 +16,7 @@ dynamic = ["version"]
 requires-python = ">=3.9"
 
 dependencies =[
-    "numpy==1.21.5",
+    "numpy==1.22.0",
     "scipy>=1.9",
     "h5py==3.6.0",
     "nibabel>=2.3",
