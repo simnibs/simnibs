@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Group Analysis &#8212; SimNIBS 4.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <title>Group Analysis &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -48,37 +48,37 @@
           <div class="body" role="main">
             
   <section id="group-analysis">
-<span id="group-tutorial"></span><h1>Group Analysis<a class="headerlink" href="#group-analysis" title="Permalink to this heading">¶</a></h1>
+<span id="group-tutorial"></span><h1>Group Analysis<a class="headerlink" href="#group-analysis" title="Link to this heading">¶</a></h1>
 <p>SimNIBS supports group analysis of electric fields in both <em>FsAverage</em> and <em>MNI</em> spaces.</p>
 <p>In this example, we will simulate the average electric field for a simple tDCS montage across five subjects using the <em>FsAverage</em> space.</p>
 <section id="example-dataset">
-<h2>Example Dataset<a class="headerlink" href="#example-dataset" title="Permalink to this heading">¶</a></h2>
+<h2>Example Dataset<a class="headerlink" href="#example-dataset" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://osf.io/gxumc/download">Click here to download the example dataset for group analyses</a>.</p>
 <p>This example dataset is composed of a subgroup of a cohort available at <a class="reference external" href="https://openneuro.org/datasets/ds000171">OpenfMRI</a>. The data was processed in SimNIBS 4 using <a class="reference internal" href="../../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a>. For more information, please see the <a class="reference external" href="https://osf.io/ah5eu/">OSF repository</a> and <a class="reference external" href="https://doi.org/10.1101/500314">Saturnino et al., 2018</a>.</p>
 <p>In this example, we have five subjects, named <code class="file docutils literal notranslate"><span class="pre">sub01</span></code>, <code class="file docutils literal notranslate"><span class="pre">sub09</span></code>,
 <code class="file docutils literal notranslate"><span class="pre">sub10</span></code>, <code class="file docutils literal notranslate"><span class="pre">sub12</span></code>, and <code class="file docutils literal notranslate"><span class="pre">sub15</span></code>. Their head models are stored in the corresponding m2m-folders <code class="file docutils literal notranslate"><span class="pre">m2m_sub01</span></code>, <code class="file docutils literal notranslate"><span class="pre">m2m_sub09</span></code>, etc.</p>
 </section>
 <section id="objective">
-<h2>Objective<a class="headerlink" href="#objective" title="Permalink to this heading">¶</a></h2>
+<h2>Objective<a class="headerlink" href="#objective" title="Link to this heading">¶</a></h2>
 <p>Suppose we apply tDCS on the five subjects using an anode over C3 and a cathode over AF4.
 We want to obtain the mean and standard deviation of the normal component of the electric field (that is, the incoming or outgoing electric field component) in the middle gray matter surface across all subjects.</p>
 <figure class="align-default" id="id3">
 <img alt="../../_images/tutorial_normal.png" src="../../_images/tutorial_normal.png" />
 <figcaption>
-<p><span class="caption-text">Magnitude (aka Vector Norm) (top) and Normal (bottom) of the electric field, from <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et al. 2019</a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Magnitude (aka Vector Norm) (top) and Normal (bottom) of the electric field, from <a class="reference external" href="https://doi.org/10.1016/j.brs.2019.03.072">Antonenko et al. 2019</a></span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <p></p>
 </section>
 <section id="set-up-and-run-simulations">
-<h2>Set up and Run Simulations<a class="headerlink" href="#set-up-and-run-simulations" title="Permalink to this heading">¶</a></h2>
+<h2>Set up and Run Simulations<a class="headerlink" href="#set-up-and-run-simulations" title="Link to this heading">¶</a></h2>
 <p>There are several ways to set-up and run Simulations in SimNIBS</p>
 <section id="gui">
-<h3>GUI<a class="headerlink" href="#gui" title="Permalink to this heading">¶</a></h3>
+<h3>GUI<a class="headerlink" href="#gui" title="Link to this heading">¶</a></h3>
 <p>Set-up the simulation for each subject in the <a class="reference internal" href="../gui.html#gui-tutorial"><span class="std std-ref">Graphical User Interface</span></a>. In this case, remember to tick the <em>Transform to FsAverage</em> option in the <a class="reference internal" href="../../documentation/gui.html#sim-opt"><span class="std std-ref">Simulation Options Window</span></a>. (under <em>Edit</em> -&gt; <em>Simulation Options</em>)</p>
 </section>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
 <p>Write a <em>Python</em> script. In this case, remember to set <em>map_to_fsavg</em> to <em>True</em> in the <a class="reference internal" href="../../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> structure. See <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a> for more information.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    This example runs tDCS simulations with a bipolar montage for five subjects</span>
@@ -135,7 +135,7 @@ We want to obtain the mean and standard deviation of the normal component of the
 </div>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
 <p>Write a <em>MATLAB</em> script. In this case, remember to set <em>map_to_fsavg</em> to <em>True</em> in the <a class="reference internal" href="../../documentation/sim_struct/session.html#session-doc"><span class="std std-ref">SESSION</span></a> structure. See <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a> for more information.</p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%  This example runs tDCS simulations with a bipolar montage for five subjects</span>
 <span class="c">%  The dataset with the five head models is avaliable at https://osf.io/ah5eu/</span>
@@ -185,11 +185,11 @@ We want to obtain the mean and standard deviation of the normal component of the
 </section>
 </section>
 <section id="calculate-mean">
-<h2>Calculate Mean<a class="headerlink" href="#calculate-mean" title="Permalink to this heading">¶</a></h2>
+<h2>Calculate Mean<a class="headerlink" href="#calculate-mean" title="Link to this heading">¶</a></h2>
 <p>When the simulations are over, we need to collect their results to calculate an average. In SimNIBS, we can do it either in Python or MATLAB.
 Please notice that, while for setting up simulations Python and MATLAB share a similar interface, in post-processing the interfaces can be very different.</p>
 <section id="id1">
-<h3>Python<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    This example wil go throgh simulations and calculate</span>
 <span class="sd">    the average and the standard deviation of the normal component</span>
@@ -248,7 +248,7 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 </div>
 </section>
 <section id="id2">
-<h3>MATLAB<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% This example wil go throgh simulations and calculate</span>
 <span class="c">% the average and the standard deviation of the normal component</span>
 <span class="c">% of the electric field in FsAverage space</span>
@@ -305,7 +305,7 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
 </section>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
 <p>For more information on group analysis, please see our <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a> and <a class="reference external" href="https://doi.org/10.1093/cercor/bhw292A">Bungert et al. 2017</a>.</p>
 </section>
 </section>
@@ -410,7 +410,7 @@ Please notice that, while for setting up simulations Python and MATLAB share a s
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |

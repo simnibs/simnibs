@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import tempfile
 import argparse
+import re
 
 from jinja2 import Template
 import conda_pack
@@ -18,9 +19,17 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         os.path.abspath(os.path.dirname(__file__)),
         '..'
     ))
-    version = open(os.path.join(
-        simnibs_root_dir, "simnibs", "_version.py")
-    ).readlines()[-1].split()[-1].strip("\"'")
+    version = ''
+    with open(os.path.join(simnibs_root_dir, "simnibs", "_version.py")) as fp:
+        for line in fp:
+            if '__version__' in line:
+                version = line.split("version = '")[-1]
+                version = version.split("' ")[0]
+                break
+
+    if not version:
+        raise RuntimeError('Unable to find own __version__ string')
+
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
     simnibs_dist_dir = os.path.abspath(simnibs_dist_dir)
@@ -40,6 +49,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
     env = os.path.join(
         simnibs_root_dir, f'environment_{os_name}.yml'
     )
+
     # Install requirements
     subprocess.run(
         f'conda env create -p {env_prefix} -f {env} --force',
@@ -50,6 +60,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
     wheels = glob.glob(
         os.path.join(simnibs_dist_dir, f'simnibs-{version}*.whl')
     )
+
     if len(wheels) == 0:
         raise FileNotFoundError(f'Did not find any wheels for version {version}')
     if sys.platform == 'win32':

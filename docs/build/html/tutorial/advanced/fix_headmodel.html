@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to manually edit a head model &#8212; SimNIBS 4.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <title>How to manually edit a head model &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -48,17 +48,17 @@
           <div class="body" role="main">
             
   <section id="how-to-manually-edit-a-head-model">
-<span id="fixheadmodel-tutorial"></span><h1>How to manually edit a head model<a class="headerlink" href="#how-to-manually-edit-a-head-model" title="Permalink to this heading">¶</a></h1>
+<span id="fixheadmodel-tutorial"></span><h1>How to manually edit a head model<a class="headerlink" href="#how-to-manually-edit-a-head-model" title="Link to this heading">¶</a></h1>
 <p>This example demonstrates how to manually edit a head model to improve the results of the automated segmentation pipeline or to add additional tissue types, e.g. to model pathologies.</p>
 <section id="edit-the-label-image">
-<h2>1) Edit the label image<a class="headerlink" href="#edit-the-label-image" title="Permalink to this heading">¶</a></h2>
+<h2>1) Edit the label image<a class="headerlink" href="#edit-the-label-image" title="Link to this heading">¶</a></h2>
 <p>We need to edit the label image “tissue_labeling_upsampled.nii.gz” in the subfolder “label_prep” of the m2m-folder of the subject. It’s a good idea to make a copy of the image before editing it:</p>
 <img alt="../../_images/tutorial_fixheadmodel_1_makecopy.png" class="align-center" src="../../_images/tutorial_fixheadmodel_1_makecopy.png" />
 <p>Afterwards, use an editor of your choice, your custom script or whatever you prefere to update the label image. Here, I’ve manually added “SimNIBS” using a new tissue type 15. This was done using FreeSurfer’s freeview and a few lines in python to extend the thickness of the letters in anterior-posterior direction (code not listed here):</p>
 <img alt="../../_images/tutorial_fixheadmodel_2_edit.png" class="align-center" src="../../_images/tutorial_fixheadmodel_2_edit.png" />
 </section>
 <section id="recreate-the-mesh">
-<h2>2) Recreate the mesh<a class="headerlink" href="#recreate-the-mesh" title="Permalink to this heading">¶</a></h2>
+<h2>2) Recreate the mesh<a class="headerlink" href="#recreate-the-mesh" title="Link to this heading">¶</a></h2>
 <p>Next, we need to update the head mesh by running on the command line:</p>
 <blockquote>
 <div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">charm ernie --mesh</span>
@@ -67,12 +67,12 @@
 </div></blockquote>
 </section>
 <section id="check-the-updated-mesh">
-<h2>3) Check the updated mesh<a class="headerlink" href="#check-the-updated-mesh" title="Permalink to this heading">¶</a></h2>
+<h2>3) Check the updated mesh<a class="headerlink" href="#check-the-updated-mesh" title="Link to this heading">¶</a></h2>
 <p>The updated head mesh can be checked by clicking on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject), or alternatively also with gmsh:</p>
 <img alt="../../_images/tutorial_fixheadmodel_3_check.png" class="align-center" src="../../_images/tutorial_fixheadmodel_3_check.png" />
 </section>
 <section id="run-simulations">
-<h2>4) Run simulations<a class="headerlink" href="#run-simulations" title="Permalink to this heading">¶</a></h2>
+<h2>4) Run simulations<a class="headerlink" href="#run-simulations" title="Link to this heading">¶</a></h2>
 <p>When the manual edit only updated existing tissue labels, e.g. to improve the automatic segmentation results, the simulations can be run as usual using the GUI or python and matlab scripts. In case new tissue labels were added (tissue type 15 in this example), we have to define its conductivity:</p>
 <ul>
 <li><p><em>Python</em></p>
@@ -152,7 +152,7 @@
 <img alt="../../_images/tutorial_fixheadmodel_4_runsimu.png" class="align-center" src="../../_images/tutorial_fixheadmodel_4_runsimu.png" />
 </section>
 <section id="further-notes">
-<h2>Further notes<a class="headerlink" href="#further-notes" title="Permalink to this heading">¶</a></h2>
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Tissue labels have to be lower than 99</p></li>
 <li><p>Please see <a class="reference internal" href="../../documentation/command_line/add_tissues_to_upsampled.html#add-tissues-to-upsampled-doc"><span class="std std-ref">add_tissues_to_upsampled</span></a> for an example on how to upsample a custom volume mask from the original resolution of the T1 image to the resolutoin of the “tissue_labeling_upsampled.nii.gz” image</p></li>
@@ -260,7 +260,7 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |

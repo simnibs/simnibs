@@ -43,6 +43,10 @@ We have included code or binaries from the following project to this repository:
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
 * [PyPardiso](https://github.com/haasad/PyPardisoProject)
-
+* [PyPardiso](https://github.com/haasad/PyPardisoProject)
+* [PyPardiso](https://github.com/haasad/PyPardisoProject)
+* [CGAL](https://www.cgal.org/)
+* [Mmg](https://www.mmgtools.org/)
+* [FMM3D](https://github.com/flatironinstitute/FMM3D)
 
 For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file

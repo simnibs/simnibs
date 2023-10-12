@@ -1,12 +1,20 @@
 import os
 import tempfile
+import logging
 import numpy as np
+import nibabel as nib
 import scipy.sparse
 import scipy.ndimage
 import time
 
+from simnibs.utils import transformations
+
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from . import mesh_io
 from . import cgal
+from ..utils import file_finder
+from ..utils.spawn_process import spawn_process
 from ..utils.simnibs_logger import logger, format_time
 from ..segmentation.brain_surface import dilate, erosion
 from ..segmentation._thickness import _calc_thickness
@@ -48,7 +56,7 @@ def _write_inr(image, voxel_dims, fn_out):
 def _mesh_image(image, voxel_dims, facet_angle,
                 facet_size, facet_distance,
                 cell_radius_edge_ratio, cell_size,
-                optimize):
+                num_threads, do_perturb, do_exude, do_lloyd):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         fn_image = os.path.join(tmpdir, 'image.inr')
@@ -59,14 +67,14 @@ def _mesh_image(image, voxel_dims, facet_angle,
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize
+                    num_threads, do_perturb, do_exude, do_lloyd,
                  )
         else:
             ret = cgal.mesh_image(
                     fn_image.encode(), fn_mesh.encode(),
                     facet_angle, facet_size, facet_distance,
                     cell_radius_edge_ratio, cell_size,
-                    optimize
+                    num_threads, do_perturb, do_exude, do_lloyd,
                  )
 
         if ret != 0:
@@ -127,7 +135,8 @@ def _resample2iso(image, affine, sampling_rate=1, order=1):
 def image2mesh(image, affine, facet_angle=30,
                facet_size=None, facet_distance=None,
                cell_radius_edge_ratio=3, cell_size=None,
-               optimize=False):
+               num_threads=2, do_perturb=False, do_exude=False, do_lloyd=False
+    ):
     ''' Creates a mesh from a 3D image
 
     Parameters
@@ -171,8 +180,14 @@ def image2mesh(image, affine, facet_angle=30,
         spatially variable scalar field. It provides an upper bound on the circumradii of the
         mesh tetrahedra. Default: minimum voxel size (very low!)
 
-    optimize: bool (optional)
-        Tunrn on Lloyd optimization. Sliver perturbation and exudation is always done. Default: True
+    num_threads : int
+        Number of threads to use with CGAL.
+    do_perturb: bool
+        Apply sliver pertubation in CGAL after meshing (default = False).
+    do_exude: bool
+        Apply exudation in CGAL after meshing (default = False).
+    do_lloyd: bool
+        Apply Lloyd optimization in CGAL after meshing (default = False).
 
     Returns
     ----------
@@ -224,7 +239,7 @@ def image2mesh(image, affine, facet_angle=30,
         image, voxel_dims,
         facet_angle, facet_size, facet_distance,
         cell_radius_edge_ratio, cell_size,
-        optimize
+        num_threads, do_perturb, do_exude, do_lloyd
     )
     # Rotate nodes
     mesh.nodes.node_coord = rot.dot(mesh.nodes.node_coord.T).T
@@ -304,7 +319,7 @@ def remesh(mesh, facet_size, cell_size,
     # Reconstruct surfaces from tetrahedra
     mesh = mesh.crop_mesh(elm_type=4)
     mesh.reconstruct_surfaces()
-    mesh.elm.tag1[mesh.elm.tag1 > 1000] -= 1000
+    mesh.elm.tag1[mesh.elm.tag1 > ElementTags.TH_END] -= ElementTags.TH_SURFACE_START
     # Find the tetrahedra adjacent to each surface
     adj_th = mesh.elm.find_adjacent_tetrahedra()
     adj_labels = mesh.elm.tag1[adj_th - 1]
@@ -499,9 +514,9 @@ def _get_elm_and_new_tag(tag, adj_tets, nr_diff, return_diffmat = False):
     adj_labels = adj_labels[adj_diff[idx_elm]].reshape((-1,nr_diff))
     
     if nr_diff == 4:
-        new_tag = scipy.stats.mode(adj_labels, axis=1)[0].flatten()
+        new_tag = scipy.stats.mode(adj_labels, axis=1, keepdims=True)[0].flatten()
     elif nr_diff == 3:
-        new_tag, n_occ = scipy.stats.mode(adj_labels, axis=1)
+        new_tag, n_occ = scipy.stats.mode(adj_labels, axis=1, keepdims=True)
         # ensure that at least 2 neighbors have the same label
         idx_relabel = (n_occ > 1).flatten() 
         idx_elm = idx_elm[idx_relabel]
@@ -571,7 +586,7 @@ def _get_test_nodes(faces, tet_faces, adj_tets, idx_surface_tri, face_node_diff,
         # get the node that is shared by the three tet faces facing the different neighbor tets
         faces_elm = tet_faces[idx_elm]
         faces_elm = faces_elm[adj_diff[idx_elm]].reshape((-1,3))
-        idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1)[0]
+        idx_node = scipy.stats.mode(faces[faces_elm].reshape((-1,9)), axis=1, keepdims=True)[0]
         if len(idx_node) > 0:
             idx_test_nodes[idx_node] = True
         
@@ -902,7 +917,7 @@ def _select_splits_from_candidates(splittest, node_number_list, node_coord, tag_
         idx_orgtets = np.where( np.any(node_number_list == idx_n1,axis=1) * 
                                 np.any(node_number_list == idx_n2,axis=1) )[0]
         if len(idx_orgtets) == 0:
-            raise ValueError("The two nodes are not connected!")
+            raise ValueError("The two nodes are not connected! This happens sporadically. Running the meshing again (charm subID --mesh) should solve the problem.")
             
         if np.max(tag_org[idx_orgtets]) != np.min(tag_org[idx_orgtets]):
             # this can happen when the 2nd node is part of the "ring" of surface nodes connected to the first node
@@ -966,7 +981,7 @@ def _combine_small_spikes(sp2_unique_nodes, sp2_spike_tets, adj_tets,
             _, sp_dat_hlp = _get_new_tag_for_spikes(idx_sp_nodes-1, adj_tets, node_number_list,
                                                     tag_org, nr_nodes)
             splitlist.append((idx_sp_nodes[0], idx_sp_nodes[1], sp_dat_hlp[1][3], sp_dat_hlp[0][3]))
-    
+
     return splitlist
 
 
@@ -988,13 +1003,21 @@ def _split_spikes(m, splitlist):
         indices of the split tets (for visualization and debugging)
 
     """
+    # remove doublets
+    splitlist = np.array(splitlist)
+    if len(splitlist) > 0:
+        splitlist[:,:2] = np.sort(splitlist[:,:2], axis=1)
+        idx = np.unique(splitlist[:,:2],return_index=True, axis=0)[1]
+        splitlist = splitlist[idx]
+    
+    # split
     idx_splittets = np.empty((0),dtype='int32')
     for sp in splitlist:
         idx_n1 = sp[0]
         idx_n2 = sp[1]
         old_tag = sp[2]
         new_tag = sp[3]
-        
+                
         idx_tets1, idx_tets2 = m.split_tets_along_line(idx_n1,idx_n2,return_tetindices = True)
         m.elm.tag1[idx_tets1-1] = new_tag
         m.elm.tag1[idx_tets2-1] = old_tag
@@ -1235,12 +1258,12 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
         #   step 2: determine the spikes that will be split from the candidates
         splitlist = _select_splits_from_candidates(splittest, m.elm.node_number_list, 
                                                    m.nodes.node_coord, tag_buff)
-        
+
         #   step 3: at thin interfaces, two spikes with each 2 tets can be directly next
         #   to each other --> combine to a common spike with 4 tets that will be split
         splitlist += _combine_small_spikes(sp2_uniquenodes, sp2_tets, adj_tets, 
                                            m.elm.node_number_list, tag_buff, m.nodes.nr)
-        
+                
         #   step 4: split (updates the mesh in place)
         n_tet_pre = m.elm.nr
         idx_splittets = _split_spikes(m, splitlist)
@@ -1256,14 +1279,198 @@ def update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = False,
     return m
 
 
+def _remove_spikes(m, label_img, affine, label_GM = 2, label_CSF = 3):
+    """
+    wrapper function around the three spike removal steps
+
+    Parameters
+    ----------
+    m : simnibs.Msh
+        mesh from cgal, has to be without surfaces!
+    label_img: 3D np.ndarray in uint8 format
+        Labeled image from segmentation
+    affine: 4x4 np.ndarray
+        Affine transformation from voxel coordinates to world coordinates
+    label_GM : int, optional
+        label for GM volume. The default is 2.
+    label_CSF : int, optional
+        label for CSF volume. The default is 3.
+
+    Returns
+    -------
+    msh: simnibs.Msh
+        Mesh structure
+
+    """
+    logger.info('Removing Spikes')
+    logger.info(' Step 1: Update tags from label image')
+    faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
+    tag_buff = m.elm.tag1.copy()
+    m = update_tag_from_label_img(m, adj_tets, label_img, affine, 
+                                  label_GM = label_GM, label_CSF = label_CSF)
+    
+    logger.info(' Step 2: Update tags from tet neighbors')
+    m = update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets)
+    
+    logger.info(' Step 3: Resolve remaining localized spikes ')
+    m = update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = True)
+            
+    logger.info('Done Removing Spikes: Total number of relabled tets: ' +
+                str(np.sum(m.elm.tag1[:len(tag_buff)] != tag_buff)) +
+                '; Number of split tets: ' + str(len(m.elm.tag1) - len(tag_buff)))
+    
+    # remove "air" tetrahedra with label -1 and corresponding nodes
+    idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
+    m = m.crop_mesh(elements = idx_keep)
+    
+    return m
+
+
+def _fix_labels(m, label_img):
+    ''' Assign the right labels to the mesh as CGAL modifies them '''
+    indices_seg, label_counts = np.unique(label_img, return_counts=True)
+    indices_seg = indices_seg[1:]
+    label_counts = label_counts[1:]
+    indices_cgal = np.unique(m.elm.tag1)
+    n_dropped = len(indices_seg)-len(indices_cgal)
+    if n_dropped:    
+        idx_keep = np.argsort(label_counts)[::-1]
+        idx_keep = idx_keep[:-n_dropped]
+        indices_seg = np.sort(indices_seg[idx_keep])
+        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
+    new_tags = np.copy(m.elm.tag1)
+    for i, t in enumerate(indices_seg):
+        new_tags[m.elm.tag1 == i+1] = t
+    m.elm.tag1 = new_tags
+    m.elm.tag2 = new_tags.copy()
+    return m
+
+
+def _relabel_microtets(m, el_max = 0.0001):
+    """ CGAL can create spurious groups of microscopic tetrahedra
+    at region boundaries. In order to get mmg to fix them, they are
+    relabled to the most common tag in each group. By that, the 
+    boundary is moved away and mmg will resolve them even
+    when -nosurf is set.
+    
+    Parameters
+    ----------
+    m : simnibs.Msh
+        Mesh structure.
+    el_max : float, optional
+        maximal edge length. Tetrahedra will be relabeled
+        when all edges are shorter than el_max. 
+        The default is 0.0001.
+
+    Returns
+    -------
+    m : simnibs.Msh
+        Mesh structure.
+
+    """
+    M = m.nodes[m.elm[:]]
+    E = np.array([
+        M[:, 0] - M[:, 1],
+        M[:, 0] - M[:, 2],
+        M[:, 0] - M[:, 3],
+        M[:, 1] - M[:, 2],
+        M[:, 1] - M[:, 3],
+        M[:, 2] - M[:, 3]])
+    E = np.swapaxes(E, 0, 1)
+    # max Edge length
+    Smax = np.max(np.linalg.norm(E, axis=2), axis=1)
+
+    idx = np.argwhere(Smax<el_max).flatten()
+
+    if len(idx) == 0:
+        return m
+
+    idx_c = m.elm.connected_components(idx+1)
+
+    for i in idx_c:
+        logger.debug(f"Relabeling group of {len(i)} micro-tets")
+        m.elm.tag1[i-1] = np.argmax(np.bincount(m.elm.tag1[i-1]))
+    m.elm.tag2[:] = m.elm.tag1
+    return m
+
+
+def _run_mmg(m, repeats=2, mmg_noinsert=True, sizing_field=None, affine=None):
+    """
+    Wrapper around mmg command line call to improve mesh quality.
+
+    Parameters
+    ----------
+    m : simnibs.Msh
+        Mesh structure.
+        A sizing field as a node data field having the substring ':metric' can be included
+    repeats, int, optional
+        The number of times mmg is supposed to be run.
+    mmg_noinsert : bool, optional
+        set -noinsert flag to prevent mmg from adding nodes. The default is True.
+    sizing_field :
+        The sizing field to be used for mmg
+    affine :
+        The affine for the sizing field
+
+    Returns
+    -------
+    m : simnibs.Msh
+        Mesh structure.
+    """
+    logger.info('Improving Mesh Quality')
+    with tempfile.NamedTemporaryFile(suffix=".msh", delete=False) as tmpfile:
+        tmp_in = tmpfile.name
+    with tempfile.NamedTemporaryFile(suffix=".msh", delete=False) as tmpfile:
+        tmp_out = tmpfile.name
+
+    # set MMG command
+    if mmg_noinsert:
+        cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc", "-noinsert",
+               "-in", tmp_in, "-out", tmp_out]
+    else:
+        if sizing_field is not None:
+            # hsiz is now coming from the sizing field
+            cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
+                   "-in", tmp_in, "-out", tmp_out]
+        else:
+            cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "6", "-nosurf", "-nofem", "-hgrad", "-1", "-rmc",
+                   "-hsiz", "100.0", "-hmin", "1.3", "-in", tmp_in, "-out", tmp_out]
+        
+    # run MMG to improve mesh
+    for i in range(repeats):
+        # add user defined sizing field from sizing image to mesh in a NodeData field called "sizing_field:metric" for mmg
+        if sizing_field is not None:
+            mmg_sizing_field = np.copy(sizing_field)
+            mmg_sizing_field[mmg_sizing_field <= 0] = 100.0
+            m.add_sizing_field(sizing_field=mmg_sizing_field, affine=affine)
+            del mmg_sizing_field
+
+        mesh_io.write_msh(m, tmp_in, mmg_fix=True)
+        del m
+        spawn_process(cmd, lvl=logging.DEBUG)
+
+        # read mesh written by MMG (msh in ascii format)
+        m = mesh_io.read_msh(tmp_out, skip_data=True)
+        m = m.crop_mesh(elm_type=[2, 4])
+
+        logger.info(f'Tetraedras after remeshing run {i + 1}: {len(m.elm.tetrahedra)}')
+
+    # remove tmp-files
+    if os.path.exists(tmp_in):
+        os.remove(tmp_in)
+    if os.path.exists(tmp_out):
+        os.remove(tmp_out)
+    return m
+    
+
 def create_mesh(label_img, affine,
                 elem_sizes={"standard": {"range": [1, 5], "slope": 1.0}},
-                smooth_size_field = 2,
+                smooth_size_field=2,
                 skin_facet_size=2.0, 
                 facet_distances={"standard": {"range": [0.1, 3], "slope": 0.5}},
-                optimize=True, remove_spikes=True, skin_tag=1005,
-                hierarchy=None, smooth_steps=5, skin_care=20, 
-                sizing_field=None, DEBUG_FN=None):
+                optimize=False, remove_spikes=True, skin_tag=1005,
+                hierarchy=None, apply_cream=True,  smooth_steps=5, skin_care=20,
+                sizing_field=None, mmg_noinsert=False, debug=False, debug_path="", num_threads=2):
     """Create a mesh from a labeled image.
 
     The maximum element sizes (CGAL facet_size and cell_size) are controlled 
@@ -1310,7 +1517,8 @@ def create_mesh(label_img, affine,
         "slope": Steepness of relationship between thickness and facet_distance.
         Default: {"standard": {"range": [0.1, 3], "slope": 0.5}}
     optimize: bool (optional)
-        Whether to run lloyd optimization on the mesh. Default: True
+        Whether to apply sliver perturbation, exudation, and lloyd optimization
+        to the mesh with CGAL. Default: False
     remove_spikes: bool (optional)
         Whether to remove spikes to create smoother meshes. Default: True
     skin_tag: float (optional)
@@ -1323,7 +1531,9 @@ def create_mesh(label_img, affine,
         List of surface tags that determines the order in which triangles 
         are kept for twin pairs (for remove_twins=True). Default for hierarchy=None:
         (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
-        i.e. WM (1) has highest priority, GM (2) comes next, etc; 
+        i.e. WM (1) has highest priority, GM (2) comes next, etc;
+    apply_cream: bool (optional)
+        Whether to apply a cream layer around the outside of the head to remove spikes on the outside of the head
     smooth_steps: int (optional)
         Number of smoothing steps applied to the final mesh surfaces. Default: 5
     skin_care: int (optional)
@@ -1332,6 +1542,15 @@ def create_mesh(label_img, affine,
         Sizing field to control the element sizes. Its shape has to be the same
         as label_img.shape. Zeros will be replaced by values from the 
         standard sizing field. Default: None
+    mmg_noinsert : bool, optional, default: False
+        Set this flag to constrain the mesh improvement algorithm of MMG to not insert additional points.
+        In this way, the number of elements of the mesh is not increased. (not recommended)
+    debug : bool, optional, default: False
+        Weather to save intermediate mesh results
+    debug_path : string, optional, default: ""
+        The path to use to save the debug output
+    num_threads: int (optional)
+        Number of threads used for meshing. Default: 2
 
     Returns
     -------
@@ -1344,6 +1563,12 @@ def create_mesh(label_img, affine,
         raise ValueError('elem_sizes needs a \"standard\" entry')
     if not 'standard' in facet_distances:
         raise ValueError('facet_distances needs a \"standard\" entry')
+
+    if apply_cream:
+        if sizing_field is not None:
+            sizing_field, _ = transformations.pad_vol(sizing_field, affine, 30)
+
+        label_img, affine = transformations.pad_vol(label_img, affine, 30)
 
     # Calculate thickness
     logger.info('Calculating tissue thickness')
@@ -1364,7 +1589,11 @@ def create_mesh(label_img, affine,
         label_img, thickness, facet_distances
     )
     del thickness
-    
+
+    if apply_cream:
+        logger.info('Applying cream mask')
+        apply_cream_layer(label_img, size_field, distance_field, 20)
+
     # Smooth size field a bit to reduce effect of a few outliers in the thickness
     # map on the mesh; the outliers show up as localized small thickness values at 
     # some of the tissue boundaries
@@ -1380,8 +1609,8 @@ def create_mesh(label_img, affine,
     
     # Control triangle size of outer surface to ensure eletrode meshing works OK
     if skin_facet_size is not None:      
-        boundary = (label_img > 0).astype('int8')
-        boundary = boundary-erosion(boundary,1)
+        boundary = ((label_img > 0) & (label_img != ElementTags.CREAM)).astype('int8')
+        boundary = boundary-erosion(boundary, 1)
         if skin_tag is not None:
             # keep boundary only at regions with label skin_tag-1000
             # to save some tetrahedra
@@ -1394,7 +1623,9 @@ def create_mesh(label_img, affine,
         size_field = size_field.flatten()
         size_field[boundary.flatten()] = skin_facet_size
         size_field = size_field.reshape(label_img.shape)
+        size_field[label_img == ElementTags.CREAM] = skin_facet_size
         del boundary
+
     logger.info(
         'Time to prepare meshing: ' +
         format_time(time.time()-start)
@@ -1404,9 +1635,18 @@ def create_mesh(label_img, affine,
     if sizing_field is not None:
         assert sizing_field.shape == label_img.shape
         size_field[sizing_field>0] = sizing_field[sizing_field>0]
+
+    if debug:
+        tmp_nii = nib.Nifti1Image(size_field, affine)
+        nib.save(tmp_nii, os.path.join(debug_path, 'size_field.nii.gz'))
+        tmp_nii = nib.Nifti1Image(distance_field, affine)
+        nib.save(tmp_nii, os.path.join(debug_path, 'distance_field.nii.gz'))
+        tmp_nii = nib.Nifti1Image(label_img, affine)
+        nib.save(tmp_nii, os.path.join(debug_path, 'label_img.nii.gz'))
+        del tmp_nii
     
     # Run meshing
-    logger.info('Meshing')
+
     start = time.time()
     m = image2mesh(
         label_img,
@@ -1414,89 +1654,71 @@ def create_mesh(label_img, affine,
         facet_size=size_field,
         facet_distance=distance_field,
         cell_size=size_field,
-        optimize=optimize
+        num_threads=num_threads,
+        do_perturb=optimize,
+        do_exude=optimize,
+        do_lloyd=optimize,
     )
-    del size_field, distance_field
+
+    del size_field
+    del distance_field
+
     logger.info(
         'Time to mesh: ' +
         format_time(time.time()-start)
     )
-    
-    # Separate out tetrahedron (will reconstruct triangles later)
+
+    # separate out tetrahedron (will reconstruct surfaces later)
     start = time.time()
     m = m.crop_mesh(elm_type=4)
-    # Assign the right labels to the mesh as CGAL modifies them
-    indices_seg, label_counts = np.unique(label_img,return_counts=True)
-    indices_seg = indices_seg[1:]
-    label_counts = label_counts[1:]
-    indices_cgal = np.unique(m.elm.tag1)
-    n_dropped = len(indices_seg)-len(indices_cgal)
-    if n_dropped:    
-        idx_keep = np.argsort(label_counts)[::-1]
-        idx_keep = idx_keep[:-n_dropped]
-        indices_seg = np.sort(indices_seg[idx_keep])
-        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
-    new_tags = np.copy(m.elm.tag1)
-    for i, t in enumerate(indices_seg):
-        new_tags[m.elm.tag1 == i+1] = t
-    m.elm.tag1 = new_tags
-    m.elm.tag2 = new_tags.copy()
-    
-    if DEBUG_FN is not None:
-        mesh_io.write_msh(m, DEBUG_FN)
-    
-    # Preparation for despiking and surface reconstruction
-    faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
-    
-    # Remove spikes from mesh
-    do_splits = True # allow for splitting tets to resolve some spikes (needs additional time)
-    if remove_spikes:
-        logger.info('Removing Spikes')
-        logger.info(' Step 1: Update tags from label image')
-        tag_buff = m.elm.tag1.copy()
-        m = update_tag_from_label_img(m, adj_tets, label_img, affine, 
-                                      label_GM = 2, label_CSF = 3)
-        
-        logger.info(' Step 2: Update tags from tet neighbors')
-        m = update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets)
-        
-        logger.info(' Step 3: Resolve remaining localized spikes ')
-        m = update_tag_from_surface(m, faces, tet_faces, adj_tets, do_splits = do_splits)
-                
-        logger.info('Done Removing Spikes: Total number of relabled tets: ' +
-                    str(np.sum(m.elm.tag1[:len(tag_buff)] != tag_buff)) +
-                    '; Number of split tets: ' + str(len(m.elm.tag1) - len(tag_buff)))
 
-        if do_splits:
-            # remove "air" tetrahedra with label -1 and corresponding nodes
-            idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
-            m = m.crop_mesh(elements = idx_keep)
-            # redo preparation step, as it's needed by the later surface smoothing
-            faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
+    # assign the right labels to the mesh as CGAL modifies them
+    m = _fix_labels(m, label_img)
+
+    # relabel groups of microscopic tets to a common tag, so that mmg fixes them
+    m = _relabel_microtets(m)
+
+    if debug:
+        mesh_io.write_msh(m, os.path.join(debug_path, 'before_despike.msh'))
+
+    # remove spikes from mesh
+    if remove_spikes:
+        m = _remove_spikes(m, label_img, affine, label_GM=2, label_CSF=3)
         
+    # Remove cream mask (optional)
+    if apply_cream:
+        logger.info('Remove cream mask')
+        tags_keep = np.setdiff1d(np.unique(m.elm.tag1), ElementTags.CREAM)
+        m = m.crop_mesh(tags=tags_keep)
+
+    # keep only largest component
+    idx = m.elm.connected_components()
+    m = m.crop_mesh(elements=max(idx, key=np.size))
+
     # reconstruct surfaces
     logger.info('Reconstructing Surfaces')
     m.fix_th_node_ordering()
-    m.reconstruct_unique_surface(hierarchy = hierarchy, add_outer_as = skin_tag, 
-                                  faces = faces, idx_tet_faces = tet_faces, 
-                                  adj_tets = adj_tets)
+    m.reconstruct_unique_surface(hierarchy=hierarchy, add_outer_as=skin_tag)
 
-    # remove "air" tetrahedra with label -1 and corresponding nodes
-    idx_keep = np.where(m.elm.tag1 != -1)[0] + 1
-    m = m.crop_mesh(elements = idx_keep)
+    if debug:
+        mesh_io.write_msh(m, os.path.join(debug_path, 'before_smooth.msh'))
 
-    # keep only largest component
-    idx=m.elm.connected_components()
-    m = m.crop_mesh(elements=max(idx,key=np.size))
-    
-    # Smooth mesh
+    m = _run_mmg(m, 1, mmg_noinsert)
+
+    # smooth surfaces
     if smooth_steps > 0:
         logger.info('Smoothing Mesh Surfaces')
         m.smooth_surfaces(smooth_steps, step_size=0.3, max_gamma=10)
 
     if skin_care > 0:
         logger.info('Extra Skin Care')
-        m.smooth_surfaces(skin_care, step_size=0.3, tags = skin_tag, max_gamma=10)
+        m.smooth_surfaces(skin_care, step_size=0.3, tags=skin_tag, max_gamma=10)
+
+    if debug:
+        mesh_io.write_msh(m, os.path.join(debug_path, 'before_mmg.msh'), mmg_fix=True)
+
+    # improve mesh quality using mmg
+    m = _run_mmg(m, 2, mmg_noinsert, sizing_field=sizing_field, affine=affine)
 
     logger.info(
         'Time to post-process mesh: ' +
@@ -1504,6 +1726,28 @@ def create_mesh(label_img, affine,
     )
     return m
 
+
+def apply_cream_layer(label_img, size_field, distance_field, cream_thickness):
+    footprint = np.array([[[0, 0, 0],
+                           [0, 1, 0],
+                           [0, 0, 0]],
+                          [[0, 1, 0],
+                           [1, 1, 1],
+                           [0, 1, 0]],
+                          [[0, 0, 0],
+                           [0, 1, 0],
+                           [0, 0, 0]]])
+    for i in range(cream_thickness):
+        mask = label_img > 0
+        mask_dil = scipy.ndimage.binary_dilation(mask, iterations=1)
+        mask_dil ^= mask
+        skin_and_cream_size_field = np.where(label_img == 0, -1, size_field)
+        skin_and_cream_distance_field = np.where(label_img == 0, -1, distance_field)
+        size_field[mask_dil] = scipy.ndimage.grey_dilation(skin_and_cream_size_field, footprint=footprint)[
+            mask_dil]
+        distance_field[mask_dil] = \
+        scipy.ndimage.grey_dilation(skin_and_cream_distance_field, footprint=footprint)[mask_dil]
+        label_img[mask_dil] = ElementTags.CREAM
 
 # def relabel_spikes(elm, tag, with_labels, adj_labels, label_a, label_b, 
 #                    target_label, labels, nodes_label, adj_th, adj_threshold=2,

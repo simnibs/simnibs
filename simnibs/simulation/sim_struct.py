@@ -26,6 +26,7 @@ import glob
 import gc
 import logging
 import functools
+from typing import Union
 
 import numpy as np
 import scipy.io
@@ -33,7 +34,10 @@ from scipy.spatial.transform import Rotation as R
 import nibabel
 import h5py
 
-from . import cond
+import simnibs.utils.cond_utils
+from simnibs.utils.cond_utils import COND
+from simnibs.utils.mesh_element_properties import ElementTags
+
 from ..mesh_tools import mesh_io, gmsh_view
 from ..utils import transformations
 from ..utils import simnibs_logger
@@ -618,7 +622,7 @@ class SimuList(object):
 
     def __init__(self, mesh=None):
         # list of conductivities (using COND class)
-        self.cond = cond.standard_cond()
+        self.cond = simnibs.utils.cond_utils.standard_cond()
         self.mesh = mesh  # The mesh where the simulation will be performed
         self.fn_tensor_nifti = None  # File name with anisotropy information
         # The 2 variables bellow are set when the _get_vol() method is called
@@ -802,7 +806,7 @@ class SimuList(object):
 
         if self.anisotropy_type == 'scalar':
             logger.log(level, 'Using isotropic conductivities')
-            return cond.cond2elmdata(mesh, cond_list)
+            return simnibs.utils.cond_utils.cond2elmdata(mesh, cond_list)
 
         elif self.anisotropy_type == 'dir':
             logger.log(
@@ -810,7 +814,7 @@ class SimuList(object):
                 'Using anisotropic direct conductivities based on the file:'
                 ' {0}'.format(self.fn_tensor_nifti))
             image, affine = self._get_vol_info()
-            return cond.cond2elmdata(mesh, cond_list,
+            return simnibs.utils.cond_utils.cond2elmdata(mesh, cond_list,
                                      anisotropy_volume=image,
                                      affine=affine,
                                      aniso_tissues=self.anisotropic_tissues,
@@ -822,7 +826,7 @@ class SimuList(object):
             logger.log(level, 'Using anisotropic volume normalized conductivities based on the file:'
                               ' {0}'.format(self.fn_tensor_nifti))
             image, affine = self._get_vol_info()
-            return cond.cond2elmdata(mesh, cond_list,
+            return simnibs.utils.cond_utils.cond2elmdata(mesh, cond_list,
                                      anisotropy_volume=image,
                                      affine=affine,
                                      aniso_tissues=self.anisotropic_tissues,
@@ -835,7 +839,7 @@ class SimuList(object):
             logger.log(level, 'Using isotropic mean conductivities based on the file:'
                               ' {0}'.format(self.fn_tensor_nifti))
             image, affine = self._get_vol_info()
-            return cond.cond2elmdata(mesh, cond_list,
+            return simnibs.utils.cond_utils.cond2elmdata(mesh, cond_list,
                                      anisotropy_volume=image,
                                      affine=affine,
                                      aniso_tissues=self.anisotropic_tissues,
@@ -943,7 +947,7 @@ class SimuList(object):
             except KeyError:
                 self.anisotropy_vol = None
 
-    def _scalp_geo(self, m, fn_out, scalp_idx=1005):
+    def _scalp_geo(self, m, fn_out, scalp_idx : int = ElementTags.SCALP_TH_SURFACE):
         ''' write out scalp surface as geo file '''
         idx = (m.elm.tag1 == scalp_idx) & (m.elm.elm_type == 2)
         mesh_io.write_geo_triangles(m.elm[idx, :3]-1,
@@ -1034,7 +1038,6 @@ class TMSLIST(SimuList):
         # pos data type
         pos_dt = np.dtype([('type', 'O'),
                            ('name', 'O'), ('date', 'O'),
-                           ('istrig', 'O'), ('matORG', 'O'), ('orient', 'O'),
                            ('matsimnibs', 'O'), ('didt', 'O'),
                            ('fnamefem', 'O'), ('centre', 'O'),
                            ('pos_ydir', 'O'), ('distance', 'O')])
@@ -1043,9 +1046,6 @@ class TMSLIST(SimuList):
         for pos in self.pos:
             pos_array = np.array([('POSITION', remove_None(pos.name),
                                    remove_None(pos.date),
-                                   remove_None(pos.istrig),
-                                   remove_None(pos.matORG),
-                                   remove_None(pos.orient),
                                    remove_None(pos.matsimnibs),
                                    remove_None(pos.didt),
                                    remove_None(pos.fnamefem),
@@ -1150,11 +1150,11 @@ class TMSLIST(SimuList):
         matsimnibs_list = [p.calc_matsimnibs(self.mesh) for p in self.pos]
         didt_list = [p.didt for p in self.pos]
         dirname = os.path.dirname(self.fnamecoil)
-        fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
-        fname = fname.split('.nii')[0]+'.stl'
-        fn_stl = os.path.join(dirname,fname)
-        if not os.path.isfile(fn_stl):
-            fn_stl = None
+        #fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
+        #fname = fname.split('.nii')[0]+'.stl'
+        #fn_stl = os.path.join(dirname,fname)
+        #if not os.path.isfile(fn_stl):
+        #    fn_stl = None
 
         # Output names
         coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
@@ -1166,32 +1166,16 @@ class TMSLIST(SimuList):
         geo_names = [f + 'coil_pos.geo' for f in fn_simu]
 
         # call tms_coil
-        fem.tms_coil(self.mesh, cond, self.fnamecoil, self.postprocess,
+        fem.tms_coil(self.mesh, cond, self.cond, self.fnamecoil, self.postprocess,
                      matsimnibs_list, didt_list, output_names, geo_names,
-                     solver_options=self.solver_options, n_workers=cpus,
-                     fn_stl=fn_stl)
+                     solver_options=self.solver_options, n_workers=cpus)
 
+        
         logger.info('Creating visualizations')
         summary = ''
-        for p, n, g, s in zip(self.pos, output_names, geo_names, fn_simu):
+        for p, n, s in zip(self.pos, output_names, fn_simu):
             p.fnamefem = n
             m = mesh_io.read_msh(n)
-            # write .opt-file
-            v = m.view(
-                visible_tags=_surf_preferences(m),
-                visible_fields=_field_preferences(self.postprocess),
-                cond_list=self.cond)
-            v.add_merge(g)
-            v.add_view(ShowScale=0)  # dipoles or direction "hook"
-            if fn_stl is not None:  # coil casing
-                v.add_view(ColorTable=gmsh_view._gray_red_lightblue_blue_cm(),
-                           Visible=1, ShowScale=0, CustomMin=-0.5,
-                           CustomMax=3.5, RangeType=2)
-            if add_scalp_to_geo:
-                self._scalp_geo(m, g)  # append scalp to .geo-file
-                v.add_view(ColormapNumber=8, ColormapAlpha=.3,
-                           Visible=0, ShowScale=0)  # scalp
-            v.write_opt(n)
 
             if view:
                 mesh_io.open_in_gmsh(n, True)
@@ -1207,7 +1191,7 @@ class TMSLIST(SimuList):
         gc.collect()
         return output_names, geo_names
 
-    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
+    def run_gpc(self, fn_simu, cpus=1, tissues=[ElementTags.GM], eps=1e-2):
         from .gpc import run_tms_gpc
         gPC_regression = run_tms_gpc(
             self, fn_simu, cpus=cpus, tissues=tissues, eps=eps)
@@ -1283,14 +1267,11 @@ class POSITION(object):
         name of position
     date: str
         date when stimulation was done
-    matORG: list
-        4x4 matrix defining coil center and orientation
-        in the original coordinate system
     matsimnibs: list with 16 numbers
         4x4 matrix defining coil center and orientation
         in simnibs coordinate system.
         HAS PREFERENCE OVER (centre, pos_y, distance)
-    dIdt: float
+    dIdt: Union[float, list[float]]
         Change of current in coil, in A/s
     fnamefem: str
         Name of simulation output
@@ -1311,11 +1292,8 @@ class POSITION(object):
     def __init__(self, matlab_struct=None):
         self.name = ''
         self.date = None
-        self.istrig = False
-        self.matORG = None
-        self.orient = ''
         self.matsimnibs = None
-        self.didt = 1e6  # corresponding to 1 A/us
+        self.didt: Union[float, list[float]] = 1e6  # corresponding to 1 A/us
         self.fnamefem = ''
         self.centre = None
         self.pos_ydir = None
@@ -1342,14 +1320,8 @@ class POSITION(object):
         self.name = try_to_read_matlab_field(p, 'name', str, self.name)
         self.date = try_to_read_matlab_field(p, 'date', str, self.date)
         self.didt = try_to_read_matlab_field(p, 'didt', float, self.didt)
-        self.istrig = try_to_read_matlab_field(p, 'istrig', bool, self.istrig)
-        self.orient = try_to_read_matlab_field(p, 'orient', str, self.orient)
         self.fnamefem = try_to_read_matlab_field(
             p, 'fnamefem', str, self.fnamefem)
-        try:
-            self.matORG = (p['matORG'][0]).tolist()
-        except:
-            pass
         try:
             self.matsimnibs = (p['matsimnibs']).tolist()
         except:
@@ -1411,10 +1383,10 @@ class POSITION(object):
                 self.centre, self.pos_ydir, self.distance, msh_surf=msh_surf)
 
         logger.info('matsimnibs: \n{0}'.format(self.matsimnibs))
-        if 1002 in msh.elm.tag1:
+        if ElementTags.GM_TH_SURFACE in msh.elm.tag1:
             cc_distance = np.min(np.linalg.norm(
                 msh.elements_baricenters(
-                )[msh.elm.tag1 == 1002] - self.matsimnibs[:3, 3],
+                )[msh.elm.tag1 == ElementTags.GM_TH_SURFACE] - self.matsimnibs[:3, 3],
                 axis=1)
             )
             logger.info(f'coil-cortex distance: {cc_distance:.2f}mm')
@@ -1422,7 +1394,6 @@ class POSITION(object):
 
     def __eq__(self, other):
         if self.name != other.name or self.date != other.date or \
-                self.mat != other.mat or self.orient != other.orient or \
                 self.matsimnibs != other.matsimnibs or self.didt != other.didt:
             return False
 
@@ -1436,87 +1407,6 @@ class POSITION(object):
             s += 'Centre: {0}\n'.format(self.centre)
             s += 'pos_ydir: {0}\n'.format(self.pos_ydir)
             s += 'distance: {0}\n'.format(self.distance)
-        return s
-
-
-class COND(object):
-    """ conductivity information
-    Conductivity information for simulations
-
-    Attributes:
-    ---------------------
-    name: str
-        Name of tissue
-    value: float
-        value of conductivity
-    descrip: str
-        description of conductivity
-    distribution_type: 'uniform', 'normal', 'beta' or None
-        type of distribution for gPC simulation
-    distribution_parameters: list of floats
-        if distribution_type is 'uniform': [min_value, max_value]
-        if distribution_type is 'normal': [mean, standard_deviation]
-        if distribution_type is 'beta': [p, q, min_value, max_value]
-    """
-
-    def __init__(self, matlab_struct=None):
-        self.name = None  # e.g. WM, GM
-        self.value = None  # in S/m
-        self.descrip = ''
-        self._distribution_type = None
-        self.distribution_parameters = []
-
-        if matlab_struct is not None:
-            self.read_mat_struct(matlab_struct)
-
-    @property
-    def distribution_type(self):
-        return self._distribution_type
-
-    @distribution_type.setter
-    def distribution_type(self, dist):
-        if dist == '':
-            dist = None
-        if dist in ['uniform', 'normal', 'beta', None]:
-            self._distribution_type = dist
-        else:
-            raise ValueError('Invalid distribution type: {0}'.format(dist))
-
-    def read_mat_struct(self, c):
-        try:
-            self.name = str(c['name'][0])
-        except:
-            pass
-
-        try:
-            self.value = c['value'][0][0]
-        except:
-            self.value = None
-
-        try:
-            self.descrip = str(c['descrip'][0])
-        except:
-            pass
-
-        try:
-            self.distribution_type = str(c['distribution_type'][0])
-        except:
-            pass
-
-        try:
-            self.distribution_parameters = c['distribution_parameters'][0]
-        except:
-            pass
-
-    def __eq__(self, other):
-        if self.name != other.name or self.value != other.value:
-            return False
-        else:
-            return True
-
-    def __str__(self):
-        s = "name: {0}\nvalue: {1}\ndistribution: {2}\ndistribution parameters: {3}".format(
-            self.name, self.value, self.distribution_type, self.distribution_parameters)
         return s
 
 
@@ -1574,14 +1464,14 @@ class TDCSLIST(SimuList):
                              "Currents:" + str(self.currents))
 
         for i in self.unique_channels:
-            while len(self.cond) < 500 + i:
+            while len(self.cond) < (ElementTags.SALINE_START - 1) + 1 + i:
                 self.cond.append(COND())
-            if self.cond[99 + i].value is None:
-                self.cond[99 + i].name = str(i) + ' el'
-                self.cond[99 + i].value = self.cond[99].value
-            if self.cond[499 + i].value is None:
-                self.cond[499 + i].name = str(i) + ' gel_sponge'
-                self.cond[499 + i].value = self.cond[499].value
+            if self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].value is None:
+                self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].name = str(i) + ' el'
+                self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].value = self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1)].value
+            if self.cond[(ElementTags.SALINE_START - 1) + i].value is None:
+                self.cond[(ElementTags.SALINE_START - 1) + i].name = str(i) + ' gel_sponge'
+                self.cond[(ElementTags.SALINE_START - 1) + i].value = self.cond[(ElementTags.SALINE_START - 1)].value
 
         self.check_conductivities()
         if not np.isclose(np.sum(self.currents), 0):
@@ -1834,7 +1724,7 @@ class TDCSLIST(SimuList):
         gc.collect()
         return [final_name], [el_geo_fn]
 
-    def run_gpc(self, fn_simu, cpus=1, tissues=[2], eps=1e-2):
+    def run_gpc(self, fn_simu, cpus=1, tissues=[ElementTags.GM], eps=1e-2):
         from .gpc import run_tcs_gpc
         gPC_regression = run_tcs_gpc(
             self, fn_simu, cpus=cpus, tissues=tissues, eps=eps)
@@ -1865,7 +1755,7 @@ class TDCSLIST(SimuList):
         triangles = []
         values = []
         for t, c in zip(self.unique_channels, self.currents):
-            triangles.append(m.elm[m.elm.tag1 == 1500 + t, :3])
+            triangles.append(m.elm[m.elm.tag1 == ElementTags.SALINE_TH_SURFACE_START + t, :3])
             values.append(c * np.ones(len(triangles[-1])))
 
         triangles = np.concatenate(triangles, axis=0)
@@ -2035,7 +1925,7 @@ class ELECTRODE(object):
         """
         self._prepare()
         m, t = electrode_placement.put_electrode_on_mesh(
-            self, mesh, 100 + self.channelnr)
+            self, mesh, ElementTags.ELECTRODE_RUBBER_START + self.channelnr)
         return m, t
 
     def add_hole(self, hole=None):
@@ -2227,11 +2117,11 @@ class LEADFIELD():
         self.fname_tensor = None
         self.mesh = None
         self.field = 'E'
-        self.tissues = [2]
+        self.tissues = [ElementTags.GM]
         self.interpolation = 'middle gm'
         self.interpolation_subsampling = None
-        self.interpolation_tissue = [2]
-        self.cond = cond.standard_cond()
+        self.interpolation_tissue = [ElementTags.GM]
+        self.cond = simnibs.utils.cond_utils.standard_cond()
         self.anisotropy_type = 'scalar'
         self.aniso_maxratio = 10
         self.aniso_maxcond = 2
@@ -2240,7 +2130,7 @@ class LEADFIELD():
         self.anisotropy_vol = None  # 4-d data with anisotropy information
         self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         # if an anisotropic conductivity is to be used,
-        self.anisotropic_tissues = [1, 2]
+        self.anisotropic_tissues = [ElementTags.WM, ElementTags.GM]
 
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
@@ -2407,7 +2297,7 @@ class TDCSLEADFIELD(LEADFIELD):
         super().__init__()
         self.eeg_cap = 'EEG10-10_UI_Jurak_2007.csv'
         self.pathfem = 'tdcs_leadfield/'
-        self.tissues = [1006]
+        self.tissues = [ElementTags.EYE_BALLS_TH_SURFACE]
         self.electrode = ELECTRODE()
         self.electrode.shape = 'ellipse'
         self.electrode.dimensions = [10, 10]
@@ -2493,14 +2383,14 @@ class TDCSLEADFIELD(LEADFIELD):
                              'please connect all electrodes to a channel')
 
         for i in self.unique_channels:
-            while len(self.cond) < 500 + i:
+            while len(self.cond) < (ElementTags.SALINE_START - 1) + 1 + i:
                 self.cond.append(COND())
-            if self.cond[99 + i].value is None:
-                self.cond[99 + i].name = 'el' + str(i)
-                self.cond[99 + i].value = self.cond[99].value
-            if self.cond[499 + i].value is None:
-                self.cond[499 + i].name = 'gel_sponge' + str(i + 1)
-                self.cond[499 + i].value = self.cond[499].value
+            if self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].value is None:
+                self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].name = 'el' + str(i)
+                self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1) + i].value = self.cond[(ElementTags.ELECTRODE_RUBBER_START - 1)].value
+            if self.cond[(ElementTags.SALINE_START - 1) + i].value is None:
+                self.cond[(ElementTags.SALINE_START - 1) + i].name = 'gel_sponge' + str(i + 1)
+                self.cond[(ElementTags.SALINE_START - 1) + i].value = self.cond[(ElementTags.SALINE_START - 1)].value
 
     def _place_electrodes(self):
         """ Add the defined electrodes to a mesh """
@@ -2561,8 +2451,8 @@ class TDCSLEADFIELD(LEADFIELD):
         Writes the simulations
 
         '''
-        def contains_volume(x): return any([i < 1000 for i in x])
-        def contains_surface(x): return any([i > 1000 for i in x])
+        def contains_volume(x): return any([ElementTags.TH_START <= i <= ElementTags.TH_END for i in x])
+        def contains_surface(x): return any([ElementTags.TH_SURFACE_END >= i >= ElementTags.TH_SURFACE_START for i in x])
 
         assert isinstance(self.tissues, list)
         assert isinstance(self.interpolation, (type(None), str, list, tuple))
@@ -2630,7 +2520,7 @@ class TDCSLEADFIELD(LEADFIELD):
                 raise ValueError('Can not run leadfield on sponge electrodes')
 
         # Handle the ROI
-        if np.any(np.array(self.tissues) > 1000) and np.any(np.array(self.tissues) < 1000):
+        if np.any(np.array(self.tissues) >= ElementTags.TH_SURFACE_START) and np.any(np.array(self.tissues) <= ElementTags.TH_END):
             raise ValueError('Mixing Volumes and Surfaces in ROI!')
 
         if self.field != 'E' and self.field != 'J':
@@ -2647,7 +2537,7 @@ class TDCSLEADFIELD(LEADFIELD):
             logger.info('Placing Electrodes')
             w_elec, electrode_surfaces = self._place_electrodes()
             mesh_io.write_msh(w_elec, fn_el)
-            scalp_electrodes = w_elec.crop_mesh([1005] + electrode_surfaces)
+            scalp_electrodes = w_elec.crop_mesh([ElementTags.SCALP_TH_SURFACE] + electrode_surfaces)
             scalp_electrodes.write_hdf5(fn_hdf5, 'mesh_electrodes/')
             input_type = 'tag'
             current = 1.0
@@ -2658,7 +2548,7 @@ class TDCSLEADFIELD(LEADFIELD):
             # coordinates
             logger.info("Using point electrodes")
             w_elec = self.mesh
-            skin_faces = w_elec.elm[w_elec.elm.tag1 == 1005, :3]-1
+            skin_faces = w_elec.elm[w_elec.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]-1
             subset = w_elec.get_outer_skin_points()
 
             pts = np.array([e.centre for e in self.electrode])
@@ -2941,17 +2831,17 @@ def _field_preferences(postprocess):
 
 
 def _surf_preferences(mesh):
-    if 1002 in mesh.elm.tag1:
-        return [1002]
-    elif 2 in mesh.elm.tag1:
-        return [2]
+    if ElementTags.GM_TH_SURFACE in mesh.elm.tag1:
+        return [ElementTags.GM_TH_SURFACE.value]
+    elif ElementTags.GM in mesh.elm.tag1:
+        return [ElementTags.GM.value]
     else:
         return None
 
 
 def _volume_preferences(mesh):
-    if 2 in mesh.elm.tag1:
-        return [2]
+    if ElementTags.GM in mesh.elm.tag1:
+        return [ElementTags.GM.value]
     else:
         return None
 
@@ -3055,7 +2945,7 @@ def sphereFit(pts, bounds=None):
 
 def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
                      pos_dir_1stsurround=None, phis_surround=None,
-                     tissue_idx=1005, DEBUG=False):
+                     tissue_idx=ElementTags.SCALP_TH_SURFACE, DEBUG=False):
     """
     Determine the positions of surround electrodes.
 
@@ -3102,10 +2992,10 @@ def get_surround_pos(center_pos, fnamehead, radius_surround=50, N=4,
     tmp.substitute_positions_from_cap(ff.get_eeg_cap())
 
     m = mesh_io.read_msh(fnamehead)
-    if tissue_idx < 1000:
-        tissue_idx += 1000
+    if tissue_idx < ElementTags.TH_SURFACE_START:
+        tissue_idx += ElementTags.TH_SURFACE_START
     idx = (m.elm.elm_type == 2) & (
-        (m.elm.tag1 == tissue_idx) | (m.elm.tag1 == tissue_idx-1000))
+        (m.elm.tag1 == tissue_idx) | (m.elm.tag1 == tissue_idx - ElementTags.TH_SURFACE_START))
     m = m.crop_mesh(elements=m.elm.elm_number[idx])
     #P_centre = m.find_closest_element(tmp.centre)
     P_centre = project_points_on_surface(m, tmp.centre)

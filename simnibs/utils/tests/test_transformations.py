@@ -488,31 +488,20 @@ class TestCropVol:
         assert np.allclose(new_affine[:3, 3], [(10-1)*4, (30-2)*2, 50-4])
         assert np.allclose(bb, [[9, 20], [28, 41], [46, 63]])
 
-class TestPasteVol:
-    '''
-    def test_paste_vol_data(self):
-        data = scipy.io.loadmat(os.path.join(
-            FUNCTION_TESTS_FOLDER, 'cat_vol_resize_AT',
-            'dereduce_brain.mat'),
-            squeeze_me=False
-        )
-        pasted = transformations.paste_vol(
-            data['Ymfs'],
-            data['BB']['sizeT'][0, 0][0],
-            data['BB']['BB'][0, 0][0].reshape(3, 2) - 1
-        )
-
-        assert np.allclose(pasted, data['dereduced'])
-    '''
-    def test_paste_simple(self):
+class TestPadVol:
+    def test_pad_simple(self):
         data = np.random.random((10, 20, 30))
-        target_size = (100, 100, 100)
-        bb = np.array([[10, 19], [15, 34], [20, 49]])
+        affine = np.eye(4)
+        voxel_pad = 22
 
-        pasted = transformations.paste_vol(data, target_size, bb)
+        padded, new_affine = transformations.pad_vol(data, affine, voxel_pad)
 
-        assert pasted.shape == target_size
-        assert np.allclose(pasted[10:20, 15:35, 20:50], data)
+        assert padded.shape == (data.shape[0] + voxel_pad * 2, data.shape[1] + voxel_pad * 2, data.shape[2] + voxel_pad * 2)
+        assert (affine[0, 3] - new_affine[0, 3]) / (voxel_pad) == affine[0, 0]
+        assert (affine[1, 3] - new_affine[1, 3]) / (voxel_pad) == affine[1, 1]
+        assert (affine[2, 3] - new_affine[2, 3]) / (voxel_pad) == affine[2, 2]
+        assert np.allclose(affine[:3, :3], new_affine[:3, :3])
+        assert np.allclose(padded[22:32, 22:42, 22:52], data)
 
 class TestGetVoxSize:
     def test_get_vox_size(self):

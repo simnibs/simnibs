@@ -4,8 +4,9 @@ import numpy as np
 import os
 import nibabel as nib
 from scipy import ndimage
+from scipy.ndimage import binary_erosion
+
 from . import brainsprite_helper
-import scipy.ndimage.morphology as mrph
 
 se = ndimage.generate_binary_structure(3,1)
 
@@ -83,7 +84,7 @@ def _final_overlay(labeling, labels = [1, 2, 3, 6, 9, 8, 7, 5],
     label_buffer = np.zeros_like(tissues_buffer)
     for l in labels:
         tissue_mask = tissue_mask | (tissues_buffer == l)
-        ero = mrph.binary_erosion(np.squeeze(tissue_mask), se, 1)
+        ero = binary_erosion(np.squeeze(tissue_mask), se, 1)
         label_buffer[(tissue_mask & ~ero & ~(label_buffer > 0))] = l
 
     return nib.Nifti1Image(np.uint16(np.squeeze(label_buffer)), tissues_data.affine)

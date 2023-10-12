@@ -78,7 +78,8 @@ class Solver:
         https://software.intel.com/en-us/mkl-developer-reference-fortran-pardiso
     """
     # I get segfaults if mtype=2, so usng mtype=11
-    def __init__(self, A, mtype=11):
+    def __init__(self, A, mtype=2, isSymmetric=True):
+
         self._libmkl = get_libmkl()
 
         self._mkl_pardiso = self._libmkl.pardiso
@@ -89,36 +90,19 @@ class Solver:
         else:
             self._pt_type = (ctypes.c_int32, np.int32)
 
-        self._mkl_pardiso.argtypes = [
-            ctypes.POINTER(self._pt_type[0]),    # pt
-            ctypes.POINTER(ctypes.c_int32),      # maxfct
-            ctypes.POINTER(ctypes.c_int32),      # mnum
-            ctypes.POINTER(ctypes.c_int32),      # mtype
-            ctypes.POINTER(ctypes.c_int32),      # phase
-            ctypes.POINTER(ctypes.c_int32),      # n
-            ctypes.POINTER(None),                # a
-            ctypes.POINTER(ctypes.c_int32),      # ia
-            ctypes.POINTER(ctypes.c_int32),      # ja
-            ctypes.POINTER(ctypes.c_int32),      # perm
-            ctypes.POINTER(ctypes.c_int32),      # nrhs
-            ctypes.POINTER(ctypes.c_int32),      # iparm
-            ctypes.POINTER(ctypes.c_int32),      # msglvl
-            ctypes.POINTER(None),                # b
-            ctypes.POINTER(None),                # x
-            ctypes.POINTER(ctypes.c_int32)]      # error
-
-        self._mkl_pardiso.restype = None
-
         self._pt = np.zeros(64, dtype=self._pt_type[1])
         self._iparm = np.zeros(64, dtype=np.int32)
         self._perm = np.zeros(0, dtype=np.int32)
 
         self._mtype = mtype
         self._msglvl = False
-
         self._solve_transposed = False
-        self._factorize(A)
 
+        if isSymmetric:
+            # get the upper triangular part of the A matrix
+            self._factorize(sp.triu(A).tocsr())
+        else:
+            self._factorize(A.tocsr())
 
     def _factorize(self, A):
         """

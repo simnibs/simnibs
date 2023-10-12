@@ -12,6 +12,7 @@ simnibs/simulation/petsc_solver.c
 simnibs/mesh_tools/cgal/create_mesh_surf.cpp
 simnibs/mesh_tools/cgal/create_mesh_vol.cpp
 simnibs/mesh_tools/cgal/cgal_misc.cpp
+simnibs/mesh_tools/cgal/polygon_mesh_processing.cpp
 simnibs/segmentation/_cat_c_utils.c
 simnibs/segmentation/_marching_cubes_lewiner_cy.c
 simnibs/segmentation/_thickness.c
@@ -20,6 +21,8 @@ simnibs/ccd-files/LICENSE
 simnibs/ccd-files/README.md
 # notice the first / (no recursivity)
 /build
+
+simnibs/_version.py
 
 # Object files
 *.o
@@ -50,6 +53,7 @@ simnibs/ccd-files/README.md
 # IDE stuff
 .idea/
 .Rhistory
+.vscode
 
 # Mac stuff
 .DS_store

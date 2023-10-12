@@ -2,7 +2,8 @@ import argparse
 from pathlib import Path
 import sys
 
-from simnibs.cli.utils import clargs
+from simnibs.cli.utils.helpers import add_argument, resolve_subject_id_path
+from simnibs.cli.utils import args_eeg, args_general
 
 from simnibs.eeg.forward import compute_tdcs_leadfield
 
@@ -31,47 +32,23 @@ def parse_args(argv):
             """,
     )
 
-    montage = dict(
-        type=str, help="""Name of EEG montage file defining the electrode positions."""
-    )
-
-    # Optional
-
-    output_dir = dict(
-        type=str,
-        default="fem_{subid}",
-        help="""Directory in which to store the results of the simulation. If
-            it does not exist, it will be created (default: %(default)s).""",
-    )
-
-    mesh_electrodes = dict(
-        action="store_true",
-        help="""Model electrodes as rings with a diameter of 10 mm and a
-        thickness of 4 mm. Otherwise, electrodes are modeled as points
-        (default: %(default)s)."""
-    )
-    pardiso = dict(
-        action="store_true",
-        help="""Use PARDISO as solver for FEM calculations. Otherwise, PETSc will be
-        used.""",
-    )
-
     parser = argparse.ArgumentParser(**program)
 
-    clargs.subid.add_to(parser)
+    add_argument(parser, args_general.subid)
 
-    parser.add_argument("montage", **montage)
-    parser.add_argument("--mesh_electrodes", **mesh_electrodes)
-    parser.add_argument("-o", "--output_dir", **output_dir)
-    parser.add_argument("--pardiso", **pardiso)
-    clargs.subsampling.add_to(parser)
+    add_argument(parser, args_eeg.montage)
+    add_argument(parser, args_eeg.mesh_electrodes)
+    add_argument(parser, args_eeg.output_dir)
+    add_argument(parser, args_eeg.use_pardiso)
+
+    args_eeg.subsampling.add_to(parser)
 
     return parser.parse_args(argv[1:])
 
 def main():
     args = parse_args(sys.argv)
 
-    m2m_dir = clargs.resolve_subject_id_path(args.subid)
+    m2m_dir = resolve_subject_id_path(args.subid)
     subid = m2m_dir.stem.lstrip("m2m_")
     fem_dir = Path(args.output_dir.format(subid=subid)).resolve()
     montage = Path(args.montage)

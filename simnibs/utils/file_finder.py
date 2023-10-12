@@ -24,6 +24,7 @@ import os
 import re
 import numpy as np
 import nibabel
+from . import mesh_element_properties
 from .. import SIMNIBSDIR
 
 __all__ = [
@@ -42,6 +43,9 @@ fs_surfaces = ["central", "sphere"]
 fs_resolutions = [None, 10, 40, 160]
 fs_resolutions_names = ["", "10k", "40k", ""]
 fs_res_mapper = dict(zip(fs_resolutions, fs_resolutions_names))
+
+coil_models = os.path.join(SIMNIBSDIR, "resources", "coil_models")
+ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, "resources", "ElectrodeCaps_MNI")
 
 
 class Templates:
@@ -64,6 +68,8 @@ class Templates:
     final_tissues_LUT: str
         Path to freeview color LUT for the final_tissues.nii.gz and
         label_prep/tissue_labeling_upsampled.nii.gz
+    tcd_json_schema: str
+        Path to the json schema describing the tcd format (json)
     """
 
     def __init__(self):
@@ -124,6 +130,7 @@ class Templates:
 
         self.eeg_montage_dir = Path(SIMNIBSDIR) / "resources" / "ElectrodeCaps_MNI"
         self.fiducials = self.eeg_montage_dir / "Fiducials.csv"
+        self.tcd_json_schema = os.path.join(coil_models, "coil_model.schema.json")
 
     def get_eeg_montage(self, name):
         f = self.eeg_montage_dir / f"{name}.csv"
@@ -131,11 +138,7 @@ class Templates:
             raise FileNotFoundError
         return f
 
-
 templates = Templates()
-coil_models = os.path.join(SIMNIBSDIR, "resources", "coil_models")
-ElectrodeCaps_MNI = os.path.join(SIMNIBSDIR, "resources", "ElectrodeCaps_MNI")
-
 
 def get_atlas(atlas_name, hemi="both"):
     """Loads a brain atlas based of the FreeSurfer fsaverage template
@@ -175,7 +178,7 @@ def get_atlas(atlas_name, hemi="both"):
 
     if hemi in ["lh", "rh"]:
         fn_atlas = os.path.join(
-            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.freesurfer.annot"
+            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.annot"
         )
         labels, _, names = nibabel.freesurfer.io.read_annot(fn_atlas)
         atlas = {}
@@ -207,10 +210,10 @@ def get_reference_surf(
 
     Parameters
     -----------
-    region: 'lh', 'rh', 'lc' or 'rc'
-        Name of the region of interest
-    surf_type: 'central', 'sphere', 'inflated' (optional)
-        Surface type. Default: central
+    region: str
+        Name of the region of interest. Valid regions are `lh` and `rh`.
+    surf_type: str
+        Surface type. 'central', 'sphere', 'inflated' Default: central
 
     Returns
     --------
@@ -225,7 +228,7 @@ def get_reference_surf(
     assert resolution in fs_resolutions, f"{resolution} is not a valid fsaverage resolution; please choose one of {fs_resolutions}"
     fn_surf = os.path.join(
         getattr(templates, f"freesurfer_templates{fs_res_mapper[resolution]}"),
-        f"{region}.{surf_type}.freesurfer.gii",
+        f"{region}.{surf_type}.gii",
     )
     if os.path.isfile(fn_surf):
         return fn_surf
@@ -295,10 +298,6 @@ class SubjectFiles:
 
     final_labels_MNI: str
         Label image created from final mesh in MNI space
-
-    ref_fs: str
-        Reference FreeSurfer space file (.nii.gz)
-        Now always set to True, so that a standard header is added, which seems to work
 
     hemispheres: list
         Hemisphere names.
@@ -421,11 +420,9 @@ class SubjectFiles:
         self.settings = os.path.join(self.subpath, "settings.ini")
         self.charm_log = os.path.join(self.subpath, "charm_log.html")
         self.summary_report = os.path.join(self.subpath, "charm_report.html")
-        # self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
 
         self.final_labels = os.path.join(self.subpath, "final_tissues.nii.gz")
         self.tensor_file = os.path.join(self.subpath, "DTI_coregT1_tensor.nii.gz")
-        self.ref_fs = True  # when True, mesh_io.write_freesurfer_surface writes a standard header that seems to work
 
         # transformations
 
@@ -471,6 +468,9 @@ class SubjectFiles:
         self.template_coregistered = os.path.join(
             self.segmentation_folder, "template_coregistered.mgz"
         )
+        self.t1_synth = os.path.join(
+            self.segmentation_folder, "T1_synth.nii.gz"
+        )
 
         # labels
 
@@ -502,7 +502,7 @@ class SubjectFiles:
         self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
         self.surfaces = {s: {h: self.get_surface(h, s) for h in self.hemispheres} for s in self._standard_surfaces}
 
-        self._standard_morph_data = ("thickness", )
+        self._standard_morph_data = tuple() # e.g., "thickness",
         self.morph_data = {d: {h: self.get_morph_data(h, d) for h in self.hemispheres} for d in self._standard_morph_data}
 
         # eeg
@@ -546,6 +546,55 @@ class SubjectFiles:
     @staticmethod
     def _parse_subsampling(subsampling: Union[None, int]) -> str:
         return str(subsampling) if subsampling else ""
+
+class FreeSurferSubject:
+    def __init__(self, subject_dir) -> None:
+        self.hemispheres = HEMISPHERES
+
+        self.root = Path(subject_dir)
+        self.mri = self.root / "mri"
+        self.surf = self.root / "surf"
+        self.label = self.root / "label"
+
+
+    def get_volume(self, name: str):
+        """Get volume.
+
+        name : str
+            Filename without `mgz`.
+
+        """
+        return self.mri / f"{name}.mgz"
+
+
+    def get_surface(self, hemi: str, name: str):
+        """Get surface for a single hemisphere."""
+        return self.surf / f"{hemi}.{name}"
+
+
+    def get_surfaces(self, name: str):
+        """Get surfaces for both hemispheres."""
+        return {hemi: self.get_surface(hemi, name) for hemi in self.hemispheres}
+
+
+    def get_annot(self, hemi: str, name: str):
+        """Get annotation for a single hemisphere."""
+        return self.label / f"{hemi}.{name}.annot"
+
+
+    def get_annots(self, name: str):
+        """Get annotation for both hemispheres."""
+        return {hemi: self.get_annot(hemi, name) for hemi in self.hemispheres}
+
+
+    def get_label(self, hemi: str, name: str):
+        """Get label for a single hemisphere."""
+        return self.label / f"{hemi}.{name}.label"
+
+
+    def get_labels(self, name: str):
+        """Get label for both hemispheres."""
+        return {hemi: self.get_label(hemi, name) for hemi in self.hemispheres}
 
 
 def path2bin(program):

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from simnibs import SIMNIBSDIR
-from simnibs.simulation.cond import standard_cond
+from simnibs.utils.cond_utils import standard_cond
 from simnibs.simulation.analytical_solutions import potential_dipole_3layers
 from simnibs.eeg import forward
 from simnibs.utils.file_finder import SubjectFiles
@@ -28,6 +28,7 @@ def sphere3_msh():
 def test_prepare_forward(point_electrodes, solver, sphere3_msh):
 
     s = standard_cond()
+    # Special tags for sphere3_msh
     s[2].value = 0.3  # gray matter
     s[3].value = 0.006  # bone (average)
     s[4].value = 0.3  # skin

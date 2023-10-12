@@ -2,7 +2,8 @@ import argparse
 from pathlib import Path
 import sys
 
-from simnibs.cli.utils import clargs, clpars
+from simnibs.cli.utils.helpers import add_argument, resolve_subject_id_path
+from simnibs.cli.utils import args_eeg, parsers_eeg, args_general
 from simnibs.eeg.forward import make_forward
 
 def parse_args(argv):
@@ -22,21 +23,21 @@ def parse_args(argv):
     )
 
     parent_parser = argparse.ArgumentParser(add_help=False)
-    clargs.subid.add_to(parent_parser)
-    clargs.leadfield.add_to(parent_parser)
-    clargs.fsaverage.add_to(parent_parser)
+    add_argument(parent_parser, args_general.subid)
+    add_argument(parent_parser, args_eeg.leadfield)
+    add_argument(parent_parser, args_eeg.fsaverage)
     parent_parser.add_argument("--no-average-ref", **no_average_ref)
 
     parser = argparse.ArgumentParser(**program, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    sp_eeg = parser.add_subparsers(**clpars.write_format_eeg.kwargs)
+    sp_eeg = parser.add_subparsers(**parsers_eeg.write_format_eeg.kwargs)
 
     # MNE
-    sp_mne = clpars.write_format_mne.add_to(sp_eeg, parents=[parent_parser])
-    clargs.info_mne.add_to(sp_mne)
-    clargs.trans_mne.add_to(sp_mne)
+    sp_mne = parsers_eeg.write_format_mne.add_to(sp_eeg, parents=[parent_parser])
+    add_argument(sp_mne, args_eeg.info_mne)
+    add_argument(sp_mne, args_eeg.trans_mne)
 
     # FieldTrip
-    sp_fieldtrip = clpars.write_format_fieldtrip.add_to(sp_eeg, parents=[parent_parser])
+    sp_fieldtrip = parsers_eeg.write_format_fieldtrip.add_to(sp_eeg, parents=[parent_parser])
 
     return parser.parse_args(argv[1:])
 
@@ -44,7 +45,7 @@ def main():
     args = parse_args(sys.argv)
 
     kwargs = dict(
-        m2m_dir = clargs.resolve_subject_id_path(args.subid),
+        m2m_dir = resolve_subject_id_path(args.subid),
         fname_leadfield = Path(args.leadfield).resolve(),
         out_format = args.format,
         morph_to_fsaverage = args.fsaverage,

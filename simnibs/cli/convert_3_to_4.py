@@ -32,7 +32,7 @@ import sys
 
 from simnibs import SIMNIBSDIR, __version__
 from simnibs.utils import html_writer
-from simnibs.simulation import cond
+from simnibs.utils import cond_utils
 from simnibs.mesh_tools import mesh_io
 from simnibs.utils import transformations
 from simnibs.utils.file_finder import SubjectFiles, templates, ElectrodeCaps_MNI
@@ -89,9 +89,6 @@ class SubjectFiles_old:
 
     mni2conf_12dof: str
         MNI to conform 12 DOF transfomation (.txt or .mat)
-
-    ref_fs: str
-        Reference FreeSurfer space file (.nii.gz)
 
     surf_dir: str
         Directory with surfaces from CAT12/FreeSurfer segmentations (dir)
@@ -198,7 +195,6 @@ class SubjectFiles_old:
 
 
         # Stuff for surface transformations
-        self.ref_fs = os.path.join(self.subpath, 'ref_FS.nii.gz')
         headreco_surf_dir = os.path.join(self.subpath, 'segment', 'cat', 'surf')
         mri2mesh_surf_dir = os.path.join(self.basedir, 'fs_' + self.subid, 'surf')
 
@@ -347,7 +343,7 @@ def convert_old_new(subpath_old, subpath_new):
             mesh_in=mesh,
         )
                 
-    v = final_mesh.view(cond_list=cond.standard_cond())
+    v = final_mesh.view(cond_list=cond_utils.standard_cond())
     v.write_opt(sf_new.fnamehead)
     
     # Write label image from mesh

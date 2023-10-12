@@ -12,9 +12,13 @@ import atexit
 import h5py
 import numpy as np
 import scipy.sparse as sparse
+from simnibs.mesh_tools import gmsh_view
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+
+from simnibs.utils.mesh_element_properties import ElementTags
 
 from ..mesh_tools import mesh_io
-from . import cond as cond_lib
+from ..utils import cond_utils as cond_lib
 from . import coil_numpy as coil_lib
 from . import pardiso
 from . import petsc_solver
@@ -190,7 +194,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
                 cond.field_name = 'conductivity'
                 cond.mesh = out_mesh
                 if cond.nr_comp == 9:
-                    out_mesh.elmdata += cond_lib.TensorVisualization(cond, out_mesh)
+                    out_mesh.elmdata += cond_lib.visualize_tensor(cond, out_mesh)
                 else:
                     out_mesh.elmdata.append(cond)
 
@@ -1347,7 +1351,7 @@ def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_optio
     return el_c / current * v.value
 
 
-def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[5, 1005], units='mm'):
+def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[ElementTags.SCALP, ElementTags.SCALP_TH_SURFACE], units='mm'):
     # Set-up a mesh with a mesh
     m = copy.deepcopy(v.mesh)
     m.nodedata = [v]
@@ -1419,9 +1423,8 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
     return mesh_io.NodeData(v, name='v', mesh=mesh)
 
 
-def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
-             output_names, geo_names=None, solver_options=None, n_workers=1,
-             fn_stl=None):
+def tms_coil(mesh, cond, cond_list, fn_coil, fields, matsimnibs_list, didt_list,
+             output_names, geo_names=None, solver_options=None, n_workers=1):
     '''Simulates TMS fields using a coil + matsimnibs + dIdt definition.
 
     Parameters
@@ -1437,7 +1440,7 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
     matsimnibs_list: list
         List of "matsimnibs" matrices, one per position
     didt_list: list
-        List of dIdt values, one per position
+        List of dIdt values, one per position or a list of dIdt values, one per stimulator
     output_names: list of str
         List of output mesh file names, one per position
     geo_names: list of str
@@ -1467,8 +1470,8 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
         for matsimnibs, didt, fn_out, fn_geo in zip(
                 matsimnibs_list, didt_list, output_names, geo_names):
             _run_tms(
-                mesh, cond, fn_coil, fields,
-                matsimnibs, didt, fn_out, fn_geo, fn_stl)
+                mesh, cond, cond_list, fn_coil, fields,
+                matsimnibs, didt, fn_out, fn_geo)
         _finalize_global_solver()
     else:
         with multiprocessing.Pool(processes=n_workers,
@@ -1480,8 +1483,8 @@ def tms_coil(mesh, cond, fn_coil, fields, matsimnibs_list, didt_list,
                 sims.append(
                     pool.apply_async(
                         _run_tms,
-                        (mesh, cond, fn_coil, fields,
-                         matsimnibs, didt, fn_out, fn_geo, fn_stl)))
+                        (mesh, cond, cond_list, fn_coil, fields,
+                         matsimnibs, didt, fn_out, fn_geo)))
             pool.close()
             pool.join()
 
@@ -1491,13 +1494,15 @@ def _set_up_global_solver(S):
     tms_global_solver = S
 
 
-def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
-             fn_stl):
+def _run_tms(mesh, cond, cond_list, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo):
     global tms_global_solver
     logger.info('Calculating dA/dt field')
     start = time.time()
-    dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt,
-                               fn_geo=fn_geo, fn_stl=fn_stl)
+
+    dAdt = _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs)
+
+    #dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt,
+    #                           fn_geo=fn_geo, fn_stl=fn_stl)
     logger.info(f'{time.time() - start:.2f}s to calculate dA/dt')
     b = tms_global_solver.assemble_rhs(dAdt)
     v = tms_global_solver.solve(b)
@@ -1506,10 +1511,51 @@ def _run_tms(mesh, cond, fn_coil, fields, matsimnibs, didt, fn_out, fn_geo,
     v.mesh = mesh
     out = calc_fields(v, fields, cond=cond, dadt=dAdt)
     mesh_io.write_msh(out, fn_out)
+
+    if fn_geo is not None:
+        logger.info('Creating visualizations')
+        #summary = ''
+        skin_mesh = mesh.crop_mesh(tags = [ElementTags.SCALP_TH_SURFACE])
+
+        # write .opt-file
+        v = out.view(
+            visible_tags=[ElementTags.GM_TH_SURFACE.value],
+            visible_fields=['magnE'],
+            cond_list=cond_list)
+        TmsCoil.from_file(fn_coil).append_simulation_visualization(v, fn_geo, skin_mesh, matsimnibs)
+
+        mesh_io.write_geo_triangles(skin_mesh.elm.node_number_list - 1,
+                                        skin_mesh.nodes.node_coord, fn_geo,
+                                        name='scalp', mode='ba')
+        v.add_view(ColormapNumber=8, ColormapAlpha=.3,
+                Visible=0, ShowScale=0)  # scalp
+        v.add_merge(fn_geo)
+        v.write_opt(fn_out)
+
+    #if view:
+    #    mesh_io.open_in_gmsh(fn_out, True)
+#
+    #summary += f'\n{os.path.split(s)[1][:-1]}\n'
+    #summary += len(os.path.split(s)[1][:-1]) * '=' + '\n'
+    #summary += 'Gray Matter\n\n'
+    #summary += m.fields_summary(roi=2)
+#
+    #logger.log(25, summary)
     
     del dAdt, v, b
     gc.collect()
 
+def _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs):
+    tms_coil = TmsCoil.from_file(fn_coil)
+
+    didt = np.atleast_1d(didt)
+    if len(didt) == 1:
+        for stimulator in tms_coil.get_elements_grouped_by_stimulators().keys():
+            stimulator.di_dt = didt
+    else:
+        for stimulator, stimulator_didt in zip(tms_coil.get_elements_grouped_by_stimulators().keys(), didt):
+            stimulator.di_dt = stimulator_didt
+    return tms_coil.get_da_dt(mesh, matsimnibs)
 
 def _finalize_global_solver():
     global tms_global_solver

@@ -26,7 +26,7 @@ import numpy as np
 
 from .. import SIMNIBSDIR
 from ..simulation import sim_struct
-from ..simulation.cond import standard_cond
+from ..utils.cond_utils import standard_cond
 from ..simulation.run_simnibs import run_simnibs
 from . import electrodeGUI
 from . import head_model_OGL
@@ -35,6 +35,7 @@ from .. import __version__
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles, path2bin
 from ..utils.matlab_read import read_mat
+from ..utils.mesh_element_properties import ElementTags
 
 
 class TDCS_GUI(QtWidgets.QMainWindow):
@@ -1117,7 +1118,7 @@ class CoilTable (QtWidgets.QWidget):
 
         dialog = QtWidgets.QFileDialog(self)
         dialog.setWindowTitle('Open Coil Definition File')
-        dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz)')
+        dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz *.tcd)')
         dialog.setDirectory(ccd_folder)
         dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
@@ -1655,10 +1656,10 @@ class ConductivitiesGui (QtWidgets.QDialog):
     def reset(self):
         standard = standard_cond()
         for j in range(self.condTable.rowCount()):
-            if self.conds_dict[j] > 99 and self.conds_dict[j] < 499:
-                self.cond_values[j].setValue(standard[99].value)
-            elif self.conds_dict[j] > 499:
-                self.cond_values[j].setValue(standard[499].value)
+            if self.conds_dict[j] > ElementTags.ELECTRODE_RUBBER_START - 1 and self.conds_dict[j] <= ElementTags.ELECTRODE_RUBBER_END - 1:
+                self.cond_values[j].setValue(standard[ElementTags.ELECTRODE_RUBBER - 1].value)
+            elif self.conds_dict[j] > ElementTags.SALINE_START - 1:
+                self.cond_values[j].setValue(standard[ElementTags.SALINE - 1].value)
             else:
                 self.cond_values[j].setValue(standard[self.conds_dict[j]].value)
 

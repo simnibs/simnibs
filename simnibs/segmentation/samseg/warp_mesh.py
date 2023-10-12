@@ -59,7 +59,7 @@ def kvlWarpMesh(sourceMeshCollectionFileName, sourceDeformation, targetMeshColle
         # We can resolve both issues by giving to each non-visited voxel the deformation field value of the closest voxel
         # that has been visited, augmented by knowledge that certain deformation components of voxels on the image grid
         # boundaries are zero by theory (sliding boundary conditions)
-        closestIndices = scipy.ndimage.morphology.distance_transform_edt(
+        closestIndices = scipy.ndimage.distance_transform_edt(
             validMask == 0, return_indices=True, return_distances=False)
         denseDeformation = denseDeformation[closestIndices[0], closestIndices[1], closestIndices[2]]
 

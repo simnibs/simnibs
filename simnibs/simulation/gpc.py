@@ -26,6 +26,9 @@ import h5py
 import numpy as np
 import copy
 from collections import OrderedDict
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+
+from simnibs.utils.mesh_element_properties import ElementTags
 
 
 from . import pygpc
@@ -284,7 +287,7 @@ class gPC_regression(pygpc.RegularizedRegression):
                 f.create_dataset(
                     'mesh_roi/data_matrices/' + name + '_samples',
                     data=data, compression='gzip')
-            except (RuntimeError, OSError):
+            except (RuntimeError, OSError, ValueError):
                 pass
 
         data_dims = data.shape[1:]
@@ -509,7 +512,7 @@ def prep_gpc(simlist):
     return random_vars, pdf_type, pdfshape, limits
 
 
-def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[2], eps=1e-2,
+def run_tms_gpc(poslist, fn_simu, cpus=1, tissues=[ElementTags.GM], eps=1e-2,
                 max_iter=1000, min_iter=2, data_poly_ratio=2):
     ''' Runs one TMS gPC for each position in the current TMSLIST
 
@@ -962,12 +965,15 @@ class TMSgPCSampler(gPCSampler):
                 dAdt = self.dAdt
                 dAdt_roi = self.dAdt_roi
             except AttributeError:
-                dAdt = coil.set_up_tms_dAdt(
-                    self.mesh,
-                    self.fnamecoil,
-                    self.matsimnibs,
-                    didt=self.didt,
-                    fn_geo=self.fn_hdf5[:-5]+'_coil.geo')
+                tms_coil = TmsCoil.from_file(self.fnamecoil)
+                didt = np.atleast_1d(self.didt)
+                if len(didt) == 1:
+                    for stimulator in tms_coil.get_elements_grouped_by_stimulators().keys():
+                        stimulator.di_dt = didt
+                else:
+                    for stimulator, stimulator_didt in zip(tms_coil.get_elements_grouped_by_stimulators().keys(), didt):
+                        stimulator.di_dt = stimulator_didt 
+                dAdt = tms_coil.get_da_dt(self.mesh, self.matsimnibs)
                 if isinstance(dAdt, mesh_io.NodeData):
                     dAdt = dAdt.node_data2elm_data()
                 dAdt.field_name = 'dAdt'

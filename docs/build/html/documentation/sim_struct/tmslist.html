@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>TMSLIST &#8212; SimNIBS 4.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <title>TMSLIST &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -48,10 +48,10 @@
           <div class="body" role="main">
             
   <section id="tmslist">
-<span id="tmslist-doc"></span><h1>TMSLIST<a class="headerlink" href="#tmslist" title="Permalink to this heading">¶</a></h1>
+<span id="tmslist-doc"></span><h1>TMSLIST<a class="headerlink" href="#tmslist" title="Link to this heading">¶</a></h1>
 <p>Describes a set of TMS simulations.</p>
 <section id="initialization">
-<h2>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading">¶</a></h2>
+<h2>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h2>
 <ul>
 <li><p><strong>Python</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span>
@@ -71,7 +71,7 @@
 </ul>
 </section>
 <section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
 <ul id="tmslist-fnamecoil">
 <li><p><strong>fnamecoil</strong>: <em>string (Python)/ character array (MATLAB)</em></p>
 <ul>
@@ -83,7 +83,7 @@
 </li>
 <li><p><strong>Examples</strong>: <em>Python/MATLAB</em></p>
 <p>Select the SimNIBS model for the Magstim 70mm figure-of-eight coil</p>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tmslist</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tmslist</span><span class="p">.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span>
 </pre></div>
 </div>
 <p></p>
@@ -118,7 +118,7 @@
 </ul>
 </section>
 <section id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
 <ul>
 <li><p>Set up a simulation with a coil over C3, pointing posteriorly.
 See the documentation on <a class="reference internal" href="session.html#session-doc"><span class="std std-ref">SESSION</span></a> and the <a class="reference internal" href="position.html#position-doc"><span class="std std-ref">POSITION</span></a> structures for more information.</p>
@@ -155,7 +155,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 <span class="c">% Add a TMSLIST to the SESSION</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span>
 <span class="c">% Select the coil from those available in the ccd-coils subfolder</span>
-<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;Magstim_70mm_Fig8.nii.gz&#39;</span><span class="p">;</span>
 <span class="c">% Place the coil over C3</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">pos</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span>
 <span class="c">% Point the coil towards CP3</span>
@@ -272,7 +272,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |

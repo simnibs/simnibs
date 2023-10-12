@@ -9,6 +9,7 @@
 #ifdef CGAL_CONCURRENT_MESH_3
 #include "tbb/task_arena.h"
 #include "tbb/task_group.h"
+#include "tbb/global_control.h"
 #endif
 
 #include <cstdlib>
@@ -32,15 +33,22 @@ typedef CGAL::Mesh_complex_3_in_triangulation_3<Tr_img> C3t3_img;
 typedef CGAL::Mesh_criteria_3<Tr_img> Mesh_criteria_img;
 typedef Mesh_criteria_img::Facet_criteria    Facet_criteria_img;
 typedef Mesh_criteria_img::Cell_criteria     Cell_criteria_img;
-// To avoid verbose function and named parameters call
-using namespace CGAL::parameters;
+
+namespace params = CGAL::parameters;
 
 
 int _mesh_image(
-  char *fn_image, char *fn_out,
-  float facet_angle, float facet_size, float facet_distance,
-  float cell_radius_edge_ratio, float cell_size,
-  bool optimize
+  char *fn_image,
+  char *fn_out,
+  float facet_angle,
+  float facet_size,
+  float facet_distance,
+  float cell_radius_edge_ratio,
+  float cell_size,
+  int num_threads,
+  bool do_perturb = false,
+  bool do_exude = false,
+  bool do_lloyd = false
 )
 {
   /// Load image
@@ -49,6 +57,10 @@ int _mesh_image(
     std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
     return EXIT_FAILURE;
   }
+
+  // Set max number of threads
+  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
 
@@ -56,48 +68,45 @@ int _mesh_image(
   Facet_criteria_img facet_criteria(facet_angle, facet_size, facet_distance);
   Cell_criteria_img cell_criteria(cell_radius_edge_ratio, cell_size);
   Mesh_criteria_img criteria(facet_criteria, cell_criteria);
-  
+
   // Mesh generation
-  std::cout << "Began meshing \n";
   CGAL::get_default_random() = CGAL::Random(0);
-  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
 
-  std::cout << "Lloyd \n";
-  // Run Lloyd optimization using single core as it often fails in parallel
-  // https://github.com/CGAL/cgal/issues/4566
-  // When the bug gets fixed, please remove this whole block and only keep the simple version below
-  // if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #ifdef CGAL_CONCURRENT_MESH_3
-    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
-    tbb::task_group tg;
-    limited.execute([&]{ // Use at most 2 threads for this job.
-        tg.run([&]{ // run in task group
-            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-        });
-    });
-    // Wait for completion of the task group in the limited arena.
-    limited.execute([&]{ tg.wait(); });
-  #else
-    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #endif
-  std::cout << "Perturb \n";
-  CGAL::perturb_mesh_3(c3t3, domain);
-  std::cout << "Exude \n";
-  CGAL::exude_mesh_3(c3t3);
-  std::cout << "Exude done\n";
+  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, params::no_perturb(), params::no_exude());
 
-  // Output
+  if (do_lloyd){
+    // Run Lloyd optimization using single core as it often fails in parallel
+    // https://github.com/CGAL/cgal/issues/4566
+    // When the bug gets fixed, please remove this whole block and only keep the simple version below
+    // CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+    #ifdef CGAL_CONCURRENT_MESH_3
+      tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+      tbb::task_group tg;
+      limited.execute([&]{ // Use at most 2 threads for this job.
+          tg.run([&]{ // run in task group
+              CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+          });
+      });
+      // Wait for completion of the task group in the limited arena.
+      limited.execute([&]{ tg.wait(); });
+    #else
+      CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+    #endif
+  }
+  if (do_perturb) CGAL::perturb_mesh_3(c3t3, domain);
+  if (do_exude) CGAL::exude_mesh_3(c3t3);
+
   std::ofstream medit_file(fn_out);
   c3t3.output_to_medit(medit_file);
-  return EXIT_SUCCESS;
 
+  return EXIT_SUCCESS;
 }
 
 struct Sizing_field
 {
     typedef ::FT FT;
     typedef Point Point_3;
-    typedef Mesh_domain_img::Index Index; 
+    typedef Mesh_domain_img::Index Index;
     double tx, ty, tz;
     double vx, vy, vz;
     std::size_t sx, sy, sz;
@@ -119,10 +128,17 @@ struct Sizing_field
 };
 
 int _mesh_image_sizing_field(
-  char *fn_image, char *fn_out,
-  float facet_angle, float *facet_size, float *facet_distance,
-  float cell_radius_edge_ratio, float *cell_size,
-  bool optimize
+  char *fn_image,
+  char *fn_out,
+  float facet_angle,
+  float *facet_size,
+  float *facet_distance,
+  float cell_radius_edge_ratio,
+  float *cell_size,
+  int num_threads,
+  bool do_perturb = false,
+  bool do_exude = false,
+  bool do_lloyd = false
 )
 {
   /// Load image
@@ -131,6 +147,10 @@ int _mesh_image_sizing_field(
     std::cerr << "Error: Cannot read file " <<  fn_image << std::endl;
     return EXIT_FAILURE;
   }
+
+  // Set max number of threads
+  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
 
@@ -163,37 +183,33 @@ int _mesh_image_sizing_field(
           sizing_field_cell
   );
   Mesh_criteria_img criteria(facet_criteria, cell_criteria);
-  
-  // Mesh generation
-  std::cout << "Began meshing \n";
-  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, no_perturb(), no_exude());
- 
-  std::cout << "Lloyd \n";
-  // Run Lloyd optimization using single core as it often fails in parallel
-  // https://github.com/CGAL/cgal/issues/4566
-  // When the bug gets fixed, please remove this whole block and only keep the simple version
-  // if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #ifdef CGAL_CONCURRENT_MESH_3
-    tbb::task_arena limited(1);        // No more than 2 threads in this arena.
-    tbb::task_group tg;
-    limited.execute([&]{ // Use at most 2 threads for this job.
-        tg.run([&]{ // run in task group
-            if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-        });
-    });
-    // Wait for completion of the task group in the limited arena.
-    limited.execute([&]{ tg.wait(); });
-  #else
-    if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-  #endif
-  std::cout << "Perturb \n";
-  CGAL::perturb_mesh_3(c3t3, domain);
-  std::cout << "Exude \n";
-  CGAL::exude_mesh_3(c3t3);
-  
 
-  // Output
+  C3t3_img c3t3 = CGAL::make_mesh_3<C3t3_img>(domain, criteria, params::no_perturb(), params::no_exude());
+
+  if (do_lloyd){
+    // Run Lloyd optimization using single core as it often fails in parallel
+    // https://github.com/CGAL/cgal/issues/4566
+    // When the bug gets fixed, please remove this whole block and only keep the simple version
+    // CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+    #ifdef CGAL_CONCURRENT_MESH_3
+      tbb::task_arena limited(1);        // No more than 2 threads in this arena.
+      tbb::task_group tg;
+      limited.execute([&]{ // Use at most 2 threads for this job.
+          tg.run([&]{ // run in task group
+              CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+          });
+      });
+      // Wait for completion of the task group in the limited arena.
+      limited.execute([&]{ tg.wait(); });
+    #else
+      CGAL::lloyd_optimize_mesh_3(c3t3, domain);
+    #endif
+  }
+  if (do_perturb) CGAL::perturb_mesh_3(c3t3, domain);
+  if (do_exude) CGAL::exude_mesh_3(c3t3);
+
   std::ofstream medit_file(fn_out);
   c3t3.output_to_medit(medit_file);
+
   return EXIT_SUCCESS;
 }

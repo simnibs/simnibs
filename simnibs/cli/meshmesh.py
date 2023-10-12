@@ -26,20 +26,22 @@
 
 import argparse
 import os
+import re
 import sys
 import shutil
 import textwrap
 import nibabel as nib
 import numpy as np
+import logging
 
 from simnibs import __version__
 from simnibs import SIMNIBSDIR
-from simnibs.simulation import cond
+from simnibs.utils import cond_utils, file_finder
 from simnibs.mesh_tools.mesh_io import write_msh
 from simnibs.mesh_tools.meshing import create_mesh
 from simnibs.utils.transformations import resample_vol, crop_vol
 from simnibs.utils.settings_reader import read_ini
-from simnibs.utils.simnibs_logger import logger
+from simnibs.utils.simnibs_logger import logger, register_excepthook, unregister_excepthook
 
 
 def parseArguments(argv):
@@ -73,7 +75,10 @@ use custom .ini-file to control tetrahedra sizes:
                         nargs=1, metavar="size_field.nii.gz", 
                         help="""optional sizing field to locally control element 
                         sizes""")
-    parser.add_argument('-v','--version', action='version', version=__version__)
+    parser.add_argument('--nthreads', type=int,  dest='nthreads', default=1,
+                        help="""Number of threads to be used for the meshing.""")
+    parser.add_argument('-v', '--version', action='version', version=__version__)
+    parser.add_argument('--debug_path', default=None, help="""Debug path to write debug output""")
     
     args=parser.parse_args(argv)
     if args.label_image is None:
@@ -84,19 +89,25 @@ use custom .ini-file to control tetrahedra sizes:
 
 def main():
     args = parseArguments(sys.argv[1:])
-    order_upsampling = 1; # 0 [nearest neighbor] or 1 [linear]
-    
+    order_upsampling = 1;  # 0 [nearest neighbor] or 1 [linear]
+
+    # setup logger
+    if args.debug_path is not None:
+        _setup_logger(os.path.join(args.debug_path, 'meshmesh_log.html'))
+
     # load settings
     if args.usesettings is None:
-        args.usesettings = os.path.join(SIMNIBSDIR, 'charm.ini') # use standard settings
+        args.usesettings = os.path.join(SIMNIBSDIR, 'charm.ini')  # use standard settings
     if type(args.usesettings) == list:
         args.usesettings = args.usesettings[0]        
     settings = read_ini(args.usesettings)['mesh']
+    #settings = _read_settings_and_copy(args.usesettings, sub_files.settings)
     if not settings['skin_tag']:
         settings['skin_tag'] = None
     if not settings['hierarchy']:
         settings['hierarchy'] = None
-     
+
+
     # load label image
     label_nifti = nib.load(args.label_image)
     label_image = np.squeeze(label_nifti.get_fdata().astype(np.uint16)) # Cast to uint16, otherwise meshing complains
@@ -110,12 +121,13 @@ def main():
         sf_nifti = nib.load(args.fn_sizing_field)
         sf_image = np.squeeze(sf_nifti.get_fdata())
         assert sf_image.shape == label_image.shape
-        
+
     # upsample (optional)
     if args.voxsize_meshing is not None:
         logger.info('upsampling label image ...')
         if type(args.voxsize_meshing) == list:
                 args.voxsize_meshing = args.voxsize_meshing[0]
+
         args.voxsize_meshing = float(args.voxsize_meshing)
         if sf_image is not None:
             sf_image, _, _ = resample_vol(sf_image, label_affine,
@@ -140,34 +152,79 @@ def main():
         
     # reduce memory consumption a bit
     if sf_image is not None:
-            sf_image, _, _ = crop_vol(sf_image, label_affine,
-                                      label_image>0, thickness_boundary=5) 
-    label_image, label_affine, _ = crop_vol(label_image, label_affine, 
-                                            label_image>0, thickness_boundary=5) 
-    
+        sf_image, _, _ = crop_vol(sf_image, label_affine,
+                                  label_image>0, thickness_boundary=5)
+
+    label_image, label_affine, _ = crop_vol(label_image, label_affine,
+                                            label_image>0, thickness_boundary=5)
+
     # meshing
     new_mesh = create_mesh(label_image, label_affine,
-                            elem_sizes=settings['elem_sizes'],
-                            smooth_size_field=settings['smooth_size_field'],
-                            skin_facet_size=settings['skin_facet_size'], 
-                            facet_distances=settings['facet_distances'],
-                            optimize=settings['optimize'], 
-                            remove_spikes=settings['remove_spikes'], 
-                            skin_tag=settings['skin_tag'],
-                            hierarchy= settings['hierarchy'],
-                            smooth_steps=settings['smooth_steps'],
-                            sizing_field=sf_image)
+                           elem_sizes=settings['elem_sizes'],
+                           smooth_size_field=settings['smooth_size_field'],
+                           skin_facet_size=settings['skin_facet_size'],
+                           facet_distances=settings['facet_distances'],
+                           optimize=settings['optimize'],
+                           remove_spikes=settings['remove_spikes'],
+                           skin_tag=settings['skin_tag'],
+                           hierarchy=settings['hierarchy'],
+                           smooth_steps=settings['smooth_steps'],
+                           sizing_field=sf_image,
+                           num_threads=args.nthreads,
+                           debug=args.debug_path is not None,
+                           debug_path=args.debug_path)
 
     # write out mesh, .opt-file with some visualization settings and .ini-file with settings
     if not args.mesh_name.lower().endswith('.msh'):
         args.mesh_name+='.msh'
     write_msh(new_mesh, args.mesh_name)
-    v = new_mesh.view(cond_list = cond.standard_cond())
+    v = new_mesh.view(cond_list=cond_utils.standard_cond())
     v.write_opt(args.mesh_name)
     try:
         shutil.copyfile(args.usesettings, args.mesh_name+'.ini')
     except shutil.SameFileError:
         pass
+    if args.debug_path is not None:
+        _stop_logger(os.path.join(args.debug_path, 'meshmesh_log.html'))
+
+
+def _setup_logger(logfile):
+    """Add FileHandler etc."""
+    with open(logfile, "a") as f:
+        f.write("<HTML><HEAD><TITLE>charm report</TITLE></HEAD><BODY><pre>")
+        f.close()
+    fh = logging.FileHandler(logfile, mode="a")
+    formatter = logging.Formatter("%(levelname)s: %(message)s")
+    fh.setFormatter(formatter)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
+    register_excepthook(logger)
+
+
+def _stop_logger(logfile):
+    """Close down logging"""
+    while logger.hasHandlers():
+        logger.removeHandler(logger.handlers[0])
+    unregister_excepthook()
+    logging.shutdown()
+    with open(logfile, "r") as f:
+        logtext = f.read()
+
+    # Explicitly remove this really annoying stuff from the log
+    removetext = (
+        re.escape("-\|/"),
+        re.escape("Selecting intersections ... ")
+        + "\d{1,2}"
+        + re.escape(" %Selecting intersections ... ")
+        + "\d{1,2}"
+        + re.escape(" %"),
+    )
+    with open(logfile, "w") as f:
+        for text in removetext:
+            logtext = re.sub(text, "", logtext)
+        f.write(logtext)
+        f.write("</pre></BODY></HTML>")
+        f.close()
 
 
 if __name__ == '__main__':

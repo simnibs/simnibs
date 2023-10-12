@@ -2,10 +2,11 @@ import pytest
 import os
 import numpy as np
 import tempfile
+import warnings
 
 from ... import SIMNIBSDIR
 from ...simulation.sim_struct import TMSLIST, POSITION
-from ..nnav import localite, softaxic, brainsight
+from ..nnav import localite, softaxic, brainsight, ant
 
 
 FIXTURE_DIR = os.path.join(
@@ -204,6 +205,16 @@ def arr_sample2():
                      [0.0000e+00, 0.0000e+00, 0.0000e+00, 1.0000e+00]])
 
 
+## ANT test files and data ##
+@pytest.fixture()
+def ant_mrk_fn():
+    # ANT visor .mrk-file example
+    fn = os.path.join(FIXTURE_DIR,
+                      "ant",
+                      "ioJson3DMarker_example_SimNIBS.mrk")
+    return fn
+
+
 
 class TestLocalite:
     def test_read_tm(self, tm_fn, arr_tm_0):
@@ -361,3 +372,49 @@ class TestBrainsight:
             assert len(tmslist_targets.pos) == 1
             assert len(tmslist_samples.pos) == 0
             assert np.all(np.isclose(tmslist_targets.pos[0].matsimnibs, arr_sample2))
+
+
+class TestAnt:
+    def test_read_mrk(self, ant_mrk_fn):
+        tmslists = ant().read(ant_mrk_fn)
+        assert len(tmslists) == 3
+        assert len(tmslists[0].pos) == 4
+        assert len(tmslists[1].pos) == 2
+        assert len(tmslists[2].pos) == 1
+        
+    def test_read_mrk_with_info(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
+        assert 'NIfTI_quatern' in imageinfo
+        assert 'NIfTI_pixdim' in imageinfo
+        assert 'NIfTI_qoffset' in imageinfo
+        
+    def test_write_mrk(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
+        with tempfile.TemporaryDirectory() as folder:
+            print(folder)
+            fn = os.path.join(folder, 'export.mrk')
+            ant().write(tmslists, fn, imageinfo=imageinfo)
+            
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                # header infos are identical --> no warning should be raised
+                tmslists2 = ant().read(fn, imageinfo=imageinfo)
+                assert len(tmslists2) == 3
+                assert np.all(np.isclose(tmslists[0].pos[-1].matsimnibs, 
+                                         tmslists2[0].pos[-1].matsimnibs))
+                   
+    def test_write_mrk_no_imageinfo(self, ant_mrk_fn):
+        tmslists, imageinfo = ant().read(ant_mrk_fn, return_imageinfo=True)        
+        with tempfile.TemporaryDirectory() as folder:
+            print(folder)
+            fn = os.path.join(folder, 'export.mrk')
+            ant().write(tmslists, fn)
+            
+            with pytest.warns():
+                # header infos are different --> warning should be raised
+                tmslists2 = ant().read(fn, imageinfo=imageinfo)
+                assert len(tmslists2) == 3
+                assert np.all(np.isclose(tmslists[0].pos[-1].matsimnibs, 
+                                         tmslists2[0].pos[-1].matsimnibs))
+
+        
