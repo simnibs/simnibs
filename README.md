@@ -25,7 +25,8 @@ After cloning the repository:
 ```
 conda env create -f environment_.yml -n <name_of_my_environment>
 conda activate <name_of_my_environment>
-python setup.py develop
+python -m pip install --editable .
+python simnibs/cli/link_external_progs.py
 ```
 
 ## Authors
