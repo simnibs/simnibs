@@ -22,9 +22,9 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
     version = ''
     with open(os.path.join(simnibs_root_dir, "simnibs", "_version.py")) as fp:
         for line in fp:
-            if '__version__' in line:
+            if '__version__ = version' in line:
                 version = line.split("version = '")[-1]
-                version = version.split("' ")[0]
+                version = version.split("'")[0]
                 break
 
     if not version:

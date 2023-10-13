@@ -19,6 +19,7 @@ jobs:
     displayName: Create Conda environment
 
   - bash: |
+      source /opt/rh/devtoolset-8/enable
       gcc -v
       source activate simnibs_env
       python -m pip wheel . -w ./dist  --no-deps --use-feature=in-tree-build
