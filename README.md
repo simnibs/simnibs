@@ -8,6 +8,7 @@ The pipeline is divided in three parts:
 2. Calculation of electric fields through the Finite Element Method (FEM)
 3. Post-processing of results for further analysis.
 
+
 ## Build Status
 | Linux   | Windows    | MacOS |
 |---------|------------|-----|
