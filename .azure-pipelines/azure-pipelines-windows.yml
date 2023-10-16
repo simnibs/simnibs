@@ -59,7 +59,7 @@ jobs:
     displayName: Download Installer
 
   - script: |
-      start /wait $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
+      start $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\ --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
 
@@ -90,7 +90,7 @@ jobs:
     displayName: Install Octave
 
   - script: |
-      start /wait $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
+      start $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
       simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\examples\tests\examples.py -v -s --junit-xml=test-results.xml
     displayName: Install SimNIBS and run tests
 
