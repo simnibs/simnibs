@@ -917,6 +917,62 @@ class TestPositionOptimization:
             skin_surface.get_AABBTree(), affine_after
         )[0]
 
+    def test_optimization_with_global_rotation(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
+    ):
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+
+        coil_affine = np.array(
+            [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
+        )
+
+        (
+            before,
+            after,
+            affine_after,
+        ) = small_functional_3_element_coil.optimize_deformations(
+            skin_surface, coil_affine, coil_rotation_ranges=np.array([[-5, 5], [-5, 5], [-20, 20]])
+        )
+
+        assert before > after
+        assert after < before * 0.05
+        assert not np.allclose(coil_affine, affine_after)
+        assert not small_functional_3_element_coil._get_exact_deformation_scores(
+            skin_surface.get_AABBTree(), affine_after
+        )[0]
+
+    def test_self_intersection_optimization(
+        self, small_self_intersecting_2_element_coil: TmsCoil, sphere3_msh: Msh
+    ):
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+
+        intersection_before, distance_before, self_intersection_before = small_self_intersecting_2_element_coil._get_exact_deformation_scores(
+            skin_surface.get_AABBTree(), coil_affine
+        )
+
+        (
+            before,
+            after,
+            affine_after,
+        ) = small_self_intersecting_2_element_coil.optimize_deformations(
+            skin_surface, coil_affine
+        )
+       
+        intersection_after, distance_after, self_intersection_after = small_self_intersecting_2_element_coil._get_exact_deformation_scores(
+            skin_surface.get_AABBTree(), affine_after
+        )
+
+        assert intersection_after < 0.1
+        assert self_intersection_before > self_intersection_after
+        assert self_intersection_after < 0.00001
+        np.testing.assert_allclose(coil_affine, affine_after)
+
+class TestGetDeformations:  
+    def test_get_deformations(self, small_functional_3_element_coil: TmsCoil):
+        assert len(small_functional_3_element_coil.get_deformations()) == 2
 
 class TestInit:
     def test_init_zero_element_exception(self):
@@ -1014,6 +1070,19 @@ class TestInit:
                 resolution=[-1, 2, 3],
             )
 
+    def test_repetition_in_self_intersection_test(self):
+        with pytest.raises(ValueError):
+            TmsCoil(
+                [DipoleElements(TmsStimulator(""), [[1, 2, 3]], [[1, 2, 3]])],
+                self_intersection_test=[[1,1], [0, 1]],
+            )
+
+    def test_single_element_group_in_self_intersection_test(self):
+        with pytest.raises(ValueError):
+            TmsCoil(
+                [DipoleElements(TmsStimulator(""), [[1, 2, 3]], [[1, 2, 3]])],
+                self_intersection_test=[[1]],
+            )
 
 class TestCasingGeneration:
     def test_distance(self, small_functional_3_element_coil: TmsCoil):

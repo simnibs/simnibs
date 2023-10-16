@@ -1852,7 +1852,7 @@ def subject_atlas(atlas_name, m2m_dir, hemi="both"):
 
     if hemi in ["lh", "rh"]:
         fn_atlas = os.path.join(
-            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.freesurfer.annot"
+            templates.atlases_surfaces, f"{hemi}.aparc_{atlas_name}.annot"
         )
         labels, _, names = nib.freesurfer.io.read_annot(fn_atlas)
         morph = SurfaceMorph(

@@ -69,3 +69,29 @@ class TestGetPoints:
             casing_after.intersect_points,
             casing.intersect_points @ affine[:3, :3].T + affine[None, :3, 3],
         )
+
+class TestFromPoints:
+    def test_from_points(self):
+        x = np.arange(-5, 5 + 0.1, 0.1)
+        y = np.arange(-5, 5 + 0.1, 0.1)
+
+        X, Y = np.meshgrid(x, y)
+        Z = np.zeros_like(X) 
+
+        coords = np.stack((X, Y, Z), axis=-1).reshape(-1, 3)
+        print(coords)
+        casing = TmsCoilModel.from_points(coords, 1, 0.1, False)
+        aabb_tree = casing.mesh.get_AABBTree()
+
+        assert np.min(aabb_tree.min_sqdist(coords)) > 0.9
+
+    def test_from_points_intersection_points(self):
+        x = np.arange(-5, 5 + 0.5, 0.5)
+        y = np.arange(-5, 5 + 0.5, 0.5)
+
+        X, Y = np.meshgrid(x, y)
+        Z = np.zeros_like(X) 
+
+        coords = np.stack((X, Y, Z), axis=-1).reshape(-1, 3)
+        casing = TmsCoilModel.from_points(coords, 1, 0.5, True)
+        assert np.all(casing.intersect_points[:, 2] > 0)
