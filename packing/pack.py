@@ -9,8 +9,10 @@ import tempfile
 import argparse
 import re
 
+
 from jinja2 import Template
 import conda_pack
+from setuptools_scm import get_version
 
 
 
@@ -19,16 +21,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         os.path.abspath(os.path.dirname(__file__)),
         '..'
     ))
-    version = ''
-    with open(os.path.join(simnibs_root_dir, "simnibs", "_version.py")) as fp:
-        for line in fp:
-            if '__version__ = version' in line:
-                version = line.split("version = '")[-1]
-                version = version.split("'")[0]
-                break
-
-    if not version:
-        raise RuntimeError('Unable to find own __version__ string')
+    version = get_version()
 
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')

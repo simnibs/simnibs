@@ -23,7 +23,7 @@ jobs:
       gcc -v
       source activate simnibs_env
       python -m pip wheel . -w ./dist  --no-deps --use-feature=in-tree-build
-      pip install jinja2 conda-pack
+      pip install jinja2 conda-pack setuptools-scm
       python packing/pack.py dist/
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
