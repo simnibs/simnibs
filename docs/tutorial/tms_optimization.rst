@@ -124,7 +124,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
 
 Further Reading
 ------------------
-Please see :ref:`tmsoptimize_doc` for a detail description of all TMS optimization options.
+Please see :ref:`tmsoptimize_doc` for a detailed description of all TMS optimization options.
 
 References
 ------------
