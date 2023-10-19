@@ -6,9 +6,9 @@ Uncertainty Quantification
 
 Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.
 
-For that reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.
+For that reason, we introduced a way in SimNIBS to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.
 
-Before proceeding through this tutorial, please see `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+Before proceeding through this tutorial, please see `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_.
 
 
 Introduction
@@ -24,7 +24,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 
 
 
-For more information on methodology, please see the supplementary material in  `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_
+For more information on methodology, please see the supplementary material in  `Saturnino et al., 2018 <https://doi.org/10.1016/j.neuroimage.2018.12.053>`_.
 
 
 Setting-up a Simulation with UQ
@@ -33,7 +33,7 @@ Setting-up a Simulation with UQ
 
 It is simple to set-up a simulation with UQ. All you need to do is to set-up the  **distribution_type** and **distribution_parameters** parameters in the :ref:`cond_struct_doc` structures.
 
-.. note:: As of now, UQ is only supported through scripting. For more information on scipts, please see :ref:`scripting_tutorial`.
+.. note:: As of now, UQ is only supported through scripting. For more information on scripts, please see :ref:`scripting_tutorial`.
 
 .. warning:: Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.
 
@@ -99,7 +99,7 @@ In the example below, we set-up a UQ TMS problem with the ROI being the whole br
 Secondary Quantities
 ---------------------
 
-It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude
+It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude.
 
 .. literalinclude:: ../../../simnibs/examples/uncertainty_quantification/uq_secondary_quantities.py
    :language: python

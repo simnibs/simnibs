@@ -58,7 +58,7 @@ To get started, let's create a nifti file that contains a two-layer sphere with 
 
 Meshing the example label image
 -------------------------------
-To create a tetrahedral mesh from "myspheres.nii.gz", run on the command line
+To create a tetrahedral mesh from "myspheres.nii.gz", run in the command line
 
 .. code-block::
 
@@ -90,14 +90,14 @@ A further difference is that we decided to include a custom tissue type with lab
 Output 
 ------
 
-Windows showing the results, such as the following should appear:
+Windows, such as the following, should appear and show the results:
 
 .. image:: ../../images/custommesh1.png
    :align: center
 
-Making also the tetrahedra visible and cutting shows the field inside the volume, including the custom tissue type. As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength there is weaker in this case:
+By making the tetrahedra visible and clipping the volume, the field inside the volume is shown (including the custom tissue type). As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength is weaker there:
 
 .. image:: ../../images/custommesh2.png
    :align: center
 
-The results can also be found in the output folder 'simu_custom_mesh'
+The results can also be found in the output folder 'simu_custom_mesh'.
