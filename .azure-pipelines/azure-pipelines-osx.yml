@@ -34,7 +34,6 @@ jobs:
   - bash: |
       source activate simnibs_env
       export MACOSX_DEPLOYMENT_TARGET=10.9
-      python setup.py bdist_wheel
       python -m pip wheel . -w ./dist --no-deps --use-feature=in-tree-build
       pip install jinja2 conda-pack
       python packing/pack.py dist --developer-id 8J5V4KS7H4
