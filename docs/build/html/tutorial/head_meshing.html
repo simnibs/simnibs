@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Creating Head Models &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <title>Creating Head Models &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
-    <script src="../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../_static/documentation_options.js?v=fac7b16c"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
@@ -59,7 +59,7 @@
 <p>To create individualized models, SimNIBS <strong>requires</strong> a T1-weighted image. T2-weighted images are optional, but <strong>recommended</strong>.</p>
 <section id="t1-weighted-images">
 <h3>T1-weighted images<a class="headerlink" href="#t1-weighted-images" title="Link to this heading">¶</a></h3>
-<p>Commonly used for segmentation of the brain. Usually acquired at a rather low readout bandwidth to maximize SNR. However, using a low readout bandwidth comes with the disadvantage that the positions of the (fatty) spongy bone and subcutaneous fat will be displaced in the MR images due to the chemical shift artifact. This can result in the spongy bone touching brain gray matter (GM), rendering an accurate segmentation of the GM pial surface and the boundary between cerebrospinal fluid (CSF) and skull difficult. For this reason, we recommend to <strong>acquire the T1w images with a fat suppression method</strong> such as selective water excitation. Specific sequence parameters can be seen at <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., NeuroImage, 2018</a>.</p>
+<p>Commonly used for segmentation of the brain. Usually acquired at a rather low readout bandwidth to maximize SNR. However, using a low readout bandwidth comes with the disadvantage that the positions of the (fatty) spongy bone and subcutaneous fat will be displaced in the MR images due to the chemical shift artifact. This can result in the spongy bone touching brain gray matter (GM), and rendering an accurate segmentation of the GM pial surface and the boundary between cerebrospinal fluid (CSF) and skull is difficult. For this reason, we recommend to <strong>acquire the T1w images with a fat suppression method</strong> such as selective water excitation. Specific sequence parameters can be seen at <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.03.001">Nielsen et al., NeuroImage, 2018</a>.</p>
 </section>
 <section id="t2-weighted-images">
 <h3>T2-weighted images<a class="headerlink" href="#t2-weighted-images" title="Link to this heading">¶</a></h3>
@@ -95,7 +95,7 @@
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>charm<span class="w"> </span>ernie<span class="w"> </span>org/ernie_T1.nii.gz<span class="w"> </span>org/ernie_T2.nii.gz
 </pre></div>
 </div>
-<p>The subject ID (subID) <code class="code docutils literal notranslate"><span class="pre">ernie</span></code> is given as first argument. Charm will create named a folder <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code> that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).</p>
+<p>The subject ID (subID) <code class="code docutils literal notranslate"><span class="pre">ernie</span></code> is given as first argument. Charm will create a folder named <code class="file docutils literal notranslate"><span class="pre">m2m_ernie</span></code> that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).</p>
 </div></blockquote>
 <p></p>
 <blockquote>
@@ -114,8 +114,8 @@
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>If you encounter spurious segmentation results this <em>could</em> be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial <a class="reference internal" href="advanced/fix_affine_registration.html#fix-affine-registration-tutorial"><span class="std std-ref">Fixing the Affine Registration</span></a>.</p></li>
-<li><p>Please see the tutorial <a class="reference internal" href="advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">How to manually edit a head model</span></a> in case manually fixes to the segmentation are needed.</p></li>
-<li><p>If you want to embed a custom-created mask (e.g. of a lesion or tumor) in the head model, then please see the description of the command-line tool <a class="reference internal" href="../documentation/command_line/add_tissues_to_upsampled.html#add-tissues-to-upsampled-doc"><span class="std std-ref">add_tissues_to_upsampled</span></a>.</p></li>
+<li><p>Please see the tutorial <a class="reference internal" href="advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">How to manually edit a head model</span></a> in case manual fixes to the segmentation are needed.</p></li>
+<li><p>If you want to embed a custom-created mask (e.g. of a lesion or tumor) in the head model, please see the description of the command-line tool <a class="reference internal" href="../documentation/command_line/add_tissues_to_upsampled.html#add-tissues-to-upsampled-doc"><span class="std std-ref">add_tissues_to_upsampled</span></a>.</p></li>
 </ul>
 </section>
 <section id="further-reading">

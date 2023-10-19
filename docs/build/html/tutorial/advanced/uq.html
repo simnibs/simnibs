@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Uncertainty Quantification &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <title>Uncertainty Quantification &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
-    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/documentation_options.js?v=fac7b16c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
@@ -50,8 +50,8 @@
   <section id="uncertainty-quantification">
 <span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Link to this heading">¶</a></h1>
 <p>Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.</p>
-<p>For that reason, we introduced in SimNIBS a way to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
-<p>Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+<p>For that reason, we introduced a way in SimNIBS to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
+<p>Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
 <p>In UQ via gPC, we quantify the uncertainty of the input variables (the conductivities) using a probability distribution.
@@ -60,14 +60,14 @@ SimNIBS supports two types of conductivity distribution: Normal and Beta.</p>
 In gPC, we build a polynomial representation of the output variable (such as the electric field), given the input variable.
 For SimNIBS, we developed an adaptive approach to select the polynomials to obtain fast convergence.
 At each step, the error is evaluated using a K-means cross-validation scheme. The iteration stops when a tolerance is reached.</p>
-<p>For more information on methodology, please see the supplementary material in  <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+<p>For more information on methodology, please see the supplementary material in  <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
 </section>
 <section id="setting-up-a-simulation-with-uq">
 <h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Link to this heading">¶</a></h2>
 <p>It is simple to set-up a simulation with UQ. All you need to do is to set-up the  <strong>distribution_type</strong> and <strong>distribution_parameters</strong> parameters in the <a class="reference internal" href="../../documentation/sim_struct/cond.html#cond-struct-doc"><span class="std std-ref">COND</span></a> structures.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>As of now, UQ is only supported through scripting. For more information on scipts, please see <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a>.</p>
+<p>As of now, UQ is only supported through scripting. For more information on scripts, please see <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -275,7 +275,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </section>
 <section id="secondary-quantities">
 <h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Link to this heading">¶</a></h2>
-<p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude</p>
+<p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">simnibs</span>
 <span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>

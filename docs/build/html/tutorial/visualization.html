@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Visualizing Results &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <title>Visualizing Results &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
-    <script src="../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../_static/documentation_options.js?v=fac7b16c"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
@@ -57,7 +57,7 @@ For this reason, SimNIBS writes <em>.opt</em> files with basic visualization con
 Here we will give a walk-through of a few useful features in Gmsh.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is distributed together with SimNIBS, you don’t need to install it separately</p>
+<p><a class="reference external" href="http://gmsh.info/">Gmsh</a> is distributed together with SimNIBS, you don’t need to install it separately.</p>
 </div>
 <section id="starting-gmsh">
 <h3>Starting Gmsh<a class="headerlink" href="#starting-gmsh" title="Link to this heading">¶</a></h3>
@@ -67,24 +67,24 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gmsh<span class="w"> </span>ernie_TDCS_1_scalar.msh
 </pre></div>
 </div>
-<p>The following window will appear</p>
+<p>The following window will appear:</p>
 </div></blockquote>
 <img alt="../_images/tutorial_gmshinit.png" class="align-center" src="../_images/tutorial_gmshinit.png" />
 <p></p>
 <blockquote>
-<div><p>There, we see the gray matter surface with the <strong>magnitude</strong> of the electric field (<strong>magnE</strong>) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel</p>
+<div><p>There, we see the gray matter surface with the <strong>magnitude</strong> of the electric field (<strong>magnE</strong>) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel.</p>
 </div></blockquote>
 </section>
 <section id="selecting-where-to-visualize">
 <h3>Selecting Where to Visualize<a class="headerlink" href="#selecting-where-to-visualize" title="Link to this heading">¶</a></h3>
-<p>To visualize another surface, such as while matter</p>
+<p>To visualize another surface, such as white matter:</p>
 <ol class="arabic simple">
 <li><p>Go to <em>Tools</em> → <em>Visibility</em></p></li>
 </ol>
 <img alt="../_images/tutorial_gmshvisibility.png" class="align-center" src="../_images/tutorial_gmshvisibility.png" />
 <p></p>
 <blockquote>
-<div><p>select <em>Elementary entities</em></p>
+<div><p>and select <em>Elementary entities</em></p>
 </div></blockquote>
 <img alt="../_images/tutorial_elementaryentities.png" class="align-center" src="../_images/tutorial_elementaryentities.png" />
 <p></p>
@@ -97,8 +97,8 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 <p>5: Skin volume</p>
 <p>6: Eye volumes (headreco models only)</p>
 <p>101+: Electrode rubber layer volume</p>
-<p>501+: Electrode Gel / Sponge volume</p>
-<p>The corresponding surfaces have the number 1000 + volume value. For example, 1002 corresponds to the gray matter surface. The only exception are the electrode contacts, numbered 2100+. You can select multiple surfaces or volumes by holding <em>Ctrl</em>. Selecting 1001 and clicking in <em>Apply</em>, we can see the white matter surface</p>
+<p>501+: Electrode gel / sponge volume</p>
+<p>The corresponding surfaces have the number 1000 + volume value. For example, 1002 corresponds to the gray matter surface. The only exception are the electrode contacts, numbered 2100+. You can select multiple surfaces or volumes by holding <em>Ctrl</em>. Selecting 1001 and clicking on <em>Apply</em>, we can see the white matter surface:</p>
 </li>
 </ol>
 <img alt="../_images/tutorial_gmshwmfield.png" class="align-center" src="../_images/tutorial_gmshwmfield.png" />
@@ -106,7 +106,7 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 </section>
 <section id="selecting-what-to-visualize">
 <h3>Selecting What to Visualize<a class="headerlink" href="#selecting-what-to-visualize" title="Link to this heading">¶</a></h3>
-<p>You can select the field to be visualized by checking the boxes in the left of the Gmsh window</p>
+<p>You can select the field to be visualized by checking the boxes in the left of the Gmsh window.</p>
 <img alt="../_images/tutorial_gmshnorme.png" class="align-center" src="../_images/tutorial_gmshnorme.png" />
 <p></p>
 <p>To visualize the surfaces or volumes without any field, go to <em>Tools</em> -&gt; <em>Options</em> -&gt; <em>Mesh</em> and click on <em>Surface Faces</em> or <em>Volume Faces</em></p>
@@ -115,17 +115,17 @@ Alternatively, you can start Gmsh by double clicking in the <code class="file do
 </section>
 <section id="changing-the-scale">
 <h3>Changing the Scale<a class="headerlink" href="#changing-the-scale" title="Link to this heading">¶</a></h3>
-<p>To change the scale of a field visualization <em>Tools</em> → <em>Options</em> → <em>View [N]</em> and change the <em>Min</em> and <em>Max</em> values</p>
+<p>To change the scale of a field visualization, select <em>Tools</em> → <em>Options</em> → <em>View [N]</em> and change the <em>Min</em> and <em>Max</em> values.</p>
 <img alt="../_images/tutorial_gmshview.png" class="align-center" src="../_images/tutorial_gmshview.png" />
 <p></p>
 </section>
 <section id="exporting-an-image">
 <h3>Exporting an Image<a class="headerlink" href="#exporting-an-image" title="Link to this heading">¶</a></h3>
-<p>To create an image, go to <em>File</em> -&gt; <em>Export</em> (or press <em>Ctrl+E</em>)and type in a file name with a  <em>.png</em> or  <em>.jpg</em> extension.</p>
+<p>To create an image, go to <em>File</em> -&gt; <em>Export</em> (or press <em>Ctrl+E</em>) and type in a file name with a  <em>.png</em> or  <em>.jpg</em> extension.</p>
 </section>
 <section id="other-functionalities">
 <h3>Other Functionalities<a class="headerlink" href="#other-functionalities" title="Link to this heading">¶</a></h3>
-<p>We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image bellow by selecting the Volume 2 for visualization an clipping the model in <em>Tools</em> →  <em>Clipping</em></p>
+<p>We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image below by selecting the Volume 2 for visualization an clipping the model in <em>Tools</em> →  <em>Clipping</em>.</p>
 <img alt="../_images/tutorial_gmshclip.png" class="align-center" src="../_images/tutorial_gmshclip.png" />
 <p></p>
 </section>
