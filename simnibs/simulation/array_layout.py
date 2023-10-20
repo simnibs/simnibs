@@ -19,15 +19,22 @@ class ElectrodeInitializer():
 
         # CircularArray properties
         self.radius_inner = None
+        self.radius_inner_bounds = None
         self.radius_outer = None
+        self.radius_outer_bounds = None
         self.distance = None
+        self.distance_bounds = None
         self.n_outer = None
+        self.n_outer_bounds = None
 
         # ElectrodeArrayPair properties
         self.center = None
         self.radius = None
+        self.radius_bounds = None
         self.length_x = None
+        self.length_x_bounds = None
         self.length_y = None
+        self.length_y_bounds = None
 
         # simulation properties
         self.dirichlet_correction = None
@@ -51,7 +58,12 @@ class ElectrodeInitializer():
                                       current_estimator_method=self.current_estimator_method,
                                       dirichlet_correction=self.dirichlet_correction,
                                       dirichlet_correction_detailed=self.dirichlet_correction_detailed,
-                                      current=self.current)
+                                      current=self.current,
+                                      distance_bounds=self.distance_bounds,
+                                      radius_inner_bounds=self.radius_inner_bounds,
+                                      radius_outer_bounds=self.radius_outer_bounds,
+                                      n_outer_bounds=self.n_outer_bounds)
+
         elif self.type == "ElectrodeArrayPair":
             electrode = ElectrodeArrayPair(center=self.center,
                                            radius=self.radius,
@@ -59,7 +71,11 @@ class ElectrodeInitializer():
                                            length_y=self.length_y,
                                            dirichlet_correction=self.dirichlet_correction,
                                            dirichlet_correction_detailed=self.dirichlet_correction_detailed,
-                                           current=self.current)
+                                           current=self.current,
+                                           radius_bounds=self.radius_bounds,
+                                           length_x_bounds=self.length_x_bounds,
+                                           length_y_bounds=self.length_y_bounds)
+
         else:
             electrode = None
 
@@ -354,7 +370,7 @@ class Electrode():
         self.transmat = None
         self.posmat_norm = np.array([[1, 0, 0, center[0]],
                                      [0, 1, 0, center[1]],
-                                     [0, 0, 1, center[2]],
+                                     [0, 0, 1, 0],
                                      [0, 0, 0, 1]])
         self.posmat = copy.deepcopy(self.posmat_norm)
 
@@ -546,8 +562,8 @@ class ElectrodeArray():
         and rectangular), the IDs of the circular electrodes are coming first followed by the rectangular ones.
     ele_id : np.ndarray of int [n_ele]
         Unique electrode identifier of whole setup
-    center : np.ndarray of float [n_ele, 3]
-        Center coordinates (x,y,z) of electrodes in normalized space (in mm)
+    center : np.ndarray of float [n_ele, 2]
+        Center coordinates (x, y) of electrodes in normalized space (in mm)
     radius : np.ndarray of float [n_ele_circ] or None
         Radii of circular electrodes (in mm)
     length_x : np.ndarray of float [n_ele_rect] or None
@@ -599,7 +615,7 @@ class ElectrodeArray():
     def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
         self.channel_id = channel_id
         self.ele_id = ele_id
-        self.array_center = np.array([0, 0, 0])
+        self.array_center = np.array([0, 0])
         self.center = center
         self.radius = radius
         self.length_x = length_x
@@ -764,23 +780,20 @@ class ElectrodeArrayPair(ElectrodeMaster):
 
     Parameters
     ----------
-    center : np.ndarray of float [n_ele/2 x 3]
-        Center positions of electrodes in normalized x/y plane (z=0). Array will be copied for second array.
-    radius : np.ndarray of float [n_ele/2] or list [2] or None
-        Radii of single circular electrodes in array (in mm). Array will be copied for second array.
-        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
-        varying between the provided values [min, max].
-        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
-    length_x : np.ndarray of float [n_ele/2] or list [2] or None
-        Extensions in x-direction of single rectangular electrodes in array. Array will be copied for second array.
-        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
-        varying between the provided values [min, max].
-        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
-    length_y : np.ndarray of float [n_ele/2] or list [2] or None
-        Extensions in y-direction of single rectangular electrodes in array. Array will be copied for second array.
-        If a list is passed, it has to be of length 2 and the parameter will be included in the optimization
-        varying between the provided values [min, max].
-        (i.e. optimization of geometrical parameters can only performed for standard TES with 2 electrodes)
+    center : np.ndarray of float [n_ele/2 x 2]
+        Center positions of electrodes in normalized x/y plane (z=0). Values will be copied for second array.
+    radius : np.ndarray of float [n_ele/2] or None
+        Radii of circular electrodes in array (in mm). Array will be copied for second electrode array.
+    length_x : np.ndarray of float [n_ele/2] or None
+        x-dimension of rectangular electrodes in array (in mm). Values will be copied for second array.
+    length_y : np.ndarray of float [n_ele/2] or None
+        y-dimension of rectangular electrodes in array (in mm). Values will be copied for second array.
+    radius_bounds : list or np.ndarray of float [2]
+        (min, max) values of electrode radius for optimization (applied to all electrodes in array).
+    length_x_bounds : list or np.ndarray of float [2]
+        (min, max) values of electrode x-dimension for optimization (applied to all electrodes in array).
+    length_y_bounds : list or np.ndarray of float [2]
+        (min, max) values of electrode y-dimension for optimization (applied to all electrodes in array).
     current : np.ndarray of float [n_ele] or None
         Current through electrodes. Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
@@ -809,43 +822,63 @@ class ElectrodeArrayPair(ElectrodeMaster):
     """
 
     def __init__(self, center, radius=None, length_x=None, length_y=None, current=None,
+                 radius_bounds=None, length_x_bounds=None, length_y_bounds=None,
                  current_estimator_method=None, dirichlet_correction=True, dirichlet_correction_detailed=False,
                  current_outlier_correction=False):
 
+        if type(center) is list:
+            center = np.array(center)
+
+        if radius is None:
+            radius = np.zeros(center.shape[0])
+
+        if length_x is None:
+            assert length_y is None, "length_x provided but not length_y"
+
+        if length_y is None:
+            assert length_x is None, "length_y provided but not length_x"
+
+        if length_x is None and length_y is None:
+            length_x = np.zeros(center.shape[0])
+            length_y = np.zeros(center.shape[0])
+
         # check free and fixed parameters
-        if isinstance(radius, list):
-            assert len(radius) == 2, "radius is provided as list, optimizing this parameter but length != 2 [min, max]"
+        if radius_bounds is not None:
+            assert len(radius_bounds) == 2, ("Dimension mismatch! "
+                                             "Please provide [min, max] values for radius_bounds.")
             self.radius_free = True
-            self.radius_bounds = radius
-            self.radius = np.array([np.mean(radius)])
+            self.radius_bounds = radius_bounds
+            self.radius = np.array([np.mean(radius_bounds)] * center.shape[0])
         else:
             self.radius_free = False
             self.radius_bounds = [0, 0]
             self.radius = radius
 
-        if isinstance(length_x, list):
-            assert len(length_x) == 2, "length_x is provided as list, optimizing this parameter but length != 2 [min, max]"
+        if length_x_bounds is not None:
+            assert len(length_x_bounds) == 2, ("Dimension mismatch! "
+                                               "Please provide [min, max] values for length_x.")
             self.length_x_free = True
-            self.length_x_bounds = length_x
-            self.length_x = np.array([np.mean(length_x)])
+            self.length_x_bounds = length_x_bounds
+            self.length_x = np.array([np.mean(length_x_bounds)] * center.shape[0])
         else:
             self.length_x_free = False
             self.length_x_bounds = [0, 0]
             self.length_x = length_x
 
-        if isinstance(length_y, list):
-            assert len(length_y) == 2, "length_y is provided as list, optimizing this parameter but length != 2 [min, max]"
+        if length_y_bounds is not None:
+            assert len(length_y_bounds) == 2, ("Dimension mismatch! "
+                                               "Please provide [min, max] values for length_y.")
             self.length_y_free = True
-            self.length_y_bounds = length_y
-            self.length_y = np.array([np.mean(length_y)])
+            self.length_y_bounds = length_y_bounds
+            self.length_y = np.array([np.mean(length_y_bounds)] * center.shape[0])
         else:
             self.length_y_free = False
             self.length_y_bounds = [0, 0]
             self.length_y = length_y
 
         self.center = center
-        self.n_ele = len(radius) * 2                                                        # total number of electrodes
-        self.channel_id = np.hstack([[i for _ in range(len(center))] for i in range(2)])    # array of all channel_ids
+        self.n_ele = center.shape[0] * 2                                                    # total number of electrodes
+        self.channel_id = np.hstack([[i for _ in range(self.center.shape[0])] for i in range(2)])    # array of all channel_ids
         self.channel_id_unique = np.unique(self.channel_id)
         self.n_channel = len(self.channel_id_unique)
         self.ele_id = np.arange(self.n_ele)
@@ -866,7 +899,7 @@ class ElectrodeArrayPair(ElectrodeMaster):
             self.current = np.hstack((np.array([1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))]),
                                       np.array([-1/(self.n_ele/2.) for _ in range(int(self.n_ele/2))])))
         else:
-            self.current = current
+            self.current = np.array(current)
 
         if np.abs(np.sum(self.current)) > 1e-12:
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")
@@ -1022,14 +1055,22 @@ class CircularArray(ElectrodeMaster):
 
     Parameters
     ----------
-    radius_inner : float or np.ndarray of float [2]
+    radius_inner : float
         Radius of inner electrodes or (min, max) values for optimization.
-    distance : float or np.ndarray of float [2]
+    distance : float
         Distance between inner and outer electrodes (from center) (in mm)
-    n_outer : int or np.ndarray of int [2]
+    n_outer : int
         Number of outer electrodes or (min, max) values for optimization.
-    radius_outer : float or np.ndarray of float [2]
+    radius_outer : float
         Radius of outer electrodes, default: same radius as inner electrodes or (min, max) values for optimization.
+    radius_inner_bounds : list or np.ndarray of float [2], optional, default: None
+        (min, max) values of radius of inner electrodes for optimization.
+    distance_bounds : list or np.ndarray of float [2], optional, default: None
+        (min, max) values of distance between inner and outer electrodes (from center) (in mm) for optimization.
+    n_outer_bounds : list or np.ndarray of int [2], optional, default: None
+        (min, max) values of number of outer electrodes for optimization.
+    radius_outer_bounds : list or np.ndarray of float [2], optional, default: None
+        (min, max) values radius of outer electrodes for optimization.
     current : np.ndarray of float [n_ele]
         Current through electrodes (First entry is central electrode).
         Has to sum up to zero net current.
@@ -1058,7 +1099,8 @@ class CircularArray(ElectrodeMaster):
         One ElectrodeArray instance containing the Electrode instances
     """
     def __init__(self,
-                 radius_inner, distance, n_outer=4, radius_outer=None,
+                 radius_inner=None, distance=None, n_outer=None, radius_outer=None,
+                 radius_inner_bounds=None, distance_bounds=None, n_outer_bounds=None, radius_outer_bounds=None,
                  current=None, current_estimator_method=None,
                  dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
 
@@ -1066,37 +1108,45 @@ class CircularArray(ElectrodeMaster):
             radius_outer = radius_inner
 
         # check free and fixed parameters
-        if isinstance(radius_inner, np.ndarray) or isinstance(radius_inner, list):
+        if radius_inner_bounds is not None:
+            assert len(radius_inner_bounds) == 2, ("Dimension mismatch! "
+                                                   "Please provide [min, max] values for radius_inner_bounds.")
             self.radius_inner_free = True
-            self.radius_inner_bounds = radius_inner
-            self.radius_inner = np.mean(radius_inner)
+            self.radius_inner_bounds = radius_inner_bounds
+            self.radius_inner = np.mean(radius_inner_bounds)
         else:
             self.radius_inner_free = False
             self.radius_inner_bounds = [radius_inner, radius_inner]
             self.radius_inner = radius_inner
 
-        if isinstance(distance, np.ndarray) or isinstance(distance, list):
+        if distance_bounds is not None:
+            assert len(distance_bounds) == 2, ("Dimension mismatch! "
+                                               "Please provide [min, max] values for distance_bounds.")
             self.distance_free = True
-            self.distance_bounds = distance
-            self.distance = np.mean(distance)
+            self.distance_bounds = distance_bounds
+            self.distance = np.mean(distance_bounds)
         else:
             self.distance_free = False
             self.distance_bounds = [distance, distance]
             self.distance = distance
 
-        if isinstance(n_outer, np.ndarray) or isinstance(n_outer, list):
+        if n_outer_bounds is not None:
+            assert len(n_outer_bounds) == 2, ("Dimension mismatch! "
+                                              "Please provide [min, max] values for n_outer_bounds.")
             self.n_outer_free = True
-            self.n_outer_bounds = n_outer
-            self.n_outer = int(np.round(np.mean(n_outer)))
+            self.n_outer_bounds = n_outer_bounds
+            self.n_outer = int(np.round(np.mean(n_outer_bounds)))
         else:
             self.n_outer_free = False
             self.n_outer_bounds = [n_outer, n_outer]
             self.n_outer = n_outer
 
-        if isinstance(radius_outer, np.ndarray) or isinstance(radius_outer, list):
+        if radius_outer_bounds is not None:
+            assert len(radius_outer_bounds) == 2, ("Dimension mismatch! "
+                                                   "Please provide [min, max] values for radius_outer_bounds.")
             self.radius_outer_free = True
-            self.radius_outer_bounds = radius_outer
-            self.radius_outer = np.mean(radius_outer)
+            self.radius_outer_bounds = radius_outer_bounds
+            self.radius_outer = np.mean(radius_outer_bounds)
         else:
             self.radius_outer_free = False
             self.radius_outer_bounds = [radius_outer, radius_outer]
@@ -1147,12 +1197,12 @@ class CircularArray(ElectrodeMaster):
         self.current_channel = np.array([self.current_total, -self.current_total])
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(self.n_outer))
-        self.center = np.array([[0., 0., 0.]])
+        self.center = np.array([[0., 0.]])
         self.length_x = np.zeros(self.n_ele)
         self.length_y = np.zeros(self.n_ele)
 
         for i in range(self.n_outer):
-            self.center = np.vstack((self.center, np.array([[0., 0., 0.]])))
+            self.center = np.vstack((self.center, np.array([[0., 0.]])))
             self.center[-1, 0] = np.cos(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
             self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 
@@ -1261,12 +1311,12 @@ class CircularArray(ElectrodeMaster):
             self.radius_outer = self.radius_outer
 
         self.radius = np.append(np.array([self.radius_inner]), self.radius_outer*np.ones(self.n_outer))
-        self.center = np.array([[0., 0., 0.]])
+        self.center = np.array([[0., 0.]])
         self.length_x = np.zeros(self.n_ele)
         self.length_y = np.zeros(self.n_ele)
 
         for i in range(self.n_outer):
-            self.center = np.vstack((self.center, np.array([[0., 0., 0.]])))
+            self.center = np.vstack((self.center, np.array([[0., 0.]])))
             self.center[-1, 0] = np.cos(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
             self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 

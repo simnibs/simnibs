@@ -61,7 +61,7 @@ from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ..utils.TI_utils import get_maxTI, get_dirTI
 from ..utils.measures import AUC, integral_focality, ROC
 from simnibs import run_simnibs
-
+from simnibs.optimization import optimize_tms
 
 class TMSoptimize():
     """
@@ -2746,6 +2746,8 @@ class TESoptimize():
     def __init__(self, matlab_struct=None):
         """ Initialized TESoptimize class instance """
         # folders and I/O
+        self.date = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_str = time.strftime("%Y%m%d-%H%M%S")
         self.output_folder = None
         self.plot_folder = None
         self.plot = False
@@ -2827,6 +2829,9 @@ class TESoptimize():
         self.anisotropy_type = "scalar"
         self.solver_options = "pardiso"
         self.ofem = None
+
+        if matlab_struct:
+            self.read_mat_struct(matlab_struct)
 
     def _prepare(self):
         """
@@ -3060,9 +3065,6 @@ class TESoptimize():
 
                     min_idx = max_idx
 
-        # determine initial values
-
-
         # set default options for optimizer
         self.optimizer_options_std["bounds"] = self.bounds
         self.optimizer_options_std["init_vals"] = self.x0
@@ -3178,33 +3180,77 @@ class TESoptimize():
         """ Convert sim_struct to mat """
         pass
 
-        # mat = SimuList.cond_mat_struct(self)
-        # mat['type'] = self.type
-        # mat['date'] = remove_None(self.date)
-        # mat['subpath'] = remove_None(self.subpath)
-        # mat['fnamehead'] = remove_None(self.fnamehead)
-        # mat['pathfem'] = remove_None(self.pathfem)
-        # mat['fname_tensor'] = remove_None(self.fname_tensor)
-        # mat['tissues'] = remove_None(self.tissues)
-        # mat['fnamecoil'] = remove_None(self.fnamecoil)
-        #
-        # mat['target'] = remove_None(self.target)
-        # mat['target_direction'] = remove_None(self.target_direction)
-        # mat['target_size'] = remove_None(self.target_size)
-        # mat['centre'] = remove_None(self.centre)
-        # mat['pos_ydir'] = remove_None(self.pos_ydir)
-        # mat['distance'] = remove_None(self.distance)
-        # mat['didt'] = remove_None(self.didt)
-        # mat['search_radius'] = remove_None(self.search_radius)
-        # mat['spatial_resolution'] = remove_None(self.spatial_resolution)
-        # mat['search_angle'] = remove_None(self.search_angle)
-        # mat['angle_resolution'] = remove_None(self.angle_resolution)
-        # mat['open_in_gmsh'] = remove_None(self.open_in_gmsh)
-        # mat['solver_options'] = remove_None(self.solver_options)
-        # mat['method'] = remove_None(self.method)
-        # mat['scalp_normals_smoothing_steps'] = remove_None(self.scalp_normals_smoothing_steps)
-        # return mat
+        # cond
+        # mat = SimuList.cond_mat_struct(self.ofem)
+        mat = dict()
 
+        # folders and I/O
+        mat['date'] = remove_None(self.date)
+        mat['output_folder'] = remove_None(self.output_folder)
+        mat['plot_folder'] = remove_None(self.plot_folder)
+        mat['plot'] = remove_None(self.plot)
+        mat['fn_final_sim'] = remove_None(self.fn_final_sim)
+        mat['fn_results_hdf5'] = remove_None(self.fn_results_hdf5)
+        mat['prepared'] = remove_None(self.prepared)
+
+        # headmodel
+        mat['fn_eeg_cap'] = remove_None(self.fn_eeg_cap)
+        mat['fn_mesh'] = remove_None(self.fn_mesh)
+        mat['fn_electrode_mask'] = remove_None(self.fn_electrode_mask)
+
+        # roi
+        mat['n_roi'] = remove_None(self.n_roi)
+
+        roi_dict = dict()
+
+        for i_roi, _roi in enumerate(self.roi):
+            roi_dict[f"{i_roi}"]["center"] = self.roi.center
+            roi_dict[f"{i_roi}"]["nodes"] = self.roi.nodes
+            roi_dict[f"{i_roi}"]["con"] = self.roi.con
+            roi_dict[f"{i_roi}"]["domains"] = self.roi.domains
+
+        mat['roi'] = roi_dict
+
+        # electrode
+        mat['electrode_pos'] = remove_None(self.electrode_pos)
+        mat['electrode_pos_opt'] = remove_None(self.electrode_pos_opt)
+        mat['min_electrode_distance'] = remove_None(self.min_electrode_distance)
+        mat['n_channel_stim'] = remove_None(self.n_channel_stim)
+        mat['n_iter_dirichlet_correction'] = remove_None(self.n_iter_dirichlet_correction)
+        mat['n_ele_free'] = remove_None(self.n_ele_free)
+        mat['init_pos'] = remove_None(self.init_pos)
+        mat['init_pos_subject_coords'] = remove_None(self.init_pos_subject_coords)
+
+        # goal function
+        mat['goal'] = remove_None(self.goal)
+        mat['goal_dir'] = remove_None(self.goal_dir)
+        mat['e_postproc'] = remove_None(self.e_postproc)
+        mat['threshold'] = remove_None(self.threshold)
+        mat['optimizer'] = remove_None(self.optimizer)
+        mat['weights'] = remove_None(self.weights)
+        mat['track_focality'] = remove_None(self.track_focality)
+        mat['constrain_electrode_locations'] = remove_None(self.constrain_electrode_locations)
+        mat['overlap_factor'] = remove_None(self.overlap_factor)
+        mat['polish'] = remove_None(self.polish)
+        mat['n_test'] = remove_None(self.n_test)
+        mat['n_sim'] = remove_None(self.n_sim)
+        mat['optimize_init_vals'] = remove_None(self.optimize_init_vals)
+        mat['bounds'] = remove_None(self.bounds)
+        mat['x0'] = remove_None(self.x0)
+        mat['goal_fun_value'] = remove_None(self.goal_fun_value)
+        mat['AUC'] = remove_None(self.AUC)
+        mat['integral_focality'] = remove_None(self.integral_focality)
+        mat['optimizer_options'] = remove_None(self.optimizer_options)
+        mat['optimizer_options_std'] = remove_None(self.optimizer_options_std)
+
+        # FEM
+        mat['run_final_electrode_simulation'] = remove_None(self.run_final_electrode_simulation)
+        mat['dirichlet_node'] = remove_None(self.dirichlet_node)
+        mat['dataType'] = remove_None(self.dataType)
+        mat['anisotropy_type'] = remove_None(self.anisotropy_type)
+        mat['solver_options'] = remove_None(self.solver_options)
+
+        return mat
 
     @classmethod
     def read_mat_struct(self, mat):
@@ -3213,102 +3259,122 @@ class TESoptimize():
 
         Parameters
         ----------
-        mat: scipy.io.loadmat
-            Loaded matlab structure
+        mat: str or scipy.io.loadmat
+            Filename of .mat file or loaded matlab structure
         """
-        # self = self()
+        self = self()
+
+        if type(mat) is str:
+            mat = scipy.io.loadmat(mat)
+
+        # cond
         # SimuList.read_cond_mat_struct(self, mat)
-        # self.date = try_to_read_matlab_field(
-        #     mat, 'date', str, self.date
-        # )
-        # self.subpath = try_to_read_matlab_field(
-        #     mat, 'subpath', str, self.subpath
-        # )
-        # self.fnamehead = try_to_read_matlab_field(
-        #     mat, 'fnamehead', str, self.fnamehead
-        # )
-        # self.pathfem = try_to_read_matlab_field(
-        #     mat, 'pathfem', str, self.pathfem
-        # )
-        # self.fnamecoil = try_to_read_matlab_field(
-        #     mat, 'fnamecoil', str, self.fnamecoil
-        # )
-        # self.fname_tensor = try_to_read_matlab_field(
-        #     mat, 'fname_tensor', str, self.fname_tensor
-        # )
-        # self.target = try_to_read_matlab_field(
-        #     mat, 'target', list, self.target
-        # )
-        # self.target_direction = try_to_read_matlab_field(
-        #     mat, 'target_direction', list, self.target_direction
-        # )
-        # self.target_size = try_to_read_matlab_field(
-        #     mat, 'target_size', float, self.target_size
-        # )
-        # self.centre = try_to_read_matlab_field(
-        #     mat, 'centre', list, self.centre
-        # )
-        # self.centre = try_to_read_matlab_field(
-        #     mat, 'center', list, self.centre
-        # )
-        # self.pos_ydir = try_to_read_matlab_field(
-        #     mat, 'pos_ydir', list, self.pos_ydir
-        # )
-        # self.distance = try_to_read_matlab_field(
-        #     mat, 'distance', float, self.distance
-        # )
-        # self.didt = try_to_read_matlab_field(
-        #     mat, 'didt', float, self.didt
-        # )
-        # self.search_radius = try_to_read_matlab_field(
-        #     mat, 'search_radius', float, self.search_radius
-        # )
-        # self.spatial_resolution = try_to_read_matlab_field(
-        #     mat, 'spatial_resolution', float, self.spatial_resolution
-        # )
-        # self.search_angle = try_to_read_matlab_field(
-        #     mat, 'search_angle', float, self.search_angle
-        # )
-        # self.angle_resolution = try_to_read_matlab_field(
-        #     mat, 'angle_resolution', float, self.angle_resolution
-        # )
-        # self.open_in_gmsh = try_to_read_matlab_field(
-        #     mat, 'open_in_gmsh', bool, self.open_in_gmsh
-        # )
-        # self.solver_options = try_to_read_matlab_field(
-        #     mat, 'solver_options', str, self.solver_options
-        # )
-        # self.method = try_to_read_matlab_field(
-        #     mat, 'method', str, self.method
-        # )
-        # self.scalp_normals_smoothing_steps = try_to_read_matlab_field(
-        #     mat, 'scalp_normals_smoothing_steps', int, self.scalp_normals_smoothing_steps
-        # )
-        # return self
+
+        # folders and I/O
+        self.date = try_to_read_matlab_field(mat, 'date', str, self.date)
+        self.output_folder = try_to_read_matlab_field(mat, 'output_folder', str, self.output_folder)
+        self.plot_folder = try_to_read_matlab_field(mat, 'plot_folder', str, self.plot_folder)
+        self.plot = try_to_read_matlab_field(mat, 'plot', bool, self.plot)
+        self.fn_final_sim = try_to_read_matlab_field(mat, 'fn_final_sim', list, self.fn_final_sim)
+        self.fn_results_hdf5 = try_to_read_matlab_field(mat, 'fn_results_hdf5', str, self.fn_results_hdf5)
+        self.prepared = try_to_read_matlab_field(mat, 'prepared', bool, self.prepared)
+
+        # headmodel
+        self.fn_eeg_cap = try_to_read_matlab_field(mat, 'fn_eeg_cap', str, self.fn_eeg_cap)
+        self.fn_mesh = try_to_read_matlab_field(mat, 'fn_mesh', str, self.fn_mesh)
+        self.fn_electrode_mask = try_to_read_matlab_field(mat, 'fn_electrode_mask', str, self.fn_electrode_mask)
+
+        self.mesh = read_msh(self.fn_mesh)
+
+        # roi
+        self.n_roi = try_to_read_matlab_field(mat, 'n_roi', int, self.n_roi)
+        roi_dict = try_to_read_matlab_field(mat, 'roi_dict', dict, self.roi_dict)
+
+        roi = []
+
+        for i_roi in range(self.n_roi):
+            roi.append(RegionOfInterest(center=roi_dict[f"{i_roi}"]["center"],
+                                nodes=roi_dict[f"{i_roi}"]["nodes"],
+                                con=roi_dict[f"{i_roi}"]["con"],
+                                domains=roi_dict[f"{i_roi}"]["domains"],
+                                mesh=self.fn_mesh))
+            roi_dict[f"{i_roi}"]["center"] = self.roi.center
+            roi_dict[f"{i_roi}"]["nodes"] = self.roi.nodes
+            roi_dict[f"{i_roi}"]["con"] = self.roi.con
+            roi_dict[f"{i_roi}"]["domains"] = self.roi.domains
+
+        mat['roi'] = roi_dict
+
+        # electrode
+        self.electrode_pos = try_to_read_matlab_field(mat, 'electrode_pos', list, self.electrode_pos)
+        self.electrode_pos_opt = try_to_read_matlab_field(mat, 'electrode_pos_opt', list, self.electrode_pos_opt)
+        self.min_electrode_distance = try_to_read_matlab_field(mat, 'min_electrode_distance', float, self.min_electrode_distance)
+        self.n_channel_stim = try_to_read_matlab_field(mat, 'n_channel_stim', int, self.n_channel_stim)
+        self.n_iter_dirichlet_correction = try_to_read_matlab_field(mat, 'n_iter_dirichlet_correction', list, self.n_iter_dirichlet_correction)
+        self.n_ele_free = try_to_read_matlab_field(mat, 'n_ele_free', int, self.n_ele_free)
+        self.init_pos = try_to_read_matlab_field(mat, 'init_pos', list, self.init_pos)
+        self.init_pos_subject_coords = try_to_read_matlab_field(mat, 'init_pos_subject_coords', list, self.init_pos_subject_coords)
+
+        # goal function
+        self.goal = try_to_read_matlab_field(mat, 'goal', str, self.goal)
+        self.goal_dir = try_to_read_matlab_field(mat, 'goal_dir', list, self.goal_dir)
+        self.e_postproc = try_to_read_matlab_field(mat, 'e_postproc', str, self.e_postproc)
+        self.threshold = try_to_read_matlab_field(mat, 'threshold', list, self.threshold)
+        self.optimizer = try_to_read_matlab_field(mat, 'optimizer', str, self.optimizer)
+        self.weights = try_to_read_matlab_field(mat, 'weights', list, self.weights)
+        self.track_focality = try_to_read_matlab_field(mat, 'track_focality', list, self.track_focality)
+        self.constrain_electrode_locations = try_to_read_matlab_field(mat, 'constrain_electrode_locations', bool, self.constrain_electrode_locations)
+        self.overlap_factor = try_to_read_matlab_field(mat, 'overlap_factor', float, self.overlap_factor)
+        self.polish = try_to_read_matlab_field(mat, 'polish', bool, self.polish)
+        self.n_test = try_to_read_matlab_field(mat, 'n_test', int, self.n_test)
+        self.n_sim = try_to_read_matlab_field(mat, 'n_sim', int, self.n_sim)
+        self.optimize_init_vals = try_to_read_matlab_field(mat, 'optimize_init_vals', bool, self.optimize_init_vals)
+        bounds_ = try_to_read_matlab_field(mat, 'bounds', list, self.bounds)[0]
+        self.bounds = Bounds(lb=bounds_[0].flatten(), ub=bounds_[1].flatten())
+        self.x0 = try_to_read_matlab_field(mat, 'x0', list, self.x0)
+        self.goal_fun_value = try_to_read_matlab_field(mat, 'goal_fun_value', list, self.goal_fun_value)
+        self.AUC = try_to_read_matlab_field(mat, 'AUC', list, self.AUC)
+        self.integral_focality = try_to_read_matlab_field(mat, 'integral_focality', list, self.integral_focality)
+        self.optimizer_options = try_to_read_matlab_field(mat, 'optimizer_options', dict, self.optimizer_options)
+        self.optimizer_options_std = try_to_read_matlab_field(mat, 'optimizer_options_std', dict, self.optimizer_options_std)
+
+        # FEM
+        self.run_final_electrode_simulation = try_to_read_matlab_field(mat, 'run_final_electrode_simulation', bool, self.run_final_electrode_simulation)
+        self.dirichlet_node = try_to_read_matlab_field(mat, 'dirichlet_node', int, self.dirichlet_node)
+        self.dataType = try_to_read_matlab_field(mat, 'dataType', list, self.dataType)
+        self.anisotropy_type = try_to_read_matlab_field(mat, 'anisotropy_type', str, self.anisotropy_type)
+        self.solver_options = try_to_read_matlab_field(mat, 'solver_options', str, self.solver_options)
+
+        return self
+
     def run(self, cpus=None, allow_multiple_runs=False, save_mat=True, return_n_max=1):
         """
         Runs the tes optimization
 
         Parameters
         ----------
-        cpus : optional, default:None
-            Number of CPU cores to use (not used here)
-        allow_multiple_runs: bool (optinal)
-            Wether to allow multiple runs in one folder. Default: False
-        save_mat: bool (optional)
-            Whether to save the ".mat" file of this structure
-        return_n_max: int (optional)
-            Return n-th best solutions. Default: 1
+        cpus : int, optional, default: None
+            Number of CPU cores to use (not used here because of pardiso solver)
+        allow_multiple_runs: bool, optional, default: False
+            Whether to allow multiple runs in one folder. (not implemented yet)
+        save_mat: bool, optional, default: True
+            Save the ".mat" file of this structure
+        return_n_max: int, optional, default: 1
+            Return n-th best solutions. (not implemented yet)
 
         Returns
         --------
-        best_results: array_like
-            optimal coil positions/orientations. shape  = (return_n_max, 4, 4)
+        <files>: Results files (.hdf5) in self.output_folder.
         """
 
         # prepare optimization
         if not self.prepared:
             self._prepare()
+
+        # save structure in .mat format
+        if save_mat:
+            mat = self.sim_struct2mat()
+            scipy.io.savemat(os.path.join(self.output_folder, 'simnibs_simulation_{0}.mat'.format(self.time_str)), mat)
 
         # run optimization
         ################################################################################################################
@@ -3437,7 +3503,7 @@ class TESoptimize():
         # print optimization summary
         save_optimization_results(fname=os.path.join(self.output_folder, "summary"),
                                   optimizer=self.optimizer,
-                                  optimizer_options=self.optimizer_options,
+                                  optimizer_options=self.optimizer_options_std,
                                   fopt=fopt,
                                   fopt_before_polish=fopt_before_polish,
                                   popt=self.electrode_pos_opt,

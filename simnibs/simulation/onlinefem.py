@@ -74,6 +74,9 @@ class OnlineFEM:
         self.coil = coil                            # TMS coil
         self.electrode = electrode                  # TES electrode
         self.n_iter_dirichlet_correction = 0        # number of iterations required for dirichlet correction
+        self.aniso_maxratio = 10                    # not used (included to use methods of the SimuList class)
+        self.name = None                            # not used (included to use methods of the SimuList class)
+        self.aniso_maxcond = 2                      # not used (included to use methods of the SimuList class)
 
         if type(self.roi) is not list:
             self.roi = [self.roi]

@@ -293,19 +293,9 @@ class Solver:
             return np.ascontiguousarray(x) # change memory-layout back from fortran to c order
 
     def __del__(self):
-        # pass
-        self._A = sp.csr_matrix((0, 0))
+        self._A = sp.csr_matrix((0,0))
         b = np.zeros(0)
         self._call_pardiso(b, 0)
-        self._call_pardiso(b, -1)
-
-    # def __del__(self):
-    #     try:
-    #         self._A = sp.csr_matrix((0,0))
-    #         b = np.zeros(0)
-    #         self._call_pardiso(b, 0)
-    #     except ImportError:
-    #         pass
 
 
 class PardisoWarning(UserWarning):
