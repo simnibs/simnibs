@@ -12,7 +12,7 @@ jobs:
   container: simnibs/simnibs-testing:latest
   steps:
   - checkout: 'self'
-    fetchDepth: '5'
+    fetchDepth: '0'
     fetchTags: 'true'
 
   - bash: |
