@@ -1,7 +1,3 @@
-variables:
-  Agent.Source.Git.ShallowFetchDepth: 5
-  Agent.Source.Git.ShallowFetchTags: true
-
 trigger:
 - master
 
@@ -11,9 +7,20 @@ jobs:
 - job: Build
   pool:
      vmImage: 'ubuntu-20.04'
-     
-  container: simnibs/simnibs-testing:latest
+
   steps:
+  - checkout: 'self'
+    fetchDepth: '5'
+    fetchTags: 'true'
+
+
+  container: simnibs/simnibs-testing:latest
+
+  steps:
+  - checkout: 'self'
+    fetchDepth: '5'
+    fetchTags: 'true'
+
   - bash: |
       conda update -y conda
       conda env create -f environment_linux.yml
