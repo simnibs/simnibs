@@ -1,6 +1,3 @@
-variables:
-  Agent.Source.Git.ShallowFetchDepth: 5
-
 trigger:
 - master
 
@@ -10,6 +7,11 @@ jobs:
     vmImage: 'windows-2019'
 
   steps:
+
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
+
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
