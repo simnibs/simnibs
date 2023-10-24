@@ -1,5 +1,6 @@
 variables:
   Agent.Source.Git.ShallowFetchDepth: 5
+  Agent.Source.Git.ShallowFetchTags: true
 
 trigger:
 - master
