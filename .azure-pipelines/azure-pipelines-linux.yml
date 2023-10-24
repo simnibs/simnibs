@@ -8,14 +8,8 @@ jobs:
   pool:
      vmImage: 'ubuntu-20.04'
 
-  steps:
-  - checkout: 'self'
-    fetchDepth: '5'
-    fetchTags: 'true'
-
 
   container: simnibs/simnibs-testing:latest
-
   steps:
   - checkout: 'self'
     fetchDepth: '5'
