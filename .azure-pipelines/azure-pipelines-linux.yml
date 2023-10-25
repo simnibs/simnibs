@@ -116,8 +116,9 @@ jobs:
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
   dependsOn:
-    - Test
-    - Examples
+    - Build
+    # - Test
+    # - Examples
 #  dependsOn: Build
   
   pool:

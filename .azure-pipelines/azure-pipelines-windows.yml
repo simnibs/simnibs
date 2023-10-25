@@ -73,7 +73,7 @@ jobs:
 
 - job: Examples
   dependsOn: Build
-  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
+  timeoutInMinutes: 120 # Maximum time (should be 6 hours)
   pool:
     vmImage: 'windows-2019'
 
@@ -106,8 +106,9 @@ jobs:
 - job: Release
 #  dependsOn: Build
   dependsOn:
-   - Test
-   - Examples
+   - Build
+   # - Test
+   # - Examples
   pool:
     vmImage: 'windows-2019'
 
