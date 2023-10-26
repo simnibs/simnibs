@@ -592,9 +592,12 @@ class TmsCoil(TcdElement):
                 element_casing_points = coil_element.get_casing_coordinates(
                     affine, apply_deformation
                 )
-                casing_points.append(element_casing_points[0])
-                min_distance_points.append(element_casing_points[1])
-                intersect_points.append(element_casing_points[2])
+                if len(element_casing_points[0]) > 0:
+                    casing_points.append(element_casing_points[0])
+                if len(element_casing_points[1]) > 0:
+                    min_distance_points.append(element_casing_points[1])
+                if len(element_casing_points[2]) > 0:
+                    intersect_points.append(element_casing_points[2])
 
         casing_points = np.concatenate(casing_points, axis=0)
         min_distance_points = np.concatenate(min_distance_points, axis=0)
