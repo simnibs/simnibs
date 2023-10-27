@@ -26,7 +26,7 @@ jobs:
       python packing\pack.py dist\
       copy dist\* $(Build.ArtifactStagingDirectory)
       copy environment_win.yml $(Build.ArtifactStagingDirectory)
-      cp simnibs_installer_windows.exe  $(Build.ArtifactStagingDirectory)
+      copy simnibs_installer_windows.exe $(Build.ArtifactStagingDirectory)
     displayName: Build SimNIBS
 
   - task: PublishBuildArtifacts@1
@@ -124,7 +124,7 @@ jobs:
 
   - task: GithubRelease@0
     displayName: Edit GitHub Release
-    inputs: 
+    inputs:
       gitHubConnection: oulap # I use my connection because github does not generate OAuth token for organizations
       repositoryName: simnibs/simnibs
       action: edit
