@@ -1,12 +1,13 @@
-variables:
-  Agent.Source.Git.ShallowFetchDepth: 5
-
 jobs:
 - job: Linux
   pool:
     vmImage: 'ubuntu-latest'
 
   steps:
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
+
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
@@ -48,6 +49,10 @@ jobs:
     vmImage: 'macOS-latest'
 
   steps:
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
+
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
       sudo chown -R $USER $CONDA
@@ -79,6 +84,10 @@ jobs:
     vmImage: 'windows-2019'
 
   steps:
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
+
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
