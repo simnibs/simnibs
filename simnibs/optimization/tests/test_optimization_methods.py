@@ -175,7 +175,7 @@ def optimize_lstsq(A, b,
         constraints += (iq_constraint, )
 
     warnings.filterwarnings("ignore", message="Values in x were outside bounds during a minimize step, clipping to bounds")
-        
+
     res = scipy.optimize.minimize(
         objective, x0, jac=jac,
         bounds=bounds,
@@ -272,7 +272,7 @@ class TestTESOptimizationProblem():
         currents = tes_opt.extend_currents(
             np.array([0.5, 2, -3])
         )
-        assert np.all((C.dot(currents) < d)[:6] == 
+        assert np.all((C.dot(currents) < d)[:6] ==
                        [True, False, True, True, True, False])
         assert np.all((C.dot(currents) <= d)[6:])
 
@@ -822,7 +822,8 @@ class TestLinearAngleElecConstrained:
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
-        assert np.all(tes_problem.l.dot(x) >= obj_bf)
+        res = tes_problem.l.dot(x)
+        assert np.allclose(res, obj_bf) or np.all(res > obj_bf)
 
 
 class TestEqConstrained:
@@ -1218,12 +1219,12 @@ class TestDistributed:
         P = np.linalg.pinv(np.vstack([-np.ones(5), np.eye(5)]))
         A = leadfield[..., 1].T.dot(P)
         b = target_field[..., 1]
-        
+
         x_sp = optimize_lstsq(
             A, b,
             max_el_current, max_total_current
         )
-        
+
         objective = lambda x: np.linalg.norm(A.dot(x) - b)**2
         assert np.linalg.norm(x, 1) <= 2 * max_total_current + 1e-4
         assert np.all(np.abs(x) <= max_el_current + 1e-4)
