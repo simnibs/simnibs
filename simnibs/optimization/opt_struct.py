@@ -3270,7 +3270,7 @@ class TESoptimize():
         # goal function
         mat['goal'] = remove_None(self.goal)
 
-        if None in self.goal_dir:
+        if np.array([True for _t in self.goal_dir if _t is None]).any():
             mat['goal_dir'] = [''] * len(self.roi)
         else:
             mat['goal_dir'] = remove_None(self.goal_dir)
