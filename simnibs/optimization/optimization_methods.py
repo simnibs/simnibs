@@ -694,7 +694,7 @@ def _linear_constrained_tes_opt(l, target_mean, Q,
             np.vstack([C_, l_]), np.hstack([d_, target_mean]),
             A_, b_,
             bounds=(0, max_el_current),
-            method='interior-point'
+            method='highs'
         )
         x_ = sol.x
 
@@ -1052,7 +1052,7 @@ def _norm_opt_x0(
             np.vstack([C_, l_]), np.hstack([d_, target_norm**2]),
             A_, b_,
             bounds=(0, max_el_current),
-            method='interior-point'
+            method='highs'
         )
         x = sol.x[:n] - sol.x[n:]
         if (cur_min - sol.fun) < 1e-3*np.abs(sol.fun):
@@ -1201,7 +1201,7 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
     minimize l^T x + 1/2 x^T Q x
     subject to  Cx <= d
                 Ax = b
-    
+
     Numerically stable methods for quadratic programminga, Gill and Murray
     https://link.springer.com/article/10.1007/BF01588976
     '''
