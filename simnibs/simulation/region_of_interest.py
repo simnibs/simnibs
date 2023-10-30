@@ -122,9 +122,6 @@ class RegionOfInterestInitializer():
         self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
 
         if self.type == "custom":
-            if self.center is None:
-                raise AssertionError("Please assign ROI points for 'custom' ROI type (set roi.center)")
-
             roi = RegionOfInterest(center=self.center,
                                    nodes=self.nodes,
                                    con=self.con,
