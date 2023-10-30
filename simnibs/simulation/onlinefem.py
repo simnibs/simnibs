@@ -1327,7 +1327,7 @@ def postprocess_e(e, e2=None, dirvec=None, type="magn"):
     elif type == "max_TI":
         e_pp = get_maxTI(E1_org=e, E2_org=e2)
 
-    elif type == "dir_TI":
+    elif type == "dir_TI" or type == "dir_TI_normal" or type == "dir_TI_tangential":
         e_pp = get_dirTI(E1=e, E2=e2, dirvec_org=dirvec)
 
     elif type is None:
