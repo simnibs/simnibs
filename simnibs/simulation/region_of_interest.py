@@ -1,8 +1,11 @@
 import numpy as np
+import nibabel as nib
 import scipy.sparse as sparse
 
-from ..utils.simnibs_logger import logger
+from ..utils.file_finder import SubjectFiles
 from ..utils.utils_numba import spmatmul, postp_mag, postp
+from ..utils.simnibs_logger import logger
+from ..utils.transformations import mni2subject_coords, create_new_connectivity_list_point_mask
 
 
 def _get_local_distances(node_numbers, node_coordinates):
@@ -85,6 +88,11 @@ class RegionOfInterestInitializer():
         self.nodes = None
         self.con = None
         self.domains = None
+        self.type = "custom"                    # "custom", "GMmidlayer" or "volume"
+        self.roi_sphere_center_mni = None
+        self.roi_sphere_center_subject = None
+        self.roi_sphere_radius = None
+        self.ff_subject = None
 
     def initialize(self):
         """
@@ -95,11 +103,104 @@ class RegionOfInterestInitializer():
         roi : RegionOfInterest class instance
             Region of Interest
         """
-        return RegionOfInterest(center=self.center,
-                                nodes=self.nodes,
-                                con=self.con,
-                                domains=self.domains,
-                                mesh=self.mesh)
+
+        if self.center is not None and type(self.center is list):
+            self.center = np.array(self.center)
+
+        if self.nodes is not None and type(self.nodes is list):
+            self.nodes = np.array(self.nodes)
+
+        if self.con is not None and type(self.con is list):
+            self.con = np.array(self.con)
+
+        if self.roi_sphere_center_mni is not None and type(self.roi_sphere_center_mni is list):
+            self.roi_sphere_center_mni = np.array(self.roi_sphere_center_mni)
+
+        if self.roi_sphere_center_subject is not None and type(self.roi_sphere_center_subject is list):
+            self.roi_sphere_center_subject = np.array(self.roi_sphere_center_subject)
+
+        self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
+
+        if self.type == "custom":
+            if self.center is None:
+                raise AssertionError("Please assign ROI points for 'custom' ROI type (set roi.center)")
+
+            roi = RegionOfInterest(center=self.center,
+                                   nodes=self.nodes,
+                                   con=self.con,
+                                   domains=self.domains,
+                                   mesh=self.mesh)
+
+        elif self.type == "GMmidlayer":
+            if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
+                    or self.roi_sphere_radius is None):
+                raise AssertionError("Please specify roi_sphere_center_mni or roi_sphere_center_subject and "
+                                     "roi_sphere_radius for 'MNI' ROI type.")
+
+            # transform MNI to subject coordinates
+            if self.roi_sphere_center_subject is None:
+                self.roi_sphere_center_subject = mni2subject_coords(self.roi_sphere_center_mni, self.ff_subject.subpath)
+
+            # load midlayer from m2m_* folder
+            img_lh = nib.load(self.ff_subject.surfaces["central"]["lh"])
+            img_rh = nib.load(self.ff_subject.surfaces["central"]["rh"])
+
+            lh_nodes = img_lh.darrays[0].data
+            rh_nodes = img_rh.darrays[0].data
+
+            lh_con = img_lh.darrays[1].data
+            rh_con = img_rh.darrays[1].data
+
+            # merge two hemispheres
+            lh_rh_nodes = np.vstack((lh_nodes, rh_nodes))
+            lh_rh_con = np.vstack((lh_con, rh_con+lh_nodes.shape[0]))
+
+            # mask out ROI sphere
+            mask = np.linalg.norm(lh_rh_nodes - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
+            self.nodes, self.con = create_new_connectivity_list_point_mask(points=lh_rh_nodes,
+                                                                           con=lh_rh_con,
+                                                                           point_mask=mask)
+            self.center = np.mean(self.nodes[self.con,], axis=1)
+
+            roi = RegionOfInterest(center=self.center,
+                                   nodes=self.nodes,
+                                   con=self.con,
+                                   mesh=self.mesh)
+
+        elif self.type == "volume":
+            if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
+                    or self.roi_sphere_radius is None):
+                raise AssertionError("Please specify roi_sphere_center or roi_sphere_center_subject and "
+                                     "roi_sphere_radius for 'MNI' ROI type.")
+
+            # transform MNI to subject coordinates
+            if self.roi_sphere_center_subject is None:
+                self.roi_sphere_center_subject = mni2subject_coords(self.roi_sphere_center_mni, self.ff_subject.subpath)
+
+            # mask out spherical ROI (mask targets whole mesh.elm.node_number_list)
+            ele_center = np.mean(self.mesh.nodes.node_coord[self.mesh.elm.node_number_list-1, ], axis=1)
+            ele_center[self.mesh.elm.elm_type != 4] = np.inf
+
+            if self.domains is not None:
+                domains_remove = [d for d in np.unique(self.mesh.elm.tag1) if d not in self.domains]
+
+                for d in domains_remove:
+                    ele_center[self.mesh.elm.tag1 == d] = np.inf
+
+            mask = np.linalg.norm(ele_center - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
+
+            roi = RegionOfInterest(mask=mask, mesh=self.mesh)
+
+        else:
+            raise AssertionError("Specified ROI type not implemented ('custom', 'MNI', 'GMmidlayer')")
+
+        # set values for re-initialization
+        roi.type = self.type
+        roi.roi_sphere_center_mni = self.roi_sphere_center_mni
+        roi.roi_sphere_center_subject = self.roi_sphere_center_subject
+        roi.roi_sphere_radius = self.roi_sphere_radius
+
+        return roi
 
 
 class RegionOfInterest:
@@ -123,6 +224,8 @@ class RegionOfInterest:
         If not provided, all elements will have the same area/volume.
     domains : int or list of int or np.ndarray of int
         Domain indices the ROI is defined for (1: WM, 2: GM, 3: CSF, etc.)
+    mask : np.ndarray of bool, optional, default: None
+        Mask (boolean array) applied to mesh.node_number_list to include in ROI.
     out_fill : float or None
         Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value;
         otherwise assign to out_fill, for example 0)
@@ -153,7 +256,7 @@ class RegionOfInterest:
     vol : float
         Volume or area of ROI elements
     """
-    def __init__(self, mesh, center=None, nodes=None, con=None, gradient=None, out_fill=1, domains=None):
+    def __init__(self, mesh, center=None, nodes=None, con=None, gradient=None, out_fill=1, domains=None, mask=None):
         """
         Initializes RegionOfInterest class instance
         """
@@ -181,10 +284,11 @@ class RegionOfInterest:
 
         self.n_tet_mesh = mesh_cropped.elm.node_number_list.shape[0]
 
-        if type(domains) is not list and type(domains) is not np.ndarray:
-            domains = np.array([domains])
-        elif type(domains) is list and type(domains) is not np.ndarray:
-            domains = np.array(domains)
+        if domains is not None:
+            if type(domains) is not list and type(domains) is not np.ndarray:
+                domains = np.array([domains])
+            elif type(domains) is list and type(domains) is not np.ndarray:
+                domains = np.array(domains)
 
         self.domains = domains
 
@@ -197,7 +301,7 @@ class RegionOfInterest:
             gradient = _get_gradient(local_dist)
 
         # determine sF matrix for fast interpolation
-        if None in domains:
+        if domains is None:
             # compute sF matrix
             self._get_sF_matrix(mesh_cropped, self.center, out_fill)
             self.gradient = gradient[self.idx]
@@ -209,10 +313,11 @@ class RegionOfInterest:
             if (self.domains >= 1000).any():
                 raise NotImplementedError("Surfaces can not be defined as ROI domains.")
 
-            mask = np.zeros(mesh_cropped.elm.node_number_list.shape[0])
-            for d in self.domains:
-                mask += mesh_cropped.elm.tag1 == d
-            mask = mask > 0
+            if mask is None:
+                mask = np.zeros(mesh_cropped.elm.node_number_list.shape[0])
+                for d in self.domains:
+                    mask += mesh_cropped.elm.tag1 == d
+                mask = mask > 0
 
             self.node_index_list = mesh_cropped.elm.node_number_list[mask] - 1
             self.con = self.node_index_list
@@ -232,12 +337,12 @@ class RegionOfInterest:
                 self.triangles_normals = np.cross(p2 - p1, p3 - p1)
                 self.triangles_normals /= np.linalg.norm(self.triangles_normals, axis=1)[:, np.newaxis]
             # volume ROI
-            elif self.con.shape == 4:
+            elif self.con.shape[1] == 4:
                 p1 = self.nodes[self.con[:, 0], :]
                 p2 = self.nodes[self.con[:, 1], :]
                 p3 = self.nodes[self.con[:, 2], :]
                 p4 = self.nodes[self.con[:, 3], :]
-                self.vol = 1.0 / 6 * np.sum(np.multiply(np.cross(p2 - p1, p3 - p1), p4 - p1), 1)
+                self.vol = 1.0 / 6 * np.sum(np.multiply(np.cross(p2 - p1, p3 - p1), p4 - p1), axis=1)
                 self.center = 1.0 / 4 * (p1 + p2 + p3 + p4)
 
         elif nodes is None or con is None:

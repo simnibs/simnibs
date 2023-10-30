@@ -28,18 +28,65 @@ class ElectrodeInitializer():
         self.n_outer_bounds = None
 
         # ElectrodeArrayPair properties
-        self.center = None
-        self.radius = None
+        self._center = None
+        self._radius = None
         self.radius_bounds = None
-        self.length_x = None
+        self._length_x = None
         self.length_x_bounds = None
-        self.length_y = None
+        self._length_y = None
         self.length_y_bounds = None
 
         # simulation properties
         self.dirichlet_correction = None
         self.dirichlet_correction_detailed = None
         self.current_estimator_method = None
+
+    @property
+    def radius(self):
+        return self._radius
+
+    @radius.setter
+    def radius(self, value):
+        if type(value) is int or type(value) is float:
+            value = [value]
+
+        self._radius = value
+
+    @property
+    def length_x(self):
+        return self._length_x
+
+    @length_x.setter
+    def length_x(self, value):
+        if type(value) is int or type(value) is float:
+            value = [value]
+
+        self._length_x = value
+
+    @property
+    def length_y(self):
+        return self._length_y
+
+    @length_y.setter
+    def length_y(self, value):
+        if type(value) is int or type(value) is float:
+            value = [value]
+
+        self._length_y = value
+
+    @property
+    def center(self):
+        return self._center
+
+    @center.setter
+    def center(self, value):
+        if type(value) is list:
+            value = np.array(value)
+
+        if value.ndim == 1:
+            value = value[np.newaxis, :]
+
+        self._center = value
 
     def initialize(self):
         """
@@ -918,6 +965,7 @@ class ElectrodeArrayPair(ElectrodeMaster):
         self.current_channel = np.array([self.current_total, -self.current_total])
 
         # initialize current estimator for fake Dirichlet BC
+        self.current_estimator_method = current_estimator_method
         if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
             current_estimator = None
         else:
@@ -1213,6 +1261,7 @@ class CircularArray(ElectrodeMaster):
                 self.center[-1, 1] = 0.
 
         # initialize current estimator for fake Dirichlet BC
+        self.current_estimator_method = current_estimator_method
         if current_estimator_method is None or current_estimator_method == "" or (self.n_ele_per_channel == 1).all():
             current_estimator = None
         else:

@@ -5,12 +5,13 @@ Written by: Konstantin Weise (2023)
 """
 
 import simnibs
+from simnibs import ElementTags
 
 # Initialize structure
 opt = simnibs.opt_struct.TESoptimize()
 
-# filename of headmodel
-opt.mesh = "/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/ernie_mmg_no_sizing_field_3_bin.msh"
+# path of m2m folder containing the headmodel
+opt.subpath = '/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/'
 
 # output folder
 opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimize_ti_focality"
@@ -21,7 +22,10 @@ opt.goal = "focality"
 # define threshold(s)
 opt.threshold = [0.1, 0.2]
 
-# postprocessing function of e-fields ("max_TI": maximal envelope of TI field)
+# postprocessing function of e-fields
+# "max_TI": maximal envelope of TI field magnitude
+# "dir_TI_normal": maximize envelope of normal component
+# "dir_TI_tangential": maximize envelope of tangential component
 opt.e_postproc = "max_TI"
 
 # define first pair of electrodes
@@ -42,13 +46,18 @@ electrode.current = [0.002, -0.002]                     # electrode currents
 
 # define ROI
 roi = opt.add_roi()
-roi.center = [[-13.754, 13.104, 71.152],                # list of ROI points
-              [-16.096, 12.434, 71.120],
-              [-16.141, 12.429, 70.581]]
+roi.type = "GMmidlayer"
+
+# center of spherical ROI in subject space (in mm)
+roi.roi_sphere_center_subject = [-41, -13,  66]
+
+# radius of spherical ROI (in mm)
+roi.roi_sphere_radius = 20
 
 # define non-ROI
 roi = opt.add_roi()
-roi.domains = [1, 2]                                    # domain indices (1: WM, 2: GM)
+roi.type = "custom"
+roi.domains = [ElementTags.WM, ElementTags.GM]
 
 # Run optimization
 simnibs.run_simnibs(opt)

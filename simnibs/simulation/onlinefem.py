@@ -1278,7 +1278,7 @@ def delete_col_csr(mat, i):
     return mat[:, mask]
 
 
-def postprocess_e(e, e2=None, dirvec=None, type="norm"):
+def postprocess_e(e, e2=None, dirvec=None, type="magn"):
     """
     Post-processing electric field according to specified type.
 
@@ -1292,9 +1292,9 @@ def postprocess_e(e, e2=None, dirvec=None, type="norm"):
         Normal vectors for normal and tangential e-field component calculation or general direction vectors the
         directional TI fields are calculated for. Can be either a single vector (1 x 3)
         that is applied to all positions or one vector per position (N x 3).
-    type : str, optional, default: "norm"
+    type : str, optional, default: "magn"
         Type of postprocessing to apply:
-        - "norm": electric field magnitude (default)
+        - "magn": electric field magnitude (default)
         - "normal": determine normal component (required surface normals in dirvec)
         - "tangential": determine tangential component (required surface normals in dirvec)
         - "max_TI": maximum envelope for TI fields
@@ -1315,7 +1315,7 @@ def postprocess_e(e, e2=None, dirvec=None, type="norm"):
     if type in ["max_TI", "dir_TI"] and e2 is None:
         raise ValueError("Please provide second e-field to calculate TI field!")
 
-    if type == "norm":
+    if type == "magn":
         e_pp = np.linalg.norm(e, axis=1)
 
     elif type == "normal":

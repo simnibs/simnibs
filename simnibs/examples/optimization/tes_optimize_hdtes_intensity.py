@@ -9,8 +9,8 @@ import simnibs
 # Initialize structure
 opt = simnibs.opt_struct.TESoptimize()
 
-# filename of headmodel
-opt.mesh = "/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/ernie_mmg_no_sizing_field_3_bin.msh"
+# path of m2m folder containing the headmodel
+opt.subpath = '/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/'
 
 # output folder
 opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimze_hdtes_intensity"
@@ -18,8 +18,8 @@ opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimze_hdtes_intensit
 # type of goal function
 opt.goal = "mean"
 
-# postprocessing of e-fields
-opt.e_postproc = "norm"
+# postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
+opt.e_postproc = "magn"
 
 # define electrode
 electrode = opt.add_electrode()
@@ -34,9 +34,13 @@ electrode.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # initial c
 
 # define ROI
 roi = opt.add_roi()
-roi.center = [[-13.754, 13.104, 71.152],                             # list of ROI points
-              [-16.096, 12.434, 71.120],
-              [-16.141, 12.429, 70.581]]
+roi.type = "GMmidlayer"
+
+# center of spherical ROI in subject space (in mm)
+roi.roi_sphere_center_subject = [-41, -13,  66]
+
+# radius of spherical ROI (in mm)
+roi.roi_sphere_radius = 20
 
 # Run optimization
 simnibs.run_simnibs(opt)
