@@ -4,7 +4,7 @@ trigger:
 jobs:
 - job: Build
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-12'
     maxParallel: 4
 
   steps:
@@ -61,10 +61,10 @@ jobs:
   dependsOn: Build
   strategy:
     matrix:
-      MacOSX-11:
-        vmImage: 'macOS-11'
       MacOSX-12:
         vmImage: 'macOS-12'
+      MacOSX-13:
+        vmImage: 'macOS-13'
 
   pool:
     vmImage: $(vmImage)
@@ -97,7 +97,7 @@ jobs:
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-13'
     maxParallel: 4
 
   steps:
@@ -138,7 +138,7 @@ jobs:
 #  dependsOn: Build
   
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-13'
 
   steps:
   - checkout: none
