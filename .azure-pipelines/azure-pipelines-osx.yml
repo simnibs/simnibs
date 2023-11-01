@@ -68,7 +68,7 @@ jobs:
 
   pool:
     vmImage: $(vmImage)
-    maxParallel: 4
+    maxParallel: 1
 
   steps:
   - checkout: none
