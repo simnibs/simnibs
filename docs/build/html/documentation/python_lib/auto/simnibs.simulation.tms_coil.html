@@ -1,20 +1,17 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>simnibs.simulation.tms_coil &#8212; SimNIBS 4.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/jquery.js"></script>
-    <script src="../../../_static/underscore.js"></script>
-    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+    <title>simnibs.simulation.tms_coil &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="simnibs.simulation.tms_many_simulations" href="simnibs.simulation.tms_many_simulations.html" />
@@ -51,22 +48,22 @@
           <div class="body" role="main">
             
   <section id="simnibs-simulation-tms-coil">
-<h1>simnibs.simulation.tms_coil<a class="headerlink" href="#simnibs-simulation-tms-coil" title="Permalink to this heading">¶</a></h1>
+<h1>simnibs.simulation.tms_coil<a class="headerlink" href="#simnibs-simulation-tms-coil" title="Link to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="simnibs.simulation.tms_coil">
-<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tms_coil</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_coil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matsimnibs_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">didt_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geo_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_stl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tms_coil" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">simnibs.simulation.</span></span><span class="sig-name descname"><span class="pre">tms_coil</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cond_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn_coil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matsimnibs_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">didt_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geo_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.simulation.tms_coil" title="Link to this definition">¶</a></dt>
 <dd><p>Simulates TMS fields using a coil + matsimnibs + dIdt definition.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mesh</strong> (<em>simnibs.msh.mesh_io.Msh</em>) – Mesh structure</p></li>
 <li><p><strong>cond</strong> (<em>simnibs.msh.mesh_io.ElementData</em>) – Conductivity field</p></li>
-<li><p><strong>fields</strong> (<em>str</em><em> or </em><em>list of str</em>) – Fields to be calculated for each position</p></li>
+<li><p><strong>fields</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – Fields to be calculated for each position</p></li>
 <li><p><strong>fn_coil</strong> (<em>string</em>) – Name of coil file</p></li>
 <li><p><strong>matsimnibs_list</strong> (<em>list</em>) – List of “matsimnibs” matrices, one per position</p></li>
-<li><p><strong>didt_list</strong> (<em>list</em>) – List of dIdt values, one per position</p></li>
-<li><p><strong>output_names</strong> (<em>list of str</em>) – List of output mesh file names, one per position</p></li>
-<li><p><strong>geo_names</strong> (<em>list of str</em>) – List of output mesh file names, one per position</p></li>
+<li><p><strong>didt_list</strong> (<em>list</em>) – List of dIdt values, one per position or a list of dIdt values, one per stimulator</p></li>
+<li><p><strong>output_names</strong> (<em>list</em><em> of </em><em>str</em>) – List of output mesh file names, one per position</p></li>
+<li><p><strong>geo_names</strong> (<em>list</em><em> of </em><em>str</em>) – List of output mesh file names, one per position</p></li>
 <li><p><strong>solver_options</strong> (<em>str</em>) – Options for the solver</p></li>
 <li><p><strong>n_workers</strong> (<em>int</em>) – Number of workers to use</p></li>
 <li><p><strong>fn_stl</strong> (<em>string</em>) – Name of stl-file for coil visualization</p></li>
@@ -182,8 +179,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="../../../_sources/documentation/python_lib/auto/simnibs.simulation.tms_coil.rst.txt"

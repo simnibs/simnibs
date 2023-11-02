@@ -142,11 +142,11 @@ m.triangles=double(m.triangles);
 
 if ~isempty(s.label)
     if strcmpi(s.label,'a2009s')
-        fname_label=fullfile(path_to_labels,'lh.aparc_a2009s.freesurfer.annot');
+        fname_label=fullfile(path_to_labels,'lh.aparc_a2009s.annot');
     elseif strcmpi(s.label,'DK40')
-        fname_label=fullfile(path_to_labels,'lh.aparc_DK40.freesurfer.annot');
+        fname_label=fullfile(path_to_labels,'lh.aparc_DK40.annot');
     elseif strcmpi(s.label,'HCP_MMP1')
-        fname_label=fullfile(path_to_labels,'lh.aparc_HCP_MMP1.freesurfer.annot');
+        fname_label=fullfile(path_to_labels,'lh.aparc_HCP_MMP1.annot');
     else
         error(['unknown label file: ' s.label]);
     end

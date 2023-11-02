@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 import os
 import sys
 import glob
@@ -8,56 +8,9 @@ import tempfile
 import zipfile
 import tarfile
 from setuptools.command.build_ext import build_ext
-from setuptools import find_namespace_packages
 from distutils.dep_util import newer_group
 import numpy as np
 
-
-####################################################
-# add all scripts in the cli folder as 
-# console_scripts or gui_scripts
-####################################################
-
-# IMPORTANT: For the postinstall script to also work
-# ALL scripts should be in the simnibs/cli folder and have
-# a if __name__ == '__main__' clause
-
-script_names = [os.path.splitext(os.path.basename(s))[0]
-                for s in glob.glob('simnibs/cli/*.py')]
-
-console_scripts = []
-for s in script_names:
-    if s not in ['__init__', 'simnibs_gui']:
-        console_scripts.append(f'{s}=simnibs.cli.{s}:main')
-console_scripts.append(f'simnibs=simnibs.cli.run_simnibs:main')
-
-gui_scripts = [
-    'simnibs_gui=simnibs.cli.simnibs_gui:main',
-]
-
-
-########################################################################################################
-# external stuff for which symlinks or .cmd should be added to the scripts folder
-########################################################################################################
-external_progs = ['gmsh','meshfix']
-
-bin_dir = os.path.join('simnibs', 'external', 'bin')
-ending=''
-if sys.platform == 'darwin':
-    bin_dir = os.path.join(bin_dir, 'osx')
-elif sys.platform == 'linux':
-    bin_dir = os.path.join(bin_dir, 'linux')
-elif sys.platform == 'win32':
-    bin_dir = os.path.join(bin_dir, 'win')
-    ending='.exe'
-else:
-    raise OSError('OS not supported!')
-for i in range(len(external_progs)):
-    external_progs[i] = os.path.join(bin_dir, external_progs[i]+ending)
-
-if not sys.platform == 'win32':        
-    external_progs.append(os.path.join('simnibs','external','dwi2cond'))
-           
 
 ''' C extensions
 
@@ -180,7 +133,7 @@ if sys.platform == 'win32':
         '/D _MBCS'
     ]
     cgal_link_args = None
-    
+
     cat_compile_args = None
 
 elif sys.platform == 'linux':
@@ -215,7 +168,7 @@ elif sys.platform == 'linux':
     ]
     cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
-    
+
     cat_compile_args = [
       '-std=gnu99',
     ]
@@ -253,7 +206,7 @@ elif sys.platform == 'darwin':
         '-stdlib=libc++',
         '-Wl,-rpath,@loader_path/../../external/lib/osx'
     ]
-    
+
     cat_compile_args = None
 
 else:
@@ -331,6 +284,18 @@ cgal_misc = Extension(
     extra_compile_args=cgal_compile_args,
     extra_link_args=cgal_link_args,
 )
+cgal_pmp = Extension(
+    "simnibs.mesh_tools.cgal.polygon_mesh_processing",
+    sources = ["simnibs/mesh_tools/cgal/polygon_mesh_processing.pyx"],
+    depends = ["simnibs/mesh_tools/cgal/polygon_mesh_processing_src.cpp"],
+    language='c++',
+    include_dirs=cgal_include,
+    libraries=cgal_libs,
+    library_dirs=cgal_dirs,
+    runtime_library_dirs=cgal_runtime,
+    extra_compile_args=cgal_compile_args,
+    extra_link_args=cgal_link_args,
+)
 
 extensions = [
     cython_msh,
@@ -340,28 +305,9 @@ extensions = [
     petsc_solver,
     create_mesh_surf,
     create_mesh_vol,
-    cgal_misc
+    cgal_misc,
+    cgal_pmp,
 ]
-
-
-def add_symlinks_or_cmd(external_progs,script_dir):
-     ''' add symbolic links or .cmd '''
-     for s in external_progs:
-        if not os.path.exists(s):
-            raise IOError('Could not find '+s)
-        s = os.path.abspath(s)
-        bash_name = os.path.join(script_dir, os.path.basename(s))
-        if sys.platform == 'win32':
-            bash_name=os.path.splitext(bash_name)[0] + '.cmd'
-            print('making cmd link '+bash_name+' --> '+s)
-            with open(bash_name, 'w') as f:
-                f.write("@echo off\n")
-                f.write(f'"{s}" %*')
-        else:
-            if os.path.lexists(bash_name):
-                os.remove(bash_name)
-            print('making sym link '+bash_name+' --> '+s)
-            os.symlink(s, bash_name)
 
 
 def download_and_extract(url, path='.'):
@@ -416,11 +362,11 @@ class build_ext_(build_ext):
         self.extension = cythonize(self.extensions)
         ## Download requirements
         changed_meshing = (
-            newer_group(
-                create_mesh_surf.sources + create_mesh_surf.depends,
-                self.get_ext_fullpath(create_mesh_surf.name),
-                'newer'
-            ) or
+            # newer_group(
+            #     create_mesh_surf.sources + create_mesh_surf.depends,
+            #     self.get_ext_fullpath(create_mesh_surf.name),
+            #     'newer'
+            # ) or
             newer_group(
                 create_mesh_vol.sources + create_mesh_vol.depends,
                 self.get_ext_fullpath(create_mesh_vol.name),
@@ -476,47 +422,8 @@ class build_ext_(build_ext):
             [shutil.rmtree(f, True) for f in osx_folders]
 
 
-setup(name='simnibs',
-      version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
-      description='www.simnibs.org',
-      author='SimNIBS developers',
-      author_email='support@simnibs.org',
-      packages=find_namespace_packages(),
-      license='GPL3',
-      ext_modules=extensions,
-      include_package_data=True,
+setup(ext_modules=extensions,
       cmdclass={
           'build_ext': build_ext_
           },
-      entry_points={
-          'console_scripts': console_scripts,
-          'gui_scripts': gui_scripts
-      },
-      install_requires=[
-          'numpy>=1.16',
-          'scipy>=1.2',
-          'h5py>=2.9',
-          'nibabel>=2.3',
-          'packaging',
-          'requests',
-          'charm-gems',
-          'fmm3dpy'
-      ],
-      extras_require={
-          'GUI': ['pyqt5', 'pyopengl']
-      },
-      setup_requires=[
-          'numpy>=1.16',
-          'cython'
-      ],
-      tests_require=['pytest', 'mock'],
-      zip_safe=False)
-
-
-script_dir = shutil.which('simnibs')
-if script_dir is None:
-    raise IOError('could not locate folder with console-scripts')
-else:
-    script_dir = os.path.dirname(script_dir)
-    add_symlinks_or_cmd(external_progs,script_dir)
-    
+      )

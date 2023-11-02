@@ -18,8 +18,7 @@ import scipy.sparse
 from scipy.spatial import cKDTree, ConvexHull
 #from scipy.special import erf
 import scipy.ndimage as ndimage
-import scipy.ndimage.morphology as mrph
-from scipy.ndimage.measurements import label
+from scipy.ndimage import label, binary_dilation
 #from subprocess import Popen, PIPE
 import sys
 #from threading import Thread
@@ -32,7 +31,7 @@ from ..utils import file_finder
 from ..utils.simnibs_logger import logger
 from ..utils.spawn_process import spawn_process
 from ..utils.transformations import resample_vol, crop_vol, normalize
-from ..utils import mesh_element_properties 
+from ..utils import mesh_element_properties
 
 
 # --------------- expansion from central to pial surface ------------------
@@ -1329,8 +1328,8 @@ def refineCS(Praw, fname_thkimg, fname_ppimg, fsavgDir, vdist=1.0,
     Psphere=os.path.join(surffolder,actualsurf+'.sphere.gii')
     Pspherereg=os.path.join(surffolder,actualsurf+'.sphere.reg.gii')
 
-    Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.freesurfer.gii')
-    Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.freesurfer.gii')
+    Pfsavg=os.path.join(fsavgDir,actualsurf+'.central.gii')
+    Pfsavgsph=os.path.join(fsavgDir,actualsurf+'.sphere.gii')
 
     # if debug:
         # Pdebug=os.path.join(surffolder,actualsurf+'.debug.msh')
@@ -1514,7 +1513,7 @@ def dilate(image,n):
     image[nan_inds] = 0
     image = image > 0.5
     se = np.ones((2*n+1,2*n+1,2*n+1),dtype=bool)
-    return mrph.binary_dilation(image,se)>0
+    return binary_dilation(image,se)>0
 
 
 def erosion(image,n):
@@ -1545,6 +1544,24 @@ def labclose(image,n):
     image = image > 0.5
     tmp = close(image,n)
     return ~lab(~tmp)
+
+
+def estimate_central_surface(white: mesh_io.Msh, pial: mesh_io.Msh):
+    """For now, exploit the node-to-node correspondance between white and pial
+    surfaces and just do an average to obtain the central surface.
+
+    Parameters
+    ----------
+    white : mesh_io.Msh
+    pial : mesh_io.Msh
+
+    Returns
+    -------
+    mesh_io.Msh
+        The estimated central surface.
+    """
+    vertices = 0.5 * (white.nodes.node_coord + pial.nodes.node_coord)
+    return mesh_io.Msh(mesh_io.Nodes(vertices), white.elm)
 
 
 def subsample_surfaces(m2m_dir, n_points: int) -> dict:
@@ -1597,7 +1614,16 @@ def subsample_surfaces(m2m_dir, n_points: int) -> dict:
                 np.savetxt(filename, data.value, delimiter=",")
 
     # apply subsampling to all standard surfaces and morph data
-    for s in m2m._standard_surfaces:
+
+    # TODO this block can be removed once we switch to another surface
+    # placement strategy where we always have white matter and just add
+    # it to standard_surfaces
+    if all(m2m.get_surface(h, "white").exists() for h in m2m.hemispheres):
+        subsample_these_surfaces = list(m2m._standard_surfaces) + ["white"]
+    else:
+        subsample_these_surfaces = m2m._standard_surfaces
+
+    for s in subsample_these_surfaces:
         if s == "central":
             continue
         m = mesh_io.load_subject_surfaces(m2m, s)
@@ -2114,4 +2140,3 @@ def add_surfs(surfs, central_surf, sphere_surf, coverage, used, name):
     ensure_orientation_consistency(rr, tris)
     surfs[f"cent_{name}_sub"] = pv.make_tri_mesh(central_surf["points"][used], tris)
     surfs[f"sphe_{name}_sub"] = pv.make_tri_mesh(sphere_surf["points"][used], tris)
-    

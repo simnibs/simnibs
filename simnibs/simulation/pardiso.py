@@ -31,7 +31,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Modifications done by Guilherme Saturnino, 2019
 '''
 
-import os
 import sys
 import ctypes
 import warnings
@@ -53,29 +52,15 @@ def test_mkl():
 
 
 def get_libmkl():
-
-    # log the libmkl information
-    so_name = "libmkl_rt.so"
-    soabspath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + so_name
-    logger.debug('Factorizing matrix using MKL PARDISO: ' + soabspath)
-
     if sys.platform == 'darwin':
         return ctypes.CDLL('libmkl_rt.dylib')
     elif sys.platform == 'win32':
-        return ctypes.CDLL('mkl_rt.2.dll')
+        try:
+            return ctypes.CDLL('mkl_rt.dll')
+        except:
+            return ctypes.CDLL('mkl_rt.1.dll')
     else:
         return ctypes.CDLL('libmkl_rt.so')
-
-# def get_libmkl():
-#     if sys.platform == 'darwin':
-#         return ctypes.CDLL('libmkl_rt.dylib')
-#     elif sys.platform == 'win32':
-#         try:
-#             return ctypes.CDLL('mkl_rt.dll')
-#         except:
-#             return ctypes.CDLL('mkl_rt.1.dll')
-#     else:
-#         return ctypes.CDLL('libmkl_rt.so')
 
 
 class Solver:
@@ -92,48 +77,7 @@ class Solver:
         Type of matrix. Please see
         https://software.intel.com/en-us/mkl-developer-reference-fortran-pardiso
     """
-    # # I get segfaults if mtype=2, so usng mtype=11
-    # def __init__(self, A, mtype=11, isSymmetric=True):
-    #     self._libmkl = get_libmkl()
-    #
-    #     self._mkl_pardiso = self._libmkl.pardiso
-    #
-    #     # determine 32bit or 64bit architecture
-    #     if ctypes.sizeof(ctypes.c_void_p) == 8:
-    #         self._pt_type = (ctypes.c_int64, np.int64)
-    #     else:
-    #         self._pt_type = (ctypes.c_int32, np.int32)
-    #
-    #     self._mkl_pardiso.argtypes = [
-    #         ctypes.POINTER(self._pt_type[0]),    # pt
-    #         ctypes.POINTER(ctypes.c_int32),      # maxfct
-    #         ctypes.POINTER(ctypes.c_int32),      # mnum
-    #         ctypes.POINTER(ctypes.c_int32),      # mtype
-    #         ctypes.POINTER(ctypes.c_int32),      # phase
-    #         ctypes.POINTER(ctypes.c_int32),      # n
-    #         ctypes.POINTER(None),                # a
-    #         ctypes.POINTER(ctypes.c_int32),      # ia
-    #         ctypes.POINTER(ctypes.c_int32),      # ja
-    #         ctypes.POINTER(ctypes.c_int32),      # perm
-    #         ctypes.POINTER(ctypes.c_int32),      # nrhs
-    #         ctypes.POINTER(ctypes.c_int32),      # iparm
-    #         ctypes.POINTER(ctypes.c_int32),      # msglvl
-    #         ctypes.POINTER(None),                # b
-    #         ctypes.POINTER(None),                # x
-    #         ctypes.POINTER(ctypes.c_int32)]      # error
-    #
-    #     self._mkl_pardiso.restype = None
-    #
-    #     self._pt = np.zeros(64, dtype=self._pt_type[1])
-    #     self._iparm = np.zeros(64, dtype=np.int32)
-    #     self._perm = np.zeros(0, dtype=np.int32)
-    #
-    #     self._mtype = mtype
-    #     self._msglvl = False
-    #
-    #     self._solve_transposed = False
-    #     self._factorize(A)
-
+    # I get segfaults if mtype=2, so usng mtype=11
     def __init__(self, A, mtype=2, isSymmetric=True):
 
         self._libmkl = get_libmkl()
@@ -175,7 +119,7 @@ class Solver:
         self._A = A.copy()
         logger.info('Factorizing matrix using MKL PARDISO')
         start = time.time()
-        b = np.zeros((A.shape[0], 1))
+        b = np.zeros((A.shape[0],1))
         self._call_pardiso(b, 12)     
         logger.info(f'{time.time()-start:.2f} seconds to factorize matrix')
 
@@ -296,6 +240,7 @@ class Solver:
         self._A = sp.csr_matrix((0,0))
         b = np.zeros(0)
         self._call_pardiso(b, 0)
+
 
 
 class PardisoWarning(UserWarning):

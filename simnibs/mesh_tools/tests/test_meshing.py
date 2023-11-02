@@ -194,6 +194,18 @@ class TestImage2mesh():
         assert np.isclose(vol_2, 1e3, rtol=1e-1)
         assert np.isclose(vol_1, (30 * 20 * 10) - 1e3, rtol=1e-1)
 
+    def test_diagonal_with_optimization(self, labeled_image):
+        affine = np.eye(4)
+        mesh = meshing.image2mesh(
+            labeled_image, affine, facet_distance=0.5, facet_size=5, cell_size=5,
+            do_perturb=True, do_exude=True, do_lloyd=True
+        )
+        assert np.allclose(np.min(mesh.nodes[:], axis=0), [9.5, 14.5, 19.5], rtol=1e-2)
+        assert np.allclose(np.max(mesh.nodes[:], axis=0), [39.5, 34.5, 29.5], rtol=1e-2)
+        vol_1, vol_2 = volumes(mesh)
+        assert np.isclose(vol_2, 1e3, rtol=1e-1)
+        assert np.isclose(vol_1, (30 * 20 * 10) - 1e3, rtol=1e-1)
+
     def test_scaling(self, labeled_image):
         affine = 2*np.eye(4)
         mesh = meshing.image2mesh(
@@ -358,7 +370,7 @@ class TestRelabelSpikes:
         m = sphere3.crop_mesh(elm_type=4)
         field = m.elm.tag1.astype(np.uint16)
         ed = mesh_io.ElementData(field)
-        ed.mesh = m 
+        ed.mesh = m
         affine = 2*np.eye(4)
         affine[:3,3] = -100
         affine[3,3] = 1
@@ -368,11 +380,11 @@ class TestRelabelSpikes:
         m.elm.tag2[9033] = 3
         m.elm.tag1[8343] = 2
         m.elm.tag2[8343] = 2
-        faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets() 
+        faces, tet_faces, adj_tets = m.elm._get_tet_faces_and_adjacent_tets()
         m = meshing.update_tag_from_label_img(m, adj_tets, img, affine)
         assert np.all(m.elm.tag1 == tag_org)
         assert np.all(m.elm.tag2 == tag_org)
-        
+
     def test_despike_steps_two_three(self, sphere3):
         sphere3_th = sphere3.crop_mesh(elm_type=4)
         mesh = copy.deepcopy(sphere3_th)
@@ -380,7 +392,7 @@ class TestRelabelSpikes:
         mesh.elm.tag2[9033] = 3
         mesh.elm.tag1[8343] = 2
         mesh.elm.tag2[8343] = 2
-        faces, tet_faces, adj_tets = mesh.elm._get_tet_faces_and_adjacent_tets() 
+        faces, tet_faces, adj_tets = mesh.elm._get_tet_faces_and_adjacent_tets()
         mesh=meshing.update_tag_from_tet_neighbors(mesh, faces, tet_faces, adj_tets, nr_iter = 12)
         mesh=meshing.update_tag_from_surface(mesh, faces, tet_faces, adj_tets)
         assert np.all(mesh.elm.tag1 == sphere3_th.elm.tag1)
@@ -390,13 +402,13 @@ class TestRelabelSpikes:
         elmdata = spikyblob.elmdata[0]
         assert (elmdata.field_name == 'despiked')
         assert np.any(spikyblob.elm.tag1 != elmdata.value)
-        
-        faces, tet_faces, adj_tets = spikyblob.elm._get_tet_faces_and_adjacent_tets() 
+
+        faces, tet_faces, adj_tets = spikyblob.elm._get_tet_faces_and_adjacent_tets()
         spikyblob=meshing.update_tag_from_tet_neighbors(spikyblob, faces, tet_faces, adj_tets, nr_iter = 12)
         spikyblob2=meshing.update_tag_from_surface(copy.deepcopy(spikyblob), faces, tet_faces, adj_tets)
         assert np.all(spikyblob2.elm.tag1 == elmdata.value)
         assert np.all(spikyblob2.elm.tag2 == elmdata.value)
-        
+
         spikyblob.elmdata=[]
         spikyblob=meshing.update_tag_from_surface(spikyblob, faces, tet_faces, adj_tets, do_splits = True)
         assert spikyblob.elm.nr - spikyblob2.elm.nr == 51

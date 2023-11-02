@@ -168,6 +168,8 @@ class Visualization:
         s += 'Show {\n'
         s += 'Volume{' + vis_str + '};\n'
         s += 'Surface{' + vis_str + '};\n'
+        s += 'Curve{' + vis_str + '};\n'
+        s += 'Point{' + vis_str + '};\n'
         s += '}\n'
         return s
 

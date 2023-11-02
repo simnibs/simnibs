@@ -440,7 +440,7 @@ class TMSoptimize():
         fn_out = fn_hdf5[:-5] + '.msh'
         fn_geo = fn_hdf5[:-5] + '_coil_pos.geo'
         fem.tms_coil(
-            self.mesh, cond_field, self.fnamecoil, 'eEjJ',
+            self.mesh, cond_field, self.cond, self.fnamecoil, 'eEjJ',
             [pos_matrices[np.argmax(E_roi)]],
             [self.didt],
             [fn_out],

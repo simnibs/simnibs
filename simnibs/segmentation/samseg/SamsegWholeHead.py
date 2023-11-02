@@ -61,7 +61,7 @@ class SamsegWholeHead(Samseg):
         with open(os.path.join(output_path, 'history.p'), 'wb') as file:
             pickle.dump(history, file, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def saveParametersAndInput(self, output_path=None):
+    def saveParametersAndInput(self, filename=None):
         # Make sure the bias field basis functions are not downsampled
         # This might happen if the downsampling factor in the last
         # resolution level is >1
@@ -87,9 +87,11 @@ class SamsegWholeHead(Samseg):
                                  'transform': self.transform.as_numpy_array,
                                  'names': self.modelSpecifications.names}
 
-        if output_path is not None:
-            with open(os.path.join(output_path, 'parameters.p'), 'wb') as file:
-                pickle.dump(parameters_and_inputs,
-                            file, protocol=pickle.HIGHEST_PROTOCOL)
+        if filename is not None:
+            p = parameters_and_inputs.copy()
+            del p["imageBuffers"]
+            del p["biasFields"]
+            with open(filename, 'wb') as file:
+                pickle.dump(p, file, protocol=pickle.HIGHEST_PROTOCOL)
 
         return parameters_and_inputs

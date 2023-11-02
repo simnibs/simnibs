@@ -15,6 +15,7 @@ class ElementTags(IntEnum):
     BLOOD = 9
     MUSCLE = 10
     EDEMA = 11
+    FAT = 12
     NECROSIS = 16
     BURRHOLES = 19
     RESECTION_CAVITIES = 20
@@ -26,6 +27,7 @@ class ElementTags(IntEnum):
     SALINE_START = 500
     SALINE = 500
     SALINE_END = 899
+    CREAM = 999
     TH_END = 999
 
     TH_SURFACE_START = 1000
@@ -40,6 +42,7 @@ class ElementTags(IntEnum):
     BLOOD_TH_SURFACE = TH_SURFACE_START + BLOOD
     MUSCLE_TH_SURFACE = TH_SURFACE_START + MUSCLE
     EDEMA_TH_SURFACE = TH_SURFACE_START + EDEMA
+    FAT_TH_SURFACE = TH_SURFACE_START + FAT
     NECROSIS_TH_SURFACE = TH_SURFACE_START + NECROSIS
     BURRHOLES_TH_SURFACE = TH_SURFACE_START + BURRHOLES
     RESECTION_CAVITIES_TH_SURFACE = TH_SURFACE_START + RESECTION_CAVITIES
@@ -149,6 +152,7 @@ tissue_tags: list[int] = [
     ElementTags.ELECTRODE_RUBBER,
     ElementTags.SALINE,
     ElementTags.EDEMA,
+    ElementTags.FAT,
     ElementTags.NECROSIS,
     ElementTags.BURRHOLES,
     ElementTags.RESECTION_CAVITIES,
@@ -170,6 +174,7 @@ tissue_names: dict[int, str] = {
     ElementTags.ELECTRODE_RUBBER: "Electrode_rubber",
     ElementTags.SALINE: "Saline",
     ElementTags.EDEMA: 'Edema',
+    ElementTags.FAT: 'Fat',
     ElementTags.NECROSIS: 'Necrosis',
     ElementTags.BURRHOLES: 'Burrholes',
     ElementTags.RESECTION_CAVITIES: 'Resection Cavities',
@@ -191,6 +196,7 @@ tissue_conductivities: dict[int, float] = {
     ElementTags.ELECTRODE_RUBBER: 29.4,
     ElementTags.SALINE: 1.0,
     ElementTags.EDEMA: 0.71,
+    ElementTags.FAT: 0.0776,
     ElementTags.NECROSIS: 1.0,
     ElementTags.BURRHOLES: 1.654,
     ElementTags.RESECTION_CAVITIES: 1.654,
@@ -212,6 +218,7 @@ tissue_conductivity_descriptions: dict[int, str] = {
     ElementTags.ELECTRODE_RUBBER: "for tDCS rubber electrodes",
     ElementTags.SALINE: "for tDCS sponge electrodes",
     ElementTags.EDEMA: 'Edema',
+    ElementTags.FAT: "Fat (from IT'IS)",
     ElementTags.NECROSIS: 'Necrosis',
     ElementTags.BURRHOLES: 'Burrholes (CSF)',
     ElementTags.RESECTION_CAVITIES: 'Resection Cavities (CSF)',

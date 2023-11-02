@@ -1,20 +1,17 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Fixing the Affine Registration &#8212; SimNIBS 4.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <title>Fixing the Affine Registration &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -41,7 +38,7 @@
           <div class="body" role="main">
             
   <section id="fixing-the-affine-registration">
-<span id="fix-affine-registration-tutorial"></span><h1>Fixing the Affine Registration<a class="headerlink" href="#fixing-the-affine-registration" title="Permalink to this heading">¶</a></h1>
+<span id="fix-affine-registration-tutorial"></span><h1>Fixing the Affine Registration<a class="headerlink" href="#fixing-the-affine-registration" title="Link to this heading">¶</a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This tutorial applies only when setting <code class="code highlight python docutils literal highlight-python"><span class="n">init_type</span> <span class="o">=</span> <span class="s2">&quot;atlas&quot;</span></code> in the <a class="reference internal" href="../../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> configuration file (settings.ini).</p>
@@ -49,89 +46,89 @@
 <p>When encountering spurious segmentation results, we have found that this can often be traced back to a suboptimal affine registration between the structural scan(s) and the atlas. Identifying what exactly is causing the segmentation to fail can be a bit tricky (at least initially) so here we provide a few examples showing the type of errors that one might encounter and how they can be alleviated by modifying the settings of <a class="reference internal" href="../../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a>. Charm writes a <cite>settings.ini</cite> inside the m2m-folder of the subject. Make a copy of this and then modify it as described below. This way, different changes can be made for individual subjects. To use the modified settings file, pass it using the <cite>–usesettings</cite> argument when running <a class="reference internal" href="../../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a>.</p>
 <p>Here we use the visualizations provided by <a class="reference internal" href="../../documentation/command_line/charm.html#charm-docs"><span class="std std-ref">charm</span></a> in the <cite>charm_report.html</cite> document, specifically, the <cite>Coregistered template</cite> and <cite>Tissue labels</cite> overlays.</p>
 <section id="bad-rotation">
-<h2>1. Bad Rotation<a class="headerlink" href="#bad-rotation" title="Permalink to this heading">¶</a></h2>
+<h2>1. Bad Rotation<a class="headerlink" href="#bad-rotation" title="Link to this heading">¶</a></h2>
 <p>In the final segmentation, we see what appears to be a downwards rotation around the <em>x</em>-axis. We can fix this by changing the default value of <code class="code highlight python docutils literal highlight-python"><span class="n">affine_rotations</span></code> (which is <code class="code highlight python docutils literal highlight-python"><span class="p">[</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span></code>) to for example <code class="code highlight python docutils literal highlight-python"><span class="n">affine_rotations</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span></code>, thus restricting the rotational initializations around the <em>x</em>-axis.</p>
 <p><code class="code highlight python docutils literal highlight-python"><span class="n">affine_rotations</span></code> are specified as a list of initial rotations in degrees.</p>
 <figure class="align-default" id="id1">
 <img alt="../../_images/rotation_issue_affine.png" src="../../_images/rotation_issue_affine.png" />
 <figcaption>
-<p><span class="caption-text">Fig 1.1. Affine (rotation issue).</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 1.1. Affine (rotation issue).</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id2">
 <img alt="../../_images/rotation_issue_final.png" src="../../_images/rotation_issue_final.png" />
 <figcaption>
-<p><span class="caption-text">Fig 1.2. Final segmentation (rotation issue).</span><a class="headerlink" href="#id2" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 1.2. Final segmentation (rotation issue).</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id3">
 <img alt="../../_images/rotation_issue_affine_fixed.png" src="../../_images/rotation_issue_affine_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 1.3. Affine (rotation fixed).</span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 1.3. Affine (rotation fixed).</span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id4">
 <img alt="../../_images/rotation_issue_final_fixed.png" src="../../_images/rotation_issue_final_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 1.4. Final segmentation (rotation fixed).</span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 1.4. Final segmentation (rotation fixed).</span><a class="headerlink" href="#id4" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="bad-scaling">
-<h2>1. Bad Scaling<a class="headerlink" href="#bad-scaling" title="Permalink to this heading">¶</a></h2>
+<h2>1. Bad Scaling<a class="headerlink" href="#bad-scaling" title="Link to this heading">¶</a></h2>
 <p>In the final segmentation, we see a clear dent in the frontal part of the head. Looking at the affine registration it seems that the atlas was scaled down too much. We can fix this by changing the default value of <code class="code highlight python docutils literal highlight-python"><span class="n">affine_scales</span></code> (which is <code class="code highlight python docutils literal highlight-python"><span class="p">[[</span><span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">]]</span></code>) to for example <code class="code highlight python docutils literal highlight-python"><span class="n">affine_scales</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">]]</span></code> where we make the initializations of the scaling (along the <em>x</em>- and <em>y</em>-axis) larger.</p>
 <p><code class="code highlight python docutils literal highlight-python"><span class="n">affine_scales</span></code> is specified as a list of initial scalings in along each axis, i.e., [x, y, z].</p>
 <figure class="align-default" id="id5">
 <img alt="../../_images/scale_issue_affine.png" src="../../_images/scale_issue_affine.png" />
 <figcaption>
-<p><span class="caption-text">Fig 2.1. Affine (scale issue).</span><a class="headerlink" href="#id5" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 2.1. Affine (scale issue).</span><a class="headerlink" href="#id5" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id6">
 <img alt="../../_images/scale_issue_final.png" src="../../_images/scale_issue_final.png" />
 <figcaption>
-<p><span class="caption-text">Fig 2.2. Final segmentation (scaling issue).</span><a class="headerlink" href="#id6" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 2.2. Final segmentation (scaling issue).</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id7">
 <img alt="../../_images/scale_issue_affine_fixed.png" src="../../_images/scale_issue_affine_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 2.3. Affine (scaling fixed).</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 2.3. Affine (scaling fixed).</span><a class="headerlink" href="#id7" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id8">
 <img alt="../../_images/scale_issue_final_fixed.png" src="../../_images/scale_issue_final_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 2.4. Final segmentation (scaling fixed).</span><a class="headerlink" href="#id8" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 2.4. Final segmentation (scaling fixed).</span><a class="headerlink" href="#id8" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
 <section id="bad-neck-deformation">
-<h2>3. Bad Neck Deformation<a class="headerlink" href="#bad-neck-deformation" title="Permalink to this heading">¶</a></h2>
+<h2>3. Bad Neck Deformation<a class="headerlink" href="#bad-neck-deformation" title="Link to this heading">¶</a></h2>
 <p>In the final segmentation, we see that the neck is deformed too far back. This can be fixed by restricting the posterior search bound of the neck deformation. Specifically, we can replace the default value of <code class="code highlight python docutils literal highlight-python"><span class="n">neck_search_bounds</span></code> (which is <code class="code highlight python docutils literal highlight-python"><span class="p">[</span><span class="o">-</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]</span></code>) with <code class="code highlight python docutils literal highlight-python"><span class="n">neck_search_bounds</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span></code> to prevent posterior deformation and allow slightly more deformation in the anterior direction.</p>
 <p><code class="code highlight python docutils literal highlight-python"><span class="n">neck_search_bounds</span></code> is specified as a list with a posterior and an anterior search bound.</p>
 <figure class="align-default" id="id9">
 <img alt="../../_images/neck_issue_affine.png" src="../../_images/neck_issue_affine.png" />
 <figcaption>
-<p><span class="caption-text">Fig 3.1. Affine (neck deformation issue).</span><a class="headerlink" href="#id9" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 3.1. Affine (neck deformation issue).</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id10">
 <img alt="../../_images/neck_issue_final.png" src="../../_images/neck_issue_final.png" />
 <figcaption>
-<p><span class="caption-text">Fig 3.2. Final segmentation (neck deformation issue).</span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 3.2. Final segmentation (neck deformation issue).</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id11">
 <img alt="../../_images/neck_issue_affine_fixed.png" src="../../_images/neck_issue_affine_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 3.3. Affine (neck deformation fixed). Since the neck deformation is performed <em>after</em> the affine registration, there is no visual effect of this,  but the result can be appreciated in the final segmentation (fig. 3.4).</span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 3.3. Affine (neck deformation fixed). Since the neck deformation is performed <em>after</em> the affine registration, there is no visual effect of this,  but the result can be appreciated in the final segmentation (fig. 3.4).</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 <figure class="align-default" id="id12">
 <img alt="../../_images/neck_issue_final_fixed.png" src="../../_images/neck_issue_final_fixed.png" />
 <figcaption>
-<p><span class="caption-text">Fig 3.4. Final segmentation (neck deformation fixed)</span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
+<p><span class="caption-text">Fig 3.4. Final segmentation (neck deformation fixed)</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
 </section>
@@ -212,8 +209,8 @@
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
       <a href="../../_sources/tutorial/advanced/fix_affine_registration.rst.txt"

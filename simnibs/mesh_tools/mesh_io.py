@@ -30,8 +30,10 @@ import gc
 import hashlib
 import subprocess
 import threading
+from itertools import combinations
 from typing import Union
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 from numpy.lib import recfunctions
@@ -42,12 +44,14 @@ import scipy.sparse.csgraph
 import scipy.interpolate
 import nibabel
 import h5py
+from simnibs.utils import file_finder
 
 from simnibs.utils.mesh_element_properties import ElementTags
+from ..utils.spawn_process import spawn_process
 
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
-from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles
+from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles, FreeSurferSubject
 from . import cython_msh
 from . import cgal
 
@@ -209,12 +213,30 @@ class Elements:
 
     """
 
-    def __init__(self, triangles=None, tetrahedra=None):
+    def __init__(self, triangles=None, tetrahedra=None, points=None, lines=None):
         # gmsh fields
         self.elm_type = np.zeros(0, 'int8')
         self.tag1 = np.zeros(0, dtype='int16')
         self.tag2 = np.zeros(0, dtype='int16')
         self.node_number_list = np.zeros((0, 4), dtype='int32')
+
+        if points is not None:
+            assert len(points.shape) == 1
+            assert np.all(points > 0), "Node count should start at 1"
+            self.node_number_list = np.zeros(
+                (points.shape[0], 4), dtype='int32')
+            self.node_number_list[:, 0] = points.astype('int32')
+            self.node_number_list[:, 1:] = -1
+            self.elm_type = np.ones((self.nr,), dtype='int32') * 15
+
+        if lines is not None:
+            assert lines.shape[1] == 2
+            assert np.all(lines > 0), "Node count should start at 1"
+            self.node_number_list = np.zeros(
+                (lines.shape[0], 4), dtype='int32')
+            self.node_number_list[:, :2] = lines.astype('int32')
+            self.node_number_list[:, 2:] = -1
+            self.elm_type = np.ones((self.nr,), dtype='int32') * 1
 
         if triangles is not None:
             assert triangles.shape[1] == 3
@@ -486,7 +508,7 @@ class Elements:
                 adj_th[self.tetrahedra - 1, i] = adj[adj != th_indexing]
 
         # tranform from th indexing to element indexing
-        adj_th[adj_th > 0] = self.tetrahedra[adj_th[adj_th > 0]]
+        adj_th[adj_th >= 0] = self.tetrahedra[adj_th[adj_th >= 0]]
         return adj_th
 
 
@@ -677,6 +699,12 @@ class Elements:
         s += 'node list: {0}'.format(self.node_number_list)
         return s
 
+
+def make_surface_mesh(vertices, faces):
+    """Convenience function for constructing a triangulated surface mesh. """
+    return Msh(Nodes(vertices), Elements(faces))
+
+
 class Msh:
     """class to handle the meshes.
     Gathers Nodes, Elements and Data
@@ -855,6 +883,8 @@ class Msh:
         """
         if self.nodes.nr == 0:
             return copy.deepcopy(other)
+        elif other.nodes.nr == 0:
+            return copy.deepcopy(self)
 
         joined = copy.deepcopy(self)
         joined.elmdata = []
@@ -869,14 +899,18 @@ class Msh:
         joined.elm.tag1 = np.hstack([joined.elm.tag1, other.elm.tag1])
         joined.elm.tag2 = np.hstack([joined.elm.tag2, other.elm.tag2])
         joined.elm.elm_type = np.hstack([joined.elm.elm_type, other.elm.elm_type])
+        lines = np.where(joined.elm.elm_type == 1)[0]
+        points = np.where(joined.elm.elm_type == 15)[0]
         triangles = np.where(joined.elm.elm_type == 2)[0]
-        tetrahedra = np.where(joined.elm.elm_type != 2)[0]
-        new_elm_order = np.hstack([triangles, tetrahedra])
+        tetrahedra = np.where(joined.elm.elm_type == 4)[0]
+        new_elm_order = np.hstack([points, lines, triangles, tetrahedra])
         joined.elm.node_number_list = joined.elm.node_number_list[new_elm_order]
         joined.elm.tag1 = joined.elm.tag1[new_elm_order]
         joined.elm.tag2 = joined.elm.tag2[new_elm_order]
         joined.elm.elm_type = joined.elm.elm_type[new_elm_order]
         joined.elm.node_number_list[joined.elm.elm_type == 2, 3] = -1
+        joined.elm.node_number_list[joined.elm.elm_type == 1, 2:] = -1
+        joined.elm.node_number_list[joined.elm.elm_type == 15, 1:] = -1
 
         for nd in self.nodedata:
             assert len(nd.value) == self.nodes.nr
@@ -2207,6 +2241,8 @@ class Msh:
         ''' Finds the triangle (if any) that intersects with the rays starting
             at points and pointing into directions
 
+        NOTE: triangle indices are not corresponding to msh indices!
+
         Parameters
         ------------
         points: (N, 3) array
@@ -2324,6 +2360,111 @@ class Msh:
 
         return np.where(has_far)[0], far
 
+    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None):
+        """Generates a distance field on a grid to the mesh surface
+
+        Parameters
+        ----------
+        resolution : float, optional
+            The resolution of the grid, by default 1.0
+        AABBTree : pyAABBTree, optional
+            A pre-calculated AABBTree, will be generated if None, by default None
+
+        Returns
+        -------
+        Callable
+            The signed gridded distance field function (inside is negative)
+        pyAABBTree
+            The AABBTree used
+        """
+
+        if AABBTree is None:
+            AABBTree = self.get_AABBTree()
+        xmin = self.nodes.node_coord.min(0)
+        xmax = self.nodes.node_coord.max(0)
+        xyz = np.meshgrid(
+            *[
+                np.arange(np.floor(x[0]), x[1], resolution)
+                for x in zip(xmin - 5, xmax + 5)
+            ],
+            indexing="ij",
+        )
+        xyzc = np.array(xyz).reshape(3, -1).T
+
+        M = np.identity(4) * resolution
+        M[3, 3] = 1
+        M[:3, 3] = np.floor(xmin - 5)
+        iM = np.linalg.inv(M)
+
+        grid = np.zeros(xyz[0].shape, dtype="bool")
+
+        np.put(grid, AABBTree.points_inside(xyzc), 1)
+        grid = scipy.ndimage.binary_closing(grid, iterations=3)
+        inside = scipy.ndimage.distance_transform_edt(grid)
+        outside = scipy.ndimage.distance_transform_edt(1 - grid)
+        grid = -inside + outside
+
+        def min_distance_on_grid(x):
+            x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
+            width, height, depth = grid.shape
+
+            # Filter coordinates that are inside the image boundaries
+            inside_image_mask = (
+                    (x_coords >= 0)
+                    & (x_coords < width)
+                    & (y_coords >= 0)
+                    & (y_coords < height)
+                    & (z_coords >= 0)
+                    & (z_coords < depth)
+            )
+
+            mapped_values_inside = scipy.ndimage.map_coordinates(
+                grid,
+                (
+                    x_coords[inside_image_mask],
+                    y_coords[inside_image_mask],
+                    z_coords[inside_image_mask],
+                ),
+                order=1,
+            )
+
+            outside_image_indices = ~inside_image_mask
+            outside_x = x_coords[outside_image_indices]
+            outside_y = y_coords[outside_image_indices]
+            outside_z = z_coords[outside_image_indices]
+
+            x1 = np.clip(np.floor(outside_x), 0, width - 1).astype(np.int_)
+            x2 = np.clip(np.floor(outside_x), 1, width - 2).astype(np.int_)
+            x2[np.floor(outside_x) == 0] = 0
+            x2[np.floor(width - 1) == 0] = width - 1
+            y1 = np.clip(np.floor(outside_y), 0, height - 1).astype(np.int_)
+            y2 = np.clip(np.floor(outside_y), 1, height - 2).astype(np.int_)
+            y2[np.floor(outside_y) == 0] = 0
+            y2[np.floor(height - 1) == 0] = height - 1
+            z1 = np.clip(np.floor(outside_z), 0, depth - 1).astype(np.int_)
+            z2 = np.clip(np.floor(outside_z), 1, depth - 2).astype(np.int_)
+            z2[np.floor(outside_z) == 0] = 0
+            z2[np.floor(depth - 1) == 0] = depth - 1
+
+            dx = np.abs(outside_x - x1)
+            dy = np.abs(outside_y - y1)
+            dz = np.abs(outside_z - z1)
+
+            extrapolation_values = (
+                    grid[x1, y1, z1]
+                    + dx * (grid[x1, y1, z1] - grid[x2, y1, z1])
+                    + dy * (grid[x1, y1, z1] - grid[x1, y2, z1])
+                    + dz * (grid[x1, y1, z1] - grid[x1, y1, z2])
+            )
+
+            # Create an array for all coordinates with extrapolation
+            mapped_values = np.empty_like(x_coords)
+            mapped_values[inside_image_mask] = mapped_values_inside
+            mapped_values[outside_image_indices] = extrapolation_values
+
+            return mapped_values
+
+        return min_distance_on_grid, AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
@@ -2346,13 +2487,14 @@ class Msh:
         """
         directions = np.zeros_like(pts)
         directions[:,2] = 1
-        idx_inside, _ = self.intersect_ray(pts, directions, AABBTree)
-
-
-        if len(idx_inside):
-            return np.unique(idx_inside[:,0])
-        else:
+        indices, _ = self.intersect_ray(pts, directions, AABBTree)
+        if len(indices) == 0:
             return []
+        else:
+            # unequal number of intersections = inside
+            i,counts = np.unique(indices[:, 0], return_counts=True)
+            return i[counts % 2 != 0]
+
 
     def any_pts_inside_surface(self, pts, AABBTree):
         """
@@ -2672,6 +2814,7 @@ class Msh:
         # read sizing image
         if type(sizing_field) is str:
             sizing_image = nibabel.load(sizing_field)
+            affine = sizing_image.affine
             sizing_field = sizing_image.get_fdata()
         # if an image is passed read the sizing field data out of it
         elif type(sizing_field) is nibabel.nifti1.Nifti1Image:
@@ -2682,16 +2825,16 @@ class Msh:
             raise ValueError("Please provide affine for sizing field.")
 
         # create a NodeData field containiong the sizing field with ":metric" tag for mmg
-        sizing_field_NodeData = NodeData.from_data_grid(mesh=self,
-                                                        data_grid=sizing_field,
-                                                        affine=affine,
-                                                        field_name='sizing_field:metric')
+        sizing_field_node_data = NodeData.from_data_grid(mesh=self,
+                                                         data_grid=sizing_field,
+                                                         affine=affine,
+                                                         field_name='sizing_field:metric')
 
         # ensure positive element sizes
-        sizing_field_NodeData.value = np.abs(sizing_field_NodeData.value)
+        sizing_field_node_data.value = np.abs(sizing_field_node_data.value)
 
         # add NodeData with sizing field to mesh
-        self.nodedata.append(sizing_field_NodeData)
+        self.nodedata.append(sizing_field_node_data)
 
     def reconstruct_surfaces(self, tags=None):
         ''' Reconstruct the mesh surfaces for each label/connected component individually
@@ -4865,7 +5008,7 @@ class NodeData(Data):
 
 
 
-    def append_to_mesh(self, fn, mode='binary'):
+    def append_to_mesh(self, fn, mode='binary', mmg_fix=False):
         """Appends this NodeData fields to a file
 
         Parameters
@@ -4884,11 +5027,17 @@ class NodeData(Data):
             f.write((str(1) + '\n').encode('ascii'))
             f.write((str(0) + '\n').encode('ascii'))
 
-            f.write((str(4) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
-            f.write((str(self.nr_comp) + '\n').encode('ascii'))
-            f.write((str(self.nr) + '\n').encode('ascii'))
-            f.write((str(0) + '\n').encode('ascii'))
+            if mmg_fix:
+                f.write((str(3) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+            else:
+                f.write((str(4) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
+                f.write((str(self.nr_comp) + '\n').encode('ascii'))
+                f.write((str(self.nr) + '\n').encode('ascii'))
+                f.write((str(0) + '\n').encode('ascii'))
 
             if mode == 'ascii':
                 for ii in range(self.nr):
@@ -5136,7 +5285,18 @@ def _read_msh_2(fn, m, skip_data=False):
                             10, 27, 18, 14, 1, 8, 20, 15, 13]
             while current_element < elm_nr:
                 elm_type, nr, _ = np.fromfile(f, 'int32', 3)
-                if elm_type == 2:
+                if elm_type == 1:
+                    tmp = np.fromfile(f, 'int32', nr * 5).reshape(-1, 5)
+
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        1 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :2] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
+
+                elif elm_type == 2:
                     tmp = np.fromfile(f, 'int32', nr * 6).reshape(-1, 6)
 
                     m.elm.elm_type[current_element:current_element+nr] = \
@@ -5158,6 +5318,16 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.node_number_list[current_element:current_element+nr] = tmp[:, 3:]
                     read[current_element:current_element+nr] = 1
 
+                elif elm_type == 15:
+                    tmp = np.fromfile(f, 'int32', nr * 4).reshape(-1, 4)
+
+                    m.elm.elm_type[current_element:current_element+nr] = \
+                        15 * np.ones(nr, 'int32')
+                    elm_number[current_element:current_element+nr] = tmp[:, 0]
+                    m.elm.tag1[current_element:current_element+nr] = tmp[:, 1]
+                    m.elm.tag2[current_element:current_element+nr] = tmp[:, 2]
+                    m.elm.node_number_list[current_element:current_element+nr, :1] = tmp[:, 3:]
+                    read[current_element:current_element+nr] = 1
                 else:
                     warnings.warn('element of type {0} '
                                   'cannot be read, ignoring it'.format(elm_type))
@@ -5182,7 +5352,13 @@ def _read_msh_2(fn, m, skip_data=False):
 
             for ii in range(elm_nr):
                 line = f.readline().decode().strip().split()
-                if line[1] == '2':
+                if line[1] == '1':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :2] = [int(i) for i in line[5:]]
+                elif line[1] == '2':
                     elm_number[ii] = line[0]
                     m.elm.elm_type[ii] = line[1]
                     m.elm.tag1[ii] = line[3]
@@ -5194,6 +5370,12 @@ def _read_msh_2(fn, m, skip_data=False):
                     m.elm.tag1[ii] = line[3]
                     m.elm.tag2[ii] = line[4]
                     m.elm.node_number_list[ii] = [int(i) for i in line[5:]]
+                elif line[1] == '15':
+                    elm_number[ii] = line[0]
+                    m.elm.elm_type[ii] = line[1]
+                    m.elm.tag1[ii] = line[3]
+                    m.elm.tag2[ii] = line[4]
+                    m.elm.node_number_list[ii, :1] = [int(i) for i in line[5:]]
                 else:
                     read[ii] = 0
                     warnings.warn('element of type {0} '
@@ -5606,7 +5788,7 @@ def _read_msh_4(fn, m, skip_data=False):
 
 
 # write msh to mesh file
-def write_msh(msh, file_name=None, mode='binary'):
+def write_msh(msh, file_name=None, mode='binary', mmg_fix=False):
     """ Writes a gmsh 'msh' file
 
     Parameters
@@ -5675,6 +5857,12 @@ def write_msh(msh, file_name=None, mode='binary'):
                 elif msh.elm.elm_type[ii] == 4:
                     line += str(msh.elm.node_number_list[ii, :]
                                 ).translate(None, '[](),') + '\n'
+                elif msh.elm.elm_type[ii] == 15:
+                    line += str(msh.elm.node_number_list[ii, :1]
+                                ).translate(None, '[](),') + '\n'
+                elif msh.elm.elm_type[ii] == 1:
+                    line += str(msh.elm.node_number_list[ii, :2]
+                                ).translate(None, '[](),') + '\n'
                 else:
                     raise IOError(
                         "ERROR: cant write meshes with elements of type",
@@ -5683,6 +5871,32 @@ def write_msh(msh, file_name=None, mode='binary'):
                 f.write(line.encode('ascii'))
 
         elif mode == 'binary':
+            points = np.where(msh.elm.elm_type == 15)[0]
+            if len(points > 0):
+                points_header = np.array((15, len(points), 2), 'int32')
+                points_number = msh.elm.elm_number[points].astype('int32')
+                points_tag1 = msh.elm.tag1[points].astype('int32')
+                points_tag2 = msh.elm.tag2[points].astype('int32')
+                points_node_list = msh.elm.node_number_list[
+                    points, :1].astype('int32')
+                f.write(points_header.tobytes())
+                f.write(np.concatenate((points_number[:, np.newaxis],
+                                        points_tag1[:, np.newaxis],
+                                        points_tag2[:, np.newaxis],
+                                        points_node_list), axis=1).tobytes())
+            lines = np.where(msh.elm.elm_type == 1)[0]
+            if len(lines > 0):
+                lines_header = np.array((1, len(lines), 2), 'int32')
+                lines_number = msh.elm.elm_number[lines].astype('int32')
+                lines_tag1 = msh.elm.tag1[lines].astype('int32')
+                lines_tag2 = msh.elm.tag2[lines].astype('int32')
+                lines_node_list = msh.elm.node_number_list[
+                    lines, :2].astype('int32')
+                f.write(lines_header.tobytes())
+                f.write(np.concatenate((lines_number[:, np.newaxis],
+                                        lines_tag1[:, np.newaxis],
+                                        lines_tag2[:, np.newaxis],
+                                        lines_node_list), axis=1).tobytes())
             triangles = np.where(msh.elm.elm_type == 2)[0]
             if len(triangles > 0):
                 triangles_header = np.array((2, len(triangles), 2), 'int32')
@@ -5715,7 +5929,7 @@ def write_msh(msh, file_name=None, mode='binary'):
 
     # write nodeData, if existent
     for nd in msh.nodedata:
-        nd.append_to_mesh(fn, mode)
+        nd.append_to_mesh(fn, mode, mmg_fix)
 
     for eD in msh.elmdata:
         eD.append_to_mesh(fn, mode)
@@ -5844,8 +6058,8 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
     ------------
     positions: nx3 ndarray:
         position of vecrors
-    values: nx3 ndarray  (optional)
-        values to be assigned to the vectors. Default: 1
+    values: nx3 ndarray
+        values to be assigned to the vectors.
     fn: str
         name of file to be written
     name: str (optional)
@@ -5876,6 +6090,57 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
         f.write(b"};\n")
 
 
+def write_geo_lines(pos_start, pos_end, fn, values=None, name="", mode='bw'):
+    """ Writes a .geo file with lines between pos_start and pos_end
+
+    Parameters
+    ------------
+    pos_start: nx3 ndarray:
+        start positions of lines
+    pos_end: nx3 ndarray:
+        end positions of lines
+    fn: str
+        name of file to be written
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+    values: nx2 ndarray  (optional)
+        values to be assigned to the vectors. Default: 0s
+    """
+    
+    if values is None:
+        values = np.zeros((len(pos_start), 2))
+    values = np.array(values)
+    pos_start = np.array(pos_start)
+    pos_end = np.array(pos_end)
+    
+    if pos_start.shape[1] != 3:
+        raise ValueError('Positions vector must have size (Nx3)')
+    if pos_end.shape[1] != 3:
+            raise ValueError('Positions vector must have size (Nx3)')
+    if values.shape[1] != 2:
+        raise ValueError('Values must have size (Nx2)')
+
+    if len(pos_end) != len(pos_start):
+        raise ValueError(
+            'The length of the vector of start positions is different from the'
+            ' length of the vector of end positions')
+    if len(values) != len(pos_start):
+        raise ValueError(
+            'The length of the vector of positions is different from the'
+            ' length of the vector of values')
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for ps, pe, v in zip(pos_start, pos_end, values):
+            f.write(
+                ("SL(" + ", ".join([str(i) for i in ps]) +
+                 ", "  + ", ".join([str(i) for i in pe]) + ")" +
+                 "{"   + ", ".join([str(i) for i in v])  + "};\n").encode('ascii'))
+        f.write(b"};\n")
+        
+        
 def write_geo_text(positions, text, fn, name="", mode='bw'):
     """ Writes a .geo file with text in specified positions
 
@@ -5955,7 +6220,7 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
     fn: str
         File name
     apply_transform : bool, optional
-        Apply transformation from Vertex RAS to Scanner RAS. 
+        Apply transformation from Vertex RAS to Scanner RAS.
         This is needed when importing surfaces created by Freesurfer to align Freesurfer surfaces with SimNIBS head models, by default False
 
     Returns
@@ -5965,17 +6230,14 @@ def read_freesurfer_surface(fn, apply_transform : bool = False):
 
     '''
     vertex_coords, faces, meta = nibabel.freesurfer.io.read_geometry(
-        '/mnt/c/Users/torwo/Documents/Projects/simnibs4_examples/m2m_ernie/0/surf/lh.white',
+        fn,
         read_metadata=True
     )
 
     if apply_transform:
         vertex_coords = vertex_coords + meta['cras']
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertex_coords)
-    return msh
+    return make_surface_mesh(vertex_coords, faces + 1)
 
 def write_freesurfer_surface(msh, fn, write_standard_header : bool = True):
     ''' Writes a FreeSurfer surface
@@ -6032,12 +6294,9 @@ def read_gifti_surface(fn):
         mesh structure with geometrical information
     '''
     s = nibabel.load(fn)
-    faces = s.get_arrays_from_intent('NIFTI_INTENT_TRIANGLE')[0].data
-    nodes = s.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].data
-    msh = Msh()
-    msh.elm = Elements(triangles=np.array(faces + 1, dtype=int))
-    msh.nodes = Nodes(np.array(nodes, dtype=float))
-    return msh
+    faces = np.array(s.get_arrays_from_intent('NIFTI_INTENT_TRIANGLE')[0].data, dtype=int)
+    nodes = np.array(s.get_arrays_from_intent('NIFTI_INTENT_POINTSET')[0].data, dtype=float)
+    return make_surface_mesh(nodes, faces + 1)
 
 def write_gifti_surface(msh, fn, ref_image=None):
     ''' Writes mesh surfaces as a gifti file
@@ -6215,10 +6474,7 @@ def read_stl(fn):
     vertices = mesh_flat[uidx[q]]
     faces = np.argsort(q)[iidx].reshape(-1, 3)
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertices)
-    return msh
+    return make_surface_mesh(vertices, faces+1)
 
 
 def read_off(fn):
@@ -6253,10 +6509,7 @@ def read_off(fn):
         faces = np.fromfile(f, dtype=int, count=4*n_faces, sep=' ')
         faces = faces.reshape(n_faces, 4)[:, 1:]
 
-    msh = Msh()
-    msh.elm = Elements(triangles=faces + 1)
-    msh.nodes = Nodes(vertices)
-    return msh
+    return make_surface_mesh(vertices, faces+1)
 
 def read(fn):
     """Read a mesh from disk. Reads gii,[ mesh,] msh, off, stl, and freesurface
@@ -6382,16 +6635,6 @@ def read_medit(fn):
         if f.readline().strip() != 'Vertices':
             raise IOError('invalid mesh format')
         n_vertices = int(f.readline().strip())
-        # for CGAL > 5.4 the reader has to be adapted because the medit files are written differently from CGAL
-        # n_vertices = 0
-        # if not f.readline().startswith('MeshVersionFormatted'):
-        #     raise IOError('invalid mesh format')
-        # if f.readline().strip() != 'Dimension 3':
-        #     raise IOError('Can only read 3D meshes')
-        # if f.readline().strip() not in ['Vertices', '# CGAL::Mesh_complex_3_in_triangulation_3']:
-        #     raise IOError('invalid mesh format')
-        # if f.readline().strip() == 'Vertices':
-        #     n_vertices = int(f.readline().strip())
         assert n_vertices > 0
         vertices = np.loadtxt(f, dtype=float, max_rows=n_vertices)[:, :-1]
         nodes = Nodes(vertices)
@@ -6582,3 +6825,124 @@ def load_reference_surfaces(surface: str, resolution: Union[int, None] = None):
         h: read_gifti_surface(get_reference_surf(h, surface, resolution))
         for h in HEMISPHERES
     }
+
+
+def load_freesurfer_surfaces(fs_sub: FreeSurferSubject, surface: str, coord: str = "surface ras") -> dict[str, Msh]:
+    """Load surfaces from a FreeSurfer subject directory.
+
+    Parameters
+    ----------
+    fs_sub :
+        FreeSurfer subject object.
+    surface : str
+        The surface to load.
+    coord : str
+        The coordinate system in which to return the surface. `surface ras`
+        will load the surface unmodified whereas `ras` will apply the
+        transformation from surface ras to (scanner) ras.
+
+    Returns
+    -------
+    surfaces : dict
+    """
+    assert coord in {"ras", "surface ras"}
+
+    apply_transform = True if coord == "ras" else False
+    return {h: read_freesurfer_surface(s, apply_transform) for h,s in fs_sub.get_surfaces(surface).items()}
+
+
+def split(m: Msh, iterations: int = 1, hierarchy: tuple[int] = None, skin_tag: int = ElementTags.SCALP) -> Msh:
+    """Splits every edge in the mesh in its middle. Surface triangles are split into 4 new triangles,
+    tetrahedra are split into 8 new tetrahedra. To reduce tetrahedra count and increase tetrahedra quality, mmg is used.
+    The final mesh will have old_triangle_count * 4 * iterations triangles and between
+    old_tetrahedra_count * 4 * iterations and old_tetrahedra_count * 8 * iterations tetrahedra.
+    The quality of the surface triangles stays unchanged.
+
+    Parameters
+    ----------
+    m : Msh
+        The mesh that will be split
+    iterations : int
+        The number of splitting iterations
+    hierarchy : tuple[int]
+        The hierarchy used to reconstruct the surface after splitting.
+    skin_tag : int
+        The skin tag to be used for the surface reconstruction after splitting
+
+    Returns
+    -------
+    Msh
+        The resulting splitted mesh
+    """
+    if hierarchy is None:
+        hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)
+
+    m = m.crop_mesh(elm_type=4)
+
+    for _ in range(iterations):
+        edge_to_new_node_idx = {}
+        new_node_coord = []
+        new_tetra = []
+        tetra_tags = []
+
+        for tetra_indx in m.elm.tetrahedra - 1:
+            node_indxs = m.elm.node_number_list[tetra_indx] - 1
+            tetra_tags.extend([m.elm.tag1[tetra_indx]] * 8)
+
+            for edge in combinations(node_indxs, 2):
+                if edge in edge_to_new_node_idx:
+                    continue
+
+                new_node_coord.append((m.nodes.node_coord[edge[0]] + m.nodes.node_coord[edge[1]]) / 2.0)
+                edge_to_new_node_idx[edge] = len(new_node_coord) + m.nodes.nr - 1
+                edge_to_new_node_idx[edge[::-1]] = edge_to_new_node_idx[edge]
+
+            for new_tetra_nodes in [[node_indxs[0], node_indxs[1], node_indxs[2], node_indxs[3]],
+                                    [node_indxs[1], node_indxs[2], node_indxs[3], node_indxs[0]],
+                                    [node_indxs[2], node_indxs[3], node_indxs[0], node_indxs[1]],
+                                    [node_indxs[3], node_indxs[0], node_indxs[1], node_indxs[2]]]:
+                new_tetra.append([new_tetra_nodes[0],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[1])],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[2])],
+                                  edge_to_new_node_idx[(new_tetra_nodes[0], new_tetra_nodes[3])],
+                                  ])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[1])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[1])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[3])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[2], node_indxs[3])]])
+            new_tetra.append([edge_to_new_node_idx[(node_indxs[0], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[2])],
+                              edge_to_new_node_idx[(node_indxs[1], node_indxs[3])],
+                              edge_to_new_node_idx[(node_indxs[2], node_indxs[3])]])
+
+        m.nodes.node_coord = np.concatenate((m.nodes.node_coord, new_node_coord), axis=0)
+        m.elm.node_number_list = np.array(new_tetra) + 1
+        m.elm.elm_type = 4 * np.ones(len(new_tetra), dtype=int)
+        m.elm.tag1 = np.array(tetra_tags)
+        m.elm.tag2 = m.elm.tag1
+
+        m.fix_th_node_ordering()
+
+    tmp_file = tempfile.NamedTemporaryFile(suffix=".msh")
+    write_msh(m, tmp_file.name, mmg_fix=True)
+
+    cmd = [file_finder.path2bin("mmg3d_O3"), "-v", "0", "-rmc", "-nofem", "-hgrad",
+           "-1", "-nosurf", "-in", tmp_file.name, "-out", tmp_file.name]
+
+    spawn_process(cmd)
+
+    m: Msh = read_msh(tmp_file.name)
+    m = m.crop_mesh(elm_type=4)
+    m.reconstruct_unique_surface(hierarchy=hierarchy, add_outer_as=skin_tag)
+
+    tmp_file.close()
+
+    return m

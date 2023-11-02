@@ -171,7 +171,7 @@ def segmentUpsampled(input_bias_corrected, tissue_settings,
                       affine_atlas,
                       transformUpsampled)
 
-    upper_part = np.zeros(example_image.getImageBuffer().shape, dtype=np.bool, order='F')
+    upper_part = np.zeros(example_image.getImageBuffer().shape, bool, order='F')
     upper_part_cropped = affine_upsampled.rasterize(maskUpsampled.shape, 1)
     upper_part[croppingUpsampled] = (65535 - upper_part_cropped) > 32768
     del affine_upsampled
