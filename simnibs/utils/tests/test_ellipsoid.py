@@ -37,12 +37,12 @@ class TestEllipsoid:
         ellipsoid_fit.fit(points=eli_coords)
 
         # compare ellipsoid parameters
-        assert np.isclose(ellipsoid.center, ellipsoid_fit.center).all(), \
-            "Ellipsoid fit failed: center does not match!"
-        assert np.isclose(ellipsoid.radii, ellipsoid_fit.radii).all(), \
-            "Ellipsoid fit failed: radii do not match!"
-        assert np.isclose(np.abs(ellipsoid.rotmat), np.abs(ellipsoid_fit.rotmat)).all(), \
-            "Ellipsoid fit failed: rotmat does not match!"
+        np.testing.assert_allclose(ellipsoid.center, ellipsoid_fit.center,
+                                    err_msg="Ellipsoid fit failed: center does not match!")
+        np.testing.assert_allclose(ellipsoid.radii, ellipsoid_fit.radii,
+                                   err_msg="Ellipsoid fit failed: radii do not match!")
+        np.testing.assert_allclose(ellipsoid.rotmat, ellipsoid_fit.rotmat,
+                                   err_msg="Ellipsoid fit failed: rotmat does not match!")
 
     def test_transformations(self):
         """ Tests coordinates transformations (cartesian, spherical, jacobi) """

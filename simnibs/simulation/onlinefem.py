@@ -54,6 +54,8 @@ class OnlineFEM:
     dirichlet_node : int
         Index of dirichlet node (indexing starting with 1)
     """
+    # TODO: replace Coil class with new concepts
+    # TODO: move roi.calc_fields method from ROI to OnlineFEM
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None):
         """
@@ -132,6 +134,7 @@ class OnlineFEM:
                 raise AssertionError("Provide either filename of TMS coil or Coil object.")
 
             if coil is None:
+                # TODO: replace Coil class here
                 self.coil = Coil(filename=self.fn_coil,
                                  logger=self.logger)
                 # scale field to make it more appropriate for matrix solve
