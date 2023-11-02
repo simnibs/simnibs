@@ -57,7 +57,7 @@ jobs:
       artifactName: macos
     displayName: Publish Artifact
 
-- job: Test macOS12
+- job: Test12
   dependsOn: Build
 
   pool:
@@ -88,7 +88,7 @@ jobs:
       testRunTitle: 'Unit Tests'
 
 
-- job: Test macOS13
+- job: Test13
   dependsOn: Build
 
   pool:
