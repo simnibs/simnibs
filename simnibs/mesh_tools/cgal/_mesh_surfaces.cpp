@@ -96,7 +96,7 @@ int _mesh_surfaces(
     if (optimize) CGAL::lloyd_optimize_mesh_3(c3t3, domain);
   #endif
   CGAL::perturb_mesh_3(c3t3, domain);
-  CGAL::exude_mesh_3(c3t3);
+  CGAL::exude_mesh_3(c3t3,0,0);
 
 
   // Output

@@ -696,7 +696,7 @@ class SimuList(object):
         Returns
         --------------------------
         dict
-            Dictionaty for scipy.io.savemat
+            Dictionary for scipy.io.savemat
         """
         mat_cond = {}
 

@@ -1,14 +1,14 @@
 ''' Example of a SimNIBS tDCS optimization with a distributed target in Python
     Run with:
 
-    simnibs_python tdcs_optimize_distributed.py
+    simnibs_python teslf_optimize_distributed.py
 
     Copyright (C) 2020 Guilherme B Saturnino
 '''
 import simnibs
 
 # Initialize structure
-opt = simnibs.opt_struct.TDCSDistributedOptimize()
+opt = simnibs.opt_struct.TESLFDistributedOptimize()
 # Select the leadfield file
 opt.leadfield_hdf = 'leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5'
 # Subject path

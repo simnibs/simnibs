@@ -14,7 +14,13 @@ class ElementTags(IntEnum):
     SPONGY_BONE = 8
     BLOOD = 9
     MUSCLE = 10
+    EDEMA = 11
     FAT = 12
+    NECROSIS = 16
+    BURRHOLES = 19
+    RESECTION_CAVITIES = 20
+    TUMOR_SHELL = 24
+    RESIDUAL_TUMOR = 25
     ELECTRODE_RUBBER_START = 100
     ELECTRODE_RUBBER = 100
     ELECTRODE_RUBBER_END = 499
@@ -35,6 +41,13 @@ class ElementTags(IntEnum):
     SPONGY_BONE_TH_SURFACE = TH_SURFACE_START + SPONGY_BONE
     BLOOD_TH_SURFACE = TH_SURFACE_START + BLOOD
     MUSCLE_TH_SURFACE = TH_SURFACE_START + MUSCLE
+    EDEMA_TH_SURFACE = TH_SURFACE_START + EDEMA
+    FAT_TH_SURFACE = TH_SURFACE_START + FAT
+    NECROSIS_TH_SURFACE = TH_SURFACE_START + NECROSIS
+    BURRHOLES_TH_SURFACE = TH_SURFACE_START + BURRHOLES
+    RESECTION_CAVITIES_TH_SURFACE = TH_SURFACE_START + RESECTION_CAVITIES
+    TUMOR_SHELL_TH_SURFACE = TH_SURFACE_START + TUMOR_SHELL
+    RESIDUAL_TUMOR_TH_SURFACE = TH_SURFACE_START + RESIDUAL_TUMOR
     ELECTRODE_RUBBER_TH_SURFACE_START = TH_SURFACE_START + ELECTRODE_RUBBER_START
     ELECTRODE_RUBBER_TH_SURFACE = TH_SURFACE_START + ELECTRODE_RUBBER
     ELECTRODE_RUBBER_TH_SURFACE_END = TH_SURFACE_START + ELECTRODE_RUBBER_END
@@ -138,6 +151,13 @@ tissue_tags: list[int] = [
     ElementTags.MUSCLE,
     ElementTags.ELECTRODE_RUBBER,
     ElementTags.SALINE,
+    ElementTags.EDEMA,
+    ElementTags.FAT,
+    ElementTags.NECROSIS,
+    ElementTags.BURRHOLES,
+    ElementTags.RESECTION_CAVITIES,
+    ElementTags.TUMOR_SHELL,
+    ElementTags.RESIDUAL_TUMOR
 ]
 
 tissue_names: dict[int, str] = {
@@ -153,6 +173,13 @@ tissue_names: dict[int, str] = {
     ElementTags.MUSCLE: "Muscle",
     ElementTags.ELECTRODE_RUBBER: "Electrode_rubber",
     ElementTags.SALINE: "Saline",
+    ElementTags.EDEMA: 'Edema',
+    ElementTags.FAT: 'Fat',
+    ElementTags.NECROSIS: 'Necrosis',
+    ElementTags.BURRHOLES: 'Burrholes',
+    ElementTags.RESECTION_CAVITIES: 'Resection Cavities',
+    ElementTags.TUMOR_SHELL: 'Tumor shell',
+    ElementTags.RESIDUAL_TUMOR: 'Residual Tumor'
 }
 
 tissue_conductivities: dict[int, float] = {
@@ -168,6 +195,13 @@ tissue_conductivities: dict[int, float] = {
     ElementTags.MUSCLE: 0.16,
     ElementTags.ELECTRODE_RUBBER: 29.4,
     ElementTags.SALINE: 1.0,
+    ElementTags.EDEMA: 0.71,
+    ElementTags.FAT: 0.0776,
+    ElementTags.NECROSIS: 1.0,
+    ElementTags.BURRHOLES: 1.654,
+    ElementTags.RESECTION_CAVITIES: 1.654,
+    ElementTags.TUMOR_SHELL: 0.24,
+    ElementTags.RESIDUAL_TUMOR: 1.654
 }
 
 tissue_conductivity_descriptions: dict[int, str] = {
@@ -183,4 +217,11 @@ tissue_conductivity_descriptions: dict[int, str] = {
     ElementTags.MUSCLE: "Muscle (from Gabriel et al, 2009)",
     ElementTags.ELECTRODE_RUBBER: "for tDCS rubber electrodes",
     ElementTags.SALINE: "for tDCS sponge electrodes",
+    ElementTags.EDEMA: 'Edema',
+    ElementTags.FAT: "Fat (from IT'IS)",
+    ElementTags.NECROSIS: 'Necrosis',
+    ElementTags.BURRHOLES: 'Burrholes (CSF)',
+    ElementTags.RESECTION_CAVITIES: 'Resection Cavities (CSF)',
+    ElementTags.TUMOR_SHELL: 'Tumor shell',
+    ElementTags.RESIDUAL_TUMOR: 'Residual Tumor (CSF)'
 }

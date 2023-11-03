@@ -162,27 +162,27 @@ class TestPythonErnie:
 
     def test_tdcs_optimize(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize.py')
+        ret = self.run_script('optimization', 'teslf_optimize.py')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_multi_target(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_multi_target.py')
+        ret = self.run_script('optimization', 'teslf_optimize_multi_target.py')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_avoid(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_avoid.py')
+        ret = self.run_script('optimization', 'teslf_optimize_avoid.py')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_mni.py')
+        ret = self.run_script('optimization', 'teslf_optimize_mni.py')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_strength.py')
+        ret = self.run_script('optimization', 'teslf_optimize_strength.py')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
@@ -192,12 +192,17 @@ class TestPythonErnie:
                 'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
-        ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
+        ret = self.run_script('optimization', 'teslf_optimize_distributed.py')
         assert ret.returncode == 0
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization_adm')
+        assert ret.returncode == 0
+
+    def test_tes_electrode_setup_init(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tes_electrode_setup_init.py', clean=None)
         assert ret.returncode == 0
 
 
@@ -258,27 +263,27 @@ class TestMatlabErnie:
 
     def test_tdcs_optimize(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize.m')
+        ret = self.run_script('optimization', 'teslf_optimize.m')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_multi_target(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_multi_target.m')
+        ret = self.run_script('optimization', 'teslf_optimize_multi_target.m')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_avoid(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_avoid.m')
+        ret = self.run_script('optimization', 'teslf_optimize_avoid.m')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_mni(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_mni.m')
+        ret = self.run_script('optimization', 'teslf_optimize_mni.m')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_strength(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tdcs_optimize_strength.m')
+        ret = self.run_script('optimization', 'teslf_optimize_strength.m')
         assert ret.returncode == 0
 
     def test_tdcs_optimize_distributed(self, example_dataset, replace_gmsh):
@@ -288,7 +293,7 @@ class TestMatlabErnie:
                 'testing_files', 'ID03_MOTOR_ICA.nii.gz'),
             example_dataset
         )
-        ret = self.run_script('optimization', 'tdcs_optimize_distributed.m')
+        ret = self.run_script('optimization', 'teslf_optimize_distributed.m')
         assert ret.returncode == 0
 
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):

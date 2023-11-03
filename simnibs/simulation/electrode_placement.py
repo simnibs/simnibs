@@ -89,11 +89,13 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[ElementTags.SCALP, Elemen
         alpha = 0
         nr_iter = 0
         y_ref = c
-        nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
-        kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
+        # nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
+        # kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
         while np.linalg.norm(c - y_ref) < 1e-5:
-            _, y_ref_idx = kd_tree.query(y_axis + alpha * (y_axis - center))
-            y_ref = mesh.nodes.node_coord[nodes_in_surface - 1][y_ref_idx]
+            # _, y_ref_idx = kd_tree.query(y_axis + alpha * (y_axis - center))
+            # y_ref = mesh.nodes.node_coord[nodes_in_surface - 1][y_ref_idx]
+            y_ref = project_points_on_surface(mesh, y_axis + alpha * (y_axis - center),
+                                              surface_tags=mesh_surface).flatten()
             alpha += 1.
             nr_iter += 1
             if nr_iter == 10:

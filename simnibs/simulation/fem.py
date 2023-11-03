@@ -792,7 +792,7 @@ class TDCSFEMDirichlet(FEMSystem):
                 raise ValueError('Did not find any surface with tag: {0}'.format(t))
             n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
             bcs.append(DirichletBC(n, p * np.ones_like(n, dtype=float)))
-        return DirichletBC.join(bcs)
+        return DirichletBC.join(bcs)            # =====
 
 
 class TDCSFEMNeumann(FEMSystem):
@@ -875,8 +875,8 @@ class TDCSFEMNeumann(FEMSystem):
         b: np.ndarray
             Right-hand-side of FEM system
         '''
-        if self.input_type == "nodes":
-            electrodes = np.atleast_2d(electrodes)
+        # if self.input_type == "nodes":
+        #     electrodes = np.atleast_2d(electrodes)
         assert len(electrodes) == len(currents)
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         for e, c in zip(electrodes, currents):
@@ -900,7 +900,7 @@ class TDCSFEMNeumann(FEMSystem):
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         ix = self.dof_map[nodes]
         b[ix] = current
-        if self.weigh_by_area: # self.areas is not None
+        if self.weigh_by_area:  # self.areas is not None
             b[ix] *= self.areas[nodes] / self.areas[nodes].sum()
         return b
 
@@ -2084,3 +2084,45 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, source_model,
     S = DipoleFEM(mesh, cond, solver_options, units)
     b = S.assemble_rhs(dipole_positions, dipole_moments, source_model)
     return np.atleast_2d(S.solve(b).T)
+
+
+def get_dirichlet_node_index_cog(mesh, roi=None):
+    """
+    Get closest node to center of gravity of head model on lower 10% quantile in z-direction (neck direction)
+    ensuring that it does not lie on a surface. (indexing starting with 1)
+
+    Parameters
+    ----------
+    mesh : Msh object
+        Mesh object
+    roi : list of RegionOfInterest instances, optional, default: None
+        List of ROI surfaces. The Dirichlet node will be set such it does not lay on it.
+
+    Returns
+    -------
+    node_idx : int
+        Index of the node with node indexing starting with 1
+    """
+
+    # center of whole head model but lower 25% quantile of z-axis (into neck direction)
+    target_coords = np.mean(mesh.nodes.node_coord, axis=0)
+    target_coords[2] = np.quantile(mesh.nodes.node_coord[:, 2], 0.1)
+
+    # get list of node indices, which are closest to center of gravity of mesh
+    node_idx = np.argsort(np.linalg.norm(
+        mesh.nodes.node_coord - target_coords, axis=1))
+    node_idx_triangles = np.unique(mesh.elm.node_number_list[mesh.elm.triangles-1, :][:, :-1]-1)
+
+    if roi is not None:
+        if type(roi) is not list:
+            roi = [roi]
+
+        for _roi in roi:
+            node_idx_triangles = np.hstack((node_idx_triangles, _roi.node_index_list.flatten()))
+
+        node_idx_triangles = np.unique(node_idx_triangles)
+
+    # test and return first node, which is not lying on a surface
+    for idx in node_idx:
+        if idx not in node_idx_triangles:
+            return idx + 1

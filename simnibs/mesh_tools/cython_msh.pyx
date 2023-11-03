@@ -96,17 +96,17 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                 compartments,
                 np.ndarray[uint16_t, ndim=3] labelimage,
                 np.ndarray[float, ndim=3] maximage):
-    
+
     cdef double[:] c_weights =  np.array([1.0/float(len(ci)) for ci in compartments for c in ci], dtype=np.double)
     cdef uint16_t[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.uint16)
     cdef uint16_t[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.uint16)
     cdef uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
     cdef np.int_t n_comp = len(comp)
-    
+
     cdef np.int_t node_data = field.shape[0] == nd.shape[0]
     ## Create bounding box with each tetrahedra
     cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
-    
+
     cdef np.ndarray[double, ndim=3] invM = \
             np.linalg.inv(np.transpose(
                 th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1))
@@ -117,7 +117,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
 
     cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
         np.max(th_coords, axis=1)).astype(int)
-    
+
     cdef int[:] in_roi = np.where(
         np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(np.int32)
 
@@ -130,9 +130,9 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
     cdef double xc, yc, zc
     cdef double eps = 1e-5
     cdef double current_field = 0.0
-    
+
     cdef np.int_t n_in_roi = len(in_roi)
-    
+
     with nogil:
         for jj in range(n_in_roi):
             j = in_roi[jj]
@@ -168,7 +168,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                                                     maximage[x,y,z] = current_field
                                                     labelimage[x,y,z] = comp_k[k]
                                                 current_field = 0.0
-    
+
     del invM
     del th_boxes_min
     del th_boxes_max
@@ -177,7 +177,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
     del comp
     del c_weights
     del c_last
-    return 
+    return
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

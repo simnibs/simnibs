@@ -1,11 +1,11 @@
 #!/usr/bin/python2.7 -u
 # -*- coding: utf-8 -*-\
 '''
-   Structures for the GUI head model
-   This program is part of the SimNIBS package.
+    Structures for the GUI head model
+    This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
-   Copyright (C) 2015-2018 Guilherme B Saturnino
+    Copyright (C) 2015-2018 Guilherme B Saturnino, Extended 2022 by Konstantin Weise
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,9 +20,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-
-import numpy as np
 import gc
+import numpy as np
+
+from . import cgal
 
 
 class Surface():
@@ -47,7 +48,7 @@ class Surface():
 
         # @var tr_nodes
         # The nodes in each triangle
-        self. tr_nodes = []
+        self.tr_nodes = []
 
         # @var tr_normals
         # the triangle normals
@@ -173,7 +174,7 @@ class Surface():
         intersect_point = None
         intersect_normal = None
         triangle_index = None
-        # nescessary when dealing with concave surfaces (like GM surface)
+        # necessary when dealing with concave surfaces (like GM surface)
 
         V0 = self.nodes[self.tr_nodes[:, 0]]
         V1 = self.nodes[self.tr_nodes[:, 1]]
@@ -333,3 +334,38 @@ class Surface():
     # center
     def findClosestTriangle2Point(self, point):
         return np.argmin(np.sum(np.square(self.tr_centers - point), 1))
+
+    def intersect_segment(self, near, far):
+        ''' Finds the triangle (if any) that intersects a line segment
+
+        Parameters
+        ------------
+        near: (N, 3) array
+            Start of the line segment
+        far: (N, 3) array
+            end of the line segment
+
+        Returns
+        --------
+        indices: (M, 2) array
+            Pairs of indices with the line segment index and the triangle index
+        intercpt_pos (M, 3) array:
+            Positions where the interceptions occur
+        '''
+        # Using CGAL AABB https://doc.cgal.org/latest/AABB_tree/index.html
+        if near.ndim == 1:
+            near = near[None, :]
+        if far.ndim == 1:
+            far = far[None, :]
+        if not (near.shape[1] == 3 and far.shape[1] == 3):
+            raise ValueError('near and far points should be arrays of size (N, 3)')
+
+        indices, points = cgal.segment_triangle_intersection(
+            self.nodes[:],
+            self.tr_nodes,
+            near, far
+        )
+        # if len(indices) > 0:
+        #     indices[:, 1] = self.elm.triangles[indices[:, 1]]
+
+        return indices, points
