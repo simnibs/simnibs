@@ -56,7 +56,7 @@ class OnlineFEM:
     """
     # TODO: replace Coil class with new concepts
     # TODO: move roi.calc_fields method from ROI to OnlineFEM
-    def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
+    def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options="pardiso", fn_results=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None):
         """
         Constructor of the OnlineFEM class
@@ -91,8 +91,8 @@ class OnlineFEM:
         # False: interpolate the dadt field using positions (coordinates) of nodes
         self.useElements = useElements
 
-        if solver_options is None:
-            self.solver_options = "pardiso"
+        if solver_options != "pardiso":
+            self.solver_options = ""
         else:
             self.solver_options = solver_options
 
