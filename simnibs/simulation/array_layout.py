@@ -659,9 +659,8 @@ class ElectrodeArray():
         circular electrodes, the angle will not be optimized.
     """
 
-    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
+    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None, ele_id=None):
         self.channel_id = channel_id
-        self.ele_id = ele_id
         self.array_center = np.array([0, 0])
         self.center = center
         self.radius = radius
@@ -678,6 +677,11 @@ class ElectrodeArray():
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
         self.electrode_pos = None
+
+        if ele_id is None:
+            self.ele_id = np.arange(self.n_ele)
+        else:
+            self.ele_id = ele_id
 
         if current is None:
             self.current = 1/self.n_ele * np.ones(self.n_ele)
@@ -1152,6 +1156,9 @@ class CircularArray(ElectrodeMaster):
                  current=None, current_estimator_method=None,
                  dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
 
+        if type(current) is int or type(current) is float:
+            current = [current]
+
         if radius_outer is None:
             radius_outer = radius_inner
 
@@ -1225,8 +1232,13 @@ class CircularArray(ElectrodeMaster):
 
         if current is None:
             self.current = np.hstack((1, -1/(self.n_ele-1) * np.ones(self.n_ele-1)))
+        elif self.free_geometry[2]:
+            self.current = np.hstack((current[0], -current[0]/(self.n_ele-1) * np.ones(self.n_ele-1)))
         else:
             self.current = current
+
+        if len(self.current) != self.n_ele:
+            self.current = np.hstack((self.current[0], -self.current[0] / (self.n_ele - 1) * np.ones(self.n_ele - 1)))
 
         if np.abs(np.sum(self.current)) > 1e-12:
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")

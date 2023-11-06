@@ -2890,7 +2890,7 @@ class TESoptimize():
 
         # relabel internal air
         self.mesh_relabel = relabel_internal_air(m=self.mesh,
-                                                 subpath=os.path.split(self.mesh.fn)[0],
+                                                 subpath=self.subpath,
                                                  label_skin=1005,
                                                  label_new=1099,
                                                  label_internal_air=501)

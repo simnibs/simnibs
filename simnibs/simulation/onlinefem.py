@@ -148,7 +148,8 @@ class OnlineFEM:
         if method == "TES" and electrode is None:
             raise AssertionError("Please provide TES electrode object for TES simulations.")
 
-    def update_field(self, electrode=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None):
+    def update_field(self, electrode=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None,
+                     dirichlet_correction=False):
         """
         Calculating and updating electric field for given coil position (matsimnibs) for TMS or electrode position (TES)
 
@@ -168,6 +169,8 @@ class OnlineFEM:
             Rate of change of coil current (A/s) (e.g. 1 A/us = 1e6 A/s)
         fn_electrode_txt : str, optional, default: None
             Filename of .txt file containing the electrode node coords and the optimized currents
+        dirichlet_correction : bool, optional, default: False
+            Apply iterative Dirichlet correction to ensure same voltage over the whole electrode when solving.
 
         Returns
         -------
@@ -201,9 +204,8 @@ class OnlineFEM:
 
             # solve for potential
             ############################################################################################################
-            if self.method == "TES" and self.dirichlet_correction:
-                self.v = self.solve_dirichlet_correction(b=self.b,
-                                                         electrode=electrode[i_sim],
+            if self.method == "TES" and dirichlet_correction:
+                self.v = self.solve_dirichlet_correction(electrode=electrode[i_sim],
                                                          fn_electrode_txt=fn_electrode_txt)
             else:
                 self.v = self.solve(b=self.b)
@@ -247,8 +249,8 @@ class OnlineFEM:
 
         Parameters
         ----------
-        electrode :
-
+        electrode : ElectrodeArrayPair or CircularArray object instance
+            Electrode
         matsimnibs : np.array of float [4 x 4]
             Matrix containing the coil position and orientation in SimNIBS space.
 
@@ -392,8 +394,6 @@ class OnlineFEM:
 
         Parameters
         ----------
-        b : np.array of float [n_nodes]
-            Right hand side of equation system (with Dirichlet node)
         electrode : CircularArray or ElectrodeArrayPair instance
             Electrode
         fn_electrode_txt : str, optional, default: None
@@ -411,7 +411,7 @@ class OnlineFEM:
 
         electrode.compile_node_arrays()
 
-        n_nodes_total = electrode.node_coords.shape[0]
+        n_nodes_total = electrode.node_current.shape[0]
 
         # update rhs
         b = self.set_rhs(electrode=electrode)

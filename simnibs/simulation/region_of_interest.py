@@ -267,7 +267,7 @@ class RegionOfInterest:
         self.triangles_normals = None
         self.vol = None
         self.n_center = None
-        self.gradient = None
+        self.gradient = gradient
 
         if type(self.center) is list:
             self.center = np.array(self.center)
