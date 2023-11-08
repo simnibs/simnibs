@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>How to manually edit a head model &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=fac7b16c"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
+    <link rel="prev" title="How to create and use a custom mesh" href="custom_meshing.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="custom_meshing.html" title="Previous document">How to create and use a custom mesh</a>
+        </li>
+        <li>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="how-to-manually-edit-a-head-model">
+<span id="fixheadmodel-tutorial"></span><h1>How to manually edit a head model<a class="headerlink" href="#how-to-manually-edit-a-head-model" title="Link to this heading">¶</a></h1>
+<p class="linemarker linemarker-6">This example demonstrates how to manually edit a head model to improve the results of the automated segmentation pipeline or to add additional tissue types, e.g. to model pathologies.</p>
+<section id="edit-the-label-image">
+<h2>1) Edit the label image<a class="headerlink" href="#edit-the-label-image" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-10">We need to edit the label image “tissue_labeling_upsampled.nii.gz” in the subfolder “label_prep” of the m2m-folder of the subject. It’s a good idea to make a copy of the image before editing it:</p>
+<img alt="../../_images/tutorial_fixheadmodel_1_makecopy.png" class="align-center" src="../../_images/tutorial_fixheadmodel_1_makecopy.png" />
+<p class="linemarker linemarker-15">Afterwards, use an editor of your choice, your custom script or whatever you prefer to update the label image. Here, I’ve manually added “SimNIBS” using a new tissue type 15. This was done using FreeSurfer’s freeview and a few lines in python to extend the thickness of the letters in anterior-posterior direction (code not listed here):</p>
+<img alt="../../_images/tutorial_fixheadmodel_2_edit.png" class="align-center" src="../../_images/tutorial_fixheadmodel_2_edit.png" />
+</section>
+<section id="recreate-the-mesh">
+<h2>2) Recreate the mesh<a class="headerlink" href="#recreate-the-mesh" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-22">Next, we need to update the head mesh by running on the command line:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">charm ernie --mesh</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+<section id="check-the-updated-mesh">
+<h2>3) Check the updated mesh<a class="headerlink" href="#check-the-updated-mesh" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-30">The updated head mesh can be checked by clicking on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject), or alternatively with gmsh:</p>
+<img alt="../../_images/tutorial_fixheadmodel_3_check.png" class="align-center" src="../../_images/tutorial_fixheadmodel_3_check.png" />
+</section>
+<section id="run-simulations">
+<h2>1) Run simulations<a class="headerlink" href="#run-simulations" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-37">When the manual edit only updated existing tissue labels, e.g. to improve the automatic segmentation results, the simulations can be run as usual using the GUI or python and matlab scripts. In case new tissue labels were added (tissue type 15 in this example), we have to define its conductivity:</p>
+<ul>
+<li><p class="linemarker linemarker-39"><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="n">S</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="n">S</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
+<span class="n">S</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;simu&#39;</span>
+<span class="n">S</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="s1">&#39;eEjJ&#39;</span>  <span class="c1"># save e-field and current density</span>
+
+<span class="c1"># add a TDCS simulation</span>
+<span class="n">tdcs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">currents</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">]</span>  <span class="c1"># Current flow though each channel (A)</span>
+
+<span class="c1"># the new tissue was added using label number 15.</span>
+<span class="c1"># We need to assign a conductivity to this tissue label.</span>
+<span class="c1"># Note: Python indexing starts with 0, thus the conductivity has</span>
+<span class="c1">#       to be assigned to index 14 of the conductivity list</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">10</span> <span class="c1"># [S/m]</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;simnibs&#39;</span>
+
+<span class="n">electrode1</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;FC5&#39;</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;ellipse&#39;</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="n">electrode1</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">electrode2</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;FC6&#39;</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;ellipse&#39;</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="n">electrode2</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Run simulation</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="linemarker linemarker-79"><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;simu&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">fields</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;eEjJ&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% save e-field and current density</span>
+
+<span class="c">% add a TDCS simulation</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">1e-3</span><span class="p">];</span><span class="w"> </span><span class="c">% Current going through each channel, in Ampere</span>
+
+<span class="c">% the new tissue was added using label number 15.</span>
+<span class="c">% We need to assign a conductivity to this tissue label.</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">15</span><span class="p">).</span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="c">% in S/m</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">15</span><span class="p">).</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;simnibs&#39;</span><span class="p">;</span>
+
+<span class="c">% define first electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;FC5&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+
+<span class="c">% define second electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;FC6&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ellipse&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+
+<span class="c">% Run simulation</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p class="linemarker linemarker-115">The simulation results with the new tissue:</p>
+<img alt="../../_images/tutorial_fixheadmodel_4_runsimu.png" class="align-center" src="../../_images/tutorial_fixheadmodel_4_runsimu.png" />
+</section>
+<section id="further-notes">
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p class="linemarker linemarker-122">Tissue labels have to be lower than 99</p></li>
+<li><p class="linemarker linemarker-123">Please see <a class="reference internal" href="../../documentation/command_line/add_tissues_to_upsampled.html#add-tissues-to-upsampled-doc"><span class="std std-ref">add_tissues_to_upsampled</span></a> for an example on how to upsample a custom volume mask from the original resolution of the T1 image to the resolution of the “tissue_labeling_upsampled.nii.gz” image</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="custom_meshing.html" title="Previous document">How to create and use a custom mesh</a>
+        </li>
+        <li>
+          <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tms_optimization.html">TMS Optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../tutorial.html">Tutorial</a><ul>
+  <li><a href="advanced.html">Advanced Features</a><ul>
+      <li>Previous: <a href="custom_meshing.html" title="previous chapter">How to create and use a custom mesh</a></li>
+      <li>Next: <a href="../win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../_sources/tutorial/advanced/fix_headmodel.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>SimNIBS 4 &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
+    <script src="_static/documentation_options.js?v=fac7b16c"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation/installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          <a href="installation/installation.html" title="Next document">Installation</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="simnibs-4">
+<h1>SimNIBS 4<a class="headerlink" href="#simnibs-4" title="Link to this heading">¶</a></h1>
+<p class="linemarker linemarker-9"><strong>SimNIBS 4</strong> is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).</p>
+<p class="linemarker linemarker-11">A SimNIBS workflow consists of three main parts:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p class="linemarker linemarker-13"><a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">Generate high-quality head models</span></a> from MR images.</p></li>
+<li><p class="linemarker linemarker-15">Set up and run simulation using our fast FEM solvers in the <a class="reference internal" href="tutorial/gui.html#gui-tutorial"><span class="std std-ref">graphical user interface</span></a>, or via <a class="reference internal" href="tutorial/scripting.html#scripting-tutorial"><span class="std std-ref">MATLAB or Python scripts</span></a>.</p></li>
+<li><p class="linemarker linemarker-17"><a class="reference internal" href="tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">Visualize simulation results</span></a>, and easily transform them to <em>FsAverage</em> or <em>MNI</em> space via in-built functions.</p></li>
+</ul>
+</div></blockquote>
+<p class="linemarker linemarker-19">SimNIBS offers several advanced options such as <a class="reference internal" href="tutorial/tms_optimization.html#tms-optimize"><span class="std std-ref">Optimizations of TMS coil positions</span></a>, or TES optimizations for <a class="reference internal" href="tutorial/optimization.html#tdcs-opt"><span class="std std-ref">single and multiple targets</span></a> and <a class="reference internal" href="tutorial/advanced/tdcs_distributed_opt.html#tdcs-distributed-opt"><span class="std std-ref">brain network targeting</span></a>.</p>
+<embed>
+<style>
+.slideshow {
+  position: relative;
+  width: 100%;
+  height: 30vh;
+  background-color: #fff;
+  }
+.slideshow > div {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url();
+  position: absolute;
+  opacity: 0;
+  animation-name: fading-slideshow;
+  animation-iteration-count: infinite;
+  animation-duration: 12s;
+  animation-delay: 0s;
+  }
+.slideshow > div:nth-of-type(2) {
+  animation-delay: 6s;
+  }
+@keyframes fading-slideshow {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  50% { opacity: 1; }
+  60% { opacity: 0; }
+  }
+}
+</style>
+<a href="gallery.html">
+<div class="slideshow">
+  <div id="bgimg1";></div>
+  <div id="bgimg2";></div>
+</div>
+<script type="text/javascript" src=_static/gallery/list.js></script>
+<script type="text/javascript">
+  let shuffled = filelist
+              .map(value => ({ value, sort: Math.random() }))
+              .sort((a, b) => a.sort - b.sort)
+              .map(({ value }) => value)
+      document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+filelist[0]+")";
+      document.getElementById("bgimg2").style="background-image:url(_static/gallery/"+shuffled[0]+")"
+      i=0
+      setTimeout( function myRefresh2(){
+              i=i+1;
+              if (i >= shuffled.length) { i=0; }
+              document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+              , 12000); /* time point for changing bgimg1 */
+      setInterval( function myRefresh(){
+              setTimeout( function myRefresh1(){
+                      i=i+1;
+                      if (i >= shuffled.length) { i=0; }
+                      document.getElementById("bgimg2").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+              , 6000); /* time point for changing bgimg2 */
+              setTimeout( function myRefresh2(){
+              i=i+1;
+              if (i >= shuffled.length) { i=0; }
+              document.getElementById("bgimg1").style="background-image:url(_static/gallery/"+shuffled[i]+")"}
+              , 12000);} /* time point for changing bgimg1 */
+      , 12000);
+</script>
+</embed><style>
+* {
+  box-sizing: border-box;
+}
+div {
+  text-align: left;
+}
+.column {
+  float: left;
+  width: 50%;
+  padding: 10px;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+</style>
+<div class="row">
+<div class="column">
+SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research Centre for Magnetic Resonance (DRCMR)</a> and the <a href="https://www.dtu.dk/english">Technical University of Denmark (DTU)</a>, in collaboration with <a href="contributors.html" >external partners</a>
+</div>
+<div class="column">
+<a href="https://www.drcmr.dk"><img src="_static/DRCMR_logo.png" alt="DRCMR", height="70"></a>
+<a href="https://www.dtu.dk/english"><img src="_static/DTU_logo.png" alt="DTU", height="70"></a>
+</div>
+</div><p class="linemarker linemarker-122">SimNIBS is copyrighted © by its <a class="reference internal" href="contributors.html#contributors"><span class="std std-ref">authors</span></a> and licensed under <a class="reference download internal" download="" href="_downloads/0b3c60fa81bcf8314682446572b4c00c/LICENSE.txt"><code class="xref download docutils literal notranslate"><span class="pre">GPL</span> <span class="pre">v3</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-125">When you publish results based on SimNIBS, please cite <a class="reference external" href="http://dx.doi.org/10.1109/EMBC.2015.7318340">Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy</a></p>
+<p class="linemarker linemarker-127">Please see <a class="reference internal" href="publications.html#publications"><span class="std std-ref">our publications</span></a> for details about the SimNIBS modules.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p class="linemarker linemarker-129">SimNIBS is a research tool. Clinical usage is not supported or advised. In particular, SimNIBS was not tested to give accurate results in the presence of pathological condition</p>
+</div>
+</section>
+<section id="news">
+<h1>News<a class="headerlink" href="#news" title="Link to this heading">¶</a></h1>
+<blockquote>
+<div><ul class="simple">
+<li><p class="linemarker linemarker-137">Version 4.1.0 improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes</p></li>
+<li><p class="linemarker linemarker-138"><strong>Version 4.0.0</strong> is a major update that introduces our new head modeling approach <a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">charm</span></a>. In contrast to the previous methods, <em>charm</em> does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by <em>charm</em> are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.</p></li>
+<li><p class="linemarker linemarker-139"><em>Charm</em> replaces the previous methods <em>mri2mesh</em> and <em>headreco</em> which are discontinued. Use the tool <a class="reference internal" href="documentation/command_line/convert_3_to_4.html#convert-3-to-4"><span class="std std-ref">convert_3_to_4</span></a> to convert old head models for use in SimNIBS4 simulations.</p></li>
+<li><p class="linemarker linemarker-140">Further major new features are the inclusion of <a class="reference internal" href="documentation/coils.html#coil-fies"><span class="std std-ref">many new TMS coil models</span></a> and a <a class="reference internal" href="tutorial/advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">flexible meshing approach</span></a> to simplify manual editing and inclusion of custom tissue types in the head mesh. Basic I/O functions for <a class="reference internal" href="documentation/neuronavigation/neuronavigation.html#nnav-docs"><span class="std std-ref">neuronavigation data</span></a> are now also available in python.</p></li>
+</ul>
+</div></blockquote>
+<p class="linemarker linemarker-142">Please see details in the <a class="reference internal" href="changelog.html#changelog"><span class="std std-ref">changelog</span></a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          <a href="installation/installation.html" title="Next document">Installation</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="#">
+    <img class="logo" src="_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="installation/installation.html" title="next chapter">Installation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

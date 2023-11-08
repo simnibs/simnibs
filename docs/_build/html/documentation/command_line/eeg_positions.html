@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>eeg_positions &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=fac7b16c"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="meshmesh" href="meshmesh.html" />
+    <link rel="prev" title="simnibs_python" href="simnibs_python.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs_python.html" title="Previous document">simnibs_python</a>
+        </li>
+        <li>
+          <a href="meshmesh.html" title="Next document">meshmesh</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="eeg-positions">
+<span id="eeg-positions-doc"></span><h1>eeg_positions<a class="headerlink" href="#eeg-positions" title="Link to this heading">¶</a></h1>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-9">Calculates the 10/10 EEG positions based on 4 fiducial points based on the UI 10/10 definition provided in (<a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2006.09.024">Jurcak et al., 2007</a>).⁠</p>
+</section>
+<section id="usage-example">
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p class="linemarker linemarker-14">Open a terminal and go to the directory of the “Ernie” example data set.</p></li>
+<li><p class="linemarker linemarker-15">Open the mesh file in the GUI</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>simnibs_gui<span class="w"> </span>ernie.msh
+</pre></div>
+</div>
+<p class="linemarker linemarker-21"></p>
+<ol class="arabic simple" start="3">
+<li><p class="linemarker linemarker-23">Visually determine the positions of the nazion (Nz), left preauricular point (LPA), right preauricular point (RPA) and inion (Iz) on the skin surface and click on them to get their positions. Write down the coordinates displayed in the bottom of the window.</p></li>
+<li><p class="linemarker linemarker-25">Run using the coordinates taken in step 3</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>eeg_positions<span class="w"> </span>-m<span class="w"> </span>ernie.msh<span class="w"> </span>-o<span class="w"> </span>ernie_10_10<span class="w"> </span>-Nz<span class="w"> </span><span class="m">1</span>.6<span class="w"> </span><span class="m">97</span>.1<span class="w"> </span><span class="m">3</span>.4<span class="w"> </span>-LPA<span class="w"> </span>-82.2<span class="w"> </span>-14.3<span class="w"> </span>-22.2<span class="w"> </span>-Iz<span class="w"> </span>-4.8<span class="w"> </span>-108.8<span class="w"> </span>-32.7<span class="w"> </span>-RPA<span class="w"> </span><span class="m">79</span>.7<span class="w"> </span>-18.9<span class="w"> </span>-24.6
+</pre></div>
+</div>
+<p class="linemarker linemarker-31"></p>
+<ol class="arabic simple" start="5">
+<li><p class="linemarker linemarker-33">Two files will be created: <code class="file docutils literal notranslate"><span class="pre">ernie_10_10.csv</span></code> and <code class="file docutils literal notranslate"><span class="pre">ernie_10_10.geo</span></code></p></li>
+<li><p class="linemarker linemarker-35">Check the positions by opening the mesh file in Gmsh, going to <em>File</em> →  <em>Merge</em> and opening the <code class="file docutils literal notranslate"><span class="pre">ernie_10_10.geo</span></code> file for a visual check of the electrode positions</p></li>
+<li><p class="linemarker linemarker-37"><code class="file docutils literal notranslate"><span class="pre">ernie_10_10.csv</span></code> is a text file containing names and positions of the EEG electrodes. For now, you have to manually enter these coordinates when defining electrodes in simnibs_gui. Alternatively, you can write your own matlab- or python-script that uses the positions to create a .mat-file with the simulation information.</p></li>
+</ol>
+</section>
+<section id="further-notes">
+<h2>Further notes<a class="headerlink" href="#further-notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p class="linemarker linemarker-42">We have compared positions obtained using this procedure against positions automatically obtained from MNI electrodes definitions and found no large differences (<a class="reference external" href="https://doi.org/10.1101/500314">Saturnino et al., 2018</a>). The later are automatically calculated during our head meshing programs <strong>headreco</strong> and <strong>mri2mesh</strong> and stored in the <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/eeg_positions/EEG10-10_UI_Jurak_2007.csv</span></code> file.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs_python.html" title="Previous document">simnibs_python</a>
+        </li>
+        <li>
+          <a href="meshmesh.html" title="Next document">meshmesh</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="command_line.html">Command Line Tools</a><ul>
+      <li>Previous: <a href="simnibs_python.html" title="previous chapter">simnibs_python</a></li>
+      <li>Next: <a href="meshmesh.html" title="next chapter">meshmesh</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../_sources/documentation/command_line/eeg_positions.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
