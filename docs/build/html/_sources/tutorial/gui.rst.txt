@@ -131,7 +131,7 @@ Setting up a TMS Simulation
    :align: center
 
 \
-5. You can select the coil position the same way as an electrode position, or alternatively by double-clicking in the head model. In the TMS case, the y-axis where the coil is pointing. Here, we will click on the *Gray Matter* button above the model window and place the coil above the motor cortex, with the green axis pointing anteriorly. This means that the coil handle points posteriorly. :download:`See here for more information on coil coordinates <../data/coil_axesorientation.pdf>` .
+5. You can select the coil position the same way as an electrode position, or alternatively by double-clicking on the head model. In the TMS case, the *y*-axis (green) indicates the direction of the coil handle. Here, we will click on the *Gray Matter* button above the model window and place the coil above the motor cortex, with the green axis pointing anteriorly. This means that the coil handle points posteriorly. :download:`See here for more information on coil coordinates <../data/coil_axesorientation.pdf>` .
 
 .. image:: ../images/tutorial_coilpos.png
    :align: center

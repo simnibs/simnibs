@@ -60,10 +60,10 @@ Attributes
 
 * **pos_ydir**: *list/array of floats or string/character array (Python/MATLAB)*
 
-  * **Description**: Position along the electrode's y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position
+  * **Description**: Position along the electrode's *y*-axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position
   * **Example**: *Python/MATLAB*
 
-    To set-up an electrode centered at AF4 and with a y axis pointing laterally, you can use
+    To set-up an electrode centered at AF4 and with a *y*-axis pointing laterally, you can use
 
     .. code-block:: python
 
