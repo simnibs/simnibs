@@ -107,7 +107,7 @@ def main():
         # I have a parallel implementation here
         fn_atlas = os.path.join(
             file_finder.templates.atlases_surfaces,
-            f"{hemi}.aparc_{args.atlas}.freesurfer.annot",
+            f"{hemi}.aparc_{args.atlas}.annot",
         )
         labels, colors, names = nibabel.freesurfer.io.read_annot(fn_atlas)
 

@@ -284,6 +284,7 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "intersectPoints": [[4.0, 4.0, 4.0]],
             },
         ],
+        "selfIntersectionTest": [[0, 1], [1, 2, 3]],
     }
     return coil_dict
 
@@ -344,41 +345,41 @@ def full_tcd_coil() -> TmsCoil:
             )
         ],
     )
+    elements = [
+        DipoleElements(
+            stimulator,
+            np.array([[1.1, 2.1, 3.1]]),
+            np.array([[100.1, 101.1, 102.1]]),
+            "Dipole Elements",
+            coil_casings[1],
+            [deformations[0]],
+        ),
+        LineSegmentElements(
+            stimulator,
+            np.array([[1.2, 2.2, 3.2]]),
+            np.array([[100.2, 101.2, 102.2]]),
+            "Line Elements",
+            coil_casings[2],
+            [deformations[0], deformations[1]],
+        ),
+        SampledGridPointElements(
+            stimulator,
+            np.array([[[[1.4, 2.4, 3.4]]]]),
+            np.array([[1, 0, 0, 1.4], [0, 1, 0, 1.4], [0, 0, 1, 1.4], [0, 0, 0, 1]]),
+            "Digitized Grid Elements",
+            coil_casings[3],
+            [deformations[2], deformations[3]],
+        ),
+    ]
     coil = TmsCoil(
-        [
-            DipoleElements(
-                stimulator,
-                np.array([[1.1, 2.1, 3.1]]),
-                np.array([[100.1, 101.1, 102.1]]),
-                "Dipole Elements",
-                coil_casings[1],
-                [deformations[0]],
-            ),
-            LineSegmentElements(
-                stimulator,
-                np.array([[1.2, 2.2, 3.2]]),
-                np.array([[100.2, 101.2, 102.2]]),
-                "Line Elements",
-                coil_casings[2],
-                [deformations[0], deformations[1]],
-            ),
-            SampledGridPointElements(
-                stimulator,
-                np.array([[[[1.4, 2.4, 3.4]]]]),
-                np.array(
-                    [[1, 0, 0, 1.4], [0, 1, 0, 1.4], [0, 0, 1, 1.4], [0, 0, 0, 1]]
-                ),
-                "Digitized Grid Elements",
-                coil_casings[3],
-                [deformations[2], deformations[3]],
-            ),
-        ],
+        elements,
         "SimNIBS-TMS-Coil",
         "SimNIBS",
         "V1",
         np.array([[0, 255], [0, 255], [0, 255]]),
         np.array([1, 1, 1]),
         coil_casings[0],
+        [[0, 1], [1, 2, 3]],
     )
     return coil
 
@@ -454,6 +455,70 @@ def small_functional_3_element_coil() -> TmsCoil:
 
     return coil
 
+@pytest.fixture(scope="module")
+def small_self_intersecting_2_element_coil() -> TmsCoil:
+    casings = [
+        TmsCoilModel(
+            Msh(
+                Nodes(
+                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0], [0, 0, 20]])
+                ),
+                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
+            ),
+            None,
+            None,
+        ),
+        TmsCoilModel(
+            Msh(
+                Nodes(
+                    np.array([[-2, -2, 0], [-2, 2, 0], [2, -2, 0], [2, 2, 0], [0, 0, 2]]) + np.array([0, 0, 10])
+                ),
+                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
+            ),
+            None,
+            None,
+        ),
+    ]
+    deformations = [
+        TmsCoilTranslation(
+            TmsCoilDeformationRange(0, (-30, 30)),
+            0
+        ),
+        TmsCoilTranslation(
+            TmsCoilDeformationRange(0, (-30, 30)),
+            2
+        ),
+        TmsCoilTranslation(
+            TmsCoilDeformationRange(0, (-30, 30)),
+            0
+        ),
+        TmsCoilTranslation(
+            TmsCoilDeformationRange(0, (-30, 30)),
+            2
+        ),
+    ]
+    stimulator = TmsStimulator("SimNIBS-Stimulator")
+    coil = TmsCoil(
+        [
+            LineSegmentElements(
+                stimulator,
+                np.array([[0, -10, 0], [10, 10, 0], [-10, 10, 0]]),
+                casing=casings[0],
+                deformations=[deformations[0], deformations[1]]
+            ),
+            LineSegmentElements(
+                stimulator,
+                np.array([[0, -1, 10], [1, 1, 10], [-1, 1, 10]]),
+                casing=casings[1],
+                deformations=[deformations[2], deformations[3]]
+            ),
+        ],
+        limits=np.array([[-200, 200], [-200, 200], [-200, 200]]),
+        resolution=np.array([10, 10, 10]),
+        self_intersection_test=[[1,2]]
+    )
+
+    return coil
 
 @pytest.fixture(scope="module")
 def tcd_json_schema():

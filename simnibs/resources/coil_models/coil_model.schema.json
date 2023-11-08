@@ -525,6 +525,18 @@
 				"additionalProperties": false
             },
             "minItems": 1
+        },
+        "selfIntersectionTest": {
+            "description": "A list of sets of coil element indexes, each set describes a group of coil elements that should not be intersecting",
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "number"
+                },
+                "minItems": 2
+            },
+            "minItems": 1    
         }
     },
     "required": [
