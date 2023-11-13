@@ -16,6 +16,7 @@ from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.gmsh_view import Visualization, _gray_red_lightblue_blue_cm
 from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
+from simnibs.simulation.region_of_interest import RegionOfInterest
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
@@ -34,6 +35,7 @@ from simnibs.simulation.tms_coil.tms_coil_element import (
 from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator, TmsWaveform
 from simnibs.utils import file_finder
+from simnibs.utils.mesh_element_properties import ElementTags
 
 
 class TmsCoil(TcdElement):
@@ -226,14 +228,41 @@ class TmsCoil(TcdElement):
             The dA/dt field in V/m at every node of the mesh
         """
         target_positions = msh.nodes.node_coord
-        A = np.zeros_like(target_positions)
-        for coil_element in self.elements:
-            A += coil_element.get_da_dt(target_positions, coil_affine, eps)
+        A = self.get_da_dt_at_coordinates(target_positions, coil_affine, eps)
 
         node_data_result = NodeData(A)
         node_data_result.mesh = msh
 
         return node_data_result
+    
+    def get_da_dt_at_coordinates(
+        self,
+        coordinates: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+    ) -> npt.NDArray[np.float_]:
+        """Calculate the dA/dt field applied by the coil at each node of the mesh.
+        The dI/dt value used for the simulation is set by the stimulators.
+
+        Parameters
+        ----------
+        coordinates : npt.NDArray[np.float_] (N x 3)
+            The coordinates at which the dA/dt field should be calculated
+        coil_affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        NodeData
+            The dA/dt field in V/m at every coordinate
+        """
+        A = np.zeros_like(coordinates)
+        for coil_element in self.elements:
+            A += coil_element.get_da_dt(coordinates, coil_affine, eps)
+
+        return A
 
     def get_a_field(
         self,
@@ -2140,6 +2169,225 @@ class TmsCoil(TcdElement):
         if len(global_deformations) > 0:
             for global_deformation in global_deformations:
                 for coil_element in self.elements:
+                    coil_element.deformations.remove(global_deformation)
+                result_affine = global_deformation.as_matrix() @ result_affine
+        result_affine = affine.astype(float) @ result_affine
+
+        return initial_cost, optimized_cost, result_affine
+
+
+    def optimize_e_mag(
+        self,
+        head_mesh: Msh,
+        region_of_interest_element_mask: npt.NDArray[np.bool_],
+        affine: npt.NDArray[np.float_],
+        coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+        coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    ) -> tuple[float, float, npt.NDArray[np.float_]]:
+        """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
+        and the min distance points (if not present, the coil casing points) while preventing intersections of the
+        optimization_surface and the intersect points (if not present, the coil casing points)
+
+        Parameters
+        ----------
+        optimization_surface : Msh
+            The surface the deformations have to be optimized for
+        affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+            If the global coil position is supposed to be optimized as well, these ranges in the format
+            [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
+            and the updated affine coil transformation is returned, by default None
+        coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+            If the global coil rotation is supposed to be optimized as well, these ranges in the format
+            [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
+            and the updated affine coil transformation is returned, by default None
+
+        Returns
+        -------
+        tuple[float, float, npt.NDArray[np.float_]]
+            The initial cost, the cost after optimization
+            and the affine matrix. If coil_translation_ranges is None than it's the input affine,
+            otherwise it is the optimized affine.
+
+        Raises
+        ------
+        ValueError
+            If the coil has no deformations to optimize
+        ValueError
+            If the coil has no coil casing and no min distance points and no intersection points
+        ValueError
+            If an initial intersection between the intersect points (if not present, the coil casing points) and the optimization_surface is detected
+        """
+        from simnibs.simulation.onlinefem import OnlineFEM
+
+        coil_sampled = self.as_sampled()
+        coil_deformation_ranges = coil_sampled.get_deformation_ranges()
+
+        if (
+            len(coil_deformation_ranges) == 0
+            and coil_translation_ranges is None
+            and coil_rotation_ranges is None
+        ):
+            raise ValueError(
+                "The coil has no deformations to optimize the coil element positions with."
+            )
+
+        if not np.any([np.any(arr) for arr in coil_sampled.get_casing_coordinates()]):
+            raise ValueError(
+                "The coil has no coil casing or min_distance/intersection points."
+            )
+
+        element_distances = {}
+        for intersection_element in list(
+            set(np.array(coil_sampled.self_intersection_test).flat)
+        ):
+            if intersection_element.casing is not None:
+                (
+                    element_distances[intersection_element],
+                    _,
+                ) = intersection_element.casing.mesh.get_min_distance_on_grid()
+
+        global_deformations = []
+        if coil_rotation_ranges is not None:
+            if coil_rotation_ranges[0, 0] != coil_rotation_ranges[0, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[0, 0], coil_rotation_ranges[0, 1])
+                        ),
+                        [0, 0, 0],
+                        [1, 0, 0],
+                    )
+                )
+
+            if coil_rotation_ranges[1, 0] != coil_rotation_ranges[1, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[1, 0], coil_rotation_ranges[1, 1])
+                        ),
+                        [0, 0, 0],
+                        [0, 1, 0],
+                    )
+                )
+
+            if coil_rotation_ranges[2, 0] != coil_rotation_ranges[2, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[2, 0], coil_rotation_ranges[2, 1])
+                        ),
+                        [0, 0, 0],
+                        [0, 0, 1],
+                    )
+                )
+
+        if coil_translation_ranges is not None:
+            if coil_translation_ranges[0, 0] != coil_translation_ranges[0, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[0, 0],
+                                coil_translation_ranges[0, 1],
+                            ),
+                        ),
+                        0,
+                    )
+                )
+            if coil_translation_ranges[1, 0] != coil_translation_ranges[1, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[1, 0],
+                                coil_translation_ranges[1, 1],
+                            ),
+                        ),
+                        1,
+                    )
+                )
+
+            if coil_translation_ranges[2, 0] != coil_translation_ranges[2, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[2, 0],
+                                coil_translation_ranges[2, 1],
+                            ),
+                        ),
+                        2,
+                    )
+                )
+
+        for global_deformation in global_deformations:
+            coil_deformation_ranges.append(global_deformation.deformation_range)
+
+            for coil_element in coil_sampled.elements:
+                coil_element.deformations.append(global_deformation)
+
+        optimization_surface = head_mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
+        (
+            target_distance_function,
+            cost_surface_tree,
+        ) = optimization_surface.get_min_distance_on_grid()
+
+        roi = RegionOfInterest(head_mesh, center=head_mesh.elements_baricenters()[region_of_interest_element_mask][:1000])
+        fem = OnlineFEM(head_mesh, 'TMS', roi, coil=coil_sampled, dataType=[0])
+
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in coil_deformation_ranges]
+        )
+
+        def cost_f_x0_w(x):
+            for coil_deformation, deformation_setting in zip(
+                coil_deformation_ranges, x
+            ):
+                coil_deformation.current = deformation_setting
+            (
+                intersection_penalty,
+                distance_penalty,
+                self_intersection_penalty,
+            ) = coil_sampled._get_fast_deformation_scores(
+                target_distance_function, element_distances, affine
+            )
+
+            roi_e_field = fem.update_field(matsimnibs=affine)
+
+
+            f = (
+                100 * intersection_penalty
+                + (1000 / np.mean(roi_e_field))
+                + self_intersection_penalty
+            )
+
+            return f
+
+        initial_cost = cost_f_x0_w(initial_deformation_settings)
+
+        direct = opt.direct(
+            cost_f_x0_w,
+            bounds=[deform.range for deform in coil_deformation_ranges],
+            locally_biased=False,
+        )
+        best_deformation_settings = direct.x
+
+        for coil_deformation, deformation_setting in zip(
+            coil_deformation_ranges, best_deformation_settings
+        ):
+            coil_deformation.current = deformation_setting
+
+        optimized_cost = cost_f_x0_w(best_deformation_settings)
+
+        result_affine = np.eye(4)
+        if len(global_deformations) > 0:
+            for global_deformation in global_deformations:
+                for coil_element in coil_sampled.elements:
                     coil_element.deformations.remove(global_deformation)
                 result_affine = global_deformation.as_matrix() @ result_affine
         result_affine = affine.astype(float) @ result_affine

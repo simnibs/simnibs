@@ -11,6 +11,8 @@ from scipy import sparse
 from scipy.ndimage import zoom
 from scipy.optimize import minimize
 
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+
 from .fem import FEMSystem, get_dirichlet_node_index_cog, DirichletBC, dofMap, TDCSFEMDirichlet, TMSFEM, TDCSFEMNeumann
 from .sim_struct import SimuList
 from ..mesh_tools import Msh, mesh_io, read_msh
@@ -54,7 +56,6 @@ class OnlineFEM:
     dirichlet_node : int
         Index of dirichlet node (indexing starting with 1)
     """
-    # TODO: replace Coil class with new concepts
     # TODO: move roi.calc_fields method from ROI to OnlineFEM
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options=None, fn_results=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None):
@@ -135,10 +136,9 @@ class OnlineFEM:
 
             if coil is None:
                 # TODO: replace Coil class here
-                self.coil = Coil(filename=self.fn_coil,
-                                 logger=self.logger)
+                self.coil = TmsCoil.from_file(self.fn_coil)
                 # scale field to make it more appropriate for matrix solve
-                self.coil.a_field *= 1e9
+                # self.coil.a_field *= 1e9
 
                 if self.logger:
                     self.logger.info(f'Loaded coil from file: {self.fn_coil}')
@@ -219,7 +219,7 @@ class OnlineFEM:
                     self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType[i_roi])
 
                 if self.method == "TMS":
-                    self.e[i_sim][i_roi] *= didt * 1e-9
+                    self.e[i_sim][i_roi] *= didt
 
                 # TODO save e-fields outside this function?
                 # store results (overwrite if existing)
@@ -276,12 +276,10 @@ class OnlineFEM:
 
         elif self.method == "TMS":
             # determine magnetic vector potential
-            self.dadt = calculate_dadt(a_affine=self.coil.affine,
-                                       matsimnibs=matsimnibs,
-                                       coordinates=self.coordinates,
-                                       a_field=self.coil.a_field,
-                                       reshaped_node_numbers=self.reshaped_node_numbersT,
-                                       useElements=self.useElements)
+            self.dadt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, matsimnibs)
+            #reshaped_node_numbers=self.reshaped_node_numbersT,
+            #useElements=self.useElements
+            
             # isotropic
             if self.cond.ndim == 1:
                 # b = assemble_force_vector(force_integrals=self.force_integrals,
@@ -815,92 +813,6 @@ class OnlineFEM:
 
             self.fem.prepare_solver()
             self.solver = self.fem._solver
-
-
-class Coil:
-    """
-    Coil class for TMS calculations. Contains precalculated magnetic vector potential and resolution information.
-
-    Parameters
-    ----------
-    filename : str
-        Path to the coil file (.ccd or .nii format)
-    logger : logger object
-        Logger
-
-    Attributes
-    ----------
-    affine : np.array of float [4 x 4]
-        Affine matrix describing resolution, location and orientation of untransformed magnetic vector potential
-    a_field : np.array of float [3 x N_x x N_y x N_z]
-        Magnetic vector potential (A_x, A_y, A_z)
-    """
-    def __init__(self, filename, logger=None):
-        """
-        Constructor of Coil class
-        """
-        self.filename = filename
-
-        if not isinstance(filename, str):
-            raise NameError(
-                'Failed to parse input volume (not string or nibabel nifti1 volume)')
-
-        # load the A field and affine matrix
-        if filename.endswith('.nii.gz') or filename.endswith('.nii'):
-            # update the A field and affine matrix
-            coil = nib.load(filename)
-            A = np.moveaxis(np.asanyarray(coil.dataobj), -1, 0)
-            affine = coil.affine
-
-            if logger is not None:
-                logger.debug('Load A from coil file: ' + filename)
-        else:
-            raise ValueError('Coil file must be a nifti file')
-
-        self.a_field = np.asfortranarray(A)
-        self.affine = affine
-
-
-def calculate_dadt(a_affine, matsimnibs, coordinates, a_field, reshaped_node_numbers, useElements):
-    """
-    Interpolates the dadt field from a coil file.
-
-    Parameters
-    ----------
-    a_affine : np.array of float [4 x 4]
-        Affine matrix describing resolution, location and orientation of untransformed magnetic vector potential
-    matsimnibs : np.array of float [4 x 4]
-        Matrix containing the coil positions and orientations in SimNIBS space.
-    coordinates :
-
-    a_field : np.array of float [3 x N_x x N_y x N_z]
-        Magnetic vector potential (A_x, A_y, A_z)
-    reshaped_node_numbers : np.array of int [4 * n_elements + 1]
-        Flattened node number list (connectivity matrix)
-        node_numbers.reshape(-1)
-    useElements : bool
-        Get coordinates in the element centers (True) or of the nodes (False)
-
-    Returns
-    -------
-    dadt : np.array of float [3 x N_x x N_y x N_z]
-        Magnetic vector potential (A_x, A_y, A_z)
-    """
-
-    # Get the affine transformation from the "coordinates" to the coil space (defined in coil file)
-    trans = np.dot(pinv(a_affine), pinv(matsimnibs))
-    M1 = np.ascontiguousarray(trans[:3, :3])
-    t = np.ascontiguousarray(trans[:3, 3])
-    M2 = np.ascontiguousarray(matsimnibs[:3, :3])
-
-    if not useElements:
-        M2 *= 0.25
-        dadt = map_coord_lin_trans(a_field, coordinates, M1, t, M2)
-        dadt = node2elmf(dadt, reshaped_node_numbers)
-    else:
-        dadt = map_coord_lin_trans(a_field, coordinates, M1, t, M2).T
-
-    return dadt
 
 
 def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt):
