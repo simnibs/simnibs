@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Uncertainty Quantification &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=fac7b16c"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How to create and use a custom mesh" href="custom_meshing.html" />
+    <link rel="prev" title="TDCS Network Optimization" href="tdcs_distributed_opt.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
+        </li>
+        <li>
+          <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="uncertainty-quantification">
+<span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Link to this heading">¶</a></h1>
+<p class="linemarker linemarker-7">Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.</p>
+<p class="linemarker linemarker-9">For that reason, we introduced a way in SimNIBS to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
+<p class="linemarker linemarker-11">Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-17">In UQ via gPC, we quantify the uncertainty of the input variables (the conductivities) using a probability distribution.
+SimNIBS supports two types of conductivity distribution: Normal and Beta.</p>
+<p class="linemarker linemarker-20">After defining the uncertainty in the input variables, SimNIBS performs the UQ via gPC.
+In gPC, we build a polynomial representation of the output variable (such as the electric field), given the input variable.
+For SimNIBS, we developed an adaptive approach to select the polynomials to obtain fast convergence.
+At each step, the error is evaluated using a K-means cross-validation scheme. The iteration stops when a tolerance is reached.</p>
+<p class="linemarker linemarker-27">For more information on methodology, please see the supplementary material in  <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
+</section>
+<section id="setting-up-a-simulation-with-uq">
+<h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-34">It is simple to set-up a simulation with UQ. All you need to do is to set-up the  <strong>distribution_type</strong> and <strong>distribution_parameters</strong> parameters in the <a class="reference internal" href="../../documentation/sim_struct/cond.html#cond-struct-doc"><span class="std std-ref">COND</span></a> structures.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-36">As of now, UQ is only supported through scripting. For more information on scripts, please see <a class="reference internal" href="../scripting.html#scripting-tutorial"><span class="std std-ref">Scripting Simulations</span></a>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p class="linemarker linemarker-38">Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.</p>
+</div>
+<section id="python">
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS simulation in Python</span>
+<span class="sd">    Run with:</span>
+
+<span class="sd">    simnibs_python uncertainty_quantification.py</span>
+
+<span class="sd">    Copyright (C) 2019 Guilherme B Saturnino</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">run_simnibs</span>
+
+<span class="n">S</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
+<span class="n">S</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>
+<span class="n">S</span><span class="o">.</span><span class="n">pathfem</span> <span class="o">=</span> <span class="s1">&#39;tdcs_uq&#39;</span>
+
+<span class="n">tdcs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tdcslist</span><span class="p">()</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">currents</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.001</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.001</span><span class="p">]</span>
+
+<span class="c1"># Set-up the electrodes</span>
+<span class="n">mc_electrode</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;rect&#39;</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="n">mc_electrode</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">so_electrode</span> <span class="o">=</span> <span class="n">tdcs</span><span class="o">.</span><span class="n">add_electrode</span><span class="p">()</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">channelnr</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;AF4&#39;</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="s1">&#39;rect&#39;</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">70</span><span class="p">]</span>
+<span class="n">so_electrode</span><span class="o">.</span><span class="n">thickness</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Set-up the uncertain conductivities</span>
+<span class="c1"># White Matter</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.4</span><span class="p">]</span>
+<span class="c1"># Gray Matter</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.6</span><span class="p">]</span>
+<span class="c1"># Compact Bone</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tdcs</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="matlab">
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% example script that runs an Uncertainty Quantification analysis</span>
+<span class="c">% </span>
+<span class="c">% G. Saturnino, 2019</span>
+<span class="c">%</span>
+
+<span class="c">%% General information</span>
+
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;SESSION&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% subject folder</span>
+<span class="n">S</span><span class="p">.</span><span class="n">pathfem</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tdcs_uq&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">%Folder for the simulation output</span>
+
+<span class="c">%% Define tDCS simulation</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TDCSLIST&#39;</span><span class="p">);</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">currents</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.001</span><span class="p">];</span><span class="w"> </span><span class="c">% Current flow though each channel (mA)</span>
+
+<span class="c">%First Electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="c">% Connect the electrode to the first channel</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">% Place it over C3</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span><span class="w"> </span><span class="c">%Rectangular electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">];</span><span class="w"> </span><span class="c">% Dimension in mm</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"> </span><span class="c">% 4 mm thickness</span>
+
+<span class="c">%Second Electrode</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">channelnr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;AF4&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">shape</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;rect&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">dimensions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">,</span><span class="w"> </span><span class="mi">70</span><span class="p">];</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">electrode</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">thickness</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+
+<span class="c">% Set-up the uncertain conductivities</span>
+<span class="c">% White Matter</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">.1</span><span class="p">,</span><span class="w"> </span><span class="mf">.4</span><span class="p">];</span>
+<span class="c">% Gray Matter</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span><span class="p">;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">.1</span><span class="p">,</span><span class="w"> </span><span class="mf">.6</span><span class="p">];</span>
+<span class="c">% Compact Bone</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;beta&#39;</span>
+<span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">cond</span><span class="p">(</span><span class="mi">7</span><span class="p">).</span><span class="n">distribution_parameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mf">0.001</span><span class="p">,</span><span class="w"> </span><span class="mf">0.012</span><span class="p">];</span>
+
+<span class="c">%% Run Simulation</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="output-files">
+<h2>Output Files<a class="headerlink" href="#output-files" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-58">In the output folder of the examples above (the <code class="file docutils literal notranslate"><span class="pre">tdcs_uq/</span></code> folder) we have the output files</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_electrodes.msh</span></code></dt><dd><p class="linemarker linemarker-61">Head mesh (<em>Gmsh</em> format) with the electrodes</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.msh</span></code></dt><dd><p class="linemarker linemarker-63">Uncertainty quantification result in <em>Gmsh</em> format. There we have the data sets:</p>
+</dd>
+</dl>
+<ul class="simple">
+<li><dl class="simple">
+<dt><em>{Field Name}_mean</em></dt><dd><p class="linemarker linemarker-66">Mean of the probability distribution describing the uncertainty of the given field</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_std</em></dt><dd><p class="linemarker linemarker-68">Standard Deviation of the probability distribution describing the uncertainty of the given field</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_sensitivity_{N}</em></dt><dd><p class="linemarker linemarker-70">Derivative-based sensitivity for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><em>{Field Name}_sobol_{N}</em></dt><dd><p class="linemarker linemarker-72">Sobol coefficient for the tissue number <em>N</em>. See <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a></p>
+</dd>
+</dl>
+</li>
+</ul>
+</li>
+<li><p class="linemarker linemarker-74"><code class="file docutils literal notranslate"><span class="pre">ernie_TDCS_1_gpc.hdf5</span></code>: <em>HDF5</em> file containing partial information on the gPC expansion and partial results. The main datasets there are:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">gpc_object</span></code></dt><dd><p class="linemarker linemarker-77">Information to reconstruct the gPC regressions</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">cond</span></code></dt><dd><p class="linemarker linemarker-79">Conductivity information</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">mesh</span></code></dt><dd><p class="linemarker linemarker-81">Original mesh (or with electrodes for tDCS simulations). Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/v_samples</span></code> data set with the electric potential values at all mesh nodes for all iterations of the adaptive algorithm.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="file docutils literal notranslate"><span class="pre">mesh_roi</span></code></dt><dd><p class="linemarker linemarker-83">Mesh cropped to the ROI. Has the <code class="file docutils literal notranslate"><span class="pre">mesh/data_matrices/</span><em><span class="pre">Field</span> <span class="pre">Name</span></em><span class="pre">_samples</span></code> data sets with the field values (at nodes for <em>v</em> or elements for other quantities) for all iterations of the adaptive algorithm.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="linemarker linemarker-85">meshes stored in HDF5 files can be read with the <code class="xref py py-meth docutils literal notranslate"><span class="pre">simnibs.msh.Msh.read_hdf5()</span></code> class or with the <em>mesh_load_hdf5</em> function in MATLAB</p>
+</div>
+</li>
+</ul>
+</section>
+<section id="more-options">
+<h2>More Options<a class="headerlink" href="#more-options" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-91">In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.</p>
+<p class="linemarker linemarker-93">In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">simnibs</span>
+<span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
+
+<span class="c1">## Define the TMS simulation</span>
+<span class="n">tms</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">sim_struct</span><span class="o">.</span><span class="n">TMSLIST</span><span class="p">()</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">read_msh</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;m2m_ernie&#39;</span><span class="p">,</span><span class="s1">&#39;ernie.msh&#39;</span><span class="p">))</span>
+
+<span class="c1"># We need to set the EEG cap as we are giving the coil</span>
+<span class="c1"># Coordinates as EEG positions</span>
+<span class="n">sub_files</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">SubjectFiles</span><span class="p">(</span><span class="n">subpath</span><span class="o">=</span><span class="s1">&#39;m2m_ernie&#39;</span><span class="p">)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">eeg_cap</span> <span class="o">=</span> <span class="n">sub_files</span><span class="o">.</span><span class="n">eeg_cap_1010</span>
+
+<span class="c1"># Define the coil position</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">centre</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">pos_ydir</span> <span class="o">=</span> <span class="s1">&#39;CP3&#39;</span>
+<span class="n">pos</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="c1"># Define the uncertain conductivities</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.4</span><span class="p">]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">.1</span><span class="p">,</span> <span class="mf">.6</span><span class="p">]</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_type</span> <span class="o">=</span> <span class="s1">&#39;beta&#39;</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">cond</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">distribution_parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.003</span><span class="p">,</span> <span class="mf">0.012</span><span class="p">]</span>
+
+<span class="c1"># Run the UQ calling with White and Gray matter as an ROI and tolerance of 1e-2</span>
+<span class="n">gpc</span><span class="o">.</span><span class="n">run_tms_gpc</span><span class="p">(</span><span class="n">tms</span><span class="p">,</span> <span class="s1">&#39;tms_gpc/TMS_UQ&#39;</span><span class="p">,</span> <span class="n">tissues</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="secondary-quantities">
+<h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-102">It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">simnibs</span>
+<span class="kn">from</span> <span class="nn">simnibs.simulation</span> <span class="kn">import</span> <span class="n">gpc</span>
+
+
+<span class="n">fn_hdf5</span> <span class="o">=</span> <span class="s1">&#39;tdcs_uq/ernie_TDCS_1_gpc.hdf5&#39;</span>
+<span class="c1"># Read the regression object from the HDF5 file</span>
+<span class="n">regression</span> <span class="o">=</span> <span class="n">gpc</span><span class="o">.</span><span class="n">gPC_regression</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">)</span>
+<span class="c1"># Read the mesh ROI from the HDF5 file</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">Msh</span><span class="o">.</span><span class="n">read_hdf5</span><span class="p">(</span><span class="n">fn_hdf5</span><span class="p">,</span> <span class="s1">&#39;mesh_roi&#39;</span><span class="p">)</span>
+<span class="c1"># Define the function to be used for the expansion</span>
+
+<span class="k">def</span> <span class="nf">percentile_99</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
+    <span class="c1"># The function will receive the electric field in a format</span>
+    <span class="c1"># N_sims x N_elm x 3</span>
+    <span class="c1"># for each simulation, we calculate the 99th percentile</span>
+    <span class="n">prc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Es</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">E</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Es</span><span class="p">):</span>
+        <span class="n">prc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">simnibs</span><span class="o">.</span><span class="n">ElementData</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">)</span><span class="o">.</span><span class="n">get_percentiles</span><span class="p">(</span><span class="mi">99</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">prc</span>
+
+<span class="c1"># Calculate the gPC coefficients</span>
+<span class="n">gpc_coeffs</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">expand_quantity</span><span class="p">(</span><span class="n">percentile_99</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;99th Percentile&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Mean Value: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Standard Deviation: &quot;</span><span class="p">,</span> <span class="n">regression</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">))</span>
+
+<span class="c1"># Draw 1000 samples for the 99th percentile</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">regression</span><span class="o">.</span><span class="n">MC_sampling</span><span class="p">(</span><span class="n">gpc_coeffs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-110">We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc library</a>.</p>
+</section>
+<section id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
+<p class="linemarker linemarker-114"><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018</a></p>
+<p class="linemarker linemarker-116"><a class="reference external" href="https://doi.org/10.1016/j.softx.2020.100450">Weise, et al. Pygpc: A sensitivity and uncertainty analysis toolbox for Python, SoftwareX 11, 2020</a></p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
+        </li>
+        <li>
+          <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tms_optimization.html">TMS Optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation/documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../tutorial.html">Tutorial</a><ul>
+  <li><a href="advanced.html">Advanced Features</a><ul>
+      <li>Previous: <a href="tdcs_distributed_opt.html" title="previous chapter">TDCS Network Optimization</a></li>
+      <li>Next: <a href="custom_meshing.html" title="next chapter">How to create and use a custom mesh</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../../_sources/tutorial/advanced/uq.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
