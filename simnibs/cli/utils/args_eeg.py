@@ -14,7 +14,6 @@ fsaverage = CommandLineArgument(
     ["--fsaverage"],
     dict(
         type=int,
-        default=10,
         choices=[10, 40, 160],
         help="""
         The resolution of the fsaverage template to morph to. The number
@@ -22,7 +21,7 @@ fsaverage = CommandLineArgument(
             10  ->  10,242 (fsaverage 5)
             40  ->  40,962 (fsaverage 6)
             160 -> 163,842 (fsaverage 7, full resolution)
-        The default is 10.
+        By default, no interpolator is computed.
         """,
     ),
 )
