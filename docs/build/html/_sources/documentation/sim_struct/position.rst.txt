@@ -57,7 +57,7 @@ Attributes
 
 * **pos_ydir**: *list/array of floats or string/character array (Python/MATLAB)*
 
-  * **Description**: Position along the coil's y axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil y axis is a prolongation of the handle (:download:`see here for how SimNIBS defines the coil axes <../../data/coil_axesorientation.pdf>`).
+  * **Description**: Position along the coil's *y*-axis. Can either be a set of coordinates in the head model or the name of an EEG 10-10 electrode position. The coil *y*-axis is a prolongation of the handle (:download:`see here for how SimNIBS defines the coil axes <../../data/coil_axesorientation.pdf>`).
 
   * **Example**: *Python/MATLAB*
 

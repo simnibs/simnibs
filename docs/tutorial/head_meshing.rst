@@ -15,7 +15,7 @@ To create individualized models, SimNIBS **requires** a T1-weighted image. T2-we
 T1-weighted images
 ~~~~~~~~~~~~~~~~~~~
 
-Commonly used for segmentation of the brain. Usually acquired at a rather low readout bandwidth to maximize SNR. However, using a low readout bandwidth comes with the disadvantage that the positions of the (fatty) spongy bone and subcutaneous fat will be displaced in the MR images due to the chemical shift artifact. This can result in the spongy bone touching brain gray matter (GM), rendering an accurate segmentation of the GM pial surface and the boundary between cerebrospinal fluid (CSF) and skull difficult. For this reason, we recommend to **acquire the T1w images with a fat suppression method** such as selective water excitation. Specific sequence parameters can be seen at `Nielsen et al., NeuroImage, 2018 <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_.
+Commonly used for segmentation of the brain. Usually acquired at a rather low readout bandwidth to maximize SNR. However, using a low readout bandwidth comes with the disadvantage that the positions of the (fatty) spongy bone and subcutaneous fat will be displaced in the MR images due to the chemical shift artifact. This can result in the spongy bone touching brain gray matter (GM), and rendering an accurate segmentation of the GM pial surface and the boundary between cerebrospinal fluid (CSF) and skull is difficult. For this reason, we recommend to **acquire the T1w images with a fat suppression method** such as selective water excitation. Specific sequence parameters can be seen at `Nielsen et al., NeuroImage, 2018 <https://doi.org/10.1016/j.neuroimage.2018.03.001>`_.
 
 
 T2-weighted images
@@ -56,7 +56,7 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
      charm ernie org/ernie_T1.nii.gz org/ernie_T2.nii.gz
 
   \
-  The subject ID (subID) :code:`ernie` is given as first argument. Charm will create named a folder :file:`m2m_ernie` that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).
+  The subject ID (subID) :code:`ernie` is given as first argument. Charm will create a folder named :file:`m2m_ernie` that contains the segmentation results and the head mesh for the FEM simulations. The input images are given as final arguments (first the T1, then the T2).
 
 \
 
@@ -76,8 +76,8 @@ Troubleshooting
 ----------------
 
 * If you encounter spurious segmentation results this *could* be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial :ref:`fix_affine_registration_tutorial`.
-* Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
-* If you want to embed a custom-created mask (e.g. of a lesion or tumor) in the head model, then please see the description of the command-line tool :ref:`add_tissues_to_upsampled_doc`.
+* Please see the tutorial :ref:`fixheadmodel_tutorial` in case manual fixes to the segmentation are needed.
+* If you want to embed a custom-created mask (e.g. of a lesion or tumor) in the head model, please see the description of the command-line tool :ref:`add_tissues_to_upsampled_doc`.
 
 Further Reading
 ---------------

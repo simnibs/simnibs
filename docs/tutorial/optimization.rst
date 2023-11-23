@@ -17,12 +17,12 @@ There are two steps for performing the optimizations.
 Leadfield Calculations
 -----------------------
 
-The leadfield is calculated by first placing many electrodes in the head accordingly with an EEG cap, for example, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.
+The leadfield is calculated by first placing many electrodes on the head, for example according to an EEG cap, and afterwards calculating the field caused by each electrode individually, keeping a constant return electrode.
 
 With this simulations, we form a matrix which can then be used to calculate the electric field caused by any combination of electrodes.
-As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than 1h.
+As the leadfield involves calculating many electric fields, it takes some time to run, but usually no more than one hour.
 
-To calculate leadfields, the user must write a small Python of Matlab script using the :ref:`tdcsleadfield_doc` structure. Unless specified differently, the leadfields are calculated for EEG10-10 electrode positions.
+To calculate leadfields, the user must write a small Python or Matlab script using the :ref:`tdcsleadfield_doc` structure. Unless specified differently, the leadfields are calculated for EEG 10-10 electrode positions.
 
 * *Python*
 
@@ -39,26 +39,26 @@ To calculate leadfields, the user must write a small Python of Matlab script usi
 \
 
 
-Here, we are calculating a leadfield in the :file:`ernie` example data set, based on the EEG 10-10 system.
+Here, we are calculating a leadfield in the :file:`ernie` example data set based on the EEG 10-10 system.
 
-.. note:: For more options in running tDCS leadfields, please see the documentation at :ref:`tdcsleadfield_doc`.
+.. note:: For more options in running tDCS leadfields, please see the documentation :ref:`tdcsleadfield_doc`.
 
 \
 
 
 This script will create the files in the :file:`leadfield` folder:
 
-* :file:`ernie_electrodes_EEG10-10_UI_Jurak_2007.msh`: File with the head mesh and electrodes placed on top. Can be used for checking electrode positions. Beware that some electrodes will be of the same color as the skin.
+* :file:`ernie_electrodes_EEG10-10_UI_Jurak_2007.msh`: File with the head mesh and electrodes placed on top. Can be used for checking electrode positions. Be aware that some electrodes will have the same color as the skin.
 
 * :file:`ernie_ROI.msh`: The region of interest where the electric field values were recorded. In the example, the middle gray matter surface.
 
-* :file:`ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5`: HDF5 file with the leadfield matrix, orgenized with the datasets:
+* :file:`ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5`: HDF5 file with the leadfield matrix, organized with the datasets:
 
   * :file:`mesh_electrodes`: Full mesh with the electrodes
   
-  * :file:`mesh_leadfield`: Mesh with the region of interest only (in the example, the middle gray matter surface). Has the :file:`mesh_leadfield/leadfields/tdcs_leadfield` data set with the leadfield. In the attributes, you can see information such as the reference electrode, the field (*E* or *J*), units, currents and so on.
+  * :file:`mesh_leadfield`: Mesh with the region of interest only (in the example, the middle gray matter surface). Contains the :file:`mesh_leadfield/leadfields/tdcs_leadfield` data set with the leadfield. In the attributes, you can see information such as the reference electrode, the field (*E* or *J*), units, currents and so on.
 
-  .. note:: meshes stored in HDF5 files can be read with the :meth:`simnibs.msh.Msh.read_hdf5` class or with the *mesh_load_hdf5* function in MATLAB 
+  .. note:: Meshes stored in HDF5 files can be read with the :meth:`simnibs.msh.Msh.read_hdf5` class or with the *mesh_load_hdf5* function in MATLAB.
 
 
 Optimization
@@ -66,13 +66,13 @@ Optimization
 
 Now, we will use the leadfield to optimize the electric field at a given target.
 
-Simple Optimiztion
+Simple Optimization
 ~~~~~~~~~~~~~~~~~~~
 
-The first step is to set :ref:`tdcsoptimize_doc` structure.
+The first step is to set the :ref:`tdcsoptimize_doc` structure.
 In this structure, we need to select the leadfield we will use for the optimization, a name for the optimization problem, safety constraints and limit the number of electrodes.
 
-Afterwards, we need to define an optimization target using an :ref:`tdcstarget_doc` structure.
+Afterwards, we define an optimization target using a :ref:`tdcstarget_doc` structure.
 
 * *Python*
 
@@ -97,7 +97,7 @@ The optimization outputs:
 
 * :file:`{name}.csv`: comma separated values (CSV) files with optimal current values at each electrode (in A)
 * :file:`{name}_electrodes.geo`: *Gmsh* *.geo* file for visualizing electrodes and currents
-* :file:`{name}.msh`: *Gmsh* *.msh* file with the target and the optimized electric field in the ROI.
+* :file:`{name}.msh`: *Gmsh* *.msh* file with the target and the optimized electric field in the ROI
 * :file:`{name}_summary.txt`: Some summary quantities about the optimization
 
 
@@ -125,7 +125,7 @@ To maximize intensity at the target, disregarding field focality, simply use a l
 Using MNI Coordinates 
 ~~~~~~~~~~~~~~~~~~~~~
 
-The target positions are, as always in SimNIBS, given in **world coordinates** in **subject space** (:ref:`see here for more information <coords_doc>`). However, we can use the *mni2subject_coords* function to transform coordinates from MNI space to subject space. When the transformed coordinates are outside the gray matter of the subject, they will be projected to the closest gray matter position.
+The target positions are, as always in SimNIBS, given in **world coordinates** in **subject space** (:ref:`see here for more information <coords_doc>`). However, we can use the *mni2subject_coords* function to transform coordinates from MNI space to subject space. When the transformed coordinates are outside the gray matter of the subject, they will be projected onto the closest gray matter position.
 
 
 * *Python*
@@ -162,12 +162,12 @@ To optimize multiple distant targets simultaneously, just use multiple **target*
 
 \
 
-By using multiple targets, SimNIBS will try to hit each target with its respective intensity, whereas setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the many positions.
+By using multiple targets, SimNIBS will try to hit each target with its respective intensity. When setting many **positions** in a single target, SimNIBS will try to hit the average intensity over the multiple positions.
 
 
 Electric Field Strength
 ~~~~~~~~~~~~~~~~~~~~~~~
-For using electric field strength (magnitude) rather than an specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a `novel optimization method <https://doi.org/10.1101/2020.05.27.118422>`_.
+For using electric field strength (magnitude) rather than a specific direction, just set the **directions** attribute to *None* (Python) or *'none'* (MATLAB). This feature has been introduced in SimNIBS 3.2 and uses a `novel optimization method <https://doi.org/10.1101/2020.05.27.118422>`_.
  
 * *Python*
 
@@ -206,7 +206,7 @@ You can also add regions where the electric field should be more penalized than 
 \
 
 
-.. note:: For more options and information on avoidance regions please see the :ref:`referece for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **magnE** in gmsh, and selecting **avoid_1**.
+.. note:: For more options and information on avoidance regions please see the :ref:`reference for the TDCSavoid structure <tdcsavoid_doc>`. You can visualize the position of the avoided region in the results by deselecting **magnE** in gmsh, and selecting **avoid_1**.
 
 References
 ------------

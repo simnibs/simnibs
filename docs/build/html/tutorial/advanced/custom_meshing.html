@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>How to create and use a custom mesh &#8212; SimNIBS gf8a35f2c.d20231006&#39;) documentation</title>
+    <title>How to create and use a custom mesh &#8212; SimNIBS ga156bbd6&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
-    <script src="../../_static/documentation_options.js?v=61addd49"></script>
+    <script src="../../_static/documentation_options.js?v=fac7b16c"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
@@ -101,7 +101,7 @@
 </section>
 <section id="meshing-the-example-label-image">
 <h2>Meshing the example label image<a class="headerlink" href="#meshing-the-example-label-image" title="Link to this heading">¶</a></h2>
-<p>To create a tetrahedral mesh from “myspheres.nii.gz”, run on the command line</p>
+<p>To create a tetrahedral mesh from “myspheres.nii.gz”, run in the command line</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">meshmesh</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">nii</span><span class="o">.</span><span class="n">gz</span> <span class="n">myspheres</span><span class="o">.</span><span class="n">msh</span> <span class="o">--</span><span class="n">voxsize_meshing</span> <span class="mf">0.5</span>
 </pre></div>
 </div>
@@ -249,11 +249,11 @@
 </section>
 <section id="output">
 <h2>Output<a class="headerlink" href="#output" title="Link to this heading">¶</a></h2>
-<p>Windows showing the results, such as the following should appear:</p>
+<p>Windows, such as the following, should appear and show the results:</p>
 <img alt="../../_images/custommesh1.png" class="align-center" src="../../_images/custommesh1.png" />
-<p>Making also the tetrahedra visible and cutting shows the field inside the volume, including the custom tissue type. As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength there is weaker in this case:</p>
+<p>By making the tetrahedra visible and clipping the volume, the field inside the volume is shown (including the custom tissue type). As the conductivity of the custom tissue type was selected higher than the surrounding, the electric field strength is weaker there:</p>
 <img alt="../../_images/custommesh2.png" class="align-center" src="../../_images/custommesh2.png" />
-<p>The results can also be found in the output folder ‘simu_custom_mesh’</p>
+<p>The results can also be found in the output folder ‘simu_custom_mesh’.</p>
 </section>
 </section>
 
