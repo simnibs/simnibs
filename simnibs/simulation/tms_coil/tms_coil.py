@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shutil
+import sys
 from copy import deepcopy
 from typing import Optional
 
@@ -2337,7 +2338,7 @@ class TmsCoil(TcdElement):
             cost_surface_tree,
         ) = optimization_surface.get_min_distance_on_grid()
 
-        roi = RegionOfInterest(head_mesh, center=head_mesh.elements_baricenters()[region_of_interest_element_mask][:1000])
+        roi = RegionOfInterest(head_mesh, center=head_mesh.elements_baricenters()[region_of_interest_element_mask])
         fem = OnlineFEM(head_mesh, 'TMS', roi, coil=coil_sampled, dataType=[0])
 
         initial_deformation_settings = np.array(
@@ -2362,7 +2363,7 @@ class TmsCoil(TcdElement):
 
             f = (
                 100 * intersection_penalty
-                + (1000 / np.mean(roi_e_field))
+                -  100 * np.mean(roi_e_field)
                 + self_intersection_penalty
             )
 
@@ -2377,12 +2378,13 @@ class TmsCoil(TcdElement):
         )
         best_deformation_settings = direct.x
 
-        for coil_deformation, deformation_setting in zip(
+        for sampled_coil_deformation, deformation_setting in zip(
             coil_deformation_ranges, best_deformation_settings
         ):
-            coil_deformation.current = deformation_setting
+            sampled_coil_deformation.current = deformation_setting
 
         optimized_cost = cost_f_x0_w(best_deformation_settings)
+        optimized_e_mag = np.ravel(fem.update_field(matsimnibs=affine))
 
         result_affine = np.eye(4)
         if len(global_deformations) > 0:
@@ -2392,4 +2394,8 @@ class TmsCoil(TcdElement):
                 result_affine = global_deformation.as_matrix() @ result_affine
         result_affine = affine.astype(float) @ result_affine
 
-        return initial_cost, optimized_cost, result_affine
+        for sampled_coil_deformation, coil_deformation in zip(coil_sampled.get_deformation_ranges(),
+                                                              self.get_deformation_ranges()):
+            coil_deformation.current = sampled_coil_deformation.current
+
+        return initial_cost, optimized_cost, result_affine, optimized_e_mag
