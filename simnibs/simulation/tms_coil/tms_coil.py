@@ -629,9 +629,12 @@ class TmsCoil(TcdElement):
                 if len(element_casing_points[2]) > 0:
                     intersect_points.append(element_casing_points[2])
 
-        casing_points = np.concatenate(casing_points, axis=0)
-        min_distance_points = np.concatenate(min_distance_points, axis=0)
-        intersect_points = np.concatenate(intersect_points, axis=0)
+        if len(casing_points) > 0:
+            casing_points = np.concatenate(casing_points, axis=0)
+        if len(min_distance_points) > 0:
+            min_distance_points = np.concatenate(min_distance_points, axis=0)
+        if len(intersect_points) > 0:
+            intersect_points = np.concatenate(intersect_points, axis=0)
 
         return casing_points, min_distance_points, intersect_points
 
