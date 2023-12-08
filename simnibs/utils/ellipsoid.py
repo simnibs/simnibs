@@ -317,7 +317,7 @@ class Ellipsoid():
 
         Returns
         -------
-        coords_sphere : np.ndarray of float [n_points x 3]
+        coords_sphere : np.ndarray of float [n_points x 2]
             Spherical coordinates of given points [beta, lambda], in radiant.
             (beta: [-np.pi/2, +np.pi/2], lambda: [-np.pi, np.pi]
         normal : np.ndarray of float [n_points x 3]

@@ -23,7 +23,7 @@ def example_dataset():
         f'https://github.com/simnibs/example-dataset/releases/'
         'download/v4.0-lowres/ernie_lowres_V2.zip'
     )
-    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),'test_data'))
+    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
     tmpname = tempfile.mktemp(".zip")
     # Download the dataset
     with requests.get(url, stream=True) as r:
@@ -205,7 +205,6 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tes_electrode_setup_init.py', clean=None)
         assert ret.returncode == 0
 
-
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
         if clean is not None and os.path.exists(clean):
@@ -299,4 +298,52 @@ class TestMatlabErnie:
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization_adm')
+        assert ret.returncode == 0
+
+class TestTESoptimize:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
+        return subprocess.run([sys.executable, fn])
+
+    def test_tes_optimize_hdtes_focality(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "optimization",
+            "tes_optimize_hdtes_focality.py",
+            "optimization/tes_optimize_hdtes_focality")
+        assert ret.returncode == 0
+
+    def test_tes_optimize_hdtes_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "optimization",
+            "tes_optimize_hdtes_intensity.py",
+            "optimization/tes_optimize_hdtes_intensity")
+        assert ret.returncode == 0
+
+    def test_tes_optimize_ttf_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "optimization",
+            "tes_optimize_ttf_intensity.py",
+            "optimization/tes_optimize_ttf_intensity")
+        assert ret.returncode == 0
+
+    def test_tes_optimize_ti_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "optimization",
+            "tes_optimize_ti_intensity.py",
+            "optimization/tes_optimize_ti_intensity")
+        assert ret.returncode == 0
+
+    def tes_optimize_tes_Enormal_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "optimization",
+            "tes_optimize_tes_Enormal_intensity.py",
+            "optimization/tes_optimize_tes_Enormal_intensity")
         assert ret.returncode == 0

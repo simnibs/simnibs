@@ -166,6 +166,11 @@ class RegionOfInterestInitializer():
 
         elif self.type == "volume":
             if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
+                    and self.roi_sphere_radius is None):
+                self.roi_sphere_center_mni = np.array([0, 0, 0])
+                self.roi_sphere_radius = 1e6
+
+            if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
                     or self.roi_sphere_radius is None):
                 raise AssertionError("Please specify roi_sphere_center or roi_sphere_center_subject and "
                                      "roi_sphere_radius for 'MNI' ROI type.")
@@ -185,8 +190,9 @@ class RegionOfInterestInitializer():
                     ele_center[self.mesh.elm.tag1 == d] = np.inf
 
             mask = np.linalg.norm(ele_center - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
+            mask_cropped = mask[self.mesh.elm.elm_type == 4]
 
-            roi = RegionOfInterest(mask=mask, mesh=self.mesh)
+            roi = RegionOfInterest(mask=mask_cropped, mesh=self.mesh, domains=self.domains)
 
         else:
             raise AssertionError("Specified ROI type not implemented ('custom', 'MNI', 'GMmidlayer')")
