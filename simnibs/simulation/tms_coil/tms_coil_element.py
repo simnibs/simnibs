@@ -7,6 +7,7 @@ import fmm3dpy
 import numpy as np
 import numpy.typing as npt
 from scipy import ndimage
+from simnibs.utils.utils_numba import map_coord_lin, map_coord_lin_trans
 
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
@@ -804,8 +805,16 @@ class SampledGridPointElements(TmsCoilElements):
         deformations: Optional[list[TmsCoilDeformation]] = None,
     ):
         super().__init__(stimulator, name, casing, deformations)
-        self.data = np.array(data, dtype=np.float64)
+        self.data = data
         self.affine = np.array(affine, dtype=np.float64)
+
+    @property
+    def data(self) -> npt.NDArray[np.float_]:
+        return np.transpose(self._data, (1, 2, 3, 0))
+
+    @data.setter
+    def data(self, value: npt.NDArray[np.float_]):
+        self._data = np.transpose(value, (3, 0, 1, 2)).astype(np.float64, order='F')
 
     def get_a_field(
         self,
@@ -830,26 +839,31 @@ class SampledGridPointElements(TmsCoilElements):
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
-            The A field at every target positions in Tesla*meter
+            The A-field at every target positions in Tesla*meter
         """
         combined_affine = coil_affine
         if apply_deformation:
             combined_affine = self.get_combined_transformation(combined_affine)
         iM = np.linalg.pinv(self.affine) @ np.linalg.pinv(combined_affine)
 
-        target_voxle_coordinates = (
-            iM[:3, :3] @ target_positions.T + iM[:3, 3][:, np.newaxis]
-        )
+        M1 = np.ascontiguousarray(iM[:3, :3])
+        t = np.ascontiguousarray(iM[:3, 3])
+        M2 = np.ascontiguousarray(combined_affine[:3, :3])
+
+        #target_voxle_coordinates = (
+        #    iM[:3, :3] @ target_positions.T + iM[:3, 3][:, np.newaxis]
+        #)
 
         # Interpolates the values of the field in the given coordinates
-        out = np.zeros((3, target_voxle_coordinates.shape[1]))
-        for dim in range(3):
-            out[dim] = ndimage.map_coordinates(
-                np.asanyarray(self.data)[..., dim], target_voxle_coordinates, order=1
-            )
+        #out = np.zeros((3, target_voxle_coordinates.shape[1]))
+        #for dim in range(3):
+        #    out[dim] = ndimage.map_coordinates(
+        #        np.asanyarray(self.data)[..., dim], target_voxle_coordinates, order=1
+        #    )
+        out = map_coord_lin_trans(self._data, target_positions.T, M1, t, M2)
 
         # Rotates the field
-        return out.T @ combined_affine[:3, :3].T
+        return out.T #@ combined_affine[:3, :3].T
 
     def generate_element_mesh(
         self,
@@ -880,8 +894,10 @@ class SampledGridPointElements(TmsCoilElements):
 
         point_transformation = combined_affine @ self.affine
 
+        data = self.data
+
         voxel_coordinates = np.array(
-            list(np.ndindex(self.data.shape[0], self.data.shape[1], self.data.shape[2]))
+            list(np.ndindex(data.shape[0], data.shape[1], data.shape[2]))
         )
 
         points = (
@@ -895,7 +911,7 @@ class SampledGridPointElements(TmsCoilElements):
         )
 
         point_mesh.add_node_field(
-            self.data.reshape(-1, 3) @ combined_affine[:3, :3].T,
+            data.reshape(-1, 3) @ combined_affine[:3, :3].T,
             f"{element_index}-sampled_vector",
         )
 
@@ -920,8 +936,9 @@ class SampledGridPointElements(TmsCoilElements):
         """
         deformation_affine = self.get_combined_transformation()
         combined_affine = deformation_affine @ self.affine
-        data = (self.data.reshape((-1, 3)) @ deformation_affine[:3, :3].T).reshape(
-            self.data.shape
+        data = self.data
+        data = (data.reshape((-1, 3)) @ deformation_affine[:3, :3].T).reshape(
+            data.shape
         )
 
         frozen_casing = None
@@ -944,10 +961,12 @@ class SampledGridPointElements(TmsCoilElements):
         tcd_coil_element = super().to_tcd(stimulators, coil_models, deformations)
         tcd_coil_element["type"] = 3
 
+        data = self.data
+
         if ascii_mode:
-            tcd_coil_element["data"] = self.data.tolist()
+            tcd_coil_element["data"] = data.tolist()
         else:
-            tcd_coil_element["data"] = base64.b64encode(pickle.dumps(self.data)).decode(
+            tcd_coil_element["data"] = base64.b64encode(pickle.dumps(data)).decode(
                 "ascii"
             )
 

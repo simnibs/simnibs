@@ -15,6 +15,7 @@ from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
 from .fem import FEMSystem, get_dirichlet_node_index_cog, DirichletBC, dofMap, TDCSFEMDirichlet, TMSFEM, TDCSFEMNeumann
 from .sim_struct import SimuList
+from .. import NodeData
 from ..mesh_tools import Msh, mesh_io, read_msh
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates, SubjectFiles
@@ -276,7 +277,16 @@ class OnlineFEM:
 
         elif self.method == "TMS":
             # determine magnetic vector potential
-            self.dadt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, matsimnibs)
+            if self.useElements:
+                self.dadt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, matsimnibs)
+            else:
+                scaled_matsimnibs = np.copy(matsimnibs)
+                scaled_matsimnibs[:3, :3] *= 0.25
+                da_dt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, scaled_matsimnibs).T
+                #self.da_dt = NodeData(da_dt, mesh=self.mesh).node_data2elm_data()
+
+                self.dadt = node2elmf(da_dt, self.reshaped_node_numbersT)
+
             #reshaped_node_numbers=self.reshaped_node_numbersT,
             #useElements=self.useElements
             

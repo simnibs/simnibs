@@ -1333,8 +1333,8 @@ class TmsCoil(TcdElement):
 
         dx = np.spacing(1e4)
         x = np.linspace(limits[0][0], limits[0][1] - resolution[0] + dx, dims[0])
-        y = np.linspace(limits[1][0], limits[1][1] - resolution[0] + dx, dims[1])
-        z = np.linspace(limits[2][0], limits[2][1] - resolution[0] + dx, dims[2])
+        y = np.linspace(limits[1][0], limits[1][1] - resolution[1] + dx, dims[1])
+        z = np.linspace(limits[2][0], limits[2][1] - resolution[2] + dx, dims[2])
         return np.array(np.meshgrid(x, y, z, indexing="ij")).reshape((3, -1)).T, dims
 
     def as_sampled(
@@ -1628,88 +1628,8 @@ class TmsCoil(TcdElement):
                 "The coil has no coil casing or min_distance/intersection points."
             )
 
-        global_deformations = []
-        if coil_rotation_ranges is not None:
-            if coil_rotation_ranges[0, 0] != coil_rotation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[0, 0], coil_rotation_ranges[0, 1])
-                        ),
-                        [0, 0, 0],
-                        [1, 0, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[1, 0] != coil_rotation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[1, 0], coil_rotation_ranges[1, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 1, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[2, 0] != coil_rotation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[2, 0], coil_rotation_ranges[2, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 0, 1],
-                    )
-                )
-
-        if coil_translation_ranges is not None:
-            if coil_translation_ranges[0, 0] != coil_translation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[0, 0],
-                                coil_translation_ranges[0, 1],
-                            ),
-                        ),
-                        0,
-                    )
-                )
-            if coil_translation_ranges[1, 0] != coil_translation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[1, 0],
-                                coil_translation_ranges[1, 1],
-                            ),
-                        ),
-                        1,
-                    )
-                )
-
-            if coil_translation_ranges[2, 0] != coil_translation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[2, 0],
-                                coil_translation_ranges[2, 1],
-                            ),
-                        ),
-                        2,
-                    )
-                )
-
-        for global_deformation in global_deformations:
-            coil_deformation_ranges.append(global_deformation.deformation_range)
-
-            for coil_element in self.elements:
-                coil_element.deformations.append(global_deformation)
+        global_deformations = self.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
+        coil_deformation_ranges = self.get_deformation_ranges()
 
         cost_surface_tree = optimization_surface.get_AABBTree()
         deformation_ranges = np.array(
@@ -2036,88 +1956,8 @@ class TmsCoil(TcdElement):
                     _,
                 ) = intersection_element.casing.mesh.get_min_distance_on_grid()
 
-        global_deformations = []
-        if coil_rotation_ranges is not None:
-            if coil_rotation_ranges[0, 0] != coil_rotation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[0, 0], coil_rotation_ranges[0, 1])
-                        ),
-                        [0, 0, 0],
-                        [1, 0, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[1, 0] != coil_rotation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[1, 0], coil_rotation_ranges[1, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 1, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[2, 0] != coil_rotation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[2, 0], coil_rotation_ranges[2, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 0, 1],
-                    )
-                )
-
-        if coil_translation_ranges is not None:
-            if coil_translation_ranges[0, 0] != coil_translation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[0, 0],
-                                coil_translation_ranges[0, 1],
-                            ),
-                        ),
-                        0,
-                    )
-                )
-            if coil_translation_ranges[1, 0] != coil_translation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[1, 0],
-                                coil_translation_ranges[1, 1],
-                            ),
-                        ),
-                        1,
-                    )
-                )
-
-            if coil_translation_ranges[2, 0] != coil_translation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[2, 0],
-                                coil_translation_ranges[2, 1],
-                            ),
-                        ),
-                        2,
-                    )
-                )
-
-        for global_deformation in global_deformations:
-            coil_deformation_ranges.append(global_deformation.deformation_range)
-
-            for coil_element in self.elements:
-                coil_element.deformations.append(global_deformation)
+        global_deformations = self.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
+        coil_deformation_ranges = self.get_deformation_ranges()
 
         (
             target_distance_function,
@@ -2179,6 +2019,86 @@ class TmsCoil(TcdElement):
 
         return initial_cost, optimized_cost, result_affine
 
+    def add_global_deformations(self, coil_rotation_ranges, coil_translation_ranges):
+        global_deformations = []
+        if coil_rotation_ranges is not None:
+            if coil_rotation_ranges[0, 0] != coil_rotation_ranges[0, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[0, 0], coil_rotation_ranges[0, 1])
+                        ),
+                        [0, 0, 0],
+                        [1, 0, 0],
+                    )
+                )
+
+            if coil_rotation_ranges[1, 0] != coil_rotation_ranges[1, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[1, 0], coil_rotation_ranges[1, 1])
+                        ),
+                        [0, 0, 0],
+                        [0, 1, 0],
+                    )
+                )
+
+            if coil_rotation_ranges[2, 0] != coil_rotation_ranges[2, 1]:
+                global_deformations.append(
+                    TmsCoilRotation(
+                        TmsCoilDeformationRange(
+                            0, (coil_rotation_ranges[2, 0], coil_rotation_ranges[2, 1])
+                        ),
+                        [0, 0, 0],
+                        [0, 0, 1],
+                    )
+                )
+        if coil_translation_ranges is not None:
+            if coil_translation_ranges[0, 0] != coil_translation_ranges[0, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[0, 0],
+                                coil_translation_ranges[0, 1],
+                            ),
+                        ),
+                        0,
+                    )
+                )
+            if coil_translation_ranges[1, 0] != coil_translation_ranges[1, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[1, 0],
+                                coil_translation_ranges[1, 1],
+                            ),
+                        ),
+                        1,
+                    )
+                )
+
+            if coil_translation_ranges[2, 0] != coil_translation_ranges[2, 1]:
+                global_deformations.append(
+                    TmsCoilTranslation(
+                        TmsCoilDeformationRange(
+                            0,
+                            (
+                                coil_translation_ranges[2, 0],
+                                coil_translation_ranges[2, 1],
+                            ),
+                        ),
+                        2,
+                    )
+                )
+        for global_deformation in global_deformations:
+            for coil_element in self.elements:
+                coil_element.deformations.append(global_deformation)
+        return global_deformations
 
     def optimize_e_mag(
         self,
@@ -2252,88 +2172,8 @@ class TmsCoil(TcdElement):
                     _,
                 ) = intersection_element.casing.mesh.get_min_distance_on_grid()
 
-        global_deformations = []
-        if coil_rotation_ranges is not None:
-            if coil_rotation_ranges[0, 0] != coil_rotation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[0, 0], coil_rotation_ranges[0, 1])
-                        ),
-                        [0, 0, 0],
-                        [1, 0, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[1, 0] != coil_rotation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[1, 0], coil_rotation_ranges[1, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 1, 0],
-                    )
-                )
-
-            if coil_rotation_ranges[2, 0] != coil_rotation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilRotation(
-                        TmsCoilDeformationRange(
-                            0, (coil_rotation_ranges[2, 0], coil_rotation_ranges[2, 1])
-                        ),
-                        [0, 0, 0],
-                        [0, 0, 1],
-                    )
-                )
-
-        if coil_translation_ranges is not None:
-            if coil_translation_ranges[0, 0] != coil_translation_ranges[0, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[0, 0],
-                                coil_translation_ranges[0, 1],
-                            ),
-                        ),
-                        0,
-                    )
-                )
-            if coil_translation_ranges[1, 0] != coil_translation_ranges[1, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[1, 0],
-                                coil_translation_ranges[1, 1],
-                            ),
-                        ),
-                        1,
-                    )
-                )
-
-            if coil_translation_ranges[2, 0] != coil_translation_ranges[2, 1]:
-                global_deformations.append(
-                    TmsCoilTranslation(
-                        TmsCoilDeformationRange(
-                            0,
-                            (
-                                coil_translation_ranges[2, 0],
-                                coil_translation_ranges[2, 1],
-                            ),
-                        ),
-                        2,
-                    )
-                )
-
-        for global_deformation in global_deformations:
-            coil_deformation_ranges.append(global_deformation.deformation_range)
-
-            for coil_element in coil_sampled.elements:
-                coil_element.deformations.append(global_deformation)
+        global_deformations = coil_sampled.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
+        coil_deformation_ranges = coil_sampled.get_deformation_ranges()
 
         optimization_surface = head_mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
         (
@@ -2342,7 +2182,7 @@ class TmsCoil(TcdElement):
         ) = optimization_surface.get_min_distance_on_grid()
 
         roi = RegionOfInterest(head_mesh, center=head_mesh.elements_baricenters()[region_of_interest_element_mask])
-        fem = OnlineFEM(head_mesh, 'TMS', roi, coil=coil_sampled, dataType=[0])
+        fem = OnlineFEM(head_mesh, 'TMS', roi, coil=coil_sampled, dataType=[0], useElements=False)
 
         initial_deformation_settings = np.array(
             [coil_deformation.current for coil_deformation in coil_deformation_ranges]
@@ -2365,9 +2205,9 @@ class TmsCoil(TcdElement):
 
 
             f = (
-                100 * intersection_penalty
+                1000 * intersection_penalty
                 -  100 * np.mean(roi_e_field)
-                + self_intersection_penalty
+                + 1000 * self_intersection_penalty
             )
 
             return f
