@@ -2111,28 +2111,28 @@ class TmsCoil(TcdElement):
 
         element_voxel_volumn = {}
         element_voxel_affine = {}
-        if self.casing is not None:
+        if coil_sampled.casing is not None:
             base_element = DipoleElements(
                 None,
                 np.zeros((1, 3)),
                 np.zeros((1, 3)),
-                casing=self.casing,
+                casing=coil_sampled.casing,
                 deformations=global_deformations
             )
             (
                 element_voxel_volumn[base_element],
                 element_voxel_affine[base_element],
                 _
-            ) = self.casing.mesh.get_voxel_volume()
+            ) = coil_sampled.casing.mesh.get_voxel_volume()
         self_intersection_elements = []
-        for self_intersection_group in self.self_intersection_test:
+        for self_intersection_group in coil_sampled.self_intersection_test:
             self_intersection_elements.append([])
             for self_intersection_index in self_intersection_group:
                 if self_intersection_index == 0:
                     self_intersection_elements[-1].append(base_element)
                 else:
                     self_intersection_elements[-1].append(
-                        self.elements[self_intersection_index - 1]
+                        coil_sampled.elements[self_intersection_index - 1]
                     )
         for element in coil_sampled.elements:
             if element.casing is not None:
