@@ -2464,7 +2464,51 @@ class Msh:
 
             return mapped_values
 
-        return min_distance_on_grid, AABBTree
+        return min_distance_on_grid, grid, M, AABBTree
+
+    def get_voxel_volume(self, resolution=1.0, AABBTree=None):
+        """Generates a distance field on a grid to the mesh surface
+
+        Parameters
+        ----------
+        resolution : float, optional
+            The resolution of the grid, by default 1.0
+        AABBTree : pyAABBTree, optional
+            A pre-calculated AABBTree, will be generated if None, by default None
+
+        Returns
+        -------
+        npt.NDArray[np.bool_]
+            The binary voxel volume
+        npt.NDArray[np.float_]
+            The affine transformation from voxel to world space
+        pyAABBTree
+            The AABBTree used
+        """
+
+        if AABBTree is None:
+            AABBTree = self.get_AABBTree()
+        xmin = self.nodes.node_coord.min(0)
+        xmax = self.nodes.node_coord.max(0)
+        xyz = np.meshgrid(
+            *[
+                np.arange(np.floor(x[0]), x[1], resolution)
+                for x in zip(xmin - 1, xmax + 1)
+            ],
+            indexing="ij",
+        )
+        xyzc = np.array(xyz).reshape(3, -1).T
+
+        M = np.identity(4) * resolution
+        M[3, 3] = 1
+        M[:3, 3] = np.floor(xmin - 1)
+
+        grid = np.zeros(xyz[0].shape, dtype=np.bool_)
+
+        np.put(grid, AABBTree.points_inside(xyzc), 1)
+        grid = scipy.ndimage.binary_closing(grid, iterations=3)
+
+        return grid, M, AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """

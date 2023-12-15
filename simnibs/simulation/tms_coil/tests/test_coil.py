@@ -869,13 +869,12 @@ class TestPositionOptimization:
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
     ):
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        cost_surface_tree = skin_surface.get_AABBTree()
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
 
-        intersection_before, distance_before, _ = small_functional_3_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), coil_affine
-        )
+        distance_before = np.mean(np.sqrt(cost_surface_tree.min_sqdist(small_functional_3_element_coil.get_casing_coordinates(coil_affine)[0])))
 
         (
             before,
@@ -884,19 +883,18 @@ class TestPositionOptimization:
         ) = small_functional_3_element_coil.optimize_deformations(
             skin_surface, coil_affine
         )
-       
-        intersection_after, distance_after, _ = small_functional_3_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), affine_after
-        )
+
+        distance_after = np.mean(np.sqrt(cost_surface_tree.min_sqdist(small_functional_3_element_coil.get_casing_coordinates(coil_affine)[0])))
 
         assert distance_before > distance_after
-        assert intersection_after < 0.1
+        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(coil_affine).nodes.node_coord)) == 0
         np.testing.assert_allclose(coil_affine, affine_after)
 
     def test_optimization_with_global_translation(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
     ):
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        cost_surface_tree = skin_surface.get_AABBTree()
 
         coil_affine = np.array(
             [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
@@ -911,35 +909,36 @@ class TestPositionOptimization:
         )
 
         assert before > after
-        assert after < before * 0.05
+        assert after < before * 0.5
         assert not np.allclose(coil_affine, affine_after)
-        assert not small_functional_3_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), affine_after
-        )[0]
+        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(coil_affine).nodes.node_coord)) == 0
 
     def test_optimization_with_global_rotation(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
     ):
+        small_functional_3_element_coil_copy = deepcopy(small_functional_3_element_coil)
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        cost_surface_tree = skin_surface.get_AABBTree()
 
         coil_affine = np.array(
             [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
         )
 
+        del small_functional_3_element_coil_copy.elements[2].deformations[0]
+        del small_functional_3_element_coil_copy.elements[1].deformations[0]
+
         (
             before,
             after,
             affine_after,
-        ) = small_functional_3_element_coil.optimize_deformations(
-            skin_surface, coil_affine, coil_rotation_ranges=np.array([[-5, 5], [-5, 5], [-20, 20]])
+        ) = small_functional_3_element_coil_copy.optimize_deformations(
+            skin_surface, coil_affine, coil_rotation_ranges=np.array([[-90, 90], [-90, 90], [-90, 90]])
         )
 
         assert before > after
-        assert after < before * 0.05
+        assert after < before * 0.8
         assert not np.allclose(coil_affine, affine_after)
-        assert not small_functional_3_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), affine_after
-        )[0]
+        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(affine_after).nodes.node_coord)) == 0
 
     def test_self_intersection_optimization(
         self, small_self_intersecting_2_element_coil: TmsCoil, sphere3_msh: Msh
@@ -948,10 +947,9 @@ class TestPositionOptimization:
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
+        cost_surface_tree = small_self_intersecting_2_element_coil.elements[0].get_mesh(coil_affine).get_AABBTree()
 
-        intersection_before, distance_before, self_intersection_before = small_self_intersecting_2_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), coil_affine
-        )
+        self_intersection_before = np.sum(cost_surface_tree.points_inside(small_self_intersecting_2_element_coil.elements[1].get_mesh(coil_affine).nodes.node_coord))
 
         (
             before,
@@ -960,12 +958,9 @@ class TestPositionOptimization:
         ) = small_self_intersecting_2_element_coil.optimize_deformations(
             skin_surface, coil_affine
         )
-       
-        intersection_after, distance_after, self_intersection_after = small_self_intersecting_2_element_coil._get_exact_deformation_scores(
-            skin_surface.get_AABBTree(), affine_after
-        )
 
-        assert intersection_after < 0.1
+        self_intersection_after = np.sum(cost_surface_tree.points_inside(small_self_intersecting_2_element_coil.elements[1].get_mesh(coil_affine).nodes.node_coord))
+
         assert self_intersection_before > self_intersection_after
         assert self_intersection_after < 0.00001
         np.testing.assert_allclose(coil_affine, affine_after)

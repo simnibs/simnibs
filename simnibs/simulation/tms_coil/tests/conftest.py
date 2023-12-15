@@ -390,9 +390,9 @@ def small_functional_3_element_coil() -> TmsCoil:
         TmsCoilModel(
             Msh(
                 Nodes(
-                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]])
+                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0], [0, 0, 20]])
                 ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
+                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
             ),
             None,
             None,
@@ -400,17 +400,19 @@ def small_functional_3_element_coil() -> TmsCoil:
         TmsCoilModel(
             Msh(
                 Nodes(
-                    np.array([[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]])
+                    np.array([[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0], [0, -40, 20]])
                 ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
+                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
             ),
             None,
             None,
         ),
         TmsCoilModel(
             Msh(
-                Nodes(np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
+                Nodes(
+                    np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0], [0, 40, 20]])
+                ),
+                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
             ),
             None,
             None,
@@ -471,7 +473,7 @@ def small_self_intersecting_2_element_coil() -> TmsCoil:
         TmsCoilModel(
             Msh(
                 Nodes(
-                    np.array([[-2, -2, 0], [-2, 2, 0], [2, -2, 0], [2, 2, 0], [0, 0, 2]]) + np.array([0, 0, 10])
+                    np.array([[-2, -2, 0], [-2, 2, 0], [2, -2, 0], [2, 2, 0], [0, 0, 2]]) * 3 + np.array([0, 0, 10])
                 ),
                 Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
             ),
@@ -481,19 +483,19 @@ def small_self_intersecting_2_element_coil() -> TmsCoil:
     ]
     deformations = [
         TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
+            TmsCoilDeformationRange(0, (-50, 50)),
             0
         ),
         TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
+            TmsCoilDeformationRange(0, (-50, 50)),
             2
         ),
         TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
+            TmsCoilDeformationRange(0, (-50, 50)),
             0
         ),
         TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
+            TmsCoilDeformationRange(0, (-50, 50)),
             2
         ),
     ]
