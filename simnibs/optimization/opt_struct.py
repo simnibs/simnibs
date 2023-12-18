@@ -2889,11 +2889,13 @@ class TESoptimize():
         self.mesh_nodes_areas = self.mesh.nodes_areas()
 
         # relabel internal air
-        self.mesh_relabel = relabel_internal_air(m=self.mesh,
-                                                 subpath=self.subpath,
-                                                 label_skin=1005,
-                                                 label_new=1099,
-                                                 label_internal_air=501)
+        self.mesh_relabel = self.mesh.relabel_internal_air()
+
+        # self.mesh_relabel = relabel_internal_air(m=self.mesh,
+        #                                          subpath=self.subpath,
+        #                                          label_skin=1005,
+        #                                          label_new=1099,
+        #                                          label_internal_air=501)
 
         # make final skin surface including some additional distance
         self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
@@ -4855,44 +4857,44 @@ def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance
     return skin_surface
 
 
-def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
-    """
-    Relabels skin in internal air cavities to something else; relevant for charm meshes
-
-    Parameters
-    ----------
-    m : Msh object
-        Mesh object with internal air
-    subpath :
-        Path to subject m2m folder
-    label_skin : int
-        Original skin label
-    label_new : int
-        New skin label
-    label_internal_air : int
-        New label of internal air
-
-    Returns
-    -------
-    m : Msh object
-        Mesh with relabeled internal air
-    """
-    subject_files = SubjectFiles(subpath=subpath)
-
-    # relabel internal skin to some other label
-    label_nifti = nibabel.load(subject_files.labeling)
-    label_affine = label_nifti.affine
-    label_img = label_nifti.get_fdata().astype(int)
-    label_img = label_img == label_internal_air
-    label_img = mrph.binary_dilation(label_img, iterations=2)
-
-    m = copy.copy(m)
-    ed = mesh_io.ElementData.from_data_grid(m, label_img, label_affine, order=0)
-    idx = ed.value * (m.elm.tag1 == label_skin)
-    m.elm.tag1[idx] = label_new
-    m.elm.tag2[:] = m.elm.tag1
-
-    return m
+# def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
+#     """
+#     Relabels skin in internal air cavities to something else; relevant for charm meshes
+#
+#     Parameters
+#     ----------
+#     m : Msh object
+#         Mesh object with internal air
+#     subpath :
+#         Path to subject m2m folder
+#     label_skin : int
+#         Original skin label
+#     label_new : int
+#         New skin label
+#     label_internal_air : int
+#         New label of internal air
+#
+#     Returns
+#     -------
+#     m : Msh object
+#         Mesh with relabeled internal air
+#     """
+#     subject_files = SubjectFiles(subpath=subpath)
+#
+#     # relabel internal skin to some other label
+#     label_nifti = nibabel.load(subject_files.labeling)
+#     label_affine = label_nifti.affine
+#     label_img = label_nifti.get_fdata().astype(int)
+#     label_img = label_img == label_internal_air
+#     label_img = mrph.binary_dilation(label_img, iterations=2)
+#
+#     m = copy.copy(m)
+#     ed = mesh_io.ElementData.from_data_grid(m, label_img, label_affine, order=0)
+#     idx = ed.value * (m.elm.tag1 == label_skin)
+#     m.elm.tag1[idx] = label_new
+#     m.elm.tag2[:] = m.elm.tag1
+#
+#     return m
 
 
 def get_array_direction(electrode_pos, ellipsoid):

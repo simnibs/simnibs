@@ -2531,7 +2531,7 @@ class Msh:
             return False
         return any_intersections
 
-    def get_outer_skin_points(self, tol: float = 1e-3):
+    def get_outer_skin_points(self, tol: float = 1e-3, label_skin=None):
         """Return indices of points estimated to be on the outer skin surface
         (i.e., not those inside nasal cavities, ear canals etc.). Outer points
         are identified by looking for points which do not intersect the mesh in
@@ -2543,6 +2543,8 @@ class Msh:
         ----------
         tol : float
             Tolerance for avoiding self-intersections.
+        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
+            Label of skin surface (e.g. 1005)
 
         RETURNS
         -------
@@ -2551,7 +2553,10 @@ class Msh:
         """
         assert tol > 0
 
-        skin_faces = self.elm[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]
+        if label_skin is None:
+            label_skin = ElementTags.SCALP_TH_SURFACE
+
+        skin_faces = self.elm[self.elm.tag1 == label_skin, :3]
         subset = np.unique(skin_faces-1)
         m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
 
@@ -2564,6 +2569,36 @@ class Msh:
             return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
         else:
             return np.setdiff1d(subset, subset[idx], assume_unique=True)
+
+    def relabel_internal_air(self, label_skin=None, label_new=1099):
+        """
+        Relabels skin in internal air cavities to something else;
+        relevant for charm meshes and TES optimization to determine valid skin region.
+
+        PARAMETERS
+        ----------
+        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
+            Label of skin surface (e.g. 1005) with internal air.
+        label_new : int, optional, default: 1009
+            Label of internal skin surface.
+
+        RETURNS
+        -------
+        m : Msh object
+            New Msh object with relabeled internal air.
+        """
+
+        if label_skin is None:
+            label_skin = ElementTags.SCALP_TH_SURFACE
+
+        m = copy.copy(self)
+        # outer skin nodes
+        idx_skinNodes = self.get_outer_skin_points(label_skin=label_skin) + 1  # internal air triangles
+        idx_innerAirTri = (m.elm.elm_type == 2) * (m.elm.tag1 == label_skin)
+        idx_innerAirTri *= ~np.any(np.in1d(m.elm.node_number_list, idx_skinNodes).reshape(-1, 4), axis=1)
+        m.elm.tag1[idx_innerAirTri] = label_new
+        m.elm.tag2[:] = m.elm.tag1
+        return m
 
     def get_AABBTree(self):
         """

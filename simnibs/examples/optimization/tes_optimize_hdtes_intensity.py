@@ -10,10 +10,10 @@ import simnibs
 opt = simnibs.opt_struct.TESoptimize()
 
 # path of m2m folder containing the headmodel
-opt.subpath = 'm2m_ernie'
+opt.subpath = "m2m_ernie"
 
 # output folder
-opt.output_folder = f"tes_optimze_hdtes_intensity"
+opt.output_folder = "tes_optimze_hdtes_intensity"
 
 # type of goal function
 opt.goal = "mean"

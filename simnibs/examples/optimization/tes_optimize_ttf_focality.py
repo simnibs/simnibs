@@ -26,6 +26,7 @@ opt.threshold = [100, 100]
 opt.e_postproc = "magn"
 
 # define first pair of electrodes
+opt.constrain_electrode_locations = True
 electrode = opt.add_electrode()
 electrode.type = "ElectrodeArrayPair"                    # Pair of TES electrodes
 electrode.center = [[-33,  22],                          # electrode center in reference electrode space (x-y plane)

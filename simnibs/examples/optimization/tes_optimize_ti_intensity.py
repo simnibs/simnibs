@@ -22,7 +22,7 @@ opt.goal = "mean"
 # "max_TI": maximize envelope of e-field magnitude
 # "dir_TI_normal": maximize envelope of e-field normal component
 # "dir_TI_tangential": maximize envelope of e-field tangential component
-opt.e_postproc = "dir_TI_normal"
+opt.e_postproc = "max_TI"
 
 # define first pair of electrodes
 electrode = opt.add_electrode()
