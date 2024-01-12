@@ -1771,6 +1771,7 @@ class TmsCoil(TcdElement):
         for element in element_voxel_volumes:
             indexes_in_vox1 = element_voxel_indexes[element]
             element_voxel_affine = element_voxel_affines[element]
+            #move inv out of loop
             vox_to_vox_affine = np.linalg.inv(target_voxel_affine) @ element_affines[element] @ \
                                 element_voxel_affine
             indexes_in_vox2 = (
@@ -1863,45 +1864,7 @@ class TmsCoil(TcdElement):
 
         global_deformations = self.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
 
-        element_voxel_volumn = {}
-        element_voxel_indexes = {}
-        element_voxel_affine = {}
-        if self.casing is not None:
-            base_element = DipoleElements(
-                None,
-                np.zeros((1, 3)),
-                np.zeros((1, 3)),
-                casing=self.casing,
-                deformations=global_deformations
-            )
-            (
-                element_voxel_volumn[base_element],
-                element_voxel_affine[base_element],
-                _
-            ) = self.casing.mesh.get_voxel_volume()
-            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volumn[base_element])
-
-        self_intersection_elements = []
-        for self_intersection_group in self.self_intersection_test:
-            self_intersection_elements.append([])
-            for self_intersection_index in self_intersection_group:
-                if self_intersection_index == 0:
-                    self_intersection_elements[-1].append(base_element)
-                else:
-                    self_intersection_elements[-1].append(
-                        self.elements[self_intersection_index - 1]
-                    )
-        for element in self.elements:
-            if element.casing is not None:
-                (
-                    element_voxel_volumn[element],
-                    element_voxel_affine[element],
-                    _
-                ) = element.casing.mesh.get_voxel_volume()
-                element_voxel_indexes[element] = np.argwhere(element_voxel_volumn[element])
-
-        coil_deformation_ranges = self.get_deformation_ranges()
-
+        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = self.get_voxel_volume(global_deformations)
         (
             target_distance_function,
             target_voxel_distance,
@@ -1910,6 +1873,7 @@ class TmsCoil(TcdElement):
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
+        coil_deformation_ranges = self.get_deformation_ranges()
         initial_deformation_settings = np.array(
             [coil_deformation.current for coil_deformation in coil_deformation_ranges]
         )
@@ -1966,6 +1930,45 @@ class TmsCoil(TcdElement):
         result_affine = affine.astype(float) @ result_affine
 
         return initial_cost, optimized_cost, result_affine
+
+    def get_voxel_volume(self, global_deformations):
+        element_voxel_volume = {}
+        element_voxel_indexes = {}
+        element_voxel_affine = {}
+        if self.casing is not None:
+            base_element = DipoleElements(
+                None,
+                np.zeros((1, 3)),
+                np.zeros((1, 3)),
+                casing=self.casing,
+                deformations=global_deformations
+            )
+            (
+                element_voxel_volume[base_element],
+                element_voxel_affine[base_element],
+                _
+            ) = self.casing.mesh.get_voxel_volume()
+            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volume[base_element])
+        self_intersection_elements = []
+        for self_intersection_group in self.self_intersection_test:
+            self_intersection_elements.append([])
+            for self_intersection_index in self_intersection_group:
+                if self_intersection_index == 0:
+                    self_intersection_elements[-1].append(base_element)
+                else:
+                    self_intersection_elements[-1].append(
+                        self.elements[self_intersection_index - 1]
+                    )
+        for element in self.elements:
+            if element.casing is not None:
+                (
+                    element_voxel_volume[element],
+                    element_voxel_affine[element],
+                    _
+                ) = element.casing.mesh.get_voxel_volume()
+                element_voxel_indexes[element] = np.argwhere(element_voxel_volume[element])
+
+        return element_voxel_volume, element_voxel_indexes, element_voxel_affine, self_intersection_elements
 
     def add_global_deformations(self, coil_rotation_ranges, coil_translation_ranges):
         global_deformations = []
@@ -2111,48 +2114,9 @@ class TmsCoil(TcdElement):
             )
 
         global_deformations = coil_sampled.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
-
-        element_voxel_volumn = {}
-        element_voxel_indexes = {}
-        element_voxel_affine = {}
-        if coil_sampled.casing is not None:
-            base_element = DipoleElements(
-                None,
-                np.zeros((1, 3)),
-                np.zeros((1, 3)),
-                casing=coil_sampled.casing,
-                deformations=global_deformations
-            )
-            (
-                element_voxel_volumn[base_element],
-                element_voxel_affine[base_element],
-                _
-            ) = coil_sampled.casing.mesh.get_voxel_volume()
-            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volumn[base_element])
-
-        self_intersection_elements = []
-        for self_intersection_group in coil_sampled.self_intersection_test:
-            self_intersection_elements.append([])
-            for self_intersection_index in self_intersection_group:
-                if self_intersection_index == 0:
-                    self_intersection_elements[-1].append(base_element)
-                else:
-                    self_intersection_elements[-1].append(
-                        coil_sampled.elements[self_intersection_index - 1]
-                    )
-        for element in coil_sampled.elements:
-            if element.casing is not None:
-                (
-                    element_voxel_volumn[element],
-                    element_voxel_affine[element],
-                    _
-                ) = element.casing.mesh.get_voxel_volume()
-                element_voxel_indexes[element] = np.argwhere(element_voxel_volumn[element])
-
-
-        coil_deformation_ranges = coil_sampled.get_deformation_ranges()
-
         optimization_surface = head_mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
+
+        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = coil_sampled.get_voxel_volume(global_deformations)
         (
             target_distance_function,
             target_voxel_distance,
@@ -2160,6 +2124,8 @@ class TmsCoil(TcdElement):
             cost_surface_tree,
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
+
+        coil_deformation_ranges = coil_sampled.get_deformation_ranges()
 
         roi = RegionOfInterest(head_mesh, center=head_mesh.elements_baricenters()[region_of_interest_element_mask])
         fem = OnlineFEM(head_mesh, 'TMS', roi, coil=coil_sampled, dataType=[0], useElements=False)
