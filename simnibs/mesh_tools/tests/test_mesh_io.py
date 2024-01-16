@@ -899,18 +899,35 @@ class TestMsh:
                     (np.abs(inters_pos[:,2] - ROI[2,1]) < eps).astype(int)
             assert np.all(nhits == 1)
 
-    def test_get_outer_skin_points(self, sphere3_msh):
-        """Flip the normal of some node(s). Then this/these should be
-        considered inside by get_outer_skin_points.
-        """
+    def test_partition_skin_surface(self, sphere3_msh):
+
         mesh = copy.deepcopy(sphere3_msh)
-        skin_nodes = np.unique(mesh.elm[mesh.elm.tag1==1005,:3])-1
-        flip_node_indices = [0]
-        for i in skin_nodes[flip_node_indices]:
-            for j in np.where(mesh.elm.node_number_list == i+1)[0]:
-                mesh.elm.node_number_list[j, [1,2]] = mesh.elm.node_number_list[j, [2,1]]
-        ix = mesh.get_outer_skin_points()
-        assert all(i not in ix for i in skin_nodes[flip_node_indices])
+        nn = mesh.nodes_normals()
+
+        triangles = np.where(mesh.elm.tag1 == 1005)[0] + 1
+        elm_idx = triangles[0]
+        v = mesh.elm[elm_idx][0]
+
+        v_tris = triangles[(mesh.elm.node_number_list[triangles-1, :3] == v).sum(1) > 0]
+        v_to_move = np.unique(mesh.elm.node_number_list[v_tris-1, :3])
+
+        f = np.full(v_to_move.shape, 30)
+
+        # Update vertex positions
+        mesh.nodes.node_coord[v_to_move-1] -= nn[v-1] * f[:, None]
+
+        v_in_1, v_out_1, f_in_1, f_out_1 = mesh.partition_skin_surface()
+        # v is considered outside even though it is surrounded by inside nodes
+        v_in, v_out, f_in, f_out = mesh.partition_skin_surface(
+            assume_single_outside_component=False
+        )
+        assert v in v_in_1
+        assert np.isin(v_to_move, v_in_1).all(), "All updated nodes should be considered 'inside'."
+        assert v not in v_in
+        # Currently, f_in/f_out is the same irrespective of the call
+        assert np.all(f_in == f_in_1)
+        assert np.all(f_out == f_out_1)
+        assert np.all(np.isin(mesh.elm[f_in_1][:, :3], v_to_move).sum(1) >= 2)
 
     def test_elm2node_matrix(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)

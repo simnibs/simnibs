@@ -1170,7 +1170,7 @@ class TMSLIST(SimuList):
                      matsimnibs_list, didt_list, output_names, geo_names,
                      solver_options=self.solver_options, n_workers=cpus)
 
-        
+
         logger.info('Creating visualizations')
         summary = ''
         for p, n, s in zip(self.pos, output_names, fn_simu):
@@ -2549,11 +2549,12 @@ class TDCSLEADFIELD(LEADFIELD):
             logger.info("Using point electrodes")
             w_elec = self.mesh
             skin_faces = w_elec.elm[w_elec.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]-1
-            subset = w_elec.get_outer_skin_points()
+            _, v_outside, _, _ = w_elec.partition_skin_surface()
+            v_outside -= 1
 
             pts = np.array([e.centre for e in self.electrode])
             surf = dict(points=w_elec.nodes.node_coord, tris=skin_faces)
-            pttris = transformations._get_nearest_triangles_on_surface(pts, surf, 3, subset)
+            pttris = transformations._get_nearest_triangles_on_surface(pts, surf, 3, v_outside)
             tris, weights, projs, _ = transformations._project_points_to_surface(
                 pts,
                 surf,
