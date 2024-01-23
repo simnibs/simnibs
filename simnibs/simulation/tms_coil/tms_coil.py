@@ -1699,6 +1699,7 @@ class TmsCoil(TcdElement):
 
         return initial_abs_mean_dist, min_found_distance, result_affine
 
+    #@profile
     def _get_fast_distance_score(
             self,
             distance_function,
@@ -1730,6 +1731,7 @@ class TmsCoil(TcdElement):
 
         return np.mean(np.abs(distance_function(min_distance_points)))
 
+    #@profile
     def _get_fast_intersection_penalty(
         self,
         element_voxel_volumes: dict,
@@ -1761,29 +1763,26 @@ class TmsCoil(TcdElement):
         float
             The mean of the sqrt(distance) inside between casing points and the cost_surface_tree, based on the self intersection groups
         """
-        element_affines = {}
-        element_inv_affines = {}
-        for element in element_voxel_volumes:
-            element_affines[element] = element.get_combined_transformation(affine)
-            element_inv_affines[element] = np.linalg.inv(element_affines[element])
+        element_affines = {element: element.get_combined_transformation(affine) for element in element_voxel_volumes}
+        element_inv_affines = {element: np.linalg.inv(element_affines[element]) for element in
+                               element_voxel_volumes}
 
+        target_voxel_inv_affine = np.linalg.inv(target_voxel_affine)
         weighted_target_intersection_quibic_mm = 0
         for element in element_voxel_volumes:
             indexes_in_vox1 = element_voxel_indexes[element]
             element_voxel_affine = element_voxel_affines[element]
-            #move inv out of loop
-            vox_to_vox_affine = np.linalg.inv(target_voxel_affine) @ element_affines[element] @ \
-                                element_voxel_affine
+            vox_to_vox_affine = target_voxel_inv_affine @ element_affines[element] @ element_voxel_affine
             indexes_in_vox2 = (
                     vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
                     + vox_to_vox_affine[:3, 3, None]
-            ).T.astype(int)
-            index_mask = np.logical_and(np.all(indexes_in_vox2 > 0, axis=1),
-                                        np.all(indexes_in_vox2 < target_voxel_distance.shape,
-                                               axis=1))
+            ).T.astype(np.int32)
+            index_mask = np.all(np.logical_and(~np.signbit(indexes_in_vox2), indexes_in_vox2 < target_voxel_distance.shape), axis=1)
+
+            masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
             weighted_target_intersection_quibic_mm += np.sum(target_voxel_distance[
-                                                      indexes_in_vox2[index_mask][:, 0], indexes_in_vox2[index_mask][:, 1],
-                                                      indexes_in_vox2[index_mask][:, 2]])
+                                                      masked_indexes_in_vox2[:, 0], masked_indexes_in_vox2[:, 1],
+                                                      masked_indexes_in_vox2[:, 2]])
 
         self_intersection_quibic_mm = 0
         for intersection_group in self_intersection_elements:
@@ -1793,10 +1792,12 @@ class TmsCoil(TcdElement):
                 indexes_in_vox2 = (
                         vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
                         + vox_to_vox_affine[:3, 3, None]
-                ).T.astype(int)
+                ).T.astype(np.int32)
 
-                index_mask = np.logical_and(np.all(indexes_in_vox2 > 0, axis=1), np.all(indexes_in_vox2 < element_voxel_volumes[intersection_pair[1]].shape, axis=1))
-                self_intersection_quibic_mm += np.sum(element_voxel_volumes[intersection_pair[1]][indexes_in_vox2[index_mask][:, 0], indexes_in_vox2[index_mask][:, 1],indexes_in_vox2[index_mask][:, 2]])
+                voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
+                index_mask = np.all(np.logical_and(~np.signbit(indexes_in_vox2), indexes_in_vox2 < voxel_volume1.shape), axis=1)
+                masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
+                self_intersection_quibic_mm += np.count_nonzero(voxel_volume1[masked_indexes_in_vox2[:, 0], masked_indexes_in_vox2[:, 1], masked_indexes_in_vox2[:, 2]])
                 #self_intersection_quibic_mm += np.sum(np.in1d(indexes_in_vox2, element_voxel_volumes[intersection_pair[1]]))
         return (
             weighted_target_intersection_quibic_mm,
@@ -1948,7 +1949,7 @@ class TmsCoil(TcdElement):
                 element_voxel_affine[base_element],
                 _
             ) = self.casing.mesh.get_voxel_volume()
-            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volume[base_element])
+            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volume[base_element]).astype(np.int32)
         self_intersection_elements = []
         for self_intersection_group in self.self_intersection_test:
             self_intersection_elements.append([])
@@ -1966,7 +1967,7 @@ class TmsCoil(TcdElement):
                     element_voxel_affine[element],
                     _
                 ) = element.casing.mesh.get_voxel_volume()
-                element_voxel_indexes[element] = np.argwhere(element_voxel_volume[element])
+                element_voxel_indexes[element] = np.argwhere(element_voxel_volume[element]).astype(np.int32)
 
         return element_voxel_volume, element_voxel_indexes, element_voxel_affine, self_intersection_elements
 

@@ -306,6 +306,7 @@ def node2elmf(x, nodecoords):
             out[i,k] += x[k,nodecoords[j+1]]
             out[i,k] += x[k,nodecoords[j+2]]
             out[i,k] += x[k,nodecoords[j+3]]
+            out[i,k] *= 0.25
     return out
 
 # this combines the step of going from nodes to elm and the sumf, 

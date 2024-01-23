@@ -280,10 +280,8 @@ class OnlineFEM:
             if self.useElements:
                 self.dadt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, matsimnibs)
             else:
-                scaled_matsimnibs = np.copy(matsimnibs)
-                scaled_matsimnibs[:3, :3] *= 0.25
-                da_dt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, scaled_matsimnibs).T
-                #self.da_dt = NodeData(da_dt, mesh=self.mesh).node_data2elm_data()
+                da_dt = self.coil.get_da_dt_at_coordinates(self.coordinates.T, matsimnibs).T
+                #self.dadt = NodeData(da_dt, mesh=self.mesh).node_data2elm_data()[:]
 
                 self.dadt = node2elmf(da_dt, self.reshaped_node_numbersT)
 
