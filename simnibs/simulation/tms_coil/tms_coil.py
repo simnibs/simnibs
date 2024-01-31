@@ -1810,6 +1810,7 @@ class TmsCoil(TcdElement):
         affine: npt.NDArray[np.float_],
         coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
         coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
+        dither_skip=0
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1865,7 +1866,7 @@ class TmsCoil(TcdElement):
 
         global_deformations = self.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
 
-        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = self.get_voxel_volume(global_deformations)
+        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = self.get_voxel_volume(global_deformations, dither_skip=dither_skip)
         (
             target_distance_function,
             target_voxel_distance,
@@ -1932,7 +1933,7 @@ class TmsCoil(TcdElement):
 
         return initial_cost, optimized_cost, result_affine
 
-    def get_voxel_volume(self, global_deformations):
+    def get_voxel_volume(self, global_deformations, dither_skip=0):
         element_voxel_volume = {}
         element_voxel_indexes = {}
         element_voxel_affine = {}
@@ -1947,9 +1948,9 @@ class TmsCoil(TcdElement):
             (
                 element_voxel_volume[base_element],
                 element_voxel_affine[base_element],
+                element_voxel_indexes[base_element],
                 _
-            ) = self.casing.mesh.get_voxel_volume()
-            element_voxel_indexes[base_element] = np.argwhere(element_voxel_volume[base_element]).astype(np.int32)
+            ) = self.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
         self_intersection_elements = []
         for self_intersection_group in self.self_intersection_test:
             self_intersection_elements.append([])
@@ -1965,9 +1966,9 @@ class TmsCoil(TcdElement):
                 (
                     element_voxel_volume[element],
                     element_voxel_affine[element],
+                    element_voxel_indexes[element],
                     _
-                ) = element.casing.mesh.get_voxel_volume()
-                element_voxel_indexes[element] = np.argwhere(element_voxel_volume[element]).astype(np.int32)
+                ) = element.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
 
         return element_voxel_volume, element_voxel_indexes, element_voxel_affine, self_intersection_elements
 
@@ -2059,6 +2060,8 @@ class TmsCoil(TcdElement):
         affine: npt.NDArray[np.float_],
         coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
         coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
+        dither_skip=0,
+        fem_evaluation_cutoff = 1000
     ) -> tuple[float, float, npt.NDArray[np.float_]]:
         """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
         and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -2117,7 +2120,7 @@ class TmsCoil(TcdElement):
         global_deformations = coil_sampled.add_global_deformations(coil_rotation_ranges, coil_translation_ranges)
         optimization_surface = head_mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
 
-        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = coil_sampled.get_voxel_volume(global_deformations)
+        element_voxel_volumn, element_voxel_indexes, element_voxel_affine, self_intersection_elements = coil_sampled.get_voxel_volume(global_deformations, dither_skip=dither_skip)
         (
             target_distance_function,
             target_voxel_distance,
@@ -2125,6 +2128,16 @@ class TmsCoil(TcdElement):
             cost_surface_tree,
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
+
+        dither_factor = 1
+        if dither_skip > 1:
+            volume_in_mm3 = 0
+            dither_volume_in_mm3 = 0
+            for element in element_voxel_volumn:
+                volume_in_mm3 += np.count_nonzero(element_voxel_volumn[element])
+                dither_volume_in_mm3 += len(element_voxel_indexes[element])
+
+            dither_factor = volume_in_mm3 / dither_volume_in_mm3
 
         coil_deformation_ranges = coil_sampled.get_deformation_ranges()
 
@@ -2148,13 +2161,18 @@ class TmsCoil(TcdElement):
             target_voxel_affine, self_intersection_elements, affine
             )
 
+            penalty = (intersection_penalty + self_intersection_penalty) * dither_factor
+            if penalty > fem_evaluation_cutoff:
+                return penalty
+
             roi_e_field = fem.update_field(matsimnibs=affine)
 
             f = (
-                intersection_penalty
+                penalty
                 - 100 * np.mean(roi_e_field)
-                 + self_intersection_penalty
             )
+
+            #print(f'{intersection_penalty}, {self_intersection_penalty}, {100 * np.mean(roi_e_field)}', flush=True)
 
             return f
 

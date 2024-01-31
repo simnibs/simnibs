@@ -2466,7 +2466,7 @@ class Msh:
 
         return min_distance_on_grid, grid, M, AABBTree
 
-    def get_voxel_volume(self, resolution=1.0, AABBTree=None):
+    def get_voxel_volume(self, resolution:float=1.0, dither_skip:int=0, AABBTree=None):
         """Generates a distance field on a grid to the mesh surface
 
         Parameters
@@ -2508,7 +2508,17 @@ class Msh:
         np.put(grid, AABBTree.points_inside(xyzc), 1)
         grid = scipy.ndimage.binary_closing(grid, iterations=3)
 
-        return grid, M, AABBTree
+        if dither_skip > 1:
+            edges = grid & ~scipy.ndimage.binary_erosion(grid)
+            edges[dither_skip // 2::dither_skip, ::dither_skip, ::dither_skip] = True
+            edges[::dither_skip, dither_skip // 2::dither_skip, ::dither_skip] = True
+            edges[::dither_skip, ::dither_skip, dither_skip // 2::dither_skip] = True
+            edges[dither_skip // 2::dither_skip, dither_skip // 2::dither_skip, dither_skip // 2::dither_skip] = True
+            voxel_indexes = np.argwhere(grid & edges).astype(np.int32)
+        else:
+            voxel_indexes = np.argwhere(grid).astype(np.int32)
+
+        return grid, M, voxel_indexes, AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
