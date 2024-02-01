@@ -2361,7 +2361,7 @@ class Msh:
         return np.where(has_far)[0], far
 
     def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None):
-        """Generates a distance field on a grid to the mesh surface
+        """Generates a distance to surface field on a grid
 
         Parameters
         ----------
@@ -2372,9 +2372,13 @@ class Msh:
 
         Returns
         -------
-        Callable
+        min_distance_on_grid : Callable
             The signed gridded distance field function (inside is negative)
-        pyAABBTree
+        grid : npt.NDArray[np.float_]
+            The voxelized surface distance
+        affine : npt.NDArray[np.float_]
+            The affine transformation from voxel to world coordinates
+        AABBTree : pyAABBTree
             The AABBTree used
         """
 
