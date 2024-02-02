@@ -507,15 +507,12 @@ class TestCoilMesh:
     def test_generate_full_coil_mesh(self, full_tcd_coil: TmsCoil):
         coil_mesh = full_tcd_coil.get_mesh(apply_deformation=False)
 
-        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 4 + 3
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 2
         assert is_close_subset_of(
             full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord
         )
         assert is_close_subset_of(
             full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord
-        )
-        assert is_close_subset_of(
-            full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord
         )
 
         for coil_element in full_tcd_coil.elements:
@@ -524,9 +521,6 @@ class TestCoilMesh:
             )
             assert is_close_subset_of(
                 coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord
-            )
-            assert is_close_subset_of(
-                coil_element.casing.intersect_points, coil_mesh.nodes.node_coord
             )
 
             if isinstance(coil_element, PositionalTmsCoilElements):
@@ -583,15 +577,12 @@ class TestCoilMesh:
             + inv_coil_affine[None, :3, 3]
         )
         print(list(coil_mesh.nodes.node_coord))
-        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 4 + 3
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 2
         assert is_close_subset_of(
             full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh_node_coord
         )
         assert is_close_subset_of(
             full_tcd_coil.casing.min_distance_points, coil_mesh_node_coord
-        )
-        assert is_close_subset_of(
-            full_tcd_coil.casing.intersect_points, coil_mesh_node_coord
         )
 
         for coil_element in full_tcd_coil.elements:
@@ -600,9 +591,6 @@ class TestCoilMesh:
             )
             assert is_close_subset_of(
                 coil_element.casing.min_distance_points, coil_mesh_node_coord
-            )
-            assert is_close_subset_of(
-                coil_element.casing.intersect_points, coil_mesh_node_coord
             )
 
             if isinstance(coil_element, PositionalTmsCoilElements):
@@ -637,15 +625,12 @@ class TestCoilMesh:
             include_casing=False, apply_deformation=False
         )
 
-        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 2
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 2 + 1
         assert not is_close_to_any(
             full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord
         )
         assert is_close_subset_of(
             full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord
-        )
-        assert is_close_subset_of(
-            full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord
         )
 
         for coil_element in full_tcd_coil.elements:
@@ -654,9 +639,6 @@ class TestCoilMesh:
             )
             assert is_close_subset_of(
                 coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord
-            )
-            assert is_close_subset_of(
-                coil_element.casing.intersect_points, coil_mesh.nodes.node_coord
             )
 
             if isinstance(coil_element, PositionalTmsCoilElements):
@@ -708,9 +690,6 @@ class TestCoilMesh:
         assert not is_close_to_any(
             full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord
         )
-        assert not is_close_to_any(
-            full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord
-        )
 
         for coil_element in full_tcd_coil.elements:
             assert is_close_subset_of(
@@ -718,9 +697,6 @@ class TestCoilMesh:
             )
             assert not is_close_to_any(
                 coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord
-            )
-            assert not is_close_to_any(
-                coil_element.casing.intersect_points, coil_mesh.nodes.node_coord
             )
 
             if isinstance(coil_element, PositionalTmsCoilElements):
@@ -763,26 +739,19 @@ class TestCoilMesh:
             include_coil_elements=False, apply_deformation=False
         )
 
-        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 3 + 3
+        assert len(np.unique(coil_mesh.elm.tag1)) == len(full_tcd_coil.elements) * 2 + 2
         assert is_close_subset_of(
             full_tcd_coil.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord
         )
         assert is_close_subset_of(
             full_tcd_coil.casing.min_distance_points, coil_mesh.nodes.node_coord
         )
-        assert is_close_subset_of(
-            full_tcd_coil.casing.intersect_points, coil_mesh.nodes.node_coord
-        )
-
         for coil_element in full_tcd_coil.elements:
             assert is_close_subset_of(
                 coil_element.casing.mesh.nodes.node_coord, coil_mesh.nodes.node_coord
             )
             assert is_close_subset_of(
                 coil_element.casing.min_distance_points, coil_mesh.nodes.node_coord
-            )
-            assert is_close_subset_of(
-                coil_element.casing.intersect_points, coil_mesh.nodes.node_coord
             )
 
             if isinstance(coil_element, PositionalTmsCoilElements):
@@ -830,12 +799,9 @@ class TestPositionOptimization:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 50], [0, 0, 0, 1]]
         )
         try:
-            small_functional_3_element_coil.optimize_deformations(
-                skin_surface, coil_affine
-            )
-        except:
-            raise pytest.fail("DID RAISE {0}".format(exception))
-
+            small_functional_3_element_coil.optimize_distance(skin_surface, coil_affine)
+        except Exception as e:
+            raise pytest.fail("DID RAISE {0}".format(e))
 
     def test_no_deformations(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
@@ -849,7 +815,7 @@ class TestPositionOptimization:
             element.deformations = []
 
         with pytest.raises(ValueError):
-            coil.optimize_deformations(skin_surface, coil_affine)
+            coil.optimize_distance(skin_surface, coil_affine)
 
     def test_no_casings(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
@@ -863,7 +829,7 @@ class TestPositionOptimization:
             element.casing = None
 
         with pytest.raises(ValueError):
-            coil.optimize_deformations(skin_surface, coil_affine)
+            coil.optimize_distance(skin_surface, coil_affine)
 
     def test_simple_optimization(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
@@ -874,20 +840,43 @@ class TestPositionOptimization:
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
 
-        distance_before = np.mean(np.sqrt(cost_surface_tree.min_sqdist(small_functional_3_element_coil.get_casing_coordinates(coil_affine)[0])))
+        distance_before = np.mean(
+            np.sqrt(
+                cost_surface_tree.min_sqdist(
+                    small_functional_3_element_coil.get_casing_coordinates(coil_affine)[
+                        0
+                    ]
+                )
+            )
+        )
 
         (
             before,
             after,
             affine_after,
-        ) = small_functional_3_element_coil.optimize_deformations(
-            skin_surface, coil_affine
+        ) = small_functional_3_element_coil.optimize_distance(skin_surface, coil_affine)
+
+        distance_after = np.mean(
+            np.sqrt(
+                cost_surface_tree.min_sqdist(
+                    small_functional_3_element_coil.get_casing_coordinates(coil_affine)[
+                        0
+                    ]
+                )
+            )
         )
 
-        distance_after = np.mean(np.sqrt(cost_surface_tree.min_sqdist(small_functional_3_element_coil.get_casing_coordinates(coil_affine)[0])))
-
         assert distance_before > distance_after
-        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(coil_affine).nodes.node_coord)) == 0
+        assert (
+            len(
+                cost_surface_tree.points_inside(
+                    small_functional_3_element_coil.get_mesh(
+                        coil_affine
+                    ).nodes.node_coord
+                )
+            )
+            == 0
+        )
         np.testing.assert_allclose(coil_affine, affine_after)
 
     def test_optimization_with_global_translation(
@@ -904,14 +893,23 @@ class TestPositionOptimization:
             before,
             after,
             affine_after,
-        ) = small_functional_3_element_coil.optimize_deformations(
+        ) = small_functional_3_element_coil.optimize_distance(
             skin_surface, coil_affine, np.array([[-5, 5], [-5, 5], [-20, 20]])
         )
 
         assert before > after
         assert after < before * 0.5
         assert not np.allclose(coil_affine, affine_after)
-        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(coil_affine).nodes.node_coord)) == 0
+        assert (
+            len(
+                cost_surface_tree.points_inside(
+                    small_functional_3_element_coil.get_mesh(
+                        coil_affine
+                    ).nodes.node_coord
+                )
+            )
+            == 0
+        )
 
     def test_optimization_with_global_rotation(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
@@ -931,14 +929,25 @@ class TestPositionOptimization:
             before,
             after,
             affine_after,
-        ) = small_functional_3_element_coil_copy.optimize_deformations(
-            skin_surface, coil_affine, coil_rotation_ranges=np.array([[-90, 90], [-90, 90], [-90, 90]])
+        ) = small_functional_3_element_coil_copy.optimize_distance(
+            skin_surface,
+            coil_affine,
+            coil_rotation_ranges=np.array([[-90, 90], [-90, 90], [-90, 90]]),
         )
 
         assert before > after
         assert after < before * 0.8
         assert not np.allclose(coil_affine, affine_after)
-        assert len(cost_surface_tree.points_inside(small_functional_3_element_coil.get_mesh(affine_after).nodes.node_coord)) == 0
+        assert (
+            len(
+                cost_surface_tree.points_inside(
+                    small_functional_3_element_coil.get_mesh(
+                        affine_after
+                    ).nodes.node_coord
+                )
+            )
+            == 0
+        )
 
     def test_self_intersection_optimization(
         self, small_self_intersecting_2_element_coil: TmsCoil, sphere3_msh: Msh
@@ -947,27 +956,113 @@ class TestPositionOptimization:
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
-        cost_surface_tree = small_self_intersecting_2_element_coil.elements[0].get_mesh(coil_affine).get_AABBTree()
+        cost_surface_tree = (
+            small_self_intersecting_2_element_coil.elements[0]
+            .get_mesh(coil_affine)
+            .get_AABBTree()
+        )
 
-        self_intersection_before = np.sum(cost_surface_tree.points_inside(small_self_intersecting_2_element_coil.elements[1].get_mesh(coil_affine).nodes.node_coord))
+        self_intersection_before = np.sum(
+            cost_surface_tree.points_inside(
+                small_self_intersecting_2_element_coil.elements[1]
+                .get_mesh(coil_affine)
+                .nodes.node_coord
+            )
+        )
 
         (
             before,
             after,
             affine_after,
-        ) = small_self_intersecting_2_element_coil.optimize_deformations(
+        ) = small_self_intersecting_2_element_coil.optimize_distance(
             skin_surface, coil_affine
         )
 
-        self_intersection_after = np.sum(cost_surface_tree.points_inside(small_self_intersecting_2_element_coil.elements[1].get_mesh(coil_affine).nodes.node_coord))
+        self_intersection_after = np.sum(
+            cost_surface_tree.points_inside(
+                small_self_intersecting_2_element_coil.elements[1]
+                .get_mesh(coil_affine)
+                .nodes.node_coord
+            )
+        )
 
         assert self_intersection_before > self_intersection_after
-        assert self_intersection_after < 0.00001
+        assert self_intersection_after <= 0.0000000001
         np.testing.assert_allclose(coil_affine, affine_after)
 
-class TestGetDeformations:  
+
+class TestEMagOptimization:
+    @pytest.mark.skip(reason="Execution is slow")
+    def test_initial_intersection(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh, tmp_path: Path
+    ):
+        sphere_path = tmp_path.joinpath("sphere.msh")
+        sphere3_msh.write(str(sphere_path.absolute()))
+        sphere3_msh.fn = str(sphere_path.absolute())
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 50], [0, 0, 0, 1]]
+        )
+        try:
+            small_functional_3_element_coil.optimize_e_mag(
+                sphere3_msh, sphere3_msh.elm.tag1 == 4, coil_affine
+            )
+        except Exception as e:
+            raise pytest.fail("DID RAISE {0}".format(e))
+
+    def test_no_deformations(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
+    ):
+        coil = deepcopy(small_functional_3_element_coil)
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+        for element in coil.elements:
+            element.deformations = []
+
+        with pytest.raises(ValueError):
+            coil.optimize_e_mag(sphere3_msh, sphere3_msh.elm.tag1 == 4, coil_affine)
+
+    def test_no_casings(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
+    ):
+        coil = deepcopy(small_functional_3_element_coil)
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+        for element in coil.elements:
+            element.casing = None
+
+        with pytest.raises(ValueError):
+            coil.optimize_e_mag(sphere3_msh, sphere3_msh.elm.tag1 == 4, coil_affine)
+
+    @pytest.mark.skip(reason="Execution is slow")
+    def test_simple_optimization(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh, tmp_path: Path
+    ):
+        sphere_path = tmp_path.joinpath("sphere.msh")
+        sphere3_msh.write(str(sphere_path.absolute()))
+        sphere3_msh.fn = str(sphere_path.absolute())
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+
+        (
+            before,
+            after,
+            affine_after,
+            e_mag,
+        ) = small_functional_3_element_coil.optimize_e_mag(
+            sphere3_msh, sphere3_msh.elm.tag1 == 4, coil_affine
+        )
+
+        assert before > after
+        np.testing.assert_allclose(coil_affine, affine_after)
+
+
+class TestGetDeformations:
     def test_get_deformations(self, small_functional_3_element_coil: TmsCoil):
         assert len(small_functional_3_element_coil.get_deformations()) == 2
+
 
 class TestInit:
     def test_init_zero_element_exception(self):
@@ -1069,7 +1164,7 @@ class TestInit:
         with pytest.raises(ValueError):
             TmsCoil(
                 [DipoleElements(TmsStimulator(""), [[1, 2, 3]], [[1, 2, 3]])],
-                self_intersection_test=[[1,1], [0, 1]],
+                self_intersection_test=[[1, 1], [0, 1]],
             )
 
     def test_single_element_group_in_self_intersection_test(self):
@@ -1078,6 +1173,7 @@ class TestInit:
                 [DipoleElements(TmsStimulator(""), [[1, 2, 3]], [[1, 2, 3]])],
                 self_intersection_test=[[1]],
             )
+
 
 class TestCasingGeneration:
     def test_distance(self, small_functional_3_element_coil: TmsCoil):

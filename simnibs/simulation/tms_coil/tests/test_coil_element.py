@@ -744,7 +744,6 @@ class TestGetMesh:
         (
             casing,
             min_distance_points,
-            intersection_points,
         ) = small_functional_3_element_coil.elements[0].get_casing_coordinates()
 
         np.testing.assert_allclose(
@@ -752,7 +751,6 @@ class TestGetMesh:
             small_functional_3_element_coil.elements[0].casing.mesh.nodes.node_coord,
         )
         assert len(min_distance_points) == 0
-        assert len(intersection_points) == 0
 
     def test_get_mesh_deformed(self, small_functional_3_element_coil: TmsCoil):
         coil = deepcopy(small_functional_3_element_coil)
@@ -766,7 +764,7 @@ class TestGetMesh:
                 [-20.0, 20.0, -40.0],
                 [20.0, 20.0, 0.0],
                 [20.0, 20.0, -40.0],
-                [0.0, 40.0, -20.0]
+                [0.0, 40.0, -20.0],
             ],
         )
 

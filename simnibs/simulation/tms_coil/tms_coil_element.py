@@ -139,8 +139,8 @@ class TmsCoilElements(ABC, TcdElement):
         self,
         affine_matrix: Optional[npt.NDArray[np.float_]] = None,
         apply_deformation: bool = True,
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Returns the casing points, min distance points and intersection points,
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Returns the casing points and min distance points,
         optionally transformed by the affine matrix and deformed by the element deformation
 
         Parameters
@@ -153,20 +153,19 @@ class TmsCoilElements(ABC, TcdElement):
         Returns
         -------
         tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]
-            The casing points, min distance points and intersection points
+            The casing points and min distance points
         """
         if apply_deformation:
             affine_matrix = self.get_combined_transformation(affine_matrix)
         else:
             affine_matrix = affine_matrix if affine_matrix is not None else np.eye(4)
 
-        transformed_coordinates = [np.array([]), np.array([]), np.array([])]
+        transformed_coordinates = [np.array([]), np.array([])]
         if self.casing is not None:
             transformed_coordinates[0] = self.casing.get_points(affine_matrix)
             transformed_coordinates[1] = self.casing.get_min_distance_points(
                 affine_matrix
             )
-            transformed_coordinates[2] = self.casing.get_intersect_points(affine_matrix)
 
         return tuple(transformed_coordinates)
 
@@ -180,7 +179,7 @@ class TmsCoilElements(ABC, TcdElement):
         element_index: int = 0,
     ) -> Msh:
         """Generates a mesh of the coil element, optionally transformed by the affine matrix, deformed by the element deformation,
-        including the element casing, including the min distance and intersection points and including the coil element
+        including the element casing, including the min distance points and including the coil element
 
         Parameters
         ----------
@@ -191,7 +190,7 @@ class TmsCoilElements(ABC, TcdElement):
         include_element_casing : bool, optional
             Whether or not to include the casing mesh, by default True
         include_optimization_points : bool, optional
-            Whether or not to include the min distance and intersection points, by default True
+            Whether or not to include the min distance points, by default True
         include_coil_element : bool, optional
             Whether or not to include the stimulating elements in the mesh, by default True
         element_index : int, optional
@@ -472,6 +471,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
         if apply_deformation:
             affine_matrix = self.get_combined_transformation(affine_matrix)
         return self.values @ affine_matrix[:3, :3].T
+
 
 class DipoleElements(PositionalTmsCoilElements):
     def get_a_field(
@@ -814,7 +814,7 @@ class SampledGridPointElements(TmsCoilElements):
 
     @data.setter
     def data(self, value: npt.NDArray[np.float_]):
-        self._data = np.transpose(value, (3, 0, 1, 2)).astype(np.float64, order='F')
+        self._data = np.transpose(value, (3, 0, 1, 2)).astype(np.float64, order="F")
 
     def get_a_field(
         self,
@@ -850,20 +850,20 @@ class SampledGridPointElements(TmsCoilElements):
         t = np.ascontiguousarray(iM[:3, 3])
         M2 = np.ascontiguousarray(combined_affine[:3, :3])
 
-        #target_voxle_coordinates = (
+        # target_voxle_coordinates = (
         #    iM[:3, :3] @ target_positions.T + iM[:3, 3][:, np.newaxis]
-        #)
+        # )
 
         # Interpolates the values of the field in the given coordinates
-        #out = np.zeros((3, target_voxle_coordinates.shape[1]))
-        #for dim in range(3):
+        # out = np.zeros((3, target_voxle_coordinates.shape[1]))
+        # for dim in range(3):
         #    out[dim] = ndimage.map_coordinates(
         #        np.asanyarray(self.data)[..., dim], target_voxle_coordinates, order=1
         #    )
         out = map_coord_lin_trans(self._data, target_positions.T, M1, t, M2)
 
         # Rotates the field
-        return out.T #@ combined_affine[:3, :3].T
+        return out.T  # @ combined_affine[:3, :3].T
 
     def generate_element_mesh(
         self,

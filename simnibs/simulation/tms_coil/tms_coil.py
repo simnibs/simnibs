@@ -3,7 +3,6 @@ import json
 import os
 import re
 import shutil
-import sys
 from copy import deepcopy
 from typing import Callable, Optional
 
@@ -297,7 +296,7 @@ class TmsCoil(TcdElement):
         include_casing : bool, optional
             Whether or not to include the casing mesh, by default True
         include_optimization_points : bool, optional
-            Whether or not to include the min distance and intersection points, by default True
+            Whether or not to include the min distance, by default True
         include_coil_elements : bool, optional
             Whether or not to include the stimulating elements in the mesh, by default True
 
@@ -416,12 +415,7 @@ class TmsCoil(TcdElement):
         for tag in np.unique(optimization_points.elm.tag1):
             element_optimization_points = optimization_points.crop_mesh(tags=[tag])
             index = str(tag)[:-2]
-            identifier, color = (
-                ("min_distance_points", 2)
-                if int(str(tag)[-2:])
-                == TmsCoilElementTag.COIL_CASING_MIN_DISTANCE_POINTS
-                else ("intersect_points", 18)
-            )
+            identifier, color = ("min_distance_points", 2)
 
             mesh_io.write_geo_spheres(
                 element_optimization_points.nodes.node_coord,
@@ -567,8 +561,8 @@ class TmsCoil(TcdElement):
         self,
         affine: Optional[npt.NDArray[np.float_]] = None,
         apply_deformation: bool = True,
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Returns all casing points, min distance points and intersect points of this coil and the coil elements.
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Returns all casing points and min distance points of this coil and the coil elements.
 
         Parameters
         ----------
@@ -579,8 +573,8 @@ class TmsCoil(TcdElement):
 
         Returns
         -------
-        tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]
-            A tuple containing the casing points, min distance points and intersect points
+        tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]
+            A tuple containing the casing points and min distance points
         """
         if affine is None:
             affine = np.eye(4)
@@ -593,11 +587,6 @@ class TmsCoil(TcdElement):
             if self.casing is not None and len(self.casing.min_distance_points) > 0
             else []
         )
-        intersect_points = (
-            [self.casing.get_intersect_points(affine)]
-            if self.casing is not None and len(self.casing.intersect_points) > 0
-            else []
-        )
 
         for coil_element in self.elements:
             if coil_element.casing is not None:
@@ -608,17 +597,13 @@ class TmsCoil(TcdElement):
                     casing_points.append(element_casing_points[0])
                 if len(element_casing_points[1]) > 0:
                     min_distance_points.append(element_casing_points[1])
-                if len(element_casing_points[2]) > 0:
-                    intersect_points.append(element_casing_points[2])
 
         if len(casing_points) > 0:
             casing_points = np.concatenate(casing_points, axis=0)
         if len(min_distance_points) > 0:
             min_distance_points = np.concatenate(min_distance_points, axis=0)
-        if len(intersect_points) > 0:
-            intersect_points = np.concatenate(intersect_points, axis=0)
 
-        return casing_points, min_distance_points, intersect_points
+        return casing_points, min_distance_points
 
     def get_elements_grouped_by_stimulators(
         self,
@@ -1541,7 +1526,7 @@ class TmsCoil(TcdElement):
 
     def _get_fast_distance_score(
         self,
-        distance_function : Callable,
+        distance_function: Callable,
         elements: list[TmsCoilElements],
         affine: npt.NDArray[np.float_],
     ) -> float:
@@ -1701,7 +1686,7 @@ class TmsCoil(TcdElement):
             self_intersection_quibic_mm,
         )
 
-    def optimize_deformations(
+    def optimize_distance(
         self,
         optimization_surface: Msh,
         affine: npt.NDArray[np.float_],
@@ -1761,9 +1746,7 @@ class TmsCoil(TcdElement):
             )
 
         if not np.any([np.any(arr) for arr in self.get_casing_coordinates()]):
-            raise ValueError(
-                "The coil has no coil casing or min_distance points."
-            )
+            raise ValueError("The coil has no coil casing or min_distance points.")
 
         global_deformations = self.add_global_deformations(
             coil_rotation_ranges, coil_translation_ranges
@@ -1841,7 +1824,7 @@ class TmsCoil(TcdElement):
         return initial_cost, optimized_cost, result_affine
 
     def get_voxel_volume(
-        self, global_deformations : list[TmsCoilDeformation], dither_skip : int =0
+        self, global_deformations: list[TmsCoilDeformation], dither_skip: int = 0
     ) -> tuple[
         dict[TmsCoilElements, npt.NDArray[np.bool_]],
         dict[TmsCoilElements, npt.NDArray[np.int_]],
@@ -1853,7 +1836,7 @@ class TmsCoil(TcdElement):
         Parameters
         ----------
         global_deformations : list[TmsCoilDeformation]
-            Global deformations used in the coil 
+            Global deformations used in the coil
         dither_skip : int, optional
             How many voxel positions should be skipped when creating the coil volume representation.
             Used to speed up the optimization. When set to 0, no dithering will be applied, by default 0
@@ -2063,7 +2046,7 @@ class TmsCoil(TcdElement):
         ValueError
             If the coil has no deformations to optimize
         ValueError
-            If the coil has no casing 
+            If the coil has no casing
         """
         from simnibs.simulation.onlinefem import OnlineFEM
 
@@ -2110,10 +2093,7 @@ class TmsCoil(TcdElement):
 
         coil_deformation_ranges = coil_sampled.get_deformation_ranges()
 
-        
-        if (
-            len(element_voxel_volume) == 0
-        ):
+        if len(element_voxel_volume) == 0:
             raise ValueError(
                 "The coil has no coil casing to be used for coil head intersection tests."
             )

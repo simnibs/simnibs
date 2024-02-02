@@ -496,7 +496,7 @@
                         ]
                     },
                     "intersectPoints": {
-                        "description": "A list of points 3D points used for intersection detection",
+                        "description": "DEPRECATED! Will be removed in a future version!",
                         "oneOf": [
                             {
                                 "type": "array",
