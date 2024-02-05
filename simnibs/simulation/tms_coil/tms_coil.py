@@ -800,7 +800,7 @@ class TmsCoil(TcdElement):
         coil_casing = None
         if fn_coil_casing is not None:
             coil_casing_mesh = mesh_io.read_stl(fn_coil_casing)
-            coil_casing = TmsCoilModel(coil_casing_mesh, None, None)
+            coil_casing = TmsCoilModel(coil_casing_mesh, None)
 
         if fn_waveform_file is None:
             fn_waveform_file = f"{os.path.splitext(fn)[0]}.tsv"
@@ -1128,7 +1128,7 @@ class TmsCoil(TcdElement):
         coil_casing = None
         if fn_coil_casing is not None:
             coil_casing_mesh = mesh_io.read_stl(fn_coil_casing)
-            coil_casing = TmsCoilModel(coil_casing_mesh, None, None)
+            coil_casing = TmsCoilModel(coil_casing_mesh, None)
 
         nifti = nib.load(fn)
         data = nifti.get_fdata()
