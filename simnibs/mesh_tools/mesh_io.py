@@ -2497,20 +2497,20 @@ class Msh:
         xyz = np.meshgrid(
             *[
                 np.arange(np.floor(x[0]), x[1], resolution)
-                for x in zip(xmin - 1, xmax + 1)
+                for x in zip(xmin - 5, xmax + 5)
             ],
             indexing="ij",
         )
         xyzc = np.array(xyz).reshape(3, -1).T
-
         M = np.identity(4) * resolution
         M[3, 3] = 1
-        M[:3, 3] = np.floor(xmin - 1)
+        M[:3, 3] = np.floor(xmin - 5)
 
         grid = np.zeros(xyz[0].shape, dtype=np.bool_)
 
         np.put(grid, AABBTree.points_inside(xyzc), 1)
-        grid = scipy.ndimage.binary_closing(grid, iterations=3)
+        bc_grid = scipy.ndimage.binary_closing(grid, iterations=3)
+        grid = np.logical_or(grid, bc_grid)
 
         if dither_skip > 1:
             edges = grid & ~scipy.ndimage.binary_erosion(grid)
