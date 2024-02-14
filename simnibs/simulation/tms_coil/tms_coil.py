@@ -1766,6 +1766,16 @@ class TmsCoil(TcdElement):
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
+        dither_factor = 1
+        if dither_skip > 1:
+            volume_in_mm3 = 0
+            dither_volume_in_mm3 = 0
+            for element in element_voxel_volumn:
+                volume_in_mm3 += np.count_nonzero(element_voxel_volumn[element])
+                dither_volume_in_mm3 += len(element_voxel_indexes[element])
+
+            dither_factor = volume_in_mm3 / dither_volume_in_mm3
+
         coil_deformation_ranges = self.get_deformation_ranges()
         initial_deformation_settings = np.array(
             [coil_deformation.current for coil_deformation in coil_deformation_ranges]
@@ -1792,8 +1802,8 @@ class TmsCoil(TcdElement):
             distance_penalty = self._get_fast_distance_score(
                 target_distance_function, element_voxel_volumn.keys(), affine
             )
-
-            f = intersection_penalty + distance_penalty + self_intersection_penalty
+            
+            f = distance_penalty + (intersection_penalty + self_intersection_penalty) * dither_factor
 
             return f
 
