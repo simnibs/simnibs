@@ -1575,6 +1575,8 @@ class TmsCoil(TcdElement):
         self,
         element_voxel_volumes: dict,
         element_voxel_indexes,
+        element_dither_factors,
+        element_voxel_length,
         element_voxel_affines: dict,
         target_voxel_distance,
         target_voxel_affine,
@@ -1621,6 +1623,8 @@ class TmsCoil(TcdElement):
         target_voxel_inv_affine = np.linalg.inv(target_voxel_affine)
         weighted_target_intersection_quibic_mm = 0
         for element in element_voxel_volumes:
+            dither_factor = element_dither_factors[element]
+            voxel_length = element_voxel_length[element]
             indexes_in_vox1 = element_voxel_indexes[element]
             element_voxel_affine = element_voxel_affines[element]
             vox_to_vox_affine = (
@@ -1641,17 +1645,21 @@ class TmsCoil(TcdElement):
             )
 
             masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-            weighted_target_intersection_quibic_mm += np.sum(
-                target_voxel_distance[
+            masked_length = np.count_nonzero(index_mask[:voxel_length])
+            intersections = target_voxel_distance[
                     masked_indexes_in_vox2[:, 0],
                     masked_indexes_in_vox2[:, 1],
                     masked_indexes_in_vox2[:, 2],
-                ]
-            )
+                ] 
+            
+            weighted_target_intersection_quibic_mm += np.sum(intersections[:masked_length]) * dither_factor + np.sum(intersections[masked_length:])
+
 
         self_intersection_quibic_mm = 0
         for intersection_group in self_intersection_elements:
             for intersection_pair in itertools.combinations(intersection_group, 2):
+                dither_factor = element_dither_factors[intersection_pair[0]]
+                voxel_length = element_voxel_length[intersection_pair[0]]
                 vox_to_vox_affine = (
                     np.linalg.inv(element_voxel_affines[intersection_pair[1]])
                     @ element_inv_affines[intersection_pair[1]]
@@ -1672,14 +1680,25 @@ class TmsCoil(TcdElement):
                     ),
                     axis=1,
                 )
+                #masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
+                #self_intersection_quibic_mm += np.count_nonzero(
+                #    voxel_volume1[
+                #        masked_indexes_in_vox2[:, 0],
+                #        masked_indexes_in_vox2[:, 1],
+                #        masked_indexes_in_vox2[:, 2],
+                #    ]
+                #)
+
                 masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-                self_intersection_quibic_mm += np.count_nonzero(
-                    voxel_volume1[
+                masked_length = np.count_nonzero(index_mask[:voxel_length])
+                intersections = voxel_volume1[
                         masked_indexes_in_vox2[:, 0],
                         masked_indexes_in_vox2[:, 1],
                         masked_indexes_in_vox2[:, 2],
-                    ]
-                )
+                    ] 
+                
+                self_intersection_quibic_mm += np.count_nonzero(intersections[:masked_length]) * dither_factor + np.count_nonzero(intersections[masked_length:])
+
 
         return (
             weighted_target_intersection_quibic_mm,
@@ -1753,8 +1772,10 @@ class TmsCoil(TcdElement):
         )
 
         (
-            element_voxel_volumn,
+            element_voxel_volume,
             element_voxel_indexes,
+            element_dither_factors,
+            element_voxel_length,
             element_voxel_affine,
             self_intersection_elements,
         ) = self.get_voxel_volume(global_deformations, dither_skip=dither_skip)
@@ -1765,16 +1786,6 @@ class TmsCoil(TcdElement):
             cost_surface_tree,
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
-
-        dither_factor = 1
-        if dither_skip > 1:
-            volume_in_mm3 = 0
-            dither_volume_in_mm3 = 0
-            for element in element_voxel_volumn:
-                volume_in_mm3 += np.count_nonzero(element_voxel_volumn[element])
-                dither_volume_in_mm3 += len(element_voxel_indexes[element])
-
-            dither_factor = volume_in_mm3 / dither_volume_in_mm3
 
         coil_deformation_ranges = self.get_deformation_ranges()
         initial_deformation_settings = np.array(
@@ -1791,8 +1802,10 @@ class TmsCoil(TcdElement):
                 intersection_penalty,
                 self_intersection_penalty,
             ) = self._get_fast_intersection_penalty(
-                element_voxel_volumn,
+                element_voxel_volume,
                 element_voxel_indexes,
+                element_dither_factors,
+                element_voxel_length,
                 element_voxel_affine,
                 target_voxel_distance_inside,
                 target_voxel_affine,
@@ -1800,10 +1813,10 @@ class TmsCoil(TcdElement):
                 affine,
             )
             distance_penalty = self._get_fast_distance_score(
-                target_distance_function, element_voxel_volumn.keys(), affine
+                target_distance_function, element_voxel_volume.keys(), affine
             )
             
-            f = distance_penalty + (intersection_penalty + self_intersection_penalty) * dither_factor
+            f = distance_penalty + (intersection_penalty + self_intersection_penalty) 
 
             return f
 
@@ -1856,7 +1869,11 @@ class TmsCoil(TcdElement):
         element_voxel_volume : dict[TmsCoilElements, npt.NDArray[np.bool_]]
             The voxel volume (True inside, False outside) of each coil element
         element_voxel_indexes : dict[TmsCoilElements, npt.NDArray[np.int_]]
-            The indexes of the inside voxels for each coil element
+            The indexes of the inside voxels for each coil element (interior voxel coordinates first, then edge coordinates) 
+        element_dither_factors : dict[TmsCoilElements, float]
+            The spacial factor that describes how many voxel are described by each interior dithered voxel for each coil element
+        element_voxel_length : dict[TmsCoilElements, int]
+            THe count of interior voxels (not edges) for each coil element
         element_voxel_affine : dict[TmsCoilElements, npt.NDArray[np.float_]]
             The affine transformations from world to voxel space for each coil element
         self_intersection_elements : list[TmsCoilElements]
@@ -1864,6 +1881,8 @@ class TmsCoil(TcdElement):
         """
         element_voxel_volume = {}
         element_voxel_indexes = {}
+        element_dither_factors = {}
+        element_voxel_length = {}
         element_voxel_affine = {}
         if self.casing is not None:
             base_element = DipoleElements(
@@ -1877,6 +1896,8 @@ class TmsCoil(TcdElement):
                 element_voxel_volume[base_element],
                 element_voxel_affine[base_element],
                 element_voxel_indexes[base_element],
+                element_dither_factors[base_element],
+                element_voxel_length[base_element],
                 _,
             ) = self.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
         self_intersection_elements = []
@@ -1895,12 +1916,16 @@ class TmsCoil(TcdElement):
                     element_voxel_volume[element],
                     element_voxel_affine[element],
                     element_voxel_indexes[element],
+                    element_dither_factors[element],
+                    element_voxel_length[element],
                     _,
                 ) = element.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
 
         return (
             element_voxel_volume,
             element_voxel_indexes,
+            element_dither_factors,
+            element_voxel_length,
             element_voxel_affine,
             self_intersection_elements,
         )
@@ -2080,6 +2105,8 @@ class TmsCoil(TcdElement):
         (
             element_voxel_volume,
             element_voxel_indexes,
+            element_dither_factors,
+            element_voxel_length,
             element_voxel_affine,
             self_intersection_elements,
         ) = coil_sampled.get_voxel_volume(global_deformations, dither_skip=dither_skip)
@@ -2090,16 +2117,6 @@ class TmsCoil(TcdElement):
             cost_surface_tree,
         ) = optimization_surface.get_min_distance_on_grid()
         target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
-
-        dither_factor = 1
-        if dither_skip > 1:
-            volume_in_mm3 = 0
-            dither_volume_in_mm3 = 0
-            for element in element_voxel_volume:
-                volume_in_mm3 += np.count_nonzero(element_voxel_volume[element])
-                dither_volume_in_mm3 += len(element_voxel_indexes[element])
-
-            dither_factor = volume_in_mm3 / dither_volume_in_mm3
 
         coil_deformation_ranges = coil_sampled.get_deformation_ranges()
 
@@ -2131,6 +2148,8 @@ class TmsCoil(TcdElement):
             ) = coil_sampled._get_fast_intersection_penalty(
                 element_voxel_volume,
                 element_voxel_indexes,
+                element_dither_factors,
+                element_voxel_length,
                 element_voxel_affine,
                 target_voxel_distance_inside,
                 target_voxel_affine,
@@ -2138,7 +2157,7 @@ class TmsCoil(TcdElement):
                 affine,
             )
 
-            penalty = (intersection_penalty + self_intersection_penalty) * dither_factor
+            penalty = (intersection_penalty + self_intersection_penalty) 
             if penalty > fem_evaluation_cutoff:
                 return penalty
 

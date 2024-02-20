@@ -2477,6 +2477,9 @@ class Msh:
         ----------
         resolution : float, optional
             The resolution of the grid, by default 1.0
+        dither_skip : int, optional
+            How many voxel positions should be skipped when creating the volume representation.
+            When set to 0, no dithering will be applied, by default 0
         AABBTree : pyAABBTree, optional
             A pre-calculated AABBTree, will be generated if None, by default None
 
@@ -2486,6 +2489,10 @@ class Msh:
             The binary voxel volume
         npt.NDArray[np.float_]
             The affine transformation from voxel to world space
+        element_dither_factors : float
+            The spacial factor that describes how many voxel are described by each interior dithered voxel
+        element_voxel_length : int
+            THe count of interior voxels (not edges) 
         pyAABBTree
             The AABBTree used
         """
@@ -2514,15 +2521,23 @@ class Msh:
 
         if dither_skip > 1:
             edges = grid & ~scipy.ndimage.binary_erosion(grid)
-            edges[dither_skip // 2::dither_skip, ::dither_skip, ::dither_skip] = True
-            edges[::dither_skip, dither_skip // 2::dither_skip, ::dither_skip] = True
-            edges[::dither_skip, ::dither_skip, dither_skip // 2::dither_skip] = True
-            edges[dither_skip // 2::dither_skip, dither_skip // 2::dither_skip, dither_skip // 2::dither_skip] = True
-            voxel_indexes = np.argwhere(grid & edges).astype(np.int32)
+            edge_indexes = np.argwhere(edges).astype(np.int32)
+
+            dithered_grid = np.zeros_like(grid)
+            dithered_grid[dither_skip // 2::dither_skip, ::dither_skip, ::dither_skip] = True
+            dithered_grid[::dither_skip, dither_skip // 2::dither_skip, ::dither_skip] = True
+            dithered_grid[::dither_skip, ::dither_skip, dither_skip // 2::dither_skip] = True
+            dithered_grid[dither_skip // 2::dither_skip, dither_skip // 2::dither_skip, dither_skip // 2::dither_skip] = True
+            voxel_indexes = np.argwhere(scipy.ndimage.binary_erosion(grid) & dithered_grid).astype(np.int32)
+            voxel_length = len(voxel_indexes)
+            voxel_indexes = np.append(voxel_indexes, edge_indexes, axis=0)
+            dither_factor = dither_skip * (dither_skip / 2) ** 2
         else:
             voxel_indexes = np.argwhere(grid).astype(np.int32)
+            voxel_length = len(voxel_indexes)
+            dither_factor = 1
 
-        return grid, M, voxel_indexes, AABBTree
+        return grid, M, voxel_indexes, dither_factor, voxel_length,  AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
