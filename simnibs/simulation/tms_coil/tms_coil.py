@@ -1826,7 +1826,7 @@ class TmsCoil(TcdElement):
         direct = opt.direct(
             cost_f_x0_w,
             bounds=optimization_ranges,
-            locally_biased=False, vol_tol=1e-20, maxfun=len(optimization_ranges) * 2000
+            locally_biased=False, vol_tol=1e-19, maxfun=len(optimization_ranges) * 2000
         )
         best_deformation_settings = direct.x
 
