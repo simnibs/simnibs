@@ -443,7 +443,7 @@ class brainsight:
         Written by Ole Numssen, numssen@cbs.mpg.de; Konstantin Weise, kweise@cbs.mpg.de; 2023.
         """
         # init empty values in case nothing is found in fn
-        coord_sys, encoding = '', ''
+        coord_sys, encoding, version = '', '', -1
         data_targets, data_samples = [], []
 
         with open(fn, 'r') as f:
@@ -452,14 +452,25 @@ class brainsight:
                 line = f.readline().rstrip()
                 if line.startswith('# Target Name') or line.startswith('# Sample Name'):
                     break
+                elif line.startswith('# Version:'):
+                    version  = int(line.replace("# Version: ", ""))
                 elif line.startswith('# Coordinate system:'):
                     coord_sys = line.replace("# Coordinate system: ", "")
                 elif line.startswith('# Encoding: '):
                     encoding = line.replace("# Encoding: ", "")
 
-            if coord_sys.lower() != 'nifti:aligned':
-                raise ValueError(f"Coordinate system '{coord_sys}' is not supported. "
-                                 f"Export targes/samples as NIfTI:Aligned.")
+            if version == -1:
+                raise ValueError(f"Cannot read version from {fn}")
+
+            if version >= 14:
+                # Starting with Brainsight 2.5.3 the source of the coordinate system is specified, i.e. whether it comes from the Q or S form.
+                if not coord_sys.lower().startswith('nifti:q:'):
+                    raise ValueError(f"Coordinate system '{coord_sys}' is not supported. ")
+            else:
+                if coord_sys.lower() != 'nifti:aligned':
+                    raise ValueError(f"Coordinate system '{coord_sys}' is not supported. "
+                                     f"Export targes/samples as NIfTI:Aligned.")
+
 
             # Let's only read UTF-8
             if encoding == '':
