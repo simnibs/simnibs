@@ -51,7 +51,6 @@ from . import fem
 from . import electrode_placement
 from .. import  __version__
 
-
 class SESSION(object):
     """Class that defines a set of simnibs simulations
 
@@ -1615,7 +1614,7 @@ class TDCSLIST(SimuList):
                 El.pos_ydir = El.centre + ydir
         return
 
-    def _place_electrodes(self, fix_th=True):
+    def _place_electrodes(self):
         """ Add the defined electrodes to a mesh
 
         Parameters:
@@ -1623,6 +1622,7 @@ class TDCSLIST(SimuList):
         fn_out: str
             name of output file
         """
+
         w_elec = copy.deepcopy(self.mesh)
         w_elec.fix_tr_node_ordering()
         electrode_surfaces = [None for i in range(len(self.electrode))]
@@ -1633,11 +1633,9 @@ class TDCSLIST(SimuList):
 
         w_elec.fix_th_node_ordering()
         w_elec.fix_tr_node_ordering()
-        if fix_th:
-            logger.info('Improving mesh quality')
-            w_elec.fix_thin_tetrahedra()
 
         gc.collect()
+
         return w_elec, electrode_surfaces
 
     def run_simulation(self, fn_simu, cpus=1, view=True):
@@ -1680,6 +1678,7 @@ class TDCSLIST(SimuList):
             os.mkdir(path)
 
         fn_no_extension, extension = os.path.splitext(fn_simu)
+
         mesh_elec, electrode_surfaces = self._place_electrodes()
         cond = self.cond2elmdata(mesh_elec)
         v = fem.tdcs(mesh_elec, cond, self.currents,
@@ -1898,7 +1897,7 @@ class ELECTRODE(object):
                 for p in el['plug'][0]:
                     self.plug.append(ELECTRODE(p))
 
-        if not self.definition or self.definition == '[]':  # simplify matlab synthax
+        if not self.definition or self.definition == '[]':  # simplify matlab syntax
             self.definition = 'plane'
 
         # Parse string values for centre and pos_ydir
