@@ -300,7 +300,31 @@ class Elements:
         elm_with_node = np.any(
             np.isin(self.node_number_list, node_nr),
             axis=1)
+
         return self.elm_number[elm_with_node]
+
+    def find_th_with_node(self, node_nr):
+        """ Finds tetrahedra that have a given node
+
+        Parameters
+        -----------------
+        node_nr: int
+            number of node
+
+        Returns
+        ---------------
+        th_nr: np.ndarray
+            array with indices of tetrahedra numbers
+
+        """
+        elm_with_node = np.any(
+            np.isin(self.node_number_list, node_nr),
+            axis=1)
+
+        th_with_node = \
+            np.in1d(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
+
+        return self.elm_number[elm_with_node][th_with_node]
 
     def find_neighbouring_nodes(self, node_nr):
         """ Finds the nodes that share an element with the specified node
@@ -1838,42 +1862,7 @@ class Msh:
         gc.collect()
         return corresponding_th_indices
 
-    def fix_thin_tetrahedra(self, n_iter=7, step_length=.05):
-        ''' Optimize the locations of the points by moving them towards the center
-        of their patch. This is done iterativally for all points for a number of
-        iterations'''
-        vol_before = self.elements_volumes_and_areas()[self.elm.tetrahedra].sum()
-        boundary_faces = []
-        vol_tags = np.unique(self.elm.tag1[self.elm.elm_type == 4])
-        for t in vol_tags:
-            th_indexes = self.elm.elm_number[
-                (self.elm.tag1 == t) * (self.elm.elm_type == 4)]
-            boundary_faces.append(
-                self.elm.get_outside_faces(
-                    tetrahedra_indexes=th_indexes))
-        boundary_faces = np.vstack(boundary_faces)
-        boundary_nodes = np.unique(boundary_faces) - 1
-        mean_bar = np.zeros_like(self.nodes.node_coord)
-        nodes_bk = np.copy(self.nodes.node_coord)
-        new_nodes = self.nodes.node_coord
-        tetrahedra = self.elm[self.elm.tetrahedra] - 1
-        k = np.bincount(tetrahedra.reshape(-1), minlength=self.nodes.nr)
-        for n in range(n_iter):
-            bar = np.mean(new_nodes[tetrahedra], axis=1)
-            for i in range(3):
-                mean_bar[:, i] = np.bincount(tetrahedra.reshape(-1),
-                                             weights=np.repeat(bar[:, i], 4),
-                                             minlength=self.nodes.nr)
-            mean_bar /= k[:, None]
-            new_nodes += step_length * (mean_bar - new_nodes)
-            new_nodes[boundary_nodes] = nodes_bk[boundary_nodes]
-        self.nodes.node_coord = new_nodes
-        vol_after = self.elements_volumes_and_areas()[self.elm.tetrahedra].sum()
-        # Cheap way of comparing the valitidy of the new trianglulation (assuming the one
-        # in the input is valid)
-        if not np.isclose(vol_before, vol_after):
-            self.nodes.node_coord = nodes_bk
-
+ 
     def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=None, msh_surf=None):
         """ Calculate the matsimnibs matrix for TMS simulations
 
@@ -3268,7 +3257,7 @@ class Msh:
         edge_rms = np.sqrt(edge_rms/6.)
         gamma = np.zeros(self.elm.nr)
         gamma[th] = edge_rms[th]**3/vol[th]
-        gamma /= 8.479670
+        gamma /= 8.479670 # dividing by value for equilateral tetrahedra -> normalized value as metric
         return ElementData(gamma, 'gamma', self)
 
 

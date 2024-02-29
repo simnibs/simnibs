@@ -792,16 +792,6 @@ class TestMsh:
         assert np.allclose(direction[corrensponding], tr_data,
                            rtol=1e-1, atol=1e-1)
 
-    def test_fix_thin_tetrahedra(self, sphere3_msh):
-        msh = copy.deepcopy(sphere3_msh)
-        msh.nodes.node_coord[msh.nodes.node_coord[:, 2] > 0, 2] += 20
-        before_vol = msh.elements_volumes_and_areas()[msh.elm.tetrahedra].sum()
-        before_coords = np.copy(msh.nodes.node_coord)
-        msh.fix_thin_tetrahedra(n_iter=100)
-        after_vol = msh.elements_volumes_and_areas()[msh.elm.tetrahedra].sum()
-        assert np.isclose(before_vol, after_vol)
-        assert not np.allclose(msh.nodes.node_coord, before_coords)
-
     def test_fix_surface_labels(self, sphere3_msh):
         msh = copy.deepcopy(sphere3_msh)
         msh.elm.tag1[msh.elm.elm_type == 2] -= 1000
