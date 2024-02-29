@@ -461,7 +461,8 @@ def test_q_and_sform():
     assert np.equal(scan_forced.get_qform(coded=True)[1], scan_forced.get_sform(coded=True)[1]), "Q- and S-form codes should be the same but they're not!"
     assert np.allclose(scan_forced.get_qform(), scan_forced.get_sform()), "Q- and S-form matrices should be the same but they're not!"
 
-    # Finally if you force sform but the code is zero this should throw
+    # Finally if you force sform when q- and s-form matrices are different but the s-form code is zero this should throw
     scan_forced.set_sform(scan_forced.get_sform(), code=0)
+    scan_forced.set_qform(scan_forced.get_qform() + 0.5)
     with pytest.raises(Exception):
         _check_q_and_s_form(scan_forced, force_qform=False, force_sform=True)

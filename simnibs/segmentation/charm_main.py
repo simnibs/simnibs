@@ -745,8 +745,6 @@ def _check_q_and_s_form(scan, force_qform=False, force_sform=False):
     # If the q-form code is zero there is likely something wrong
     if not scan.get_qform(coded=True)[1] > 0 and force_sform is False:
         raise ValueError("The qform_code is 0. Please check the header of the input scan. You can use the sform instead by running charm with the --forcesform option.")
-    elif not scan.get_sform(coded=True)[1] >0 and force_sform is True:
-        raise ValueError("The sform_code is 0 but you are forcing the sform. Please check the header of the input scan.")
 
     # Even if the qform code is okay, check if the matrices are close
     if not np.allclose(scan.get_qform(), scan.get_sform(), rtol=1e-5, atol=1e-6):
