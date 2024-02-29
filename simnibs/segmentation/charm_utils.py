@@ -248,10 +248,14 @@ def _post_process_segmentation(
     logger.info("Upsampling bias corrected images.")
     for input_number, bias_corrected in enumerate(bias_corrected_image_names):
         corrected_input = nib.load(bias_corrected)
+        q_code = corrected_input.get_qform(coded=True)[1]
+        s_code = corrected_input.get_sform(coded=True)[1]
         resampled_input, new_affine, orig_res = resample_vol(
             corrected_input.get_fdata(), corrected_input.affine, 0.5, order=1
         )
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
+        upsampled.set_qform(new_affine, code=q_code)
+        upsampled.set_sform(upsampled.get_qform(), code=s_code)
         nib.save(upsampled, upsampled_image_names[input_number])
 
     # Next we need to reconstruct the segmentation with the upsampled data

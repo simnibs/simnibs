@@ -2,10 +2,12 @@ import numpy as np
 import pytest
 import nibabel as nib
 import os
+import copy
 from scipy import ndimage
 from scipy.io import loadmat
 from ... import SIMNIBSDIR
 from .. import charm_utils
+from ..charm_main import _check_q_and_s_form
 from ..samseg import initVisualizer
 from ..samseg.io import kvlReadSharedGMMParameters
 from ..samseg.simnibs_segmentation_utils import writeBiasCorrectedImagesAndSegmentation
@@ -420,3 +422,46 @@ def test_update_labeling_from_cortical_surfaces_():
 
     # the correction worked, except for a few placed
     assert np.all(comp | OK_error_img)
+
+def test_q_and_sform():
+    tmp_vol = np.zeros((3,3,3))
+    tmp_affine = np.eye(4)
+    tmp_im = nib.Nifti1Image(tmp_vol,tmp_affine)
+    # It seems by default nibabel only set the sform and
+    # also sets the sform code to 2.
+    # Test that the code throws an error if qform_code is zero
+    # and forcesform is false
+    tmp_im.set_qform(tmp_affine, code=0)
+
+    with pytest.raises(Exception):
+        _check_q_and_s_form(tmp_im, force_qform=False, force_sform=False)
+
+    # Set qform and sform codes to be the same but add noise to the qform
+    # Should still pass
+    tmp_im.set_qform(tmp_affine + 1e-7, code=tmp_im.get_sform(coded=True)[1])
+    _check_q_and_s_form(tmp_im, force_qform=False, force_sform=False)
+
+    # Add more noise to check that we get an error
+    tmp_im.set_qform(tmp_affine + 1e-4)
+    with pytest.raises(Exception):
+        _check_q_and_s_form(tmp_im, force_qform=False, force_sform=False)
+
+    # Check that forcing the qform works matrix and code
+    tmp_im_copy = copy.deepcopy(tmp_im)
+    tmp_im_copy.set_qform(tmp_im.get_qform(), code=1)
+    scan_forced = _check_q_and_s_form(tmp_im, force_qform=True, force_sform=False)
+    assert np.equal(scan_forced.get_qform(coded=True)[1], scan_forced.get_sform(coded=True)[1]), "Q- and S-form codes should be the same but they're not!"
+    assert np.allclose(scan_forced.get_qform(), scan_forced.get_sform()), "Q- and S-form matrices should be the same but they're not!"
+
+    # And the other way around (force sfrom), even if qform = 0
+    tmp_im_copy = copy.deepcopy(tmp_im)
+    tmp_im_copy.set_sform(tmp_im.get_sform(), code=1)
+    tmp_im_copy.set_qform(tmp_im.get_qform(), code=0)
+    scan_forced = _check_q_and_s_form(tmp_im, force_qform=False, force_sform=True)
+    assert np.equal(scan_forced.get_qform(coded=True)[1], scan_forced.get_sform(coded=True)[1]), "Q- and S-form codes should be the same but they're not!"
+    assert np.allclose(scan_forced.get_qform(), scan_forced.get_sform()), "Q- and S-form matrices should be the same but they're not!"
+
+    # Finally if you force sform but the code is zero this should throw
+    scan_forced.set_sform(scan_forced.get_sform(), code=0)
+    with pytest.raises(Exception):
+        _check_q_and_s_form(scan_forced, force_qform=False, force_sform=True)
