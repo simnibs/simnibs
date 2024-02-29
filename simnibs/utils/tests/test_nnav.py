@@ -160,6 +160,15 @@ def nii_niftialigned_fn():
 
 
 @pytest.fixture()
+def nii_niftialigned_q_fn():
+    # Brainsight export for nifti file, nifti:aligned:q coordinate system
+    nii_fn = os.path.join(FIXTURE_DIR,
+                          "brainsight",
+                          "niiImage_niftialigned_q_coord_v14.txt".replace('/', os.sep))
+    return nii_fn
+
+
+@pytest.fixture()
 def nii_niftialigned_empty_fn():
     # Brainsight export for nifti file, nifti:aligned coordinate system
     # no targets, not samples
@@ -203,6 +212,14 @@ def arr_sample2():
                      [-1.3000e-02, 8.8300e-01, -4.6900e-01, 7.5810e+01],
                      [-7.0200e-01, -3.4200e-01, -6.2400e-01, 6.5742e+01],
                      [0.0000e+00, 0.0000e+00, 0.0000e+00, 1.0000e+00]])
+
+
+@pytest.fixture()
+def arr_sample3():
+    return np.array([[ 1.0,  0.0,  0.0,  3.2625],
+                     [ 0.0, -1.0,  0.0, 66.7014],
+                     [ 0.0,  0.0, -1.0, 56.0143],
+                     [ 0.0,  0.0,  0.0,  1.    ]])
 
 
 ## ANT test files and data ##
@@ -321,7 +338,7 @@ class TestBrainsight:
         with pytest.raises(ValueError):
             brainsight().read(nii_niftiscanner_fn)
 
-    # Only support for nifti:aligned
+    # Support for nifti:aligned until v13 Brainsight .txt files, and for nifit:aligned:q from v14.
 
     def test_read_dcm_niftialigned(self, dcm_niftialigned_fn, arr_sample1):
         tmslist_targets, tms_list_samples = brainsight().read(dcm_niftialigned_fn)
@@ -341,6 +358,16 @@ class TestBrainsight:
         assert len(tms_list_samples.pos) == 101
         assert tms_list_samples.pos[0].name == 'Sample 1'
         np.all(np.isclose(tms_list_samples.pos[0].matsimnibs, arr_sample2))
+
+
+    def test_read_nii_niftialigned_q(self, nii_niftialigned_q_fn, arr_sample3):
+        tmslist_targets, tms_list_samples = brainsight().read(nii_niftialigned_q_fn)
+        assert tmslist_targets.name == 'Targets'
+        assert tms_list_samples.name == 'Samples'
+        assert len(tmslist_targets.pos) == 2
+        assert len(tms_list_samples.pos) == 3
+        assert tms_list_samples.pos[0].name == 'Sample 1'
+        assert np.all(np.isclose(tms_list_samples.pos[0].matsimnibs, arr_sample3))
 
 
     def test_read_nii_niftialigned_empty(self, nii_niftialigned_empty_fn):
