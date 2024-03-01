@@ -252,7 +252,6 @@ def _post_process_segmentation(
             corrected_input.get_fdata(), corrected_input.affine, 0.5, order=1
         )
         upsampled = nib.Nifti1Image(resampled_input, new_affine)
-        # At this point the q
         nib.save(upsampled, upsampled_image_names[input_number])
 
     # Next we need to reconstruct the segmentation with the upsampled data
