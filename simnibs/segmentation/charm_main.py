@@ -297,13 +297,31 @@ def run(
             debug=debug,
         )
 
-        # Write to disk
-        # This should be already okay in terms of q and sform
-        # as the T1_upsampled is fixed.
+        # Write to disk, fix the form codes
+        im_tmp = nib.load(sub_files.reference_volume)
+        scode = im_tmp.get_sform(coded=True)[1]
+        qcode = im_tmp.get_qform(coded=True)[1]
         upsampled_image = nib.load(sub_files.T1_upsampled)
         affine_upsampled = upsampled_image.affine
         upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues, affine_upsampled)
+
+        # Set the tissue labeling codes and matrices
+        upsampled_tissues.set_qform(affine_upsampled, qcode)
+        upsampled_tissues.set_sform(affine_upsampled, scode)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
+
+        # Set the upsampled image codes and matrices correctly
+        upsampled_image.set_qform(affine_upsampled, qcode)
+        upsampled_image.set_sform(affine_upsampled, scode)
+        nib.save(upsampled_tissues, sub_files.T1_upsampled)
+
+        # And also for the T2 if needed
+        if len(bias_corrected_image_names) > 1:
+            upsampled_image = nib.load(sub_files.T2_upsampled)
+            upsampled_image.set_qform(affine_upsampled, qcode)
+            upsampled_image.set_sform(affine_upsampled, scode)
+            nib.save(upsampled_tissues, sub_files.T2_upsampled)
+
         del cleaned_upsampled_tissues
 
         fn_LUT = sub_files.tissue_labeling_upsampled.rsplit(".", 2)[0] + "_LUT.txt"
