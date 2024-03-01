@@ -297,11 +297,31 @@ def run(
             debug=debug,
         )
 
-        # Write to disk
+        # Write to disk, fix the form codes
+        im_tmp = nib.load(sub_files.reference_volume)
+        scode = im_tmp.get_sform(coded=True)[1]
+        qcode = im_tmp.get_qform(coded=True)[1]
         upsampled_image = nib.load(sub_files.T1_upsampled)
         affine_upsampled = upsampled_image.affine
         upsampled_tissues = nib.Nifti1Image(cleaned_upsampled_tissues, affine_upsampled)
+
+        # Set the tissue labeling codes and matrices
+        upsampled_tissues.set_qform(affine_upsampled, qcode)
+        upsampled_tissues.set_sform(affine_upsampled, scode)
         nib.save(upsampled_tissues, sub_files.tissue_labeling_upsampled)
+
+        # Set the upsampled image codes and matrices correctly
+        upsampled_image.set_qform(affine_upsampled, qcode)
+        upsampled_image.set_sform(affine_upsampled, scode)
+        nib.save(upsampled_tissues, sub_files.T1_upsampled)
+
+        # And also for the T2 if needed
+        if len(bias_corrected_image_names) > 1:
+            upsampled_image = nib.load(sub_files.T2_upsampled)
+            upsampled_image.set_qform(affine_upsampled, qcode)
+            upsampled_image.set_sform(affine_upsampled, scode)
+            nib.save(upsampled_tissues, sub_files.T2_upsampled)
+
         del cleaned_upsampled_tissues
 
         fn_LUT = sub_files.tissue_labeling_upsampled.rsplit(".", 2)[0] + "_LUT.txt"
@@ -740,15 +760,30 @@ def _prepare_t2(T1, T2, registerT2, T2_reg, force_qform, force_sform):
 
 
 def _check_q_and_s_form(scan, force_qform=False, force_sform=False):
-    if not np.array_equal(scan.get_qform(), scan.get_sform()):
+    # If the q-form code is zero there is likely something wrong
+    if not scan.get_qform(coded=True)[1] > 0 and force_sform is False:
+        raise ValueError("The qform_code is 0. Please check the header of the input scan. You can use the sform instead by running charm with the --forcesform option.")
+
+    # Even if the qform code is okay, check if the matrices are close
+    if not np.allclose(scan.get_qform(), scan.get_sform(), rtol=1e-5, atol=1e-6):
         if not (force_qform or force_sform):
-            raise ValueError("The qform and sform do not match. Please run charm with the --forceqform (preferred) or --forcesform option")
+            raise ValueError("The qform and sform matrices do not match. Please run charm with the --forceqform (preferred) or --forcesform option")
         elif force_qform:
-            scan.set_sform(scan.get_qform())
+            # Force both the matrix *and* the code
+            (qmat, qcode) = scan.get_qform(coded=True)
+            scan.set_sform(qmat, code=qcode)
+
         elif force_sform:
-            # Note set_qform will strip shears silently per nibabel documentation
-            scan.set_qform(scan.get_sform())
-            scan.set_sform(scan.get_qform())
+            # Check that sform code is not zero
+            if not scan.get_sform(coded=True)[1] > 0:
+                raise ValueError("The sform_code is 0, but you are forcing it. Please fix the sform_code or use the qform instead.")
+            # Force both the matrix and the code.
+            # NOTE: set_qform will strip shears silently per nibabel documentation
+            else:
+                (mat_tmp, code_tmp) = scan.get_sform(coded=True)
+                scan.set_qform(mat_tmp, code=code_tmp)
+                (mat_tmp, code_tmp) = scan.get_qform(coded=True)
+                scan.set_sform(mat_tmp, code=code_tmp)
 
     return scan
 
