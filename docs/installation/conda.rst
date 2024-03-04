@@ -78,11 +78,13 @@ MacOS
   .. code-block:: bash
 
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda env create -f ~/Downloads/environment_macOS.yml
+      conda env create -f ~/Downloads/environment_macOS.yml --platform osx-64
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
 
   \
+
+  NOTE: Currently on arm64 Macs it is only possible to build by creating an x86_64 environment.
 
 4. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:
 
