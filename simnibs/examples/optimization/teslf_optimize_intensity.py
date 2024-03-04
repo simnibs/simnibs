@@ -4,7 +4,7 @@
 '''
 import simnibs
 
-opt = simnibs.opt_struct.TESLFoptimize()
+opt = simnibs.opt_struct.TDCSoptimize()
 opt.leadfield_hdf = 'leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5'
 opt.name = 'optimization/single_target'
 

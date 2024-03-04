@@ -201,7 +201,7 @@ tissue_conductivities: dict[int, float] = {
     ElementTags.BURRHOLES: 1.654,
     ElementTags.RESECTION_CAVITIES: 1.654,
     ElementTags.TUMOR_SHELL: 0.24,
-    ElementTags.RESIDUAL_TUMOR: 1.654
+    ElementTags.RESIDUAL_TUMOR: 0.24
 }
 
 tissue_conductivity_descriptions: dict[int, str] = {
@@ -222,6 +222,6 @@ tissue_conductivity_descriptions: dict[int, str] = {
     ElementTags.NECROSIS: 'Necrosis',
     ElementTags.BURRHOLES: 'Burrholes (CSF)',
     ElementTags.RESECTION_CAVITIES: 'Resection Cavities (CSF)',
-    ElementTags.TUMOR_SHELL: 'Tumor shell',
-    ElementTags.RESIDUAL_TUMOR: 'Residual Tumor (CSF)'
+    ElementTags.TUMOR_SHELL: 'Tumor shell (from Korshoej et al, 2018)',
+    ElementTags.RESIDUAL_TUMOR: 'Residual Tumor (from Korshoej et al, 2018)'
 }

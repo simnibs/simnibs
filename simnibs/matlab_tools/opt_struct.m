@@ -26,7 +26,7 @@ function S = opt_struct(type)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize'};
+validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', 'TESoptimize'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -87,7 +87,8 @@ switch S.type
         S.radius = 2; % Radius of avoid region, in mm
         S.indexes = []; % OPTIONAL: Nodes/element indexes of the region, overwires "positions"
         S.tissues = []; % OPTINAL: Tissues where the region is defined
-    case 'TDCSDistributedOptimize'       
+
+    case 'TDCSDistributedOptimize'
         S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
         S.name = 'optimization/tdcs'; % Name for the output files
         S.max_total_current = 2e-3; % Maximum total current injected (in mA), optional
@@ -99,6 +100,9 @@ switch S.type
         S.intensity = 0.2;  % Target field intensity
         S.min_image_value = 0; %minimum image value to be considered. Corresponds to T_min in Ruffini et al. 2014
         S.open_in_gmsh = true; % Wether to open output in Gmsh
+
+    case 'TESoptimize'
+        S.electrode = array_layout('ElectrodeInitializer')
 
 end
 
