@@ -294,51 +294,11 @@ class ElectrodeMaster():
                                                     normals=_electrode_array.posmat[:3, 2],
                                                     ellipsoid=ellipsoid)
 
-            # go small step in pos_ydir direction (keep normal)
-            # coords_dir_p0_eli_eli = subject2ellipsoid(
-            #     coords=_electrode_array.posmat[:3, 3] + 1e-2 * _electrode_array.posmat[:3, 1],
-            #     normals=_electrode_array.posmat[:3, 2],
-            #     ellipsoid=ellipsoid)
-
             # transform electrode center position to cartesian coordinates
             coords_base_eli_cart = ellipsoid.ellipsoid2cartesian(coords=coords_base_eli_eli,
                                                                  norm=False,
                                                                  return_normal=False)
-            # coords_dir_p0_eli_cart = ellipsoid.ellipsoid2cartesian(coords=coords_dir_p0_eli_eli,
-            #                                                        norm=False,
-            #                                                        return_normal=False)
 
-            # transform to jacobi coordinates
-            coords_base_eli_jac, coords_base_eli_jac_normal = ellipsoid.cartesian2jacobi(coords=coords_base_eli_cart,
-                                                             norm=False,
-                                                             return_norm=False,
-                                                             return_normal=True)
-
-            #######################
-
-            # determine p (tangent to line of constant beta)
-            # ax = ellipsoid.radii[0]
-            # ay = ellipsoid.radii[1]
-            # b = ellipsoid.radii[2]
-            # beta = coords_base_eli_jac[0, 0]
-            # lamb = coords_base_eli_jac[0, 1]
-            # Ex = ellipsoid.E_x
-            # Ey = ellipsoid.E_y
-            # Ee = ellipsoid.E_e
-            # t1 = ay**2*np.sin(beta)**2 + b**2*np.cos(beta)**2
-            # t2 = ax**2*np.sin(lamb)**2 + ay**2*np.cos(lamb)**2
-            # B = Ex**2*np.cos(beta)**2 + Ee**2 * np.sin(beta)**2  # (6)
-            # B1 = Ex**2 / Ey**2 *(ay**2-t1) + Ee**2/Ey**2*(t1-b**2)  # (66)
-            # L = Ex**2 - Ee**2 * np.cos(lamb)**2
-            # F = Ey**2*np.cos(beta)**2 + Ee**2 * np.sin(lamb)**2
-            #
-            # p1 = -np.sqrt(L/(F*t2))*ax/Ex*np.sqrt(B) * np.sin(lamb)
-            # p2 = np.sqrt(L/(F*t2))*ay * np.cos(beta) * np.cos(lamb)
-            # p3 = 1/np.sqrt(F*t2)*b*Ee**2/(2*Ex) * np.sin(beta) * np.sin(2*lamb)
-            # p = np.array([p1, p2, p3])
-
-            # determine q (tangent to line of constant lambda)
-            # q = np.cross(coords_base_eli_jac_normal.flatten(), p)
             q1 = ellipsoid.get_geodesic_destination(start=np.tile(coords_base_eli_cart, (3,1)),
                                                     distance=np.array([0.1, 0.1, 0.1]),
                                                     alpha=np.array([0, -10/180. * np.pi, 10/180. * np.pi]),
@@ -353,21 +313,7 @@ class ElectrodeMaster():
             else:
                 q_sign = +1
 
-            #######################
-
-            # # go small step in direction of constant lambda
-            # coords_dir_p1_eli_cart = ellipsoid.jacobi2cartesian(coords=coords_base_eli_jac - np.array([1e-2, 0]),
-            #                                                     norm=False,
-            #                                                     return_norm=False,
-            #                                                     return_normal=False)
-            #
-            # a = (coords_dir_p0_eli_cart - coords_base_eli_cart).flatten()
-            # b = (coords_dir_p1_eli_cart - coords_base_eli_cart).flatten()
-            # a /= np.linalg.norm(a)
-            # b /= np.linalg.norm(b)
-
             # calculate angle between vector of constant lambda and electrode direction
-            # alpha_array.append(np.arccos(np.dot(a, b)) + _electrode_array.angle)
             alpha_array.append(q_sign * np.arccos(np.dot(_electrode_array.posmat[:3, 1], q)) + _electrode_array.angle)
 
             # save starting point (center of array on ellipsoid)
@@ -477,29 +423,7 @@ class ElectrodeMaster():
 
                 i_ele += 1
 
-                # save number of nodes assigned to this electrode
-                # _electrode.n_nodes = len(_electrode.node_idx)
-
-                # node_coords_list[i_array_global].append(_electrode.node_coords)
-
-                # group node indices of same channel IDs
-                # if _electrode.channel_id in node_idx_dict[i_channel_stim].keys():
-                #     node_idx_dict[i_channel_stim][_electrode.channel_id] = np.append(
-                #         node_idx_dict[i_channel_stim][_electrode.channel_id], _electrode.node_idx)
-                # else:
-                #     node_idx_dict[i_channel_stim][_electrode.channel_id] = _electrode.node_idx
-
-            # gather all electrode node coords of freely movable arrays
-            # node_coords_list[i_array_global] = np.vstack(node_coords_list[i_array_global])
-            # i_array_global += 1
-
-            # # save electrode_pos in ElectrodeArray instances
-            # _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
-
         self.compile_node_arrays()
-
-        # np.savetxt("/data/u_kweise_software/tmp/node_coords.txt", np.hstack((self.node_coords, self.node_array_id[:, np.newaxis])))
-        # np.savetxt("/data/u_kweise_software/tmp/electrode_coords_eli_cart.txt", np.hstack((electrode_coords_eli_cart, electrode_array_idx[:, np.newaxis])))
 
     def update_electrode_from_node_arrays(self):
         """
@@ -796,7 +720,6 @@ class Electrode():
             self._node_voltage = value
 
             # also set ele voltage (average voltage over all nodes)
-            # if self.node_area is not None:
             self._ele_voltage = np.mean(value)  # * self.node_area / self.node_area_total)
         else:
             self._node_voltage = None

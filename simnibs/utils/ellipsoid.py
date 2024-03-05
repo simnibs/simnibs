@@ -74,11 +74,6 @@ class Ellipsoid():
     def G(self, beta, lam):
         return np.sqrt(1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
 
-        # H = lambda coords: coords[0] ** 2 + coords[1] ** 2 / (1 - self.e_e2) ** 2 + coords[2] / (
-        #             1 - self.e_x2) ** 2  # eq. (43)
-        # G = lambda beta, lam: np.sqrt(
-        #     1 - self.e_x2 * np.cos(beta) ** 2 - self.e_e2 * np.sin(beta) ** 2 * np.sin(lam) ** 2)  # eq. (44)'
-
     @property
     def radii(self):
         return self._radii
@@ -200,7 +195,6 @@ class Ellipsoid():
 
         if not norm:
             coords_cart = self.rot_norm2org(coords=coords_cart)
-            # coords_cart = ((self.rotmat @ coords_cart) + self.center[:, np.newaxis]).T
 
         if return_normal:
             normal = self.get_normal(coords=coords_cart, norm=norm, return_norm=norm)
@@ -242,7 +236,6 @@ class Ellipsoid():
         if not norm:
             # rotate cartesian coordinates back to center and align with coordinate axes
             coords = self.rot_org2norm(coords=coords)
-            # coords_rot = (coords - self.center) @ self.rotmat
 
         # quadrant (sign of x and y axes)
         mask_q1 = np.logical_and(coords[:, 0] >= 0, coords[:, 1] >= 0)
@@ -275,13 +268,6 @@ class Ellipsoid():
         """
         beta = x[0]
         lam = x[1]
-
-        # B = self.E_x2 * np.cos(beta)**2 + self.E_e2 * np.sin(beta)**2
-        # L = self.E_x2 - self.E_e2 * np.cos(lam)**2
-        #
-        # f1 = self.radii[0] / self.E_x * np.sqrt(B) * np.cos(lam) - coords[0]
-        # f2 = self.radii[1] * np.cos(beta) * np.sin(lam) - coords[1]
-        # f3 = self.radii[2] / self.E_x * np.sin(beta) * np.sqrt(L) - coords[2]
 
         v = self.radii[0] / np.sqrt(
             1 - self.e_x2 * np.sin(beta) ** 2 - self.e_e2 * np.cos(beta) ** 2 * np.sin(lam) ** 2)
@@ -331,22 +317,6 @@ class Ellipsoid():
             coords = self.rot_org2norm(coords=coords)
 
         # calculate beta and lambda from normalized coordinates
-        # beta = np.arctan((1-self.e_e2)/(1-self.e_x2) * coords[:, 2] / np.sqrt((1-self.e_e2)**2 * coords[:, 0]**2 + coords[:, 1]**2))
-        # lam = np.arctan(1/(1-self.e_e2) * coords[:, 1] / coords[:, 0])
-
-        # c0 = self.radii2[0] * self.radii2[1] + self.radii2[0]*self.radii2[2] + self.radii2[1]*self.radii2[2] \
-        #      - (self.radii2[1] + self.radii2[2]) * coords[:, 0] \
-        #      - (self.radii2[0] + self.radii2[2]) * coords[:, 1] \
-        #      - (self.radii2[0] + self.radii2[1]) * coords[:, 2]
-        # c1 = coords[:, 0]**2 + coords[:, 1]**2 + coords[:, 2]**2 - (self.radii2[0] + self.radii2[1] + self.radii2[2])
-        # if np.isnan(np.sqrt(c1**2 - 4 * c0)):
-        #     t2 = -c1 / 2.
-        # else:
-        #     t2 = (-c1 + np.sqrt(c1**2 - 4 * c0)) / 2.
-        # t1 = c0 / t2
-        # beta = np.arctan(np.sqrt((t1-self.radii2[2])/(self.radii2[1]-t1)))
-        # lam = np.arctan(np.sqrt((t2-self.radii2[1])/(self.radii2[0]-t2)))
-
         beta = np.zeros(coords.shape[0])
         lam = np.zeros(coords.shape[0])
 
@@ -653,38 +623,6 @@ class Ellipsoid():
 
         return coords_destination
 
-        # import matplotlib
-        # matplotlib.use('Qt5Agg')
-        # import matplotlib.pyplot as plt
-        # fig = plt.figure()
-        # ax = fig.add_subplot(projection='3d')
-        #
-        # theta = np.linspace(0, np.pi, 30)
-        # phi = np.linspace(0, 2 * np.pi, 50)
-        # coords_sphere = np.array(np.meshgrid(theta, phi)).T.reshape(-1, 2)
-        # # coords_sphere = np.hstack([theta[:, np.newaxis], phi[:, np.newaxis]])
-        # eli_coords = self.ellipsoid2cartesian(coords=coords_sphere, return_normal=False).astype(np.float64)
-        # eli_coords_rot = (self.rotmat.T @ (eli_coords - self.center).T).T.astype(np.float64)
-        #
-        # ax.scatter(x1.astype(np.float64), y1.astype(np.float64), z1.astype(np.float64))
-        # ax.scatter(eli_coords_rot[:, 0], eli_coords_rot[:, 1], eli_coords_rot[:, 2])
-        # # ax.scatter(x_rk[0, :], x_rk[2, :], x_rk[4, :])
-        # ax.set_xlabel("x")
-        # ax.set_ylabel("y")
-        # ax.set_zlabel("z")
-        # plt.savefig("/home/kporzig/tmp/plots/ellipse_geodesic_test.png", dpi=300)
-
-        # x = odeint(self.direct_geodesic_cartesian, initial_conditions, s)
-        # start_time = time.time()
-        # x_rk = scipy.integrate.solve_ivp(self.direct_geodesic_cartesian, [0, distance], initial_conditions,
-        #                                  method='RK45',
-        #                                  t_eval=np.linspace(0,distance, 1000),
-        #                                  atol=1e-12,
-        #                                  rtol=1e-9)
-        # x_rk = x_rk.y
-        # end_time = time.time()
-        # print(end_time - start_time)
-
     def get_initial_conditions(self, start, alpha, norm=False):
         """
         Determine initial conditions of geodesic walk algorithm
@@ -731,34 +669,13 @@ class Ellipsoid():
         lambda0 = start_jacobi[1]
 
         # Calculate Neumann boundary conditions
-        H0 = self.H(start)
-        H0_sqrt = np.sqrt(H0)
         G0 = self.G(beta0, lambda0)
 
         # normal vector to start point on ellipsoid, eq. (58)
         _, n = self.cartesian2ellipsoid(coords=start, norm=norm, return_norm=True, return_normal=True)
         n = n.flatten()
-        # n = np.zeros(3)
-        # n[0] = x0 / H0_sqrt
-        # n[1] = y0 / ((1 - self.e_e2) * H0_sqrt)
-        # n[2] = z0 / ((1 - self.e_x2) * H0_sqrt)
-
-        # unit vector tangent to line of constant beta, eq. (63)-(65)
-        # L0 = L(lambda0)
-        # F0 = F(lambda0, beta0)
-        # B0 = B(beta0)
-        # t10 = t1(beta0)
-        # t20 = t2(lambda0)
-        # p = np.zeros(3)
-        # p[0] = -np.sign(y0) * np.sqrt(L0/(F0*t20)) * self.radii[0]/(self.E_x*self.E_e) * \
-        #        np.sqrt(B0) * np.sqrt(t20-self.radii2[1])
-        # p[1] = np.sign(x0) * np.sqrt(L0/(F0*t20)) * self.radii[1]/(self.E_y*self.E_e) * \
-        #        np.sqrt((self.radii2[1]-t10) * (self.radii2[0]-t20))
-        # p[2] = np.sign(x0)*np.sign(y0)*np.sign(z0) * (1/np.sqrt(F0*t20)) * self.radii[2]/(self.E_x*self.E_y) * \
-        #        np.sqrt((t10-self.radii2[2])*(t20-self.radii2[1])*(self.radii2[0]-t20))
 
         # unit vector tangent to line of constant lambda, eq. (71)-(73)
-        # q = np.cross(n, p)
         q = np.zeros(3)
         q[0] = -1 / G0 * np.sin(beta0) * np.cos(lambda0)
         q[1] = -1 / G0 * np.sqrt(1 - self.e_e2) * np.sin(beta0) * np.sin(lambda0)
@@ -1112,47 +1029,3 @@ def ellipsoid2subject(coords: np.ndarray, ellipsoid: Ellipsoid, surface: Surface
     )
 
     return (indices, points)
-
-
-
-# coords_jacobi = np.zeros((coords.shape[0], 2))
-        # eps0 = 1e-15
-        # eps = np.inf
-        # beta = 1.
-        # lam = 1.
-        # J = np.zeros((3, 2))
-        # L = lambda lam: self.E_x2 - self.E_e2 * np.cos(lam)**2
-        # B = lambda beta: self.E_x2*np.cos(beta)**2 + self.E_e2*np.sin(beta)**2
-        #
-        # for i_point, point in enumerate(coords):
-        #     while eps > eps0:
-        #         try:
-        #             B_sqrt = np.sqrt(B(beta))
-        #             L_sqrt = np.sqrt(L(lam))
-        #         except RuntimeWarning:
-        #             beta = np.random.rand(1)
-        #             lam = np.random.rand(1)
-        #
-        #         J[0, 0] = -self.radii[0]*self.E_y2/(2*self.E_x)*np.sin(2*beta)/B_sqrt*np.cos(lam)   # dx/dbeta
-        #         J[1, 0] = -self.radii[1]*np.sin(beta)*np.sin(lam)                                   # dy/dbeta
-        #         J[2, 0] = self.radii[2]/self.E_x*np.cos(beta)*L_sqrt                                # dz/dbeta
-        #         J[0, 1] = -self.radii[0]/self.E_x*B_sqrt*np.sin(lam)                                # dx/dlam
-        #         J[1, 1] = self.radii[1]*np.cos(beta)*np.cos(lam)                                    # dy/dlam
-        #         J[2, 1] = self.radii[2]*self.E_e2/(2*self.E_x)*np.sin(beta)*np.sin(2*lam)/L_sqrt    # dz/dlam
-        #
-        #         N = J.T @ J
-        #         N_inv = np.linalg.inv(N)
-        #         # N_inv = 1/(N[0, 0]*N[1, 1]-N[0, 1]*N[1, 0]) * np.array([[N[1, 1], -N[0, 1]], [-N[1, 0],  N[0, 0]]])
-        #         coords_current = self.jacobi2cartesian(coords=np.array([[beta, lam]]), norm=True)
-        #         dI = point - coords_current
-        #
-        #         dbeta_dlam = N_inv @ J.T @ dI.T  # np.linalg.inv(N)
-        #
-        #         beta += dbeta_dlam[0]
-        #         lam += dbeta_dlam[1]
-        #
-        #         eps = np.linalg.norm(dbeta_dlam)
-        #
-        #         print(coords, coords_current, eps) #coords_current, coords,
-        #
-        #     coords_jacobi[i_point, :] = np.hstack((beta, lam))

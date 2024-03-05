@@ -286,32 +286,14 @@ class OnlineFEM:
                                        useElements=self.useElements)
             # isotropic
             if self.cond.ndim == 1:
-                # b = assemble_force_vector(force_integrals=self.force_integrals,
-                #                           reshaped_node_numbers=self.reshaped_node_numbers,
-                #                           dadt=self.dadt)
-
                 b = sumf2(x=self.force_integrals, y=self.dadt, w=self.reshaped_node_numbers)
 
             # anisotropic
             elif self.cond.ndim == 3:
-                # # integrate in each node of each element, the value for repeated nodes will be summed together later
-                # elm_node_integral = np.zeros((len(self.node_numbers), 4), dtype=np.float64)
-                # sigma_dadt = np.einsum('aij, aj -> ai', self.cond, self.dadt)
-                #
-                # for i in range(4):
-                #     elm_node_integral[:, i] = -self.volume * (sigma_dadt * self.gradient[:, i, :]).sum(axis=1)
-                #
-                # elm_node_integral *= 1e-6  # from m to mm
-                #
-                # b = np.bincount((self.node_numbers-1).reshape(-1), elm_node_integral.reshape(-1))
-
                 b = sumf3(v=self.volume, dadt=self.dadt, g=self.gradient, nn=(self.node_numbers-1).reshape(-1), c=self.cond)
 
         else:
             raise NotImplementedError("Simulation method not implemented yet. Method is either 'TMS' or 'TES'.")
-
-        # dof_map_copy = copy.deepcopy(self.dof_map)
-        # b, _ = self.bc.apply_to_rhs(self.solver._A, b, dof_map_copy)
 
         return b
 
@@ -404,10 +386,6 @@ class OnlineFEM:
         v : np.array of float [n_nodes]
             Corrected solution (including the Dirichlet node at the right position)
         """
-
-        # for _electrode_array in electrode.electrode_arrays:
-        #     for _ele in _electrode_array.electrodes:
-        #         _ele.ele_current = _ele.ele_current_init
 
         electrode.compile_node_arrays()
 
@@ -539,11 +517,7 @@ class OnlineFEM:
                             all_pos = True
 
             else:
-                # all_pos = False
-                # denom_factor = 15
-                #
-                # # It 2 ... use gradient descent
-                # while not all_pos:
+                # It 2 ... use gradient descent
                 n_wrong_current_signs.append(0)
                 for i_channel in range(n_channel):
                     if len(I_norm[i_channel][-1, :]) == 1:
@@ -562,19 +536,6 @@ class OnlineFEM:
                     denom_factor = 15
                 else:
                     denom_factor = 100 * n_wrong_current_signs[-1] / n_nodes_total
-
-                            # if ((I[i_channel] - np.mean(I[i_channel]) + 1) < 0).any():
-                            #     denom_factor /= 2
-                            #     print(f"Found {np.sum(((I[i_channel] - np.mean(I[i_channel]) + 1) < 0))}/{len(I[i_channel])} wrong current signs. Decreasing denom factor to {denom_factor}")
-                            #     all_pos = False
-                            #     break
-                            #
-                            # all_pos = True
-
-            # I_test = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
-            # if (np.isnan(I_test[0])).any() or (np.isnan(I_test[1])).any():
-            #     print("INF AGAIN")
-            #     te = 1
 
             # convert back from I_norm to I
             I = [I_mean[i_channel] * (I[i_channel] - np.mean(I[i_channel]) + 1) for i_channel in range(n_channel)]
@@ -609,9 +570,6 @@ class OnlineFEM:
                                                        node_area=electrode.node_area,
                                                        currents=I,
                                                        electrode=electrode)
-
-            # if (np.isnan(_I_norm[0])).any() or (np.isnan(_I_norm[1])).any() or (np.isnan(_v_norm[0])).any() or (np.isnan(_v_norm[1])).any():
-            #     te = 1
 
             # append
             for i_channel in range(n_channel):
@@ -695,8 +653,6 @@ class OnlineFEM:
             electrode.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
                                                           current=np.hstack(I_ele))
 
-        # self.logger.log(20, f"Optimal currents: { *I, }")
-
         if fn_electrode_txt is not None:
             np.savetxt(fn_electrode_txt, np.hstack((electrode.node_coords, electrode.node_current[:, np.newaxis])))
 
@@ -748,10 +704,6 @@ class OnlineFEM:
         # TODO: also use the new TMSFEM class here for TMS but implement the fast RHS calculations from here in it
         if self.method == "TMS":
 
-            # self.fem = TMSFEM(mesh, cond, solver_options=self.solver_options, store_G=True)
-            # self.fem.prepare_solver()
-            # self.solver = self.fem._solver
-
             self.cond = self.cond.value.squeeze()
 
             if self.cond.ndim == 2:
@@ -795,18 +747,11 @@ class OnlineFEM:
                                                node_numbers=self.node_numbers,
                                                number_of_nodes=number_of_nodes)
 
-            # self.A_reduced = copy.deepcopy(self.A)
-            # dof_map_copy = copy.deepcopy(self.dof_map)
-            # self.A_reduced, _ = self.bc.apply_to_matrix(self.A_reduced, dof_map_copy)
-
             self.A = delete_row_csr(self.A, self.dirichlet_node-1)
             self.A = delete_col_csr(self.A, self.dirichlet_node-1)
             self.solver = pardiso.Solver(self.A)
 
         elif self.method == "TES":
-            # Calculate node areas for whole mesh
-            # self.msh_nodes_areas = self.mesh.nodes_areas()
-
             self.fem = TDCSFEMNeumann(mesh=self.mesh,
                                       cond=self.cond,
                                       ground_electrode=self.dirichlet_node,
@@ -928,14 +873,13 @@ def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt):
     node_integrals = np.zeros(force_integrals.shape[:2], order='C')
 
     # force_integrals: (4, number_of_elements, 3); dadt: (number_of_elements, 3); node_integrals: (4, number_of_elements)
-    # node_integrals = np.einsum('ijk,jk->ij', force_integrals, dadt)
     sumf(force_integrals, dadt, node_integrals)
 
     # Assembles the right hand side for TMS.
     # forcevec: (number_of_nodes,), reshaped_node_numbers: (number_of_elements*4,), node_integrals: (4, number_of_elements)
-    # forcevec = bincount_nb(reshaped_node_numbers, node_integrals.reshape(-1)).reshape(-1, 1)
 
     # keep np.bincount to make the testing more stable. May change it back to bincount_nb() for performance reason.
+    # forcevec = bincount_nb(reshaped_node_numbers, node_integrals.reshape(-1)).reshape(-1, 1)
     forcevec = np.bincount(reshaped_node_numbers, node_integrals.reshape(-1)).reshape(-1, 1)
 
     return forcevec
@@ -1054,11 +998,6 @@ def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, numb
         factor = (volume * conductivity * 1e-3)[:, None, None] * gradient
     elif conductivity.ndim == 3:
         factor = volume[:, None, None] * np.einsum('aij, ajk -> aik', gradient, conductivity) * 1e-3
-
-    # if cond.ndim == 1:
-    #     vGc = vols[:, None, None]*G*cond[:, None, None]
-    # elif cond.ndim == 3:
-    #     vGc = vols[:, None, None]*np.einsum('aij, ajk -> aik', G, cond)
 
     stiffmat = sparse.coo_matrix((number_of_nodes, number_of_nodes), dtype='float64')
 
