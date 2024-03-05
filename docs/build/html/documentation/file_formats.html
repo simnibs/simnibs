@@ -1,17 +1,20 @@
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="../">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>File Formats in SimNIBS &#8212; SimNIBS g75fd674e&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
-    <script src="../_static/documentation_options.js?v=18dd14a8"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <link rel="icon" href="../_static/favicon.ico"/>
+    <title>File Formats in SimNIBS &#8212; SimNIBS g55be60be&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Coordinates in SimNIBS" href="coordinates.html" />
@@ -48,9 +51,9 @@
           <div class="body" role="main">
             
   <section id="file-formats-in-simnibs">
-<span id="file-formats"></span><h1>File Formats in SimNIBS<a class="headerlink" href="#file-formats-in-simnibs" title="Link to this heading">¶</a></h1>
+<span id="file-formats"></span><h1>File Formats in SimNIBS<a class="headerlink" href="#file-formats-in-simnibs" title="Permalink to this heading">¶</a></h1>
 <section id="head-models">
-<h2>Head Models<a class="headerlink" href="#head-models" title="Link to this heading">¶</a></h2>
+<h2>Head Models<a class="headerlink" href="#head-models" title="Permalink to this heading">¶</a></h2>
 <p>SimNIBS’ head models are <strong>meshes</strong> (<em>.msh</em> files).
 This means that the head head is represented as a set of <em>Nodes</em> and <em>Elements</em>.</p>
 <ul class="simple">
@@ -65,7 +68,7 @@ But it can’t write files with elements other then first order triangles and te
 <em>MATLAB</em> function <em>mesh_load_gmsh4</em> to read <em>.msh</em> files.</p>
 </section>
 <section id="simulation-results">
-<h2>Simulation Results<a class="headerlink" href="#simulation-results" title="Link to this heading">¶</a></h2>
+<h2>Simulation Results<a class="headerlink" href="#simulation-results" title="Permalink to this heading">¶</a></h2>
 <p>By default, Simulation results are also stored in <em>Gmsh</em> format.
 There are 2 types of fields used in SimNIBS:</p>
 <ul class="simple">
@@ -79,16 +82,16 @@ However, the gradient operation is defined element-wise, and not node-wise.</p>
 <p>Together with the <em>.msh</em> files, we often also save <em>.opt</em> files to facilitate visualization.</p>
 </section>
 <section id="surface-fields">
-<h2>Surface Fields<a class="headerlink" href="#surface-fields" title="Link to this heading">¶</a></h2>
+<h2>Surface Fields<a class="headerlink" href="#surface-fields" title="Permalink to this heading">¶</a></h2>
 <p>When fields are mapped to the middle gray matter surface, either on the subject or on the  <em>FsAverage</em>, it saves results as a <em>FreeSurfer</em> <em>.curv</em> file, which contains values for each point in the surface. SimNIBS has the <em>mesh_load_fsresults</em> <em>MATLAB</em> function and the <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_curv()</span></code> <em>Python</em> function to load this kind of file.</p>
 <p>The surfaces themselves are stored as GIFTI files in <code class="file docutils literal notranslate"><span class="pre">m2m_</span><em><span class="pre">subID</span></em><span class="pre">/surfaces/</span></code>. They can be read using <em>mesh_load_fssurf</em> in <em>MATLAB</em> and <code class="xref py py-func docutils literal notranslate"><span class="pre">simnibs.msh.read_gifti_surface()</span></code> in <em>Python</em>.</p>
 </section>
 <section id="volumes">
-<h2>Volumes<a class="headerlink" href="#volumes" title="Link to this heading">¶</a></h2>
+<h2>Volumes<a class="headerlink" href="#volumes" title="Permalink to this heading">¶</a></h2>
 <p>Fields mapped to subject or MNI volumes are stored in NiftI format.</p>
 </section>
 <section id="hdf5">
-<h2>HDF5<a class="headerlink" href="#hdf5" title="Link to this heading">¶</a></h2>
+<h2>HDF5<a class="headerlink" href="#hdf5" title="Permalink to this heading">¶</a></h2>
 <p>SimNIBS uses <a class="reference external" href="https://www.hdfgroup.org/solutions/hdf5/">HDF5</a> to store large data sets, such as for uncertainty quantification (UQ) and leadfields.
 The HDF5 format is hierarchical, meaning that is acts almost as a folder structure.</p>
 </section>
@@ -194,8 +197,8 @@ The HDF5 format is hierarchical, meaning that is acts almost as a folder structu
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="../_sources/documentation/file_formats.rst.txt"

@@ -32,16 +32,12 @@ Current Contributors
 * Jesper D. Nielsen
    * Contributions to the segmentation functions in :ref:`charm_docs` (4.0)
    * Main author of the *headreco* pipeline, now discontinued (2.1)
-
-* Maria Drakaki
-   * Main contributor to the new TMS coil models (4.0)
-
-* Fang Cao
-   * Code testing and updating to python 3.9 (4.0)
+   * Update to *charm* to optionally use FreeSurfer surfaces (4.1)
 
 * Konstantin Weise
    * First version of the TMS optimization (3.1)
    * UQ functionality (3.0)
+   * Integration of mmg to improve tetrahedral mesh quality (4.1)
 
 * Thomas Knoesche
    * Help with the UQ functionality (3.0)
@@ -49,9 +45,22 @@ Current Contributors
 * Ole Numssen
    * I/O functions for Localite and Brainsight (4.0)
    * First version of the TMS optimization (3.1)
+   
+* Torge H. Worbs
+   * Integration of mmg to improve tetrahedral mesh quality (4.1)
+   
+* Merle Diedrichsen
+   * Update of electrode meshing to improve tetrahedral quality at the electrode edges (4.1)
+
 
 Former Contributors
 ---------------------
+
+* Maria Drakaki
+   * Main contributor to the new TMS coil models (4.0)
+
+* Fang Cao
+   * Code testing and updating to python 3.9 (4.0)
 
 * Guilherme B. Saturnino
    * Main contributor to many SimNIBS features: 
@@ -92,7 +101,7 @@ Acknowledgements
 SimNIBS integrates free software for Neuroimaging, computer graphics
 and FEM calculations into one coherent pipeline:
 
-* :ref:`charm_docs` uses `Samseg (Oula Puonti, Koen Van Leemput) from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, and also a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_, functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_
+* :ref:`charm_docs` uses `Samseg (Oula Puonti, Koen Van Leemput) from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, `Mmg <https://www.mmgtools.org/>`_ for improving the mesh quality, a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_ for surface fixing, and functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_ for GM central surface estimation
 * We use `Gmsh <http://geuz.org/gmsh/>`_ by `Christophe Geuzaine 
   <http://www.montefiore.ulg.ac.be/~geuzaine/>`_ and `Jean-François Remacle <http://perso.uclouvain.be/jean-francois.remacle/>`_ for visualization.
 * :ref:`dwi2cond_docs` uses `FSL <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.

@@ -33,13 +33,11 @@
       ~Msh.fix_surface_labels
       ~Msh.fix_surface_orientation
       ~Msh.fix_th_node_ordering
-      ~Msh.fix_thin_tetrahedra
       ~Msh.fix_tr_node_ordering
       ~Msh.gamma_metric
       ~Msh.gaussian_curvature
       ~Msh.get_AABBTree
       ~Msh.get_min_distance_on_grid
-      ~Msh.get_outer_skin_points
       ~Msh.interp_matrix
       ~Msh.intersect_ray
       ~Msh.intersect_segment
@@ -48,6 +46,7 @@
       ~Msh.nodes_normals
       ~Msh.nodes_volumes_or_areas
       ~Msh.open_in_gmsh
+      ~Msh.partition_skin_surface
       ~Msh.prepare_surface_tags
       ~Msh.pts_inside_surface
       ~Msh.read_hdf5

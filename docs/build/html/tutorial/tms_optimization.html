@@ -1,17 +1,20 @@
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="../">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>TMS Optimization &#8212; SimNIBS g75fd674e&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
-    <script src="../_static/documentation_options.js?v=18dd14a8"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <link rel="icon" href="../_static/favicon.ico"/>
+    <title>TMS Optimization &#8212; SimNIBS g55be60be&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Advanced Features" href="advanced/advanced.html" />
@@ -48,7 +51,7 @@
           <div class="body" role="main">
             
   <section id="tms-optimization">
-<span id="tms-optimize"></span><h1>TMS Optimization<a class="headerlink" href="#tms-optimization" title="Link to this heading">¶</a></h1>
+<span id="tms-optimize"></span><h1>TMS Optimization<a class="headerlink" href="#tms-optimization" title="Permalink to this heading">¶</a></h1>
 <p>SimNIBS can help finding the best TMS position for stimulating a certain target. This is
 done by searching coil positions in a grid around the target position and turning the
 coil at various angles.</p>
@@ -74,7 +77,7 @@ coil at various angles.</p>
 </div>
 <p></p>
 <section id="basic-setting">
-<h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Link to this heading">¶</a></h2>
+<h2>Basic Setting<a class="headerlink" href="#basic-setting" title="Permalink to this heading">¶</a></h2>
 <p>Setting up a TMS optimization is similar to setting-up a TMS simulation. In the most basic
 setting, you need to select the head model, the coil being used and the target position.
 The target position has to be given in <a class="reference internal" href="../documentation/coordinates.html#coords-doc"><span class="std std-ref">SimNIBS coordinates</span></a> and can be
@@ -82,7 +85,7 @@ determined using the <em>nifti</em> volumes produced by <a class="reference inte
 <p>For accelerating the simulations, SimNIBS can use the MKL Pardiso direct solver. However, this
 solver uses approximately three times more memory than the standard solver.</p>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
@@ -106,7 +109,7 @@ solver uses approximately three times more memory than the standard solver.</p>
 </div>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization</span>
 <span class="c">% Guilherme Saturnino, 2019</span>
 
@@ -134,11 +137,11 @@ magnitude at the target.</p>
 </section>
 </section>
 <section id="refining-the-search">
-<h2>Refining the Search<a class="headerlink" href="#refining-the-search" title="Link to this heading">¶</a></h2>
+<h2>Refining the Search<a class="headerlink" href="#refining-the-search" title="Permalink to this heading">¶</a></h2>
 <p>If you already have a good idea of where and how the coil should be located or oriented, you can
 refine the search by precisely specifying the search region, search angles and resolution.</p>
 <section id="id1">
-<h3>Python<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Refining the TMS Optimization &#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
@@ -178,7 +181,7 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 </section>
 <section id="id2">
-<h3>MATLAB<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refining the TMS Optimization</span>
 
 <span class="c">% Initialize structure</span>
@@ -215,7 +218,7 @@ refine the search by precisely specifying the search region, search angles and r
 </section>
 </section>
 <section id="auxiliary-dipole-method-adm">
-<h2>Auxiliary Dipole Method (ADM)<a class="headerlink" href="#auxiliary-dipole-method-adm" title="Link to this heading">¶</a></h2>
+<h2>Auxiliary Dipole Method (ADM)<a class="headerlink" href="#auxiliary-dipole-method-adm" title="Permalink to this heading">¶</a></h2>
 <p>To use the Auxiliary Dipole Method (ADM), simply use a <code class="file docutils literal notranslate"><span class="pre">.ccd</span></code> coil file and set the <code class="code docutils literal notranslate"><span class="pre">method</span> <span class="pre">=</span> <span class="pre">'ADM'</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="n">tms_opt</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;ADM&#39;</span>
@@ -223,7 +226,7 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 <p></p>
 <section id="id3">
-<h3>Python<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">mni2subject_coords</span>
 
@@ -246,7 +249,7 @@ refine the search by precisely specifying the search region, search angles and r
 </div>
 </section>
 <section id="id4">
-<h3>MATLAB<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
 <span class="c">% Subject folder</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
@@ -266,16 +269,16 @@ refine the search by precisely specifying the search region, search angles and r
 </section>
 </section>
 <section id="acknowledgements">
-<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this heading">¶</a></h2>
 <p>We would like to thank Ole Numssen and Konstantin Weise for helping with the development of this
 functionality, and Luis Gomez for contributing the code for the ADM optimization.</p>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
 <p>Please see <a class="reference internal" href="../documentation/opt_struct/tmsoptimize.html#tmsoptimize-doc"><span class="std std-ref">TMSoptimize</span></a> for a detailed description of all TMS optimization options.</p>
 </section>
 <section id="references">
-<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1101/595603">Weise, K., Numssen, O., Thielscher, A., Hartwigsen, G., Knösche, T.R. (in review) A novel approach to localize cortical TMS effects. bioRxiv, 595603.</a></p>
 <p><a class="reference external" href="https://doi.org/10.1101/2020.05.27.120022">Gomez, L. J., Dannhauer, M., &amp; Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. bioRxiv</a></p>
 </section>
@@ -379,8 +382,8 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="../_sources/tutorial/tms_optimization.rst.txt"
