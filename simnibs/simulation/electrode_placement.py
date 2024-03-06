@@ -391,7 +391,9 @@ def _calc_gamma(affected_nodes):
     ''' gamma value of tetrahedra 
     (see Parthasarathy et al., Finite Elements in Analysis and Design, 1994)
 
-    Note: negative ...
+    Calculates the gamma metric for tetrahdra.
+    Negative volumes can happen if tetrahedra had been inverted in the process of moving nodes.
+    In that case, penalize by returning a high gamma value (100). 
     
     Parameters
     ------------
@@ -485,7 +487,6 @@ def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi
         moved_tr_nodes[to_be_moved, :2] = old_position[:2] + t*d
         # node movement in tetrahedra is done in original 3D space to assess th quality ->
         # apply inverse affine on node movement to map to original space
-        # moved_th_nodes[th_moved, node_moved, :2] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))[:, :2]
         moved_th_nodes[th_moved, node_moved] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))
         # build electrode tetrahedra according to current movement
         el_nodes, el_tetrahedra_, _, corresponding, _, _, _ = _build_electrode(poly, el_layer, moved_tr_nodes[:, :2], adj_tr_nodes, holes=holes, test_gamma=True) 
@@ -520,7 +521,7 @@ def _make_line(line, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, 
         for p, t in zip(line, tr_w_points):
             # If not outside
             if t != -1:
-                # Try to move the nodes, Choose the movement that maximizes the minimum angle
+                # Try to move the nodes, Choose the movement that minimizes the maximum gamma value
                 gammas = []
                 moved_tr_nodes_list = []
                 for n in triangles[t]:
@@ -541,7 +542,7 @@ def _make_line(line, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, 
     edge_s = side[edges]
     edges_crossing = np.where(np.prod(edge_s, axis=1) < -.1)[0]
     kdtree = _calc_kdtree(triangles, moved_tr_nodes[:, :2])
-    # For each edge crossing the line segment, try to move each node. choose the movement
+    # For each edge crossing the line segment, try to move each node. Choose the movement
     # that minimizes the maximum gamma value
     for e in edges_crossing:
         gammas = []
