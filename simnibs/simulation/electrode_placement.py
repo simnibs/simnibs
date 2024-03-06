@@ -418,7 +418,7 @@ def _calc_gamma(affected_nodes):
     
     return gamma
 
-def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count,
+def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
                 edge_list=None, kdtree=None):
     '''
     Moves one point to new old_position on the line of the electrode. The gamma metric [source] is calculated for all adjacent tetrahedra,
@@ -485,9 +485,12 @@ def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi
         moved_tr_nodes[to_be_moved, :2] = old_position[:2] + t*d
         # node movement in tetrahedra is done in original 3D space to assess th quality ->
         # apply inverse affine on node movement to map to original space
-        moved_th_nodes[th_moved, node_moved, :2] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))[:, :2]
+        # moved_th_nodes[th_moved, node_moved, :2] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))[:, :2]
+        moved_th_nodes[th_moved, node_moved] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))
         # build electrode tetrahedra according to current movement
-        el_nodes, el_tetrahedra_, _, _, _, _, _ = _build_electrode(poly, el_layer, moved_tr_nodes[:, :2], adj_tr_nodes, holes=holes, test_gamma=True) 
+        el_nodes, el_tetrahedra_, _, corresponding, _, _, _ = _build_electrode(poly, el_layer, moved_tr_nodes[:, :2], adj_tr_nodes, holes=holes, test_gamma=True) 
+        el_nodes[:, 2] += tr_nodes[:, 2][corresponding]
+        el_nodes = _apply_affine(inv_affine, el_nodes)
         el_nodes = el_nodes[el_tetrahedra_]
         # reorder elec th nodes, so volume is positive
         MM = el_nodes[:, 1:] - el_nodes[:, 0, None]
@@ -521,7 +524,7 @@ def _make_line(line, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, 
                 gammas = []
                 moved_tr_nodes_list = []
                 for n in triangles[t]:
-                    mn, mg = _move_point(p, n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count,
+                    mn, mg = _move_point(p, n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
                                         edge_list=edge_list)
                     if mn is not None:
                         gammas.append(mg)
@@ -544,7 +547,7 @@ def _make_line(line, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, 
         gammas = []
         moved_tr_nodes_list = []
         for i, n in enumerate(edges[e]):
-            mn, mg = _move_point(closest[n], n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count,
+            mn, mg = _move_point(closest[n], n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
                                 edge_list=edge_list, kdtree=kdtree)
             if mn is not None:
                 gammas.append(mg)
@@ -1068,7 +1071,6 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, Ele
         mesh_surface=skin_tag,
         nodes_roi=roi_tr_nodes)
     tr_nodes = _apply_affine(affine, tr_nodes)
-    tr_nodes_z = tr_nodes[:, 2]
     
     inv_affine = np.linalg.inv(affine)
 
@@ -1114,7 +1116,6 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, Ele
 
 
     # Change the mesh
-    tr_nodes = np.vstack([tr_nodes[: ,:2].T, tr_nodes_z]).T
     tr_nodes = _apply_affine(inv_affine, tr_nodes)
     mesh.nodes.node_coord[roi_tr_nodes-1, :] = tr_nodes
 
