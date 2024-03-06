@@ -7,7 +7,7 @@ This module provides import and export functions for the `Brainsight <https://ww
 SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
 Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.
 
-The Brainsight ecosystem provides two main ways of storing positions/orientations: `Targets` and `Samples`. `Targets` represent planned locations for stimulation, and `Samples` represent the actual locations that were stimulated. Both are exported in a single `.txt` file. In addition, several coordinate systems are supported for export and import.
+Brainsight provides two main ways of storing positions/orientations: `Targets` and `Samples`. `Targets` represent planned locations for stimulation, and `Samples` represent the actual locations that were stimulated. Both are exported in a single `.txt` file. As several coordinate systems are supported for export and import by Brainsight, please see the following notes regarding which of them are suited for data exchange with SimNIBS.
 
 
 How to use 

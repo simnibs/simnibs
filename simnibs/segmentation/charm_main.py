@@ -676,11 +676,11 @@ def _stop_logger(logfile):
 
     # Explicitly remove this really annoying stuff from the log
     removetext = (
-        re.escape("-\|/"),
+        re.escape(r"-\|/"),
         re.escape("Selecting intersections ... ")
-        + "\d{1,2}"
+        + r"\d{1,2}"
         + re.escape(" %Selecting intersections ... ")
-        + "\d{1,2}"
+        + r"\d{1,2}"
         + re.escape(" %"),
     )
     with open(logfile, "w") as f:

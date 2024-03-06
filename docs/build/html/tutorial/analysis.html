@@ -1,17 +1,20 @@
+
 <!DOCTYPE html>
 
-<html lang="en" data-content_root="../">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Analyzing Simulations &#8212; SimNIBS g75fd674e&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
-    <script src="../_static/documentation_options.js?v=18dd14a8"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <link rel="icon" href="../_static/favicon.ico"/>
+    <title>Analyzing Simulations &#8212; SimNIBS g55be60be&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TDCS Optimization" href="optimization.html" />
@@ -48,12 +51,12 @@
           <div class="body" role="main">
             
   <section id="analyzing-simulations">
-<span id="analysis-tutorial"></span><h1>Analyzing Simulations<a class="headerlink" href="#analyzing-simulations" title="Link to this heading">¶</a></h1>
+<span id="analysis-tutorial"></span><h1>Analyzing Simulations<a class="headerlink" href="#analyzing-simulations" title="Permalink to this heading">¶</a></h1>
 <p>SimNIBS offers tools to help analyzing your simulation results.
 Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. However, their arguments and outputs might be slightly different.</p>
 <p>To run the analysis scripts, please follow the same steps needed to run the <a class="reference internal" href="scripting.html#run-scripts"><span class="std std-ref">simulation scripts</span></a>.</p>
 <section id="roi-analysis-using-mni-coordinates">
-<span id="roi-mni-analysis"></span><h2>ROI Analysis Using MNI Coordinates<a class="headerlink" href="#roi-analysis-using-mni-coordinates" title="Link to this heading">¶</a></h2>
+<span id="roi-mni-analysis"></span><h2>ROI Analysis Using MNI Coordinates<a class="headerlink" href="#roi-analysis-using-mni-coordinates" title="Permalink to this heading">¶</a></h2>
 <p>The objective of this example is to evaluate the mean electric field in an ROI, defined using MNI coordinates.</p>
 <p>This analysis follows the steps:</p>
 <ol class="arabic">
@@ -132,7 +135,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 </li>
 </ol>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Simple ROI analysis of the electric field from a simulation.</span>
 
@@ -186,7 +189,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 </div>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Simple ROI analysis of the electric field from a simulation.</span>
 <span class="c">% We will calculate the mean electric field in a gray matter ROI</span>
 <span class="c">% The ROI is defined using an MNI coordinates</span>
@@ -233,7 +236,7 @@ Most of the tools have both <em>Python</em> and <em>MATLAB</em> versions. Howeve
 </section>
 </section>
 <section id="roi-analysis-using-surfaces">
-<h2>ROI Analysis Using Surfaces<a class="headerlink" href="#roi-analysis-using-surfaces" title="Link to this heading">¶</a></h2>
+<h2>ROI Analysis Using Surfaces<a class="headerlink" href="#roi-analysis-using-surfaces" title="Permalink to this heading">¶</a></h2>
 <p>An alternative analysis method is to use the <strong>middle cortical surfaces</strong> created by SimNIBS.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -303,7 +306,7 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
 </li>
 </ol>
 <section id="id1">
-<h3>Python<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">ROI analysis of the electric field from a simulation using an atlas.</span>
 
@@ -341,7 +344,7 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
 </div>
 </section>
 <section id="id2">
-<h3>MATLAB<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% ROI analysis of the electric field from a simulation using an atlas.</span>
 <span class="c">% We will calculate the mean electric field in a gray matter </span>
 <span class="c">% ROI defined using an atlas</span>
@@ -479,8 +482,8 @@ or by setting the <strong>map_to_surf</strong> option in the <a class="reference
       &copy;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
       <a href="../_sources/tutorial/analysis.rst.txt"
