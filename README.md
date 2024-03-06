@@ -35,7 +35,7 @@ Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of
 
 ## 3rd Party Files
 We have included code or binaries from the following project to this repository:
-* [Gmsh](www.gmsh.info)
+* [Gmsh](https://www.gmsh.info)
 * [meshfix](https://github.com/MarcoAttene/MeshFix-V2.1)
 * [CAT12](http://www.neuro.uni-jena.de/cat/)
 * [PETSc](https://www.mcs.anl.gov/petsc/)
@@ -44,8 +44,6 @@ We have included code or binaries from the following project to this repository:
 * [MSMPI](https://github.com/Microsoft/Microsoft-MPI)
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
-* [PyPardiso](https://github.com/haasad/PyPardisoProject)
-* [PyPardiso](https://github.com/haasad/PyPardisoProject)
 * [PyPardiso](https://github.com/haasad/PyPardisoProject)
 * [CGAL](https://www.cgal.org/)
 * [Mmg](https://www.mmgtools.org/)
