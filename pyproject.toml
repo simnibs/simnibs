@@ -28,7 +28,7 @@ dependencies =[
 "Source" = "https://github.com/simnibs/simnibs/"
 
 [build-system]
-requires = ['setuptools', 'wheel', 'build', 'numpy', 'cython','setuptools-scm']
+requires = ['setuptools>=63', 'wheel', 'build', 'numpy', 'cython','setuptools-scm>=8']
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
@@ -41,7 +41,7 @@ exclude = ["packing"]
 
 [tool.setuptools_scm]
 version_file = "simnibs/_version.py"
-
+git_describe_command = "git describe --tags --abbrev=0"
 [project.scripts]
     charm = "simnibs.cli.charm:main"
     add_tissues_to_upsampled = "simnibs.cli.add_tissues_to_upsampled:main"
