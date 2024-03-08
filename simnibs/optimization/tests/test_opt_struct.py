@@ -414,10 +414,10 @@ class TestFindDirections:
 
 
 
-class TestTDCSTarget:
+class TestTDCStarget:
     def test_create_mat_struct(self):
-        targets = [opt_struct.TESLFtarget(indexes=1, directions=[0, 1, 0], radius=5),
-                   opt_struct.TESLFtarget(indexes=[1, 2], intensity=.3, max_angle=30,
+        targets = [opt_struct.TDCStarget(indexes=1, directions=[0, 1, 0], radius=5),
+                   opt_struct.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30,
                                           tissues=[3, 4])]
         m = opt_struct._save_TDCStarget_mat(targets)
         assert np.all(m[0]['indexes'] == 1)
@@ -433,7 +433,7 @@ class TestTDCSTarget:
              'directions': ['normal'],
              'intensity': [[0.5]], 'max_angle': [[30]],
              'radius': [[4.]], 'tissues': [[3, 2]]}
-        t = opt_struct.TESLFtarget.read_mat_struct(m)
+        t = opt_struct.TDCStarget.read_mat_struct(m)
         assert t.indexes == [1]
         assert t.positions is None
         assert t.directions == 'normal'
@@ -446,7 +446,7 @@ class TestTDCSTarget:
         m = {'indexes': [''],
              'positions': [[1., 2., 3.]],
              'directions': [[0., 0., 1.]]}
-        t = opt_struct.TESLFtarget.read_mat_struct(m)
+        t = opt_struct.TDCStarget.read_mat_struct(m)
         assert t.indexes is None
         assert np.allclose(t.directions, [[0, 0, 1]])
         assert np.allclose(t.positions, [[1, 2, 3]])
@@ -455,21 +455,21 @@ class TestTDCSTarget:
 
     def test_read_mat_directions_none(self):
         m = {'directions': ['none']}
-        t = opt_struct.TESLFtarget.read_mat_struct(m)
+        t = opt_struct.TDCStarget.read_mat_struct(m)
         assert t.directions is None
 
 
     def test_mat_io(self):
-        targets = [opt_struct.TESLFtarget(indexes=1, directions=[0, 1, 0]),
-                   opt_struct.TESLFtarget(indexes=[1, 2], intensity=.3, max_angle=30)]
+        targets = [opt_struct.TDCStarget(indexes=1, directions=[0, 1, 0]),
+                   opt_struct.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30)]
         m = opt_struct._save_TDCStarget_mat(targets)
         scipy.io.savemat('tmp.mat', {'targets': m})
         m = scipy.io.loadmat('tmp.mat', struct_as_record=True, squeeze_me=False)
         os.remove('tmp.mat')
-        t = opt_struct.TESLFtarget.read_mat_struct(m['targets'][0][0])
+        t = opt_struct.TDCStarget.read_mat_struct(m['targets'][0][0])
         assert t.indexes == [1]
         assert np.allclose(t.directions, [0, 1, 0])
-        t = opt_struct.TESLFtarget.read_mat_struct(m['targets'][0][1])
+        t = opt_struct.TDCStarget.read_mat_struct(m['targets'][0][1])
         assert np.all(t.indexes == [1, 2])
         assert t.directions == 'normal'
         assert t.intensity == .3
@@ -479,7 +479,7 @@ class TestTDCSTarget:
     def test_get_indexes_and_directions(self, sphere_surf):
         idx = [1]
         directions = [2., 0., 0.]
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -490,7 +490,7 @@ class TestTDCSTarget:
     def test_get_indexes_and_directions_none(self, sphere_surf):
         idx = [1]
         directions = None
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -501,7 +501,7 @@ class TestTDCSTarget:
     def test_get_indexes_and_directions_2_targets(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.], [0., 3., 0.]]
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -511,7 +511,7 @@ class TestTDCSTarget:
     def test_get_indexes_and_directions_2_targets_1_dir(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.]]
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -525,7 +525,7 @@ class TestTDCSTarget:
             (sphere_vol.elm.tag1 == 4))[0]
         directions = [[2., 0., 0.]]
 
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             positions=bar[0], directions=directions,
             mesh=sphere_vol, lf_type='element', radius=20, tissues=4)
 
@@ -539,7 +539,7 @@ class TestTDCSTarget:
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     @pytest.mark.parametrize('intensity', [0.2, -0.2])
     def test_as_field(self, intensity, lf_type, sphere_surf):
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=[1, 2], directions=[[1, 0, 0], [0, 2, 0]],
             mesh=sphere_surf, lf_type=lf_type, intensity=intensity)
         d = t.as_field()
@@ -549,7 +549,7 @@ class TestTDCSTarget:
 
     def test_as_field_radius(self, sphere_vol):
         bar = sphere_vol.elements_baricenters().value
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             positions=bar[0], directions=[[1, 0, 0]],
             mesh=sphere_vol, lf_type='element', intensity=1.,
             radius=20, tissues=4)
@@ -562,7 +562,7 @@ class TestTDCSTarget:
 
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     def test_as_field_none(self, lf_type, sphere_surf):
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=[1, 2], directions=None,
             mesh=sphere_surf, lf_type=lf_type, intensity=2
         )
@@ -571,7 +571,7 @@ class TestTDCSTarget:
         assert np.allclose(d[3:], 0)
 
     def test_mean_intensity(self, sphere_vol):
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=[1, 2],
             directions=[[1, 0, 0], [0, 1, 0]],
             mesh=sphere_vol, lf_type='element',
@@ -585,7 +585,7 @@ class TestTDCSTarget:
         assert np.isclose(t.mean_intensity(f), m)
 
     def test_mean_intensity_none(self, sphere_vol):
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=[1, 2],
             directions=None,
             mesh=sphere_vol, lf_type='element',
@@ -601,7 +601,7 @@ class TestTDCSTarget:
 
 
     def test_mean_angle(self, sphere_vol):
-        t = opt_struct.TESLFtarget(
+        t = opt_struct.TDCStarget(
             indexes=[1, 2],
             directions=[[1, 0, 0], [0, 1, 0]],
             mesh=sphere_vol, lf_type='element',
@@ -616,8 +616,8 @@ class TestTDCSTarget:
 
 class TestTDCSAvoid:
     def test_create_mat_struct(self):
-        targets = [opt_struct.TESLFavoid(indexes=1, radius=5),
-                   opt_struct.TESLFavoid(positions=[1., 0., 3.], weight=1e4,
+        targets = [opt_struct.TDCSavoid(indexes=1, radius=5),
+                   opt_struct.TDCSavoid(positions=[1., 0., 3.], weight=1e4,
                                          tissues=[3, 4])]
         m = opt_struct._save_TDCSavoid_mat(targets)
         assert np.all(m[0]['indexes'] == 1)
@@ -631,20 +631,20 @@ class TestTDCSAvoid:
              'weight': [[1e4]],
              'radius': [[4.]],
              'tissues': [[3, 2]]}
-        t = opt_struct.TESLFavoid.read_mat_struct(m)
+        t = opt_struct.TDCSavoid.read_mat_struct(m)
         assert t.indexes == [1]
         assert t.positions is None
         assert t.weight == 1e4
         assert t.radius == 4.
         assert t.tissues == [3, 2]
         m = {'positions': [[1., 2., 3.]]}
-        t = opt_struct.TESLFavoid.read_mat_struct(m)
+        t = opt_struct.TDCSavoid.read_mat_struct(m)
         assert t.indexes is None
         assert np.allclose(t.positions, [[1, 2, 3]])
         assert t.tissues is None
 
     def test_avoid_field_node(self, sphere_surf):
-        a = opt_struct.TESLFavoid(indexes=2,
+        a = opt_struct.TDCSavoid(indexes=2,
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)
@@ -656,7 +656,7 @@ class TestTDCSAvoid:
 
 
     def test_avoid_field_elm(self, sphere_surf):
-        a = opt_struct.TESLFavoid(indexes=2,
+        a = opt_struct.TDCSavoid(indexes=2,
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -667,7 +667,7 @@ class TestTDCSAvoid:
         assert np.allclose(f[~in_r], 1)
 
     def test_avoid_field_none_elm(self, sphere_surf):
-        a = opt_struct.TESLFavoid(tissues=[1003],
+        a = opt_struct.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -677,7 +677,7 @@ class TestTDCSAvoid:
 
     def test_avoid_field_elm_radius(self, sphere_surf):
         bar = sphere_surf.elements_baricenters()[:]
-        a = opt_struct.TESLFavoid(positions=bar[0],
+        a = opt_struct.TDCSavoid(positions=bar[0],
                                   radius=10,
                                   weight=1e4,
                                   lf_type='element',
@@ -689,7 +689,7 @@ class TestTDCSAvoid:
 
 
     def test_avoid_field_none_node(self, sphere_surf):
-        a = opt_struct.TESLFavoid(tissues=[1003],
+        a = opt_struct.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)
@@ -699,7 +699,7 @@ class TestTDCSAvoid:
         assert np.allclose(f[~roi], 1)
 
     def test_avoid_mean_field_norm_elm(self, sphere_surf):
-        a = opt_struct.TESLFavoid(tissues=[1003],
+        a = opt_struct.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -708,7 +708,7 @@ class TestTDCSAvoid:
         assert np.isclose(a.mean_field_norm_in_region(field), 2)
 
     def test_avoid_mean_field_norm_node(self, sphere_surf):
-        a = opt_struct.TESLFavoid(tissues=[1003],
+        a = opt_struct.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)
@@ -719,21 +719,21 @@ class TestTDCSAvoid:
 
 class TestTDCSoptimize:
     def test_prepare_read_mesh_surf(self, fn_surf, sphere_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
         assert np.all(
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_prepare_read_mesh_vol(self, fn_vol, sphere_vol):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_vol.nodes.node_coord))
         assert np.all(
             p.mesh.elm.node_number_list==sphere_vol.elm.node_number_list)
 
     def test_prepare_set_mesh_vol(self, fn_vol, sphere_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
@@ -741,32 +741,32 @@ class TestTDCSoptimize:
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_read_lf(self, fn_surf, leadfield_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
         assert np.all(np.isclose(p.leadfield, leadfield_surf))
         p.leadfield
 
     def test_set_lf(self, fn_surf, leadfield_vol):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
         p.leadfield = leadfield_vol
         assert np.all(np.isclose(p.leadfield, leadfield_vol))
 
     def test_read_lftype(self, fn_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
         assert p.lf_type == 'node'
 
     def test_read_lftype_elm(self, fn_vol):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         assert p.lf_type == 'element'
 
     def test_read_lftype_wrong(self, fn_vol, sphere_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         with pytest.raises(ValueError):
             p.lf_type
 
 
     def test_get_avoid_field_vol(self, fn_vol, sphere_vol):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         t = p.add_avoid()
         t.tissues = 4
         t.weight = 1e5
@@ -775,18 +775,18 @@ class TestTDCSoptimize:
         assert np.allclose(avoid_field[sphere_vol.elm.tag1 != 4], 1)
 
     def test_add_target(self):
-        p = opt_struct.TESLFoptimize()
+        p = opt_struct.TDCSoptimize()
         t = p.add_target()
         assert t is p.target[-1]
 
     def test_add_target_arg(self):
         t = 'taget'
-        p = opt_struct.TESLFoptimize()
+        p = opt_struct.TDCSoptimize()
         p.add_target(t)
         assert t is p.target[-1]
 
     def test_create_mat_struct(self):
-        p = opt_struct.TESLFoptimize(
+        p = opt_struct.TDCSoptimize(
             leadfield_hdf='a.hdf5',
             max_total_current=2.,
             max_individual_current=.1,
@@ -810,7 +810,7 @@ class TestTDCSoptimize:
              'target': [],
              'avoid': [],
              'open_in_gmsh': [False]}
-        p = opt_struct.TESLFoptimize.read_mat_struct(m)
+        p = opt_struct.TDCSoptimize.read_mat_struct(m)
         assert p.leadfield_hdf == 'a.hdf5'
         assert p.max_total_current == 2.
         assert p.max_individual_current == .1
@@ -823,12 +823,12 @@ class TestTDCSoptimize:
              'max_active_electrodes': [''],
              'target': [],
              'avoid': []}
-        p = opt_struct.TESLFoptimize.read_mat_struct(m)
+        p = opt_struct.TDCSoptimize.read_mat_struct(m)
         assert p.max_active_electrodes is None
 
     @pytest.mark.parametrize('max_active_electrodes', [3, None])
     def test_mat_io(self, max_active_electrodes):
-        p = opt_struct.TESLFoptimize(
+        p = opt_struct.TDCSoptimize(
             leadfield_hdf='a.hdf5',
             max_total_current=2.,
             max_individual_current=.1,
@@ -838,7 +838,7 @@ class TestTDCSoptimize:
         scipy.io.savemat('tmp.mat', m)
         m = scipy.io.loadmat('tmp.mat', struct_as_record=True, squeeze_me=False)
         os.remove('tmp.mat')
-        p = opt_struct.TESLFoptimize.read_mat_struct(m)
+        p = opt_struct.TDCSoptimize.read_mat_struct(m)
         assert p.leadfield_hdf == 'a.hdf5'
         assert p.max_total_current == 2.
         assert p.max_individual_current == .1
@@ -855,7 +855,7 @@ class TestTDCSoptimize:
     def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
                       max_angle, n_targets, sphere_surf, fn_surf, leadfield_surf):
 
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf,
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf,
                                      max_individual_current=max_el_c,
                                      max_total_current=max_tot_c,
                                      max_active_electrodes=max_ac)
@@ -890,7 +890,7 @@ class TestTDCSoptimize:
     def test_optimize_norm(self, max_el_c, max_tot_c, max_ac, n_targets, sphere_surf, fn_surf, leadfield_surf):
 
         intensity = 3e-5
-        p = opt_struct.TESLFoptimize(
+        p = opt_struct.TDCSoptimize(
             leadfield_hdf=fn_surf,
             max_individual_current=max_el_c,
             max_total_current=max_tot_c,
@@ -916,14 +916,14 @@ class TestTDCSoptimize:
                 assert np.linalg.norm(currents, 0) <= max_ac
 
     def test_field_node(self, leadfield_surf, fn_surf):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
         c = [1., -1., 0, 0., 0.]
         E = p.field(c)
         assert isinstance(E, mesh_io.NodeData)
         assert np.allclose(E.value, -leadfield_surf[0])
 
     def test_field_elm(self, leadfield_vol, fn_vol):
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_vol)
         c = [1., -1., 0, 0., 0.]
         E = p.field(c)
         assert isinstance(E, mesh_io.ElementData)
@@ -932,7 +932,7 @@ class TestTDCSoptimize:
     @pytest.mark.parametrize('names', [None, ['A', 'B']])
     def test_currents_csv(self, names, fn_elec):
         csv_fn = 'test.csv'
-        p = opt_struct.TESLFoptimize(leadfield_hdf=fn_elec)
+        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_elec)
         currents = [-0.2, 0.2]
         p.write_currents_csv(currents, csv_fn, electrode_names=names)
         with open(csv_fn) as f:
@@ -948,21 +948,21 @@ class TestTDCSoptimize:
 
 class TestTDCSDistributedoptimize:
     def test_prepare_read_mesh_surf(self, fn_surf, sphere_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
         assert np.all(
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_prepare_read_mesh_vol(self, fn_vol, sphere_vol):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_vol.nodes.node_coord))
         assert np.all(
             p.mesh.elm.node_number_list==sphere_vol.elm.node_number_list)
 
     def test_prepare_set_mesh_vol(self, fn_vol, sphere_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         assert np.all(np.isclose(
             p.mesh.nodes.node_coord, sphere_surf.nodes.node_coord))
@@ -970,25 +970,25 @@ class TestTDCSDistributedoptimize:
             p.mesh.elm.node_number_list==sphere_surf.elm.node_number_list)
 
     def test_read_lf(self, fn_surf, leadfield_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         assert np.all(np.isclose(p.leadfield, leadfield_surf))
         p.leadfield
 
     def test_set_lf(self, fn_surf, leadfield_vol):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         p.leadfield = leadfield_vol
         assert np.all(np.isclose(p.leadfield, leadfield_vol))
 
     def test_read_lftype(self, fn_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         assert p.lf_type == 'node'
 
     def test_read_lftype_elm(self, fn_vol):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         assert p.lf_type == 'element'
 
     def test_read_lftype_wrong(self, fn_vol, sphere_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         p.mesh = sphere_surf
         with pytest.raises(ValueError):
             p.lf_type
@@ -1004,7 +1004,7 @@ class TestTDCSDistributedoptimize:
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
         min_img_value = 10
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=(target_image, affine),
             mni_space=False,
@@ -1044,7 +1044,7 @@ class TestTDCSDistributedoptimize:
             nibabel.Nifti1Image(target_image, affine),
             fn_nii
         )
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=fn_nii,
             mni_space=False,
@@ -1066,7 +1066,7 @@ class TestTDCSDistributedoptimize:
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_vol,
             target_image=(target_image, affine),
             mni_space=False,
@@ -1088,7 +1088,7 @@ class TestTDCSDistributedoptimize:
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
         s2mni_coords_mock.return_value = -sphere_surf.nodes[:]
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=(target_image, affine),
             subpath='',
@@ -1099,17 +1099,17 @@ class TestTDCSDistributedoptimize:
         assert np.allclose(field, -sphere_surf.nodes[:, 0], atol=1e-2)
 
     def test_normals_surf(self, fn_surf, sphere_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         n = p.normal_directions()
         assert np.allclose(n, -sphere_surf.nodes_normals()[:])
 
     def test_normals_vol(self, fn_vol, sphere_vol):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_vol)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_vol)
         with pytest.raises(ValueError):
             p.normal_directions()
 
     def test_field_node(self, leadfield_surf, fn_surf):
-        p = opt_struct.TESLFDistributedOptimize(leadfield_hdf=fn_surf)
+        p = opt_struct.TDCSDistributedOptimize(leadfield_hdf=fn_surf)
         c = [1., -1., 0, 0., 0.]
         E = p.field(c)
         assert isinstance(E, mesh_io.NodeData)
@@ -1125,7 +1125,7 @@ class TestTDCSDistributedoptimize:
         affine = np.eye(4)
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             target_image=(target_distribution, affine),
             mni_space=False,
@@ -1153,7 +1153,7 @@ class TestTDCSDistributedoptimize:
         affine[:3, 3] = -100
         affine[:3, :3] *= 2
 
-        p = opt_struct.TESLFDistributedOptimize(
+        p = opt_struct.TDCSDistributedOptimize(
             leadfield_hdf=fn_surf,
             max_individual_current=max_el_c,
             max_total_current=max_tot_c,
