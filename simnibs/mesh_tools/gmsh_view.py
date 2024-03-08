@@ -121,21 +121,21 @@ class Visualization:
         -----------
         fn: str
             file name
-            
+
         append_views_from_geo: Bool, optional
-            if true, all views in the geo file will be appended to the 
-            Visualization, thereby guessing hopefully useful 
+            if true, all views in the geo file will be appended to the
+            Visualization, thereby guessing hopefully useful
             visualization settings from the view name
         '''
         self.merge.append(fn)
         if append_views_from_geo:
             with open(fn, 'r') as fp:
-                content = fp.read()  
+                content = fp.read()
                 fp.close()
                 views = [line for line in content.split('\n') if "View" in line]
-                for view in views:                
+                for view in views:
                     if 'scalp' in view:
-                    	self.add_view(ColormapNumber=8, ColormapAlpha=.3, 
+                    	self.add_view(ColormapNumber=8, ColormapAlpha=.3,
                                    Visible=0, ShowScale=0)
                     elif 'electrode_currents' in view:
                     	self.add_view(ColormapNumber=10, ColormapAlpha=.5, Visible=1)
@@ -162,16 +162,20 @@ class Visualization:
 
     def _visibility_str(self):
         if self.visibility is None:
-            return ''
-        vis_str = ','.join([str(v) for v in self.visibility])
-        s = 'Hide "*";\n'
-        s += 'Show {\n'
-        s += 'Volume{' + vis_str + '};\n'
-        s += 'Surface{' + vis_str + '};\n'
-        s += 'Curve{' + vis_str + '};\n'
-        s += 'Point{' + vis_str + '};\n'
-        s += '}\n'
-        return s
+            return ""
+        vis_str = "{" + ",".join([f"{v}" for v in self.visibility]) + "}"
+        view = "\n".join(
+            [
+                'Hide "*";',
+                'Show {',
+                f'Volume{vis_str};',
+                f'Surface{vis_str};',
+                f'Curve{vis_str};',
+                f'Point{vis_str};',
+                '}',
+            ]
+        )
+        return view
 
     def screenshot_views(self, fn_out, sleep=1):
         try:
@@ -349,11 +353,11 @@ class Mesh(object):
                 c_st = str(v)
                 st = c_st.replace('Color', 'Mesh.Color')
             else:
-                st = 'Mesh.{0} = {1};\n'.format(k, v) 
-            # st = st.replace('[', '{').replace(']', '}') 
+                st = 'Mesh.{0} = {1};\n'.format(k, v)
+            # st = st.replace('[', '{').replace(']', '}')
             string += st
 
-        return string 
+        return string
 
     def apply(self):
         from . import gmsh
@@ -534,7 +538,7 @@ class PhysicalNames(object):
     -----------
     PhysicalSurfaces: dictionary of surface names
     PhysicalVolumes: dictionary of volume names
-        
+
     References
     ------------
      `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html>`_
@@ -543,14 +547,14 @@ class PhysicalNames(object):
     def __init__(self, m, cond):
         self.PhysicalSurfaces = dict()
         self.PhysicalVolumes = dict()
-        
+
         if cond is not None:
             tri_tags=np.unique(m.elm.tag1[m.elm.elm_type==2])
             tet_tags=np.unique(m.elm.tag1[m.elm.elm_type==4])
-            
+
             cond_names = [c.name for c in cond]
-            
-            if tet_tags.size > 0 and len(cond_names) < np.max(tet_tags):  
+
+            if tet_tags.size > 0 and len(cond_names) < np.max(tet_tags):
                 raise ValueError('The cond_list size is too small'
                                  ', should be at least of size {0}'
                                  ''.format(np.max(tet_tags)))
@@ -560,7 +564,7 @@ class PhysicalNames(object):
                         self.PhysicalVolumes[i] = ' '+cond_names[i-1]
                     else:
                         self.PhysicalVolumes[i] = cond_names[i-1]
-                    
+
             for i in tri_tags:
                 if i < 100 and (cond_names[i-1] is not None):
                     self.PhysicalSurfaces[i] = ' '+cond_names[i-1]
@@ -569,18 +573,18 @@ class PhysicalNames(object):
                 if i > 1100 and i < 1500:
                     self.PhysicalSurfaces[i] = str(i-1100)+' top'
                 if i > 1500 and i < 2000:
-                    self.PhysicalSurfaces[i] = str(i-1500)   
+                    self.PhysicalSurfaces[i] = str(i-1500)
                 if i > 2100:
-                    self.PhysicalSurfaces[i] = str(i-2100)+' plug'    
-        
+                    self.PhysicalSurfaces[i] = str(i-2100)+' plug'
+
     def __str__(self):
-        string = ''        
+        string = ''
         for key in self.PhysicalVolumes:
-            st = 'Physical Volume (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalVolumes[key])  
+            st = 'Physical Volume (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalVolumes[key])
             string += st
         for key in self.PhysicalSurfaces:
-            st = 'Physical Surface (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalSurfaces[key])  
-            string += st   
+            st = 'Physical Surface (\"{1}\",{0}) = {{ {0} }};\n'.format(key, self.PhysicalSurfaces[key])
+            string += st
         return string
 
 
@@ -592,7 +596,7 @@ def _run(command, remove=[]):
 
 
 def _coolwarm_cm():
-    # from http://www.kennethmoreland.com/color-maps/ 
+    # from http://www.kennethmoreland.com/color-maps/
     cm = np.array([
         [59,76,192],
         [60,78,194],
@@ -886,9 +890,9 @@ def _label_cm():
 
 
 def _gray_red_lightblue_blue_cm():
-   # simple colormap to visualize coils    
+   # simple colormap to visualize coils
     cm = np.zeros((255,4),dtype = int)
-    cm[0:64,0:3] = 132 # first quarter is gray 
+    cm[0:64,0:3] = 132 # first quarter is gray
     cm[64:128,0] = 255 # second quarter is red
     cm[128:192,2] = 255 # third quarter is lightblue
     cm[128:192,0:2] = 127

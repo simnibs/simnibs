@@ -41,7 +41,7 @@ s=parse_input(s,varargin{:});
 
 fn_in  = [tempname,'.mat'];
 fn_out = [tempname,'.mat'];
-save(fn_in,'-struct','tdcslist')
+save(fn_in,'-struct','tdcslist', '-v7')
 
 % Run expand_to_center_surround
 cmdstr = [simnibs_cli_call('expand_to_center_surround') ...

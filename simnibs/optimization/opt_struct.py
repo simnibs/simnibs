@@ -130,7 +130,7 @@ class TMSoptimize():
         self.pathfem = 'tms_optimization/'
         self.fname_tensor = None
         self.mesh = None
-        # Name of coil file
+        # Relative path of coil file
         self.fnamecoil = None
         # Conductivity stuff
         self.cond = cond_utils.standard_cond()
@@ -2892,11 +2892,7 @@ class TESoptimize():
         self.mesh_nodes_areas = self.mesh.nodes_areas()
 
         # relabel internal air
-        self.mesh_relabel = relabel_internal_air(m=self.mesh,
-                                                 subpath=os.path.split(self.mesh.fn)[0],
-                                                 label_skin=1005,
-                                                 label_new=1099,
-                                                 label_internal_air=501)
+        self.mesh_relabel = self.mesh.relabel_internal_air()
 
         # make final skin surface including some additional distance
         self.skin_surface = surface.Surface(mesh=self.mesh_relabel, labels=1005)
@@ -2913,28 +2909,16 @@ class TESoptimize():
 
         # plot skin surface and ellipsoid
         if self.plot:
-            try:
-                import pynibs
-                pynibs.write_geo_hdf5_surf(out_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
-                                           points=self.skin_surface.nodes,
-                                           con=self.skin_surface.tr_nodes,
-                                           replace=True,
-                                           hdf5_path='/mesh')
-
-                pynibs.write_data_hdf5_surf(data=[np.zeros(self.skin_surface.tr_nodes.shape[0])],
-                                            data_names=["domain"],
-                                            data_hdf_fn_out=os.path.join(self.plot_folder, f"skin_surface_data.hdf5"),
-                                            geo_hdf_fn=os.path.join(self.plot_folder, f"skin_surface_geo.hdf5"),
-                                            replace=True)
-            except:
-                pass
+            # save skin surface
+            np.savetxt(os.path.join(self.plot_folder, f"skin_surface_nodes.txt"), self.skin_surface.nodes)
+            np.savetxt(os.path.join(self.plot_folder, f"skin_surface_con.txt"), self.skin_surface.tr_nodes)
 
             # save fitted ellipsoid
             beta = np.linspace(-np.pi / 2, np.pi / 2, 180)
             lam = np.linspace(0, 2 * np.pi, 360)
             coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
             eli_coords_jac = self.ellipsoid.jacobi2cartesian(coords=coords_sphere_jac, return_normal=False)
-            np.savetxt(os.path.join(self.output_folder, "plots", "fitted_ellipsoid.txt"), eli_coords_jac)
+            np.savetxt(os.path.join(self.plot_folder, "fitted_ellipsoid.txt"), eli_coords_jac)
 
         # setup ROI
         ################################################################################################################
@@ -2998,7 +2982,7 @@ class TESoptimize():
             for i_channel_stim in range(self.n_channel_stim):
                 for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                     _electrode_array.plot(show=False, fn_plot=os.path.join(
-                        self.output_folder, "plots", f"electrode_stim_{i_channel_stim}_array_{i_array}.png"))
+                        self.plot_folder, f"electrode_stim_{i_channel_stim}_array_{i_array}.png"))
 
         # setup optimization
         ################################################################################################################
@@ -3140,12 +3124,11 @@ class TESoptimize():
 
             for i_array, _electrode_array in enumerate(self.electrode[i_channel_stim].electrode_arrays):
                 self.logger.log(25, f"Electrode array [i_channel_stim][i_array]: [{i_channel_stim}][{i_array}]")
-                self.logger.log(25, f"\tn_ele: {_electrode_array.n_ele}")
-                # self.logger.log(25, f"\tinit_pos: {self.init_pos[i_channel_stim][i_array]}")
-                # self.logger.log(25, f"\tcenter: {_electrode_array.center}")
-                # self.logger.log(25, f"\tradius: {_electrode_array.radius}")
-                # self.logger.log(25, f"\tlength_x: {_electrode_array.length_x}")
-                # self.logger.log(25, f"\tlength_y: {_electrode_array.length_y}")
+                self.logger.log(25, f"\tn_ele: {remove_None(_electrode_array.n_ele)}")
+                self.logger.log(25, f"\tcenter: {remove_None(_electrode_array.center)}")
+                self.logger.log(25, f"\tradius: {remove_None(_electrode_array.radius)}")
+                self.logger.log(25, f"\tlength_x: {remove_None(_electrode_array.length_x)}")
+                self.logger.log(25, f"\tlength_y: {remove_None(_electrode_array.length_y)}")
 
         self.logger.log(25, f"=" * 100)
 
@@ -3701,27 +3684,6 @@ class TESoptimize():
         # transform electrode pos from array to list of list
         self.electrode_pos = self.get_electrode_pos_from_array(parameters)
 
-        # # extract electrode positions from parameters
-        # self.electrode_pos = [[] for _ in range(self.n_channel_stim)]
-        #
-        # i_para = 0
-        # for i_channel_stim in range(self.n_channel_stim):
-        #     for i_ele_free in range(self.n_ele_free[i_channel_stim]):
-        #         if self.electrode[i_channel_stim].electrode_arrays[i_ele_free].optimize_alpha:
-        #             i_para_increment = 3
-        #         else:
-        #             i_para_increment = 2
-        #         self.electrode_pos[i_channel_stim].append(parameters[i_para:(i_para + i_para_increment)])
-        #         i_para += i_para_increment
-        #
-        # # extract geometrical electrode parameters from optimal parameters and update electrode
-        # for i_channel_stim in range(self.n_channel_stim):
-        #     if self.electrode[i_channel_stim].any_free_geometry:
-        #         n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
-        #         self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
-        #             parameters[i_para:(i_para + n_free_parameters)])
-        #         i_para += n_free_parameters
-
         # update field, returns list of list e[n_channel_stim][n_roi] (None if position is not applicable)
         e = self.update_field(electrode_pos=self.electrode_pos, plot=False)
 
@@ -4194,7 +4156,6 @@ class TESoptimize():
                     # add geometric parameters if applicable
                     x0 = np.append(x0, self.electrode[i_channel_stim].geo_para_mean[self.electrode[i_channel_stim].free_geometry])
 
-        # self.x0 = np.mean(np.vstack((bounds.lb, bounds.ub)), axis=0)
         return x0
 
     def get_nodes_electrode(self, electrode_pos):
@@ -4373,9 +4334,6 @@ class TESoptimize():
 
                     # save node coords (refering to global mesh)
                     _electrode.node_coords = self.skin_surface.nodes[mask]
-
-                    # save number of nodes assigned to this electrode
-                    # _electrode.n_nodes = len(_electrode.node_idx)
 
                     node_coords_list[i_array_global].append(_electrode.node_coords)
 
@@ -4781,7 +4739,6 @@ def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance
     skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 0] >= mask_img.shape[0], 0] = mask_img.shape[0] - 1
     skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 1] >= mask_img.shape[1], 1] = mask_img.shape[1] - 1
     skin_nodes_mni_voxel[skin_nodes_mni_voxel[:, 2] >= mask_img.shape[2], 2] = mask_img.shape[2] - 1
-    # skin_nodes_mni_voxel[skin_nodes_mni_voxel < 0] = 0
 
     # get boolean mask of valid skin points
     skin_surface.mask_valid_nodes = mask_img_data[skin_nodes_mni_voxel[:, 0],
@@ -4858,46 +4815,6 @@ def valid_skin_region(skin_surface, mesh, fn_electrode_mask, additional_distance
     return skin_surface
 
 
-def relabel_internal_air(m, subpath, label_skin=1005, label_new=1099, label_internal_air=501):
-    """
-    Relabels skin in internal air cavities to something else; relevant for charm meshes
-
-    Parameters
-    ----------
-    m : Msh object
-        Mesh object with internal air
-    subpath :
-        Path to subject m2m folder
-    label_skin : int
-        Original skin label
-    label_new : int
-        New skin label
-    label_internal_air : int
-        New label of internal air
-
-    Returns
-    -------
-    m : Msh object
-        Mesh with relabeled internal air
-    """
-    subject_files = SubjectFiles(subpath=subpath)
-
-    # relabel internal skin to some other label
-    label_nifti = nibabel.load(subject_files.labeling)
-    label_affine = label_nifti.affine
-    label_img = label_nifti.get_fdata().astype(int)
-    label_img = label_img == label_internal_air
-    label_img = mrph.binary_dilation(label_img, iterations=2)
-
-    m = copy.copy(m)
-    ed = mesh_io.ElementData.from_data_grid(m, label_img, label_affine, order=0)
-    idx = ed.value * (m.elm.tag1 == label_skin)
-    m.elm.tag1[idx] = label_new
-    m.elm.tag2[:] = m.elm.tag1
-
-    return m
-
-
 def get_array_direction(electrode_pos, ellipsoid):
     """
     Determine electrode array direction given in ellipsoidal coordinates [theta, phi, alpha] and return direction
@@ -4965,8 +4882,7 @@ def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(me
 
 def plot_roi_field(e, roi, fn_out, e_label=None):
     """
-    Creates plot files for paraview to visualize electric fields.
-    Creates file triple of *_geo.hdf5,  *_data.hdf5, and *_data.xdmf, which can be loaded with Paraview.
+    Exports data to .txt files for plotting.
 
     Parameters
     ----------
@@ -4988,26 +4904,10 @@ def plot_roi_field(e, roi, fn_out, e_label=None):
     if type(e_label) is not list:
         e_label = [e_label]
 
+    np.savetxt(fn_out + "_nodes.txt", roi.nodes)
+    np.savetxt(fn_out + "_data.txt", np.hstack(e))
+    np.savetxt(fn_out + "_data_label.txt", e_label)
+
     # if we have a connectivity (surface):
     if roi.con is not None:
-        import pynibs
-
-        fn_geo = fn_out + "_geo.hdf5"
-        fn_data = fn_out + "_data.hdf5"
-
-        # surface plot
-        if roi.con.shape[1] == 3:
-            pynibs.write_geo_hdf5_surf(out_fn=fn_geo, points=roi.nodes, con=roi.con, replace=True, hdf5_path='/mesh')
-            pynibs.write_data_hdf5_surf(data=e, data_names=e_label, data_hdf_fn_out=fn_data, geo_hdf_fn=fn_geo,
-                                        replace=True)
-
-        # volume plot
-        else:
-            pynibs.write_geo_hdf5_vol(out_fn=fn_geo, points=roi.nodes, con=roi.con, replace=True, hdf5_path='/mesh')
-            pynibs.write_data_hdf5_vol(data=e, data_names=e_label, data_hdf_fn_out=fn_data, geo_hdf_fn=fn_geo,
-                                       replace=True)
-
-    else:
-        # if we just have points and data w/o connectivity information:
-        e = np.hstack(e)
-        np.savetxt(fn_out + "_data.txt", np.hstack((roi.center, e)))
+        np.savetxt(fn_out + "_con.txt", roi.con)

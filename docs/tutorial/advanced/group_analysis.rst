@@ -12,7 +12,7 @@ Example Dataset
 ----------------
 
 
-`Click here to download the example dataset for group analyses <https://osf.io/gxumc/download>`_.
+`Click here to download the example dataset for group analysis <https://osf.io/gxumc/download>`_.
 
 This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed in SimNIBS 4 using :ref:`charm_docs`. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
 
@@ -37,7 +37,7 @@ We want to obtain the mean and standard deviation of the normal component of the
 Set up and Run Simulations
 ---------------------------
 
-There are several ways to set-up and run Simulations in SimNIBS
+There are several ways to set-up and run Simulations in SimNIBS.
 
 
 GUI
@@ -65,8 +65,8 @@ Write a *MATLAB* script. In this case, remember to set *map_to_fsavg* to *True* 
 Calculate Mean 
 ----------------
 
-When the simulations are over, we need to collect their results to calculate an average. In SimNIBS, we can do it either in Python or MATLAB.
-Please notice that, while for setting up simulations Python and MATLAB share a similar interface, in post-processing the interfaces can be very different.
+When the simulations have finished, we need to collect their results to calculate an average. In SimNIBS, we can do it either in Python or MATLAB.
+Please notice: for setting up simulations, Python and MATLAB share a similar interface, but for post-processing, the interfaces can be very different.
 
 Python
 ''''''''

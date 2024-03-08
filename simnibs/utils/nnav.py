@@ -385,12 +385,12 @@ class softaxic:
 
 class brainsight:
     """
-    I/O of brainsight data
+    I/O of Brainsight data
     """
 
     def read(self, fn):
         """
-        Import coil positions/orientations from a BrainSight neuronavigation system.
+        Import coil positions/orientations from a Brainsight neuronavigation system.
     
         Data has to be exported from Brainsight to 'NIfTI:Aligned' space.
         One TMSLIST for 'Targets' and one for 'Samples' is returned.
@@ -399,17 +399,19 @@ class brainsight:
             - the same T1 scan for nnav and SimNIBS is used
             - qform and sform to be equal (automatically set by SimNIBS now)
 
-        Notes:
-        ------
-        Sean: "Brainsight supports multiple coordinate systems when exporting to its .txt file format,
-        and the possible options depend on the project's anatomical dataset, specifically:
+        Notes from Rogue Research:
+        -------------------------
+        "Brainsight supports multiple coordinate systems when exporting to its .txt file format,
+        and the possible options depend on the project's anatomical dataset and the file format version.
+        
+        For file format version 13 and earlier (Brainsight 2.5.2 and earlier):
 
         * "Brainsight" - this option is always available. It's Brainsight's internal coordinate system,
             where the X axis goes from right to left, Y axis goes from anterior to posterior, and the Z axis goes
             from inferior to superior. The origin is the centre of the voxel at the right-anterior-inferior corner.
             The units are millimetres. SimNIBS calls this `LPS`, short for the direction each axis points towards.
-        * "World" - this option is only available for projects *not* based on a NIfTI file.
-            Since SimNIBS 4 no longer supports anything but NIfTI, this choice is not applicable.
+        * "World" - for projects *not* based on a NIfTI file, this will be the only option. The only other time
+            it will be present is for NIfTI files that have neither a qform nor an sform.
         * "NIfTI:Aligned" - this option is only available for projects based on a NIfTI file.
             It corresponds to the qform/sform `NIFTI_XFORM_ALIGNED_ANAT
             <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
@@ -420,15 +422,35 @@ class brainsight:
             <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
         * "NIfTI:Talairach" - same but for `NIFTI_XFORM_TALAIRACH
             <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
+        * "NIfTI:Other-Template" - same but for `NIFTI_XFORM_TEMPLATE_OTHER
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_
 
-        Many NIfTI files have only an sform, or only a qform, or they are both the same.
-        In that case, only one of the `NIfTI:*` options above will be available, and that is what you should use.
+        With file format version 14 (introduced in Brainsight 2.5.3):
 
-        If the sform and qform are different, each will result in a `NIfTI:*` option,
-        but the Brainsight user interface does not indicate which is from the `qform` and which is from the `sform`.
-        To deterime that, you'd need to use a tool like
-        `nifti1_tool <https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/programs/nifti1_tool_sphx.html>`_
-        and look at the `qform_code` and `sform_code`."
+        * "Brainsight" - as above.
+        * "World" - as above.
+        * "NIfTI:Q:XXX" - this option is only available for projects based on a NIfTI file. It corresponds to
+            the qform coordinates. The `XXX` will be a string version of the `intent code
+            <https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html>`_,
+            and will be one of: `Aligned`, `Scanner`, `MNI-152`, `Talairach`, or `Other-Template`.
+        * "NIfTI:S:XXX" - same but from the sform.
+
+        NIfTI files can have only an sform, only a qform, both, or neither. If both are present, they may or
+        may not have the same intent code, and may or may not have the same transform/matrix.
+        
+        In Brainsight 2.5.2 and earlier, if both were present, and both had the same intent code, only the
+        qform was used. This was regardless of whether they had the same transform/matrix or not. The user
+        interface, and the coordinate system names in .txt files, revolved around the intent code, which was
+        expected to be unique (not be the same in both qform and sform). It was also impossible to know if the
+        source was the sform or qform.
+        
+        In Brainsight 2.5.3, there were several changes:
+        
+        * the coordinate system names in .txt files now include `:S` or `:Q` to indicate if the source is from
+          the sform or qform, respectively.
+        * the sform is always read, even if it has the same intent code as the qform.
+        * the .txt file format was increased from version 13 to 14.
+        
 
         Parameter:
         ----------
@@ -443,7 +465,7 @@ class brainsight:
         Written by Ole Numssen, numssen@cbs.mpg.de; Konstantin Weise, kweise@cbs.mpg.de; 2023.
         """
         # init empty values in case nothing is found in fn
-        coord_sys, encoding = '', ''
+        coord_sys, encoding, version = '', '', -1
         data_targets, data_samples = [], []
 
         with open(fn, 'r') as f:
@@ -452,14 +474,25 @@ class brainsight:
                 line = f.readline().rstrip()
                 if line.startswith('# Target Name') or line.startswith('# Sample Name'):
                     break
+                elif line.startswith('# Version:'):
+                    version  = int(line.replace("# Version: ", ""))
                 elif line.startswith('# Coordinate system:'):
                     coord_sys = line.replace("# Coordinate system: ", "")
                 elif line.startswith('# Encoding: '):
                     encoding = line.replace("# Encoding: ", "")
 
-            if coord_sys.lower() != 'nifti:aligned':
-                raise ValueError(f"Coordinate system '{coord_sys}' is not supported. "
-                                 f"Export targes/samples as NIfTI:Aligned.")
+            if version == -1:
+                raise ValueError(f"Cannot read version from {fn}")
+
+            if version >= 14:
+                # Starting with Brainsight 2.5.3 the source of the coordinate system is specified, i.e. whether it comes from the Q or S form.
+                if not coord_sys.lower().startswith('nifti:q:'):
+                    raise ValueError(f"Coordinate system '{coord_sys}' is not supported. ")
+            else:
+                if coord_sys.lower() != 'nifti:aligned':
+                    raise ValueError(f"Coordinate system '{coord_sys}' is not supported. "
+                                     f"Export targes/samples as NIfTI:Aligned.")
+
 
             # Let's only read UTF-8
             if encoding == '':
@@ -534,7 +567,7 @@ class brainsight:
         Writes an .txt file that can be imported with the Brainsight neuronavition system.
     
         Input can be a single or multiple 4x4 matsimnibs matrices with coil position and orientation.
-        Output space is NIfTI:aligned.
+        Output space is NIfTI:Aligned.
     
         matsimnibs: np.ndarray or TMSLIST or POSITION
             Coil position/orientation(s) to export.
@@ -571,7 +604,7 @@ class brainsight:
 
         assert not os.path.exists(fn) or overwrite, f'File {fn} already exists. Remove or set overwrite=True.'
 
-        with open(fn, 'w') as f:  # correct windows style would be \r\n, but Localite uses \n
+        with open(fn, 'w') as f:
             f.write('# Version: 12\n')
             f.write(f'# Coordinate system: {out_coord_space}\n')
             f.write(f'# Created by: SimNIBS v{simnibs_v}\n')

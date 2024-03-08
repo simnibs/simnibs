@@ -7,6 +7,10 @@ if sys.platform == 'win32':
         os.path.join(SIMNIBSDIR, 'external', 'lib', 'win'),
         os.environ['PATH']
     ])
+    # windows only: starting from python 3.8, the ctypes module only searches
+    # for DLLs in certain (trusted) locations, hence we need to add this
+    # explicitly to pick up the runtime dependencies for petsc
+    os.add_dll_directory(os.path.join(SIMNIBSDIR, "external", "lib", "win"))
 elif sys.platform == 'linux':
     os.environ['PATH'] = os.pathsep.join([
         os.path.join(SIMNIBSDIR, 'external', 'lib', 'linux'),

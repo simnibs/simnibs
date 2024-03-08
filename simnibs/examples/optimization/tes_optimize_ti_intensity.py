@@ -10,10 +10,10 @@ import simnibs
 opt = simnibs.opt_struct.TESoptimize()
 
 # path of m2m folder containing the headmodel
-opt.subpath = '/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/'
+opt.subpath = 'm2m_ernie'
 
 # output folder
-opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimize_ti_intensity"
+opt.output_folder = f"tes_optimize_ti_intensity"
 
 # type of goal function
 opt.goal = "mean"
@@ -22,7 +22,7 @@ opt.goal = "mean"
 # "max_TI": maximize envelope of e-field magnitude
 # "dir_TI_normal": maximize envelope of e-field normal component
 # "dir_TI_tangential": maximize envelope of e-field tangential component
-opt.e_postproc = "dir_TI_normal"
+opt.e_postproc = "max_TI"
 
 # define first pair of electrodes
 electrode = opt.add_electrode()

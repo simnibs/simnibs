@@ -11,7 +11,7 @@ Visualizing Results in Gmsh
 For this reason, SimNIBS writes *.opt* files with basic visualization configurations in addition to the mesh files.
 Here we will give a walk-through of a few useful features in Gmsh.
 
-.. note:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS, you don't need to install it separately
+.. note:: `Gmsh <http://gmsh.info/>`_ is distributed together with SimNIBS, you don't need to install it separately.
 
 Starting Gmsh
 ~~~~~~~~~~~~~~
@@ -24,19 +24,19 @@ Alternatively, you can start Gmsh by double clicking in the :file:`ernie_TDCS_1_
      gmsh ernie_TDCS_1_scalar.msh
   
   \
-  The following window will appear
+  The following window will appear:
 
 .. image:: ../images/tutorial_gmshinit.png
    :align: center
 
 \
 
-  There, we see the gray matter surface with the **magnitude** of the electric field (**magnE**) ploted, as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel
+  We see the gray matter surface with the **magnitude** of the electric field (**magnE**), as well as the electrode currents. You can rotate the model with the left mouse button, translate it with the right button, and zoom with the mouse wheel.
 
  
 Selecting Where to Visualize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To visualize another surface, such as while matter
+To visualize another surface, such as white matter:
 
 1. Go to *Tools* → *Visibility*
 
@@ -45,7 +45,7 @@ To visualize another surface, such as while matter
 
 \
 
-  select *Elementary entities*
+ and select *Elementary entities*
 
 .. image:: ../images/tutorial_elementaryentities.png
    :align: center
@@ -68,9 +68,9 @@ To visualize another surface, such as while matter
 
    101+: Electrode rubber layer volume
 
-   501+: Electrode Gel / Sponge volume
+   501+: Electrode gel / sponge volume
 
-   The corresponding surfaces have the number 1000 + volume value. For example, 1002 corresponds to the gray matter surface. The only exception are the electrode contacts, numbered 2100+. You can select multiple surfaces or volumes by holding *Ctrl*. Selecting 1001 and clicking in *Apply*, we can see the white matter surface
+   The corresponding surfaces have the number 1000 + volume value. For example, 1002 corresponds to the gray matter surface. The only exception are the electrode contacts, numbered 2100+. You can select multiple surfaces or volumes by holding *Ctrl*. Selecting 1001 and clicking on *Apply*, we can see the white matter surface:
 
 .. image:: ../images/tutorial_gmshwmfield.png
    :align: center
@@ -82,7 +82,7 @@ Selecting What to Visualize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-You can select the field to be visualized by checking the boxes in the left of the Gmsh window
+You can select the field to be visualized by checking the boxes in the left of the Gmsh window.
 
 .. image:: ../images/tutorial_gmshnorme.png
    :align: center
@@ -98,7 +98,7 @@ To visualize the surfaces or volumes without any field, go to *Tools* -> *Option
 
 Changing the Scale
 ~~~~~~~~~~~~~~~~~~~
-To change the scale of a field visualization *Tools* → *Options* → *View [N]* and change the *Min* and *Max* values
+To change the scale of a field visualization, select *Tools* → *Options* → *View [N]* and change the *Min* and *Max* values.
 
 .. image:: ../images/tutorial_gmshview.png
    :align: center
@@ -109,13 +109,13 @@ To change the scale of a field visualization *Tools* → *Options* → *View [N]
 Exporting an Image
 ~~~~~~~~~~~~~~~~~~~
 
-To create an image, go to *File* -> *Export* (or press *Ctrl+E*)and type in a file name with a  *.png* or  *.jpg* extension.
+To create an image, go to *File* -> *Export* (or press *Ctrl+E*) and type in a file name with a  *.png* or  *.jpg* extension.
 
 
 Other Functionalities
 ~~~~~~~~~~~~~~~~~~~~~~
 
-We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image bellow by selecting the Volume 2 for visualization an clipping the model in *Tools* →  *Clipping*
+We recommend users to explore the many functionalities of Gmsh. One can, for example, produce the image below by selecting the Volume 2 for visualization an clipping the model in *Tools* →  *Clipping*.
 
 .. image:: ../images/tutorial_gmshclip.png
    :align: center

@@ -3,7 +3,6 @@ Example to run TESoptimize with an HDTES montage to optimize the field focality 
 
 Written by: Konstantin Weise (2023)
 """
-
 import simnibs
 from simnibs import ElementTags
 
@@ -11,10 +10,10 @@ from simnibs import ElementTags
 opt = simnibs.opt_struct.TESoptimize()
 
 # path of m2m folder containing the headmodel
-opt.subpath = '/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/'
+opt.subpath = "m2m_ernie"
 
 # output folder
-opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimze_hdtes_focality"
+opt.output_folder = "tes_optimze_hdtes_focality"
 
 # type of goal function
 opt.goal = "focality"

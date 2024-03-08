@@ -10,10 +10,10 @@ import simnibs
 opt = simnibs.opt_struct.TESoptimize()
 
 # path of m2m folder containing the headmodel
-opt.subpath = '/data/pt_01756/probands/ernie/mesh/charm_4.0.1/m2m_ernie/'
+opt.subpath = "m2m_ernie"
 
 # output folder
-opt.output_folder = f"/data/pt_02381/studies/ttf/test/tes_optimize_ttf_intensity"
+opt.output_folder = "tes_optimize_ttf_intensity"
 
 # type of goal function
 opt.goal = "mean"
@@ -22,6 +22,7 @@ opt.goal = "mean"
 opt.e_postproc = "magn"
 
 # define first pair of electrodes
+opt.constrain_electrode_locations = True
 electrode = opt.add_electrode()
 electrode.type = "ElectrodeArrayPair"                    # Pair of TES electrodes
 electrode.center = [[-33,  22],                          # electrode center in reference electrode space (x-y plane)

@@ -8,6 +8,7 @@ The pipeline is divided in three parts:
 2. Calculation of electric fields through the Finite Element Method (FEM)
 3. Post-processing of results for further analysis.
 
+
 ## Build Status
 | Linux   | Windows    | MacOS |
 |---------|------------|-----|
@@ -18,13 +19,23 @@ The pipeline is divided in three parts:
 SimNIBS runs on 64bit Windows, Linux and MacOS machines.
 Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/installation/simnibs_installer.html) for instructions on how to download and install SimNIBS.
 
+## Installation for development
+
+After cloning the repository:
+
+```
+conda env create -f environment_.yml -n <name_of_my_environment>
+conda activate <name_of_my_environment>
+python -m pip install --editable .
+python simnibs/cli/link_external_progs.py
+```
 
 ## Authors
 Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.
 
 ## 3rd Party Files
 We have included code or binaries from the following project to this repository:
-* [Gmsh](www.gmsh.info)
+* [Gmsh](https://www.gmsh.info)
 * [meshfix](https://github.com/MarcoAttene/MeshFix-V2.1)
 * [CAT12](http://www.neuro.uni-jena.de/cat/)
 * [PETSc](https://www.mcs.anl.gov/petsc/)
@@ -33,8 +44,6 @@ We have included code or binaries from the following project to this repository:
 * [MSMPI](https://github.com/Microsoft/Microsoft-MPI)
 * [CYGWIN](https://www.cygwin.com/)
 * [pygpc](https://github.com/konstantinweise/pygpc)
-* [PyPardiso](https://github.com/haasad/PyPardisoProject)
-* [PyPardiso](https://github.com/haasad/PyPardisoProject)
 * [PyPardiso](https://github.com/haasad/PyPardisoProject)
 * [CGAL](https://www.cgal.org/)
 * [Mmg](https://www.mmgtools.org/)

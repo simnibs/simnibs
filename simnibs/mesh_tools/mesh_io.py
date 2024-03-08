@@ -300,7 +300,31 @@ class Elements:
         elm_with_node = np.any(
             np.isin(self.node_number_list, node_nr),
             axis=1)
+
         return self.elm_number[elm_with_node]
+
+    def find_th_with_node(self, node_nr):
+        """ Finds tetrahedra that have a given node
+
+        Parameters
+        -----------------
+        node_nr: int
+            number of node
+
+        Returns
+        ---------------
+        th_nr: np.ndarray
+            array with indices of tetrahedra numbers
+
+        """
+        elm_with_node = np.any(
+            np.isin(self.node_number_list, node_nr),
+            axis=1)
+
+        th_with_node = \
+            np.in1d(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
+
+        return self.elm_number[elm_with_node][th_with_node]
 
     def find_neighbouring_nodes(self, node_nr):
         """ Finds the nodes that share an element with the specified node
@@ -1838,42 +1862,7 @@ class Msh:
         gc.collect()
         return corresponding_th_indices
 
-    def fix_thin_tetrahedra(self, n_iter=7, step_length=.05):
-        ''' Optimize the locations of the points by moving them towards the center
-        of their patch. This is done iterativally for all points for a number of
-        iterations'''
-        vol_before = self.elements_volumes_and_areas()[self.elm.tetrahedra].sum()
-        boundary_faces = []
-        vol_tags = np.unique(self.elm.tag1[self.elm.elm_type == 4])
-        for t in vol_tags:
-            th_indexes = self.elm.elm_number[
-                (self.elm.tag1 == t) * (self.elm.elm_type == 4)]
-            boundary_faces.append(
-                self.elm.get_outside_faces(
-                    tetrahedra_indexes=th_indexes))
-        boundary_faces = np.vstack(boundary_faces)
-        boundary_nodes = np.unique(boundary_faces) - 1
-        mean_bar = np.zeros_like(self.nodes.node_coord)
-        nodes_bk = np.copy(self.nodes.node_coord)
-        new_nodes = self.nodes.node_coord
-        tetrahedra = self.elm[self.elm.tetrahedra] - 1
-        k = np.bincount(tetrahedra.reshape(-1), minlength=self.nodes.nr)
-        for n in range(n_iter):
-            bar = np.mean(new_nodes[tetrahedra], axis=1)
-            for i in range(3):
-                mean_bar[:, i] = np.bincount(tetrahedra.reshape(-1),
-                                             weights=np.repeat(bar[:, i], 4),
-                                             minlength=self.nodes.nr)
-            mean_bar /= k[:, None]
-            new_nodes += step_length * (mean_bar - new_nodes)
-            new_nodes[boundary_nodes] = nodes_bk[boundary_nodes]
-        self.nodes.node_coord = new_nodes
-        vol_after = self.elements_volumes_and_areas()[self.elm.tetrahedra].sum()
-        # Cheap way of comparing the valitidy of the new trianglulation (assuming the one
-        # in the input is valid)
-        if not np.isclose(vol_before, vol_after):
-            self.nodes.node_coord = nodes_bk
-
+ 
     def calc_matsimnibs(self, center, pos_ydir, distance, skin_surface=None, msh_surf=None):
         """ Calculate the matsimnibs matrix for TMS simulations
 
@@ -2604,7 +2593,88 @@ class Msh:
             return False
         return any_intersections
 
-    def get_outer_skin_points(self, tol: float = 1e-3):
+    def partition_skin_surface(
+            self, assume_single_outside_component = True, tol: float = 1e-3
+        ):
+        """Return indices of vertices and faces estimated to be on the inner
+        and outer skin surface (the inner part would be those inside nasal
+        cavities, ear canals etc. whereas the outer skin surface would be the
+        scalp, nose, etc.).
+        We identify outer vertices by looking for points which do not intersect
+        the mesh in the direction of its normal. This is not perfect but seems
+        to do a reasonable job of identifying the relevant points. Faces are
+        deemed outside if two or more of its vertices were identified as being
+        outside.
+        To remove small, spurious clusters of vertices/faces identified as
+        outside (e.g., in ear canal), we apply the assumption that the
+        "outside" compartment is made up of a single connected component of
+        faces (only when `assume_single_outside_component` is True).
+
+        PARAMETERS
+        ----------
+        tol : float
+            Tolerance for avoiding self-intersections.
+        assume_single_outside_components: bool
+            If true, assume that the outside skin surface comprise a single
+            connected component. Consequently, keep only the largest such
+            component and relabel the rest to "inside" faces (and update
+            inside/outside vertices accordingly).
+
+        RETURNS
+        -------
+        v_in : ndarray
+            Indices (one-based!) of inner skin vertices.
+        v_out : ndarray
+            Indices (one-based!) of outer skin vertices.
+        f_in : ndarray
+            Indices (one-based!) of inner skin faces.
+        f_out : ndarray
+            Indices (one-based!) of outer skin faces.
+        """
+        assert tol > 0
+
+        f_orig_id = self.elm.elm_number[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE]
+        faces = self.elm[f_orig_id, :3]
+        verts = np.unique(faces)
+        m = Msh(Nodes(self.nodes.node_coord), Elements(faces))
+
+        is_subset = len(verts) < m.nodes.nr
+
+        n = m.nodes_normals().value
+        n = n[verts - 1] if is_subset else n
+
+        coords = m.nodes.node_coord
+        coords = coords[verts - 1] if is_subset else coords
+
+        # Avoid self-intersections by moving each point slightly along the test
+        # direction
+        idx = np.unique(m.intersect_ray(coords + tol * n, n)[0][:, 0])
+
+        v_in = verts[idx] if is_subset else idx # idx is zero-based!
+        v_out = np.setdiff1d(verts, v_in, assume_unique=True)
+
+        # faces are deemed outside if two or all of its vertices are outside
+        f_out_m = np.isin(faces, v_out).sum(1) > 1
+
+        if assume_single_outside_component:
+            cc = m.elm.connected_components(f_out_m)
+            cc_sorted_idx = np.argsort(list(map(len, cc)))[::-1]
+            # cc is one-based!
+            for c in cc_sorted_idx[1:]:
+                f_out_m[cc[c] - 1] = False
+
+            # Update vertices removing vertices from v_out if they are not in
+            # in the outside faces and add those to v_in instead
+            v_out = np.intersect1d(faces[f_out_m], v_out)
+            v_in = np.setdiff1d(verts, v_out)
+
+        f_in = f_orig_id[~f_out_m]
+        f_out = f_orig_id[f_out_m]
+
+        # the indices are into self
+        return v_in, v_out, f_in, f_out
+    
+    def get_outer_skin_points(self, tol: float = 1e-3, label_skin=None):
         """Return indices of points estimated to be on the outer skin surface
         (i.e., not those inside nasal cavities, ear canals etc.). Outer points
         are identified by looking for points which do not intersect the mesh in
@@ -2616,6 +2686,8 @@ class Msh:
         ----------
         tol : float
             Tolerance for avoiding self-intersections.
+        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
+            Label of skin surface (e.g. 1005)
 
         RETURNS
         -------
@@ -2624,7 +2696,10 @@ class Msh:
         """
         assert tol > 0
 
-        skin_faces = self.elm[self.elm.tag1 == ElementTags.SCALP_TH_SURFACE, :3]
+        if label_skin is None:
+            label_skin = ElementTags.SCALP_TH_SURFACE
+
+        skin_faces = self.elm[self.elm.tag1 == label_skin, :3]
         subset = np.unique(skin_faces-1)
         m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
 
@@ -2637,6 +2712,36 @@ class Msh:
             return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
         else:
             return np.setdiff1d(subset, subset[idx], assume_unique=True)
+
+    def relabel_internal_air(self, label_skin=None, label_new=1099):
+        """
+        Relabels skin in internal air cavities to something else;
+        relevant for charm meshes and TES optimization to determine valid skin region.
+
+        PARAMETERS
+        ----------
+        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
+            Label of skin surface (e.g. 1005) with internal air.
+        label_new : int, optional, default: 1009
+            Label of internal skin surface.
+
+        RETURNS
+        -------
+        m : Msh object
+            New Msh object with relabeled internal air.
+        """
+
+        if label_skin is None:
+            label_skin = ElementTags.SCALP_TH_SURFACE
+
+        m = copy.copy(self)
+        # outer skin nodes
+        idx_skinNodes = self.get_outer_skin_points(label_skin=label_skin) + 1  # internal air triangles
+        idx_innerAirTri = (m.elm.elm_type == 2) * (m.elm.tag1 == label_skin)
+        idx_innerAirTri *= ~np.any(np.in1d(m.elm.node_number_list, idx_skinNodes).reshape(-1, 4), axis=1)
+        m.elm.tag1[idx_innerAirTri] = label_new
+        m.elm.tag2[:] = m.elm.tag1
+        return m
 
     def get_AABBTree(self):
         """
@@ -2789,7 +2894,7 @@ class Msh:
     def fields_summary(self, roi=None, fields=None,
                        percentiles=(99.9, 99, 95),
                        focality_cutoffs=(75, 50)):
-        ''' Creates a text summaty of the field
+        ''' Creates a text summary of the field
 
         Parameters
         ------------
@@ -3293,7 +3398,7 @@ class Msh:
         edge_rms = np.sqrt(edge_rms/6.)
         gamma = np.zeros(self.elm.nr)
         gamma[th] = edge_rms[th]**3/vol[th]
-        gamma /= 8.479670
+        gamma /= 8.479670 # dividing by value for equilateral tetrahedra -> normalized value as metric
         return ElementData(gamma, 'gamma', self)
 
 
@@ -3712,7 +3817,7 @@ class Data(object):
         return focality
 
     def summary(self, percentiles=(99.9, 99, 95), focality_cutoffs=(75, 50), units=None):
-        ''' Creates a text summaty of the field
+        ''' Creates a text summary of the field
 
         Parameters
         ------------
@@ -6181,13 +6286,13 @@ def write_geo_lines(pos_start, pos_end, fn, values=None, name="", mode='bw'):
     values: nx2 ndarray  (optional)
         values to be assigned to the vectors. Default: 0s
     """
-    
+
     if values is None:
         values = np.zeros((len(pos_start), 2))
     values = np.array(values)
     pos_start = np.array(pos_start)
     pos_end = np.array(pos_end)
-    
+
     if pos_start.shape[1] != 3:
         raise ValueError('Positions vector must have size (Nx3)')
     if pos_end.shape[1] != 3:
@@ -6212,8 +6317,8 @@ def write_geo_lines(pos_start, pos_end, fn, values=None, name="", mode='bw'):
                  ", "  + ", ".join([str(i) for i in pe]) + ")" +
                  "{"   + ", ".join([str(i) for i in v])  + "};\n").encode('ascii'))
         f.write(b"};\n")
-        
-        
+
+
 def write_geo_text(positions, text, fn, name="", mode='bw'):
     """ Writes a .geo file with text in specified positions
 

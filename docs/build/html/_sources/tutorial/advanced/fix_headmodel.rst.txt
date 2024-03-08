@@ -12,7 +12,7 @@ We need to edit the label image "tissue_labeling_upsampled.nii.gz" in the subfol
 .. image:: ../../images/tutorial_fixheadmodel_1_makecopy.png
    :align: center
 
-Afterwards, use an editor of your choice, your custom script or whatever you prefere to update the label image. Here, I've manually added "SimNIBS" using a new tissue type 15. This was done using FreeSurfer's freeview and a few lines in python to extend the thickness of the letters in anterior-posterior direction (code not listed here):
+Afterwards, use an editor of your choice, your custom script or whatever you prefer to update the label image. Here, I've manually added "SimNIBS" using a new tissue type 15. This was done using FreeSurfer's freeview and a few lines in python to extend the thickness of the letters in anterior-posterior direction (code not listed here):
 
 .. image:: ../../images/tutorial_fixheadmodel_2_edit.png
    :align: center
@@ -27,12 +27,12 @@ Next, we need to update the head mesh by running on the command line:
 	
 3) Check the updated mesh
 --------------------------
-The updated head mesh can be checked by clicking on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject), or alternatively also with gmsh:
+The updated head mesh can be checked by clicking on the final segmentation viewer in the results.html (to be found in the m2m-folder of the subject), or alternatively with gmsh:
 
 .. image:: ../../images/tutorial_fixheadmodel_3_check.png
    :align: center
 
-4) Run simulations
+1) Run simulations
 -------------------
 When the manual edit only updated existing tissue labels, e.g. to improve the automatic segmentation results, the simulations can be run as usual using the GUI or python and matlab scripts. In case new tissue labels were added (tissue type 15 in this example), we have to define its conductivity:
 
@@ -120,4 +120,4 @@ The simulation results with the new tissue:
 Further notes
 ---------------
 * Tissue labels have to be lower than 99
-* Please see :ref:`add_tissues_to_upsampled_doc` for an example on how to upsample a custom volume mask from the original resolution of the T1 image to the resolutoin of the "tissue_labeling_upsampled.nii.gz" image
+* Please see :ref:`add_tissues_to_upsampled_doc` for an example on how to upsample a custom volume mask from the original resolution of the T1 image to the resolution of the "tissue_labeling_upsampled.nii.gz" image

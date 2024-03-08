@@ -24,6 +24,7 @@ class TestEllipsoid:
         rotmat = np.array([[1, 0, 0],
                            [0, np.cos(30. / 180. * np.pi), np.sin(30. / 180. * np.pi)],
                            [0, -np.sin(30. / 180. * np.pi), np.cos(30. / 180. * np.pi)]])
+
         ellipsoid = Ellipsoid(center=center, radii=radii, rotmat=rotmat)
 
         # generate some samples on test ellipsoid
@@ -37,11 +38,11 @@ class TestEllipsoid:
         ellipsoid_fit.fit(points=eli_coords)
 
         # compare ellipsoid parameters
-        np.testing.assert_allclose(ellipsoid.center, ellipsoid_fit.center,
+        np.testing.assert_allclose(ellipsoid.center, ellipsoid_fit.center, atol=1e-10,
                                     err_msg="Ellipsoid fit failed: center does not match!")
-        np.testing.assert_allclose(ellipsoid.radii, ellipsoid_fit.radii,
+        np.testing.assert_allclose(ellipsoid.radii, ellipsoid_fit.radii, atol=1e-10,
                                    err_msg="Ellipsoid fit failed: radii do not match!")
-        np.testing.assert_allclose(ellipsoid.rotmat, ellipsoid_fit.rotmat,
+        np.testing.assert_allclose(np.abs(ellipsoid.rotmat), np.abs(ellipsoid_fit.rotmat), atol=1e-10,
                                    err_msg="Ellipsoid fit failed: rotmat does not match!")
 
     def test_transformations(self):

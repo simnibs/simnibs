@@ -81,16 +81,16 @@ If the scripts are not in the same folder as the subject folder, you should also
 
 * *Python*
 
-  .. code-block:: python
+.. code-block:: python
 
-     from simnibs import sim_struct, run_simnibs
+    from simnibs import sim_struct, run_simnibs
 
-     # Initalize a session
-     s = sim_struct.SESSION()
-     # Name of head mesh
-     s.subpath = 'm2m_ernie'
-     # Output folder
-     s.pathfem = 'tutorial/'
+    # Initalize a session
+    s = sim_struct.SESSION()
+    # Name of head mesh
+    s.subpath = 'm2m_ernie'
+    # Output folder
+    s.pathfem = 'tutorial/'
 
 * *MATLAB*
 
@@ -112,7 +112,7 @@ Setting up a TMS Simulation
 
 
 Now, we want to set-up a TMS simulation.
-To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and selecting a coil model (:ref:`list of available coils <coil_fies>`).
+To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and select a coil model (:ref:`list of available coils <coil_fies>`).
 
 
 * *Python*
@@ -122,7 +122,7 @@ To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and se
      # Initialize a list of TMS simulations
      tmslist = s.add_tmslist()
      # Select coil
-     tmslist.fnamecoil = 'Magstim_70mm_Fig8.nii.gz'
+     tmslist.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
 
 
 * *MATLAB*
@@ -132,9 +132,9 @@ To do it, we add a :ref:`tmslist_doc` to the :ref:`session_doc` structure and se
     % Initialize a list of TMS simulations
     s.poslist{1} = sim_struct('TMSLIST');
     % Select coil
-    s.poslist{1}.fnamecoil = 'Magstim_70mm_Fig8.nii.gz';
+    s.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 
-Now we need to set a position for our coil. Suppose we want to place it over C1, pointing
+Now we need to set a position for our coil. Suppose we want to place it on position C1, pointing
 posteriorly. You can do it by
 
 * *Python*
@@ -254,7 +254,7 @@ Let's first set the cathode. Suppose we want a 70x50mm rectangular over C3, poin
      s.poslist{2}.electrode(1).pos_ydir = 'Cz';
 
 
-Now we need to configure the anode. Let's set a 30x30mm circular electrode over C4
+Now we need to configure the anode. Let's set a 30x30mm circular electrode over C4.
 
 * *Python*
 
@@ -296,7 +296,7 @@ Running Simulations
 ---------------------
 
 After the simulations are set, we can use the *run_simnibs* function to run the
-simulations
+simulations:
 
 .. code-block:: matlab
 
@@ -304,7 +304,7 @@ simulations
 
 
 Now run the script in *Python* (using the :ref:`simnibs_python <simnibs_python_cli>` command) or in *MATLAB*.
-After the simulations are finished running the results can be found in the newly created
+After the simulations have finished running, the results can be found in the newly created
 :file:`tutorial/` folder.
 
 * Download the full :download:`Python <../data/tutorial_python.py>` and :download:`MATLAB <../data/tutorial_matlab.m>` scripts.
@@ -330,6 +330,6 @@ More examples can be found in the :file:`examples/` folder in your SimNIBS insta
 Further Reading
 ----------------
 
-* Tutorial on :ref:`visualization_tutorial`.
+* Tutorial on :ref:`visualization_tutorial`
 * More information on the :ref:`sim_struct_doc`
 * For an example on how to do group analysis in SimNIBS, please see the `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_.

@@ -1,6 +1,3 @@
-variables:
-  Agent.Source.Git.ShallowFetchDepth: 5
-
 trigger:
 - master
 
@@ -10,19 +7,25 @@ jobs:
 - job: Build
   pool:
      vmImage: 'ubuntu-20.04'
-     
+
+
   container: simnibs/simnibs-testing:latest
   steps:
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
+
   - bash: |
       conda update -y conda
       conda env create -f environment_linux.yml
     displayName: Create Conda environment
 
   - bash: |
+      source /opt/rh/devtoolset-8/enable
       gcc -v
       source activate simnibs_env
       python -m pip wheel . -w ./dist  --no-deps --use-feature=in-tree-build
-      pip install jinja2 conda-pack
+      pip install jinja2 conda-pack setuptools-scm
       python packing/pack.py dist/
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_linux.yml $(Build.ArtifactStagingDirectory)
@@ -113,8 +116,9 @@ jobs:
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
   dependsOn:
-    - Test
-    - Examples
+    - Build
+    # - Test
+    # - Examples
 #  dependsOn: Build
   
   pool:

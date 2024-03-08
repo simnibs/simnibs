@@ -105,7 +105,7 @@ Attributes
 
 * **map_to_vol**: *bool, optional*
 
-  * **Description**: Whether to map the fields to a NifTi volume. The NifTI volume will in the same space as the :file:`m2m_{subID}/T1fs_conform.nii.gz` file.
+  * **Description**: Whether to map the fields to a NIfTI volume. The NifTI volume will be in the same space as the :file:`m2m_{subID}/T1fs_conform.nii.gz` file.
   * **Default**: False
   * **Reference**: `SimNIBS 2.1 tutorial paper <https://doi.org/10.1101/500314>`_
 
@@ -128,7 +128,7 @@ Attributes
 
 * **fname_tensor**:*string (Python)/character array (MATLAB), optional*
 
-  * **Description**: Name of NifTi file with conductivity tensors
+  * **Description**: Name of NIfTI file with conductivity tensors
   * **Default**: Automatically finds the file :file:`d2c_{subID}/dti_results_T1space/DTI_conf_tensor.nii.gz` based on **fnamehead**.
   * **Note**: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.
 

@@ -67,7 +67,7 @@ class SubjectFiles_old:
         Path to the folder where the m2m_subid folder is located (dir)
 
     tensor_file: str
-        Path to the NifTi file with the tensor conductivity information (.nii.gz)
+        Path to the NIfTI file with the tensor conductivity information (.nii.gz)
 
     eeg_cap_folder: str
         Path to the folder with EEG caps (dir)

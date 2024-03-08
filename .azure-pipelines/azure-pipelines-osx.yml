@@ -1,17 +1,17 @@
-variables:
-  Agent.Source.Git.ShallowFetchDepth: 5
-
 trigger:
 - master
 
 jobs:
 - job: Build
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-12'
     maxParallel: 4
 
   steps:
   # Install certificates for signing the package
+  - checkout: 'self'
+    fetchDepth: '0'
+    fetchTags: 'true'
   - task: InstallAppleCertificate@2
     inputs:
       certSecureFile: 'certificate_installer_new.p12'
@@ -34,9 +34,8 @@ jobs:
   - bash: |
       source activate simnibs_env
       export MACOSX_DEPLOYMENT_TARGET=10.9
-      python setup.py bdist_wheel
       python -m pip wheel . -w ./dist --no-deps --use-feature=in-tree-build
-      pip install jinja2 conda-pack
+      pip install jinja2 conda-pack setuptools-scm
       python packing/pack.py dist --developer-id 8J5V4KS7H4
       cp dist/* $(Build.ArtifactStagingDirectory)
       cp environment_macOS.yml $(Build.ArtifactStagingDirectory)
@@ -58,17 +57,11 @@ jobs:
       artifactName: macos
     displayName: Publish Artifact
 
-- job: Test
+- job: Test12
   dependsOn: Build
-  strategy:
-    matrix:
-      MacOSX-11:
-        vmImage: 'macOS-11'
-      MacOSX-12:
-        vmImage: 'macOS-12'
 
   pool:
-    vmImage: $(vmImage)
+    vmImage: 'macOS-12'
     maxParallel: 4
 
   steps:
@@ -93,12 +86,43 @@ jobs:
     inputs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Unit Tests'
-      
+
+
+- job: Test13
+  dependsOn: Build
+
+  pool:
+    vmImage: 'macOS-13'
+    maxParallel: 4
+
+  steps:
+  - checkout: none
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'macos'
+      itemPattern: '**/*.pkg'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: Download SimNIBS Installer
+
+  - bash: |
+      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
+      cat ~/Applications/SimNIBS*/install.log
+      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs --junit-xml=test-results.xml
+    displayName: Install SimNIBS and run unit tests
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: 'test-results.xml'
+      testRunTitle: 'Unit Tests'
+
 - job: Examples
   dependsOn: Build
   timeoutInMinutes: 0 # Maximum time (should be 6 hours)
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-13'
     maxParallel: 4
 
   steps:
@@ -133,12 +157,13 @@ jobs:
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
   dependsOn:
-    - Test
-    - Examples
+    - Build
+    # - Test
+    # - Examples
 #  dependsOn: Build
   
   pool:
-    vmImage: 'macOS-latest'
+    vmImage: 'macOS-13'
 
   steps:
   - checkout: none

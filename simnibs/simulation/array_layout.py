@@ -1,7 +1,13 @@
+import os
 import copy
 import numpy as np
-from .current_estimator import CurrentEstimator
-from .sim_struct import SESSION
+import simnibs
+from . current_estimator import CurrentEstimator
+from . sim_struct import SESSION
+from .. utils.ellipsoid import subject2ellipsoid, ellipsoid2subject
+from .. mesh_tools.surface import Surface
+from .. utils.ellipsoid import Ellipsoid
+from .. utils.file_finder import Templates
 
 
 class ElectrodeInitializer():
@@ -236,6 +242,188 @@ class ElectrodeMaster():
 
         if _node_current_sign is not None:
             self.node_current_sign = np.hstack(_node_current_sign)
+
+    def update_electrode_from_posmat(self, mesh, fn_electrode_mask=None):
+        """
+        Takes information from the posmat matrices and writes global and local node array information to electrode
+        instances of the electrode arrays.
+
+        Parameters
+        ----------
+        mesh : Msh Object
+            Head mesh
+        fn_electrode_mask : str, optional, default: Templates().mni_volume_upper_head_mask
+            Filename of mask to use to define valid skin region, where the electrodes can be applied
+        """
+        # get some paths
+        subpath = os.path.split(mesh.fn)[0]
+
+        if fn_electrode_mask is None:
+            ff_templates = Templates()
+            fn_electrode_mask = ff_templates.mni_volume_upper_head_mask
+
+        # relabel internal air
+        mesh_relabel = simnibs.opt_struct.relabel_internal_air(m=mesh,
+                                                               subpath=subpath,
+                                                               label_skin=1005,
+                                                               label_new=1099,
+                                                               label_internal_air=501)
+
+        # make final skin surface including some additional distance
+        skin_surface_ellipsoid = Surface(mesh=mesh_relabel, labels=1005)
+        skin_surface = copy.deepcopy(skin_surface_ellipsoid)
+        skin_surface_ellipsoid = simnibs.opt_struct.valid_skin_region(skin_surface=skin_surface_ellipsoid,
+                                                                      fn_electrode_mask=fn_electrode_mask,
+                                                                      mesh=mesh_relabel,
+                                                                      additional_distance=0)
+
+        # get mapping between skin_surface node indices and global mesh nodes
+        node_idx_msh = np.where(np.isin(mesh.nodes.node_coord, skin_surface.nodes).all(axis=1))[0]
+
+        # fit optimal ellipsoid to valid skin points
+        ellipsoid = Ellipsoid()
+        ellipsoid.fit(points=skin_surface_ellipsoid.nodes)
+
+        alpha_array = []
+        start_array = []
+        distance_array = []
+
+        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+            # transform electrode position in posmat from subject space to ellipsoid space
+            coords_base_eli_eli = subject2ellipsoid(coords=_electrode_array.posmat[:3, 3],
+                                                    normals=_electrode_array.posmat[:3, 2],
+                                                    ellipsoid=ellipsoid)
+
+            # transform electrode center position to cartesian coordinates
+            coords_base_eli_cart = ellipsoid.ellipsoid2cartesian(coords=coords_base_eli_eli,
+                                                                 norm=False,
+                                                                 return_normal=False)
+
+            q1 = ellipsoid.get_geodesic_destination(start=np.tile(coords_base_eli_cart, (3,1)),
+                                                    distance=np.array([0.1, 0.1, 0.1]),
+                                                    alpha=np.array([0, -10/180. * np.pi, 10/180. * np.pi]),
+                                                    n_steps=10)
+            q = q1[0, :] - coords_base_eli_cart
+            q /= np.linalg.norm(q)
+            q = q.flatten()
+
+            if (np.linalg.norm(q1[1, :] - (coords_base_eli_cart + _electrode_array.posmat[:3, 1])) <
+                    np.linalg.norm(q1[2, :] - (coords_base_eli_cart + _electrode_array.posmat[:3, 1]))):
+                q_sign = -1
+            else:
+                q_sign = +1
+
+            # calculate angle between vector of constant lambda and electrode direction
+            alpha_array.append(q_sign * np.arccos(np.dot(_electrode_array.posmat[:3, 1], q)) + _electrode_array.angle)
+
+            # save starting point (center of array on ellipsoid)
+            start_array.append(coords_base_eli_cart)
+
+            # save electrode distances
+            distance_array.append(_electrode_array.distance)
+
+        electrode_array_idx = np.hstack([i_array * np.ones(_electrode_array.n_ele)
+                                         for i_array, _electrode_array in
+                                         enumerate(self.electrode_arrays)])
+
+        # combine data from different electrode_arrays to run geodesic distance calculation only once
+        start = np.vstack([np.tile(start_array[i_array], (_electrode_array.n_ele, 1))
+                           for i_array, _electrode_array in enumerate(self.electrode_arrays)])
+
+        alpha = np.hstack(alpha_array)
+        distance = np.hstack(distance_array)
+
+        for i_a, _alpha in enumerate(alpha):
+            if _alpha > np.pi:
+                alpha[i_a] = _alpha - 2 * np.pi
+            elif _alpha < -np.pi:
+                alpha[i_a] = _alpha + 2 * np.pi
+
+        if not (distance == 0.).all():
+            electrode_coords_eli_cart = ellipsoid.get_geodesic_destination(start=start,
+                                                                           distance=distance,
+                                                                           alpha=alpha,
+                                                                           n_steps=400)
+        else:
+            electrode_coords_eli_cart = start
+
+        n = ellipsoid.get_normal(coords=electrode_coords_eli_cart)
+
+        # transform to ellipsoidal coordinates
+        electrode_coords_eli_eli = ellipsoid.cartesian2ellipsoid(coords=electrode_coords_eli_cart)
+
+        # project coordinates to subject
+        tmp_arrays = []
+        i_ele = 0
+        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+            ele_idx, tmp = ellipsoid2subject(coords=electrode_coords_eli_eli[electrode_array_idx == i_array, :],
+                                             ellipsoid=ellipsoid,
+                                             surface=skin_surface)
+            tmp_arrays.append(tmp)
+
+            if len(ele_idx) != len(alpha[electrode_array_idx == i_array]):
+                raise AssertionError("Electrode position invalid (can not project all electrodes on skin surface)")
+
+            electrode_coords_subject = np.vstack(tmp_arrays)
+
+            # loop over electrodes and determine node indices
+            for _electrode in _electrode_array.electrodes:
+                if _electrode.type == "spherical":
+                    # mask with a sphere
+                    mask = np.linalg.norm(
+                        skin_surface.nodes - electrode_coords_subject[i_ele, :],
+                        axis=1) < _electrode.radius
+
+                    # save position of electrode in subject space to posmat field
+                    _electrode.posmat[:3, 3] = electrode_coords_subject[i_ele, :]
+
+                elif _electrode.type == "rectangular":
+                    cx_local = np.cross(n[i_ele, :], _electrode_array.posmat[:3, 1])
+
+                    # rotate skin nodes to normalized electrode space
+                    rotmat = np.array([[cx_local[0], _electrode_array.posmat[0, 1], n[i_ele, 0]],
+                                       [cx_local[1], _electrode_array.posmat[1, 1], n[i_ele, 1]],
+                                       [cx_local[2], _electrode_array.posmat[2, 1], n[i_ele, 2]]])
+                    center = np.array([electrode_coords_subject[i_ele, 0],
+                                       electrode_coords_subject[i_ele, 1],
+                                       electrode_coords_subject[i_ele, 2]])
+
+                    # save position of electrode in subject space to posmat field
+                    _electrode.posmat = np.vstack(
+                        (np.hstack((rotmat, center[:, np.newaxis])), np.array([0, 0, 0, 1])))
+
+                    skin_nodes_rotated = (skin_surface.nodes - center) @ rotmat
+
+                    # mask with a box
+                    mask_x = np.logical_and(skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
+                                            skin_nodes_rotated[:, 0] < +_electrode.length_x / 2)
+                    mask_y = np.logical_and(skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
+                                            skin_nodes_rotated[:, 1] < +_electrode.length_y / 2)
+                    mask_z = np.logical_and(skin_nodes_rotated[:, 2] > -30,
+                                            skin_nodes_rotated[:, 2] < +30)
+                    mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
+                else:
+                    raise AssertionError("Electrodes have to be either 'spherical' or 'rectangular'")
+
+                # node areas
+                _electrode.node_area = skin_surface.nodes_areas[mask]
+
+                # total effective area of all nodes
+                _electrode.area_skin = _electrode.node_area_total
+
+                # electrode position is invalid if it overlaps with invalid skin region and area is not "complete"
+                # if _electrode.area_skin < 0.90 * _electrode.area:
+                #     raise AssertionError("Electrode position invalid (partly overlaps with invalid skin region)")
+
+                # save node indices (referring to global mesh)
+                _electrode.node_idx = node_idx_msh[mask]
+
+                # save node coords (refering to global mesh)
+                _electrode.node_coords = skin_surface.nodes[mask]
+
+                i_ele += 1
+
+        self.compile_node_arrays()
 
     def update_electrode_from_node_arrays(self):
         """
@@ -532,7 +720,6 @@ class Electrode():
             self._node_voltage = value
 
             # also set ele voltage (average voltage over all nodes)
-            # if self.node_area is not None:
             self._ele_voltage = np.mean(value)  # * self.node_area / self.node_area_total)
         else:
             self._node_voltage = None
@@ -659,9 +846,8 @@ class ElectrodeArray():
         circular electrodes, the angle will not be optimized.
     """
 
-    def __init__(self, channel_id, ele_id, center, radius=None, length_x=None, length_y=None, current=None):
+    def __init__(self, channel_id, center, radius=None, length_x=None, length_y=None, current=None, ele_id=None):
         self.channel_id = channel_id
-        self.ele_id = ele_id
         self.array_center = np.array([0, 0])
         self.center = center
         self.radius = radius
@@ -678,6 +864,11 @@ class ElectrodeArray():
         self.posmat = copy.deepcopy(self.posmat_norm)
         self.transmat = None
         self.electrode_pos = None
+
+        if ele_id is None:
+            self.ele_id = np.arange(self.n_ele)
+        else:
+            self.ele_id = ele_id
 
         if current is None:
             self.current = 1/self.n_ele * np.ones(self.n_ele)
@@ -1152,6 +1343,9 @@ class CircularArray(ElectrodeMaster):
                  current=None, current_estimator_method=None,
                  dirichlet_correction=True, dirichlet_correction_detailed=False, current_outlier_correction=False):
 
+        if type(current) is int or type(current) is float:
+            current = [current]
+
         if radius_outer is None:
             radius_outer = radius_inner
 
@@ -1225,8 +1419,13 @@ class CircularArray(ElectrodeMaster):
 
         if current is None:
             self.current = np.hstack((1, -1/(self.n_ele-1) * np.ones(self.n_ele-1)))
+        elif self.free_geometry[2]:
+            self.current = np.hstack((current[0], -current[0]/(self.n_ele-1) * np.ones(self.n_ele-1)))
         else:
             self.current = current
+
+        if len(self.current) != self.n_ele:
+            self.current = np.hstack((self.current[0], -self.current[0] / (self.n_ele - 1) * np.ones(self.n_ele - 1)))
 
         if np.abs(np.sum(self.current)) > 1e-12:
             raise AssertionError("Please check electrode currents. They do not sum up to 0. (atol = 1e-12)")

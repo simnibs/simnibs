@@ -41,8 +41,8 @@ coil at various angles.
 
 Basic Setting
 --------------
-Setting up a TMS optimization is similar to set-up a TMS simulation. In the most basic
-settings, you need to select the head model, the coil being used and the target position.
+Setting up a TMS optimization is similar to setting-up a TMS simulation. In the most basic
+setting, you need to select the head model, the coil being used and the target position.
 The target position has to be given in :ref:`SimNIBS coordinates <coords_doc>` and can be
 determined using the *nifti* volumes produced by :ref:`headreco_docs`, :ref:`mri2mesh_docs` or by using the :ref:`mni2subject_coords <mni2subject_coords_docs>` command line tool.
 
@@ -68,12 +68,12 @@ This will first generate a grid of positions and start simulating. After it is d
 simulating, SimNIBS will return with the position that causes the largest electric field
 magnitude at the target.
 
-The optimization will create the output file :file:`ernie_TMS_optimize_Magstim_70mm_Fig8_nii.msh`: Gmsh `.msh` file with the  optimized field and coil position
+The optimization will create the Gmsh output file :file:`ernie_TMS_optimize_Magstim_70mm_Fig8_nii.msh` with the optimized field and coil position
 
 
 Refining the Search
 --------------------
-If you already have a good idea of where the coil should be located or oriented, you can
+If you already have a good idea of where and how the coil should be located or oriented, you can
 refine the search by precisely specifying the search region, search angles and resolution.
 
 Python
@@ -93,11 +93,11 @@ MATLAB
 Auxiliary Dipole Method (ADM)
 ---------------------------------------
 
-To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`
+To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`:
 
 .. code-block:: python
 
-  tms_opt.fnamecoil = 'Magstim_70mm_Fig8.ccd'
+  tms_opt.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')
   tms_opt.method = 'ADM'
 
 \
@@ -119,12 +119,12 @@ MATLAB
 Acknowledgements
 ------------------
 
-We would like to thank Ole Numssen and Konstantin Weise for the help in developing this
-functionality, and Luis Gomez for contributing the code for the ADM optimization
+We would like to thank Ole Numssen and Konstantin Weise for helping with the development of this
+functionality, and Luis Gomez for contributing the code for the ADM optimization.
 
 Further Reading
 ------------------
-Please see :ref:`tmsoptimize_doc` for a detail description of all TMS optimization options
+Please see :ref:`tmsoptimize_doc` for a detailed description of all TMS optimization options.
 
 References
 ------------

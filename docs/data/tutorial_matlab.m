@@ -10,7 +10,7 @@ s.pathfem = 'tutorial/';
 % Initialize a list of TMS simulations
 s.poslist{1} = sim_struct('TMSLIST');
 % Select coil
-s.poslist{1}.fnamecoil = 'Magstim_70mm_Fig8.nii.gz';
+s.poslist{1}.fnamecoil = fullfile('legacy_and_other','Magstim_70mm_Fig8.ccd');
 
 %% First coil position
 % Select coil centre

@@ -4,7 +4,7 @@
 TDCSDistributedOptimize
 =======================
 
-TDCS optimization problem with a distributed target defined in a NifTi file.
+TDCS optimization problem with a distributed target defined in a NIfTI file.
 
 Initialization
 ---------------

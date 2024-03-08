@@ -114,7 +114,7 @@ Attributes
 
 * **pos_ydir**: *(3x1) list/array (Python/MATLAB) of floats, optional*
 
-  * **Description**: Reference position for the coil Y axis, with respect to the *pos* variable 
+  * **Description**: Reference position for the coil *y*-axis, with respect to the *pos* variable 
   * **Default**:  Search positions in a 360 degrees radius.
 
 * **distance**: *float, optional*

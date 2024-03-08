@@ -66,7 +66,7 @@ Attributes
   * **Default**: Automatically finds the file :file:`subpath/eeg_positions/EEG10-10_UI_Jurak_2007.csv` based on **fnamehead** or **subpath**
   * **Note**: Only needs to be set by the user if not using the standard *.csv* cap file.
 
-* **interpolate**: *'middle gm', None/[], or list/cell array of strings (Python/MATLAB), optional. Default: 'middle gm'*
+* **interpolation**: *'middle gm', None/[], or list/cell array of strings (Python/MATLAB), optional. Default: 'middle gm'*
 
   * **Description**: Where to interpolate fields
 
@@ -136,7 +136,7 @@ Attributes
 
 * **fname_tensor**:*string (Python)/character array (MATLAB), optional*
 
-  * **Description**: Name of NifTi file with conductivity tensors
+  * **Description**: Name of NIfTI file with conductivity tensors
   * **Default**: Automatically finds the file :file:`d2c_{subID}/dti_results_T1space/DTI_conf_tensor.nii.gz` based on **fnamehead**.
   * **Note**: Only needed for simulations with anisotropic conductivities. And only needs to be set by the user if a file other than the above is to be used.
 
