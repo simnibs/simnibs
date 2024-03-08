@@ -6,7 +6,7 @@ import numpy as np
 global logger
 logger = logging.getLogger('simnibs')
 sh = logging.StreamHandler()
-formatter = logging.Formatter('[ %(name)s ]%(levelname)s: %(message)s')
+formatter = logging.Formatter('[ %(name)s ] %(levelname)s: %(message)s')
 sh.setFormatter(formatter)
 sh.setLevel(logging.INFO)
 logger.addHandler(sh)

@@ -2187,3 +2187,36 @@ def _sliced_argmin(x: np.ndarray, indptr: np.ndarray):
     """
     assert x.ndim == 1
     return np.array([x[i:j].argmin() + i for i, j in zip(indptr[:-1], indptr[1:])])
+
+
+def create_new_connectivity_list_point_mask(points, con, point_mask):
+    """
+    Creates a new point and connectivity list when applying a point mask (changes indices of points)
+
+    Parameters
+    ----------
+    points : np.ndarray of float [n_points x 3]
+        Point coordinates
+    con : np.ndarray of float [n_tri x 3]
+        Connectivity of triangles
+    point_mask : nparray of bool [n_points]
+        Mask of (True/False) which points are kept in the mesh
+
+    Returns
+    -------
+    points_new : np.ndarray of float [n_points_new x 3]
+        New point array containing the remaining points after applying the mask
+    con_new : np.ndarray of float [n_tri_new x 3]
+        New connectivity list containing the remaining points (includes reindexing)
+    """
+    con_global = con[point_mask[con].all(axis=1), :]
+    unique_points = np.unique(con_global)
+    points_new = points[unique_points, :]
+
+    con_new = np.zeros(con_global.shape).astype(int)
+
+    for i, idx in enumerate(unique_points):
+        idx_where = np.where(con_global == idx)
+        con_new[idx_where[0], idx_where[1]] = i
+
+    return points_new, con_new
