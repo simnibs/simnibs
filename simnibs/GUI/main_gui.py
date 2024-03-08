@@ -1300,7 +1300,7 @@ class CoilTable (QtWidgets.QWidget):
                 c_list.append(coil_object)    
             self.glHeadModel.stimulatorList(c_list)
         else:
-            if len(self.table_rows[row_nb].p1) != 0:
+            if len(self.table_rows[row_nb].p1) != 0 and len(self.glHeadModel.stimulator_objects) > row_nb:
                 if self.show_coil_enabled:
                     ogl_object, coil_object = self.glHeadModel.drawPointAndDirs(self.table_rows[row_nb].calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
                         self.colors[row_nb%len(self.colors)], fn_coil)
