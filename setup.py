@@ -1,5 +1,6 @@
 from setuptools import setup, Extension
 import os
+import re
 import sys
 import glob
 import shutil
@@ -10,6 +11,7 @@ import tarfile
 from setuptools.command.build_ext import build_ext
 from distutils.dep_util import newer_group
 import numpy as np
+from setuptools_scm import ScmVersion
 
 
 ''' C extensions
@@ -421,9 +423,52 @@ class build_ext_(build_ext):
             [shutil.rmtree(f, True) for f in linux_folders]
             [shutil.rmtree(f, True) for f in osx_folders]
 
+# setuptool-scm hook for branches
+#
+def _increment_version_dev_branch(
+        version: ScmVersion, major_increment: int = 0, minor_increment: int = 1, patch_increment: int = 0
+) -> str:
 
-setup(ext_modules=extensions,
+    # Get version parts
+    increments = [major_increment, minor_increment, patch_increment]
+    parts_orig = [i for i in str(version.tag).split(".")]
+    if len(parts_orig) > 3 or len(parts_orig) < 1:
+        raise ValueError(f"{version} is not in the correct format X.Y.Z")
+
+    parts_new = [0]*len(parts_orig)
+    for i, p in enumerate(parts_orig):
+        try:
+            temp_num = int(p)
+            parts_new[i] = temp_num + increments[i]
+        except:
+            # find digits
+            m = re.search(r"\d+", p)
+            # No digits (should not happen)
+            if m is None:
+                continue
+            temp_num = int(p[m.start():m.end()])
+            parts_new[i] = temp_num + increments[i]
+
+    if all(v==0 for v in parts_new):
+        print('Could not update version number')
+        new_version = str(version.tag)
+    else:
+        new_version = ".".join(str(i) for i in parts_new)
+
+    return new_version
+
+def custom_version_func(version: ScmVersion) -> str:
+    if 'dev' in version.branch.lower():
+        return version.format_next_version(_increment_version_dev_branch, "{guessed}")
+    else:
+        return version.format_with("{tag}")
+
+setup(
+    ext_modules=extensions,
       cmdclass={
           'build_ext': build_ext_
           },
+      use_scm_version={"version_file": "simnibs/_version.py",
+                       "version_scheme": custom_version_func,
+                       "git_describe_command": "git describe --tags --abbrev=0",},
       )

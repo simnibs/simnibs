@@ -39,9 +39,8 @@ include-package-data = true
 where = ["."]
 exclude = ["packing"]
 
-[tool.setuptools_scm]
-version_file = "simnibs/_version.py"
-git_describe_command = "git describe --tags --abbrev=0"
+# [tool.setuptools_scm]
+
 [project.scripts]
     charm = "simnibs.cli.charm:main"
     add_tissues_to_upsampled = "simnibs.cli.add_tissues_to_upsampled:main"
