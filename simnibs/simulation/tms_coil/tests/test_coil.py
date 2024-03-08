@@ -834,6 +834,7 @@ class TestPositionOptimization:
     def test_simple_optimization(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
     ):
+        coil = deepcopy(small_functional_3_element_coil)
         skin_surface = sphere3_msh.crop_mesh(tags=[1005])
         cost_surface_tree = skin_surface.get_AABBTree()
         coil_affine = np.array(
@@ -843,7 +844,7 @@ class TestPositionOptimization:
         distance_before = np.mean(
             np.sqrt(
                 cost_surface_tree.min_sqdist(
-                    small_functional_3_element_coil.get_casing_coordinates(coil_affine)[
+                    coil.get_casing_coordinates(coil_affine)[
                         0
                     ]
                 )
@@ -854,12 +855,12 @@ class TestPositionOptimization:
             before,
             after,
             affine_after,
-        ) = small_functional_3_element_coil.optimize_distance(skin_surface, coil_affine)
+        ) = coil.optimize_distance(skin_surface, coil_affine)
 
         distance_after = np.mean(
             np.sqrt(
                 cost_surface_tree.min_sqdist(
-                    small_functional_3_element_coil.get_casing_coordinates(coil_affine)[
+                    coil.get_casing_coordinates(coil_affine)[
                         0
                     ]
                 )
@@ -870,7 +871,75 @@ class TestPositionOptimization:
         assert (
             len(
                 cost_surface_tree.points_inside(
-                    small_functional_3_element_coil.get_mesh(
+                    coil.get_mesh(
+                        coil_affine
+                    ).nodes.node_coord
+                )
+            )
+            == 0
+        )
+        np.testing.assert_allclose(coil_affine, affine_after)
+
+    def test_dithering_optimization(
+        self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
+    ):
+        coil = deepcopy(small_functional_3_element_coil)
+        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
+        cost_surface_tree = skin_surface.get_AABBTree()
+        coil_affine = np.array(
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
+        )
+
+        distance_before = np.mean(
+            np.sqrt(
+                cost_surface_tree.min_sqdist(
+                    coil.get_casing_coordinates(coil_affine)[
+                        0
+                    ]
+                )
+            )
+        )
+
+        (
+            before,
+            after,
+            affine_after,
+        ) = coil.optimize_distance(skin_surface, coil_affine, dither_skip=0)
+
+        distance_after_no_dithering = np.mean(
+            np.sqrt(
+                cost_surface_tree.min_sqdist(
+                    coil.get_casing_coordinates(coil_affine)[
+                        0
+                    ]
+                )
+            )
+        )
+
+        coil = deepcopy(small_functional_3_element_coil)
+        (
+            before,
+            after,
+            affine_after,
+        ) = coil.optimize_distance(skin_surface, coil_affine, dither_skip=4)
+
+
+        distance_after_dithering = np.mean(
+            np.sqrt(
+                cost_surface_tree.min_sqdist(
+                    coil.get_casing_coordinates(coil_affine)[
+                        0
+                    ]
+                )
+            )
+        )
+
+        assert distance_before > distance_after_no_dithering
+        assert np.allclose(distance_after_dithering, distance_after_no_dithering)
+        assert (
+            len(
+                cost_surface_tree.points_inside(
+                    coil.get_mesh(
                         coil_affine
                     ).nodes.node_coord
                 )

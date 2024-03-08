@@ -63,6 +63,9 @@ from ..utils.measures import AUC, integral_focality, ROC
 from simnibs import run_simnibs
 from simnibs.optimization import optimize_tms
 
+from simnibs.optimization.tms_flex_optimization import TmsFlexOptimization
+
+
 
 class TMSoptimize():
     """

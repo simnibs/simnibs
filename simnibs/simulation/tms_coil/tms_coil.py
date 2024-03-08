@@ -472,6 +472,8 @@ class TmsCoil(TcdElement):
         goe_fn: str,
         msh_skin: Msh,
         coil_matrix: npt.NDArray[np.float_],
+        visibility=1,
+        infix=''
     ):
         for i, element in enumerate(self.elements):
             points = []
@@ -480,16 +482,17 @@ class TmsCoil(TcdElement):
                 points = element.get_points(coil_matrix)
                 vectors = element.get_values(coil_matrix)
                 visualization.add_view(
-                    Visible=1, VectorType=2, CenterGlyphs=0, ShowScale=0
+                    Visible=visibility, VectorType=2, CenterGlyphs=0, ShowScale=0
                 )
                 mesh_io.write_geo_vectors(
-                    points, vectors, goe_fn, name=f"{i+1}-dipoles", mode="ba"
+                    points, vectors, goe_fn, name=f"{i+1}{infix}-dipoles", mode="ba"
                 )
             elif isinstance(element, LineSegmentElements):
                 points = element.get_points(coil_matrix)
                 vectors = element.get_values(coil_matrix)
                 vector_lengths = np.linalg.norm(vectors, axis=1)
                 visualization.add_view(
+                    Visible=visibility,
                     VectorType=2,
                     RangeType=2,
                     CenterGlyphs=0,
@@ -501,7 +504,7 @@ class TmsCoil(TcdElement):
                     ArrowSizeMin=30,
                 )
                 mesh_io.write_geo_vectors(
-                    points, vectors, goe_fn, name=f"{i+1}-line_segments", mode="ba"
+                    points, vectors, goe_fn, name=f"{i+1}{infix}-line_segments", mode="ba"
                 )
             elif isinstance(element, SampledGridPointElements):
                 y_axis = np.arange(1, 10, dtype=float)[:, None] * (0, 1, 0)
@@ -512,12 +515,12 @@ class TmsCoil(TcdElement):
                 directions = np.vstack((directions, np.zeros(3)))
                 points = pos
                 vectors = directions
-                visualization.add_view(ShowScale=0)
+                visualization.add_view(Visible=visibility, ShowScale=0)
                 mesh_io.write_geo_vectors(
                     points,
                     vectors,
                     goe_fn,
-                    name=f"{i+1}-sampled_grid_points",
+                    name=f"{i+1}{infix}-sampled_grid_points",
                     mode="ba",
                 )
 
@@ -545,12 +548,12 @@ class TmsCoil(TcdElement):
                     casing.nodes.node_coord,
                     goe_fn,
                     values=casing.elm.tag1,
-                    name=f"{i+index_offset}-coil_casing",
+                    name=f"{i+index_offset}{infix}-coil_casing",
                     mode="ba",
                 )
                 visualization.add_view(
                     ColorTable=_gray_red_lightblue_blue_cm(),
-                    Visible=1,
+                    Visible=visibility,
                     ShowScale=0,
                     CustomMin=-0.5,
                     CustomMax=3.5,
