@@ -21,7 +21,7 @@ Please visit [the SimNIBS website](https://simnibs.github.io/simnibs/build/html/
 
 ## Installation for development
 
-After cloning the repository:
+After cloning the repository (for all platforms except arm64 Macs):
 
 ```
 conda env create -f environment_.yml -n <name_of_my_environment>
@@ -29,6 +29,19 @@ conda activate <name_of_my_environment>
 python -m pip install --editable .
 python simnibs/cli/link_external_progs.py
 ```
+
+> **NOTE**
+>
+> Currently on arm64 Macs it is only possible to build by creating an x86_64 environment. To do so, replace the first command above with:
+> ```
+> conda env create -f environment_.yml -n <name_of_my_environment> --platform osx-64
+> ```
+> If the `--platform` argument is not available in your version of `conda`, use
+> ```
+> CONDA_SUBDIR=osx-64 conda env create -f environment_.yml -n <name_of_my_environment>
+> conda env config vars set CONDA_SUBDIR=osx-64 -n <name_of_my_environment>
+> ```
+> The latter command ensures that new packages are also installed from the `osx-64` subdir in this environment.
 
 ## Authors
 Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.
