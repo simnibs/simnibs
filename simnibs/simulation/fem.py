@@ -1729,6 +1729,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             b = S.assemble_rhs([el_tag], [current])
             v = S.solve(b)
 
+            #TODO implement calibration error also for element/node defined electrodes
+            # when input_type == "nodes"
             if input_type == "tag":
                 # estimate calibration error
                 ref_electrode = el_tag
@@ -1771,11 +1773,15 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
         S.lock = multiprocessing.Lock()
         with multiprocessing.Pool(processes=n_workers,
                                   initializer=_set_up_tdcs_global_solver,
-                                  initargs=(S, n_sims, D, post_pro, cond, field)) as pool:
+                                  initargs=(S, n_sims, D, post_pro, cond_roi, field)) as pool:
             sims = []
             for i, (el_tag, current) in enumerate(zip(electrode_surface[1:], currents)):
-                ref_electrode = el_tag
-                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])
+                if input_type == "tag":
+                    ref_electrode = el_tag
+                    other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])
+                else:
+                    ref_electrode = el_tag
+                    other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]
                 sims.append(
                     pool.apply_async(
                         _run_tdcs_leadfield,
@@ -1813,6 +1819,8 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh
     b = tdcs_global_solver.assemble_rhs(el_tags, currents)
     v = tdcs_global_solver.solve(b)
 
+    #TODO implement calibration error also for element/node defined electrodes
+    # when input_type == "nodes"
     if input_type == "tag":
         v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
         flux = np.array([
