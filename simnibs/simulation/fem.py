@@ -1348,7 +1348,7 @@ def _sim_tdcs_pair(mesh, cond, ref_electrode, el_surf, el_c, units, solver_optio
     if error <= 0.1:
         logger.info('Estimated current calibration error: {0:.1%}'.format(error))
     else:
-        logger.warning(f'The estimated current calibration error of {error*100:.2f}% exceeded 10%!')
+        logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
     del s
     gc.collect()
     return el_c / current * v.value
@@ -1746,7 +1746,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             current_ = np.average(np.abs(flux))
             error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
             if error > 0.1:
-                logger.warning(f'The estimated current calibration error of {error*100:.2f}% exceeded 10%!')
+                logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
 
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             if field == 'E':
@@ -1823,8 +1823,8 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, mesh, cond, ref_
                             units='mm')])
     current_ = np.average(np.abs(flux))
     error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
-    if error >= 0.1:
-        logger.warning(f'The estimated current calibration error of {error*100:.2f}% exceeded 10%!')
+    if error > 0.1:
+        logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
 
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tdcs_global_grad_matrix]).T * 1e3
