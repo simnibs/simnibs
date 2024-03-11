@@ -1729,24 +1729,26 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             b = S.assemble_rhs([el_tag], [current])
             v = S.solve(b)
 
-            # estimate calibration error
-            ref_electrode = el_tag
-            other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])                
+            if input_type == "tag":
+                # estimate calibration error
+                ref_electrode = el_tag
+                # other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]  
+                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])             
 
-            v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
-            flux = np.array([
-                _calc_flux_electrodes(v_, cond,
-                                    [other_electrodes - 1000, other_electrodes - 600,
-                                    other_electrodes - 2000, other_electrodes - 1600],
-                                    units='mm'),
-                _calc_flux_electrodes(v_, cond,
-                                    [ref_electrode - 1000, ref_electrode - 600,
-                                    ref_electrode - 2000, ref_electrode - 1600],
-                                    units='mm')])
-            current_ = np.average(np.abs(flux))
-            error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
-            if error > 0.1:
-                logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
+                v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
+                flux = np.array([
+                    _calc_flux_electrodes(v_, cond,
+                                        [other_electrodes - 1000, other_electrodes - 600,
+                                        other_electrodes - 2000, other_electrodes - 1600],
+                                        units='mm'),
+                    _calc_flux_electrodes(v_, cond,
+                                        [ref_electrode - 1000, ref_electrode - 600,
+                                        ref_electrode - 2000, ref_electrode - 1600],
+                                        units='mm')])
+                current_ = np.average(np.abs(flux))
+                error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
+                if error > 0.1:
+                    logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
 
             E = np.vstack([-d.dot(v) for d in D]).T * 1e3
             if field == 'E':
@@ -1777,7 +1779,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
                 sims.append(
                     pool.apply_async(
                         _run_tdcs_leadfield,
-                        (i, [el_tag], [current], fn_hdf5, dataset, mesh, cond, ref_electrode, other_electrodes)))
+                        (i, [el_tag], [current], fn_hdf5, dataset, input_type, mesh, cond, ref_electrode, other_electrodes)))
             [s.get() for s in sims]
             pool.close()
             pool.join()
@@ -1799,7 +1801,7 @@ def _set_up_tdcs_global_solver(S, n, D, post_pro, cond, field):
     tdcs_global_field = field
 
 
-def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, mesh, cond, ref_electrode, other_electrodes):
+def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh, cond, ref_electrode, other_electrodes):
     global tdcs_global_solver
     global tdcs_global_nsims
     global tdcs_global_grad_matrix
@@ -1811,20 +1813,21 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, mesh, cond, ref_
     b = tdcs_global_solver.assemble_rhs(el_tags, currents)
     v = tdcs_global_solver.solve(b)
 
-    v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
-    flux = np.array([
-        _calc_flux_electrodes(v_, cond,
-                            [other_electrodes - 1000, other_electrodes - 600,
-                            other_electrodes - 2000, other_electrodes - 1600],
-                            units='mm'),
-        _calc_flux_electrodes(v_, cond,
-                            [ref_electrode - 1000, ref_electrode - 600,
-                            ref_electrode - 2000, ref_electrode - 1600],
-                            units='mm')])
-    current_ = np.average(np.abs(flux))
-    error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
-    if error > 0.1:
-        logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
+    if input_type == "tag":
+        v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
+        flux = np.array([
+            _calc_flux_electrodes(v_, cond,
+                                [other_electrodes - 1000, other_electrodes - 600,
+                                other_electrodes - 2000, other_electrodes - 1600],
+                                units='mm'),
+            _calc_flux_electrodes(v_, cond,
+                                [ref_electrode - 1000, ref_electrode - 600,
+                                ref_electrode - 2000, ref_electrode - 1600],
+                                units='mm')])
+        current_ = np.average(np.abs(flux))
+        error = np.abs(np.abs(flux[0]) - np.abs(flux[1])) / current_
+        if error > 0.1:
+            logger.warning(f'The current calibration error exceeded 10%! Estimated error value: {error*100:.2f}%')
 
     # Calculate E and postprocessing
     E = np.vstack([-d.dot(v) for d in tdcs_global_grad_matrix]).T * 1e3
