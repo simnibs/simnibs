@@ -3,27 +3,30 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.9
-  - numpy=1.22.0
-  - scipy=1.9
-  - h5py=3.6.0
-  - pyopengl=3.1.1a1
-  - pytest=7.1.1
-  - cython=0.29.28
-  - mock=4.0.3
-  - packaging=21.3
-  - requests=2.27.1
-  - freeglut=3.0.0
-  - pip=21.2.4
-  - matplotlib=3.5.1
-  - boost=1.73.0
-  - tbb=2021.5.0
-  - libwebp=1.2.2
-  - pillow=9.0.1
-  - nibabel=3.2.2
-  - pyqt=5.9.2
-  - mkl=2022.0.1
-  - jsonschema=4.17.3
+  - python=3.11.8
+  - numpy
+  - scipy
+  - h5py
+  - pyopengl
+  - pytest
+  - cython
+  - mock
+  - packaging
+  - requests
+  - freeglut
+  - pip
+  - matplotlib
+  - boost
+  - tbb
+  - libwebp
+  - pillow
+  - nibabel
+  - pyqt
+  - mkl
+  - jsonschema
+  - numba
+  - seaborn
   - pip:
     - fmm3dpy==1.0.0
-    - charm_gems==1.3
+    - charm_gems==1.3.3
+    - pygpc==0.3.8
