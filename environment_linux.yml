@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.11.8
+  - python=3.11
   - numpy
   - scipy
   - h5py
@@ -16,8 +16,8 @@ dependencies:
   - freeglut
   - pip
   - matplotlib
-  - boost
-  - tbb
+  - boost=1.78.0
+  - tbb=2021.6.0
   - libwebp
   - pillow
   - nibabel

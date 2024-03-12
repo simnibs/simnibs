@@ -13,13 +13,13 @@ description = "Simulation of Non-Invasive Brain Stimulation"
 dynamic = ["version"]
 # version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
 #version = v4.1
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 dependencies =[
-    "numpy==1.26.4",
-    "scipy>=1.11.4",
-    "h5py==3.9.0",
-    "nibabel>=5.2.1",
+    "numpy",
+    "scipy",
+    "h5py",
+    "nibabel",
     "packaging==23.1"]
 
 [project.urls]  # Optional
