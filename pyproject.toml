@@ -13,14 +13,14 @@ description = "Simulation of Non-Invasive Brain Stimulation"
 dynamic = ["version"]
 # version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
 #version = v4.1
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 
 dependencies =[
-    "numpy==1.22.0",
-    "scipy>=1.9",
-    "h5py==3.6.0",
-    "nibabel>=2.3",
-    "packaging==21.3"]
+    "numpy==1.26.4",
+    "scipy>=1.11.4",
+    "h5py==3.9.0",
+    "nibabel>=5.2.1",
+    "packaging==23.1"]
 
 [project.urls]  # Optional
 "Homepage" = "simnibs.org"
@@ -28,7 +28,7 @@ dependencies =[
 "Source" = "https://github.com/simnibs/simnibs/"
 
 [build-system]
-requires = ['setuptools>=63', 'wheel', 'build', 'numpy', 'cython','setuptools-scm>=8']
+requires = ['setuptools>=68', 'wheel', 'build', 'numpy', 'cython','setuptools-scm>=8']
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
