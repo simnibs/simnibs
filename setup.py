@@ -1,12 +1,7 @@
 from setuptools import setup, Extension
 import os
 import sys
-import glob
 import shutil
-import urllib
-import tempfile
-import zipfile
-import tarfile
 from setuptools.command.build_ext import build_ext
 from distutils.dep_util import newer_group
 import numpy as np
@@ -34,15 +29,6 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 
 '''
 
-# Information for CGAL download
-CGAL_version = '5.4'
-CGAL_headers = os.path.abspath(f'CGAL-{CGAL_version}/include')
-CGAL_url = (
-    f'https://github.com/CGAL/cgal/releases/download/'
-    #f'releases/CGAL-{CGAL_version}/'
-    f'v{CGAL_version}/'
-    f'CGAL-{CGAL_version}-library.zip'
-)
 cgal_mesh_macros = [
     ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
     ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
@@ -52,52 +38,15 @@ cgal_mesh_macros = [
     ('CGAL_LINKED_WITH_TBB', None)
 ]
 
+is_conda = 'CONDA_PREFIX' in os.environ
+# No conda, no setup
+if not is_conda:
+    raise Exception("Cannot run setup without conda")
+
 # Information for eigen library
-# I don't download it because gitlab does not allow it
-eigen_version = '3.3.7'
-eigen_headers = os.path.abspath(f'simnibs/external/include/eigen-{eigen_version}')
-
-# Information for Intel TBB download
-tbb_version = '2020.1'
-tbb_path = os.path.abspath('tbb')
-tbb_headers = os.path.join(tbb_path, 'tbb', 'include')
-if sys.platform == 'win32':
-    tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-win.zip'
-    )
-    tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbb.dll'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbb.lib'),
-        os.path.join(tbb_path, 'tbb', 'bin', 'intel64', 'vc14', 'tbbmalloc.dll'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'vc14', 'tbbmalloc.lib'),
-    ]
-elif sys.platform == 'linux':
-    tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-lin.tgz'
-    )
-    tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbb.so.2'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'intel64', 'gcc4.8', 'libtbbmalloc.so.2'),
-    ]
-elif sys.platform == 'darwin':
-    tbb_url = (
-        f'https://github.com/intel/tbb/releases/download/'
-        f'v{tbb_version}/tbb-{tbb_version}-mac.tgz'
-    )
-    tbb_libs = [
-        os.path.join(tbb_path, 'tbb', 'lib', 'libtbb.dylib'),
-        os.path.join(tbb_path, 'tbb', 'lib', 'libtbbmalloc.dylib'),
-    ]
-else:
-    raise OSError('OS not supported!')
-
+eigen_headers = os.path.abspath(os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'))
 
 #### Setup compilation arguments
-is_conda = 'CONDA_PREFIX' in os.environ
 
 if sys.platform == 'win32':
     petsc_libs = ['libpetsc', 'msmpi']
@@ -112,18 +61,12 @@ if sys.platform == 'win32':
     petsc_extra_link_args = None
 
     cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib', 'tbb', 'tbbmalloc']
-    cgal_include = [
+    cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
+    cgal_include += [
         np.get_include(),
-        CGAL_headers,
         eigen_headers,
-        tbb_headers,
-        'simnibs/external/include/win/mpfr',
-        'simnibs/external/include/win/gmp'
     ]
     # Find boost headers if installed with conda
-    if is_conda:
-        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
-    cgal_dirs = ['simnibs/external/lib/win']
     cgal_runtime = None
     # Got those arguments from compiling a CGAL program following the instructions in the website
     cgal_compile_args = [
@@ -147,17 +90,16 @@ elif sys.platform == 'linux':
     petsc_extra_link_args = None
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
-    cgal_include = [
-        np.get_include(),
-        CGAL_headers,
-        eigen_headers,
-        tbb_headers,
-        'simnibs/external/include/linux/mpfr',
-        'simnibs/external/include/linux/gmp'
-    ]
     # To find the boost headers if installed with conda
+    cgal_include = []
     if is_conda:
         cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
+
+    cgal_include += [
+        np.get_include(),
+        eigen_headers,
+    ]
+
     cgal_dirs = ['simnibs/external/lib/linux']
     cgal_runtime = ['$ORIGIN/../../external/lib/linux']
     # Add -Os -flto for much smaller binaries
@@ -185,17 +127,12 @@ elif sys.platform == 'darwin':
     petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
-    cgal_include = [
+    cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
+    cgal_include += [
         np.get_include(),
-        CGAL_headers,
         eigen_headers,
-        tbb_headers,
-        'simnibs/external/include/osx/mpfr',
-        'simnibs/external/include/osx/gmp'
     ]
-    if is_conda:
-        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
-    cgal_dirs = ['simnibs/external/lib/osx']
+
     cgal_runtime = None
     cgal_compile_args = [
         '-std=gnu++14',
@@ -310,48 +247,6 @@ extensions = [
 ]
 
 
-def download_and_extract(url, path='.'):
-    ''' Downloads and extracts a zip or tar-gz folder '''
-    print('Downloading:', url)
-    with urllib.request.urlopen(url) as response:
-        with tempfile.NamedTemporaryFile('wb', delete=False) as tmpf:
-            shutil.copyfileobj(response, tmpf)
-            tmpname = tmpf.name
-
-    if url.endswith('.zip'):
-        with zipfile.ZipFile(tmpname) as z:
-            z.extractall(path)
-
-    elif url.endswith('.tgz') or url.endswith('.tar.gz'):
-        with tarfile.open(tmpname, 'r:gz') as z:
-            z.extractall(path)
-    else:
-        raise IOError('Could not extract file, unrecognized extension')
-
-    os.remove(tmpname)
-
-
-def install_lib(url, path, libs, build_path):
-    ''' Downloads a compiled library from the internet and move to "lib" folder '''
-    download_and_extract(url, path)
-    if sys.platform == 'darwin':
-        folder_name = 'osx'
-    elif sys.platform == 'linux':
-        folder_name = 'linux'
-    elif sys.platform == 'win32':
-        folder_name = 'win'
-    for l in libs:
-        shutil.copy(
-            l, f'simnibs/external/lib/{folder_name}',
-            follow_symlinks=False
-        )
-        if build_path:
-            shutil.copy(
-                l, f'{build_path}simnibs/external/lib/{folder_name}',
-                follow_symlinks=False
-            )
-
-
 class build_ext_(build_ext):
     '''
         Build the extension, download some dependencies and remove stuff from other OS
@@ -362,11 +257,11 @@ class build_ext_(build_ext):
         self.extension = cythonize(self.extensions)
         ## Download requirements
         changed_meshing = (
-            # newer_group(
-            #     create_mesh_surf.sources + create_mesh_surf.depends,
-            #     self.get_ext_fullpath(create_mesh_surf.name),
-            #     'newer'
-            # ) or
+            newer_group(
+                create_mesh_surf.sources + create_mesh_surf.depends,
+                self.get_ext_fullpath(create_mesh_surf.name),
+                'newer'
+            ) or
             newer_group(
                 create_mesh_vol.sources + create_mesh_vol.depends,
                 self.get_ext_fullpath(create_mesh_vol.name),
@@ -378,21 +273,10 @@ class build_ext_(build_ext):
                 'newer'
             )
         )
-        if self.force or changed_meshing:
-            download_and_extract(CGAL_url)
-            if self.inplace:
-                build_lib = ""
-            else:
-                build_lib = self.build_lib + "/"
-
-            install_lib(tbb_url, tbb_path, tbb_libs, build_lib)
 
         # Compile
         build_ext.run(self)
-        # cleanup downloads
-        if self.force or changed_meshing:
-            shutil.rmtree(f'CGAL-{CGAL_version}', ignore_errors=True)
-            shutil.rmtree(tbb_path, ignore_errors=True)
+
         # Remove unescessary binary files
         linux_folders = [
             os.path.join(self.build_lib, 'simnibs', 'external', 'bin', 'linux'),

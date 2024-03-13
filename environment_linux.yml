@@ -16,8 +16,12 @@ dependencies:
   - freeglut
   - pip
   - matplotlib
-  - boost=1.78.0
-  - tbb=2021.6.0
+  - boost
+  - tbb-devel
+  - cgal=5.5.1
+  - eigen=3.3.7
+  - mpfr
+  - gmp
   - libwebp
   - pillow
   - nibabel
