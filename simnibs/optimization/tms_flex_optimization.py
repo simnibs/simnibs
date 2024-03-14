@@ -307,6 +307,8 @@ class TmsFlexOptimization:
                 self.pos.matsimnibs,
                 self._global_translation_ranges,
                 self._global_rotation_ranges,
+                True,
+                True,
                 self.dither_skip,
                 self.direct_eps,
                 self.direct_maxfun,
@@ -565,7 +567,10 @@ def optimize_distance(
     affine: npt.NDArray[np.float_],
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    dither_skip=0, direct_eps = 1e-4,
+    dither_skip=0,
+    global_optimization: bool = True,
+    local_optimization: bool = False,
+    direct_eps = 1e-4,
     direct_maxfun = None,
     direct_maxiter = 1000,
     direct_locally_biased = False,
@@ -681,24 +686,42 @@ def optimize_distance(
 
     optimization_ranges = [deform.range for deform in coil_deformation_ranges]
 
-    if direct_maxfun is None:
-        direct_maxfun = len(optimization_ranges) * 2000
-    direct = opt.direct(
-        cost_f_x0_w,
-        bounds=optimization_ranges,
-        eps = direct_eps,
-        maxfun = direct_maxfun,
-        maxiter = direct_maxiter,
-        locally_biased = direct_locally_biased,
-        vol_tol = direct_vol_tol,
-        len_tol = direct_len_tol,
-    )
-    best_deformation_settings = direct.x
+    opt_results = []
+    if global_optimization:
+        if direct_maxfun is None:
+            direct_maxfun = len(optimization_ranges) * 2000
+        direct = opt.direct(
+            cost_f_x0_w,
+            bounds=optimization_ranges,
+            eps = direct_eps,
+            maxfun = direct_maxfun,
+            maxiter = direct_maxiter,
+            locally_biased = direct_locally_biased,
+            vol_tol = direct_vol_tol,
+            len_tol = direct_len_tol,
+        )
+        best_deformation_settings = direct.x
 
-    for coil_deformation, deformation_setting in zip(
-        coil_deformation_ranges, best_deformation_settings
-    ):
-        coil_deformation.current = deformation_setting
+        for coil_deformation, deformation_setting in zip(
+            coil_deformation_ranges, best_deformation_settings
+        ):
+            coil_deformation.current = deformation_setting
+        opt_results.append(direct)
+    
+    if local_optimization:
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in coil.get_deformation_ranges()]
+        )
+        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, method='Nelder-Mead')
+
+        best_deformation_settings = local_opt.x
+
+        for coil_deformation, deformation_setting in zip(
+            coil_deformation_ranges, best_deformation_settings
+        ):
+            coil_deformation.current = deformation_setting
+
+        opt_results.append(local_opt)
 
     optimized_cost = cost_f_x0_w(best_deformation_settings)
 
@@ -710,7 +733,7 @@ def optimize_distance(
             result_affine = global_deformation.as_matrix() @ result_affine
     result_affine = affine.astype(float) @ result_affine
 
-    return initial_cost, optimized_cost, result_affine, direct
+    return initial_cost, optimized_cost, result_affine, opt_results
 
 
 def get_voxel_volume(
@@ -907,6 +930,8 @@ def optimize_e_mag(
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
     dither_skip=0,
     fem_evaluation_cutoff=1000,
+    global_optimization: bool = True,
+    local_optimization: bool = False,
     direct_eps = 1e-4,
     direct_maxfun = None,
     direct_maxiter = 1000,
@@ -1038,22 +1063,40 @@ def optimize_e_mag(
 
     initial_cost = cost_f_x0_w(initial_deformation_settings)
 
-    direct = opt.direct(
-        cost_f_x0_w,
-        bounds=[deform.range for deform in coil_deformation_ranges],
-        eps = direct_eps,
-        maxfun = direct_maxfun,
-        maxiter = direct_maxiter,
-        locally_biased = direct_locally_biased,
-        vol_tol = direct_vol_tol,
-        len_tol = direct_len_tol,
-    )
-    best_deformation_settings = direct.x
+    opt_results = []
+    if global_optimization:
+        direct = opt.direct(
+            cost_f_x0_w,
+            bounds=[deform.range for deform in coil_deformation_ranges],
+            eps = direct_eps,
+            maxfun = direct_maxfun,
+            maxiter = direct_maxiter,
+            locally_biased = direct_locally_biased,
+            vol_tol = direct_vol_tol,
+            len_tol = direct_len_tol,
+        )
+        best_deformation_settings = direct.x
 
-    for sampled_coil_deformation, deformation_setting in zip(
-        coil_deformation_ranges, best_deformation_settings
-    ):
-        sampled_coil_deformation.current = deformation_setting
+        for sampled_coil_deformation, deformation_setting in zip(
+            coil_deformation_ranges, best_deformation_settings
+        ):
+            sampled_coil_deformation.current = deformation_setting
+        opt_results.append(direct)
+
+    if local_optimization:
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in coil.get_deformation_ranges()]
+        )
+        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, method='Nelder-Mead')
+
+        best_deformation_settings = local_opt.x
+
+        for coil_deformation, deformation_setting in zip(
+            coil_deformation_ranges, best_deformation_settings
+        ):
+            coil_deformation.current = deformation_setting
+
+        opt_results.append(local_opt)
 
     optimized_cost = cost_f_x0_w(best_deformation_settings)
     optimized_e_mag = np.ravel(fem.update_field(matsimnibs=affine))
@@ -1071,4 +1114,4 @@ def optimize_e_mag(
     ):
         coil_deformation.current = sampled_coil_deformation.current
 
-    return initial_cost, optimized_cost, result_affine, optimized_e_mag, direct
+    return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results
