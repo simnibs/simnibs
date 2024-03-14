@@ -1085,7 +1085,7 @@ def optimize_e_mag(
 
     if local_optimization:
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in coil.get_deformation_ranges()]
+            [coil_deformation.current for coil_deformation in coil_sampled.get_deformation_ranges()]
         )
         local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, method='Nelder-Mead')
 
