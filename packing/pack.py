@@ -21,7 +21,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         os.path.abspath(os.path.dirname(__file__)),
         '..'
     ))
-    version = get_version()
+    version = get_version(git_describe_command="git describe --tags --abbrev=0")
 
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
@@ -83,7 +83,8 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         dest_prefix='simnibs_env',
         output=os.path.join(pack_dir, 'simnibs_env.tar'),
         compress_level=0,
-        force=True
+        force=True,
+        ignore_missing_files=True
     )
     shutil.unpack_archive(
         os.path.join(pack_dir, 'simnibs_env.tar'),

@@ -34,3 +34,4 @@ dependencies:
     - PyQt5
     - mkl
     - packaging
+    - PySide2
