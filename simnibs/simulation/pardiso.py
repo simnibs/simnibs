@@ -58,9 +58,12 @@ def get_libmkl():
         try:
             return ctypes.CDLL('mkl_rt.dll')
         except:
-            return ctypes.CDLL('mkl_rt.1.dll')
+            return ctypes.CDLL('mkl_rt.2.dll')
     else:
-        return ctypes.CDLL('libmkl_rt.so')
+        try:
+            return ctypes.CDLL('libmkl_rt.so')
+        except:
+            return ctypes.CDLL('libmkl_rt.so.2')
 
 
 class Solver:
