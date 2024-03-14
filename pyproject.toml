@@ -13,14 +13,25 @@ description = "Simulation of Non-Invasive Brain Stimulation"
 dynamic = ["version"]
 # version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
 #version = v4.1
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies =[
     "numpy",
     "scipy",
     "h5py",
     "nibabel",
-    "packaging==23.1"]
+    "jsonschema",
+    "tbb",
+    "numba",
+    "matplotlib",
+    "seaborn",
+    "fmm3dpy==1.0.0",
+    "charm_gems==1.3.3",
+    "PyQt5",
+    "PySide2",
+    "mkl",
+    "pygpc==0.3.8",
+    "packaging"]
 
 [project.urls]  # Optional
 "Homepage" = "simnibs.org"
@@ -74,10 +85,10 @@ git_describe_command = "git describe --tags --abbrev=0"
 
 [project.optional-dependencies]
 test =[
-    "pytest==7.1.1",
-    "mock==4.0.3"
+    "pytest",
+    "mock"
 ]
 GUI =[
     "pyqt5",
-    "pyopengl==3.1.1a1"
+    "pyopengl"
 ]
