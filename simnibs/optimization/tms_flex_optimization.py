@@ -709,10 +709,12 @@ def optimize_distance(
         opt_results.append(direct)
     
     if local_optimization:
+        for global_deformation in global_deformations:
+            global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
         initial_deformation_settings = np.array(
             [coil_deformation.current for coil_deformation in coil.get_deformation_ranges()]
         )
-        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, method='Nelder-Mead')
+        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, bounds= [deform.range for deform in coil_deformation_ranges], method='Nelder-Mead')
 
         best_deformation_settings = local_opt.x
 
@@ -1065,15 +1067,15 @@ def optimize_e_mag(
 
     opt_results = []
     if global_optimization:
-        direct = opt.direct(
+        direct = opt.dual_annealing(
             cost_f_x0_w,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            eps = direct_eps,
-            maxfun = direct_maxfun,
-            maxiter = direct_maxiter,
-            locally_biased = direct_locally_biased,
-            vol_tol = direct_vol_tol,
-            len_tol = direct_len_tol,
+            #eps = direct_eps,
+            #maxfun = direct_maxfun,
+            #maxiter = direct_maxiter,
+            #locally_biased = direct_locally_biased,
+            #vol_tol = direct_vol_tol,
+            #len_tol = direct_len_tol,
         )
         best_deformation_settings = direct.x
 
@@ -1084,6 +1086,8 @@ def optimize_e_mag(
         opt_results.append(direct)
 
     if local_optimization:
+        for global_deformation in global_deformations:
+            global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
         initial_deformation_settings = np.array(
             [coil_deformation.current for coil_deformation in coil_sampled.get_deformation_ranges()]
         )
