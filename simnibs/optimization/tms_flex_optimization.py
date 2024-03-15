@@ -1067,15 +1067,15 @@ def optimize_e_mag(
 
     opt_results = []
     if global_optimization:
-        direct = opt.dual_annealing(
+        direct = opt.direct(
             cost_f_x0_w,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            #eps = direct_eps,
-            #maxfun = direct_maxfun,
-            #maxiter = direct_maxiter,
-            #locally_biased = direct_locally_biased,
-            #vol_tol = direct_vol_tol,
-            #len_tol = direct_len_tol,
+            eps = direct_eps,
+            maxfun = direct_maxfun,
+            maxiter = direct_maxiter,
+            locally_biased = direct_locally_biased,
+            vol_tol = direct_vol_tol,
+            len_tol = direct_len_tol,
         )
         best_deformation_settings = direct.x
 
