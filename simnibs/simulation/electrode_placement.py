@@ -59,6 +59,7 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[ElementTags.SCALP, Elemen
     center = np.array(center, dtype=float)
 
     c = project_points_on_surface(mesh, center, surface_tags = mesh_surface).flatten()
+
     if nodes_roi is None:
         nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
         kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
@@ -118,27 +119,42 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[ElementTags.SCALP, Elemen
     affine[3, 3] = 1
     return affine, c
 
-
 def _get_roi(center, radius, mesh, mesh_surface=[5, 1005], min_cos=.1):
     ''' Defines the region of interest of a given radius. Around a given center. Only
     node with normals pointing in the given direction are
-    considered. Returns a list of triangles with at least 1 element in the ROI'''
+    considered. Returns a list of triangles with at least 1 element in the ROI and their adjacent tetrahedra'''
     center = np.array(center, dtype=float)
     nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
     if len(nodes_in_surface) == 0:
         raise ValueError('Could not find surface {0} in mesh'.format(mesh_surface))
+
     distances = np.linalg.norm(center - mesh.nodes[nodes_in_surface], axis=1)
     normals = mesh.nodes_normals()[nodes_in_surface]
     center_normal = normals[np.argmin(distances)]
-    in_roi = nodes_in_surface[(distances <= radius) *
-                              (center_normal.dot(normals.T) > min_cos)]
-    tr_in_roi = np.any(
-        np.in1d(mesh.elm[mesh.elm.triangles, :3], in_roi).reshape(-1, 3), axis=1)
+    
+    # determine average edge length in roi by sampling
+    avg_l = np.average(np.linalg.norm(mesh.nodes[mesh.elm[mesh.elm.triangles, 0][nodes_in_surface]] - \
+                                      mesh.nodes[mesh.elm[mesh.elm.triangles, 1][nodes_in_surface]], axis=1))
+    
+    nodes_in_roi_ext = nodes_in_surface[(distances <= radius + 2*avg_l) *
+                            (center_normal.dot(normals.T) > min_cos)]
+    nodes_in_roi = nodes_in_surface[(distances <= radius) *
+                            (center_normal.dot(normals.T) > min_cos)]
 
-    roi_nodes, roi_triangles_reordering = \
+    tr_in_roi = np.any(
+        np.in1d(mesh.elm[mesh.elm.triangles, :3], nodes_in_roi).reshape(-1, 3), axis=1)
+
+    th_in_roi = np.any(
+        np.in1d(mesh.elm[mesh.elm.tetrahedra], nodes_in_roi_ext).reshape(-1, 4), axis=1)
+
+    roi_tr_nodes, roi_triangles_reordering = \
         np.unique(mesh.elm[mesh.elm.triangles[tr_in_roi], :3], return_inverse=True)
 
-    return mesh.elm.triangles[tr_in_roi], roi_nodes, roi_triangles_reordering.reshape(-1,3)
+    roi_th_nodes, roi_tetrahedra_reordering = \
+        np.unique(mesh.elm[mesh.elm.tetrahedra[th_in_roi]], return_inverse=True)
+
+    return mesh.elm.triangles[tr_in_roi], roi_tr_nodes, roi_triangles_reordering.reshape(-1,3), \
+        mesh.elm.tetrahedra[th_in_roi], roi_th_nodes, roi_tetrahedra_reordering.reshape(-1,4)
 
 def _point_inside_polygon(vertices, points, tol=1e-3):
     '''uses the line-tracing algorithm Known issues: if the point is right in the edge,
@@ -222,22 +238,22 @@ def _apply_affine(affine, p):
     p_inc = np.hstack([p, np.ones((len(p), 1))])
     return affine.dot(p_inc.T).T[:, :3]
 
-
 def _point_line_distance(end_point_1, end_point_2, points, tol=1e-5):
     ''' Distance of points to line. Notice: Here we condider a line segment!'''
     '''Line Equation: y = t*x + b '''
     b = end_point_1
     x = (end_point_2 - end_point_1)
-    t_max = np.linalg.norm(x)
-    x = x / t_max
+    t_max = np.linalg.norm(x)# length of line
+    x = x / t_max # normalised direction
     normal = np.random.rand(len(end_point_1)) - .5
     normal -= normal.dot(x) * x
     normal /= np.linalg.norm(normal)
 
     # Find where in the line the point projects
     t = (points - b[None, :]).dot(x)
-    # Fix t to be between t and t_max
-    out_range = (t < 0) + (t > t_max)
+    # Fix t to be between t and t_max. Has buffer to ensure that 
+    # nodes are move even if they lie outside of range, but close to end points of line.
+    out_range = (t < -2) + (t > t_max + 2)
     t[t < 0] = 0.
     t[t > t_max] = t_max
     projected = t[:, None] * x + b
@@ -317,6 +333,7 @@ def _calc_kdtree(triangles, nodes):
     tr_baricenters = _triangle_baricenters(triangles, nodes)
     return scipy.spatial.cKDTree(tr_baricenters)
 
+
 def _triangle_with_points(points, triangles, nodes, eps=1e-5,
                           edge_list=None, kdtree=None):
     if edge_list is None:
@@ -326,7 +343,7 @@ def _triangle_with_points(points, triangles, nodes, eps=1e-5,
     # Find triangles with points using a walking algorithm
     if kdtree is None:
         kdtree = _calc_kdtree(triangles, nodes)
-    # Starting position for walking algorithm: the closest baricenter
+    # Starting old_position for walking algorithm: the closest baricenter
     _, closest_tr = kdtree.query(points)
     #TODO: Walk in only a subset of the triangles (20 closest?)
     tr_with_points = np.zeros(len(points), dtype=int)
@@ -370,106 +387,183 @@ def _triangle_with_points(points, triangles, nodes, eps=1e-5,
 
     return tr_with_points
 
-def _calc_triangle_angles(p, eps=1e-5):
-    p1 = p[:, 0]
-    p2 = p[:, 1]
-    p3 = p[:, 2]
+def _calc_gamma(affected_nodes):
+    ''' gamma value of tetrahedra 
+    (see Parthasarathy et al., Finite Elements in Analysis and Design, 1994)
 
-    e1 = np.linalg.norm(p2 - p1, axis=1)
-    e2 = np.linalg.norm(p3 - p1, axis=1)
-    e3 = np.linalg.norm(p3 - p2, axis=1)
-    # Law Of Cossines
-    state = np.geterr()['invalid']
-    np.seterr(invalid='ignore')
-    a = np.zeros((p.shape[0], 3))
-    v = (e1 > eps) * (e2 > eps)
-    a[v, 0] = np.arccos((e2[v] ** 2 + e1[v] ** 2 - e3[v] ** 2) / (2 * e1[v] * e2[v]))
-    a[~v, 0] = 0
+    Calculates the gamma metric for tetrahdra.
+    Negative volumes can happen if tetrahedra had been inverted in the process of moving nodes.
+    In that case, penalize by returning a high gamma value (100). 
+    
+    Parameters
+    ------------
+    affected_nodes: 
+        node coordinates for each node in each triangle
+    '''
 
-    v = (e1 > eps) * (e3 > eps)
-    a[v, 1] = np.arccos((e1[v] ** 2 + e3[v] ** 2 - e2[v] ** 2) / (2 * e1[v] * e3[v]))
-    a[~v, 1] = 0
+    M = affected_nodes[:, 1:] - affected_nodes[:, 0, None]
+    vol = np.linalg.det(M) / 6.
+    if np.any(vol == 0.0):
+        return np.inf
 
-    v = (e2 > eps) * (e3 > eps)
-    a[v, 2] = np.arccos((e2[v] ** 2 + e3[v] ** 2 - e1[v] ** 2) / (2 * e2[v] * e3[v]))
-    a[~v, 2] = 0
-    np.seterr(invalid=state)
-    a[np.isnan(a)] = np.pi
+    # unique combination of nodes -> six edges
+    unique_pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+    edge_len = np.zeros((affected_nodes.shape[0], 6, affected_nodes.shape[2]))
+    for e, (i, j) in enumerate(unique_pairs):
+        edge_len[:, e, :] = affected_nodes[:, i, :] - affected_nodes[:, j, :]
+    edge_rms = np.sqrt(np.sum(edge_len**2, axis=(1, 2))/ 6.0)
+    gamma = edge_rms**3/vol
+    gamma /= 8.479670
+    # if volume is negative, th has been inverted ->
+    # return high gamma to penalize
+    gamma[np.signbit(vol)] = 100
+    
+    return gamma
 
-    return a
-
-def _move_point(new_position, to_be_moved, nodes, triangles, min_angle=0.25,
+def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
                 edge_list=None, kdtree=None):
-    '''Moves one point to the new_position. The angle of the patch should not become less
-    than min_angle (in radians) '''
-    # Certify that the new_position is inside the patch
-    tr = _triangle_with_points(np.atleast_2d(new_position), triangles, nodes,
+    '''
+    Moves one point to new old_position on the line of the electrode. The gamma metric [source] is calculated for all adjacent tetrahedra,
+    including the electrode tetrahedra built on the scalp. If the gamma metric becomes less than the minimal value,
+    the movement of the current node is rejected.
+
+    The triangle roi (tr roi) and tetrahedra roi (th roi) are indexes differently. The node to_be_moved in the tr roi
+    is mapped to the original mesh indices and then to the th roi to determine the teterahedra that need to be checked for quality.
+    
+    new_position: 
+        position in electrode plane, where node should be moved
+    to_be_moved:
+        index of node to be moved in tr roi
+    tr_nodes:
+        coordinates of triangles in tr roi
+    th_nodes:
+        coordinates of tetrahdera in th roi
+    roi_tr_nodes:
+        original node indices of triangles in roi
+    roi_th_nodes:   
+        original node indices of tetrahedra in roi
+    triangles:
+        node inidces belonging to one triangle (roi)
+    tetrahedra:
+        node inidces belonging to one tetrahedra (roi)
+    poly:
+        description of lines marking the electrode outline
+    affine:
+        rigid affine, mapping from head model space to electrode plane
+    holes: 
+        description of holes, needed to built electrode tetrahedra
+    el_layer: float
+        thickness of first electrode layer calculated by average edge length of triangles in roi
+    
+    '''
+    # Certify that the new_position is inside the patch = adj_tr_nodes
+    tr = _triangle_with_points(np.atleast_2d(new_position), triangles, tr_nodes[:, :2],
                                edge_list=edge_list, kdtree=kdtree)
     tr_with_node = np.where(np.any(triangles == to_be_moved, axis=1))[0]
-    patch = triangles[tr_with_node]
+    adj_tr_nodes = triangles[tr_with_node]
     if not np.in1d(tr, tr_with_node):
         return None, None
-    new_nodes = np.copy(nodes)
-    position = nodes[to_be_moved]
-    d = new_position - position
-    # Start from the full move and go back
-    for t in np.linspace(0, 1, num=10)[::-1]:
-        new_nodes[to_be_moved] = position + t*d
-        angle = np.min(_calc_triangle_angles(new_nodes[patch]))
-        if angle > min_angle:
-            break
-    # Return the new node list and the minimum angle in the patch
-    return new_nodes, angle
+    
+    # node movement in 2D electrode plane
+    old_position = tr_nodes[to_be_moved] 
+    d = new_position - old_position[:2]
+    
+    # The triangle node is indexed in the tr roi. To extract all adjacent tetrahedra,
+    # the original index of to_be_moved is extracted from roi_tr_nodes[to_be_moved].
+    th_with_node = np.any(roi_th_nodes[tetrahedra] == roi_tr_nodes[to_be_moved], axis=1)
+    adj_th_nodes = roi_th_nodes[tetrahedra[th_with_node]]
+    roi_adj_th_nodes = tetrahedra[th_with_node]
+    adj_th_node_coords = th_nodes[roi_adj_th_nodes]  
 
-def _make_line(line, nodes, triangles, ends=True):
-    new_nodes = np.copy(nodes)
+    # which node in which tetrahedron is moved
+    th_moved, node_moved = np.where(adj_th_nodes == roi_tr_nodes[to_be_moved])
+    
+    moved_tr_nodes = np.copy(tr_nodes)
+    moved_th_nodes = adj_th_node_coords.copy()
+
+    gamma_threshold = 7.0
+    for t in np.linspace(loop_count/6, 0, num=10):
+
+        moved_tr_nodes[to_be_moved, :2] = old_position[:2] + t*d
+        # node movement in tetrahedra is done in original 3D space to assess th quality ->
+        # apply inverse affine on node movement to map to original space
+        moved_th_nodes[th_moved, node_moved] = _apply_affine(inv_affine, (old_position + np.append(t*d, 0)).reshape(-1,3))
+        # build electrode tetrahedra according to current movement
+        el_nodes, el_tetrahedra_, _, corresponding, _, _, _ = _build_electrode(poly, el_layer, moved_tr_nodes[:, :2], adj_tr_nodes, holes=holes, test_gamma=True) 
+        el_nodes[:, 2] += tr_nodes[:, 2][corresponding]
+        el_nodes = _apply_affine(inv_affine, el_nodes)
+        el_nodes = el_nodes[el_tetrahedra_]
+        # reorder elec th nodes, so volume is positive
+        MM = el_nodes[:, 1:] - el_nodes[:, 0, None]
+        vol = np.linalg.det(MM) / 6.
+        neg_vol = np.signbit(vol)
+        if np.any(neg_vol):
+            tmp = el_nodes[neg_vol, 1]
+            el_nodes[neg_vol, 1] = el_nodes[neg_vol, 0]
+            el_nodes[neg_vol, 0] = tmp
+            del tmp
+
+        max_gamma = np.max(_calc_gamma(np.vstack((moved_th_nodes, el_nodes))))
+
+        if max_gamma <= gamma_threshold:
+            break
+
+    return moved_tr_nodes, max_gamma
+
+def _make_line(line, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, ends=True):
+    moved_tr_nodes = np.copy(tr_nodes)
+    moved_th_nodes = np.copy(th_nodes)
     moved = []
     edge_list = _edge_list(triangles)
     if ends:
         # Find the triangles containing the end points
-        tr_w_points = _triangle_with_points(line, triangles, nodes, edge_list=edge_list)
+        tr_w_points = _triangle_with_points(line, triangles, tr_nodes[:, :2], edge_list=edge_list)
         for p, t in zip(line, tr_w_points):
             # If not outside
             if t != -1:
-                # Try to move the nodes, Choose the movement that maximizes the minimum angle
-                angles = []
-                new_nodes_list = []
-                for i, n in enumerate(triangles[t]):
-                    nn, an = _move_point(p, n, new_nodes, triangles,
-                                         edge_list=edge_list)
-                    if nn is not None:
-                        angles.append(an)
-                        new_nodes_list.append(nn)
-                if new_nodes_list != []:
-                    angles = np.array(angles)
-                    new_nodes = new_nodes_list[angles.argmax()]
-                    moved.append(triangles[t, angles.argmax()])
+                # Try to move the nodes, Choose the movement that minimizes the maximum gamma value
+                gammas = []
+                moved_tr_nodes_list = []
+                for n in triangles[t]:
+                    mn, mg = _move_point(p, n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
+                                        edge_list=edge_list)
+                    if mn is not None:
+                        gammas.append(mg)
+                        moved_tr_nodes_list.append(mn)
+                if moved_tr_nodes_list != []:
+                    gammas = np.array(gammas)
+                    moved_tr_nodes = moved_tr_nodes_list[gammas.argmin()]
+                    moved_th_nodes[np.where(np.isin(roi_th_nodes, roi_tr_nodes))[0]] = _apply_affine(inv_affine, moved_tr_nodes_list[gammas.argmin()])
+                    moved.append(triangles[t, gammas.argmin()])
     # Finds the edges that are cut by the line segment
     edges, tr_edges, adjacency_list = _edge_list(triangles)
-    _, closest, side = _point_line_distance(line[0], line[1], new_nodes)
+
+    _, closest, side = _point_line_distance(line[0], line[1], moved_tr_nodes[:, :2])
     edge_s = side[edges]
     edges_crossing = np.where(np.prod(edge_s, axis=1) < -.1)[0]
-    kdtree = _calc_kdtree(triangles, new_nodes)
-    # For each edge crossing the line segment, try to move each node. choose the movement
-    # that maximizes the minimum angle
+    kdtree = _calc_kdtree(triangles, moved_tr_nodes[:, :2])
+    # For each edge crossing the line segment, try to move each node. Choose the movement
+    # that minimizes the maximum gamma value
     for e in edges_crossing:
-        angles = []
-        new_nodes_list = []
+        gammas = []
+        moved_tr_nodes_list = []
         for i, n in enumerate(edges[e]):
-            nn, an = _move_point(closest[n], n, new_nodes, triangles,
-                                 edge_list=edge_list, kdtree=kdtree)
-            if nn is not None:
-                angles.append(an)
-                new_nodes_list.append(nn)
-        if new_nodes_list != []:
-            angles = np.array(angles)
-            new_nodes = new_nodes_list[angles.argmax()]
-            moved.append(edges[e, angles.argmax()])
-    return new_nodes, moved
+            mn, mg = _move_point(closest[n], n, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, 
+                                edge_list=edge_list, kdtree=kdtree)
+            if mn is not None:
+                gammas.append(mg)
+                moved_tr_nodes_list.append(mn)
+        if moved_tr_nodes_list != []:
+            gammas = np.array(gammas)
+            moved_tr_nodes = moved_tr_nodes_list[gammas.argmin()]
+            moved_th_nodes[np.where(np.isin(roi_th_nodes, roi_tr_nodes))[0]] = _apply_affine(inv_affine, moved_tr_nodes_list[gammas.argmin()])
+            moved.append(edges[e, gammas.argmin()])
+    
+    return moved_tr_nodes, moved_th_nodes, moved
 
-
-def _draw_polygon_2D(poly, nodes, triangles, ends=True):
-    new_nodes = np.copy(nodes)
+def _draw_polygon_2D(poly, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, inv_affine, holes, el_layer, loop_count, ends=True):
+    moved_tr_nodes = np.copy(tr_nodes)
+    moved_th_nodes = np.copy(th_nodes)
     moved = []
     for v in range(len(poly)):
         if v == len(poly) - 1:
@@ -477,38 +571,14 @@ def _draw_polygon_2D(poly, nodes, triangles, ends=True):
         else:
             next_v = v+1
         vertices = poly[[v, next_v]]
-        new_nodes, m = _make_line(vertices, new_nodes, triangles, ends=ends)
+        moved_tr_nodes, moved_th_nodes, m = _make_line(vertices, moved_tr_nodes, moved_th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, poly, inv_affine, holes, el_layer, loop_count, ends=ends)
         moved.append(m)
 
     moved = [n for m in moved for n in m]
-    return new_nodes, moved
+
+    return moved_tr_nodes, moved_th_nodes, moved
 
 
-def _optimize_2D(nodes, triangles, stay=[]):
-    ''' Optimize the locations of the points by moving them towards the center
-    of their patch. This is done iterativally for all points for a number of
-    iterations and using a .05 step length'''
-    edges, tr_edges, adjacency_list = _edge_list(triangles)
-    boundary = edges[adjacency_list[:, 1] == -1].reshape(-1)
-    stay = np.union1d(boundary, stay)
-    stay = stay.astype(int)
-    n_iter = 5
-    step_length = .05
-    mean_bar = np.zeros_like(nodes)
-    new_nodes = np.copy(nodes)
-    k = np.bincount(triangles.reshape(-1), minlength=len(nodes))
-    for n in range(n_iter):
-        bar = np.mean(new_nodes[triangles], axis=1)
-        for i in range(2):
-            mean_bar[:, i] = np.bincount(triangles.reshape(-1),
-                                         weights=np.repeat(bar[:, i], 3),
-                                         minlength=len(nodes))
-        mean_bar /= k[:, None]
-        new_nodes += step_length * (mean_bar - new_nodes)
-        new_nodes[stay] = nodes[stay]
-    return new_nodes
-
-    
 def _inside_complex_polygon(poly, nodes, triangles, holes=[], tol=1e-2):
     ''' Determines the triangles inside a complex polygon '''
     avg_l = np.average(
@@ -526,7 +596,7 @@ def _inside_complex_polygon(poly, nodes, triangles, holes=[], tol=1e-2):
 
 
 def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
-                     middle_layer=None):
+                     middle_layer=None, test_gamma=False):
     '''Builds the 3d structure of the electrode '''
     h = np.atleast_1d(height)
     assert np.all(np.array(height) > 0)
@@ -534,21 +604,33 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
     if middle_layer is not None and len(h) < 3:
         raise ValueError('Can only define a middle layer with sandwich'
                          ' electrodes')
-    # Average length of an egde, determined by sampling
-    avg_l = np.average(
-        np.linalg.norm(nodes[triangles[:, 0]] - nodes[triangles[:, 1]], axis=1))
-    tr_inside = _inside_complex_polygon(poly, nodes, triangles, holes=holes, tol=1e-2)
-    if len(tr_inside) == 0:
-        return None
+    
+    if not test_gamma: 
+        # Average length of an egde, determined by sampling
+        avg_l = np.average(
+            np.linalg.norm(nodes[triangles[:, 0]] - nodes[triangles[:, 1]], axis=1))
+        
+        tr_inside = _inside_complex_polygon(poly, nodes, triangles, holes=holes, tol=1e-2)
+        if len(tr_inside) == 0:
+            return None
+        # Find the nodes in the area
+        nodes_inside_num, tr = np.unique(triangles[tr_inside], return_inverse=True)
+
+    else:
+        # Average length of an egdes in roi equals the height in order to build one layer
+        avg_l = height
+
+        nodes_inside_num, tr = np.unique(triangles, return_inverse=True)
+    
+    tr = tr.reshape(-1, 3)
+    nodes_inside = nodes[nodes_inside_num]
+
     # Determine the number of layers
-    n_th_layers = (np.round(h/avg_l)).astype(int)
+    n_th_layers = np.rint(h/avg_l).astype(int)
     n_th_layers[n_th_layers < 1] = 1
     total_layers = np.sum(n_th_layers)
     layer_height = h/n_th_layers
-    # Find the nodes in the area
-    nodes_inside_num, tr = np.unique(triangles[tr_inside], return_inverse=True)
-    tr = tr.reshape(-1, 3)
-    nodes_inside = nodes[nodes_inside_num]
+
     # Create the nodes in the main electrode volume (and also copy the surface ones)
     nodes_3d = np.zeros(((total_layers + 1)*nodes_inside.shape[0], 3), dtype=float)
     nodes_3d[:, :2] = np.tile(nodes_inside, (total_layers + 1, 1))
@@ -565,7 +647,7 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
 
     # Vectors with the corresponding surface node of each electrode node
     corresponding = np.tile(nodes_inside_num, (total_layers + 1, ))
-    # Vector with information on whether or not the poin is in the bottom surface
+    # Vector with information on whether or not the point is in the bottom surface
     in_surface = np.zeros_like(corresponding, dtype=bool)
     in_surface[:n_in_layer] = 1
 
@@ -582,7 +664,11 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
 
     tetrahedra = []
     tetrahedra_idx = []
+    
     count = 0
+    c1 = tr_reordered[:, 1] < tr_reordered[:, 2]
+    c2 = ~c1    
+
     for n, n_l in enumerate(n_th_layers):
         for nn in range(n_l):
             # we should vary the type of prism we get to that the faces are
@@ -622,7 +708,7 @@ def _build_electrode(poly, height, nodes, triangles, holes=[], plug=None,
 
     tetrahedra = np.vstack(tetrahedra)
     tetrahedra_idx = np.hstack(tetrahedra_idx).astype(int)
-    # 3D trianlges
+
     el_triangles = []
     triangles_idx = []
     '''
@@ -722,54 +808,52 @@ def _build_electrode_on_mesh(center, ydir, poly, h, mesh, el_vol_tag, el_surf_ta
 
     R = np.linalg.norm(poly, axis=1).max() * 1.2
 
-    roi_triangles, roi_nodes, triangles = _get_roi(
+    roi_triangles, roi_tr_nodes, triangles, _, _, _ = _get_roi(
              center, R, mesh, mesh_surface=on_top_of)
-    
+        
     # Sometimes the ROI can include nodes inside the head. Figure out the 
     # connected components and take the group, which includes the center node
-    roi_nodes, triangles, roi_triangles = \
-    _remove_unconnected_triangles(mesh, roi_triangles, center, roi_nodes, triangles)
+    roi_tr_nodes, triangles, roi_triangles = \
+    _remove_unconnected_triangles(mesh, roi_triangles, center, roi_tr_nodes, triangles)
     
-    nodes = mesh.nodes[roi_nodes]
+    tr_nodes = mesh.nodes[roi_tr_nodes]
     affine, _ = _get_transform(
         center, ydir, mesh,
         mesh_surface=on_top_of,
-        nodes_roi=roi_nodes
+        nodes_roi=roi_tr_nodes
     )
-    nodes = _apply_affine(affine, nodes)
-    #nodes = affine[:3, :3].dot(nodes.T).T + affine[:3, 3]
-    nodes_z = nodes[:, 2]
-    nodes = nodes[:, :2]
+    tr_nodes = _apply_affine(affine, tr_nodes)
+    tr_nodes_z = tr_nodes[:, 2]
+    tr_nodes = tr_nodes[:, :2]
+
     # Build the electrode
     out = _build_electrode(
-        poly, h, nodes, triangles, holes=holes, plug=plug, middle_layer=middle_layer
+        poly, h, tr_nodes, triangles, holes=holes, plug=plug, middle_layer=middle_layer
     )
     if out is None:
         return mesh
     else:
-        new_nodes, tetrahedra, triangles, corresponding, in_surf, th_tag, tr_tag = out
-    ### Add electrodes to mesh
-    # Transform the nodes back
+        moved_tr_nodes, tetrahedra, triangles, corresponding, in_surf, th_tag, tr_tag = out
+    
+    ### Add electrodes to mesh, transform the nodes back
     inv_affine = np.linalg.inv(affine)
 
-    nodes = np.vstack([nodes.T, nodes_z]).T
-    #nodes = inv_affine[:3, :3].dot(nodes.T).T + inv_affine[:3, 3]
-    nodes = _apply_affine(inv_affine, nodes)
+    tr_nodes = np.vstack([tr_nodes[:, :2].T, tr_nodes_z]).T
+    tr_nodes = _apply_affine(inv_affine, tr_nodes)
 
-    new_nodes[:, 2] += nodes_z[corresponding]
-    new_nodes = new_nodes[~in_surf]
-    #new_nodes = inv_affine[:3, :3].dot(new_nodes.T).T + inv_affine[:3, 3]
-    new_nodes = _apply_affine(inv_affine, new_nodes)
+    moved_tr_nodes[:, 2] += tr_nodes_z[corresponding]
+    moved_tr_nodes = moved_tr_nodes[~in_surf]
+    moved_tr_nodes = _apply_affine(inv_affine, moved_tr_nodes)
 
     # Add nodes to mesh
-    mesh.nodes.node_coord[roi_nodes-1, :] = nodes
+    mesh.nodes.node_coord[roi_tr_nodes-1, :] = tr_nodes
     mesh.nodes.node_coord = np.vstack(
-        [mesh.nodes.node_coord, new_nodes])
+        [mesh.nodes.node_coord, moved_tr_nodes])
 
     # Create dictonary in order to make the elements
     node_dict = np.zeros(len(corresponding), dtype=int)
-    node_dict[in_surf] = roi_nodes[corresponding[in_surf]]
-    node_dict[~in_surf] = 1 + mesh.nodes.nr - len(new_nodes) + np.arange(len(new_nodes))
+    node_dict[in_surf] = roi_tr_nodes[corresponding[in_surf]]
+    node_dict[~in_surf] = 1 + mesh.nodes.nr - len(moved_tr_nodes) + np.arange(len(moved_tr_nodes))
 
     # Tetrahedra tags
     tetra_tags = np.ones_like(th_tag, dtype=int)
@@ -881,7 +965,7 @@ def _create_polygon_from_elec(elec, mesh, skin_tag=[ElementTags.SCALP, ElementTa
         # In this case, we disregard the electrode.center argument
         center = np.average(v, axis=0)
         R = np.linalg.norm(center - v, axis=1).max() * 1.2
-        _, roi_nodes, _ = _get_roi(
+        _, roi_nodes, _, _, _, _ = _get_roi(
             center, R, mesh, mesh_surface=skin_tag
         )
         transform, c = _get_transform(center, None, mesh, mesh_surface=skin_tag,
@@ -970,33 +1054,45 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, Ele
     else:
         R = np.linalg.norm(elec_poly, axis=1).max() * 1.2
 
-    roi_triangles, roi_nodes, triangles = _get_roi(
-    elec_center, R, mesh, mesh_surface=skin_tag)
+
+    roi_triangles, roi_tr_nodes, triangles, roi_tetrahedra, roi_th_nodes, tetrahedra =  _get_roi(
+        elec_center, R, mesh, mesh_surface=skin_tag)
     
     # Sometimes the ROI can include nodes inside the head. Figure out the 
     # connected components and take the group, which includes the center node
-    roi_nodes, triangles, roi_triangles = \
-    _remove_unconnected_triangles(mesh, roi_triangles, elec_center, roi_nodes, triangles)
+    roi_tr_nodes, triangles, roi_triangles = \
+        _remove_unconnected_triangles(mesh, roi_triangles, elec_center, roi_tr_nodes, triangles)
 
-    nodes = mesh.nodes[roi_nodes] 
+    tr_nodes = mesh.nodes[roi_tr_nodes]
+    th_nodes = mesh.nodes[roi_th_nodes]
+    mesh.fix_th_node_ordering()
+
     affine, elec_center = _get_transform(
         elec_center, ydir, mesh,
         mesh_surface=skin_tag,
-        nodes_roi=roi_nodes)
-    nodes = _apply_affine(affine, nodes)
-    nodes_z = nodes[:, 2]
-    nodes = nodes[:, :2]
-    # Draw polygon and  holes
+        nodes_roi=roi_tr_nodes)
+    tr_nodes = _apply_affine(affine, tr_nodes)
+    
+    inv_affine = np.linalg.inv(affine)
+
+    # thickness of one electrode layer like defined in _build_electrode() when calculating gamma metric
+    # for moving nodes. One layer of electrode is built to check quality of electrode tetrahedra.
+    el_layer = np.average(
+            np.linalg.norm(tr_nodes[triangles[:, 0]] - tr_nodes[triangles[:, 1]], axis=1))
+
+    # Draw polygon and holes
     moved = []
     ends = elec.shape != 'ellipse'
-    nodes, m = _draw_polygon_2D(
-            elec_poly, nodes, triangles, ends=ends)
+    for loop_count in range(1,7):
+        tr_nodes, th_nodes, m = _draw_polygon_2D(
+            elec_poly, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, inv_affine, holes_poly, el_layer, loop_count, ends=ends)
     moved.append(m)
 
     for h_p, h in zip(holes_poly, elec.holes):
         ends = h.shape != 'ellipse'
-        nodes, m = _draw_polygon_2D(
-            h_p, nodes, triangles, ends=ends)
+        for loop_count in range(1,7):
+            tr_nodes, th_nodes, m = _draw_polygon_2D(
+                h_p, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, inv_affine, holes_poly, el_layer, loop_count, ends=ends)
         moved.append(m)
 
     if plug_poly is not None:
@@ -1004,26 +1100,25 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, Ele
         if len(plug_center) == 3:
             plug_center = _apply_affine(affine, plug_center[None, :])[0, :2]
             plug_poly += plug_center
-        nodes, m = _draw_polygon_2D(
-            plug_poly, nodes, triangles, ends=ends)
+        for loop_count in range(1,7):
+            tr_nodes, th_nodes, m = _draw_polygon_2D(
+                plug_poly, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, inv_affine, holes_poly, el_layer, loop_count, ends=ends)
         moved.append(m)
 
     if has_sponge:
         ends = sponge_el.shape != 'ellipse'
-        nodes, m = _draw_polygon_2D(
-            sponge_poly, nodes, triangles, ends=ends)
+        for loop_count in range(1,7):
+            tr_nodes, th_nodes, m = _draw_polygon_2D(
+                sponge_poly, tr_nodes, th_nodes, roi_tr_nodes, roi_th_nodes, triangles, tetrahedra, inv_affine, holes_poly, el_layer, loop_count, ends=ends)
         moved.append(m)
 
-    # Optimize positions
+    # Optimize old_positions
     moved = [n for m in moved for n in m]
 
-    nodes = _optimize_2D(nodes, triangles, stay=moved)
+
     # Change the mesh
-    nodes = np.vstack([nodes.T, nodes_z]).T
-    inv_affine = np.linalg.inv(affine)
-    #nodes = inv_affine[:3, :3].dot(nodes.T).T + inv_affine[:3, 3]
-    nodes = _apply_affine(inv_affine, nodes)
-    mesh.nodes.node_coord[roi_nodes-1, :] = nodes
+    tr_nodes = _apply_affine(inv_affine, tr_nodes)
+    mesh.nodes.node_coord[roi_tr_nodes-1, :] = tr_nodes
 
     # Build electrodes
     if plug_poly is None:
@@ -1055,5 +1150,6 @@ def put_electrode_on_mesh(elec, mesh, elec_tag, skin_tag=[ElementTags.SCALP, Ele
             middle_layer=elec_poly)
     else:
         raise ValueError('Electrodes must have 1, 2, or 3 layers')
+
 
     return mesh, elec_tag + plug_add

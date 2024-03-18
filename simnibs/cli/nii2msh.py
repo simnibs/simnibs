@@ -29,7 +29,7 @@ import nibabel
 import simnibs.mesh_tools.mesh_io as mesh_io
 import simnibs.utils.cond_utils
 from simnibs.utils.simnibs_logger import logger
-from ..utils.mesh_element_properties import ElementTags
+from simnibs.utils.mesh_element_properties import ElementTags
 from simnibs import __version__
 
 

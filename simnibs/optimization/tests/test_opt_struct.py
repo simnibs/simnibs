@@ -15,6 +15,8 @@ from ...simulation import sim_struct
 from ...simulation import analytical_solutions
 from .. import opt_struct
 
+NUM_TOL = 1e-8
+
 
 @pytest.fixture()
 def sphere_surf():
@@ -887,9 +889,16 @@ class TestTDCSoptimize:
     @pytest.mark.parametrize('max_tot_c', [2e-3, None])
     @pytest.mark.parametrize('max_ac', [None, 3])
     @pytest.mark.parametrize('n_targets', [1, 3])
-    def test_optimize_norm(self, max_el_c, max_tot_c, max_ac, n_targets, sphere_surf, fn_surf, leadfield_surf):
-
+    def test_optimize_norm(
+        self, max_el_c, max_tot_c, max_ac, n_targets, fn_surf,
+    ):
         intensity = 3e-5
+        # 0.75 is completely heuristic: I simply looked at how well the
+        # intensities were achieved at the time of writing and set the cutoff
+        # so that the tests would pass. However, most were close to 3e-5. In
+        # any case this should catch significantly degraded performance!
+        min_acceptable_intensity = 0.75 * intensity
+
         p = opt_struct.TDCSoptimize(
             leadfield_hdf=fn_surf,
             max_individual_current=max_el_c,
@@ -907,6 +916,8 @@ class TestTDCSoptimize:
             pass
         else:
             currents = p.optimize()
+
+            # check that the constraints are fulfilled
             assert np.isclose(np.sum(currents), 0, atol=1e-6)
             if max_el_c is not None:
                 assert np.max(np.abs(currents)) < max_el_c * 1.05
@@ -914,6 +925,15 @@ class TestTDCSoptimize:
                 assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
             if max_ac is not None:
                 assert np.linalg.norm(currents, 0) <= max_ac
+
+            # check that we reached meaningful target intensities
+            field = p.field(currents)
+            assert all(
+                [t.mean_intensity(field) >= min_acceptable_intensity for t in p.target]
+            )
+            assert all(
+                [t.mean_intensity(field) <= intensity + NUM_TOL for t in p.target]
+            )
 
     def test_field_node(self, leadfield_surf, fn_surf):
         p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)

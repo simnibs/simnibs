@@ -200,7 +200,8 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
             tensors = tensors.dot(M.T)
             tensors = M.dot(tensors.transpose(2, 1, 0)).transpose(2, 0, 1)
         cond.value = tensors.reshape(-1, 9)
-
+        elm_vols = mesh.elements_volumes_and_areas().value
+        
         # VN type conductivities
         if normalize:
             for i, t in enumerate(vol_tags):
@@ -261,8 +262,9 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
                         tensors = _fix_zeros(tensors, c)
                         cond.value[(mesh.elm.tag1 == t) * (mesh.elm.elm_type == 4)] = \
                             tensors.reshape(-1, 9)
-
-                    mean_vol[i] = np.average(eigval.prod(axis=1))
+                    vol_t = elm_vols[(mesh.elm.tag1 == t) * (mesh.elm.elm_type == 4)]
+                    mean_vol[i] = np.sum(eigval.prod(axis=1) * vol_t)/np.sum(vol_t)
+                    
         # Correct the intensity
         if correct_intensity and not normalize:
             num = 0
@@ -281,9 +283,10 @@ def cond2elmdata(mesh, cond_list, anisotropy_volume=None, affine=None,
                     eigval = s * eigval_list[i]
                     eigvec = eigvec_list[i]
                     eigval = _fix_eigv(eigval, max_cond, max_ratio, c)
-                    logger.info(
-                        'Reference conductivity: {0} Mean conductivity: {1}'.format(
-                            c, np.average(eigval.prod(axis=1)) ** (1./3.)))
+                    vol_t = elm_vols[(mesh.elm.tag1 == t) * (mesh.elm.elm_type == 4)]
+                    mean_cond = np.sum(eigval.prod(axis=1) ** (1./3.) * vol_t)/np.sum(vol_t) 
+                    logger.info('Reference conductivity: {0} Mean conductivity: {1}'.format(
+                                c, mean_cond))
                     if excentricity_scaling is not None:
                         eigval = _adjust_excentricity(eigval, excentricity_scaling)
                     tensors = _form_tensors(eigval, eigvec)

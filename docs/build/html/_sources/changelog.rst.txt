@@ -2,18 +2,18 @@
 
 Changelog
 ===========
+4.1.0 
+------
+ * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
+ * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
+ * I/O functions for neuronavigation data have been updated to support new Brainsight version 2.5.3
+
+NOTES & Known issues: see 4.0.0
+ 
 4.0.1
 ------
   * changed Brainsight position import/export to support only NIfTI:Aligned (to avoid ambiguities)
   * small bug fixes
-
-NOTE & Known issues: see 4.0.0
-
-4.1.0 Pre-Release
------------------
- * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
- * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
- * Available on GitHub
 
 4.0.0
 ------
