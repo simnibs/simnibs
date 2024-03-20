@@ -3,12 +3,11 @@ import logging
 import os
 import time
 import glob
-from typing import Callable, Optional
+from typing import Callable, Optional, get_type_hints
 import numpy.typing as npt
 
 import scipy.optimize as opt
 import numpy as np
-from simnibs.mesh_tools import mesh_io
 
 from simnibs.simulation.region_of_interest import (
     RegionOfInterest,
@@ -22,8 +21,9 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilTranslation,
 )
 from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoilElements
+from simnibs.utils.matlab_read import remove_None, try_to_read_matlab_field
 
-from ..simulation.sim_struct import POSITION, SESSION
+from ..simulation.sim_struct import POSITION
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.mesh_element_properties import ElementTags
@@ -32,7 +32,7 @@ from simnibs import Msh
 from simnibs.utils import file_finder
 
 from simnibs.utils import simnibs_logger
-from .. import  __version__
+from .. import __version__
 from simnibs.simulation import sim_struct
 
 
@@ -65,43 +65,69 @@ class TmsFlexOptimization:
     ------------------------
     matlab_struct: (optional) scipy.io.loadmat()
         matlab structure
-
     """
+
+    date: str 
+    time_str: str 
+
+    fnamecoil: str 
+    pos: POSITION 
+
+    fnamehead: str 
+    subpath: str 
+    path_optimization: str 
+    eeg_cap: str 
+    run_simulation: bool
+
+    method: str 
+    roi: RegionOfInterestInitializer 
+    global_translation_ranges: list 
+    global_rotation_ranges: list 
+
+    dither_skip: int 
+    fem_evaluation_cutoff: float 
+
+    direct_eps: float 
+    direct_maxfun: int 
+    direct_maxiter: int
+    direct_locally_biased: bool 
+    direct_vol_tol: float 
+    direct_len_tol: float 
 
     def __init__(self, matlab_struct=None):
         # Date when the session was initiated
-        self.date = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.time_str = time.strftime("%Y%m%d-%H%M%S")
+        self.date: str = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_str: str = time.strftime("%Y%m%d-%H%M%S")
 
-        self.fnamecoil : str = None
-        self.pos : POSITION = None
+        self.fnamecoil: str = None
+        self.pos: POSITION = None
 
-        self.fnamehead : str = None
-        self.subpath : str = None
-        self.path_optimization : str = None
-        self.eeg_cap : str = None
-        self.run_simulation : bool = True
+        self.fnamehead: str = None
+        self.subpath: str = None
+        self.path_optimization: str = None
+        self.eeg_cap: str = None
+        self.run_simulation: bool = True
 
-        self.method : str = None
-        self.roi : RegionOfInterestInitializer = None
-        self.global_translation_ranges : list = None
-        self.global_rotation_ranges : list = None
+        self.method: str = None
+        self.roi: RegionOfInterestInitializer = None
+        self.global_translation_ranges: list = None
+        self.global_rotation_ranges: list = None
 
-        self.dither_skip : int = 6
-        self.fem_evaluation_cutoff : float = 1000
+        self.dither_skip: int = 6
+        self.fem_evaluation_cutoff: float = 1000
 
-        self.direct_eps : float = 0.0001
-        self.direct_maxfun : int = None
-        self.direct_maxiter : int = 1000
-        self.direct_locally_biased : bool = False
-        self.direct_vol_tol : float = None
-        self.direct_len_tol : float = 1e-6
+        self.direct_eps: float = 0.0001
+        self.direct_maxfun: int = None
+        self.direct_maxiter: int = 1000
+        self.direct_locally_biased: bool = False
+        self.direct_vol_tol: float = None
+        self.direct_len_tol: float = 1e-6
 
         self._prepared = False
         self._log_handlers = []
 
-        # if matlab_struct:
-        #    self.read_mat_struct(matlab_struct)
+        if matlab_struct:
+           self.read_mat_struct(matlab_struct)
 
     def add_position(self, position=None):
         """Adds the position to the current optimization
@@ -202,7 +228,7 @@ class TmsFlexOptimization:
 
         self._mesh = Msh(fn=self.fnamehead)
 
-        if self.method == 'emag':
+        if self.method == "emag":
             if self.roi is not None:
                 self.roi.mesh = self._mesh
                 self._roi = self.roi.initialize()
@@ -217,10 +243,10 @@ class TmsFlexOptimization:
 
         self.pos.calc_matsimnibs(self._mesh)
 
-        if self.direct_vol_tol is None: 
-            if self.method == 'distance':
+        if self.direct_vol_tol is None:
+            if self.method == "distance":
                 self.direct_vol_tol = 1e-19
-            else:   
+            else:
                 self.direct_vol_tol = 1e-16
 
         self._prepared = True
@@ -229,7 +255,7 @@ class TmsFlexOptimization:
     def type(self):
         return self.__class__.__name__
 
-    def _set_logger(self, fname_prefix='simnibs_optimization'):
+    def _set_logger(self, fname_prefix="simnibs_optimization"):
         """
         Set-up logger to write to a file
 
@@ -241,11 +267,12 @@ class TmsFlexOptimization:
         if not os.path.isdir(self.path_optimization):
             os.mkdir(self.path_optimization)
         log_fn = os.path.join(
-            self.path_optimization,
-            f'{fname_prefix}_{self.time_str}.log')
-        fh = logging.FileHandler(log_fn, mode='w')
+            self.path_optimization, f"{fname_prefix}_{self.time_str}.log"
+        )
+        fh = logging.FileHandler(log_fn, mode="w")
         formatter = logging.Formatter(
-            f'[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
+            f"[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s"
+        )
         fh.setFormatter(formatter)
         fh.setLevel(logging.DEBUG)
         logger = logging.getLogger("simnibs")
@@ -278,27 +305,43 @@ class TmsFlexOptimization:
 
         self._prepare()
 
-        if self.method == 'emag' and self._roi.n_center == 0:
+        if self.method == "emag" and self._roi.n_center == 0:
             raise ValueError("The region of interest contains no positions")
-        
-        optimization_options_output = f'global_translation_ranges: {self._global_translation_ranges}{os.linesep}'
-        optimization_options_output += f'global_rotation_ranges: {self._global_rotation_ranges}{os.linesep}'
-        optimization_options_output += f'dither_factor: {self.dither_skip}{os.linesep}'
 
-        if self.method == 'emag':
-            optimization_options_output += f'ROI positions: {self._roi.n_center}{os.linesep}'
-            optimization_options_output += f'fem_evaluation_cutoff: {self.fem_evaluation_cutoff}{os.linesep}'
+        optimization_options_output = (
+            f"global_translation_ranges: {self._global_translation_ranges}{os.linesep}"
+        )
+        optimization_options_output += (
+            f"global_rotation_ranges: {self._global_rotation_ranges}{os.linesep}"
+        )
+        optimization_options_output += f"dither_factor: {self.dither_skip}{os.linesep}"
 
-        optimization_options_output += f'direct_eps: {self.direct_eps}{os.linesep}'
-        optimization_options_output += f'direct_maxfun: {self.direct_maxfun}{os.linesep}'
-        optimization_options_output += f'direct_maxiter: {self.direct_maxiter}{os.linesep}'
-        optimization_options_output += f'direct_locally_biased: {self.direct_locally_biased}{os.linesep}'
-        optimization_options_output += f'direct_vol_tol: {self.direct_vol_tol}{os.linesep}'
-        optimization_options_output += f'direct_len_tol: {self.direct_len_tol}'
+        if self.method == "emag":
+            optimization_options_output += (
+                f"ROI positions: {self._roi.n_center}{os.linesep}"
+            )
+            optimization_options_output += (
+                f"fem_evaluation_cutoff: {self.fem_evaluation_cutoff}{os.linesep}"
+            )
 
-        logger.info(f'Optimization options:{os.linesep}{optimization_options_output}')
+        optimization_options_output += f"direct_eps: {self.direct_eps}{os.linesep}"
+        optimization_options_output += (
+            f"direct_maxfun: {self.direct_maxfun}{os.linesep}"
+        )
+        optimization_options_output += (
+            f"direct_maxiter: {self.direct_maxiter}{os.linesep}"
+        )
+        optimization_options_output += (
+            f"direct_locally_biased: {self.direct_locally_biased}{os.linesep}"
+        )
+        optimization_options_output += (
+            f"direct_vol_tol: {self.direct_vol_tol}{os.linesep}"
+        )
+        optimization_options_output += f"direct_len_tol: {self.direct_len_tol}"
 
-        logger.info(f'Running optimization ({self.method})')
+        logger.info(f"Optimization options:{os.linesep}{optimization_options_output}")
+
+        logger.info(f"Running optimization ({self.method})")
         # Run simulations
         if self.method == "distance":
             initial_cost, optimized_cost, opt_matsimnibs, direct = optimize_distance(
@@ -307,70 +350,85 @@ class TmsFlexOptimization:
                 self.pos.matsimnibs,
                 self._global_translation_ranges,
                 self._global_rotation_ranges,
-                True,
-                True,
                 self.dither_skip,
+                True,
+                False,
                 self.direct_eps,
                 self.direct_maxfun,
                 self.direct_maxiter,
                 self.direct_locally_biased,
                 self.direct_vol_tol,
-                self.direct_len_tol
+                self.direct_len_tol,
             )
         elif self.method == "emag":
-            initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = optimize_e_mag(
-                self._coil,
-                self._mesh,
-                self._roi,
-                self.pos.matsimnibs,
-                self._global_translation_ranges,
-                self._global_rotation_ranges,
-                self.dither_skip,
-                self.fem_evaluation_cutoff,
-                self.direct_eps,
-                self.direct_maxfun,
-                self.direct_maxiter,
-                self.direct_locally_biased,
-                self.direct_vol_tol,
-                self.direct_len_tol
+            initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = (
+                optimize_e_mag(
+                    self._coil,
+                    self._mesh,
+                    self._roi,
+                    self.pos.matsimnibs,
+                    self._global_translation_ranges,
+                    self._global_rotation_ranges,
+                    self.dither_skip,
+                    self.fem_evaluation_cutoff,
+                    True,
+                    False,
+                    self.direct_eps,
+                    self.direct_maxfun,
+                    self.direct_maxiter,
+                    self.direct_locally_biased,
+                    self.direct_vol_tol,
+                    self.direct_len_tol,
+                )
             )
         else:
             raise ValueError("method should be 'distance' or 'emag'")
-        
-        logger.info(f'Optimization result:{os.linesep}{direct}{os.linesep}'
-                    f'Initial cost: {initial_cost}{os.linesep}'
-                    f'Optimized cost: {optimized_cost}')
-        if self.method == 'emag':
-            logger.info(f'Optimized mean E-field magnitude in ROI: {optimized_e_mag}')
 
-        logger.info(f'Matsimnibs result:{os.linesep}{opt_matsimnibs}')
-        
-        logger.info(f'Creating Visualizations')
+        logger.info(
+            f"Optimization result:{os.linesep}{direct[0]}{os.linesep}"
+            f"Initial cost: {initial_cost}{os.linesep}"
+            f"Optimized cost: {optimized_cost}"
+        )
+        if self.method == "emag":
+            logger.info(f"Optimized mean E-field magnitude in ROI: {optimized_e_mag}")
 
-        skin_mesh = self._mesh.crop_mesh(tags = [ElementTags.SCALP_TH_SURFACE])
+        logger.info(f"Matsimnibs result:{os.linesep}{opt_matsimnibs}")
+
+        logger.info(f"Creating Visualizations")
+
+        skin_mesh = self._mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
         mesh_name = os.path.splitext(os.path.basename(self._mesh.fn))[0]
-        coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0] 
-        fn_geo = os.path.join(self.path_optimization, f'{mesh_name}_{coil_name}_optimization.geo')
-        fn_out = os.path.join(self.path_optimization, f'{mesh_name}_{coil_name}_optimization.msh')
+        coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
+        fn_geo = os.path.join(
+            self.path_optimization, f"{mesh_name}_{coil_name}_optimization.geo"
+        )
+        fn_out = os.path.join(
+            self.path_optimization, f"{mesh_name}_{coil_name}_optimization.msh"
+        )
 
         skin_mesh.write(fn_out)
-        v = self._mesh.view(
-            visible_tags=[ElementTags.SCALP_TH_SURFACE.value])
-        self._coil.append_simulation_visualization(v, fn_geo, skin_mesh, self.pos.matsimnibs, visibility=0, infix='-initial')
-        self._coil.append_simulation_visualization(v, fn_geo, skin_mesh, opt_matsimnibs, infix='-optimized')
+        v = self._mesh.view(visible_tags=[ElementTags.SCALP_TH_SURFACE.value])
+        self._coil.append_simulation_visualization(
+            v, fn_geo, skin_mesh, self.pos.matsimnibs, visibility=0, infix="-initial"
+        )
+        self._coil.append_simulation_visualization(
+            v, fn_geo, skin_mesh, opt_matsimnibs, infix="-optimized"
+        )
 
-        fn_optimized_coil = os.path.join(self.path_optimization, f'{mesh_name}_{coil_name}_optimized.tcd')
+        fn_optimized_coil = os.path.join(
+            self.path_optimization, f"{mesh_name}_{coil_name}_optimized.tcd"
+        )
         self._coil.freeze_deformations().write(fn_optimized_coil)
 
         v.add_merge(fn_geo)
         v.write_opt(fn_out)
 
-        logger.info(f'Creating Simulation')
+        logger.info(f"Creating Simulation")
         S = sim_struct.SESSION()
-        S.subpath = self.subpath 
+        S.subpath = self.subpath
         S.fnamehead = self.fnamehead
 
-        S.pathfem = os.path.join(self.path_optimization, 'tms_simulation') 
+        S.pathfem = os.path.join(self.path_optimization, "tms_simulation")
 
         ## Define the TMS simulation
         tms = S.add_tmslist()
@@ -379,15 +437,67 @@ class TmsFlexOptimization:
         # Define the coil position
         pos = tms.add_position(self.pos)
         pos.matsimnibs = opt_matsimnibs
-       
+
         fn_sim = os.path.join(
-            self.path_optimization,
-            f'optimized_simnibs_simulation_{self.time_str}.mat')
+            self.path_optimization, f"optimized_simnibs_simulation_{self.time_str}.mat"
+        )
         sim_struct.save_matlab_sim_struct(S, fn_sim)
 
         if self.run_simulation:
             S.run()
-        
+
+    def to_mat(self):
+        """ Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+
+        Returns
+        --------------------
+        dict
+            Dictionaty for usage with scipy.io.savemat
+        """
+        mat = {
+            key:remove_None(value) for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+        }
+        mat['type'] = 'TmsFlexOptimize'
+
+        pos_dt = np.dtype([('type', 'O'),
+                           ('name', 'O'), ('date', 'O'),
+                           ('matsimnibs', 'O'), ('didt', 'O'),
+                           ('fnamefem', 'O'), ('centre', 'O'),
+                           ('pos_ydir', 'O'), ('distance', 'O')])
+
+        pos_array = np.array([('POSITION', remove_None(self.pos.name),
+                                remove_None(self.pos.date),
+                                remove_None(self.pos.matsimnibs),
+                                remove_None(self.pos.didt),
+                                remove_None(self.pos.fnamefem),
+                                remove_None(self.pos.centre),
+                                remove_None(self.pos.pos_ydir),
+                                remove_None(self.pos.distance))],
+                                dtype=pos_dt)
+        mat['pos'] = pos_array
+        return mat
+    
+    def read_mat_struct(self, mat):
+        """ Reads parameters from matlab structure
+
+        Parameters
+        ----------
+        mat: scipy.io.loadmat
+            Loaded matlab structure
+        """
+        types = get_type_hints(TmsFlexOptimization)
+        for key, value in self.__dict__.items():
+            if key in mat:
+                setattr(self, key, try_to_read_matlab_field(mat, key, types[key], value))
+
+        if 'pos' in mat:
+            self.pos = POSITION(mat['pos'])
+
+        return self
 
 
 def _get_fast_distance_score(
@@ -570,12 +680,12 @@ def optimize_distance(
     dither_skip=0,
     global_optimization: bool = True,
     local_optimization: bool = False,
-    direct_eps = 1e-4,
-    direct_maxfun = None,
-    direct_maxiter = 1000,
-    direct_locally_biased = False,
-    direct_vol_tol = 1e-19,
-    direct_len_tol = 1e-6,
+    direct_eps=1e-4,
+    direct_maxfun=None,
+    direct_maxiter=1000,
+    direct_locally_biased=False,
+    direct_vol_tol=1e-19,
+    direct_len_tol=1e-6,
 ) -> tuple[float, float, npt.NDArray[np.float_]]:
     """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
     and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -693,12 +803,12 @@ def optimize_distance(
         direct = opt.direct(
             cost_f_x0_w,
             bounds=optimization_ranges,
-            eps = direct_eps,
-            maxfun = direct_maxfun,
-            maxiter = direct_maxiter,
-            locally_biased = direct_locally_biased,
-            vol_tol = direct_vol_tol,
-            len_tol = direct_len_tol,
+            eps=direct_eps,
+            maxfun=direct_maxfun,
+            maxiter=direct_maxiter,
+            locally_biased=direct_locally_biased,
+            vol_tol=direct_vol_tol,
+            len_tol=direct_len_tol,
         )
         best_deformation_settings = direct.x
 
@@ -707,14 +817,22 @@ def optimize_distance(
         ):
             coil_deformation.current = deformation_setting
         opt_results.append(direct)
-    
+
     if local_optimization:
         for global_deformation in global_deformations:
             global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in coil.get_deformation_ranges()]
+            [
+                coil_deformation.current
+                for coil_deformation in coil.get_deformation_ranges()
+            ]
         )
-        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, bounds= [deform.range for deform in coil_deformation_ranges], method='Nelder-Mead')
+        local_opt = opt.minimize(
+            cost_f_x0_w,
+            x0=initial_deformation_settings,
+            bounds=[deform.range for deform in coil_deformation_ranges],
+            method="Nelder-Mead",
+        )
 
         best_deformation_settings = local_opt.x
 
@@ -934,12 +1052,12 @@ def optimize_e_mag(
     fem_evaluation_cutoff=1000,
     global_optimization: bool = True,
     local_optimization: bool = False,
-    direct_eps = 1e-4,
-    direct_maxfun = None,
-    direct_maxiter = 1000,
-    direct_locally_biased = False,
-    direct_vol_tol = 1e-16,
-    direct_len_tol = 1e-6,
+    direct_eps=1e-4,
+    direct_maxfun=None,
+    direct_maxiter=1000,
+    direct_locally_biased=False,
+    direct_vol_tol=1e-16,
+    direct_len_tol=1e-6,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_]]:
     """Optimizes the deformations of the coil elements to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
@@ -1070,12 +1188,12 @@ def optimize_e_mag(
         direct = opt.direct(
             cost_f_x0_w,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            eps = direct_eps,
-            maxfun = direct_maxfun,
-            maxiter = direct_maxiter,
-            locally_biased = direct_locally_biased,
-            vol_tol = direct_vol_tol,
-            len_tol = direct_len_tol,
+            eps=direct_eps,
+            maxfun=direct_maxfun,
+            maxiter=direct_maxiter,
+            locally_biased=direct_locally_biased,
+            vol_tol=direct_vol_tol,
+            len_tol=direct_len_tol,
         )
         best_deformation_settings = direct.x
 
@@ -1089,9 +1207,18 @@ def optimize_e_mag(
         for global_deformation in global_deformations:
             global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
         initial_deformation_settings = np.array(
-            [coil_deformation.current for coil_deformation in coil_sampled.get_deformation_ranges()]
+            [
+                coil_deformation.current
+                for coil_deformation in coil_sampled.get_deformation_ranges()
+            ]
         )
-        local_opt = opt.minimize(cost_f_x0_w, x0=initial_deformation_settings, bounds=[deform.range for deform in coil_deformation_ranges], method='Nelder-Mead')
+        local_opt = opt.minimize(
+            cost_f_x0_w,
+            x0=initial_deformation_settings,
+            bounds=[deform.range for deform in coil_deformation_ranges],
+            method="BFGS",
+            options={'eps': 1}
+        )
 
         best_deformation_settings = local_opt.x
 
