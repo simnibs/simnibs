@@ -1216,8 +1216,8 @@ def optimize_e_mag(
             cost_f_x0_w,
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            method="BFGS",
-            options={'eps': 1}
+            method="L-BFGS-B",
+            options={'eps': 1, 'maxls': 100}
         )
 
         best_deformation_settings = local_opt.x
