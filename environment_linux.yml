@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.11
+  - numpy
   - pyopengl
   - pytest
   - cython
@@ -11,27 +12,22 @@ dependencies:
   - requests
   - freeglut
   - pip
-  - boost
-  - cgal=5.5.1
-  - eigen=3.3.7
-  - mpfr
-  - gmp
+  - cgal-cpp=5.4
   - libwebp
   - pillow
+  - scipy
+  - h5py
+  - nibabel
+  - jsonschema
+  - tbb-devel
+  - numba
+  - matplotlib
+  - seaborn
+  - pyqt
+  - mkl
+  - packaging
+  - PySide2
   - pip:
-    - numpy
     - fmm3dpy==1.0.0
     - charm_gems==1.3.3
     - pygpc==0.3.8
-    - scipy
-    - h5py
-    - nibabel
-    - jsonschema
-    - tbb-devel
-    - numba
-    - matplotlib
-    - seaborn
-    - PyQt5
-    - mkl
-    - packaging
-    - PySide2
