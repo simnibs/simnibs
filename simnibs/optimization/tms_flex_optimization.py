@@ -544,12 +544,11 @@ def _get_fast_distance_score(
 
     return np.mean(np.abs(distance_function(min_distance_points)))
 
-
+import scipy
 def _get_fast_intersection_penalty(
     element_voxel_volumes: dict,
     element_voxel_indexes,
-    element_dither_factors,
-    element_voxel_length,
+    element_voxel_dither_factors,
     element_voxel_affines: dict,
     target_voxel_distance,
     target_voxel_affine,
@@ -596,8 +595,7 @@ def _get_fast_intersection_penalty(
     target_voxel_inv_affine = np.linalg.inv(target_voxel_affine)
     weighted_target_intersection_quibic_mm = 0
     for element in element_voxel_volumes:
-        dither_factor = element_dither_factors[element]
-        voxel_length = element_voxel_length[element]
+        dither_factors = element_voxel_dither_factors[element]
         indexes_in_vox1 = element_voxel_indexes[element]
         element_voxel_affine = element_voxel_affines[element]
         vox_to_vox_affine = (
@@ -606,32 +604,37 @@ def _get_fast_intersection_penalty(
         indexes_in_vox2 = (
             vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
             + vox_to_vox_affine[:3, 3, None]
-        ).T.astype(np.int32)
-        index_mask = np.all(
-            np.logical_and(
-                ~np.signbit(indexes_in_vox2),
-                indexes_in_vox2 < target_voxel_distance.shape,
-            ),
-            axis=1,
         )
+        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=1)
+        weighted_target_intersection_quibic_mm += np.sum(intersections * dither_factors)
+        #indexes_in_vox2 = (
+        #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
+        #    + vox_to_vox_affine[:3, 3, None]
+        #).T.astype(np.int32)
+        #index_mask = np.all(
+        #    np.logical_and(
+        #        ~np.signbit(indexes_in_vox2),
+        #        indexes_in_vox2 < target_voxel_distance.shape,
+        #    ),
+        #    axis=1,
+        #)
 
-        masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-        masked_length = np.count_nonzero(index_mask[:voxel_length])
-        intersections = target_voxel_distance[
-            masked_indexes_in_vox2[:, 0],
-            masked_indexes_in_vox2[:, 1],
-            masked_indexes_in_vox2[:, 2],
-        ]
+        #masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
+        #masked_length = np.count_nonzero(index_mask[:voxel_length])
+        #intersections = target_voxel_distance[
+        #    masked_indexes_in_vox2[:, 0],
+        #    masked_indexes_in_vox2[:, 1],
+        #    masked_indexes_in_vox2[:, 2],
+        #]
 
-        weighted_target_intersection_quibic_mm += np.sum(
-            intersections[:masked_length]
-        ) * dither_factor + np.sum(intersections[masked_length:])
+        #weighted_target_intersection_quibic_mm += np.sum(
+        #    intersections[:masked_length]
+        #) * dither_factor + np.sum(intersections[masked_length:])
 
     self_intersection_quibic_mm = 0
     for intersection_group in self_intersection_elements:
         for intersection_pair in itertools.combinations(intersection_group, 2):
-            dither_factor = element_dither_factors[intersection_pair[0]]
-            voxel_length = element_voxel_length[intersection_pair[0]]
+            dither_factors = element_voxel_dither_factors[intersection_pair[0]]
             vox_to_vox_affine = (
                 np.linalg.inv(element_voxel_affines[intersection_pair[1]])
                 @ element_inv_affines[intersection_pair[1]]
@@ -642,28 +645,35 @@ def _get_fast_intersection_penalty(
             indexes_in_vox2 = (
                 vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
                 + vox_to_vox_affine[:3, 3, None]
-            ).T.astype(np.int32)
-
-            voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
-            index_mask = np.all(
-                np.logical_and(
-                    ~np.signbit(indexes_in_vox2),
-                    indexes_in_vox2 < voxel_volume1.shape,
-                ),
-                axis=1,
             )
+            voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
+            intersections = scipy.ndimage.map_coordinates(voxel_volume1, indexes_in_vox2, order=1)
+            self_intersection_quibic_mm += np.sum(intersections * dither_factors)
+            #indexes_in_vox2 = (
+            #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
+            #    + vox_to_vox_affine[:3, 3, None]
+            #).T.astype(np.int32)
 
-            masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-            masked_length = np.count_nonzero(index_mask[:voxel_length])
-            intersections = voxel_volume1[
-                masked_indexes_in_vox2[:, 0],
-                masked_indexes_in_vox2[:, 1],
-                masked_indexes_in_vox2[:, 2],
-            ]
+            #voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
+            #index_mask = np.all(
+            #    np.logical_and(
+            #        ~np.signbit(indexes_in_vox2),
+            #        indexes_in_vox2 < voxel_volume1.shape,
+            #    ),
+            #    axis=1,
+            #)
 
-            self_intersection_quibic_mm += np.count_nonzero(
-                intersections[:masked_length]
-            ) * dither_factor + np.count_nonzero(intersections[masked_length:])
+            #masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
+            #masked_length = np.count_nonzero(index_mask[:voxel_length])
+            #intersections = voxel_volume1[
+            #    masked_indexes_in_vox2[:, 0],
+            #    masked_indexes_in_vox2[:, 1],
+            #    masked_indexes_in_vox2[:, 2],
+            #]
+
+            #self_intersection_quibic_mm += np.count_nonzero(
+            #    intersections[:masked_length]
+            #) * dither_factor + np.count_nonzero(intersections[masked_length:])
 
     return (
         weighted_target_intersection_quibic_mm,
@@ -748,8 +758,7 @@ def optimize_distance(
     (
         element_voxel_volume,
         element_voxel_indexes,
-        element_dither_factors,
-        element_voxel_length,
+        element_voxel_dither_factors,
         element_voxel_affine,
         self_intersection_elements,
     ) = get_voxel_volume(coil, global_deformations, dither_skip=dither_skip)
@@ -776,8 +785,7 @@ def optimize_distance(
         ) = _get_fast_intersection_penalty(
             element_voxel_volume,
             element_voxel_indexes,
-            element_dither_factors,
-            element_voxel_length,
+            element_voxel_dither_factors,
             element_voxel_affine,
             target_voxel_distance_inside,
             target_voxel_affine,
@@ -819,19 +827,12 @@ def optimize_distance(
         opt_results.append(direct)
 
     if local_optimization:
-        for global_deformation in global_deformations:
-            global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
-        initial_deformation_settings = np.array(
-            [
-                coil_deformation.current
-                for coil_deformation in coil.get_deformation_ranges()
-            ]
-        )
         local_opt = opt.minimize(
             cost_f_x0_w,
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            method="Nelder-Mead",
+            method="L-BFGS-B",
+            options={'maxls': 100}
         )
 
         best_deformation_settings = local_opt.x
@@ -880,10 +881,8 @@ def get_voxel_volume(
         The voxel volume (True inside, False outside) of each coil element
     element_voxel_indexes : dict[TmsCoilElements, npt.NDArray[np.int_]]
         The indexes of the inside voxels for each coil element (interior voxel coordinates first, then edge coordinates)
-    element_dither_factors : dict[TmsCoilElements, float]
-        The spacial factor that describes how many voxel are described by each interior dithered voxel for each coil element
-    element_voxel_length : dict[TmsCoilElements, int]
-        THe count of interior voxels (not edges) for each coil element
+    element_voxel_dither_factors : dict[TmsCoilElements, npt.NDArray[float]]
+        The spacial factor that describes how many voxel are described by each interior dithered voxel for each voxel inside the volume for each coil element
     element_voxel_affine : dict[TmsCoilElements, npt.NDArray[np.float_]]
         The affine transformations from world to voxel space for each coil element
     self_intersection_elements : list[TmsCoilElements]
@@ -891,8 +890,7 @@ def get_voxel_volume(
     """
     element_voxel_volume = {}
     element_voxel_indexes = {}
-    element_dither_factors = {}
-    element_voxel_length = {}
+    element_voxel_dither_factors = {}
     element_voxel_affine = {}
     if coil.casing is not None:
         base_element = DipoleElements(
@@ -906,8 +904,7 @@ def get_voxel_volume(
             element_voxel_volume[base_element],
             element_voxel_affine[base_element],
             element_voxel_indexes[base_element],
-            element_dither_factors[base_element],
-            element_voxel_length[base_element],
+            element_voxel_dither_factors[base_element],
             _,
         ) = coil.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
     self_intersection_elements = []
@@ -926,16 +923,14 @@ def get_voxel_volume(
                 element_voxel_volume[element],
                 element_voxel_affine[element],
                 element_voxel_indexes[element],
-                element_dither_factors[element],
-                element_voxel_length[element],
+                element_voxel_dither_factors[element],
                 _,
             ) = element.casing.mesh.get_voxel_volume(dither_skip=dither_skip)
 
     return (
         element_voxel_volume,
         element_voxel_indexes,
-        element_dither_factors,
-        element_voxel_length,
+        element_voxel_dither_factors,
         element_voxel_affine,
         self_intersection_elements,
     )
@@ -1125,8 +1120,7 @@ def optimize_e_mag(
     (
         element_voxel_volume,
         element_voxel_indexes,
-        element_dither_factors,
-        element_voxel_length,
+        element_voxel_dither_factors,
         element_voxel_affine,
         self_intersection_elements,
     ) = get_voxel_volume(coil_sampled, global_deformations, dither_skip=dither_skip)
@@ -1162,8 +1156,7 @@ def optimize_e_mag(
         ) = _get_fast_intersection_penalty(
             element_voxel_volume,
             element_voxel_indexes,
-            element_dither_factors,
-            element_voxel_length,
+            element_voxel_dither_factors,
             element_voxel_affine,
             target_voxel_distance_inside,
             target_voxel_affine,
@@ -1204,20 +1197,12 @@ def optimize_e_mag(
         opt_results.append(direct)
 
     if local_optimization:
-        for global_deformation in global_deformations:
-            global_deformation.deformation_range.range = np.array([-np.inf, np.inf])
-        initial_deformation_settings = np.array(
-            [
-                coil_deformation.current
-                for coil_deformation in coil_sampled.get_deformation_ranges()
-            ]
-        )
         local_opt = opt.minimize(
             cost_f_x0_w,
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
             method="L-BFGS-B",
-            options={'eps': 1, 'maxls': 100}
+            options={'maxls': 100}
         )
 
         best_deformation_settings = local_opt.x

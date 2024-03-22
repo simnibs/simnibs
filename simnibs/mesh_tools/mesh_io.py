@@ -2478,10 +2478,8 @@ class Msh:
             The binary voxel volume
         npt.NDArray[np.float_]
             The affine transformation from voxel to world space
-        element_dither_factors : float
-            The spacial factor that describes how many voxel are described by each interior dithered voxel
-        element_voxel_length : int
-            THe count of interior voxels (not edges) 
+        voxel_dither_factors : npt.NDArray[np.float_]
+            The spacial factor that describes how many voxel are described by each interior dithered voxel for each voxel inside the volume
         pyAABBTree
             The AABBTree used
         """
@@ -2520,13 +2518,14 @@ class Msh:
             voxel_indexes = np.argwhere(scipy.ndimage.binary_erosion(grid) & dithered_grid).astype(np.int32)
             voxel_length = len(voxel_indexes)
             voxel_indexes = np.append(voxel_indexes, edge_indexes, axis=0)
-            dither_factor = dither_skip * (dither_skip / 2) ** 2
+            voxel_dither_factors = np.ones(len(voxel_indexes))
+            voxel_dither_factors[:voxel_length] = dither_skip * (dither_skip / 2) ** 2
         else:
             voxel_indexes = np.argwhere(grid).astype(np.int32)
-            voxel_length = len(voxel_indexes)
-            dither_factor = 1
+            voxel_dither_factors = np.ones(len(voxel_indexes))
 
-        return grid, M, voxel_indexes, dither_factor, voxel_length,  AABBTree
+
+        return grid, M, voxel_indexes, voxel_dither_factors,  AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
