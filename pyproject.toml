@@ -12,7 +12,7 @@ description = "Simulation of Non-Invasive Brain Stimulation"
 # long_description_content_type = text/markdown
 # dynamic = ["version"]
 # version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
-version = v4.1.0
+version = "v4.1.0"
 requires-python = ">=3.9"
 
 dependencies =[
