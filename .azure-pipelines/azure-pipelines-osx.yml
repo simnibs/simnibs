@@ -44,7 +44,7 @@ jobs:
   # https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
   - bash: |
 #      xcrun altool --notarize-app -u "$ALTOOL_USER" -p "$ALTOOL_PASSWORD" -f $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg --primary-bundle-id "org.simnibs.pkg"
-       xcrun notarytool submit --apple-id "$APPLEID" --team-id "$TEAMID" --password "$APP_PASSWD) --wait $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg
+       xcrun notarytool submit --apple-id "$APPLEID" --team-id "$TEAMID" --password "$APP_PASSWD" --wait $(Build.ArtifactStagingDirectory)/simnibs_installer_macos.pkg
     env:
       APPLEID: $(APPLEID)
       TEAMID: $(TEAMID)
