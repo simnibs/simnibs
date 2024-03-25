@@ -14,6 +14,7 @@ from ...mesh_tools import mesh_io
 from ...simulation import sim_struct
 from ...simulation import analytical_solutions
 from .. import opt_struct
+from .. import tdcs_optimization
 
 
 @pytest.fixture()
@@ -222,7 +223,7 @@ class TestTMSOpt:
         assert np.allclose(E_analytical, E_fem, rtol=0.1)
 
 
-    @patch('simnibs.optimization.optimize_tms.get_opt_grid_ADM')
+    @patch('simnibs.optimization.tms_optimization.get_opt_grid_ADM')
     def test_reciprocal(self, get_opt_grid_mock, sphere_msh, simple_coil_ccd):
         tms_opt = opt_struct.TMSoptimize()
         tms_opt.fnamecoil = simple_coil_ccd
@@ -284,7 +285,7 @@ class TestTMSOpt:
 class TestFindIndexes:
     @pytest.mark.parametrize('indexes', [3, [5, 2]])
     def test_find_indexes_idx_node(self, indexes, sphere_surf):
-        idx, mapping = opt_struct._find_indexes(sphere_surf, 'node',
+        idx, mapping = tdcs_optimization._find_indexes(sphere_surf, 'node',
                                                  indexes=indexes)
 
         assert np.all(np.atleast_1d(idx) == indexes)
@@ -292,7 +293,7 @@ class TestFindIndexes:
 
     @pytest.mark.parametrize('indexes', [3, [5, 2]])
     def test_find_indexes_idx_element(self, indexes, sphere_surf):
-        idx, mapping = opt_struct._find_indexes(sphere_surf, 'element',
+        idx, mapping = tdcs_optimization._find_indexes(sphere_surf, 'element',
                                                  indexes=indexes)
 
         assert np.all(np.atleast_1d(idx) == indexes)
@@ -303,7 +304,7 @@ class TestFindIndexes:
     @pytest.mark.parametrize('pos', [[85., 0., 0.], [[85., 0., 0.], [0., 85., 0.]]])
     @pytest.mark.parametrize('tissues', [None, [1004]])
     def test_find_indexes_pos_node(self, tissues, pos, sphere_surf, r):
-        index, mapping = opt_struct._find_indexes(
+        index, mapping = tdcs_optimization._find_indexes(
             sphere_surf, 'node',
             positions=pos, radius=r,
             tissues=tissues)
@@ -337,7 +338,7 @@ class TestFindIndexes:
     @pytest.mark.parametrize('pos', [[85., 0., 0.], [[85., 0., 0.], [0., 85., 0.]]])
     @pytest.mark.parametrize('tissues', [None, [1004]])
     def test_find_indexes_pos_elm(self, tissues, pos, sphere_surf, r):
-        index, mapping = opt_struct._find_indexes(
+        index, mapping = tdcs_optimization._find_indexes(
             sphere_surf, 'element',
             positions=pos, radius=r,
             tissues=tissues)
@@ -373,7 +374,7 @@ class TestFindDirections:
     @pytest.mark.parametrize('idx', [np.array([1]), np.array([1, 2])])
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     def test_find_directions_normal(self, idx, lf_type, sphere_surf):
-        directions = opt_struct._find_directions(
+        directions = tdcs_optimization._find_directions(
             sphere_surf, lf_type, 'normal', idx
         )
         if lf_type == 'node':
@@ -384,21 +385,21 @@ class TestFindDirections:
 
 
     def test_find_directions_defined_1d(self):
-        directions = opt_struct._find_directions(
+        directions = tdcs_optimization._find_directions(
             None, None, [1, 0, 0], [1]
         )
         assert directions.shape == (1, 3)
         assert np.allclose(directions, [[1, 0, 0]])
 
     def test_find_directions_defined_2d(self):
-        directions = opt_struct._find_directions(
+        directions = tdcs_optimization._find_directions(
             None, None, [[1, 0, 0], [0, 1, 0]], [1, 2]
         )
         assert directions.shape == (2, 3)
         assert np.allclose(directions, [[1, 0, 0], [0, 1, 0]])
 
     def test_find_directions_defined_1_to_2(self):
-        directions = opt_struct._find_directions(
+        directions = tdcs_optimization._find_directions(
             None, None, [1, 0, 0], [1, 2], [1, 2]
         )
         assert directions.shape == (2, 3)
@@ -406,7 +407,7 @@ class TestFindDirections:
 
 
     def test_find_directions_defined_map(self):
-        directions = opt_struct._find_directions(
+        directions = tdcs_optimization._find_directions(
             None, None, [[1, 0, 0], [0, 1, 0]], [1, 2, 3, 4], [0, 0, 1, 1]
         )
         assert directions.shape == (4, 3)
@@ -416,10 +417,10 @@ class TestFindDirections:
 
 class TestTDCStarget:
     def test_create_mat_struct(self):
-        targets = [opt_struct.TDCStarget(indexes=1, directions=[0, 1, 0], radius=5),
-                   opt_struct.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30,
+        targets = [tdcs_optimization.TDCStarget(indexes=1, directions=[0, 1, 0], radius=5),
+                   tdcs_optimization.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30,
                                           tissues=[3, 4])]
-        m = opt_struct._save_TDCStarget_mat(targets)
+        m = tdcs_optimization._save_TDCStarget_mat(targets)
         assert np.all(m[0]['indexes'] == 1)
         assert np.all(m[0]['directions'] == [0, 1, 0])
         assert np.all(m[0]['radius'] == 5)
@@ -433,7 +434,7 @@ class TestTDCStarget:
              'directions': ['normal'],
              'intensity': [[0.5]], 'max_angle': [[30]],
              'radius': [[4.]], 'tissues': [[3, 2]]}
-        t = opt_struct.TDCStarget.read_mat_struct(m)
+        t = tdcs_optimization.TDCStarget.read_mat_struct(m)
         assert t.indexes == [1]
         assert t.positions is None
         assert t.directions == 'normal'
@@ -446,7 +447,7 @@ class TestTDCStarget:
         m = {'indexes': [''],
              'positions': [[1., 2., 3.]],
              'directions': [[0., 0., 1.]]}
-        t = opt_struct.TDCStarget.read_mat_struct(m)
+        t = tdcs_optimization.TDCStarget.read_mat_struct(m)
         assert t.indexes is None
         assert np.allclose(t.directions, [[0, 0, 1]])
         assert np.allclose(t.positions, [[1, 2, 3]])
@@ -455,21 +456,21 @@ class TestTDCStarget:
 
     def test_read_mat_directions_none(self):
         m = {'directions': ['none']}
-        t = opt_struct.TDCStarget.read_mat_struct(m)
+        t = tdcs_optimization.TDCStarget.read_mat_struct(m)
         assert t.directions is None
 
 
     def test_mat_io(self):
-        targets = [opt_struct.TDCStarget(indexes=1, directions=[0, 1, 0]),
-                   opt_struct.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30)]
-        m = opt_struct._save_TDCStarget_mat(targets)
+        targets = [tdcs_optimization.TDCStarget(indexes=1, directions=[0, 1, 0]),
+                   tdcs_optimization.TDCStarget(indexes=[1, 2], intensity=.3, max_angle=30)]
+        m = tdcs_optimization._save_TDCStarget_mat(targets)
         scipy.io.savemat('tmp.mat', {'targets': m})
         m = scipy.io.loadmat('tmp.mat', struct_as_record=True, squeeze_me=False)
         os.remove('tmp.mat')
-        t = opt_struct.TDCStarget.read_mat_struct(m['targets'][0][0])
+        t = tdcs_optimization.TDCStarget.read_mat_struct(m['targets'][0][0])
         assert t.indexes == [1]
         assert np.allclose(t.directions, [0, 1, 0])
-        t = opt_struct.TDCStarget.read_mat_struct(m['targets'][0][1])
+        t = tdcs_optimization.TDCStarget.read_mat_struct(m['targets'][0][1])
         assert np.all(t.indexes == [1, 2])
         assert t.directions == 'normal'
         assert t.intensity == .3
@@ -479,7 +480,7 @@ class TestTDCStarget:
     def test_get_indexes_and_directions(self, sphere_surf):
         idx = [1]
         directions = [2., 0., 0.]
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -490,7 +491,7 @@ class TestTDCStarget:
     def test_get_indexes_and_directions_none(self, sphere_surf):
         idx = [1]
         directions = None
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -501,7 +502,7 @@ class TestTDCStarget:
     def test_get_indexes_and_directions_2_targets(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.], [0., 3., 0.]]
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -511,7 +512,7 @@ class TestTDCStarget:
     def test_get_indexes_and_directions_2_targets_1_dir(self, sphere_surf):
         idx = [1, 2]
         directions = [[2., 0., 0.]]
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=idx, directions=directions,
             mesh=sphere_surf, lf_type='node')
         id_, dir_ = t.get_indexes_and_directions()
@@ -525,7 +526,7 @@ class TestTDCStarget:
             (sphere_vol.elm.tag1 == 4))[0]
         directions = [[2., 0., 0.]]
 
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             positions=bar[0], directions=directions,
             mesh=sphere_vol, lf_type='element', radius=20, tissues=4)
 
@@ -539,7 +540,7 @@ class TestTDCStarget:
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     @pytest.mark.parametrize('intensity', [0.2, -0.2])
     def test_as_field(self, intensity, lf_type, sphere_surf):
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=[1, 2], directions=[[1, 0, 0], [0, 2, 0]],
             mesh=sphere_surf, lf_type=lf_type, intensity=intensity)
         d = t.as_field()
@@ -549,7 +550,7 @@ class TestTDCStarget:
 
     def test_as_field_radius(self, sphere_vol):
         bar = sphere_vol.elements_baricenters().value
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             positions=bar[0], directions=[[1, 0, 0]],
             mesh=sphere_vol, lf_type='element', intensity=1.,
             radius=20, tissues=4)
@@ -562,7 +563,7 @@ class TestTDCStarget:
 
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     def test_as_field_none(self, lf_type, sphere_surf):
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=[1, 2], directions=None,
             mesh=sphere_surf, lf_type=lf_type, intensity=2
         )
@@ -571,7 +572,7 @@ class TestTDCStarget:
         assert np.allclose(d[3:], 0)
 
     def test_mean_intensity(self, sphere_vol):
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=[1, 2],
             directions=[[1, 0, 0], [0, 1, 0]],
             mesh=sphere_vol, lf_type='element',
@@ -585,7 +586,7 @@ class TestTDCStarget:
         assert np.isclose(t.mean_intensity(f), m)
 
     def test_mean_intensity_none(self, sphere_vol):
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=[1, 2],
             directions=None,
             mesh=sphere_vol, lf_type='element',
@@ -601,7 +602,7 @@ class TestTDCStarget:
 
 
     def test_mean_angle(self, sphere_vol):
-        t = opt_struct.TDCStarget(
+        t = tdcs_optimization.TDCStarget(
             indexes=[1, 2],
             directions=[[1, 0, 0], [0, 1, 0]],
             mesh=sphere_vol, lf_type='element',
@@ -616,10 +617,10 @@ class TestTDCStarget:
 
 class TestTDCSAvoid:
     def test_create_mat_struct(self):
-        targets = [opt_struct.TDCSavoid(indexes=1, radius=5),
-                   opt_struct.TDCSavoid(positions=[1., 0., 3.], weight=1e4,
+        targets = [tdcs_optimization.TDCSavoid(indexes=1, radius=5),
+                   tdcs_optimization.TDCSavoid(positions=[1., 0., 3.], weight=1e4,
                                          tissues=[3, 4])]
-        m = opt_struct._save_TDCSavoid_mat(targets)
+        m = tdcs_optimization._save_TDCSavoid_mat(targets)
         assert np.all(m[0]['indexes'] == 1)
         assert np.all(m[0]['radius'] == 5)
         assert np.all(m[1]['positions'] == [1, 0., 3.])
@@ -631,20 +632,20 @@ class TestTDCSAvoid:
              'weight': [[1e4]],
              'radius': [[4.]],
              'tissues': [[3, 2]]}
-        t = opt_struct.TDCSavoid.read_mat_struct(m)
+        t = tdcs_optimization.TDCSavoid.read_mat_struct(m)
         assert t.indexes == [1]
         assert t.positions is None
         assert t.weight == 1e4
         assert t.radius == 4.
         assert t.tissues == [3, 2]
         m = {'positions': [[1., 2., 3.]]}
-        t = opt_struct.TDCSavoid.read_mat_struct(m)
+        t = tdcs_optimization.TDCSavoid.read_mat_struct(m)
         assert t.indexes is None
         assert np.allclose(t.positions, [[1, 2, 3]])
         assert t.tissues is None
 
     def test_avoid_field_node(self, sphere_surf):
-        a = opt_struct.TDCSavoid(indexes=2,
+        a = tdcs_optimization.TDCSavoid(indexes=2,
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)
@@ -656,7 +657,7 @@ class TestTDCSAvoid:
 
 
     def test_avoid_field_elm(self, sphere_surf):
-        a = opt_struct.TDCSavoid(indexes=2,
+        a = tdcs_optimization.TDCSavoid(indexes=2,
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -667,7 +668,7 @@ class TestTDCSAvoid:
         assert np.allclose(f[~in_r], 1)
 
     def test_avoid_field_none_elm(self, sphere_surf):
-        a = opt_struct.TDCSavoid(tissues=[1003],
+        a = tdcs_optimization.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -677,7 +678,7 @@ class TestTDCSAvoid:
 
     def test_avoid_field_elm_radius(self, sphere_surf):
         bar = sphere_surf.elements_baricenters()[:]
-        a = opt_struct.TDCSavoid(positions=bar[0],
+        a = tdcs_optimization.TDCSavoid(positions=bar[0],
                                   radius=10,
                                   weight=1e4,
                                   lf_type='element',
@@ -689,7 +690,7 @@ class TestTDCSAvoid:
 
 
     def test_avoid_field_none_node(self, sphere_surf):
-        a = opt_struct.TDCSavoid(tissues=[1003],
+        a = tdcs_optimization.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)
@@ -699,7 +700,7 @@ class TestTDCSAvoid:
         assert np.allclose(f[~roi], 1)
 
     def test_avoid_mean_field_norm_elm(self, sphere_surf):
-        a = opt_struct.TDCSavoid(tissues=[1003],
+        a = tdcs_optimization.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='element',
                                   mesh=sphere_surf)
@@ -708,7 +709,7 @@ class TestTDCSAvoid:
         assert np.isclose(a.mean_field_norm_in_region(field), 2)
 
     def test_avoid_mean_field_norm_node(self, sphere_surf):
-        a = opt_struct.TDCSavoid(tissues=[1003],
+        a = tdcs_optimization.TDCSavoid(tissues=[1003],
                                   weight=1e4,
                                   lf_type='node',
                                   mesh=sphere_surf)

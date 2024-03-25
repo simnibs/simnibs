@@ -4,7 +4,7 @@ import simnibs
 import numpy as np
 from ... mesh_tools import mesh_io, surface
 from ... import SIMNIBSDIR
-from .. opt_struct import TESoptimize, valid_skin_region
+from .. tes_flex_optimization import TESoptimize, valid_skin_region
 from ...utils.file_finder import Templates
 
 
