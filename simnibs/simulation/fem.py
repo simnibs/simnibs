@@ -1557,7 +1557,7 @@ def _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs):
     else:
         for stimulator, stimulator_didt in zip(tms_coil.get_elements_grouped_by_stimulators().keys(), didt):
             stimulator.di_dt = stimulator_didt
-    return tms_coil.get_da_dt(mesh, matsimnibs)
+    return tms_coil.get_da_dt(mesh, matsimnibs).node_data2elm_data()
 
 def _finalize_global_solver():
     global tms_global_solver
