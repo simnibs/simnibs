@@ -22,12 +22,258 @@
 
 import os
 import glob
+import re
 import numpy as np
 import fmm3dpy
-import simnibs.simulation.coil_numpy as coil_numpy
 import nibabel as nib
 import time
-from simnibs.simulation.coil_numpy import parseccd
+
+
+def read_ccl(fn):
+    """ reads a ccl file, this format is similar to the ccd format. However,
+    only line segments positions are included (first 3 columns) and an optional
+    weighting in the forth column
+
+    Parameters
+    -----------
+    fn: str
+        name of ccl file
+
+    Returns
+    ----------
+    [pos, m]: list
+        positions of line segments
+    """
+    ccl_file = np.loadtxt(fn, skiprows=2)
+
+    # if there is only 1 dipole, loadtxt return as array of the wrong shape
+    if (len(np.shape(ccl_file)) == 1):
+        a = np.zeros([1, 4])
+        a[0, 0:3] = ccl_file[0:3]
+        a[0, 3:] = ccl_file[3:]
+        ccd_file = a
+
+    return ccd_file[:, 0:3], ccd_file[:, 3:]
+
+def read_ccd(fn):
+    """ reads a ccd file
+
+    Parameters
+    -----------
+    fn: str
+        name of ccd file
+
+    Returns
+    ----------
+    [pos, m]: list
+        position and moment of dipoles
+    """
+    ccd_file = np.loadtxt(fn, skiprows=2)
+
+    # if there is only 1 dipole, loadtxt return as array of the wrong shape
+    if (len(np.shape(ccd_file)) == 1):
+        a = np.zeros([1, 6])
+        a[0, 0:3] = ccd_file[0:3]
+        a[0, 3:] = ccd_file[3:]
+        ccd_file = a
+
+    return ccd_file[:, 0:3], ccd_file[:, 3:]
+
+def parseccd(ccd_file):
+    '''
+    Parse ccd file, and return intended bounding box, resolution and dIdtmax
+        and other fields if available
+
+    Parameters
+    ----------
+    ccd_file : string
+        ccd file to parse
+
+    On ccd file format version 1.1:
+    1) First line is a header line escaped with # which can contain any number
+       of variables in the form variable=value, a few of these variables are
+       reserved as can be seen below, they are separated by semicolons (;).
+    2) The second line is the contains the number of dipoles expected
+       (this is actually not used in practice).
+    3) Third line contains a header text excaped by #, typically:
+       # centers and weighted directions of the elements (magnetic dipoles)
+    4-end) Remaining lines are space separated dipole positions and dipole
+       moments in a string number format readable by numpy. E.g. each line must contain
+       six values: x y z mx my mz, where the first three are x,y and positions
+       in meters, and the remaining three are dipole moments in x,y and z direction
+       in Coulumb * meter per 1 A/s input current.
+       an example could be:
+       0 0 0 0 0 1.0e-03
+       indicating a dipole at position 0,0,0 in z direction with strength
+       0.001 C*m*s/A
+
+    The variables are used to encode additonal optional information in text, specifically:
+    dIdtmax=147,100
+        which would indicate a max dI/dt (at 100% MSO) of 146.9 A/microsecond
+        for first stimulator and 100 A/microsecond for the second stimulator.
+    dIdtstim=162
+        Indicating the max dI/dt reported on the stimulation display of 162,
+        typically this is used to create a rescaled version of the ccd file
+        such that the stimulator reported dI/dt max can be used directly.
+        This is currently only supported for one stimulator.
+    stimulator=Model name 1,Model name 2
+    brand=Brand name 1,Brand name 2
+    coilname=name of coil
+        Indicates the name of the coil for display purposes
+    Some variables are used for expansion in to nifti1 format:
+    x=-300,300
+        Indicates that the ccd file should be expanded into a FOV from
+        x=-300mm to x=300mm, this could also be indicated as x=300
+    y=-300,300
+        The same for y
+    z=-200,200
+        The same for z
+    resolution=3,3,3
+        Indicates that the resolution should be 3mm in x,y and z directions,
+        this could also be given as resolution=3
+
+    The below is an example header line:
+    #Test CCD file;dIdtmax=162;x=300;y=300;z=200;resolution=3;stimulator=MagProX100;brand=MagVenture;
+
+
+    '''
+    def parseField(info, field):
+        try:
+            a = np.fromstring(info[field],sep=',')
+        except:
+            a = None
+        return a
+    if os.path.splitext(ccd_file)[1]=='.ccl':
+        d_position, d_moment = read_ccl(ccd_file)
+    else:
+        d_position, d_moment = read_ccd(ccd_file)
+
+    #reopen to read header
+    f = open(ccd_file,'r')
+    data = f.readline()
+    fields = re.findall(r'(\w*=[^;]*)', data + ';')
+    labels = [f.split('=')[0] for f in fields]
+    values = [f.split('=')[1].rstrip('\n') for f in fields]
+    info = {}
+    for i,label in enumerate(labels):
+        info[label]=values[i]
+
+    #parse bounding box for nii
+    bb = []
+    for dim in ('x','y','z'):
+        a = parseField(info, dim)
+        if a is None:
+            bb.append(None)
+        else:
+            if len(a)<2:
+                bb.append((-np.abs(a),np.abs(a)))
+            else:
+                bb.append(a)
+
+    #parse resolution
+    res = []
+    a = parseField(info, 'resolution')
+    if a is None:
+        res.append(None)
+    else:
+        if len(a)<3:
+            for i in range(len(a),3):
+                a = np.concatenate((a, (a[i-1],)))
+        res = a
+    return d_position, d_moment, bb, res, info
+
+def A_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    '''
+    Get A field from dipoles using FMM3D
+
+    Parameters
+    ----------
+    d_moment : ndarray
+        dipole moments (Nx3).
+    d_position : ndarray
+        dipole positions (Nx3).
+    target_positions : ndarray
+        positions for which to calculate the A field.
+    eps : float
+        Precision. The default is 1e-3
+    direct : bool
+        Set to true to force using direct (naive) approach or False to force use of FMM.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster in these cases.
+        The default is 'auto'
+
+    Returns
+    -------
+    A : ndarray
+        A field at points (M x 3) in Tesla*meter.
+
+    '''
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(charges=d_moment.T, sources=d_position.T,
+                  targets=target_positions.T, nd=3, pgt=2)
+    elif direct is False:
+        #use fmm3dpy to calculate expansion fast
+        out = fmm3dpy.lfmm3d(charges=d_moment.T, eps=eps, sources=d_position.T,
+                  targets=target_positions.T, nd=3, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
+    A = np.empty((target_positions.shape[0], 3), dtype=float)
+    #calculate curl
+    A[:, 0] = (out.gradtarg[1][2] - out.gradtarg[2][1])
+    A[:, 1] = (out.gradtarg[2][0] - out.gradtarg[0][2])
+    A[:, 2] = (out.gradtarg[0][1] - out.gradtarg[1][0])
+    #scale
+    A *= -1e-7
+    return A
+
+def B_from_dipoles(d_moment, d_position, target_positions, eps=1e-3, direct='auto'):
+    '''
+    Get B field from dipoles using FMM3D
+
+    Parameters
+    ----------
+    d_moment : ndarray
+        dipole moments (Nx3).
+    d_position : ndarray
+        dipole positions (Nx3).
+    target_positions : ndarray
+        position for which to calculate the B field.
+    eps : float
+        Precision. The default is 1e-3
+    direct : bool
+        Set to true to force using direct (naive) approach or False to force use of FMM.
+        If set to auto direct method is used for less than 300 dipoles which appears to be faster i these cases.
+        The default is 'auto'
+
+    Returns
+    -------
+    B : ndarray
+        B field at points (M x 3) in Tesla.
+
+    '''
+    #if set to auto use direct methods if # dipoles less than 300
+    if direct=='auto':
+        if d_moment.shape[0]<300:
+            direct = True
+        else:
+            direct = False
+    if direct is True:
+        out = fmm3dpy.l3ddir(dipvec=d_moment.T, sources=d_position.T,
+                  targets=target_positions.T, nd=1, pgt=2)
+    elif direct is False:
+        out = fmm3dpy.lfmm3d(dipvec=d_moment.T, eps=eps, sources=d_position.T,
+                  targets=target_positions.T, nd=1, pgt=2)
+    else:
+        print('Error: direct flag needs to be either "auto", True or False')
+    B = out.gradtarg.T
+    B *= -1e-7
+    return B
+
 
 def writeccd(fn, mpos, m, info=None, extra=None):
     N=m.shape[0]
@@ -111,9 +357,9 @@ def ccd2nifti(ccdfn, info={}, eps=1e-3, Bfield=False):
     xyz = np.array(xyz).reshape((3, len(x) * len(y) * len(z)))
     xyz *= 1.0e-3 #from mm to SI (meters)
     if Bfield:
-        A = coil_numpy.B_from_dipoles(d_moment, d_position, xyz.T)
+        A = B_from_dipoles(d_moment, d_position, xyz.T)
     else:
-        A = coil_numpy.A_from_dipoles(d_moment, d_position, xyz.T)
+        A = A_from_dipoles(d_moment, d_position, xyz.T)
     A = A.reshape((len(x), len(y), len(z), 3))
     #header info
     hdr = nib.Nifti1Header()

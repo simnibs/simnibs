@@ -35,7 +35,6 @@ from . import pygpc
 from ..mesh_tools import mesh_io
 from .sim_struct import SimuList
 from . import fem
-from . import coil_numpy as coil
 from ..utils.simnibs_logger import logger
 
 FIELD_NAME = {'v': 'v', 'E': 'E', 'e': 'magnE', 'J': 'J', 'j': 'magnJ'}

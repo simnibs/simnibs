@@ -19,7 +19,6 @@ from simnibs.utils.mesh_element_properties import ElementTags
 
 from ..mesh_tools import mesh_io
 from ..utils import cond_utils as cond_lib
-from . import coil_numpy as coil_lib
 from . import pardiso
 from . import petsc_solver
 from ..utils.simnibs_logger import logger
@@ -1949,7 +1948,7 @@ def tms_many_simulations(
         for i, matsimnibs, didt in zip(range(n_sims), matsimnibs_list, didt_list):
             logger.info(
                 f'Running Simulation {i+1} out of {n_sims}')
-            dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
+            dAdt = _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs)
             # b = S.assemble_tms_rhs(dAdt)
             b = S.assemble_rhs(dAdt)
             v = S.solve(b)
@@ -2036,10 +2035,11 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     logger.info('Running Simulation {0} out of {1}'.format(
         i+1, tms_many_global_nsims))
     # RHS
-    dAdt = coil_lib.set_up_tms(
-        tms_many_global_solver.mesh,
+    dAdt = _get_da_dt_from_coil(
         tms_many_global_fn_coil,
-        matsimnibs, didt
+        tms_many_global_solver.mesh,
+        didt,
+        matsimnibs
     )
     b = tms_many_global_solver.assemble_rhs(dAdt)
     # Simulate

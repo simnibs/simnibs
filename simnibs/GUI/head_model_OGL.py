@@ -30,7 +30,6 @@ import numpy
 
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
-from ..simulation import coil_numpy as coil
 from ..mesh_tools import surface, mesh_io
 from ..utils.csv_reader import read_csv_positions
 

@@ -12,7 +12,6 @@ import scipy.sparse as sparse
 from ... import SIMNIBSDIR
 from .. import fem
 from .. import analytical_solutions
-from .. import coil_numpy as coil_lib
 from .. import petsc_solver
 from ...mesh_tools import mesh_io
 
@@ -714,7 +713,7 @@ class TestLeadfield:
 class TestTMSMany:
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('n_workers', [1, 2])
-    @patch.object(coil_lib, 'set_up_tms')
+    @patch.object(fem, '_get_da_dt_from_coil')
     def test_many_simulations(self, mock_set_up, n_workers, post_pro, tms_sphere):
         if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows '''
