@@ -5,7 +5,7 @@ import scipy.optimize
 import pytest
 import warnings
 
-from .. import optimization_methods
+from .. import tdcs_optimization
 from ...simulation.analytical_solutions import fibonacci_sphere
 
 @pytest.fixture()
@@ -189,7 +189,7 @@ class TestActiveSetQp:
         C = np.eye(len(l))
         x0 = np.zeros(len(l))
         d = 1e3 * np.ones(C.shape[0])
-        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
+        x = tdcs_optimization._active_set_QP(l, Q, C, d, x0)
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d)
         assert np.isclose(objective(l, Q, 0, x), objective(l, Q, 0, x_sp),
@@ -200,7 +200,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), -np.eye(len(l))])
         x0 = np.zeros(len(l))
         d = 0.3 * np.ones(C.shape[0])
-        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
+        x = tdcs_optimization._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
 
@@ -213,7 +213,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), np.ones(len(l)), -np.eye(len(l)), -np.ones(len(l))])
         x0 = np.zeros(len(l))
         d =  0.3 * np.ones(C.shape[0])
-        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
+        x = tdcs_optimization._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d)
@@ -227,7 +227,7 @@ class TestActiveSetQp:
         b = np.zeros(1)
         x0 = np.zeros(len(l))
         d = 0.3 * np.ones(C.shape[0])
-        x = optimization_methods._active_set_QP(l, Q, C, d, x0, A=A, b=b)
+        x = tdcs_optimization._active_set_QP(l, Q, C, d, x0, A=A, b=b)
         x_sp = optimize_scipy(l, Q, C, d, A, b)
         assert np.isclose(A.dot(x), b)
         assert np.linalg.norm(C.dot(x) <= d + 1e-4)
@@ -241,7 +241,7 @@ class TestActiveSetQp:
         C = np.vstack([np.eye(len(l)), -np.eye(len(l))])
         x0 = 2 * np.ones(len(l))
         d = 2 * np.ones(C.shape[0])
-        x = optimization_methods._active_set_QP(l, Q, C, d, x0)
+        x = tdcs_optimization._active_set_QP(l, Q, C, d, x0)
 
         x_sp = optimize_scipy(l, Q, C, d)
         assert np.linalg.norm(C.dot(x) <= d + 1e-4)
@@ -253,7 +253,7 @@ class TestTESOptimizationProblem():
     def test_calc_Q(self):
         A = np.random.random((2, 5, 3))
         volumes = np.array([1, 2, 2, 2, 4])
-        tes_opt = optimization_methods.TESOptimizationProblem(
+        tes_opt = tdcs_optimization.TESOptimizationProblem(
             A, 1e3, 1e3, volumes
         )
         currents = np.array([1, 0])
@@ -265,7 +265,7 @@ class TestTESOptimizationProblem():
 
     def test_bound_constraints(self):
         A = np.random.random((2, 5, 3))
-        tes_opt = optimization_methods.TESOptimizationProblem(
+        tes_opt = tdcs_optimization.TESOptimizationProblem(
             A, 1e4, 1
         )
         C, d = tes_opt._bound_contraints()
@@ -278,7 +278,7 @@ class TestTESOptimizationProblem():
 
     def test_l1_constraint(self):
         A = np.random.random((2, 5, 3))
-        tes_opt = optimization_methods.TESOptimizationProblem(
+        tes_opt = tdcs_optimization.TESOptimizationProblem(
             A, 1, 1e4
         )
         C, d = tes_opt._l1_constraint()
@@ -290,7 +290,7 @@ class TestTESOptimizationProblem():
 
     def test_l1_constraint_fail(self):
         A = np.random.random((2, 5, 3))
-        tes_opt = optimization_methods.TESOptimizationProblem(
+        tes_opt = tdcs_optimization.TESOptimizationProblem(
             A, 1, 1e4
         )
         C, d = tes_opt._l1_constraint()
@@ -307,7 +307,7 @@ class TestCalcl:
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-        l = optimization_methods._calc_l(A, targets, target_direction, volumes)
+        l = tdcs_optimization._calc_l(A, targets, target_direction, volumes)
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         avg = np.average(field_x[[0, 1]], weights=[1, 2])
@@ -318,7 +318,7 @@ class TestCalcl:
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-        l = optimization_methods._calc_l(
+        l = tdcs_optimization._calc_l(
             A, targets, target_direction, volumes
         )
         currents = [1, 1]
@@ -334,7 +334,7 @@ class TestTESLinearConstrained():
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             A, weights=volumes
         )
         tes_problem.add_linear_constraint(targets, target_direction, 0.2)
@@ -349,7 +349,7 @@ class TestTESLinearConstrained():
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             A, weights=volumes
         )
         tes_problem.add_linear_constraint(targets, target_direction, 0.2)
@@ -362,7 +362,7 @@ class TestTESLinearConstrained():
     def test_calc_many_targets(self):
         A = np.random.random((2, 5, 3))
         volumes = np.array([1, 2, 2, 2, 2])
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             A, weights=volumes
         )
         tes_problem.add_linear_constraint([0], [1, 0, 0], 0.2)
@@ -383,7 +383,7 @@ class TestTESLinearConstrained():
         max_total_current = 0.2
         max_el_current = 0.1
 
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             leadfield, max_total_current, max_el_current
         )
         tes_problem.add_linear_constraint(targets, target_direction, target_mean)
@@ -417,7 +417,7 @@ class TestTESLinearConstrained():
         max_total_current = 0.2
         max_el_current = 0.1
 
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             leadfield, max_total_current, max_el_current
         )
         tes_problem.add_linear_constraint(targets, target_direction, target_mean)
@@ -445,7 +445,7 @@ class TestTESLinearConstrained():
         max_total_current = 0.2
         max_el_current = 0.1
 
-        tes_problem = optimization_methods.TESLinearConstrained(
+        tes_problem = tdcs_optimization.TESLinearConstrained(
             leadfield, max_total_current, max_el_current
         )
         tes_problem.add_linear_constraint([0], [1, 0, 0], 1e-3)
@@ -464,7 +464,7 @@ class TestCalcQnorm:
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         volumes = np.array([1, 2, 2, 2, 4])
-        Qin = optimization_methods._calc_Qnorm(
+        Qin = tdcs_optimization._calc_Qnorm(
             A, targets, volumes,
         )
         currents = np.array([1, 0])
@@ -483,7 +483,7 @@ class TestTESLinearAngleConstrained:
         max_el_current = 2e-3
         max_total_current = 4e-3
         f = .02
-        x = optimization_methods._linear_angle_constrained_tes_opt(
+        x = tdcs_optimization._linear_angle_constrained_tes_opt(
             np.atleast_2d(l), np.atleast_1d(f), Q,
             max_el_current, max_total_current, Q_in, max_angle
         )
@@ -508,7 +508,7 @@ class TestTESLinearAngleConstrained:
         max_el_current = 2e-3
         max_total_current = 4e-3
         f = .02
-        x = optimization_methods._linear_angle_constrained_tes_opt(
+        x = tdcs_optimization._linear_angle_constrained_tes_opt(
             np.atleast_2d(l), np.atleast_1d(f), Q,
             max_el_current, max_total_current, Q_in, max_angle
         )
@@ -523,7 +523,7 @@ class TestTESLinearAngleConstrained:
         max_el_current = 2e-3
         max_total_current = 4e-3
         f = .01
-        x = optimization_methods._linear_angle_constrained_tes_opt(
+        x = tdcs_optimization._linear_angle_constrained_tes_opt(
             np.atleast_2d(l), np.atleast_1d(f), Q,
             max_el_current, max_total_current, Q_in, max_angle
         )
@@ -550,7 +550,7 @@ class TestTESLinearAngleConstrained:
         max_el_current = 0.1
         max_angle = 20
 
-        tes_problem = optimization_methods.TESLinearAngleConstrained(
+        tes_problem = tdcs_optimization.TESLinearAngleConstrained(
             [0], [1, 0, 0], target_intensity, max_angle,
             leadfield, max_total_current,
             max_el_current
@@ -584,8 +584,8 @@ class TestBBAlgorithm:
                 split2 = None
             return ub, lb, split1, split2
 
-        init = optimization_methods.bb_state([], [], list(range(10)))
-        bb_node = optimization_methods.bb_node(init, bounds_func)
+        init = tdcs_optimization.bb_state([], [], list(range(10)))
+        bb_node = tdcs_optimization.bb_node(init, bounds_func)
         assert bb_node.lb_val == 0 + 1 + 2 + 3
         assert bb_node.ub_val == sum(range(10))
         assert np.all(bb_node.child1.active == [])
@@ -623,13 +623,13 @@ class TestBBAlgorithm:
 
             return ub, lb, split1, split2
 
-        init = optimization_methods.bb_state([], [], list(range(10)))
+        init = tdcs_optimization.bb_state([], [], list(range(10)))
         eps = 1e-1
-        final_state = optimization_methods._branch_and_bound(init, bounds_func, eps, 100)
+        final_state = tdcs_optimization._branch_and_bound(init, bounds_func, eps, 100)
         assert np.all(final_state.active == [1, 2, 4, 3])
 
     def test_bb_bounds_tes_problem(self):
-        state = optimization_methods.bb_state([1], [0], [2, 3, 4]) # 1 active, 0 inactive
+        state = tdcs_optimization.bb_state([1], [0], [2, 3, 4]) # 1 active, 0 inactive
         linear = [np.arange(5)[None, :]]
         quadratic = [np.diag(np.arange(5))]
         max_l0 = 3
@@ -642,7 +642,7 @@ class TestBBAlgorithm:
                 (np.array([4, 3, 2]), 4), # Third call (calculation upper bound)
             ]
         )
-        ub, lb, child1, child2 = optimization_methods._bb_bounds_tes_problem(
+        ub, lb, child1, child2 = tdcs_optimization._bb_bounds_tes_problem(
             state, max_l0, linear, quadratic,
             max_el_current, mock_fun,
         )
@@ -678,7 +678,7 @@ class TestLinearElecConstrained:
         target_mean = 5e-2
         n_elec = 4
 
-        tes_problem = optimization_methods.TESLinearElecConstrained(
+        tes_problem = tdcs_optimization.TESLinearElecConstrained(
             n_elec, leadfield, max_total_current, max_el_current
         )
         tes_problem.add_linear_constraint(targets, target_direction, target_mean)
@@ -690,7 +690,7 @@ class TestLinearElecConstrained:
         for c in itertools.combinations(range(6),  n_elec):
             l_ = tes_problem.l[:, c]
             Q_ = tes_problem.Q[np.ix_(c, c)]
-            x_ = optimization_methods._linear_constrained_tes_opt(
+            x_ = tdcs_optimization._linear_constrained_tes_opt(
                 l_, tes_problem.target_means,
                 Q_, max_el_current,
                 max_total_current, log_level=0
@@ -720,7 +720,7 @@ class TestLinearElecConstrained:
         target_mean = 20
         n_elec = 4
 
-        tes_problem = optimization_methods.TESLinearElecConstrained(
+        tes_problem = tdcs_optimization.TESLinearElecConstrained(
             n_elec, leadfield, max_total_current, max_el_current
         )
         tes_problem.add_linear_constraint(targets, target_direction, target_mean)
@@ -753,7 +753,7 @@ class TestLinearAngleElecConstrained:
         max_angle = 40
         n_elec = 4
 
-        tes_problem = optimization_methods.TESLinearAngleElecConstrained(
+        tes_problem = tdcs_optimization.TESLinearAngleElecConstrained(
             n_elec, [0], [1, 0, 0], target_mean, max_angle,
             leadfield, max_total_current, max_el_current
         )
@@ -766,7 +766,7 @@ class TestLinearAngleElecConstrained:
             l_ = tes_problem.l[:, c]
             Q_ = tes_problem.Q[np.ix_(c, c)]
             Qnorm_ = tes_problem.Qnorm[np.ix_(c, c)]
-            x_ = optimization_methods._linear_angle_constrained_tes_opt(
+            x_ = tdcs_optimization._linear_angle_constrained_tes_opt(
                 l_, tes_problem.target_mean,
                 Q_, max_el_current, max_total_current,
                 Qnorm_, max_angle,
@@ -795,7 +795,7 @@ class TestLinearAngleElecConstrained:
         max_angle = 40
         n_elec = 4
 
-        tes_problem = optimization_methods.TESLinearAngleElecConstrained(
+        tes_problem = tdcs_optimization.TESLinearAngleElecConstrained(
             n_elec, [0], [1, 0, 0], target_mean, max_angle,
             leadfield, max_total_current, max_el_current
         )
@@ -808,7 +808,7 @@ class TestLinearAngleElecConstrained:
             l_ = tes_problem.l[:, c]
             Q_ = tes_problem.Q[np.ix_(c, c)]
             Qnorm_ = tes_problem.Qnorm[np.ix_(c, c)]
-            x_ = optimization_methods._linear_angle_constrained_tes_opt(
+            x_ = tdcs_optimization._linear_angle_constrained_tes_opt(
                 l_, tes_problem.target_mean,
                 Q_, max_el_current, max_total_current,
                 Qnorm_, max_angle,
@@ -831,7 +831,7 @@ class TestEqConstrained:
         l, Q, P = optimization_variables
         A = np.ones((1, len(l)))
         b = np.zeros(1)
-        x = optimization_methods._eq_constrained_QP(l, Q, A, b)
+        x = tdcs_optimization._eq_constrained_QP(l, Q, A, b)
 
         ob = lambda x: l.dot(x) + .5 * x.dot(Q.dot(x))
         x0 = np.zeros(Q.shape[0])
@@ -857,7 +857,7 @@ class TestConstrainedEigenvalue:
     def test_constrained_eigv(self):
         A = np.random.rand(5, 100)
         Q = A.dot(A.T)
-        eigvals, eigvec = optimization_methods._constrained_eigenvalue(Q)
+        eigvals, eigvec = tdcs_optimization._constrained_eigenvalue(Q)
         assert np.allclose(np.sum(eigvec, axis=0), 0)
         assert np.allclose(eigvec.T.dot(eigvec)[1:, 1:], np.eye(4))
         assert np.allclose(eigvals, np.diagonal(eigvec.T.dot(Q).dot(eigvec)))
@@ -869,15 +869,15 @@ class TestTESNormContrained:
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
 
-        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        tes_opt = tdcs_optimization.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm = tdcs_optimization._calc_Qnorm(leadfield, 0, np.ones(10))
 
         max_total_current = 0.2
         max_el_current = 0.1
         target_magn = 0.1
 
-        x = optimization_methods._norm_constrained_tes_opt(
+        x = tdcs_optimization._norm_constrained_tes_opt(
             Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
@@ -886,10 +886,10 @@ class TestTESNormContrained:
         directions = fibonacci_sphere(51)
         directions = directions[directions[:, 2] > 0]
         for d in directions:
-            l = optimization_methods._calc_l(
+            l = tdcs_optimization._calc_l(
                 leadfield, 0, d, np.ones(10)
             )
-            x_ = optimization_methods._linear_constrained_tes_opt(
+            x_ = tdcs_optimization._linear_constrained_tes_opt(
                 l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
                 max_total_current, log_level=0
@@ -910,15 +910,15 @@ class TestTESNormContrained:
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
 
-        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        tes_opt = tdcs_optimization.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm = tdcs_optimization._calc_Qnorm(leadfield, 0, np.ones(10))
 
         max_total_current = 0.2
         max_el_current = 0.1
         target_magn = 20
 
-        x = optimization_methods._norm_constrained_tes_opt(
+        x = tdcs_optimization._norm_constrained_tes_opt(
             Qnorm[None, ...], target_magn, Q,
             max_el_current, max_total_current
         )
@@ -927,10 +927,10 @@ class TestTESNormContrained:
         directions = fibonacci_sphere(51)
         directions = directions[directions[:, 2] > 0]
         for d in directions:
-            l = optimization_methods._calc_l(
+            l = tdcs_optimization._calc_l(
                 leadfield, 0, d, np.ones(10)
             )
-            x_ = optimization_methods._linear_constrained_tes_opt(
+            x_ = tdcs_optimization._linear_constrained_tes_opt(
                 l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
                 max_total_current, log_level=0
@@ -950,17 +950,17 @@ class TestTESNormContrained:
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
 
-        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        tes_opt = tdcs_optimization.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm1 = tdcs_optimization._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = tdcs_optimization._calc_Qnorm(leadfield, 1, np.ones(10))
         Qnorm = np.stack([Qnorm1, Qnorm2])
 
         max_total_current = 0.2
         max_el_current = 0.1
         target_magn = np.array([0.1, 0.1])
 
-        x = optimization_methods._norm_constrained_tes_opt(
+        x = tdcs_optimization._norm_constrained_tes_opt(
             Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
@@ -976,17 +976,17 @@ class TestTESNormContrained:
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
 
-        tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
+        tes_opt = tdcs_optimization.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
+        Qnorm1 = tdcs_optimization._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = tdcs_optimization._calc_Qnorm(leadfield, 1, np.ones(10))
         Qnorm = np.stack([Qnorm1, Qnorm2])
 
         max_total_current = 0.2
         max_el_current = 0.1
         target_magn = np.array([0.1, 0.2])
 
-        x = optimization_methods._norm_constrained_tes_opt(
+        x = tdcs_optimization._norm_constrained_tes_opt(
             Qnorm, target_magn, Q,
             max_el_current, max_total_current
         )
@@ -1000,7 +1000,7 @@ class TestTESNormContrained:
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         volumes = np.array([1, 2, 2, 2, 2])
-        tes_problem = optimization_methods.TESNormConstrained(
+        tes_problem = tdcs_optimization.TESNormConstrained(
             A, weights=volumes
         )
         tes_problem.add_norm_constraint(targets, 0.2)
@@ -1019,7 +1019,7 @@ class TestTESNormContrained:
         max_el_current = 0.1
         target_magn = np.array([0.1, 0.1])
 
-        tes_opt = optimization_methods.TESNormConstrained(
+        tes_opt = tdcs_optimization.TESNormConstrained(
             leadfield, max_total_current, max_el_current
         )
         tes_opt.add_norm_constraint(0, target_magn[0])
@@ -1045,7 +1045,7 @@ class TestMagnElecConstrained:
         target_mean = 5e-2
         n_elec = 4
 
-        tes_problem = optimization_methods.TESNormElecConstrained(
+        tes_problem = tdcs_optimization.TESNormElecConstrained(
             n_elec, leadfield, max_total_current, max_el_current
         )
         tes_problem.add_norm_constraint(targets, target_mean)
@@ -1057,7 +1057,7 @@ class TestMagnElecConstrained:
         for c in itertools.combinations(range(6),  n_elec):
             Qnorm_ = tes_problem.Qnorm[0][np.ix_(c, c)]
             Q_ = tes_problem.Q[np.ix_(c, c)]
-            x_ = optimization_methods._norm_constrained_tes_opt(
+            x_ = tdcs_optimization._norm_constrained_tes_opt(
                 Qnorm_, tes_problem.target_means,
                 Q_, max_el_current,
                 max_total_current, log_level=0
@@ -1086,7 +1086,7 @@ class TestMagnElecConstrained:
         target_mean = 20
         n_elec = 4
 
-        tes_problem = optimization_methods.TESNormElecConstrained(
+        tes_problem = tdcs_optimization.TESNormElecConstrained(
             n_elec, leadfield, max_total_current, max_el_current
         )
         tes_problem.add_norm_constraint(targets, target_mean)
@@ -1111,7 +1111,7 @@ class TestDistributed:
         Q = A.T.dot(A)
         l = -2*b.dot(A)
 
-        x = optimization_methods._least_squares_tes_opt(
+        x = tdcs_optimization._least_squares_tes_opt(
             l, Q,
             max_el_current,
             max_total_current,
@@ -1131,10 +1131,10 @@ class TestDistributed:
         target_field = np.zeros((30, 3))
         target_field[0, 0] = 1
 
-        tes_problem = optimization_methods.TESDistributed(
+        tes_problem = tdcs_optimization.TESDistributed(
             leadfield, target_field
         )
-        x = optimization_methods._eq_constrained_QP(
+        x = tdcs_optimization._eq_constrained_QP(
             tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
         )
         field = leadfield.T.dot(x[1:]).T
@@ -1152,10 +1152,10 @@ class TestDistributed:
         weights = np.ones((30, 3))
         weights[0] = [-2, -1, -1]
 
-        tes_problem = optimization_methods.TESDistributed(
+        tes_problem = tdcs_optimization.TESDistributed(
             leadfield, target_field, weights
         )
-        x = optimization_methods._eq_constrained_QP(
+        x = tdcs_optimization._eq_constrained_QP(
             tes_problem.l, 2*tes_problem.Q, np.ones((1, 6)), [0]
         )
         field = leadfield.T.dot(x[1:]).T
@@ -1173,7 +1173,7 @@ class TestDistributed:
         weights = np.ones(30)
         weights[20:] = 0
 
-        tes_problem = optimization_methods.TESDistributed(
+        tes_problem = tdcs_optimization.TESDistributed(
             leadfield, target_field, weights, max_total_current,
             max_el_current
         )
@@ -1209,7 +1209,7 @@ class TestDistributed:
         weights = np.zeros((30, 3))
         weights[:, 1] = 1.
 
-        tes_problem = optimization_methods.TESDistributed(
+        tes_problem = tdcs_optimization.TESDistributed(
             leadfield, target_field, weights, max_total_current,
             max_el_current
         )
@@ -1244,7 +1244,7 @@ class TestDistributedElec:
         weights = np.zeros((30, 3))
         weights[:, 1] = 1.
 
-        tes_problem = optimization_methods.TESDistributedElecConstrained(
+        tes_problem = tdcs_optimization.TESDistributedElecConstrained(
             4, leadfield, target_field,
             weights, max_total_current,
             max_el_current
