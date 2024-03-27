@@ -14,6 +14,7 @@ class ElementTags(IntEnum):
     SPONGY_BONE = 8
     BLOOD = 9
     MUSCLE = 10
+    CARTILAGE = 11
     FAT = 12
     ELECTRODE_RUBBER_START = 100
     ELECTRODE_RUBBER = 100
@@ -35,6 +36,8 @@ class ElementTags(IntEnum):
     SPONGY_BONE_TH_SURFACE = TH_SURFACE_START + SPONGY_BONE
     BLOOD_TH_SURFACE = TH_SURFACE_START + BLOOD
     MUSCLE_TH_SURFACE = TH_SURFACE_START + MUSCLE
+    CARTILAGE_TH_SURFACE = TH_SURFACE_START + CARTILAGE
+    FAT_TH_SURFACE = TH_SURFACE_START + FAT
     ELECTRODE_RUBBER_TH_SURFACE_START = TH_SURFACE_START + ELECTRODE_RUBBER_START
     ELECTRODE_RUBBER_TH_SURFACE = TH_SURFACE_START + ELECTRODE_RUBBER
     ELECTRODE_RUBBER_TH_SURFACE_END = TH_SURFACE_START + ELECTRODE_RUBBER_END
@@ -136,6 +139,8 @@ tissue_tags: list[int] = [
     ElementTags.SPONGY_BONE,
     ElementTags.BLOOD,
     ElementTags.MUSCLE,
+    ElementTags.CARTILAGE,
+    ElementTags.FAT,
     ElementTags.ELECTRODE_RUBBER,
     ElementTags.SALINE,
 ]
@@ -151,6 +156,8 @@ tissue_names: dict[int, str] = {
     ElementTags.SPONGY_BONE: "Spongy_bone",
     ElementTags.BLOOD: "Blood",
     ElementTags.MUSCLE: "Muscle",
+    ElementTags.CARTILAGE: "Cartilage",
+    ElementTags.FAT: "Fat",
     ElementTags.ELECTRODE_RUBBER: "Electrode_rubber",
     ElementTags.SALINE: "Saline",
 }
@@ -166,6 +173,8 @@ tissue_conductivities: dict[int, float] = {
     ElementTags.SPONGY_BONE: 0.025,
     ElementTags.BLOOD: 0.6,
     ElementTags.MUSCLE: 0.16,
+    ElementTags.CARTILAGE: 0.88,
+    ElementTags.FAT: 0.078,
     ElementTags.ELECTRODE_RUBBER: 29.4,
     ElementTags.SALINE: 1.0,
 }
@@ -181,6 +190,8 @@ tissue_conductivity_descriptions: dict[int, str] = {
     ElementTags.SPONGY_BONE: "spongy bone (from Opitz, Paulus, Thielscher, submitted)",
     ElementTags.BLOOD: "Blood (from Gabriel et al, 2009)",
     ElementTags.MUSCLE: "Muscle (from Gabriel et al, 2009)",
+    ElementTags.CARTILAGE: "Cartilage (average of values from Binette et al. 2004 and Morita et al. 2012)",
+    ElementTags.FAT: "Fat (from Gabriel et al, 2009)",
     ElementTags.ELECTRODE_RUBBER: "for tDCS rubber electrodes",
     ElementTags.SALINE: "for tDCS sponge electrodes",
 }
