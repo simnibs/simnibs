@@ -1,28 +1,24 @@
-import itertools
 import json
 import os
 import re
 import shutil
 from copy import deepcopy
-from typing import Callable, Optional
+from typing import Optional
 
 import jsonschema
 import nibabel as nib
 import numpy as np
 import numpy.typing as npt
-import scipy.optimize as opt
 
 from simnibs import __version__
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.gmsh_view import Visualization, _gray_red_lightblue_blue_cm
 from simnibs.mesh_tools.mesh_io import Elements, Msh, NodeData, Nodes
-from simnibs.simulation.region_of_interest import RegionOfInterest
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
 from simnibs.simulation.tms_coil.tms_coil_constants import TmsCoilElementTag
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilDeformation,
     TmsCoilDeformationRange,
-    TmsCoilTranslation,
     TmsCoilRotation,
 )
 from simnibs.simulation.tms_coil.tms_coil_element import (
@@ -35,7 +31,6 @@ from simnibs.simulation.tms_coil.tms_coil_element import (
 from simnibs.simulation.tms_coil.tms_coil_model import TmsCoilModel
 from simnibs.simulation.tms_coil.tms_stimulator import TmsStimulator, TmsWaveform
 from simnibs.utils import file_finder
-from simnibs.utils.mesh_element_properties import ElementTags
 
 
 class TmsCoil(TcdElement):

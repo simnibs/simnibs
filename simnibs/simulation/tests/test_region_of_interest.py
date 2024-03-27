@@ -4,7 +4,7 @@ import simnibs
 import numpy as np
 from ... mesh_tools import mesh_io
 from ... import SIMNIBSDIR
-from .. region_of_interest import RegionOfInterest
+from ..onlinefem import FemTargetPointCloud
 
 
 class TestRegionOfInterest:
@@ -20,18 +20,12 @@ class TestRegionOfInterest:
         center = np.mean(nodes[con, ], axis=1)
         fn_mesh = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
         mesh = mesh_io.read_msh(fn_mesh)
-        roi = RegionOfInterest(center=center,
-                               nodes=nodes,
-                               con=con,
-                               domains=None,
+        roi = FemTargetPointCloud(center=center,
                                mesh=mesh)
 
     def test_RegionOfInterestInitializer_custom_domains(self):
-        domains = [3, 4]
         fn_mesh = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
         mesh = mesh_io.read_msh(fn_mesh)
-        roi = RegionOfInterest(center=None,
-                               nodes=None,
-                               con=None,
-                               domains=domains,
-                               mesh=mesh)
+        roi = FemTargetPointCloud(mesh,
+                                  mesh.elements_baricenters()[(mesh.elm.tag1 == 3) | (mesh.elm.tag1 == 4)]
+                               )

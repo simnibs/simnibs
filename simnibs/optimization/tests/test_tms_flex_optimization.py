@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from simnibs.mesh_tools.mesh_io import Msh
-from simnibs.simulation.region_of_interest import RegionOfInterest
+from simnibs.simulation.onlinefem import FemTargetPointCloud
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.simulation.tms_coil.tms_coil_element import (
     DipoleElements,
@@ -287,7 +287,7 @@ class TestEMagOptimization:
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 50], [0, 0, 0, 1]]
         )
-        roi = RegionOfInterest(
+        roi = FemTargetPointCloud(
             sphere3_msh,
             center=sphere3_msh.elements_baricenters()[sphere3_msh.elm.tag1 == 4],
         )
@@ -334,7 +334,7 @@ class TestEMagOptimization:
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
-        roi = RegionOfInterest(
+        roi = FemTargetPointCloud(
             sphere3_msh,
             center=sphere3_msh.elements_baricenters()[sphere3_msh.elm.tag1 == 4],
         )

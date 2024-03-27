@@ -5,7 +5,7 @@ import numpy as np
 from ... mesh_tools import mesh_io
 from ... import SIMNIBSDIR
 from .. onlinefem import OnlineFEM
-from .. region_of_interest import RegionOfInterest
+from ..onlinefem import FemTargetPointCloud
 
 
 class TestOnlineFEM:
@@ -15,12 +15,10 @@ class TestOnlineFEM:
         mesh = mesh_io.read_msh(fn_mesh)
 
         # roi
-        domains = [3]
-        roi = RegionOfInterest(center=None,
-                               nodes=None,
-                               con=None,
-                               domains=domains,
-                               mesh=mesh)
+        domain = 3
+        roi = FemTargetPointCloud(mesh,
+                                  mesh.elements_baricenters()[mesh.elm.tag1 == domain]
+                               )
 
         # electrode
         electrode_i = simnibs.ElectrodeInitializer()
@@ -63,12 +61,10 @@ class TestOnlineFEM:
         mesh = mesh_io.read_msh(fn_mesh)
 
         # roi
-        domains = [3]
-        roi = RegionOfInterest(center=None,
-                               nodes=None,
-                               con=None,
-                               domains=domains,
-                               mesh=mesh)
+        domain = 3
+        roi = FemTargetPointCloud(mesh,
+                                  mesh.elements_baricenters()[mesh.elm.tag1 == domain]
+                               )
 
         # electrode
         electrode_i = simnibs.ElectrodeInitializer()
@@ -115,12 +111,10 @@ class TestOnlineFEM:
         mesh = mesh_io.read_msh(fn_mesh)
 
         # roi
-        domains = [3]
-        roi = RegionOfInterest(center=None,
-                               nodes=None,
-                               con=None,
-                               domains=domains,
-                               mesh=mesh)
+        domain = 3
+        roi = FemTargetPointCloud(mesh,
+                                  mesh.elements_baricenters()[mesh.elm.tag1 == domain]
+                               )
 
         # coil
         fn_coil = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'testcoil.nii.gz')

@@ -9,9 +9,9 @@ import numpy.typing as npt
 import scipy.optimize as opt
 import numpy as np
 
+from simnibs.simulation.onlinefem import FemTargetPointCloud
 from simnibs.simulation.region_of_interest import (
     RegionOfInterest,
-    RegionOfInterestInitializer,
 )
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.simulation.tms_coil.tms_coil_deformation import (
@@ -80,7 +80,7 @@ class TmsFlexOptimization:
     run_simulation: bool
 
     method: str 
-    roi: RegionOfInterestInitializer 
+    roi: RegionOfInterest 
     global_translation_ranges: list 
     global_rotation_ranges: list 
 
@@ -109,7 +109,7 @@ class TmsFlexOptimization:
         self.run_simulation: bool = True
 
         self.method: str = None
-        self.roi: RegionOfInterestInitializer = None
+        self.roi: RegionOfInterest = None
         self.global_translation_ranges: list = None
         self.global_rotation_ranges: list = None
 
@@ -162,7 +162,7 @@ class TmsFlexOptimization:
             RegionOfInterest structure defining the region of interest
         """
         if roi is None:
-            roi = RegionOfInterestInitializer()
+            roi = RegionOfInterest()
 
         self.roi = roi
         return roi
@@ -231,7 +231,7 @@ class TmsFlexOptimization:
         if self.method == "emag":
             if self.roi is not None:
                 self.roi.mesh = self._mesh
-                self._roi = self.roi.initialize()
+                self._roi = FemTargetPointCloud(self.roi.mesh, self.roi.initialize()) 
             else:
                 raise ValueError("No ROI specified")
 
@@ -1039,7 +1039,7 @@ def add_global_deformations(
 def optimize_e_mag(
     coil,
     head_mesh: Msh,
-    roi: RegionOfInterest,
+    roi: FemTargetPointCloud,
     affine: npt.NDArray[np.float_],
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,

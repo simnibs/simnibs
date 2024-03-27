@@ -22,13 +22,13 @@ from scipy.optimize import (
 
 from ..simulation.sim_struct import ELECTRODE
 from ..simulation.fem import get_dirichlet_node_index_cog
-from ..simulation.region_of_interest import RegionOfInterestInitializer
+from ..simulation.region_of_interest import RegionOfInterest
 from ..simulation.array_layout import (
     create_tdcs_session_from_array,
     CircularArray,
     ElectrodeInitializer,
 )
-from ..simulation.onlinefem import OnlineFEM, postprocess_e
+from ..simulation.onlinefem import FemTargetPointCloud, OnlineFEM, postprocess_e
 from ..mesh_tools import mesh_io, surface
 from ..utils.file_finder import SubjectFiles, Templates
 from ..utils.matlab_read import remove_None
@@ -149,6 +149,9 @@ class TESoptimize:
         # roi
         self.roi = []
         self.n_roi = None
+        self.con = []
+        self.nodes = []
+        self.vol = []
 
         # electrode
         self.electrode = []
@@ -327,13 +330,20 @@ class TESoptimize:
         if type(self.roi) is not list:
             self.roi = [self.roi]
 
-        # initialize ROIs if not done already
-        for i in range(len(self.roi)):
-            if type(self.roi[i]) == RegionOfInterestInitializer:
-                self.roi[i].mesh = self.mesh
-                self.roi[i] = self.roi[i].initialize()
+        if type(self.con) is not list:
+            self.con = [self.con]
 
-        self.n_roi = len(self.roi)
+        if type(self.nodes) is not list:
+            self.nodes = [self.nodes]
+
+        # initialize ROIs if not done already
+        self._roi = []
+        for i in range(len(self.roi)):
+            if type(self.roi[i]) == RegionOfInterest:
+                self.roi[i].mesh = self.mesh
+                self._roi[i] = FemTargetPointCloud(self.roi[i].mesh, self.roi[i].initialize()) 
+
+        self.n_roi = len(self._roi)
 
         # setup electrode
         ################################################################################################################
@@ -408,21 +418,22 @@ class TESoptimize:
             self.weights = None
 
         if self.weights is None:
-            self.weights = np.ones(len(self.roi)) / len(self.roi)
+            self.weights = np.ones(len(self._roi)) / len(self._roi)
         elif type(self.weights) is list:
             self.weights = np.array(self.weights)
 
         if type(self.goal) is not list:
             self.goal = [self.goal]
 
-        if "focality" in self.goal and len(self.goal) != len(self.roi):
-            self.goal = ["focality"] * len(self.roi)
+        if "focality" in self.goal and len(self.goal) != len(self._roi):
+            self.goal = ["focality"] * len(self._roi)
 
         self.goal_dir = []
 
-        for i_roi in range(len(self.roi)):
+        for i_roi in range(len(self._roi)):
+            self.vol[i_roi], triangles_normals = get_element_properties(self.meh, self.roi[i_roi] ,self.nodes[i_roi], self.con[i_roi], len(self._roi[i_roi].center))
             if "normal" in self.e_postproc or "tangential" in self.e_postproc:
-                self.goal_dir.append(self.roi[i_roi].triangles_normals)
+                self.goal_dir.append(triangles_normals)
             else:
                 self.goal_dir.append(None)
 
@@ -441,10 +452,10 @@ class TESoptimize:
         if type(self.e_postproc) is not list:
             self.e_postproc = [self.e_postproc]
 
-        if len(self.e_postproc) != len(self.roi):
-            self.e_postproc = self.e_postproc * len(self.roi)
+        if len(self.e_postproc) != len(self._roi):
+            self.e_postproc = self.e_postproc * len(self._roi)
 
-        if self.track_focality and len(self.roi) != 2:
+        if self.track_focality and len(self._roi) != 2:
             raise ValueError(
                 "Focality can not be computed and tracked with only one ROI (non-ROI missing)."
             )
@@ -455,13 +466,13 @@ class TESoptimize:
             or "focality_inv" in self.goal
         ):
             assert len(self.goal) == len(
-                self.roi
+                self._roi
             ), "Please provide a goal function for each ROI."
             assert len(self.weights) == len(
-                self.roi
+                self._roi
             ), "Number of weights has to match the number ROIs"
 
-        if "focality" in self.goal and len(self.roi) != 2:
+        if "focality" in self.goal and len(self._roi) != 2:
             raise ValueError(
                 "For focality optimization please provide ROI and non ROI region (in this order)."
             )
@@ -512,17 +523,17 @@ class TESoptimize:
         # setup FEM
         ################################################################################################################
         # set dirichlet node to closest node of center of gravity of head model (indexing starting with 1)
-        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh, roi=self.roi)
+        self.dirichlet_node = get_dirichlet_node_index_cog(mesh=self.mesh, roi=self._roi)
 
         # always compute e-field components (Ex, Ey, Ez), it will be postprocessed later according to self.e_postproc
-        self.dataType = [1] * len(self.roi)
+        self.dataType = [1] * len(self._roi)
 
         # prepare FEM
         self.ofem = OnlineFEM(
             mesh=self.mesh,
             electrode=self.electrode,
             method="TES",
-            roi=self.roi,
+            roi=self._roi,
             anisotropy_type=self.anisotropy_type,
             solver_options=self.solver_options,
             fn_results=self.fn_results_hdf5,
@@ -636,7 +647,7 @@ class TESoptimize:
             RegionOfInterestInitializer structure added to TESoptimize
         """
         if roi is None:
-            roi = RegionOfInterestInitializer()
+            roi = RegionOfInterest()
         self.roi.append(roi)
         return roi
 
@@ -873,7 +884,7 @@ class TESoptimize:
 
         self.roi = []
         for i_roi in range(self.n_roi):
-            roi_ = RegionOfInterestInitializer()
+            roi_ = RegionOfInterest()
             roi_.type = roi_dict[f"roi_{i_roi}"]["type"]
             roi_.roi_sphere_radius = roi_dict[f"roi_{i_roi}"]["roi_sphere_radius"]
 
@@ -1483,7 +1494,7 @@ class TESoptimize:
                     # compute integral focality
                     self.integral_focality[i_channel_stim].append(
                         integral_focality(
-                            e1=e1, e2=e2, v1=self.roi[0].vol, v2=self.roi[1].vol
+                            e1=e1, e2=e2, v1=self.vol[0], v2=self.vol[1]
                         )
                     )
 
@@ -2993,3 +3004,48 @@ def plot_roi_field(e, roi, fn_out, e_label=None):
     # if we have a connectivity (surface):
     if roi.con is not None:
         np.savetxt(fn_out + "_con.txt", roi.con)
+
+def get_element_properties(mesh, roi, nodes, con, n_center):
+    # if domains are specified, read e-field directly from the element center
+    if roi.domains is not None:
+        mesh_cropped = mesh.crop_mesh(elm_type=4)
+
+        if (roi.domains >= 1000).any():
+            raise NotImplementedError("Surfaces can not be defined as ROI domains.")
+
+        if mask is None:
+            mask = np.zeros(mesh_cropped.elm.node_number_list.shape[0])
+            for d in roi.domains:
+                mask += mesh_cropped.elm.tag1 == d
+            mask = mask > 0
+
+        node_index_list = mesh_cropped.elm.node_number_list[mask] - 1
+        con = node_index_list
+        idx = np.where(mask)[0]
+        nodes = mesh_cropped.nodes.node_coord
+        gradient = gradient[mask]
+        n_center = con.shape[0]
+
+    # determine element properties
+    triangles_normals = None
+    if nodes is not None and con is not None:
+        # surface ROI
+        if con.shape[1] == 3:
+            p1 = nodes[con[:, 0], :]
+            p2 = nodes[con[:, 1], :]
+            p3 = nodes[con[:, 2], :]
+            vol = 0.5 * np.linalg.norm(np.cross(p2 - p1, p3 - p1), axis=1)
+            triangles_normals = np.cross(p2 - p1, p3 - p1)
+            triangles_normals /= np.linalg.norm(triangles_normals, axis=1)[:, np.newaxis]
+        # volume ROI
+        elif con.shape[1] == 4:
+            p1 = nodes[con[:, 0], :]
+            p2 = nodes[con[:, 1], :]
+            p3 = nodes[con[:, 2], :]
+            p4 = nodes[con[:, 3], :]
+            vol = 1.0 / 6 * np.sum(np.multiply(np.cross(p2 - p1, p3 - p1), p4 - p1), axis=1)
+
+    elif nodes is None or con is None:
+        vol = np.ones(n_center)
+
+    return vol, triangles_normals
