@@ -271,6 +271,34 @@ class TmsCoil(TcdElement):
             a_field += coil_element.get_a_field(points, coil_affine, eps)
 
         return a_field
+    
+    def get_b_field(
+        self,
+        points: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the coil at each point.
+
+        Parameters
+        ----------
+        points : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated in mm
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The A field at every point in Tesla
+        """
+        b_field = np.zeros_like(points)
+        for coil_element in self.elements:
+            b_field += coil_element.get_b_field(points, coil_affine, eps)
+
+        return b_field
 
     def get_mesh(
         self,
@@ -1142,9 +1170,9 @@ class TmsCoil(TcdElement):
 
         limits = np.array(
             [
-                [affine[0][3], data.shape[0] * resolution[0] + affine[0][3]],
-                [affine[1][3], data.shape[1] * resolution[1] + affine[1][3]],
-                [affine[2][3], data.shape[2] * resolution[2] + affine[2][3]],
+                [affine[0][3], data.shape[0] * resolution[0] + affine[0][3] - resolution[0]],
+                [affine[1][3], data.shape[1] * resolution[1] + affine[1][3] - resolution[1]],
+                [affine[2][3], data.shape[2] * resolution[2] + affine[2][3] - resolution[2]],
             ]
         )
 
@@ -1194,6 +1222,7 @@ class TmsCoil(TcdElement):
         fn: str,
         limits: Optional[npt.NDArray[np.float_]] = None,
         resolution: Optional[npt.NDArray[np.float_]] = None,
+        b_field: bool = False
     ):
         """Writes the A field of the coil in the NIfTI file format.
         If multiple stimulators are present, the NIfTI file will be 5D and containing vector data for each stimulator group.
@@ -1226,16 +1255,25 @@ class TmsCoil(TcdElement):
 
         data_per_stimulator = []
         for stimulator in stimulators_to_elements.keys():
-            stimulator_a_field = np.zeros_like(sample_positions)
+            stimulator_field = np.zeros_like(sample_positions)
             for element in stimulators_to_elements[stimulator]:
-                stimulator_a_field += element.get_a_field(sample_positions, np.eye(4))
+                if b_field:
+                    stimulator_field += element.get_b_field(sample_positions, np.eye(4))
+                else:
+                    stimulator_field += element.get_a_field(sample_positions, np.eye(4))
 
-            stimulator_a_field = stimulator_a_field.reshape(
+
+            stimulator_field = stimulator_field.reshape(
                 (dims[0], dims[1], dims[2], 3)
             )
-            data_per_stimulator.append(stimulator_a_field)
+            data_per_stimulator.append(stimulator_field)
 
         data = np.stack(data_per_stimulator, axis=-2)
+
+        if data.shape[3] == 1:
+            data = data.reshape(
+                (dims[0], dims[1], dims[2], 3)
+            )
 
         affine = np.array(
             [
@@ -1279,15 +1317,17 @@ class TmsCoil(TcdElement):
         resolution = resolution if resolution is not None else self.resolution
         if resolution is None:
             raise ValueError("resolution needs to be set")
+        
+        print(limits, resolution)
 
         dims = [
-            int((max_ - min_) // res) for [min_, max_], res in zip(limits, resolution)
+            int((max_ - min_) // res) + 1 for [min_, max_], res in zip(limits, resolution)
         ]
 
         dx = np.spacing(1e4)
-        x = np.linspace(limits[0][0], limits[0][1] - resolution[0] + dx, dims[0])
-        y = np.linspace(limits[1][0], limits[1][1] - resolution[1] + dx, dims[1])
-        z = np.linspace(limits[2][0], limits[2][1] - resolution[2] + dx, dims[2])
+        x = np.linspace(limits[0][0], limits[0][1] + dx, dims[0])
+        y = np.linspace(limits[1][0], limits[1][1] + dx, dims[1])
+        z = np.linspace(limits[2][0], limits[2][1] + dx, dims[2])
         return np.array(np.meshgrid(x, y, z, indexing="ij")).reshape((3, -1)).T, dims
 
     def as_sampled(

@@ -40,6 +40,12 @@ def testcoil_nii_gz():
     )
     return fn
 
+@pytest.fixture(scope='module')
+def testcoil_nii_gz_B():
+    fn = os.path.join(
+        SIMNIBSDIR, '_internal_resources', 'testing_files', 'testcoilB.nii.gz')
+    return fn
+
 
 def is_close_subset_of(array1, array2, tolerance=1e-4):
     return np.all(
@@ -213,7 +219,7 @@ class TestReadCoil:
         sampled_grid_points: SampledGridPointElements = coil.elements[0]
         np.testing.assert_allclose(coil.resolution, [10, 10, 10])
         np.testing.assert_allclose(
-            coil.limits, [[-100.0, 110.0], [-100.0, 110.0], [-100.0, 110.0]]
+            coil.limits, [[-100.0, 100.0], [-100.0, 100.0], [-100.0, 100.0]]
         )
         np.testing.assert_allclose(
             sampled_grid_points.affine,
@@ -235,7 +241,7 @@ class TestReadCoil:
         sampled_grid_points: SampledGridPointElements = coil.elements[0]
         np.testing.assert_allclose(coil.resolution, [10, 10, 10])
         np.testing.assert_allclose(
-            coil.limits, [[-100.0, 110.0], [-100.0, 110.0], [-100.0, 110.0]]
+            coil.limits, [[-100.0, 100.0], [-100.0, 100.0], [-100.0, 100.0]]
         )
         np.testing.assert_allclose(
             sampled_grid_points.affine,
@@ -317,6 +323,26 @@ class TestWriteCoil:
 
         np.testing.assert_allclose(sampled_grid.data, field)
         np.testing.assert_allclose(sampled_grid.affine, affine)
+
+class TestWriteNifti:
+    def test_from_ccd_to_nifti(self, tmp_path: Path, testcoil_ccd, testcoil_nii_gz):
+        coil = TmsCoil.from_file(testcoil_ccd)
+        coil.write_nifti(str(tmp_path / "test.nii.gz"))
+        nii = nib.load(str(tmp_path / "test.nii.gz"))
+        test_nii = nib.load(testcoil_nii_gz)
+
+        np.testing.assert_allclose(np.array(nii.dataobj), np.array(test_nii.dataobj), atol=1e-10)
+        np.testing.assert_allclose(nii.affine[:3,:3],10*np.identity(3))
+        np.testing.assert_allclose(nii.affine[:4,3],(-100,-100,-100,1))
+
+    def test_from_ccd_to_b_field_nifti(self, tmp_path: Path, testcoil_ccd, testcoil_nii_gz_B):
+        coil = TmsCoil.from_file(testcoil_ccd)
+        coil.write_nifti(str(tmp_path / "test.nii.gz"), b_field=True)
+        nii = nib.load(str(tmp_path / "test.nii.gz"))
+        test_nii = nib.load(testcoil_nii_gz_B)
+        np.testing.assert_allclose(np.array(nii.dataobj), np.array(test_nii.dataobj), atol=1e-10)
+        np.testing.assert_allclose(nii.affine[:3,:3],10*np.identity(3))
+        np.testing.assert_allclose(nii.affine[:4,3],(-100,-100,-100,1))
 
 
 class TestWriteReadCoil:
