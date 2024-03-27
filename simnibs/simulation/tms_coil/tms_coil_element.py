@@ -75,7 +75,7 @@ class TmsCoilElements(ABC, TcdElement):
         eps : float, optional
             The requested precision, by default 1e-3
         apply_deformation : bool, optional
-                    Whether or not to apply the current coil element deformations, by default True
+            Whether or not to apply the current coil element deformations, by default True
 
         Returns
         -------
@@ -109,6 +109,34 @@ class TmsCoilElements(ABC, TcdElement):
         return self.stimulator.di_dt * self.get_a_field(
             target_positions, coil_affine, eps
         )
+
+    @abstractmethod
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the coil element at each target position.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla*meter
+        """
+        pass
 
     def get_combined_transformation(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
@@ -529,6 +557,55 @@ class DipoleElements(PositionalTmsCoilElements):
         A *= -1e-7
 
         return A
+    
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the dipole elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla
+        """
+        dipole_moment = self.get_values(coil_affine, apply_deformation)
+        dipole_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
+        target_positions_m = target_positions * 1e-3
+        if dipole_moment.shape[0] < 300:
+            out = fmm3dpy.l3ddir(
+                dipvec=dipole_moment.T,
+                sources=dipole_position_m.T,
+                targets=target_positions_m.T,
+                nd=1,
+                pgt=2,
+            )
+        else:
+            out = fmm3dpy.lfmm3d(
+                dipvec=dipole_moment.T,
+                sources=dipole_position_m.T,
+                targets=target_positions_m.T,
+                eps=eps,
+                nd=1,
+                pgt=2,
+            )
+
+        B = out.gradtarg.T * -1e-7
+        return B
 
     def generate_element_mesh(
         self,
@@ -705,6 +782,56 @@ class LineSegmentElements(PositionalTmsCoilElements):
         A = 1e-7 * A.pottarg.T
         return A
 
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the line segment elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla
+        """
+        directions_m = self.get_values(coil_affine, apply_deformation) * 1e-3
+        segment_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
+        target_positions_m = target_positions * 1e-3
+
+        if directions_m.shape[0] >= 300:
+            A = fmm3dpy.l3ddir(
+                sources=segment_position_m.T,
+                charges=directions_m.T,
+                targets=target_positions_m.T,
+                nd=1,
+                pgt=1,
+            )
+        else:
+            A = fmm3dpy.lfmm3d(
+                sources=segment_position_m.T,
+                charges=directions_m.T,
+                targets=target_positions_m.T,
+                nd=1,
+                eps=eps,
+                pgt=1,
+            )
+
+        B = 1e-7 * B.pottarg.T
+        return B
+
     def generate_element_mesh(
         self,
         affine_matrix: npt.NDArray[np.float_],
@@ -864,6 +991,33 @@ class SampledGridPointElements(TmsCoilElements):
 
         # Rotates the field
         return out.T  # @ combined_affine[:3, :3].T
+    
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field interpolated from the sampled grid point elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B-field at every target positions in Tesla*meter
+        """
+        pass
 
     def generate_element_mesh(
         self,
