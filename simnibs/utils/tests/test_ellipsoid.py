@@ -1,18 +1,10 @@
-import os
-
 import numpy as np
-import pytest
 
 # from .. import SIMNIBSDIR
 # from ...mesh_tools import mesh_io
 # from .. import transformations
 
 from simnibs.utils.ellipsoid import Ellipsoid
-
-import matplotlib
-matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
-
 
 class TestEllipsoid:
 
