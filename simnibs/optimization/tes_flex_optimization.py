@@ -341,7 +341,7 @@ class TESoptimize:
         for i in range(len(self.roi)):
             if type(self.roi[i]) == RegionOfInterest:
                 self.roi[i].mesh = self.mesh
-                self._roi[i] = FemTargetPointCloud(self.roi[i].mesh, self.roi[i].initialize()) 
+                self._roi.append(FemTargetPointCloud(self.roi[i].mesh, self.roi[i].initialize()))
 
         self.n_roi = len(self._roi)
 
@@ -431,7 +431,10 @@ class TESoptimize:
         self.goal_dir = []
 
         for i_roi in range(len(self._roi)):
-            self.vol[i_roi], triangles_normals = get_element_properties(self.meh, self.roi[i_roi] ,self.nodes[i_roi], self.con[i_roi], len(self._roi[i_roi].center))
+            nodes = None if i_roi >= len(self.nodes) else self.nodes[i_roi]
+            con = None if i_roi >= len(self.con) else self.con[i_roi]
+            vol, triangles_normals = get_element_properties(self.roi[i_roi] , nodes, con, len(self._roi[i_roi].center))
+            self.vol.append(vol)
             if "normal" in self.e_postproc or "tangential" in self.e_postproc:
                 self.goal_dir.append(triangles_normals)
             else:
@@ -681,8 +684,6 @@ class TESoptimize:
         for i_roi, _roi in enumerate(self.roi):
             roi_dict[f"roi_{i_roi}"] = dict()
             roi_dict[f"roi_{i_roi}"]["center"] = remove_None(_roi.center)
-            roi_dict[f"roi_{i_roi}"]["nodes"] = remove_None(_roi.nodes)
-            roi_dict[f"roi_{i_roi}"]["con"] = remove_None(_roi.con)
             roi_dict[f"roi_{i_roi}"]["domains"] = remove_None(_roi.domains)
             roi_dict[f"roi_{i_roi}"]["type"] = remove_None(_roi.type)
             roi_dict[f"roi_{i_roi}"]["roi_sphere_center_mni"] = remove_None(
@@ -2418,7 +2419,7 @@ class TESoptimize:
 
             # Determine electric field in ROIs
             # start = time.time()
-            for i_roi, r in enumerate(self.roi):
+            for i_roi, r in enumerate(self._roi):
                 if v is None:
                     e[i_channel_stim][i_roi] = None
                     self.logger.log(
@@ -3005,32 +3006,19 @@ def plot_roi_field(e, roi, fn_out, e_label=None):
     if roi.con is not None:
         np.savetxt(fn_out + "_con.txt", roi.con)
 
-def get_element_properties(mesh, roi, nodes, con, n_center):
-    # if domains are specified, read e-field directly from the element center
-    if roi.domains is not None:
-        mesh_cropped = mesh.crop_mesh(elm_type=4)
+def get_element_properties(roi, nodes, con, n_center):
 
-        if (roi.domains >= 1000).any():
-            raise NotImplementedError("Surfaces can not be defined as ROI domains.")
-
-        if mask is None:
-            mask = np.zeros(mesh_cropped.elm.node_number_list.shape[0])
-            for d in roi.domains:
-                mask += mesh_cropped.elm.tag1 == d
-            mask = mask > 0
-
-        node_index_list = mesh_cropped.elm.node_number_list[mask] - 1
-        con = node_index_list
-        idx = np.where(mask)[0]
-        nodes = mesh_cropped.nodes.node_coord
-        gradient = gradient[mask]
-        n_center = con.shape[0]
-
+    if roi._cropped_mesh is not None:
+        if nodes is None:
+            nodes = roi._cropped_mesh.nodes.node_coord
+        
+        if con is None:
+            con = roi._cropped_mesh.elm.node_number_list - 1
     # determine element properties
     triangles_normals = None
     if nodes is not None and con is not None:
         # surface ROI
-        if con.shape[1] == 3:
+        if np.all(con[:, 3] == -1):
             p1 = nodes[con[:, 0], :]
             p2 = nodes[con[:, 1], :]
             p3 = nodes[con[:, 2], :]
@@ -3038,7 +3026,7 @@ def get_element_properties(mesh, roi, nodes, con, n_center):
             triangles_normals = np.cross(p2 - p1, p3 - p1)
             triangles_normals /= np.linalg.norm(triangles_normals, axis=1)[:, np.newaxis]
         # volume ROI
-        elif con.shape[1] == 4:
+        else:
             p1 = nodes[con[:, 0], :]
             p2 = nodes[con[:, 1], :]
             p3 = nodes[con[:, 2], :]

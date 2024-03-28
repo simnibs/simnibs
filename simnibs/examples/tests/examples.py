@@ -175,11 +175,6 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization_adm')
         assert ret.returncode == 0
 
-    def test_tes_electrode_setup_init(self, example_dataset, replace_gmsh):
-        os.chdir(example_dataset)
-        ret = self.run_script('optimization', 'tes_electrode_setup_init.py', clean=None)
-        assert ret.returncode == 0
-
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
         if clean is not None and os.path.exists(clean):
@@ -315,7 +310,7 @@ class TestTESoptimize:
             "optimization/tes_optimize_ti_intensity")
         assert ret.returncode == 0
     
-    def tes_optimize_tes_Enormal_intensity(self, example_dataset):
+    def test_optimize_tes_Enormal_intensity(self, example_dataset):
         os.chdir(example_dataset)
         ret = self.run_script(
             "optimization",

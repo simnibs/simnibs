@@ -47,7 +47,7 @@ roi.roi_sphere_radius = 20
 
 # define non-ROI
 roi = opt.add_roi()
-roi.type = "custom"
+roi.type = "volume"
 roi.domains = [ElementTags.WM, ElementTags.GM]
 
 # Run optimization
