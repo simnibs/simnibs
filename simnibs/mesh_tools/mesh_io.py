@@ -2672,45 +2672,6 @@ class Msh:
 
         # the indices are into self
         return v_in, v_out, f_in, f_out
-    
-    def get_outer_skin_points(self, tol: float = 1e-3, label_skin=None):
-        """Return indices of points estimated to be on the outer skin surface
-        (i.e., not those inside nasal cavities, ear canals etc.). Outer points
-        are identified by looking for points which do not intersect the mesh in
-        the direction of its normal. This is not perfect but seems to do a
-        reasonable job of identifying the relevant points. These may then be
-        used for projecting electrodes onto the surface.
-
-        PARAMETERS
-        ----------
-        tol : float
-            Tolerance for avoiding self-intersections.
-        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
-            Label of skin surface (e.g. 1005)
-
-        RETURNS
-        -------
-        indices : ndarray
-            Indices of the outer skin points.
-        """
-        assert tol > 0
-
-        if label_skin is None:
-            label_skin = ElementTags.SCALP_TH_SURFACE
-
-        skin_faces = self.elm[self.elm.tag1 == label_skin, :3]
-        subset = np.unique(skin_faces-1)
-        m = Msh(Nodes(self.nodes.node_coord), Elements(skin_faces))
-
-        subset = subset if len(subset) < m.nodes.nr else slice(None)
-        n = m.nodes_normals().value[subset]
-        # Avoid self-intersections by moving each point slightly along the test
-        # direction
-        idx = np.unique(m.intersect_ray(m.nodes.node_coord[subset] + tol * n, n)[0][:, 0])
-        if isinstance(subset, slice):
-            return np.setdiff1d(np.arange(m.nodes.nr), idx, assume_unique=True)
-        else:
-            return np.setdiff1d(subset, subset[idx], assume_unique=True)
 
     def relabel_internal_air(self, label_skin=None, label_new=1099):
         """
@@ -2734,11 +2695,8 @@ class Msh:
             label_skin = ElementTags.SCALP_TH_SURFACE
 
         m = copy.copy(self)
-        # outer skin nodes
-        idx_skinNodes = self.get_outer_skin_points(label_skin=label_skin) + 1  # internal air triangles
-        idx_innerAirTri = (m.elm.elm_type == 2) * (m.elm.tag1 == label_skin)
-        idx_innerAirTri *= ~np.any(np.in1d(m.elm.node_number_list, idx_skinNodes).reshape(-1, 4), axis=1)
-        m.elm.tag1[idx_innerAirTri] = label_new
+        _, _, f_in, _ = self.partition_skin_surface(label_skin=label_skin)  # internal air triangles
+        m.elm.tag1[f_in] = label_new
         m.elm.tag2[:] = m.elm.tag1
         return m
 

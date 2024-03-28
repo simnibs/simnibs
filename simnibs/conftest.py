@@ -1,7 +1,12 @@
+import functools
 import os
+import shutil
+import tempfile
+import zipfile
 
 import numpy as np
 import pytest
+import requests
 
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
@@ -41,6 +46,30 @@ def pytest_collection_modifyitems(config, items):
 def sphere3_msh():
     fn = os.path.join(SIMNIBSDIR, "_internal_resources", "testing_files", "sphere3.msh")
     return Msh(fn=fn)
+
+@pytest.fixture(scope="module")
+def example_dataset():
+    url = (
+        f'https://github.com/simnibs/example-dataset/releases/'
+        'download/v4.0-lowres/ernie_lowres_V2.zip'
+    )
+    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_data'))
+    tmpname = tempfile.mktemp(".zip")
+    # Download the dataset
+    with requests.get(url, stream=True) as r:
+        r.raw.read = functools.partial(r.raw.read, decode_content=True)
+        with open(tmpname, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
+    # Unzip the dataset
+    with zipfile.ZipFile(tmpname) as z:
+        z.extractall(fn_folder, )
+    os.remove(tmpname)
+    yield fn_folder
+    try:
+        shutil.rmtree(fn_folder)
+        pass
+    except:
+        print('Could not remove example dataset folder')
 
 
 @pytest.fixture(scope="module")
