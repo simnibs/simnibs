@@ -3018,7 +3018,7 @@ def get_element_properties(roi, nodes, con, n_center):
     triangles_normals = None
     if nodes is not None and con is not None:
         # surface ROI
-        if np.all(con[:, 3] == -1):
+        if np.all(con[:, 3] < 0):
             p1 = nodes[con[:, 0], :]
             p2 = nodes[con[:, 1], :]
             p3 = nodes[con[:, 2], :]
