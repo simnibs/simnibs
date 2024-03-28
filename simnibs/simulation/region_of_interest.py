@@ -35,12 +35,6 @@ class RegionOfInterest():
         if self.center is not None and type(self.center is list):
             self.center = np.array(self.center)
 
-        if self.nodes is not None and type(self.nodes is list):
-            self.nodes = np.array(self.nodes)
-
-        if self.con is not None and type(self.con is list):
-            self.con = np.array(self.con)
-
         if self.roi_sphere_center_mni is not None and type(self.roi_sphere_center_mni is list):
             self.roi_sphere_center_mni = np.array(self.roi_sphere_center_mni)
 
