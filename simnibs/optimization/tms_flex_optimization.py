@@ -827,6 +827,9 @@ def optimize_distance(
         opt_results.append(direct)
 
     if local_optimization:
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in coil_deformation_ranges]
+        )
         local_opt = opt.minimize(
             cost_f_x0_w,
             x0=initial_deformation_settings,
@@ -1197,6 +1200,9 @@ def optimize_e_mag(
         opt_results.append(direct)
 
     if local_optimization:
+        initial_deformation_settings = np.array(
+            [coil_deformation.current for coil_deformation in coil_deformation_ranges]
+        )
         local_opt = opt.minimize(
             cost_f_x0_w,
             x0=initial_deformation_settings,
