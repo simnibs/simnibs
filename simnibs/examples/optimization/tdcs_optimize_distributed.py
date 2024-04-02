@@ -1,7 +1,7 @@
 ''' Example of a SimNIBS tDCS optimization with a distributed target in Python
     Run with:
 
-    simnibs_python teslf_optimize_distributed.py
+    simnibs_python tdcs_optimize_distributed.py
 
     Copyright (C) 2020 Guilherme B Saturnino
 '''

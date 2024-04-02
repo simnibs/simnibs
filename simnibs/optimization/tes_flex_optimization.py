@@ -42,7 +42,7 @@ from ..utils.measures import AUC, integral_focality, ROC
 from simnibs import run_simnibs
 
 
-class TESoptimize:
+class TesFlexOptimization:
     """
     Defines a TES optimization problem using node-wise current sources.
 

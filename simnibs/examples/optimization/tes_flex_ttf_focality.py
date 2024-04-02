@@ -8,7 +8,7 @@ import simnibs
 from simnibs import ElementTags
 
 # Initialize structure
-opt = simnibs.opt_struct.TESoptimize()
+opt = simnibs.opt_struct.TesFlexOptimization()
 
 # path of m2m folder containing the headmodel
 opt.subpath = 'm2m_ernie'

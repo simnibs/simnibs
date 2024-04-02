@@ -84,11 +84,11 @@ def read_mat(fn):
         from ..optimization.opt_struct import TMSoptimize
         structure = TMSoptimize.read_mat_struct(mat)
     elif structure_type.lower() == 'tdcsoptimize':
-        from ..optimization.opt_struct import TESLFoptimize
-        structure = TESLFoptimize.read_mat_struct(mat)
+        from ..optimization.opt_struct import TDCSoptimize
+        structure = TDCSoptimize.read_mat_struct(mat)
     elif structure_type.lower() == 'tdcsdistributedoptimize':
-        from ..optimization.opt_struct import TESLFDistributedOptimize
-        structure = TESLFDistributedOptimize.read_mat_struct(mat)
+        from ..optimization.opt_struct import TDCSDistributedOptimize
+        structure = TDCSDistributedOptimize.read_mat_struct(mat)
 
     else:
         raise IOError('Not a valid structure type!')
