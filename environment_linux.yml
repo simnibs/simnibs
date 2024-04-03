@@ -31,3 +31,4 @@ dependencies:
     - fmm3dpy==1.0.0
     - charm_gems==1.3.3
     - pygpc==0.3.8
+    - fastmat==0.2.2
