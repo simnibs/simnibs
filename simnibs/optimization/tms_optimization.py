@@ -39,6 +39,8 @@ class TMSoptimize:
         type of anisotropy for simulation
     target: (3x1) array
         Optimization target
+    multiple_targets: (nx3) array
+        Multiple optimization targets
     target_size (optional): float
         Size of target region, in mm. Defualt: 5
     tissues (optional): list of ints
@@ -98,6 +100,7 @@ class TMSoptimize:
         self.anisotropy_affine = None  # 4x4 affine transformation from the regular grid
         # Optimization stuff
         self.target = None
+        self.multiple_targets = None
         self.target_direction = None
         self.tissues = [ElementTags.GM]
         self.target_size = 5
@@ -170,8 +173,10 @@ class TMSoptimize:
 
         self.mesh = mesh_io.read_msh(self.fnamehead)
         TMSLIST.resolve_fnamecoil(self)
-        if self.target is None or len(self.target) != 3:
-            raise ValueError("Target for optimization not defined")
+        single_target_defined = self.target is not None and len(self.target) == 3
+        multiple_targets_defined = self.multiple_targets is not None and np.shape(self.multiple_targets)[1] == 3
+        if not single_target_defined and not multiple_targets_defined:
+            raise ValueError('Target for optimization not defined')
 
         assert self.search_radius > 0
         assert self.spatial_resolution > 0
@@ -179,6 +184,8 @@ class TMSoptimize:
         # fix a few variables
         if len(self.pos_ydir) == 0:
             self.pos_ydir = None
+        if len(self.centre) == 0 and multiple_targets_defined:
+            self.centre = np.mean(self.multiple_targets, axis=0)
         if len(self.centre) == 0:
             self.centre = np.copy(self.target)
         if self.target_direction is not None and len(self.target_direction) == 0:
@@ -196,6 +203,7 @@ class TMSoptimize:
         mat["fnamecoil"] = remove_None(self.fnamecoil)
 
         mat["target"] = remove_None(self.target)
+        mat["multiple_targets"] = remove_None(self.multiple_targets)
         mat["target_direction"] = remove_None(self.target_direction)
         mat["target_size"] = remove_None(self.target_size)
         mat["centre"] = remove_None(self.centre)
@@ -234,6 +242,7 @@ class TMSoptimize:
             mat, "fname_tensor", str, self.fname_tensor
         )
         self.target = try_to_read_matlab_field(mat, "target", list, self.target)
+        self.multiple_targets = try_to_read_matlab_field(mat, "multiple_targets", list, self.target)
         self.target_direction = try_to_read_matlab_field(
             mat, "target_direction", list, self.target_direction
         )
@@ -444,9 +453,22 @@ class TMSoptimize:
         )
 
     def _get_target_region(self):
-        return define_target_region(
-            self.mesh, self.target, self.target_size, self.tissues
-        )
+        if self.multiple_targets is not None:
+            region = define_target_region_from_multiple_positions(
+                self.mesh,
+                self.multiple_targets,
+                self.target_size,
+                self.tissues
+            )
+        else:
+            region = define_target_region(
+                self.mesh,
+                self.target,
+                self.target_size,
+                self.tissues
+            )
+        return region
+
 
     def _direct_optimize(
         self, cond_field, target_region, pos_matrices, cpus, keep_hdf5=False
@@ -621,6 +643,7 @@ class TMSoptimize:
         string += "Mesh file name: %s\n" % self.fnamehead
         string += "Coil file: %s\n" % self.fnamecoil
         string += "Target: %s\n" % self.target
+        string += 'Number of targets: {}\n'.format("1" if self.multiple_targets is None else str(np.shape(self.multiple_targets)[0]))
         string += "Target Direction: %s\n" % self.target_direction
         string += "Centre position: %s\n" % self.centre
         string += "Reference y: %s\n" % self.pos_ydir
@@ -865,6 +888,49 @@ def define_target_region(mesh, target_position, target_radius, tags, elm_type=4)
         * np.isin(mesh.elm.elm_type, elm_type)
     ]
     return elm
+
+
+def define_target_region_from_multiple_positions(mesh, target_positions, target_radius, tags, elm_type=4):
+    ''' Defines a target based on multiple positions, a radius and an element tag.
+    Target will include elements that are within the target_radius of any of the target_positions.
+
+    Paramters
+    ------------
+    mesh: simnibs.mesh_io.msh
+        Mesh
+    target_positions: array of size (n, 3)
+        Positions of target where n is the number of positions
+    target_radius: float
+        Size of target
+    tags: array of ints
+        Tag where the target is located
+    elm_type: int
+        Type of target element (4 for tetrahedra and 2 for triangles)
+
+    Returns
+    -------
+    elements: array of size (n,)
+        Numbers (1-based) of elements in the tag
+    '''
+    bar = mesh.elements_baricenters()[:]
+    center_pos = np.mean(target_positions, axis=0)
+    max_dist = np.linalg.norm(target_positions - center_pos, axis=1).max() * 1.1
+    dist = np.linalg.norm(bar - center_pos, axis=1)
+    elm = mesh.elm.elm_number[
+        (dist <= max_dist) *
+        np.isin(mesh.elm.tag1, tags) *
+        np.isin(mesh.elm.elm_type, elm_type)
+    ]
+    candidate_elm = elm
+    candidate_bar = bar[elm-1]
+
+    elm_in_roi = set()
+    for pos in target_positions:
+        dist = np.linalg.norm(candidate_bar - pos, axis=1)
+        elm = candidate_elm[dist < target_radius]
+        elm_in_roi.update(elm)
+    elm_in_roi = np.array(list(elm_in_roi))
+    return elm_in_roi
 
 
 def get_opt_grid_ADM(

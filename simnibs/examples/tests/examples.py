@@ -170,6 +170,16 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
         assert ret.returncode == 0
 
+    def test_tms_optimize_with_region(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        shutil.copy(
+            os.path.join(simnibs.SIMNIBSDIR, '_internal_resources',
+                'testing_files', 'masks', 'P1_LH_M1_control'),
+            example_dataset
+        )
+        ret = self.run_script('optimization', 'tms_optimization_with_region.py')
+        assert ret.returncode == 0
+
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization_adm')
