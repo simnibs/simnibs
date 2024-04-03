@@ -1,20 +1,17 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Brainsight &#8212; SimNIBS g55be60be&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <title>Brainsight &#8212; SimNIBS 4.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=42d1b3bd"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Softaxic" href="softaxic.html" />
@@ -22,8 +19,9 @@
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -51,23 +49,23 @@
           <div class="body" role="main">
             
   <section id="brainsight">
-<span id="brainsight-doc"></span><h1>Brainsight<a class="headerlink" href="#brainsight" title="Permalink to this heading">¶</a></h1>
+<span id="brainsight-doc"></span><h1>Brainsight<a class="headerlink" href="#brainsight" title="Link to this heading">¶</a></h1>
 <p>This module provides import and export functions for the <a class="reference external" href="https://www.rogue-research.com/tms/brainsight-tms/">Brainsight</a> TMS Navigator software.</p>
 <p>SimNIBS requires an individual T1-NIfTI to be used during neuronavigation. This T1 scan should be the preprocessed T1 image that is created during the SimNIBS headmeshing procedure.
 Although DICOMS can be used for the Brainsight neuronavigation, no import/export to SimNIBS is supported, due to (possible) different coordinate systems.</p>
 <p>Brainsight provides two main ways of storing positions/orientations: <cite>Targets</cite> and <cite>Samples</cite>. <cite>Targets</cite> represent planned locations for stimulation, and <cite>Samples</cite> represent the actual locations that were stimulated. Both are exported in a single <cite>.txt</cite> file. As several coordinate systems are supported for export and import by Brainsight, please see the following notes regarding which of them are suited for data exchange with SimNIBS.</p>
 <section id="how-to-use">
-<h2>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this heading">¶</a></h2>
+<h2>How to use<a class="headerlink" href="#how-to-use" title="Link to this heading">¶</a></h2>
 <section id="exporting-from-brainsight">
-<h3>Exporting from Brainsight<a class="headerlink" href="#exporting-from-brainsight" title="Permalink to this heading">¶</a></h3>
+<h3>Exporting from Brainsight<a class="headerlink" href="#exporting-from-brainsight" title="Link to this heading">¶</a></h3>
 <p>With Brainsight 2.5.2 and earlier, choose the <cite>NIfTI:Aligned</cite> coordinate system when exporting.</p>
 <p>With Brainsight 2.5.3 and later, choose the <cite>NIfTI:Q:xxx</cite> coordinate system when exporting. (The <cite>XXX</cite> will be a string version of the <a class="reference external" href="https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html">intent code</a>, and will be one of: <cite>Aligned</cite>, <cite>Scanner</cite>, <cite>MNI-152</cite>, <cite>Talairach</cite>, or <cite>Other-Template</cite>.)</p>
 </section>
 <section id="importing-to-simnibs">
-<h3>Importing to SimNIBS<a class="headerlink" href="#importing-to-simnibs" title="Permalink to this heading">¶</a></h3>
+<h3>Importing to SimNIBS<a class="headerlink" href="#importing-to-simnibs" title="Link to this heading">¶</a></h3>
 <p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.read(fn)</span></code> reads Brainsight .txt files and returns two <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code> objects: One for <cite>Targets</cite> and one for <cite>Samples</cite>. The conversion of the different coil axes definitions is performed automatically.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">Import a single Brainsight .txt file as <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code></span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">Import a single Brainsight .txt file as <code class="code docutils literal notranslate"><span class="pre">simnibs.TMSLIST()</span></code></span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">brainsight</span>
 
 <span class="n">s</span> <span class="o">=</span> <span class="n">sim_struct</span><span class="o">.</span><span class="n">SESSION</span><span class="p">()</span>
@@ -82,10 +80,10 @@ Although DICOMS can be used for the Brainsight neuronavigation, no import/export
 </div>
 </section>
 <section id="exporting-from-simnibs">
-<h3>Exporting from SimNIBS<a class="headerlink" href="#exporting-from-simnibs" title="Permalink to this heading">¶</a></h3>
+<h3>Exporting from SimNIBS<a class="headerlink" href="#exporting-from-simnibs" title="Link to this heading">¶</a></h3>
 <p><code class="code docutils literal notranslate"><span class="pre">simnibs.brainsight.write(obj,</span> <span class="pre">fn)</span></code> writes a .txt file that is compatible for Brainsight import. The conversion between the different coil axes definitions is performed automatically.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Export a file for precomputed positions/orientations</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">Export a file for precomputed positions/orientations</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">sim_struct</span><span class="p">,</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">brainsight</span>
 <span class="n">fn</span> <span class="o">=</span> <span class="s2">&quot;precomuted_coilpos.xml&quot;</span>
@@ -112,7 +110,7 @@ Although DICOMS can be used for the Brainsight neuronavigation, no import/export
 </section>
 </section>
 <section id="notes">
-<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>The <strong>same anatomical scan</strong> has to be used for Brainsight and SimNIBS.</p></li>
 <li><p>The <strong>same coil model</strong> has to be used for field simulations and for real stimulation.</p></li>
@@ -148,7 +146,7 @@ Although DICOMS can be used for the Brainsight neuronavigation, no import/export
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
-    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    <img class="logo" src="../../_static/logo.png" alt="Logo" />
     
   </a>
 </p>
@@ -223,11 +221,11 @@ Although DICOMS can be used for the Brainsight neuronavigation, no import/export
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
       <a href="../../_sources/documentation/neuronavigation/brainsight.rst.txt"
