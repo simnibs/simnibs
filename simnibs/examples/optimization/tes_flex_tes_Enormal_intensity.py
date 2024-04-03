@@ -1,5 +1,6 @@
 """
-Example to run TESoptimize with a standard TES montage to optimize the field intensity in the ROI
+Example to run TESoptimize with a standard TES montage to optimize the field intensity of the normal component of the
+electric field in the ROI.
 
 Written by: Konstantin Weise (2023)
 """
@@ -7,19 +8,19 @@ Written by: Konstantin Weise (2023)
 import simnibs
 
 # Initialize structure
-opt = simnibs.opt_struct.TESoptimize()
+opt = simnibs.opt_struct.TesFlexOptimization()
 
 # path of m2m folder containing the headmodel
 opt.subpath = 'm2m_ernie'
 
 # output folder
-opt.output_folder = f"tes_optimize_tes_intensity"
+opt.output_folder = f"tes_optimize_tes_Enormal_intensity"
 
 # type of goal function
 opt.goal = "mean"
 
 # postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
-opt.e_postproc = "magn"
+opt.e_postproc = "normal"
 
 # define electrode
 electrode = opt.add_electrode()

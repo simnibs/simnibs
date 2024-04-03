@@ -60,7 +60,8 @@ if sys.platform == 'win32':
     petsc_runtime = None
     petsc_extra_link_args = None
 
-    cgal_libs = ['libmpfr-4', 'libgmp-10', 'zlib', 'tbb', 'tbbmalloc']
+    cgal_libs = ['mpfr', 'gmp', 'zlib', 'tbb', 'tbbmalloc']
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
     cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
     cgal_include += [
         np.get_include(),
@@ -100,7 +101,7 @@ elif sys.platform == 'linux':
         eigen_headers,
     ]
 
-    cgal_dirs = ['simnibs/external/lib/linux']
+    cgal_dirs = ['simnibs/external/lib/linux'] #not making sense - does this really work on linux? suggest: cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')] but perhaps all of this does not matter
     cgal_runtime = ['$ORIGIN/../../external/lib/linux']
     # Add -Os -flto for much smaller binaries
     cgal_compile_args = [

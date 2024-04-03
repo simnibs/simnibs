@@ -1,6 +1,8 @@
 import numpy as np
 import nibabel as nib
 
+from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
+
 from ..utils.file_finder import SubjectFiles
 from ..utils.transformations import mni2subject_coords, create_new_connectivity_list_point_mask
 
@@ -44,7 +46,7 @@ class RegionOfInterest():
         self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
 
         if self.type == "custom":
-            pass
+            self._cropped_mesh = None
 
         elif self.type == "GMmidlayer":
             if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
@@ -72,10 +74,11 @@ class RegionOfInterest():
 
             # mask out ROI sphere
             mask = np.linalg.norm(lh_rh_nodes - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
-            self.nodes, self.con = create_new_connectivity_list_point_mask(points=lh_rh_nodes,
+            nodes, con = create_new_connectivity_list_point_mask(points=lh_rh_nodes,
                                                                            con=lh_rh_con,
                                                                            point_mask=mask)
-            self.center = np.mean(self.nodes[self.con,], axis=1)
+            self._cropped_mesh = Msh(Nodes(nodes), Elements(triangles=con+1))
+            self.center = self._cropped_mesh.elements_baricenters()[:]
 
         elif self.type == "volume":
             if ((self.roi_sphere_center_mni is None and self.roi_sphere_center_subject is None)
@@ -92,20 +95,20 @@ class RegionOfInterest():
             if self.roi_sphere_center_subject is None:
                 self.roi_sphere_center_subject = mni2subject_coords(self.roi_sphere_center_mni, self.ff_subject.subpath)
 
-            # mask out spherical ROI (mask targets whole mesh.elm.node_number_list)
-            ele_center = np.mean(self.mesh.nodes.node_coord[self.mesh.elm.node_number_list-1, ], axis=1)
-            ele_center[self.mesh.elm.elm_type != 4] = np.inf
+            # mask out spherical ROI 
+            ele_center = self.mesh.elements_baricenters()[:]
+
+            mask = self.mesh.elm.elm_type == 4
 
             if self.domains is not None:
-                domains_remove = [d for d in np.unique(self.mesh.elm.tag1) if d not in self.domains]
+                domain_mask = np.ones_like(mask)
+                for d in self.domains:
+                    domain_mask = domain_mask | self.mesh.elm.tag1 == d
+                mask = mask & domain_mask
 
-                for d in domains_remove:
-                    ele_center[self.mesh.elm.tag1 == d] = np.inf
-
-            mask = np.linalg.norm(ele_center - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
-            mask_cropped = mask[self.mesh.elm.elm_type == 4]
-
-            self.center = self.mesh.elements_baricenters()[:][mask_cropped]
+            distance_mask = np.linalg.norm(ele_center[mask] - self.roi_sphere_center_subject, axis=1) <= self.roi_sphere_radius
+            self.center = ele_center[mask][distance_mask]
+            self._cropped_mesh = self.mesh.crop_mesh(elements= self.mesh.elm.elm_number[mask][distance_mask])
         else:
             raise AssertionError("Specified ROI type not implemented ('custom', 'MNI', 'GMmidlayer')")
 

@@ -1,26 +1,22 @@
 """
-Example to run TESoptimize for Tumor Treating Fields (TTF) to optimize the field focality in the ROI vs non-ROI
+Example to run TESoptimize for Tumor Treating Fields (TTF) to optimize the field intensity in the ROI
 
 Written by: Konstantin Weise (2023)
 """
 
 import simnibs
-from simnibs import ElementTags
 
 # Initialize structure
-opt = simnibs.opt_struct.TESoptimize()
+opt = simnibs.opt_struct.TesFlexOptimization()
 
 # path of m2m folder containing the headmodel
-opt.subpath = 'm2m_ernie'
+opt.subpath = "m2m_ernie"
 
 # output folder
-opt.output_folder = f"tes_optimize_ttf_focality"
+opt.output_folder = "tes_optimize_ttf_intensity"
 
 # type of goal function
-opt.goal = "focality"
-
-# define threshold(s)
-opt.threshold = [100, 100]
+opt.goal = "mean"
 
 # postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
 opt.e_postproc = "magn"
@@ -69,11 +65,6 @@ roi.roi_sphere_center_subject = [-41, -13,  66]
 
 # radius of spherical ROI (in mm)
 roi.roi_sphere_radius = 20
-
-# define non-ROI
-roi = opt.add_roi()
-roi.type = "custom"
-roi.domains = [ElementTags.WM, ElementTags.GM]
 
 # Run optimization
 simnibs.run_simnibs(opt)

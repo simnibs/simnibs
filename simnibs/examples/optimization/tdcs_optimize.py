@@ -1,7 +1,7 @@
 ''' Example of a SimNIBS tDCS optimization in Python
     Run with:
 
-    simnibs_python teslf_optimize.py
+    simnibs_python tdcs_optimize.py
 
     Copyright (C) 2019 Guilherme B Saturnino
 '''
@@ -26,7 +26,7 @@ opt.max_active_electrodes = 8
 # Define optimization target
 target = opt.add_target()
 # Position of target, in subject space!
-# please see teslf_optimize_mni.py for how to use MNI coordinates
+# please see tdcs_optimize_mni.py for how to use MNI coordinates
 target.positions = [-50.7, 5.1, 55.5]
 # Intensity of the electric field (in V/m)
 target.intensity = 0.2

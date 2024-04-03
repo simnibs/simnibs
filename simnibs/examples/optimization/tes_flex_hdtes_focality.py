@@ -7,7 +7,7 @@ import simnibs
 from simnibs import ElementTags
 
 # Initialize structure
-opt = simnibs.opt_struct.TESoptimize()
+opt = simnibs.opt_struct.TesFlexOptimization()
 
 # path of m2m folder containing the headmodel
 opt.subpath = "m2m_ernie"
@@ -47,7 +47,7 @@ roi.roi_sphere_radius = 20
 
 # define non-ROI
 roi = opt.add_roi()
-roi.type = "custom"
+roi.type = "volume"
 roi.domains = [ElementTags.WM, ElementTags.GM]
 
 # Run optimization

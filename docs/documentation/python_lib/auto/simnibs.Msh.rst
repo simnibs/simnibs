@@ -54,6 +54,7 @@
       ~Msh.read_hdf5
       ~Msh.reconstruct_surfaces
       ~Msh.reconstruct_unique_surface
+      ~Msh.relabel_internal_air
       ~Msh.remove_from_mesh
       ~Msh.smooth_surfaces
       ~Msh.smooth_surfaces_simple

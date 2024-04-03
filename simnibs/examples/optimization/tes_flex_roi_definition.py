@@ -8,7 +8,7 @@ import simnibs
 from simnibs import ElementTags
 
 # Initialize structure
-opt = simnibs.opt_struct.TESoptimize()
+opt = simnibs.opt_struct.TesFlexOptimization()
 
 # Option 1: Define a midlayer ROI
 # ===============================
