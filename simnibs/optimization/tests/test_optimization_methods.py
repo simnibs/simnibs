@@ -8,8 +8,6 @@ import warnings
 from .. import optimization_methods
 from ...simulation.analytical_solutions import fibonacci_sphere
 
-NUM_TOL = 1e-8
-
 @pytest.fixture()
 def optimization_variables():
     l = np.array([4, 1, 1, -5], dtype=float)
@@ -302,46 +300,27 @@ class TestTESOptimizationProblem():
         assert ~np.all(C.dot(currents) < d)
         assert np.isclose(C.dot(currents), 2.4)
 
-    def test_calc_Q_mat(self):
-        A = np.random.random((2, 5, 3))
-        targets = [0, 1]
-        volumes = np.array([1, 2, 2, 2, 4])
-
-        tes_opt = optimization_methods.TESOptimizationProblem(A)
-        Qin = tes_opt._calc_Q_mat(targets, volumes)
-
-        currents = np.array([1, 0])
-        field = np.einsum('ijk, i->jk', A, currents)
-        avg_in = np.sum(
-            np.linalg.norm(field[targets], axis=1)**2 * volumes[targets])
-        avg_in /= np.sum(volumes[targets])
-        currents = np.array([-1, 1, 0])
-        assert np.allclose(currents.dot(Qin.dot(currents)), avg_in)
-
-    def test_calc_l_vec(self):
+class TestCalcl:
+    def test_calc_l(self):
         # test if l.dot(currents) really is the average current
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-
-        tes_opt = optimization_methods.TESOptimizationProblem(A)
-        l = tes_opt._calc_l_vec(targets, target_direction, volumes)
-
+        l = optimization_methods._calc_l(A, targets, target_direction, volumes)
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         avg = np.average(field_x[[0, 1]], weights=[1, 2])
         assert np.allclose(avg, l.dot([-2, 1, 1]))
 
-    def test_calc_l_vec_different_directions(self):
+    def test_calc_different_directions(self):
         A = np.random.random((2, 5, 3))
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-
-        tes_opt = optimization_methods.TESOptimizationProblem(A)
-        l = tes_opt._calc_l_vec(targets, target_direction, volumes)
-
+        l = optimization_methods._calc_l(
+            A, targets, target_direction, volumes
+        )
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         field_y = A[..., 1].T.dot(currents)
@@ -355,12 +334,10 @@ class TestTESLinearConstrained():
         targets = [0, 1]
         target_direction = [[1, 0, 0], [1, 0, 0]]
         volumes = np.array([1, 2, 2, 2, 2])
-
         tes_problem = optimization_methods.TESLinearConstrained(
             A, weights=volumes
         )
         tes_problem.add_linear_constraint(targets, target_direction, 0.2)
-
         currents = [-2, 1, 1]
         field_x = A[..., 0].T.dot(currents[1:])
         avg = np.average(field_x[[0, 1]], weights=[1, 2])
@@ -372,12 +349,10 @@ class TestTESLinearConstrained():
         targets = [0, 1]
         target_direction = np.array([[1, 0, 0], [0, 1, 0]])
         volumes = np.array([1, 2, 2, 2, 2])
-
         tes_problem = optimization_methods.TESLinearConstrained(
             A, weights=volumes
         )
         tes_problem.add_linear_constraint(targets, target_direction, 0.2)
-
         currents = [1, 1]
         field_x = A[..., 0].T.dot(currents)
         field_y = A[..., 1].T.dot(currents)
@@ -484,6 +459,22 @@ class TestTESLinearConstrained():
         assert np.allclose(tes_problem.l.dot(x), tes_problem.target_means)
 
 
+class TestCalcQnorm:
+    def test_calc_Qnorm(self):
+        A = np.random.random((2, 5, 3))
+        targets = [0, 1]
+        volumes = np.array([1, 2, 2, 2, 4])
+        Qin = optimization_methods._calc_Qnorm(
+            A, targets, volumes,
+        )
+        currents = np.array([1, 0])
+        field = np.einsum('ijk, i->jk', A, currents)
+        avg_in = np.sum(
+            np.linalg.norm(field[targets], axis=1)**2 * volumes[targets])
+        avg_in /= np.sum(volumes[targets])
+        currents = np.array([-1, 1, 0])
+        assert np.allclose(currents.dot(Qin.dot(currents)), avg_in)
+
 class TestTESLinearAngleConstrained:
     def test_limit_angle_inactive(self, optimization_variables_avg):
         l, Q, A = optimization_variables_avg
@@ -567,7 +558,7 @@ class TestTESLinearAngleConstrained:
         x = tes_problem.solve()
         field = np.array([x[1:].dot(leadfield[..., i]) for i in range(3)]).T
         angle = np.rad2deg(np.arccos(field[0, 0]/np.linalg.norm(field[0])))
-        assert np.all(np.abs(x) <= max_el_current + NUM_TOL)
+        assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
@@ -674,8 +665,8 @@ class TestBBAlgorithm:
 
 
 class TestLinearElecConstrained:
-    @pytest.mark.parametrize('init_strategy', ['compact', 'full'])
-    def test_solve_feasible(self, init_strategy):
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -692,7 +683,7 @@ class TestLinearElecConstrained:
         )
         tes_problem.add_linear_constraint(targets, target_direction, target_mean)
 
-        x = tes_problem.solve(init_strategy=init_strategy)
+        x = tes_problem.solve(init_startegy=init_startegy)
 
         x_bf = None
         obj_bf = np.inf
@@ -750,8 +741,8 @@ class TestLinearElecConstrained:
         assert np.allclose(x_sp, x, atol=1e-4)
 
 class TestLinearAngleElecConstrained:
-    @pytest.mark.parametrize('init_strategy', ['compact', 'full'])
-    def test_solve_feasible(self, init_strategy):
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -766,7 +757,7 @@ class TestLinearAngleElecConstrained:
             n_elec, [0], [1, 0, 0], target_mean, max_angle,
             leadfield, max_total_current, max_el_current
         )
-        x = tes_problem.solve(init_strategy=init_strategy)
+        x = tes_problem.solve()
         field = np.array([x[1:].dot(leadfield[..., i]) for i in range(3)]).T
         angle = np.rad2deg(np.arccos(field[0, 0]/np.linalg.norm(field[0])))
 
@@ -785,12 +776,13 @@ class TestLinearAngleElecConstrained:
             if np.all(l_.dot(x_) > target_mean*0.99) and obj < obj_bf:
                 obj_bf = obj
 
+
         assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
         assert np.isclose(tes_problem.l.dot(x), target_mean)
-        assert x.dot(tes_problem.Q).dot(x) <= obj_bf + NUM_TOL
+        assert x.dot(tes_problem.Q).dot(x) <= obj_bf + 1.0e-14
 
     def test_solve_angle_elec_infeasible(self):
         np.random.seed(1)
@@ -826,11 +818,12 @@ class TestLinearAngleElecConstrained:
             if np.all(obj > obj_bf):
                 obj_bf = obj
 
-        assert np.all(np.abs(x) <= max_el_current + NUM_TOL)
+        assert np.all(np.abs(x) <= max_el_current)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
         assert angle <= max_angle
-        assert np.all(tes_problem.l.dot(x) >= obj_bf - NUM_TOL)
+        res = tes_problem.l.dot(x)
+        assert np.allclose(res, obj_bf) or np.all(res > obj_bf)
 
 
 class TestEqConstrained:
@@ -878,8 +871,7 @@ class TestTESNormContrained:
 
         tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        # Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        Qnorm = tes_opt._calc_Q_mat(0, np.ones(10))
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
 
         max_total_current = 0.2
         max_el_current = 0.1
@@ -894,10 +886,9 @@ class TestTESNormContrained:
         directions = fibonacci_sphere(51)
         directions = directions[directions[:, 2] > 0]
         for d in directions:
-            # l = optimization_methods._calc_l(
-            #     leadfield, 0, d, np.ones(10)
-            # )
-            l = tes_opt._calc_l_vec(0, d, np.ones(10))
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
             x_ = optimization_methods._linear_constrained_tes_opt(
                 l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
@@ -921,8 +912,7 @@ class TestTESNormContrained:
 
         tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        # Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        Qnorm = tes_opt._calc_Q_mat(0, np.ones(10))
+        Qnorm = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
 
         max_total_current = 0.2
         max_el_current = 0.1
@@ -937,10 +927,9 @@ class TestTESNormContrained:
         directions = fibonacci_sphere(51)
         directions = directions[directions[:, 2] > 0]
         for d in directions:
-            # l = optimization_methods._calc_l(
-            #     leadfield, 0, d, np.ones(10)
-            # )
-            l = tes_opt._calc_l_vec(0, d, np.ones(10))
+            l = optimization_methods._calc_l(
+                leadfield, 0, d, np.ones(10)
+            )
             x_ = optimization_methods._linear_constrained_tes_opt(
                 l[None, :], np.atleast_1d(target_magn),
                 Q, max_el_current,
@@ -963,12 +952,8 @@ class TestTESNormContrained:
 
         tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        # Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        # Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
-        Qnorm1 = tes_opt._calc_Q_mat(0, np.ones(10))
-        Qnorm2 = tes_opt._calc_Q_mat(1, np.ones(10))
-
-
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
         Qnorm = np.stack([Qnorm1, Qnorm2])
 
         max_total_current = 0.2
@@ -993,11 +978,8 @@ class TestTESNormContrained:
 
         tes_opt = optimization_methods.TESOptimizationProblem(leadfield)
         Q = tes_opt.Q
-        # Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
-        # Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
-        Qnorm1 = tes_opt._calc_Q_mat(0, np.ones(10))
-        Qnorm2 = tes_opt._calc_Q_mat(1, np.ones(10))
-
+        Qnorm1 = optimization_methods._calc_Qnorm(leadfield, 0, np.ones(10))
+        Qnorm2 = optimization_methods._calc_Qnorm(leadfield, 1, np.ones(10))
         Qnorm = np.stack([Qnorm1, Qnorm2])
 
         max_total_current = 0.2
@@ -1009,13 +991,10 @@ class TestTESNormContrained:
             max_el_current, max_total_current
         )
 
-        # check that constraints are fulfilled
         assert np.all(np.abs(x) <= max_el_current*1.001)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current*1.001)
         assert np.isclose(np.sum(x), 0)
-
-        # check that we did *not* reach (all) target magnitudes
-        assert np.any(np.sqrt(x @ Qnorm @ x) < target_magn*0.9)
+        assert np.isclose(np.sqrt(x.dot(Qnorm).dot(x))[0], target_magn[0], rtol=1e-1)
 
     def test_add_magn_constraint(self):
         A = np.random.random((2, 5, 3))
@@ -1054,8 +1033,8 @@ class TestTESNormContrained:
 
 
 class TestMagnElecConstrained:
-    @pytest.mark.parametrize('init_strategy', ['compact', 'full'])
-    def test_solve_feasible(self, init_strategy):
+    @pytest.mark.parametrize('init_startegy', ['compact', 'full'])
+    def test_solve_feasible(self, init_startegy):
         np.random.seed(1)
         leadfield = np.random.random((5, 10, 3))
         np.random.seed(None)
@@ -1071,7 +1050,7 @@ class TestMagnElecConstrained:
         )
         tes_problem.add_norm_constraint(targets, target_mean)
 
-        x = tes_problem.solve(init_strategy=init_strategy)
+        x = tes_problem.solve(init_startegy=init_startegy)
 
         x_bf = None
         obj_bf = np.inf

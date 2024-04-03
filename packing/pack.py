@@ -22,6 +22,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         '..'
     ))
     version = get_version()
+    # version = "4.1.0"
 
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
