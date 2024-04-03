@@ -101,7 +101,7 @@ elif sys.platform == 'linux':
         eigen_headers,
     ]
 
-    cgal_dirs = ['simnibs/external/lib/linux'] #not making sense - does this really work on linux? suggest: cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')] but perhaps all of this does not matter
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
     cgal_runtime = ['$ORIGIN/../../external/lib/linux']
     # Add -Os -flto for much smaller binaries
     cgal_compile_args = [
@@ -128,6 +128,7 @@ elif sys.platform == 'darwin':
     petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
 
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
     cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
     cgal_include += [
         np.get_include(),
