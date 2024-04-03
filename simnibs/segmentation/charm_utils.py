@@ -129,7 +129,6 @@ def _init_atlas_affine(t1_scan, mni_template, affine_settings):
     registerer = samseg.gems.KvlAffineRegistration(
         affine_settings["translation_scale"],
         affine_settings["max_iter"],
-        0,
         affine_settings["shrink_factors"],
         affine_settings["bg_value"],
         affine_settings["smoothing_factors"],
