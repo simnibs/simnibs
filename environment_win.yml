@@ -12,11 +12,8 @@ dependencies:
   - freeglut
   - vs2015_runtime
   - pip
-  - boost
-  - cgal=5.5.1
+  - cgal-cpp=5.5.1
   - eigen=3.3.7
-  - mpfr
-  - gmp
   - libwebp
   - pillow
   - pip:
