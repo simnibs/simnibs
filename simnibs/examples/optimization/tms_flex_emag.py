@@ -21,11 +21,12 @@ tms_opt.global_translation_ranges = [[-10, 10],[-10, 10],[-10, 10]]
 tms_opt.global_rotation_ranges = [[-10, 10],[-10, 10],[-10, 10]]
 
 roi = tms_opt.add_region_of_interest()
-
-roi.type = "GMmidlayer"
+roi.method = "surface"
+roi.surface_type = "central"
 
 # center of spherical ROI in subject space (in mm)
-roi.roi_sphere_center_subject = [-36.34, 14.53,  94.708]
+roi.roi_sphere_center_space = "subject"
+roi.roi_sphere_center = [-36.34, 14.53,  94.708]
 
 # radius of spherical ROI (in mm)
 roi.roi_sphere_radius = 100

@@ -22,7 +22,7 @@ from scipy.optimize import (
 
 from ..simulation.sim_struct import ELECTRODE
 from ..simulation.fem import get_dirichlet_node_index_cog
-from ..simulation.region_of_interest import RegionOfInterest
+from ..utils.region_of_interest import RegionOfInterest
 from ..simulation.array_layout import (
     create_tdcs_session_from_array,
     CircularArray,
@@ -339,9 +339,11 @@ class TesFlexOptimization:
         # initialize ROIs if not done already
         self._roi = []
         for i in range(len(self.roi)):
-            if type(self.roi[i]) == RegionOfInterest:
+            if self.subpath is not None and self.roi[i].subpath is None and self.roi[i].mesh is None:
+                    self.roi[i].subpath = self.subpath
+            elif self.roi[i].subpath is None and self.roi.mesh is None:
                 self.roi[i].mesh = self.mesh
-                self._roi.append(FemTargetPointCloud(self.roi[i].mesh, self.roi[i].initialize()))
+            self._roi.append(FemTargetPointCloud(self.mesh, self.roi[i].get_nodes()))
 
         self.n_roi = len(self._roi)
 
@@ -3008,12 +3010,13 @@ def plot_roi_field(e, roi, fn_out, e_label=None):
 
 def get_element_properties(roi, nodes, con, n_center):
 
-    if roi._cropped_mesh is not None:
+    roi_mesh = roi.get_roi_mesh()
+    if roi_mesh.elm.nr > 0:
         if nodes is None:
-            nodes = roi._cropped_mesh.nodes.node_coord
+            nodes = roi_mesh.nodes.node_coord
         
         if con is None:
-            con = roi._cropped_mesh.elm.node_number_list - 1
+            con = roi_mesh.elm.node_number_list - 1
     # determine element properties
     triangles_normals = None
     if nodes is not None and con is not None:

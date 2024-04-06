@@ -32,10 +32,12 @@ electrode.current = [0.002, -0.002]                     # electrode currents
 
 # define ROI
 roi = opt.add_roi()
-roi.type = "GMmidlayer"
+roi.method = "surface"
+roi.surface_type = "central"
 
 # center of spherical ROI in subject space (in mm)
-roi.roi_sphere_center_subject = [-41, -13,  66]
+roi.roi_sphere_center_space = "subject"
+roi.roi_sphere_center = [-41.0, -13.0,  66.0]
 
 # radius of spherical ROI (in mm)
 roi.roi_sphere_radius = 20

@@ -7,10 +7,11 @@ from typing import Callable, Optional, get_type_hints
 import numpy.typing as npt
 
 import scipy.optimize as opt
+import scipy
 import numpy as np
 
 from simnibs.simulation.onlinefem import FemTargetPointCloud
-from simnibs.simulation.region_of_interest import (
+from simnibs.utils.region_of_interest import (
     RegionOfInterest,
 )
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
@@ -230,8 +231,11 @@ class TmsFlexOptimization:
 
         if self.method == "emag":
             if self.roi is not None:
-                self.roi.mesh = self._mesh
-                self._roi = FemTargetPointCloud(self.roi.mesh, self.roi.initialize()) 
+                if self.subpath is not None and self.roi.subpath is None and self.roi.mesh is None:
+                    self.roi.subpath = self.subpath
+                elif self.roi.subpath is None and self.roi.mesh is None:
+                    self.roi.mesh = self._mesh
+                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes()) 
             else:
                 raise ValueError("No ROI specified")
 
@@ -308,38 +312,7 @@ class TmsFlexOptimization:
         if self.method == "emag" and self._roi.n_center == 0:
             raise ValueError("The region of interest contains no positions")
 
-        optimization_options_output = (
-            f"global_translation_ranges: {self._global_translation_ranges}{os.linesep}"
-        )
-        optimization_options_output += (
-            f"global_rotation_ranges: {self._global_rotation_ranges}{os.linesep}"
-        )
-        optimization_options_output += f"dither_factor: {self.dither_skip}{os.linesep}"
-
-        if self.method == "emag":
-            optimization_options_output += (
-                f"ROI positions: {self._roi.n_center}{os.linesep}"
-            )
-            optimization_options_output += (
-                f"fem_evaluation_cutoff: {self.fem_evaluation_cutoff}{os.linesep}"
-            )
-
-        optimization_options_output += f"direct_eps: {self.direct_eps}{os.linesep}"
-        optimization_options_output += (
-            f"direct_maxfun: {self.direct_maxfun}{os.linesep}"
-        )
-        optimization_options_output += (
-            f"direct_maxiter: {self.direct_maxiter}{os.linesep}"
-        )
-        optimization_options_output += (
-            f"direct_locally_biased: {self.direct_locally_biased}{os.linesep}"
-        )
-        optimization_options_output += (
-            f"direct_vol_tol: {self.direct_vol_tol}{os.linesep}"
-        )
-        optimization_options_output += f"direct_len_tol: {self.direct_len_tol}"
-
-        logger.info(f"Optimization options:{os.linesep}{optimization_options_output}")
+        logger.info(f"Optimization options:{os.linesep}{self.to_str_formatted()}")
 
         logger.info(f"Running optimization ({self.method})")
         # Run simulations
@@ -385,7 +358,7 @@ class TmsFlexOptimization:
             raise ValueError("method should be 'distance' or 'emag'")
 
         logger.info(
-            f"Optimization result:{os.linesep}{direct[0]}{os.linesep}"
+            f"Optimization result:{os.linesep}{direct}{os.linesep}"
             f"Initial cost: {initial_cost}{os.linesep}"
             f"Optimized cost: {optimized_cost}"
         )
@@ -454,6 +427,7 @@ class TmsFlexOptimization:
         dict
             Dictionaty for usage with scipy.io.savemat
         """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
         mat = {
             key:remove_None(value) for key, value in self.__dict__.items() 
             if not key.startswith('__')
@@ -461,8 +435,12 @@ class TmsFlexOptimization:
             and not callable(value) 
             and not callable(getattr(value, "__get__", None))
         }
-        mat['type'] = 'TmsFlexOptimize'
 
+        # Add class name as type (type is protected in python so it cannot be a instance variable)
+        mat['type'] = 'TmsFlexOptimization'
+
+        # Add all instance variables that are classes
+        # Manually or by calling their to_mat function
         pos_dt = np.dtype([('type', 'O'),
                            ('name', 'O'), ('date', 'O'),
                            ('matsimnibs', 'O'), ('didt', 'O'),
@@ -489,16 +467,49 @@ class TmsFlexOptimization:
         mat: scipy.io.loadmat
             Loaded matlab structure
         """
+        # Load all instance variables from the mat file
+        # Datatypes come from the type hints of the instance variables
         types = get_type_hints(TmsFlexOptimization)
         for key, value in self.__dict__.items():
             if key in mat:
                 setattr(self, key, try_to_read_matlab_field(mat, key, types[key], value))
 
+        # Load all 2d arrays manually (try_to_read_matlab_field will load only array_name[0])
+        if 'global_translation_ranges' in mat:
+            self.global_translation_ranges = mat['global_translation_ranges'].tolist()
+
+        if 'global_rotation_ranges' in mat:
+            self.global_rotation_ranges = mat['global_rotation_ranges'].tolist()
+
+        # Load all instance variables that are classes
         if 'pos' in mat:
-            self.pos = POSITION(mat['pos'])
+            self.pos = POSITION(mat['pos'][0][0])
 
         return self
+    
+    def to_str_formatted(self):
+        import pprint
+        # Generate dict from instance variables (excluding variables starting with _ or __ or None or len == 0)
+        tms_flex_dict = {
+            key:value for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+            and value is not None and (not hasattr(value, '__len__') or len(value) > 0)
+        }
 
+        # Add all instance variables that are classes manually
+        tms_flex_dict['pos'] = {
+            key:value for key, value in self.pos.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+            and value is not None and (not hasattr(value, '__len__') or len(value) > 0)
+        }
+
+        return pprint.pformat(tms_flex_dict, indent=4)
 
 def _get_fast_distance_score(
     distance_function: Callable,
@@ -544,7 +555,6 @@ def _get_fast_distance_score(
 
     return np.mean(np.abs(distance_function(min_distance_points)))
 
-import scipy
 def _get_fast_intersection_penalty(
     element_voxel_volumes: dict,
     element_voxel_indexes,

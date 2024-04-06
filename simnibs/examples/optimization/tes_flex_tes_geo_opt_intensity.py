@@ -33,7 +33,8 @@ electrode.current = [0.002, -0.002]                     # electrode currents
 
 # define ROI
 roi = opt.add_roi()
-roi.center = [[-13.754, 13.104, 71.152],                # list of ROI points
+roi.method = 'custom'
+roi.nodes = [[-13.754, 13.104, 71.152],                # list of ROI points
               [-16.096, 12.434, 71.120],
               [-16.141, 12.429, 70.581]]
 

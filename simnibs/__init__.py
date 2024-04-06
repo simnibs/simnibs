@@ -33,6 +33,6 @@ from .simulation import sim_struct
 from .simulation import fem
 from .simulation.onlinefem import *
 from .simulation.array_layout import *
-from .simulation.region_of_interest import *
+from .utils.region_of_interest import *
 from .simulation.run_simnibs import run_simnibs
 from .optimization import opt_struct

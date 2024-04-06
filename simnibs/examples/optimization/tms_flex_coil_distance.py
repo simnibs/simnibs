@@ -1,5 +1,7 @@
 import os
-from simnibs import opt_struct
+
+import scipy
+from simnibs import opt_struct, sim_struct
 
 # Initialize structure
 tms_opt = opt_struct.TmsFlexOptimization()
