@@ -8,6 +8,9 @@ import gc
 import numpy as np
 import h5py
 
+from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements
+
 from . import ADMlib
 from ..simulation import fem
 from ..utils import cond_utils
@@ -69,7 +72,7 @@ class TMSoptimize:
         Options for the FEM solver. Default: CG+AMG
     method (optional): 'direct' or 'ADM'
         Method to be used. Either 'direct' for running full TMS optimizations or
-        'ADM' for using the Auxiliary Dipole Method. 'ADM' is only compatible with ".ccd"
+        'ADM' for using the Auxiliary Dipole Method. 'ADM' is only compatible with dipole based coils
         coil format
     scalp_normals_smoothing_steps (optional): float
         Number of iterations for smoothing the scalp normals to control tangential scalp placement of TMS coil
@@ -551,12 +554,21 @@ class TMSoptimize:
         baricenters = self.mesh.elements_baricenters()
 
         th = self.mesh.elm.elm_type == 4
-        if not self.fnamecoil.endswith(".ccd"):
-            raise ValueError('ADM optimization is only possible with ".ccd" coil files')
+        coil = TmsCoil.from_file(self.fnamecoil)
+        dipoles = []
+        moments = []
+        for coil_element in coil.elements:
+            if not isinstance(coil_element, DipoleElements):
+                raise ValueError('ADM optimization is only possible with dipole based coil files')
+            dipoles.append(coil_element.get_points() * 1e-3)
+            moments.append(coil_element.get_values())
+
+        dipoles = np.concatenate(dipoles)
+        moments = np.concatenate(moments)
+
         if not np.all(th[target_region - 1]):
             raise ValueError("Target region must contain only tetrahedra")
-        ccd_file = np.loadtxt(self.fnamecoil, skiprows=2)
-        dipoles, moments = ccd_file[:, 0:3], ccd_file[:, 3:]
+        
         # Run dipole simulations
         S = fem.DipoleFEM(self.mesh, cond_field, self.solver_options)
         vols = self.mesh.elements_volumes_and_areas()
@@ -603,7 +615,7 @@ class TMSoptimize:
                     J_y[th].T,
                     J_z[th].T,
                     dipoles.T,
-                    moments.T,  # .ccd file is already in SI units
+                    moments.T,  # file is already in SI units
                     coil_matrices,
                     rotations,
                 )
@@ -620,7 +632,7 @@ class TMSoptimize:
                     baricenters[th].T * 1e-3,
                     J_d[th].T,
                     dipoles.T,
-                    moments.T,  # .ccd file is already in SI units
+                    moments.T,  # file is already in SI units
                     coil_matrices,
                     rotations,
                 )
