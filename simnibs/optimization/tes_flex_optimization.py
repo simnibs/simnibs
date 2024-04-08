@@ -684,19 +684,7 @@ class TesFlexOptimization:
         roi_dict = dict()
 
         for i_roi, _roi in enumerate(self.roi):
-            roi_dict[f"roi_{i_roi}"] = dict()
-            roi_dict[f"roi_{i_roi}"]["center"] = remove_None(_roi.center)
-            roi_dict[f"roi_{i_roi}"]["domains"] = remove_None(_roi.domains)
-            roi_dict[f"roi_{i_roi}"]["type"] = remove_None(_roi.type)
-            roi_dict[f"roi_{i_roi}"]["roi_sphere_center_mni"] = remove_None(
-                _roi.roi_sphere_center_mni
-            )
-            roi_dict[f"roi_{i_roi}"]["roi_sphere_center_subject"] = remove_None(
-                _roi.roi_sphere_center_subject
-            )
-            roi_dict[f"roi_{i_roi}"]["roi_sphere_radius"] = remove_None(
-                _roi.roi_sphere_radius
-            )
+            roi_dict[f"roi_{i_roi}"] = _roi.to_mat()
 
         mat["roi_dict"] = roi_dict
 

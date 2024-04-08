@@ -12,7 +12,6 @@ from simnibs.utils.mesh_element_properties import ElementTags
 from .file_finder import SubjectFiles
 from .transformations import (
     mni2subject_coords,
-    create_new_connectivity_list_point_mask,
 )
 from simnibs.utils import transformations
 
@@ -30,7 +29,7 @@ class RegionOfInterest:
         str | list[str] | None
     )  # method = "surface" : (label, annot, curv, nifti) | method = "volume" : (nifti)
     mask_value: int | list[int] | None  # default 1
-    mask_operator: str | list[str] | None  # default "OR" ("OR", "AND")
+    mask_operator: str | list[str] | None  # default "union" ("union", "intersection", "difference")
 
     roi_sphere_center: list[float] | list[list[float]] | None
     roi_sphere_radius: float | list[float] | None
@@ -175,6 +174,9 @@ class RegionOfInterest:
                 )
         self._prepared = True
 
+    def to_mat(self):
+        pass
+
     def get_nodes(self):
         if self.method != "manual" and not self._prepared:
             self._prepare()
@@ -216,28 +218,44 @@ class RegionOfInterest:
         if os.path.isfile(geo_file_path):
             os.remove(geo_file_path)
 
-        vis_mesh = deepcopy(self._mesh)
+        roi_colormap = np.zeros((255, 4), dtype=int)
+        roi_colormap[:-1, :] = [100, 100, 255, 255]
+        roi_colormap[-1, :] = [255, 0, 0, 255]
 
-        match self._mask_type:
-            case "node":
-                included_element_mask = np.any(
-                    np.in1d(
-                        self._mesh.elm.node_number_list,
-                        self._mesh.nodes.node_number[self._mask],
-                    ).reshape(-1, 4),
-                    axis=1,
-                )
-                vis_mesh.elm.tag1[included_element_mask] = 9999
-                vis_mesh.elm.tag2[included_element_mask] = 9999
-            case "elm_center":
-                vis_mesh.elm.tag1[self._mask] = 9999
-                vis_mesh.elm.tag2[self._mask] = 9999
+        if self._mesh.elm.nr > 0:
+            match self._mask_type:
+                case "node":
+                    v = self._mesh.view()
+                    roi_node_data = np.zeros(self._mesh.nodes.nr)
+                    roi_node_data[self._mask] = 1
+                    self._mesh.add_node_field(roi_node_data, "ROI")
+                    v.add_view(
+                        ColorTable=roi_colormap,
+                        Visible=1,
+                        ShowScale=0,
+                        CustomMin=0,
+                        CustomMax=1,
+                        RangeType=2,
+                    )
+                case "elm_center":
+                    v = self._mesh.view(visible_tags=np.unique(self._mesh.elm.tag1[self._mask]))
+                    elm_node_data = np.zeros(self._mesh.elm.nr)
+                    elm_node_data[self._mask] = 1
+                    self._mesh.add_element_field(elm_node_data, "ROI")
 
-        if np.all(self._mesh.elm.elm_type == 2):
-            v = vis_mesh.view()
+                    v.add_view(
+                        ColorTable=roi_colormap,
+                        Visible=1,
+                        ShowScale=0,
+                        CustomMin=0.9,
+                        CustomMax=1,
+                        RangeType=2,
+                    )
         else:
-            v = vis_mesh.view(visible_tags=[9999])
-        v.Mesh.VolumeFaces = 1
+            v = self._mesh.view()
+
+        v.Mesh.SurfaceFaces = 0
+        v.Mesh.VolumeFaces = 0
 
         nodes = self.get_nodes()
         mesh_io.write_geo_spheres(
@@ -250,7 +268,7 @@ class RegionOfInterest:
         node_view = v.add_view(
             ShowScale=0, PointType=0, PointSize=3.0, ColormapNumber=2
         )
-        if vis_mesh.elm.nr == 0:
+        if self._mesh.elm.nr == 0:
             node_view.Visible = 1
 
         if ElementTags.SCALP_TH_SURFACE in self._mesh.elm.tag1:
@@ -270,6 +288,12 @@ class RegionOfInterest:
         v.add_merge(geo_file_path)
         v.mesh.write(os.path.join(folder_path, f"{base_file_name}.msh"))
         v.write_opt(os.path.join(folder_path, f"{base_file_name}.msh"))
+
+        match self._mask_type:
+            case "node":
+                del self._mesh.nodedata[-1]
+            case "elm_center":
+                del self._mesh.elmdata[-1]
 
     def load_surfaces(
         self, surface_type: str | None, subpath: str | None, surface_path: str | None
@@ -358,7 +382,7 @@ class RegionOfInterest:
                 mask_value = [mask_value] * len(mask_path)
 
             if mask_operator is None:
-                mask_operator = "AND"
+                mask_operator = "intersection"
 
             if isinstance(mask_operator, str):
                 mask_operator = [mask_operator] * len(mask_path)
@@ -465,7 +489,7 @@ class RegionOfInterest:
                 mask_value = [mask_value] * len(mask_path)
 
             if mask_operator is None:
-                mask_operator = "AND"
+                mask_operator = "intersection"
 
             if isinstance(mask_operator, str):
                 mask_operator = [mask_operator] * len(mask_path)
@@ -515,7 +539,7 @@ class RegionOfInterest:
             )
 
         if surface_roi_operator is None:
-            surface_roi_operator = "AND"
+            surface_roi_operator = "intersection"
 
         kd_tree = scipy.spatial.cKDTree(self._mesh.elements_baricenters().value)
         index_mask = kd_tree.query_ball_point(
@@ -563,7 +587,7 @@ class RegionOfInterest:
                 roi_sphere_center_space = [roi_sphere_center_space]
 
             if roi_sphere_operator is None:
-                roi_sphere_operator = "AND"
+                roi_sphere_operator = "intersection"
 
             if isinstance(roi_sphere_operator, str):
                 roi_sphere_operator = [roi_sphere_operator] * len(roi_sphere_center)
@@ -627,7 +651,7 @@ class RegionOfInterest:
             tissues = [tissues]
 
         if tissue_mask_operator is None:
-            tissue_mask_operator = "AND"
+            tissue_mask_operator = "intersection"
 
         tissues = np.array(tissues)
 
@@ -719,14 +743,18 @@ def fs_avr_mask_to_sub(index_mask, hemi, subject_files: SubjectFiles):
 
 def combine_mask(bool_mask, index_mask, operator):
     match operator:
-        case "OR":
+        case "union":
             bool_mask[index_mask] = True
-        case "AND":
+        case "intersection":
             bool_index_mask = np.zeros_like(bool_mask, dtype=np.bool_)
             bool_index_mask[index_mask] = True
             bool_mask = bool_mask & bool_index_mask
+        case "difference":
+            bool_index_mask = np.ones_like(bool_mask, dtype=np.bool_)
+            bool_index_mask[index_mask] = False
+            bool_mask = bool_mask & bool_index_mask
         case _:
-            raise ValueError('elements of mask_space needs to be one of ["OR", "AND"]')
+            raise ValueError('elements of mask_space needs to be one of ["union", "intersection", "difference"]')
 
     return bool_mask
 

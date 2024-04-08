@@ -15,11 +15,15 @@ roi.method = "surface"
 roi.surface_type = "central"
 
 # center of spherical ROI in MNI space (in mm)
-roi.roi_sphere_center_space = "mni"
-roi.roi_sphere_center = [-43.6, -35.4, 64.3]
+roi.roi_sphere_center_space = ["mni", "mni"]
+roi.roi_sphere_center = [[-43.6, -35.4, 64.3],[-43.6, -35.4, 64.3]]
+roi.roi_sphere_operator = ["intersection", "difference"]
 
 # radius of spherical ROI (in mm)
-roi.roi_sphere_radius = 20
+roi.roi_sphere_radius = [20, 10]
+
+roi.write_visualization('', 'roi_surf_vis_2')
+del roi
 
 # Volume ROI
 # ======================================================================
@@ -30,17 +34,16 @@ roi.subpath = "m2m_ernie"
 roi.method = "volume"
 
 # center of spherical ROI in MNI space (in mm)
-roi.roi_sphere_center_space = "mni"
-roi.roi_sphere_center = [-43.6, -35.4, 64.3]
-
-# alternatively, the center can also be defined in subject space (in mm)
-# roi.roi_sphere_center_space = "subject"
-
+roi.roi_sphere_center_space = ["mni", "mni"]
+roi.roi_sphere_center = [[-43.6, -35.4, 64.3],[-43.6, -35.4, 64.3]]
+roi.roi_sphere_operator = ["intersection", "difference"]
 # radius of spherical ROI (in mm)
-roi.roi_sphere_radius = 20
+roi.roi_sphere_radius = [40, 30]
 
 # domains to include
-roi.tissues = [ElementTags.WM, ElementTags.GM]
+roi.tissues = [ElementTags.GM]
+roi.write_visualization('', 'roi_vis_2')
+del roi
 
 # Volume ROI from Surface ROI
 # ======================================================================
@@ -63,7 +66,7 @@ roi.tissues = [ElementTags.GM]
 
 roi.surface_inclusion_radius = 5
 
-roi.write_visualization('', 'roi_vis')
+del roi
 
 # Custom ROI
 # ======================================================================
@@ -75,3 +78,5 @@ roi.method = "custom"
 
 # points where the e-field is evaluated (interpolated), e.g. centres of custom surface or volume
 roi.nodes = [[-13.7, 13.1, 71.1], [-16.1, 12.4, 71.1], [-16.1, 12.4, 70.6]]
+roi.write_visualization('', 'roi_point_vis')
+del roi
