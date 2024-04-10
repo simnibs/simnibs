@@ -34,7 +34,7 @@ class RegionOfInterest:
     roi_sphere_center: list[float] | list[list[float]] | None
     roi_sphere_radius: float | list[float] | None
     roi_sphere_center_space: str | list[str] | None  # ("subject", "mni")
-    roi_sphere_operator: str | list[str] | None
+    roi_sphere_operator: str | list[str] | None # default "union" ("union", "intersection", "difference")
 
     # method = "custom"
     nodes: list[list[float]] | None

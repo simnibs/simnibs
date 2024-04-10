@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    command line tool to convert coil dipole definition ccd files to nifti1
+    command line tool to convert coil dipole definition ccd or tcd files to nifti1
     format. This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
 
@@ -45,7 +45,7 @@ def main():
         dest="infile",
         default=None,
         required=True,
-        help="CCD file to convert",
+        help="ccd / tcd file to convert",
     )
     parser.add_argument(
         "-o",
@@ -67,7 +67,7 @@ def main():
 
     options = parser.parse_args(sys.argv[1:])
     if os.path.isdir(options.infile):
-        print(f"recursively processing CCD files in {options.infile}")
+        print(f"recursively processing ccd / tcd files in {options.infile}")
         coil_files = chain(
             glob.iglob(os.path.join(options.infile, "**", "*.ccd"), recursive=True),
             glob.iglob(os.path.join(options.infile, "**", "*.tcd"), recursive=True),

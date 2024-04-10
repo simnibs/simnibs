@@ -48,7 +48,7 @@ class OnlineFEM:
         True: interpolate the dadt field using positions (coordinates) of elements centroids
         False: interpolate the dadt field using positions (coordinates) of nodes
     fn_coil : str
-        Path to coil file (.ccd or .nii)
+        Path to coil file (.tcd or .ccd or .nii)
     dataType : list of int [n_roi], optional, default: 0
         Calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez. Defined for each ROI.
     coil : Coil instance

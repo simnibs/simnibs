@@ -1126,17 +1126,17 @@ class CoilTable (QtWidgets.QWidget):
 
 
     def coilDialog(self):
-        #get folder with ccd files
+        #get folder with coil models
         try:
-            ccd_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
+            coil_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
         except:
-            ccd_folder = './'
+            coil_folder = './'
 
 
         dialog = QtWidgets.QFileDialog(self)
         dialog.setWindowTitle('Open Coil Definition File')
         dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz *.tcd)')
-        dialog.setDirectory(ccd_folder)
+        dialog.setDirectory(coil_folder)
         dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             fn = str(dialog.selectedFiles()[0])

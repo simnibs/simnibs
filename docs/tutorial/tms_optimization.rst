@@ -93,7 +93,7 @@ MATLAB
 Auxiliary Dipole Method (ADM)
 ---------------------------------------
 
-To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` coil file and set the :code:`method = 'ADM'`:
+To use the Auxiliary Dipole Method (ADM), simply use a :file:`.ccd` or a :file:`.tcd` coil file that only contains dipole elements and set the :code:`method = 'ADM'`:
 
 .. code-block:: python
 

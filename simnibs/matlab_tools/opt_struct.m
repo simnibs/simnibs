@@ -41,7 +41,7 @@ switch S.type
        S.subpath = ''; % path to the 'm2m_{subID}' folder created by mri2mesh or headreco (OPTIONAL, filled from fnamehead)
        S.pathfem = 'tms_optimization/';   % path to save the results (OPTIONAL)
        S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
-       S.fnamecoil =  '';      % to chose from inside ccd-files
+       S.fnamecoil =  '';      % to chose from inside coil_models
        S.cond = standard_cond;   % list of conductivities
        S.anisotropy_type = 'scalar'; % can be 'scalar' (use isotropic values), 'dir' (direct mapping),'mc' (mean conductivity from direct mapping),'vn' (volume normalized); optional
        S.aniso_maxratio = 10; % maximal ratio between largest eigenvalue and the two other eigenvalues of conductivity tensor
@@ -60,7 +60,7 @@ switch S.type
        S.angle_resolution = 30; % Resolution to use for angles (in degrees)
        S.open_in_gmsh = true; % Wether to open simulation result in Gmsh
        S.solver_options = ''; % FEM solver options
-       S.method = 'direct'; % Solution method, either 'direct' or 'ADM'. The former is only valid with .ccd coil files
+       S.method = 'direct'; % Solution method, either 'direct' or 'ADM'. The former is only valid with .ccd coil files or .tcd files that only contain dipole elements
 
     case 'TDCSoptimize'
         S.leadfield_hdf = ''; % Name of HDF5 file with leadfield
