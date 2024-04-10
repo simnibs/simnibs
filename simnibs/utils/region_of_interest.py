@@ -175,7 +175,7 @@ class RegionOfInterest:
         self._prepared = True
 
     def to_mat(self):
-        pass
+        return {'a': 'b'}
 
     def get_nodes(self):
         if self.method != "manual" and not self._prepared:
