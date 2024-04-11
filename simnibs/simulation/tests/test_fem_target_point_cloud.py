@@ -2,7 +2,7 @@ import os
 import pytest
 import simnibs
 import numpy as np
-from ... mesh_tools import mesh_io
+from ...mesh_tools import mesh_io
 from ... import SIMNIBSDIR
 from ..onlinefem import FemTargetPointCloud
 

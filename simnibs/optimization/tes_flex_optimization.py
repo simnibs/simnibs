@@ -343,7 +343,7 @@ class TesFlexOptimization:
                     self.roi[i].subpath = self.subpath
             elif self.roi[i].subpath is None and self.roi.mesh is None:
                 self.roi[i].mesh = self.mesh
-            self._roi.append(FemTargetPointCloud(self.mesh, self.roi[i].get_nodes()))
+            self._roi.append(FemTargetPointCloud(self.mesh, self.roi[i].get_nodes(node_type="elm_center")))
 
         self.n_roi = len(self._roi)
 

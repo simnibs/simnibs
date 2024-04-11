@@ -1,6 +1,7 @@
 from copy import deepcopy
 import os
 import numpy as np
+import numpy.typing as npt
 import nibabel as nib
 import scipy
 
@@ -29,12 +30,16 @@ class RegionOfInterest:
         str | list[str] | None
     )  # method = "surface" : (label, annot, curv, nifti) | method = "volume" : (nifti)
     mask_value: int | list[int] | None  # default 1
-    mask_operator: str | list[str] | None  # default "union" ("union", "intersection", "difference")
+    mask_operator: (
+        str | list[str] | None
+    )  # default "union" ("union", "intersection", "difference")
 
     roi_sphere_center: list[float] | list[list[float]] | None
     roi_sphere_radius: float | list[float] | None
     roi_sphere_center_space: str | list[str] | None  # ("subject", "mni")
-    roi_sphere_operator: str | list[str] | None # default "union" ("union", "intersection", "difference")
+    roi_sphere_operator: (
+        str | list[str] | None
+    )  # default "union" ("union", "intersection", "difference")
 
     # method = "custom"
     nodes: list[list[float]] | None
@@ -175,21 +180,31 @@ class RegionOfInterest:
         self._prepared = True
 
     def to_mat(self):
-        return {'a': 'b'}
+        return {"a": "b"}
 
-    def get_nodes(self):
+    def get_nodes(self, node_type=None) -> npt.NDArray[np.float_]:
         if self.method != "manual" and not self._prepared:
             self._prepare()
+        
+        if node_type is None:
+            match self._mask_type:
+                case "node":
+                    return self._mesh.nodes.node_coord[self._mask]
+                case "elm_center":
+                    return self._mesh.elements_baricenters().value[self._mask]
+                case _:
+                    raise ValueError(f"No mesh or surface was loaded")
+        else:
+            roi_mesh = self.get_roi_mesh()
+            match node_type:
+                case "node":
+                    return roi_mesh.nodes.node_coord
+                case "elm_center":
+                    return roi_mesh.elements_baricenters().value
+                case _:
+                    raise ValueError(f'node_type needs to be one of ["node", "elm_center"] (was {node_type})')
 
-        match self._mask_type:
-            case "node":
-                return self._mesh.nodes.node_coord[self._mask]
-            case "elm_center":
-                return self._mesh.elements_baricenters().value[self._mask]
-            case _:
-                raise ValueError(f"No mesh or surface was loaded")
-
-    def get_roi_mesh(self):
+    def get_roi_mesh(self) -> Msh:
         if self.method != "manual" and not self._prepared:
             self._prepare()
 
@@ -238,7 +253,9 @@ class RegionOfInterest:
                         RangeType=2,
                     )
                 case "elm_center":
-                    v = self._mesh.view(visible_tags=np.unique(self._mesh.elm.tag1[self._mask]))
+                    v = self._mesh.view(
+                        visible_tags=np.unique(self._mesh.elm.tag1[self._mask])
+                    )
                     elm_node_data = np.zeros(self._mesh.elm.nr)
                     elm_node_data[self._mask] = 1
                     self._mesh.add_element_field(elm_node_data, "ROI")
@@ -296,7 +313,10 @@ class RegionOfInterest:
                 del self._mesh.elmdata[-1]
 
     def load_surfaces(
-        self, surface_type: str | None, subpath: str | None, surface_path: str | None
+        self,
+        surface_type: str | None = None,
+        subpath: str | None = None,
+        surface_path: str | None = None,
     ):
         surfaces: list[Msh] = []
         match surface_type:
@@ -335,7 +355,7 @@ class RegionOfInterest:
         self._mask_type = "node"
         self._mask = np.ones((self._mesh.nodes.nr), dtype=np.bool_)
 
-    def load_mesh(self, mesh: str | Msh | None, subpath: str | None):
+    def load_mesh(self, mesh: str | Msh | None = None, subpath: str | None = None):
         if mesh is not None:
             if isinstance(mesh, Msh):
                 self._mesh = mesh
@@ -679,11 +699,11 @@ def load_surface_from_file(surface_path: str) -> Msh:
     _, file_extension = os.path.splitext(surface_path)
     surface = None
     match file_extension:
-        case "msh":
+        case ".msh":
             surface: Msh = mesh_io.read_msh(surface_path)
             if np.any(surface.elm.elm_type != 2):
                 raise ValueError(".msh file contains non triangle elements")
-        case "gii":
+        case ".gii":
             surface = mesh_io.read_gifti_surface(surface_path)
         case _:
             try:
@@ -692,21 +712,21 @@ def load_surface_from_file(surface_path: str) -> Msh:
                 pass
     if surface is None:
         raise ValueError(
-            "surface_path needs to be in one of the following file formats: [msh, Gifti, FreeSurfer surface]"
+            f"surface_path needs to be in one of the following file formats: [.msh (Gmsh), .gii (GIfTI surface), FreeSurfer surface] (was {file_extension})"
         )
     return surface
 
 
-def load_surface_mask_from_file(mask_path: str, mask_value: int):
+def load_surface_mask_from_file(mask_path: str, mask_value: int = 1) -> npt.NDArray[np.int_]:
     if not os.path.isfile(mask_path):
         raise ValueError("surface_path needs to be a file")
 
     _, file_extension = os.path.splitext(mask_path)
     index_mask = None
     match file_extension:
-        case "label":
+        case ".label":
             index_mask = nib.freesurfer.io.read_label(mask_path)
-        case "annot":
+        case ".annot":
             labels, _, _ = nib.freesurfer.io.read_annot(mask_path)
             index_mask = np.where(labels == mask_value)[0]
         case _:
@@ -718,10 +738,10 @@ def load_surface_mask_from_file(mask_path: str, mask_value: int):
 
     if index_mask is None:
         ValueError(
-            "mask_path needs to be in one of the following file formats: [FreeSurfer label, FreeSurfer annot, FreeSurfer curv, NIfTI]"
+            f"mask_path needs to be in one of the following file formats: [.label (FreeSurfer label), .annot (FreeSurfer annot), FreeSurfer curv] (was {file_extension})"
         )
 
-    return index_mask
+    return index_mask.astype(np.int_)
 
 
 def fs_avr_mask_to_sub(index_mask, hemi, subject_files: SubjectFiles):
@@ -754,7 +774,9 @@ def combine_mask(bool_mask, index_mask, operator):
             bool_index_mask[index_mask] = False
             bool_mask = bool_mask & bool_index_mask
         case _:
-            raise ValueError('elements of mask_space needs to be one of ["union", "intersection", "difference"]')
+            raise ValueError(
+                'elements of mask_space needs to be one of ["union", "intersection", "difference"]'
+            )
 
     return bool_mask
 
@@ -777,7 +799,7 @@ def mni_mask_to_sub(mask, subject_files: SubjectFiles):
     return nib.Nifti1Image(transformed_mask, target_image.affine)
 
 
-def mask_image_to_index_mask(node_type: str, mask_img, surface, mask_value):
+def mask_image_to_index_mask(node_type: str, mask_img, surface: Msh, mask_value: int):
     match node_type:
         case "node":
             data = mesh_io.NodeData.from_data_grid(
