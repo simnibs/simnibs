@@ -185,7 +185,7 @@ class RegionOfInterest:
     def get_nodes(self, node_type=None) -> npt.NDArray[np.float_]:
         if self.method != "manual" and not self._prepared:
             self._prepare()
-        
+
         if node_type is None:
             match self._mask_type:
                 case "node":
@@ -202,7 +202,9 @@ class RegionOfInterest:
                 case "elm_center":
                     return roi_mesh.elements_baricenters().value
                 case _:
-                    raise ValueError(f'node_type needs to be one of ["node", "elm_center"] (was {node_type})')
+                    raise ValueError(
+                        f'node_type needs to be one of ["node", "elm_center"] (was {node_type})'
+                    )
 
     def get_roi_mesh(self) -> Msh:
         if self.method != "manual" and not self._prepared:
@@ -717,7 +719,9 @@ def load_surface_from_file(surface_path: str) -> Msh:
     return surface
 
 
-def load_surface_mask_from_file(mask_path: str, mask_value: int = 1) -> npt.NDArray[np.int_]:
+def load_surface_mask_from_file(
+    mask_path: str, mask_value: int = 1
+) -> npt.NDArray[np.int_]:
     if not os.path.isfile(mask_path):
         raise ValueError("surface_path needs to be a file")
 
@@ -737,14 +741,16 @@ def load_surface_mask_from_file(mask_path: str, mask_value: int = 1) -> npt.NDAr
                 pass
 
     if index_mask is None:
-        ValueError(
+        raise ValueError(
             f"mask_path needs to be in one of the following file formats: [.label (FreeSurfer label), .annot (FreeSurfer annot), FreeSurfer curv] (was {file_extension})"
         )
 
     return index_mask.astype(np.int_)
 
 
-def fs_avr_mask_to_sub(index_mask, hemi, subject_files: SubjectFiles):
+def fs_avr_mask_to_sub(
+    index_mask: npt.NDArray[np.int_], hemi: str, subject_files: SubjectFiles
+) -> npt.NDArray[np.int_]:
     sphere_surface: Msh = mesh_io.read_gifti_surface(
         file_finder.get_reference_surf(hemi, "sphere")
     )
@@ -756,12 +762,17 @@ def fs_avr_mask_to_sub(index_mask, hemi, subject_files: SubjectFiles):
         sphere_surface, registration_surface, method="nearest"
     )
 
-    index_mask = morph.transform(index_mask) > 0.0001
+    bool_mask = np.zeros((sphere_surface.nodes.nr), dtype=np.int_)
+    bool_mask[index_mask] = 1
+
+    index_mask = np.where(morph.transform(bool_mask) > 0.0001)[0]
 
     return index_mask
 
 
-def combine_mask(bool_mask, index_mask, operator):
+def combine_mask(
+    bool_mask: npt.NDArray[np.bool_], index_mask: npt.NDArray[np.int_], operator: str
+) -> npt.NDArray[np.bool_]:
     match operator:
         case "union":
             bool_mask[index_mask] = True
@@ -781,14 +792,16 @@ def combine_mask(bool_mask, index_mask, operator):
     return bool_mask
 
 
-def mni_mask_to_sub(mask, subject_files: SubjectFiles):
+def mni_mask_to_sub(
+    mask_img: nib.Nifti1Image, subject_files: SubjectFiles
+) -> nib.Nifti1Image:
     target_image = nib.load(subject_files.T1_upsampled)
     target_dim = list(target_im.get_fdata().shape)
 
     image_deformation = nib.load(subject_files.conf2mni_nonl)
 
     transformed_mask = transformations.volumetric_nonlinear(
-        (mask.get_fdata(), mask.affine),
+        (mask_img.get_fdata(), mask_img.affine),
         (image_deformation.get_fdata(), image_deformation.affine),
         target_space_affine=target_image.affine,
         target_dimensions=target_dim,
@@ -799,15 +812,17 @@ def mni_mask_to_sub(mask, subject_files: SubjectFiles):
     return nib.Nifti1Image(transformed_mask, target_image.affine)
 
 
-def mask_image_to_index_mask(node_type: str, mask_img, surface: Msh, mask_value: int):
+def mask_image_to_index_mask(
+    node_type: str, mask_img: nib.Nifti1Image, mesh: Msh, mask_value: int
+) -> npt.NDArray[np.int_]:
     match node_type:
         case "node":
             data = mesh_io.NodeData.from_data_grid(
-                surface, mask_img.get_fdata(), mask_img.affine, "", order=0
+                mesh, mask_img.get_fdata(), mask_img.affine, "", order=0
             ).value
         case "elm_center":
             data = mesh_io.ElementData.from_data_grid(
-                surface, mask_img.get_fdata(), mask_img.affine, "", order=0
+                mesh, mask_img.get_fdata(), mask_img.affine, "", order=0
             ).value
         case _:
             raise ValueError(
