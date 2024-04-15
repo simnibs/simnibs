@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
     command line tool to create tetrahedral head meshes from MR images
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
@@ -19,7 +19,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-'''
+"""
 
 import argparse
 import os
@@ -37,9 +37,11 @@ from simnibs.utils import file_finder
 from simnibs.cli.utils.helpers import add_argument
 from simnibs.cli.utils import args_general, args_charm
 
+
 def parseArguments(argv):
 
-    usage_text = textwrap.dedent('''
+    usage_text = textwrap.dedent(
+        """
 
 CREATE HEAD MESH OPTIMIZED TO SPEED UP TMS SIMULATIONS:
     charm_tms subID T1 {T2}
@@ -59,11 +61,12 @@ MANUAL EDITING:
     edit m2m_{subID}/label_prep/tissue_labeling_upsampled.nii.gz using a
     viewer of your choice, then call charm_tms subID --mesh to recreate head mesh
 
-    ''')
+    """
+    )
 
     parser = argparse.ArgumentParser(prog="charm", usage=usage_text)
 
-    add_argument(parser, args_charm.subid) # NB
+    add_argument(parser, args_charm.subid)  # NB
     add_argument(parser, args_general.version)
     add_argument(parser, args_charm.primary_image)
     add_argument(parser, args_charm.secondary_image)
@@ -83,7 +86,7 @@ MANUAL EDITING:
     add_argument(parser, args_charm.fs_subjects_dir)
     add_argument(parser, args_general.debug)
 
-    args=parser.parse_args(argv)
+    args = parser.parse_args(argv)
 
     # subID is required, otherwise print help and exit (-v and -h handled by parser)
     if args.subID is None:
@@ -95,23 +98,27 @@ MANUAL EDITING:
 
 def main():
     args = parseArguments(sys.argv[1:])
-    subject_dir = os.path.join(os.getcwd(), "m2m_"+args.subID)
+    subject_dir = os.path.join(os.getcwd(), "m2m_" + args.subID)
 
     # run segmentation and meshing
 
     # check whether it's a fresh run
     fresh_run = args.registerT2
-    fresh_run |= args.initatlas and not args.registerT2 and args.T1 is not None # initatlas is the first step in the pipeline when a T1 is explicitly supplied
+    fresh_run |= (
+        args.initatlas and not args.registerT2 and args.T1 is not None
+    )  # initatlas is the first step in the pipeline when a T1 is explicitly supplied
 
-    if not any([args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]):
+    if not any(
+        [args.registerT2, args.initatlas, args.segment, args.mesh, args.surfaces]
+    ):
         # if charm part is not explicitly stated, run all
-        fresh_run=True
-        args.initatlas=True
-        args.segment=True
-        args.mesh=True
+        fresh_run = True
+        args.initatlas = True
+        args.segment = True
+        args.mesh = True
         args.surfaces = True
         if args.T2 is not None:
-            args.registerT2=True
+            args.registerT2 = True
 
     # T1 name has to be supplied when it's a fresh run
     if fresh_run and args.T1 is None:
@@ -124,10 +131,16 @@ def main():
     if fresh_run and os.path.exists(subject_dir):
         # stop when subject_dir folder exists and it's a fresh run (unless --forcerun is set)
         if not args.forcerun:
-            raise RuntimeError("ERROR: --forcerun has to be set to overwrite existing m2m_{subID} folder")
+            raise RuntimeError(
+                "ERROR: --forcerun has to be set to overwrite existing m2m_{subID} folder"
+            )
         else:
-            if args.usesettings is not None and os.path.dirname(os.path.abspath(args.usesettings[0])) == os.path.abspath(subject_dir):
-                raise RuntimeError("ERROR: move the custom settings file out of the m2m-folder before running with --forcerun.")
+            if args.usesettings is not None and os.path.dirname(
+                os.path.abspath(args.usesettings[0])
+            ) == os.path.abspath(subject_dir):
+                raise RuntimeError(
+                    "ERROR: move the custom settings file out of the m2m-folder before running with --forcerun."
+                )
 
             shutil.rmtree(subject_dir)
             time.sleep(2)
@@ -136,31 +149,55 @@ def main():
     if args.usesettings is None:
         args.usesettings = os.path.join(SIMNIBSDIR, "charm_tms.ini")
 
+    if args.skipregisterT2:
+        args.registerT2 = False
+
     if args.initatlas or args.segment or args.surfaces:
         # run all steps except meshing as usual
-        charm_main.run(subject_dir, args.T1, args.T2, args.registerT2, args.initatlas,
-                       args.segment, args.surfaces, False, args.usesettings, args.noneck,
-                       args.inittransform, args.usetransform, args.forceqform, args.forcesform, args.fs_dir,
-                       " ".join(sys.argv[1:]), args.debug)
+        charm_main.run(
+            subject_dir,
+            args.T1,
+            args.T2,
+            args.registerT2,
+            args.initatlas,
+            args.segment,
+            args.surfaces,
+            False,
+            args.usesettings,
+            args.noneck,
+            args.inittransform,
+            args.usetransform,
+            args.forceqform,
+            args.forcesform,
+            args.fs_dir,
+            " ".join(sys.argv[1:]),
+            args.debug,
+        )
 
     if args.segment:
         # update label image: cut neck and combine labels
-        sub_files = file_finder.SubjectFiles(subpath = subject_dir)
+        sub_files = file_finder.SubjectFiles(subpath=subject_dir)
         charm_main._setup_logger(sub_files.charm_log)
         templates = file_finder.Templates()
-        fn_affine = os.path.join(sub_files.segmentation_folder,'coregistrationMatrices.mat')
-        settings  = read_ini(args.usesettings)
+        fn_affine = os.path.join(
+            sub_files.segmentation_folder, "coregistrationMatrices.mat"
+        )
+        settings = read_ini(args.usesettings)
 
-        _cut_and_combine_labels(sub_files.tissue_labeling_upsampled,
-                                templates.mni_volume,
-                                fn_affine, settings["tms"], n_dil=60)
+        _cut_and_combine_labels(
+            sub_files.tissue_labeling_upsampled,
+            templates.mni_volume,
+            fn_affine,
+            settings["tms"],
+            n_dil=60,
+        )
         # 60 dilations with 0.5 mm each --> cut 30 mm below MNI mask
 
         charm_main._stop_logger(sub_files.charm_log)
 
     if args.surfaces:
         # create downsampled central surfaces
-        sub_files = file_finder.SubjectFiles(subpath = subject_dir)
+        sub_files = file_finder.SubjectFiles(subpath=subject_dir)
         charm_main._setup_logger(sub_files.charm_log)
         settings = read_ini(args.usesettings)
 
@@ -176,9 +213,9 @@ def main():
             mesh_image=True,
             usesettings=args.usesettings,
             options_str=" ".join(sys.argv[1:]),
-            debug=args.debug
+            debug=args.debug,
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
