@@ -604,7 +604,7 @@ class brainsight:
 
         assert not os.path.exists(fn) or overwrite, f'File {fn} already exists. Remove or set overwrite=True.'
 
-        with open(fn, 'w') as f:
+        with open(fn, 'w', encoding='utf-8') as f:
             f.write('# Version: 12\n')
             f.write(f'# Coordinate system: {out_coord_space}\n')
             f.write(f'# Created by: SimNIBS v{simnibs_v}\n')
