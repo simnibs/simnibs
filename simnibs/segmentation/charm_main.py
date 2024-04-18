@@ -631,6 +631,7 @@ def run(
             out=sub_files.final_labels_MNI,
             out_original=sub_files.final_labels,
             method="assign",
+            order=0,
             reference_original=sub_files.reference_volume,
         )
 

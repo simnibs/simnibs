@@ -106,8 +106,9 @@ def main():
         settings['skin_tag'] = None
     if not settings['hierarchy']:
         settings['hierarchy'] = None
-
-
+    if not settings['skin_facet_size']:
+        settings['skin_facet_size'] = None    
+        
     # load label image
     label_nifti = nib.load(args.label_image)
     label_image = np.squeeze(label_nifti.get_fdata().astype(np.uint16)) # Cast to uint16, otherwise meshing complains
