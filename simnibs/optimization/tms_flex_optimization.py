@@ -615,7 +615,7 @@ def _get_fast_intersection_penalty(
             vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
             + vox_to_vox_affine[:3, 3, None]
         )
-        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=1)
+        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=3, prefilter=False)
         weighted_target_intersection_quibic_mm += np.sum(intersections * dither_factors)
         #indexes_in_vox2 = (
         #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
