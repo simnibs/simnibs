@@ -564,6 +564,7 @@ def _get_fast_intersection_penalty(
     target_voxel_affine,
     self_intersection_elements,
     affine: npt.NDArray[np.float_],
+    order: int = 3
 ) -> tuple[float, float]:
     """Evaluates how far the element voxel volumes intersect with the target voxel volume measured in mm^3 (volume) * mm (depth).
     Evaluates the amount of self intersection based on the self intersection element groups measured in mm^3.
@@ -615,7 +616,7 @@ def _get_fast_intersection_penalty(
             vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
             + vox_to_vox_affine[:3, 3, None]
         )
-        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=3, prefilter=False)
+        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=order, prefilter=False)
         weighted_target_intersection_quibic_mm += np.sum(intersections * dither_factors)
         #indexes_in_vox2 = (
         #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
@@ -657,7 +658,7 @@ def _get_fast_intersection_penalty(
                 + vox_to_vox_affine[:3, 3, None]
             )
             voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
-            intersections = scipy.ndimage.map_coordinates(voxel_volume1, indexes_in_vox2, order=3, prefilter=False)
+            intersections = scipy.ndimage.map_coordinates(voxel_volume1, indexes_in_vox2, order=order, prefilter=False)
             self_intersection_quibic_mm += np.sum(intersections * dither_factors)
             #indexes_in_vox2 = (
             #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
