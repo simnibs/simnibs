@@ -1067,6 +1067,7 @@ def optimize_e_mag(
     direct_locally_biased=False,
     direct_vol_tol=1e-16,
     direct_len_tol=1e-6,
+    debug = False,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_]]:
     """Optimizes the deformations of the coil elements to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
@@ -1160,9 +1161,17 @@ def optimize_e_mag(
     initial_deformation_settings = np.array(
         [coil_deformation.current for coil_deformation in coil_deformation_ranges]
     )
-
+    if debug:
+        tracking_deformations = []
+        fs = []
+            
     def cost_f_x0_w(x):
+        if debug:
+            deformations = []
+            
         for coil_deformation, deformation_setting in zip(coil_deformation_ranges, x):
+            if debug:
+                deformations.append(deformation_setting)
             coil_deformation.current = deformation_setting
         (
             intersection_penalty,
@@ -1185,7 +1194,10 @@ def optimize_e_mag(
         roi_e_field = fem.update_field(matsimnibs=affine)
 
         f = penalty - 100 * np.mean(roi_e_field)
-
+        
+        if debug:
+            tracking_deformations.append(deformations)
+            fs.append(f)
         return f
 
     initial_cost = cost_f_x0_w(initial_deformation_settings)
@@ -1219,8 +1231,7 @@ def optimize_e_mag(
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
             method="L-BFGS-B",
-            options={'maxls': 100}
-        )
+           )
 
         best_deformation_settings = local_opt.x
 
@@ -1246,5 +1257,7 @@ def optimize_e_mag(
         coil_sampled.get_deformation_ranges(), coil.get_deformation_ranges()
     ):
         coil_deformation.current = sampled_coil_deformation.current
-
-    return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results
+    if debug:
+        return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results, tracking_deformations, fs
+    else:
+        return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results
