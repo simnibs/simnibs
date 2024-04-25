@@ -2349,7 +2349,7 @@ class Msh:
 
         return np.where(has_far)[0], far
 
-    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None):
+    def get_min_distance_on_grid(self, resolution=1.0, order=3, AABBTree=None):
         """Generates a distance to surface field on a grid
 
         Parameters
@@ -2418,7 +2418,7 @@ class Msh:
                     y_coords[inside_image_mask],
                     z_coords[inside_image_mask],
                 ),
-                order=1,
+                order=order,
             )
 
             outside_image_indices = ~inside_image_mask
