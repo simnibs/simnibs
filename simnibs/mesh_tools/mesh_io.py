@@ -2401,8 +2401,8 @@ class Msh:
             x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
             width, height, depth = grid.shape
 
-            # Filter coordinates that are inside the image boundaries
-            inside_image_mask = (
+            # Filter coordinates that are outside the image boundaries
+            outside_image_mask = ~(
                     (x_coords >= 0)
                     & (x_coords < width)
                     & (y_coords >= 0)
@@ -2411,49 +2411,21 @@ class Msh:
                     & (z_coords < depth)
             )
 
-            mapped_values_inside = scipy.ndimage.map_coordinates(
+            mapped_values = scipy.ndimage.map_coordinates(
                 grid,
                 (
-                    x_coords[inside_image_mask],
-                    y_coords[inside_image_mask],
-                    z_coords[inside_image_mask],
+                    x_coords,
+                    y_coords,
+                    z_coords,
                 ),
-                order=order,
+                order=order, mode='nearest', prefilter=False
             )
 
-            outside_image_indices = ~inside_image_mask
-            outside_x = x_coords[outside_image_indices]
-            outside_y = y_coords[outside_image_indices]
-            outside_z = z_coords[outside_image_indices]
-
-            x1 = np.clip(np.floor(outside_x), 0, width - 1).astype(np.int_)
-            x2 = np.clip(np.floor(outside_x), 1, width - 2).astype(np.int_)
-            x2[np.floor(outside_x) == 0] = 0
-            x2[np.floor(width - 1) == 0] = width - 1
-            y1 = np.clip(np.floor(outside_y), 0, height - 1).astype(np.int_)
-            y2 = np.clip(np.floor(outside_y), 1, height - 2).astype(np.int_)
-            y2[np.floor(outside_y) == 0] = 0
-            y2[np.floor(height - 1) == 0] = height - 1
-            z1 = np.clip(np.floor(outside_z), 0, depth - 1).astype(np.int_)
-            z2 = np.clip(np.floor(outside_z), 1, depth - 2).astype(np.int_)
-            z2[np.floor(outside_z) == 0] = 0
-            z2[np.floor(depth - 1) == 0] = depth - 1
-
-            dx = np.abs(outside_x - x1)
-            dy = np.abs(outside_y - y1)
-            dz = np.abs(outside_z - z1)
-
-            extrapolation_values = (
-                    grid[x1, y1, z1]
-                    + dx * (grid[x1, y1, z1] - grid[x2, y1, z1])
-                    + dy * (grid[x1, y1, z1] - grid[x1, y2, z1])
-                    + dz * (grid[x1, y1, z1] - grid[x1, y1, z2])
+            mapped_values[outside_image_mask] += np.sqrt(
+                np.maximum(x_coords[outside_image_mask] - width, 0)**2 +
+                np.maximum(y_coords[outside_image_mask] - height, 0)**2 +
+                np.maximum(z_coords[outside_image_mask] - depth, 0)**2
             )
-
-            # Create an array for all coordinates with extrapolation
-            mapped_values = np.empty_like(x_coords)
-            mapped_values[inside_image_mask] = mapped_values_inside
-            mapped_values[outside_image_indices] = extrapolation_values
 
             return mapped_values
 

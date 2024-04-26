@@ -618,29 +618,6 @@ def _get_fast_intersection_penalty(
         )
         intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=order, prefilter=False)
         weighted_target_intersection_quibic_mm += np.sum(intersections * dither_factors)
-        #indexes_in_vox2 = (
-        #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
-        #    + vox_to_vox_affine[:3, 3, None]
-        #).T.astype(np.int32)
-        #index_mask = np.all(
-        #    np.logical_and(
-        #        ~np.signbit(indexes_in_vox2),
-        #        indexes_in_vox2 < target_voxel_distance.shape,
-        #    ),
-        #    axis=1,
-        #)
-
-        #masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-        #masked_length = np.count_nonzero(index_mask[:voxel_length])
-        #intersections = target_voxel_distance[
-        #    masked_indexes_in_vox2[:, 0],
-        #    masked_indexes_in_vox2[:, 1],
-        #    masked_indexes_in_vox2[:, 2],
-        #]
-
-        #weighted_target_intersection_quibic_mm += np.sum(
-        #    intersections[:masked_length]
-        #) * dither_factor + np.sum(intersections[masked_length:])
 
     self_intersection_quibic_mm = 0
     for intersection_group in self_intersection_elements:
@@ -660,31 +637,6 @@ def _get_fast_intersection_penalty(
             voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
             intersections = scipy.ndimage.map_coordinates(voxel_volume1, indexes_in_vox2, order=order, prefilter=False)
             self_intersection_quibic_mm += np.sum(intersections * dither_factors)
-            #indexes_in_vox2 = (
-            #    vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
-            #    + vox_to_vox_affine[:3, 3, None]
-            #).T.astype(np.int32)
-
-            #voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
-            #index_mask = np.all(
-            #    np.logical_and(
-            #        ~np.signbit(indexes_in_vox2),
-            #        indexes_in_vox2 < voxel_volume1.shape,
-            #    ),
-            #    axis=1,
-            #)
-
-            #masked_indexes_in_vox2 = indexes_in_vox2[index_mask]
-            #masked_length = np.count_nonzero(index_mask[:voxel_length])
-            #intersections = voxel_volume1[
-            #    masked_indexes_in_vox2[:, 0],
-            #    masked_indexes_in_vox2[:, 1],
-            #    masked_indexes_in_vox2[:, 2],
-            #]
-
-            #self_intersection_quibic_mm += np.count_nonzero(
-            #    intersections[:masked_length]
-            #) * dither_factor + np.count_nonzero(intersections[masked_length:])
 
     return (
         weighted_target_intersection_quibic_mm,
