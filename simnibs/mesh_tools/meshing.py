@@ -1558,7 +1558,7 @@ def create_mesh(label_img, affine,
         Mesh structure
     """
     if hierarchy is None:
-        hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 10, 5)        
+        hierarchy = (1, 2, 9, 3, 4, 8, 7, 6, 11, 10, 12, 5)        
     if not 'standard' in elem_sizes:
         raise ValueError('elem_sizes needs a \"standard\" entry')
     if not 'standard' in facet_distances:
