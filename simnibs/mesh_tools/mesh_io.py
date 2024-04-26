@@ -2668,7 +2668,7 @@ class Msh:
 
         m = copy.copy(self)
         _, _, f_in, _ = self.partition_skin_surface()  # internal air triangles
-        m.elm.tag1[f_in] = label_new
+        m.elm.tag1[f_in - 1] = label_new
         m.elm.tag2[:] = m.elm.tag1
         return m
 
