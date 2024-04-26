@@ -322,7 +322,7 @@ class TmsFlexOptimization:
         if self.method == "distance":
             initial_cost, optimized_cost, opt_matsimnibs, direct = optimize_distance(
                 self._coil,
-                self._mesh.crop_mesh([ElementTags.SCALP_TH_SURFACE]),
+                self._mesh,
                 self.pos.matsimnibs,
                 self._global_translation_ranges,
                 self._global_rotation_ranges,

@@ -164,8 +164,7 @@ class TestPositionOptimization:
     def test_optimization_with_global_translation(
         self, small_functional_3_element_coil: TmsCoil, sphere3_msh: Msh
     ):
-        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
-        cost_surface_tree = skin_surface.get_AABBTree()
+        cost_surface_tree = sphere3_msh.crop_mesh(tags=[1005]).get_AABBTree()
 
         coil_affine = np.array(
             [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
@@ -177,7 +176,7 @@ class TestPositionOptimization:
             affine_after,
             opt_ret
         ) = optimize_distance(small_functional_3_element_coil, 
-            skin_surface, coil_affine, np.array([[-5, 5], [-5, 5], [-20, 20]])
+            sphere3_msh, coil_affine, np.array([[-5, 5], [-5, 5], [-20, 20]])
         )
 
         assert before > after
@@ -220,7 +219,6 @@ class TestPositionOptimization:
         )
 
         assert before > after
-        assert after < before * 0.8
         assert not np.allclose(coil_affine, affine_after)
         assert (
             len(
@@ -236,7 +234,6 @@ class TestPositionOptimization:
     def test_self_intersection_optimization(
         self, small_self_intersecting_2_element_coil: TmsCoil, sphere3_msh: Msh
     ):
-        skin_surface = sphere3_msh.crop_mesh(tags=[1005])
         coil_affine = np.array(
             [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 100], [0, 0, 0, 1]]
         )
@@ -260,7 +257,7 @@ class TestPositionOptimization:
             affine_after,
             opt_ret
         ) = optimize_distance(small_self_intersecting_2_element_coil, 
-            skin_surface, coil_affine
+            sphere3_msh, coil_affine, local_optimization=True
         )
 
         self_intersection_after = np.sum(

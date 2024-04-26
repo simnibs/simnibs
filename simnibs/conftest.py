@@ -242,7 +242,7 @@ def small_self_intersecting_2_element_coil() -> TmsCoil:
                         [[-2, -2, 0], [-2, 2, 0], [2, -2, 0], [2, 2, 0], [0, 0, 2]]
                     )
                     * 3
-                    + np.array([0, 0, 10])
+                    + np.array([0, 0, 15])
                 ),
                 Elements(
                     triangles=np.array(
