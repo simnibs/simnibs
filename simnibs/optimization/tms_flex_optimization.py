@@ -1,6 +1,8 @@
 import itertools
 import logging
 import os
+import subprocess
+import tempfile
 import time
 import glob
 from typing import Callable, Optional, get_type_hints
@@ -10,6 +12,7 @@ import scipy.optimize as opt
 import scipy
 import numpy as np
 
+from simnibs.mesh_tools import mesh_io
 from simnibs.simulation.onlinefem import FemTargetPointCloud
 from simnibs.utils.region_of_interest import (
     RegionOfInterest,
@@ -643,10 +646,23 @@ def _get_fast_intersection_penalty(
         self_intersection_quibic_mm,
     )
 
+def _prepare_skin_surface(mesh: Msh) -> Msh:
+    skin = mesh.relabel_internal_air().crop_mesh(ElementTags.SCALP_TH_SURFACE)
+    with tempfile.TemporaryDirectory() as tmp_dirname:
+        mesh_io.write_off(skin, os.path.join(tmp_dirname, 'mymesh.off'))
+        cmd=[file_finder.path2bin("meshfix"), os.path.join(tmp_dirname, 'mymesh.off'), '-o', os.path.join(tmp_dirname, 'mymesh.off')]
+        p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p.wait()
+        if p.returncode != 0:
+            raise subprocess.CalledProcessError(p.returncode, cmd)
+        skin = mesh_io.read_off(os.path.join(tmp_dirname, 'mymesh.off'))
+
+    return skin
+
 
 def optimize_distance(
     coil,
-    optimization_surface: Msh,
+    head_mesh: Msh,
     affine: npt.NDArray[np.float_],
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
@@ -717,6 +733,8 @@ def optimize_distance(
     global_deformations = add_global_deformations(
         coil, coil_rotation_ranges, coil_translation_ranges
     )
+
+    optimization_surface = _prepare_skin_surface(head_mesh)
 
     (
         element_voxel_volume,
@@ -1082,7 +1100,7 @@ def optimize_e_mag(
     global_deformations = add_global_deformations(
         coil_sampled, coil_rotation_ranges, coil_translation_ranges
     )
-    optimization_surface = head_mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
+    optimization_surface = _prepare_skin_surface(head_mesh)
 
     (
         element_voxel_volume,
