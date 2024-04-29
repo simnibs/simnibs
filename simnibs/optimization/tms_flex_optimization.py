@@ -647,15 +647,18 @@ def _get_fast_intersection_penalty(
     )
 
 def _prepare_skin_surface(mesh: Msh) -> Msh:
-    skin = mesh.relabel_internal_air().crop_mesh(ElementTags.SCALP_TH_SURFACE)
-    with tempfile.TemporaryDirectory() as tmp_dirname:
-        mesh_io.write_off(skin, os.path.join(tmp_dirname, 'mymesh.off'))
-        cmd=[file_finder.path2bin("meshfix"), os.path.join(tmp_dirname, 'mymesh.off'), '-o', os.path.join(tmp_dirname, 'mymesh.off')]
-        p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        p.wait()
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(p.returncode, cmd)
-        skin = mesh_io.read_off(os.path.join(tmp_dirname, 'mymesh.off'))
+    try:
+        skin = mesh.relabel_internal_air().crop_mesh(ElementTags.SCALP_TH_SURFACE)
+        with tempfile.TemporaryDirectory() as tmp_dirname:
+            mesh_io.write_off(skin, os.path.join(tmp_dirname, 'mymesh.off'))
+            cmd=[file_finder.path2bin("meshfix"), os.path.join(tmp_dirname, 'mymesh.off'), '-o', os.path.join(tmp_dirname, 'mymesh.off')]
+            p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            p.wait()
+            if p.returncode != 0:
+                raise subprocess.CalledProcessError(p.returncode, cmd)
+            skin = mesh_io.read_off(os.path.join(tmp_dirname, 'mymesh.off'))
+    except Exception:
+        skin = mesh.crop_mesh(ElementTags.SCALP_TH_SURFACE)
 
     return skin
 
