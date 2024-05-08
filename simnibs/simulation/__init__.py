@@ -8,3 +8,4 @@ from .fem import *
 from .gpc import *
 from .array_layout import *
 from .onlinefem import *
+from .biot_savart import *

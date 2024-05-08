@@ -14,12 +14,13 @@ Current Contributors
    * Example dataset *ernie* (2.1)
 
 * Oula Puonti
-   * Main author of :ref:`charm_docs` and of simnibs 4.0 in general (4.0)
    * Debugging and maintenance across the complete code.
+   * Main author of :ref:`charm_docs` and of simnibs 4.0 in general (4.0)
    * New MNI head mesh (2.1)
 
 * Kristoffer H. Madsen
    * Debugging and maintenance across the complete code.
+   * Implementation of the tcd format and initial code for the flexible TMS optimization (4.5)
    * Cross-platform building (4.0)
    * New html-based viewer (4.0)
    * Ccd to nifti conversion (4.0)
@@ -30,16 +31,21 @@ Current Contributors
    * Pre-calculated A-fields for TMS in the pipeline using nifti volume files (2.0)
 
 * Jesper D. Nielsen
+   * Update of installation procedure (4.5)
+   * Update to *charm* to optionally use FreeSurfer surfaces (4.1)
+   * Added the possiblity to calculate EEG leadfields (4.1)
    * Contributions to the segmentation functions in :ref:`charm_docs` (4.0)
    * Main author of the *headreco* pipeline, now discontinued (2.1)
-   * Update to *charm* to optionally use FreeSurfer surfaces (4.1)
 
 * Konstantin Weise
+   * Implementation of flexible TES optimization (4.5)
+   * Update of GPC code (4.5)
+   * Integration of mmg to improve tetrahedral mesh quality (4.1)
    * First version of the TMS optimization (3.1)
    * UQ functionality (3.0)
-   * Integration of mmg to improve tetrahedral mesh quality (4.1)
 
 * Thomas Knoesche
+   * Help with the flexible TES optimization (4.5)
    * Help with the UQ functionality (3.0)
 
 * Ole Numssen
@@ -47,8 +53,15 @@ Current Contributors
    * First version of the TMS optimization (3.1)
    
 * Torge H. Worbs
+   * Implementation of the tcd format and flexible TMS optimization (4.5)
+   * Coil models for Brainsway H1, H4 and H7, and of MagVenture MST Twin coil (4.5)
+   * Region-of-interest class (4.5)
    * Integration of mmg to improve tetrahedral mesh quality (4.1)
-   
+
+* Bianka Rumi
+   * Coil models for Brainsway H1, H4 and H7 (4.5)
+   * Testing and debugging of the flexible TMS optimization (4.5)
+
 * Merle Diedrichsen
    * Update of electrode meshing to improve tetrahedral quality at the electrode edges (4.1)
 
@@ -107,7 +120,6 @@ and FEM calculations into one coherent pipeline:
 * :ref:`dwi2cond_docs` uses `FSL <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.
 * FEM code introduced in version 3.0 relies on `PETSc <https://www.mcs.anl.gov/petsc/>`_ and `Hypre
   <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software>`_.
-* Thanks for **Konstantin Weise** for giving us access to an early version of his software, `pygpc <https://github.com/konstantinweise/pygpc>`_.
 
 * Thanks for **Luis Gomez** for providing a python version of his `ADM TMS optimization package <https://github.com/luisgo/Auxiliary_dipole_method>`_.
 

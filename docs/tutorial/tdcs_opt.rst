@@ -1,7 +1,7 @@
 .. _tdcs_opt:
 
-TDCS Optimization
-=================
+Leadfield-based TDCS Optimization
+=================================
 
 SimNIBS can automatically optimize TDCS montages for maximal focality or intensity at the target.
 There are two steps for performing the optimizations.

@@ -2,7 +2,7 @@
     Optimization problem set-up and post-processing in SimNIBS
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
-    Copyright (C) 2023 Guilherme B Saturnino, Konstantin Weise
+    Copyright (C) 2023 SimNIBS developers
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

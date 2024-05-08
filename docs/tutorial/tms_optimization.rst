@@ -1,8 +1,8 @@
 .. _tms_optimize:
 
 
-TMS Optimization
-==================
+TMS Optimization based on Grid Search or the Auxiliary Dipole Method (ADM)
+==========================================================================
 
 SimNIBS can help finding the best TMS position for stimulating a certain target. This is
 done by searching coil positions in a grid around the target position and turning the

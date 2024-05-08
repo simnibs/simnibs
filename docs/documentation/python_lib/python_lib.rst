@@ -59,8 +59,8 @@ Utilities
     templates
     get_atlas
     SubjectFiles
-
-
+	utils.region_of_interest.RegionOfInterest
+    
 Simulations
 ------------
 .. autosummary::

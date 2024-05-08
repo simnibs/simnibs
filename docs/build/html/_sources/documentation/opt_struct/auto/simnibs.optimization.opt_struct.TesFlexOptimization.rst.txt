@@ -1,0 +1,35 @@
+﻿simnibs.optimization.opt\_struct.TesFlexOptimization
+====================================================
+
+.. currentmodule:: simnibs.optimization.opt_struct
+
+.. autoclass:: TesFlexOptimization
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TesFlexOptimization.__init__
+      ~TesFlexOptimization.add_electrode
+      ~TesFlexOptimization.add_roi
+      ~TesFlexOptimization.compute_goal
+      ~TesFlexOptimization.get_bounds
+      ~TesFlexOptimization.get_electrode_pos_from_array
+      ~TesFlexOptimization.get_init_vals
+      ~TesFlexOptimization.get_nodes_electrode
+      ~TesFlexOptimization.goal_fun
+      ~TesFlexOptimization.read_mat_element
+      ~TesFlexOptimization.read_mat_struct
+      ~TesFlexOptimization.run
+      ~TesFlexOptimization.sim_struct2mat
+      ~TesFlexOptimization.update_field
+   
+   
+
+   
+   
+   

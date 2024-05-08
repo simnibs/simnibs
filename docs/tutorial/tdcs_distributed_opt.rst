@@ -1,13 +1,13 @@
 .. _tdcs_distributed_opt:
 
-TDCS Network Optimization
-=====================================
+Leadfield-based TDCS Network Optimization
+=========================================
 
 
 As of SimNIBS 3.2, you can use SimNIBS to optimize electric fields based on distributed
 targets, such as t-maps from resting state networks. We use the problem set-up
 proposed in (`Ruffini et al. 2014 <https://doi.org/10.1016/j.neuroimage.2013.12.002>`_),
-and solve it using algorithms proposed in (`Saturnino et al. 2019 <https://doi.org/10.1016/j.neuroimage.2019.116183>`_). The connection between the two algorithms is explained :download:`here <../../data/ERNI_opt.pdf>`.
+and solve it using algorithms proposed in (`Saturnino et al. 2019 <https://doi.org/10.1016/j.neuroimage.2019.116183>`_). The connection between the two algorithms is explained :download:`here <../data/ERNI_opt.pdf>`.
 
 
 .. note:: When using this feature in a publication, please cite `Saturnino, G. B., Siebner, H. R., Thielscher, A., & Madsen, K. H. (2019). Accessibility of cortical regions to focal TES: Dependence on spatial position, safety, and practical constraints. NeuroImage, 203, 116183. <https://doi.org/10.1016/j.neuroimage.2019.116183>`_
@@ -21,19 +21,19 @@ To run an optimization, please start by :ref:`Creating a Leadfield <tutorial_lea
 Optimization
 ------------
 
-In the examples below, we use the T-map defined in :download:`ID03_MOTOR_ICA <../../data/ID03_MOTOR_ICA.nii.gz>` file as a target. This T-map is defined in MNI space
+In the examples below, we use the T-map defined in :download:`ID03_MOTOR_ICA <../data/ID03_MOTOR_ICA.nii.gz>` file as a target. This T-map is defined in MNI space
 
 Python
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tdcs_optimize_distributed.py
+.. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_distributed.py
    :language: python
 
 
 MATLAB
 ''''''
 
-.. literalinclude:: ../../../simnibs/examples/optimization/tdcs_optimize_distributed.m
+.. literalinclude:: ../../simnibs/examples/optimization/tdcs_optimize_distributed.m
    :language: matlab
 
 

@@ -11,7 +11,7 @@ Tutorial
    head_meshing
    scripting
    analysis
-   optimization
-   tms_optimization
+   overview_tes_opt
+   overview_tms_opt
    advanced/advanced
    win_prompt

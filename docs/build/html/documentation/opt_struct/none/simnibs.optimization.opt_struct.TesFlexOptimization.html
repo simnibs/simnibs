@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>simnibs.optimization.opt_struct.TesFlexOptimization &#8212; SimNIBS dev&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="simnibs.optimization.tes_flex_optimization.TesFlexOptimization" href="simnibs.optimization.tes_flex_optimization.TesFlexOptimization.html" />
+    <link rel="prev" title="simnibs.opt_struct.TesFlexOptimization" href="simnibs.opt_struct.TesFlexOptimization.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.opt_struct.TesFlexOptimization.html" title="Previous document">simnibs.opt_struct.TesFlexOptimization</a>
+        </li>
+        <li>
+          <a href="simnibs.optimization.tes_flex_optimization.TesFlexOptimization.html" title="Next document">simnibs.optimization.tes_flex_optimization.TesFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="simnibs-optimization-opt-struct-tesflexoptimization">
+<h1>simnibs.optimization.opt_struct.TesFlexOptimization<a class="headerlink" href="#simnibs-optimization-opt-struct-tesflexoptimization" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.optimization.opt_struct.</span></span><span class="sig-name descname"><span class="pre">TesFlexOptimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matlab_struct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization" title="Link to this definition">¶</a></dt>
+<dd><p>Defines a TES optimization problem using node-wise current sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>electrode</strong> (<em>Electrode Object</em>) – Electrode object containing ElectrodeArray instances
+(see /simulation/array_layout.py for pre-implemented examples)</p></li>
+<li><p><strong>init_pos</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em><em> or </em><em>list</em><em> of </em><em>str and np.ndarray</em><em> of </em><em>float</em><em> [</em><em>3</em><em>]</em>) – Initial positions of movable Electrode arrays (for each movable array)</p></li>
+<li><p><strong>fn_eeg_cap</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default: 'EEG10-10_UI_Jurak_2007.csv'</em>) – Filename of EEG cap to use for initial position (without path)
+- ‘EEG10-10_UI_Jurak_2007.csv’
+- ‘easycap_BC_TMS64_X21.csv’
+- ‘EEG10-10_Cutini_2011.csv’
+- ‘EEG10-10_Neuroelectrics.csv’
+- ‘EEG10-20_extended_SPM12.csv’
+- ‘EEG10-20_Okamoto_2004.csv’</p></li>
+<li><p><strong>roi</strong> (<em>list</em><em> of </em><em>RegionOfInterest class instances</em>) – Region of interest(s) the field is evaluated in.</p></li>
+<li><p><strong>anisotropy_type</strong> (<em>str</em>) – Specify type of anisotropy for simulation (‘scalar’, ‘vn’ or ‘mc’)</p></li>
+<li><p><strong>weights</strong> (<em>np.array</em><em> of </em><em>float</em><em> [</em><em>n_roi</em><em>]</em>) – Weights for optimizer for ROI specific goal function weighting</p></li>
+<li><p><strong>min_electrode_distance</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default: None</em>) – Minimum electrode distance to ensure during optimization (in mm).</p></li>
+<li><p><strong>constrain_electrode_locations</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: False</em>) – Constrains the possible locations of freely movable electrode arrays. Recommended for TTF optimizations,
+where two pairs of large electrode arrays are optimized. If True, parameter bounds for the optimization
+will be specified restricting the array locations to be frontal, parietal or occipital.</p></li>
+<li><p><strong>overlap_factor</strong> (<em>float</em><em>, </em><em>optional</em><em>, </em><em>default: 1</em>) – Factor of overlap of allowed lambda regions to place electrodes. (1 corresponds to neatless regions,
+&lt;1 regions have a gap in between, &gt;1 regions are overlapping)</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: False</em>) – Plot configurations in output folder for visualization and control</p></li>
+<li><p><strong>polish</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: True</em>) – If True (default), then scipy.optimize.minimize with the L-BFGS-B method is used to polish the best
+population member at the end, which can improve the minimization.</p></li>
+<li><p><strong>optimize_init_vals</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: True</em>) – If True, find initial values for optimization, guaranteeing a valid solution. If False, initial values
+are the center between bounds.</p></li>
+<li><p><strong>e_postproc</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default: &quot;norm&quot;</em>) – Specifies how the raw e-field in the ROI (Ex, Ey, Ez) is post-processed.
+- “norm”: electric field magnitude (default)
+- “normal”: determine normal component (required surface normals in dirvec)
+- “tangential”: determine tangential component (required surface normals in dirvec)
+- “max_TI”: maximum envelope for temporal interference fields
+- “dir_TI”: directional sensitive maximum envelope for temporal interference fields</p></li>
+<li><p><strong>optimizer</strong> (<em>str</em><em>, </em><em>optional</em><em>, </em><em>default: &quot;differential_evolution&quot;</em>) – Optimization algorithm</p></li>
+<li><p><strong>goal</strong> (<em>list</em><em> of </em><em>str</em><em> [</em><em>n_roi</em><em>]</em><em>, or </em><em>FunctionType</em><em>, </em><em>optional</em><em>, </em><em>default:</em><em> [</em><em>&quot;mean&quot;</em><em>]</em>) – <p>Implemented or user provided goal functions:
+- “mean”: maximize mean e-field in ROI
+- “max”: maximize 99.9 percentile of electric field in ROI
+- “focality”: Maximize focality  (goal: sensitivity = specificity = 1)
+- “focality_inv”: Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
+- user provided function taking e-field as an input which is  a list of list of np.ndarrays of float</p>
+<blockquote>
+<div><p>[n_channel_stim][n_roi] containing np.array with e-field</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>track_focality</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: False</em>) – Tracks focality for each goal function value (requires ROI and non-ROI definition)</p></li>
+<li><p><strong>run_final_electrode_simulation</strong> (<em>bool</em><em>, </em><em>optional</em><em>, </em><em>default: True</em>) – Runs final simulation with optimized parameters using real electrode model including remeshing.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization.electrode">
+<span class="sig-name descname"><span class="pre">electrode</span></span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization.electrode" title="Link to this definition">¶</a></dt>
+<dd><p>Electrode object containing ElectrodeArray instances
+(see /simulation/array_layout.py for pre-implemented examples)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Electrode Object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization.ellipsoid">
+<span class="sig-name descname"><span class="pre">ellipsoid</span></span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization.ellipsoid" title="Link to this definition">¶</a></dt>
+<dd><p>Best fitting ellipsoid to valid skin reagion (used for coordinate system definition)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Ellipsoid Object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization.msh_nodes_areas">
+<span class="sig-name descname"><span class="pre">msh_nodes_areas</span></span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization.msh_nodes_areas" title="Link to this definition">¶</a></dt>
+<dd><p>Areas of nodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray of float [n_nodes_msh]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization.node_idx_msh">
+<span class="sig-name descname"><span class="pre">node_idx_msh</span></span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization.node_idx_msh" title="Link to this definition">¶</a></dt>
+<dd><p>Indices of skin surface nodes in global msh</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray of int [n_nodes_skin]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="simnibs.optimization.opt_struct.TesFlexOptimization.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matlab_struct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.optimization.opt_struct.TesFlexOptimization.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialized TESoptimize class instance</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.optimization.opt_struct.TesFlexOptimization.__init__" title="simnibs.optimization.opt_struct.TesFlexOptimization.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([matlab_struct])</p></td>
+<td><p>Initialized TESoptimize class instance</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_electrode</span></code>([electrode])</p></td>
+<td><p>Adds an electrode to the current TESoptimize</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_roi</span></code>([roi])</p></td>
+<td><p>Adds an ROI to the current TESoptimize</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_goal</span></code>(e)</p></td>
+<td><p>Computes goal function value from electric field.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_bounds</span></code>(constrain_electrode_locations[, ...])</p></td>
+<td><p>Get boundaries of freely movable electrode arrays for optimizer.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_electrode_pos_from_array</span></code>(electrode_pos_array)</p></td>
+<td><p>Transforms an electrode_pos in array (1D) format to a list [n_channel_stim] of list [n_electrode_arrays] of numpy arrays (2 or 3, i.e. with or without alpha optimization).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_init_vals</span></code>(bounds[, optimize])</p></td>
+<td><p>Determine initial values for optimization, guaranteeing a valid electrode position.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nodes_electrode</span></code>(electrode_pos)</p></td>
+<td><p>Assigns the skin points of the electrodes in electrode array and writes the points in electrode_array.electrodes[i].nodes and electrode_array.electrodes[i].node_area.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">goal_fun</span></code>(parameters)</p></td>
+<td><p>Run function for optimization algorithms.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mat_element</span></code>(mat, tag)</p></td>
+<td><p>Read element from matlab structure and return content</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mat_struct</span></code>(mat)</p></td>
+<td><p>Reads parameters from matlab structure</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code>([cpus, allow_multiple_runs, save_mat, ...])</p></td>
+<td><p>Runs the tes optimization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sim_struct2mat</span></code>()</p></td>
+<td><p>Convert sim_struct to mat</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_field</span></code>(electrode_pos[, plot])</p></td>
+<td><p>Calculate the E field for given electrode positions.</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.opt_struct.TesFlexOptimization.html" title="Previous document">simnibs.opt_struct.TesFlexOptimization</a>
+        </li>
+        <li>
+          <a href="simnibs.optimization.tes_flex_optimization.TesFlexOptimization.html" title="Next document">simnibs.optimization.tes_flex_optimization.TesFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../documentation.html">Documentation</a><ul>
+  <li><a href="../opt_struct.html">Optimization Data Structures</a><ul>
+  <li><a href="../tes_flex_opt_doc.html">TesFlexOptimization</a><ul>
+      <li>Previous: <a href="simnibs.opt_struct.TesFlexOptimization.html" title="previous chapter">simnibs.opt_struct.TesFlexOptimization</a></li>
+      <li>Next: <a href="simnibs.optimization.tes_flex_optimization.TesFlexOptimization.html" title="next chapter">simnibs.optimization.tes_flex_optimization.TesFlexOptimization</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../_sources/documentation/opt_struct/none/simnibs.optimization.opt_struct.TesFlexOptimization.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

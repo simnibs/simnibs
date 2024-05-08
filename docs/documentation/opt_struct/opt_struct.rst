@@ -14,3 +14,6 @@ Structures used to define optimization problems
    tdcsavoid
    tdcsdistributedoptimize
    tmsoptimize
+   tes_flex_opt_doc
+   tms_flex_opt_doc
+

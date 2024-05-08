@@ -1,21 +1,18 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Setting up and Running Simulations &#8212; SimNIBS g55be60be&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
+    <title>Setting up and Running Simulations &#8212; SimNIBS dev&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Visualizing Results" href="visualization.html" />
@@ -23,8 +20,9 @@
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -52,11 +50,11 @@
           <div class="body" role="main">
             
   <section id="setting-up-and-running-simulations">
-<span id="gui-tutorial"></span><h1>Setting up and Running Simulations<a class="headerlink" href="#setting-up-and-running-simulations" title="Permalink to this heading">¶</a></h1>
+<span id="gui-tutorial"></span><h1>Setting up and Running Simulations<a class="headerlink" href="#setting-up-and-running-simulations" title="Link to this heading">¶</a></h1>
 <p>This tutorial is based on the <a class="reference internal" href="../dataset.html#dataset"><span class="std std-ref">Example Dataset</span></a>.
 Please download it before continuing.</p>
 <section id="starting-the-gui-and-selecting-a-head-model">
-<h2>Starting the GUI and selecting a Head Model<a class="headerlink" href="#starting-the-gui-and-selecting-a-head-model" title="Permalink to this heading">¶</a></h2>
+<h2>Starting the GUI and selecting a Head Model<a class="headerlink" href="#starting-the-gui-and-selecting-a-head-model" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Launch the Graphical User Interface (GUI) from the Start Menu or by typing on a terminal window</p></li>
 </ol>
@@ -86,7 +84,7 @@ Please download it before continuing.</p>
 </dl>
 </section>
 <section id="setting-up-a-tdcs-simulation">
-<h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Permalink to this heading">¶</a></h2>
+<h2>Setting up a tDCS Simulation<a class="headerlink" href="#setting-up-a-tdcs-simulation" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Click on <em>Add tDCS Poslist</em> at the bottom left of the window.</p></li>
 </ol>
@@ -145,7 +143,7 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </dl>
 </section>
 <section id="setting-up-a-tms-simulation">
-<h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Permalink to this heading">¶</a></h2>
+<h2>Setting up a TMS Simulation<a class="headerlink" href="#setting-up-a-tms-simulation" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Click on <em>Add TMS Poslist</em> in the bottom of the window. A new TMS tab will be created.</p></li>
 </ol>
@@ -171,11 +169,11 @@ You can see a simple preview of the electrode shapes by clicking on <em>Preview 
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Most coil files are supplied in <em>.ccd</em>-format, which needs less disk space compared to <em>.nii.gz</em>. However, the preview option <em>Show dA/dt field</em> in the GUI currently works only for <em>.nii.gz</em> coil file. If needed, you can use the command line tool <a class="reference internal" href="../documentation/command_line/ccd2nifti.html#ccd2nifti-doc"><span class="std std-ref">ccd2nifti</span></a> to convert coil files from <em>.ccd</em> to <em>.nii.gz</em>.</p>
+<p>Most coil files are supplied in <em>.tcd</em>/<em>.ccd</em>-format, which needs less disk space compared to <em>.nii.gz</em>. However, the preview option <em>Show dA/dt field</em> in the GUI currently works only for <em>.nii.gz</em> coil file. If needed, you can use the command line tool <a class="reference internal" href="../documentation/command_line/coil2nifti.html#coil2nifti-doc"><span class="std std-ref">coil2nifti</span></a> to convert coil files from <em>.tcd</em>/<em>.ccd</em> to <em>.nii.gz</em>.</p>
 </div>
 </section>
 <section id="setting-simulation-options">
-<h2>Setting Simulation Options<a class="headerlink" href="#setting-simulation-options" title="Permalink to this heading">¶</a></h2>
+<h2>Setting Simulation Options<a class="headerlink" href="#setting-simulation-options" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Go to <em>Edit</em> → <em>Simulation Options</em>.</p></li>
 </ol>
@@ -268,7 +266,7 @@ Units: S/m</p>
 </div></blockquote>
 </section>
 <section id="running-a-simulation">
-<h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Permalink to this heading">¶</a></h2>
+<h2>Running a Simulation<a class="headerlink" href="#running-a-simulation" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p>Click on Run at the bottom of the screen.</p></li>
 </ol>
@@ -277,7 +275,7 @@ Units: S/m</p>
 <p>Now, please go on to our tutorial on <a class="reference internal" href="visualization.html#visualization-tutorial"><span class="std std-ref">Visualizing Results</span></a>.</p>
 </section>
 <section id="output-files">
-<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this heading">¶</a></h2>
+<h2>Output Files<a class="headerlink" href="#output-files" title="Link to this heading">¶</a></h2>
 <p>After the simulation is finished, the <code class="file docutils literal notranslate"><span class="pre">simnibs_simulation</span></code> directory will look like the following:</p>
 <img alt="../_images/tutorial_output_files.png" class="align-center" src="../_images/tutorial_output_files.png" />
 <p></p>
@@ -310,7 +308,7 @@ selected.</p>
 <p>For a complete explanation of the output, please see <a class="reference internal" href="../documentation/output_files.html#output-files"><span class="std std-ref">Output Files</span></a> .</p>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
 <p>For more information on the GUI, please see the <a class="reference external" href="https://doi.org/10.1101/500314">SimNIBS 2.1 tutorial paper</a>.</p>
 </section>
 </section>
@@ -339,7 +337,7 @@ selected.</p>
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../index.html">
-    <img class="logo" src="../_static/logo.png" alt="Logo"/>
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
     
   </a>
 </p>
@@ -361,8 +359,8 @@ selected.</p>
 <li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="optimization.html">TDCS Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tms_optimization.html">TMS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview_tes_opt.html">TES Optimization: Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview_tms_opt.html">TMS Optimization: Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
@@ -387,7 +385,7 @@ selected.</p>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -395,7 +393,7 @@ selected.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -410,11 +408,11 @@ selected.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
       <a href="../_sources/tutorial/gui.rst.txt"

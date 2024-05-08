@@ -2,13 +2,22 @@
 
 Changelog
 ===========
+4.5.0 
+------
+  * New optimization method TMS that also supports bent and flexible coils, thereby systematically avoiding intersections of the coil with the head. 
+  * New format (.tcd) for TMS coils that supports flexible and multi-element coils. Coils can now also be defined by their winding geometries. The A-fields (magnetic vector potential) are then determined via numerical integration of line integrals. This method complements coil definitions using magnetic dipoles and using precalculated A-fields stored on a regular grid (i.e. as NIfTI). The tcd-format supports all three cases.
+  * TMS coil models for Brainsway H1, H4 and H7, and for MagVenture MST twin coil.
+  * New optimization method for TES, including montages with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
+  * New class to support the convenient definition of regions-of-interest.
+  * Update to python 3.11 and corresponding updates of most of the included packages.
+
+NOTES & Known issues: see 4.0.0
+
 4.1.0 
 ------
  * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
  * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
  * I/O functions for neuronavigation data have been updated to support new Brainsight version 2.5.3
-
-NOTES & Known issues: see 4.0.0
  
 4.0.1
 ------

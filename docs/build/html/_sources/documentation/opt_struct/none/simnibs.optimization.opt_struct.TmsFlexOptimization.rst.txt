@@ -1,0 +1,55 @@
+﻿simnibs.optimization.opt\_struct.TmsFlexOptimization
+====================================================
+
+.. currentmodule:: simnibs.optimization.opt_struct
+
+.. autoclass:: TmsFlexOptimization
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TmsFlexOptimization.__init__
+      ~TmsFlexOptimization.add_position
+      ~TmsFlexOptimization.add_region_of_interest
+      ~TmsFlexOptimization.read_mat_struct
+      ~TmsFlexOptimization.run
+      ~TmsFlexOptimization.to_mat
+      ~TmsFlexOptimization.to_str_formatted
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TmsFlexOptimization.type
+      ~TmsFlexOptimization.date
+      ~TmsFlexOptimization.time_str
+      ~TmsFlexOptimization.fnamecoil
+      ~TmsFlexOptimization.pos
+      ~TmsFlexOptimization.fnamehead
+      ~TmsFlexOptimization.subpath
+      ~TmsFlexOptimization.path_optimization
+      ~TmsFlexOptimization.eeg_cap
+      ~TmsFlexOptimization.run_simulation
+      ~TmsFlexOptimization.method
+      ~TmsFlexOptimization.roi
+      ~TmsFlexOptimization.global_translation_ranges
+      ~TmsFlexOptimization.global_rotation_ranges
+      ~TmsFlexOptimization.dither_skip
+      ~TmsFlexOptimization.fem_evaluation_cutoff
+      ~TmsFlexOptimization.direct_eps
+      ~TmsFlexOptimization.direct_maxfun
+      ~TmsFlexOptimization.direct_maxiter
+      ~TmsFlexOptimization.direct_locally_biased
+      ~TmsFlexOptimization.direct_vol_tol
+      ~TmsFlexOptimization.direct_len_tol
+   
+   

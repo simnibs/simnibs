@@ -1,29 +1,27 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Uncertainty Quantification &#8212; SimNIBS g55be60be&#39;) documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/jquery.js"></script>
-    <script src="../../_static/underscore.js"></script>
-    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <title>Uncertainty Quantification &#8212; SimNIBS dev&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="How to create and use a custom mesh" href="custom_meshing.html" />
-    <link rel="prev" title="TDCS Network Optimization" href="tdcs_distributed_opt.html" />
+    <link rel="prev" title="Group Analysis" href="group_analysis.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
+
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  
 
   </head><body>
   
@@ -37,7 +35,7 @@
     <ul>
         <li>
           &larr;
-          <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
+          <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
           <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
@@ -51,12 +49,12 @@
           <div class="body" role="main">
             
   <section id="uncertainty-quantification">
-<span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Permalink to this heading">¶</a></h1>
+<span id="uq-tutorial"></span><h1>Uncertainty Quantification<a class="headerlink" href="#uncertainty-quantification" title="Link to this heading">¶</a></h1>
 <p>Tissue conductivity values are uncertain. Given that, it might be desirable to take this variability into consideration when simulating electric fields.</p>
 <p>For that reason, we introduced a way in SimNIBS to easily perform Uncertainty Quantification (UQ) via Generalized Polynomial Chaos Expansion (gPC) for evaluating the effect of uncertainty in conductivity values on the fields of interest.</p>
 <p>Before proceeding through this tutorial, please see <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
 <p>In UQ via gPC, we quantify the uncertainty of the input variables (the conductivities) using a probability distribution.
 SimNIBS supports two types of conductivity distribution: Normal and Beta.</p>
 <p>After defining the uncertainty in the input variables, SimNIBS performs the UQ via gPC.
@@ -66,7 +64,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <p>For more information on methodology, please see the supplementary material in  <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., 2018</a>.</p>
 </section>
 <section id="setting-up-a-simulation-with-uq">
-<h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Permalink to this heading">¶</a></h2>
+<h2>Setting-up a Simulation with UQ<a class="headerlink" href="#setting-up-a-simulation-with-uq" title="Link to this heading">¶</a></h2>
 <p>It is simple to set-up a simulation with UQ. All you need to do is to set-up the  <strong>distribution_type</strong> and <strong>distribution_parameters</strong> parameters in the <a class="reference internal" href="../../documentation/sim_struct/cond.html#cond-struct-doc"><span class="std std-ref">COND</span></a> structures.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -77,7 +75,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <p>Because conductivities can not be negative, we highly recommend the usage of beta-distributed random variables to represent conductivity uncertainties.</p>
 </div>
 <section id="python">
-<h3>Python<a class="headerlink" href="#python" title="Permalink to this heading">¶</a></h3>
+<h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Example for running a SimNIBS tDCS simulation in Python</span>
 <span class="sd">    Run with:</span>
 
@@ -125,7 +123,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </div>
 </section>
 <section id="matlab">
-<h3>MATLAB<a class="headerlink" href="#matlab" title="Permalink to this heading">¶</a></h3>
+<h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% example script that runs an Uncertainty Quantification analysis</span>
 <span class="c">% </span>
 <span class="c">% G. Saturnino, 2019</span>
@@ -173,7 +171,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </section>
 </section>
 <section id="output-files">
-<h2>Output Files<a class="headerlink" href="#output-files" title="Permalink to this heading">¶</a></h2>
+<h2>Output Files<a class="headerlink" href="#output-files" title="Link to this heading">¶</a></h2>
 <p>In the output folder of the examples above (the <code class="file docutils literal notranslate"><span class="pre">tdcs_uq/</span></code> folder) we have the output files</p>
 <ul>
 <li><dl class="simple">
@@ -239,7 +237,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </ul>
 </section>
 <section id="more-options">
-<h2>More Options<a class="headerlink" href="#more-options" title="Permalink to this heading">¶</a></h2>
+<h2>More Options<a class="headerlink" href="#more-options" title="Link to this heading">¶</a></h2>
 <p>In <em>Python</em>, it is also possible to call lower-level functions to set more options for the UQ run and the post-processing of results.</p>
 <p>In the example below, we set-up a UQ TMS problem with the ROI being the whole brain (tissues 1 and 2) and with a tolerance of 0.1.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -277,7 +275,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </div>
 </section>
 <section id="secondary-quantities">
-<h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Permalink to this heading">¶</a></h2>
+<h2>Secondary Quantities<a class="headerlink" href="#secondary-quantities" title="Link to this heading">¶</a></h2>
 <p>It is also possible to calculate secondary quantities, such as the 99th percentile of the electric field magnitude.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">simnibs</span>
@@ -314,11 +312,11 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 </div>
 </section>
 <section id="acknowledgements">
-<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this heading">¶</a></h2>
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
 <p>We would like to thank Konstantin Weise and Thomas Knoesche for the support in implementing the gPC in SimNIBS and supplying us with an early version of the <a class="reference external" href="https://github.com/konstantinweise/pygpc">pygpc library</a>.</p>
 </section>
 <section id="further-reading">
-<h2>Further Reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2018.12.053">Saturnino et al., A principled approach to conductivity uncertainty analysis in electric field calculations, Neuroimage 188, 2018</a></p>
 <p><a class="reference external" href="https://doi.org/10.1016/j.softx.2020.100450">Weise, et al. Pygpc: A sensitivity and uncertainty analysis toolbox for Python, SoftwareX 11, 2020</a></p>
 </section>
@@ -332,7 +330,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
     <ul>
         <li>
           &larr;
-          <a href="tdcs_distributed_opt.html" title="Previous document">TDCS Network Optimization</a>
+          <a href="group_analysis.html" title="Previous document">Group Analysis</a>
         </li>
         <li>
           <a href="custom_meshing.html" title="Next document">How to create and use a custom mesh</a>
@@ -348,7 +346,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../index.html">
-    <img class="logo" src="../../_static/logo.png" alt="Logo"/>
+    <img class="logo" src="../../_static/logo.png" alt="Logo" />
     
   </a>
 </p>
@@ -370,8 +368,8 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
 <li class="toctree-l2"><a class="reference internal" href="../head_meshing.html">Creating Head Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../scripting.html">Scripting Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../analysis.html">Analyzing Simulations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../optimization.html">TDCS Optimization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tms_optimization.html">TMS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview_tes_opt.html">TES Optimization: Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../overview_tms_opt.html">TMS Optimization: Overview</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="advanced.html">Advanced Features</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../win_prompt.html">Accessing the Command Prompt on Windows</a></li>
 </ul>
@@ -391,14 +389,14 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
   <li><a href="../../index.html">Documentation overview</a><ul>
   <li><a href="../tutorial.html">Tutorial</a><ul>
   <li><a href="advanced.html">Advanced Features</a><ul>
-      <li>Previous: <a href="tdcs_distributed_opt.html" title="previous chapter">TDCS Network Optimization</a></li>
+      <li>Previous: <a href="group_analysis.html" title="previous chapter">Group Analysis</a></li>
       <li>Next: <a href="custom_meshing.html" title="next chapter">How to create and use a custom mesh</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -406,7 +404,7 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -421,11 +419,11 @@ At each step, the error is evaluated using a K-means cross-validation scheme. Th
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020, SimNIBS Developers.
+      &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
       <a href="../../_sources/tutorial/advanced/uq.rst.txt"

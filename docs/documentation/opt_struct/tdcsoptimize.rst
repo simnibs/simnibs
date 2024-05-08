@@ -12,7 +12,7 @@ Initialization
 
   .. code-block:: python
 
-     from simnibs import optimization
+     from simnibs import opt_struct
      opt = optimization.TDCSoptimize()
 
   \

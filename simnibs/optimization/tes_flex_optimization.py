@@ -99,8 +99,7 @@ class TesFlexOptimization:
         - "max": maximize 99.9 percentile of electric field in ROI
         - "focality": Maximize focality  (goal: sensitivity = specificity = 1)
         - "focality_inv": Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
-        - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float
-          [n_channel_stim][n_roi] containing np.array with e-field
+        - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float [n_channel_stim][n_roi] containing np.array with e-field
     track_focality : bool, optional, default: False
         Tracks focality for each goal function value (requires ROI and non-ROI definition)
     run_final_electrode_simulation : bool, optional, default: True
