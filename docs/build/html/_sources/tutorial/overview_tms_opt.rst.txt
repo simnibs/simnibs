@@ -18,7 +18,7 @@ TMS Optimization (Flat Coils)
    
 These methods aim to maximize the electric field in a target region. Depending on the individual head anatomy and the targeted brain area, minor intersections of the optimized coil position with the scalp might still occur even for flat coil geometries.
 
-.. image:: ../_static/gallery/tms_optimization.jpg
+.. image:: ../_static/gallery/TMS_flex_opt.gif
    :align: right
    :width: 40%
    :target: tms_flex_opt.html
