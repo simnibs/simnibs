@@ -816,7 +816,7 @@ def optimize_distance(
         )
         if direct.fun > best_f:
             direct.x = best_x
-            direct.opt.fun = best_f
+            direct.fun = best_f
             direct.message += ' Using better solution encountered during optimization.'
         best_deformation_settings = direct.x
 
@@ -840,7 +840,7 @@ def optimize_distance(
         
         if local_opt.fun > best_f:
             local_opt.x = best_x
-            local_opt.opt.fun = best_f
+            local_opt.fun = best_f
             local_opt.message += ' Using better solution encountered during optimization.'
         
         best_deformation_settings = local_opt.x
@@ -1218,7 +1218,7 @@ def optimize_e_mag(
         )
         if direct.fun > best_f:
             direct.x = best_x
-            direct.opt.fun = best_f
+            direct.fun = best_f
             direct.message += ' Using better solution encountered during optimization.'
         best_deformation_settings = direct.x
 
@@ -1242,7 +1242,7 @@ def optimize_e_mag(
         
         if local_opt.fun > best_f:
             local_opt.x = best_x
-            local_opt.opt.fun = best_f
+            local_opt.fun = best_f
             local_opt.message += ' Using better solution encountered during optimization.'
             
         best_deformation_settings = local_opt.x
