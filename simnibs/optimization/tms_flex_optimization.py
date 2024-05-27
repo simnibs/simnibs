@@ -814,7 +814,7 @@ def optimize_distance(
             vol_tol=direct_vol_tol,
             len_tol=direct_len_tol,
         )
-        if direct.x > best_f:
+        if direct.fun > best_f:
             direct.x = best_x
             direct.opt.fun = best_f
             direct.message += ' Using better solution encountered during optimization.'
@@ -838,7 +838,7 @@ def optimize_distance(
             options={'maxls': 100}
         )
         
-        if local_opt.x > best_f:
+        if local_opt.fun > best_f:
             local_opt.x = best_x
             local_opt.opt.fun = best_f
             local_opt.message += ' Using better solution encountered during optimization.'
@@ -1216,7 +1216,7 @@ def optimize_e_mag(
             vol_tol=direct_vol_tol,
             len_tol=direct_len_tol,
         )
-        if direct.x > best_f:
+        if direct.fun > best_f:
             direct.x = best_x
             direct.opt.fun = best_f
             direct.message += ' Using better solution encountered during optimization.'
@@ -1240,7 +1240,7 @@ def optimize_e_mag(
             options={'maxls': 100}
            )
         
-        if local_opt.x > best_f:
+        if local_opt.fun > best_f:
             local_opt.x = best_x
             local_opt.opt.fun = best_f
             local_opt.message += ' Using better solution encountered during optimization.'
