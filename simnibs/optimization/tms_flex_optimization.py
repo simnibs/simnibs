@@ -815,9 +815,12 @@ def optimize_distance(
             len_tol=direct_len_tol,
         )
         if direct.fun > best_f:
+            direct.message += f''' Using better solution encountered during optimization.
+            opt.fun: {direct.fun}, best_fun: {best_f}
+            opt.x: {direct.x}, best_x: {best_x}'''
             direct.x = best_x
             direct.fun = best_f
-            direct.message += ' Using better solution encountered during optimization.'
+            
         best_deformation_settings = direct.x
 
         for coil_deformation, deformation_setting in zip(
@@ -839,9 +842,11 @@ def optimize_distance(
         )
         
         if local_opt.fun > best_f:
+            local_opt.message += f''' Using better solution encountered during optimization.
+            opt.fun: {local_opt.fun}, best_fun: {best_f}
+            opt.x: {local_opt.x}, best_x: {best_x}'''
             local_opt.x = best_x
             local_opt.fun = best_f
-            local_opt.message += ' Using better solution encountered during optimization.'
         
         best_deformation_settings = local_opt.x
             
@@ -1217,9 +1222,11 @@ def optimize_e_mag(
             len_tol=direct_len_tol,
         )
         if direct.fun > best_f:
+            direct.message += f''' Using better solution encountered during optimization.
+            opt.fun: {direct.fun}, best_fun: {best_f}
+            opt.x: {direct.x}, best_x: {best_x}'''
             direct.x = best_x
             direct.fun = best_f
-            direct.message += ' Using better solution encountered during optimization.'
         best_deformation_settings = direct.x
 
         for sampled_coil_deformation, deformation_setting in zip(
@@ -1241,9 +1248,11 @@ def optimize_e_mag(
            )
         
         if local_opt.fun > best_f:
+            local_opt.message += f''' Using better solution encountered during optimization.
+            opt.fun: {local_opt.fun}, best_fun: {best_f}
+            opt.x: {local_opt.x}, best_x: {best_x}'''
             local_opt.x = best_x
             local_opt.fun = best_f
-            local_opt.message += ' Using better solution encountered during optimization.'
             
         best_deformation_settings = local_opt.x
 
