@@ -761,6 +761,9 @@ def optimize_distance(
     initial_deformation_settings = np.array(
         [coil_deformation.current for coil_deformation in coil_deformation_ranges]
     )
+    
+    best_f = np.inf
+    best_x = None
 
     def cost_f_x0_w(x):
         for coil_deformation, deformation_setting in zip(coil_deformation_ranges, x):
@@ -784,6 +787,12 @@ def optimize_distance(
         )
 
         f = distance_penalty + (intersection_penalty + self_intersection_penalty)
+        
+        nonlocal best_f
+        if f<best_f:
+            nonlocal best_x
+            best_x = x.copy()
+            best_f = f
 
         return f
 
@@ -805,6 +814,10 @@ def optimize_distance(
             vol_tol=direct_vol_tol,
             len_tol=direct_len_tol,
         )
+        if direct.x > best_f:
+            direct.x = best_x
+            direct.opt.fun = best_f
+            direct.message += ' Using better solution encountered during optimization.'
         best_deformation_settings = direct.x
 
         for coil_deformation, deformation_setting in zip(
@@ -824,9 +837,14 @@ def optimize_distance(
             method="L-BFGS-B",
             options={'maxls': 100}
         )
-
+        
+        if local_opt.x > best_f:
+            local_opt.x = best_x
+            local_opt.opt.fun = best_f
+            local_opt.message += ' Using better solution encountered during optimization.'
+        
         best_deformation_settings = local_opt.x
-
+            
         for coil_deformation, deformation_setting in zip(
             coil_deformation_ranges, best_deformation_settings
         ):
@@ -1141,6 +1159,8 @@ def optimize_e_mag(
         tracking_deformations = []
         fs = []
             
+    best_f = np.inf
+    best_x = None
     def cost_f_x0_w(x):
         if debug:
             deformations = []
@@ -1171,6 +1191,12 @@ def optimize_e_mag(
 
         f = penalty - 100 * np.mean(roi_e_field)
         
+        nonlocal best_f
+        if f<best_f:
+            nonlocal best_x
+            best_x = x.copy()
+            best_f = f
+        
         if debug:
             tracking_deformations.append(deformations)
             fs.append(f)
@@ -1190,6 +1216,10 @@ def optimize_e_mag(
             vol_tol=direct_vol_tol,
             len_tol=direct_len_tol,
         )
+        if direct.x > best_f:
+            direct.x = best_x
+            direct.opt.fun = best_f
+            direct.message += ' Using better solution encountered during optimization.'
         best_deformation_settings = direct.x
 
         for sampled_coil_deformation, deformation_setting in zip(
@@ -1207,8 +1237,14 @@ def optimize_e_mag(
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
             method="L-BFGS-B",
+            options={'maxls': 100}
            )
-
+        
+        if local_opt.x > best_f:
+            local_opt.x = best_x
+            local_opt.opt.fun = best_f
+            local_opt.message += ' Using better solution encountered during optimization.'
+            
         best_deformation_settings = local_opt.x
 
         for coil_deformation, deformation_setting in zip(
