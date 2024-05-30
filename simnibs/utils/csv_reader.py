@@ -134,7 +134,7 @@ def write_csv_positions(filename, types, coordinates, name, extra=None, extra_co
         extra = [None]*n
     extra = [[] if e is None else e.tolist() for e in extra]
 
-    if extra_cols is None:
+    if extra_cols is None or len(extra_cols) == 0:
         extra_cols = [None]*n
     extra_cols = [e_c or [] for e_c in extra_cols]
 
@@ -144,7 +144,7 @@ def write_csv_positions(filename, types, coordinates, name, extra=None, extra_co
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         if header != []:
-            writer.writerow(header)
+            writer.writerow(header)   
         for t, c, e, n, e_c in zip(types, coordinates, extra, name, extra_cols):
             writer.writerow([t] + c + e + n + e_c)
 
