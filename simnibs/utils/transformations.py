@@ -1056,7 +1056,7 @@ def warp_coordinates(coordinates, m2m_folder,
             CoilPos:
                 Type, pos_x, pos_y, pos_z, ez_x, ez_y, ez_z, ey_x, ey_y, ey_z, dist, name, ...
             if the direction is mni2subject: position will be adjusted after transformation
-            to have specified distance to skin (mni2subject_coords ignores distances)
+            to have specified distance to skin (subject2mni_coords ignores distances)
 
             You can also input a list with the same structure as the csv files
 
