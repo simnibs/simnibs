@@ -9,7 +9,6 @@ import logging
 
 import numpy as np
 import scipy.spatial
-import h5py
 import nibabel
 from scipy.optimize import (
     direct,
@@ -303,11 +302,11 @@ class TesFlexOptimization:
         if self.plot:
             # save skin surface
             np.savetxt(
-                os.path.join(self.plot_folder, f"skin_surface_nodes.txt"),
+                os.path.join(self.plot_folder, "skin_surface_nodes.txt"),
                 self.skin_surface.nodes,
             )
             np.savetxt(
-                os.path.join(self.plot_folder, f"skin_surface_con.txt"),
+                os.path.join(self.plot_folder, "skin_surface_con.txt"),
                 self.skin_surface.tr_nodes,
             )
 
@@ -548,7 +547,7 @@ class TesFlexOptimization:
 
         # log summary
         ################################################################################################################
-        self.logger.log(25, f"=" * 100)
+        self.logger.log(25, "=" * 100)
         self.logger.log(25, f"headmodel:                        {self.mesh.fn}")
         self.logger.log(25, f"n_roi:                            {self.n_roi}")
         self.logger.log(
@@ -594,7 +593,7 @@ class TesFlexOptimization:
                 25,
                 f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})",
             )
-            self.logger.log(25, f"---------------------------------------------")
+            self.logger.log(25, "---------------------------------------------")
 
             for i_array, _electrode_array in enumerate(
                 self.electrode[i_channel_stim].electrode_arrays
@@ -613,7 +612,7 @@ class TesFlexOptimization:
                     25, f"\tlength_y: {remove_None(_electrode_array.length_y)}"
                 )
 
-        self.logger.log(25, f"=" * 100)
+        self.logger.log(25, "=" * 100)
 
         self.prepared = True
 
@@ -1169,7 +1168,7 @@ class TesFlexOptimization:
         # polish optimization
         ################################################################################################################
         if self.polish:
-            self.logger.log(20, f"Polishing optimization results!")
+            self.logger.log(20, "Polishing optimization results!")
             result = minimize(
                 self.goal_fun,
                 x0=result.x,
@@ -1215,9 +1214,9 @@ class TesFlexOptimization:
                 e_plot[i_roi].append(e[0][i_roi])
                 e_plot[i_roi].append(e[0][i_roi])
                 e_plot[i_roi].append(e_pp[0][i_roi])
-                e_plot_label[i_roi].append(f"e_stim_0")
-                e_plot_label[i_roi].append(f"e_stim_1")
-                e_plot_label[i_roi].append(f"e_pp")
+                e_plot_label[i_roi].append("e_stim_0")
+                e_plot_label[i_roi].append("e_stim_1")
+                e_plot_label[i_roi].append("e_pp")
 
                 # plot field
                 if self.plot:
@@ -2504,9 +2503,9 @@ def save_optimization_results(
     d = datetime.datetime.now()
 
     with open(fname_txt, "w") as f:
-        f.write(f"Optimization summary:\n")
+        f.write("Optimization summary:\n")
         f.write(
-            f"===================================================================\n"
+            "===================================================================\n"
         )
         f.write(f"Date: {d.year}-{d.month}-{d.day}, {d.hour}:{d.minute}:{d.second}\n")
         f.write(f"Simulation time: {str(datetime.timedelta(seconds=time))[:-7]}\n")
@@ -2514,13 +2513,13 @@ def save_optimization_results(
         f.write(f"Goal: {goal}\n")
         f.write(f"Number of Channels: {len(e)}\n")
         f.write(f"Number of ROIs: {len(e[0])}\n")
-        f.write(f"\n")
-        f.write(f"Electrode coordinates:\n")
+        f.write("\n")
+        f.write("Electrode coordinates:\n")
         f.write(
-            f"===================================================================\n"
+            "===================================================================\n"
         )
-        f.write(f"Ellipsoid space (Jacobian coordinates):\n")
-        f.write(f"---------------------------------------\n")
+        f.write("Ellipsoid space (Jacobian coordinates):\n")
+        f.write("---------------------------------------\n")
 
         for i_stim in range(len(popt)):
             f.write(f"Stimulation {i_stim}:\n")
@@ -2547,9 +2546,9 @@ def save_optimization_results(
                         f"\tn_outer:  {sep(electrode[i_stim].n_outer)}{electrode[i_stim].n_outer}\n"
                     )
 
-        f.write(f"\n")
-        f.write(f"Subject space (Cartesian coordinates):\n")
-        f.write(f"--------------------------------------\n")
+        f.write("\n")
+        f.write("Subject space (Cartesian coordinates):\n")
+        f.write("--------------------------------------\n")
         for i_stim in range(len(popt)):
             f.write(f"Stimulation {i_stim}:\n")
             for i_array, _electrode_array in enumerate(
@@ -2574,7 +2573,7 @@ def save_optimization_results(
         f.write("Optimization method:\n")
         f.write("===================================================================\n")
         f.write(f"Optimizer: {optimizer}\n")
-        f.write(f"Settings:\n")
+        f.write("Settings:\n")
         if optimizer_options is not None:
             for key in optimizer_options:
                 if type(optimizer_options[key]) is Bounds:
@@ -2644,11 +2643,11 @@ def save_optimization_results(
             if type(optimizer_options[key]) is Bounds:
                 f.create_dataset(
                     data=optimizer_options[key].lb,
-                    name=f"optimizer/optimizer_options/lb",
+                    name="optimizer/optimizer_options/lb",
                 )
                 f.create_dataset(
                     data=optimizer_options[key].ub,
-                    name=f"optimizer/optimizer_options/ub",
+                    name="optimizer/optimizer_options/ub",
                 )
             else:
                 f.create_dataset(
