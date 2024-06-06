@@ -1,4 +1,5 @@
 import os
+from typing import get_type_hints
 import numpy as np
 import numpy.typing as npt
 import nibabel as nib
@@ -8,6 +9,7 @@ from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 
 import simnibs.utils.file_finder as file_finder
+from simnibs.utils.matlab_read import matlab_field_to_list, remove_None, try_to_read_matlab_field
 from simnibs.utils.mesh_element_properties import ElementTags
 from .file_finder import SubjectFiles
 from .transformations import (
@@ -17,7 +19,13 @@ from simnibs.utils import transformations
 
 
 class RegionOfInterest:
-    """A class describing a region of Interest in a volume mesh or a surface mesh."""
+    """A class describing a region of Interest in a volume mesh or a surface mesh.
+    
+    Parameters
+    ------------------------
+    matlab_struct: (optional) scipy.io.loadmat()
+        matlab structure
+    """
 
     method: str
     """ The method to create the ROI {"manual", "custom", "surface", "volume", "volume_from_surface", "mesh+mask"} """
@@ -65,7 +73,7 @@ class RegionOfInterest:
     elm_mask: list[bool] | None  
     """ Only for method = "mesh+mask" -> a boolean node mask (exclusive with node_mask) (example: [True, ..., False])"""
 
-    def __init__(self):
+    def __init__(self, matlab_struct=None):
         self.method = "manual"
         self.subpath = None
         self.mesh = None
@@ -93,6 +101,9 @@ class RegionOfInterest:
         self.elm_mask = None
 
         self._prepared = False
+
+        if matlab_struct:
+           self.read_mat_struct(matlab_struct)
 
     def _prepare(self):
         """Prepares the Region of Interest based on the scripting parameters of the class.
@@ -195,7 +206,60 @@ class RegionOfInterest:
         self._prepared = True
 
     def to_mat(self):
-        return {"a": "b"}
+        """ Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+
+        Returns
+        --------------------
+        dict
+            Dictionaty for usage with scipy.io.savemat
+        """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
+        mat = {
+            key:remove_None(value) for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+        }
+
+        # Add class name as type (type is protected in python so it cannot be a instance variable)
+        mat['type'] = 'RegionOfInterest'
+
+        return mat
+    
+    def read_mat_struct(self, mat):
+        """ Reads parameters from matlab structure
+
+        Parameters
+        ----------
+        mat: scipy.io.loadmat
+            Loaded matlab structure
+        """
+        self.method = try_to_read_matlab_field(mat, 'method', str)
+        self.subpath = try_to_read_matlab_field(mat, 'subpath', str)
+        self.mesh = try_to_read_matlab_field(mat, 'mesh', str)
+
+        self.mask_space = matlab_field_to_list(mat, 'mask_space', 1) 
+        self.mask_path = matlab_field_to_list(mat, 'mask_path', 1) 
+        self.mask_value = matlab_field_to_list(mat, 'mask_value', 1)
+        self.mask_operator = matlab_field_to_list(mat, 'mask_operator', 1)
+
+        self.roi_sphere_center = matlab_field_to_list(mat, 'roi_sphere_center', 2)
+        self.roi_sphere_radius = matlab_field_to_list(mat, 'roi_sphere_radius', 1)
+        self.roi_sphere_center_space = matlab_field_to_list(mat, 'roi_sphere_center_space', 1)
+        self.roi_sphere_operator = matlab_field_to_list(mat, 'roi_sphere_operator', 1)
+
+        self.nodes = matlab_field_to_list(mat, 'nodes', 2)
+
+        self.surface_type = try_to_read_matlab_field(mat, 'surface_type', str)
+        self.surface_path = try_to_read_matlab_field(mat, 'surface_path', str)
+
+        self.tissues = matlab_field_to_list(mat, 'tissues', 1)
+
+        self.surface_inclusion_radius = try_to_read_matlab_field(mat, 'surface_inclusion_radius', float)
+
+        self.node_mask = matlab_field_to_list(mat, 'node_mask', 1)
+        self.elm_mask = matlab_field_to_list(mat, 'elm_mask', 1)
 
     def get_nodes(self, node_type: str | None = None) -> npt.NDArray[np.float_]:
         """Returns the nodes which are part of the Region of Interest.

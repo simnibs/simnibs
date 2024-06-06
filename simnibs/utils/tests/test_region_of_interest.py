@@ -2,6 +2,7 @@ import os
 import numpy as np
 import nibabel as nib
 import pytest
+import scipy
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.mesh_io import Msh
 from simnibs.utils import file_finder
@@ -957,3 +958,125 @@ class TestApplySphereMask:
 
         roi_mesh = roi.get_roi_mesh()
         assert np.all(roi_mesh.elm.tag1[roi_mesh.elm.elm_type == 4] == 4)
+
+
+class TestMatlab:
+    def test_surface_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "surface"
+
+        roi.surface_type = "central"
+        roi.subpath = "path/to/m2m"
+
+        roi.mask_space = ["subject_lh"]
+        roi.mask_path = ["path_to_file"]
+        roi.mask_value = [2]
+        roi.mask_operator = ["intersection"]
+
+        roi.roi_sphere_center =[[1,2,3], [4,5,6]]
+        roi.roi_sphere_radius = [3, 45]
+        roi.roi_sphere_center_space = ['subject', 'mni']
+        roi.roi_sphere_operator = ["union", "intersection"]
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__
+
+    def test_custom_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "custom"
+
+        roi.nodes = [[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]]
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__
+
+
+    def test_volume_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "volume"
+        roi.mesh = 'path/to/mesh'
+        roi.tissues = [1,2]
+
+        roi.mask_space = ["mni", "subject"]
+        roi.mask_path = ["path_to_file", "path_to_file_2"]
+        roi.mask_value = [2, 33]
+        roi.mask_operator = ["intersection", "difference"]
+
+        roi.roi_sphere_center =[[1,2,3]]
+        roi.roi_sphere_radius = [3]
+        roi.roi_sphere_center_space = ['subject']
+        roi.roi_sphere_operator = ["union"]
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__
+
+    def test_surface_to_volume_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "surface"
+
+        roi.surface_type = "central"
+        roi.subpath = "path/to/m2m"
+
+        roi.mask_space = ["subject_lh", "subject_rh"]
+        roi.mask_path = ["path_to_file", 'path_to_file_2']
+        roi.mask_value = [2, 4]
+        roi.mask_operator = ["intersection", "union"]
+
+        roi.roi_sphere_center =[[1,2,3]]
+        roi.roi_sphere_radius = [3]
+        roi.roi_sphere_center_space = ['mni']
+        roi.roi_sphere_operator = ["intersection"]
+
+        roi.tissues = [1]
+        roi.surface_inclusion_radius = 1.5
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__
+
+    def test_mesh_and_mask_node_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "mesh+mask"
+        roi.mesh = 'path/to/mesh'
+        roi.node_mask = [True, False, True, True, False]
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__
+
+    def test_mesh_and_mask_elm_roi_write_read_mat(self, tmp_path):
+        roi = RegionOfInterest()
+
+        roi.method = "mesh+mask"
+        roi.subpath = 'path/to/m2m'
+        roi.elm_mask = [True, False, True, True, False, False, False, True]
+
+        mat_path = os.path.join(tmp_path, "test.mat")
+        scipy.io.savemat(mat_path, roi.to_mat())
+
+        roi_loaded = RegionOfInterest(scipy.io.loadmat(mat_path))
+
+        assert roi.__dict__ == roi_loaded.__dict__

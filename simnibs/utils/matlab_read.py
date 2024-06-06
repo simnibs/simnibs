@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import scipy.io
 
 
@@ -31,6 +32,82 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
         pass
     return alternative
 
+def matlab_struct_to_dict(matlab_structure):
+    """Turns a matlab structure (keys described in dtype) into a normal python dict
+
+    Parameters
+    ----------
+    matlab_structure : dict
+        matlab sub structure as read by scipy.io
+
+    Returns
+    -------
+    dict
+        the dictionary containing the information from the matlab sub structure
+    """
+    result = {}
+    if matlab_structure.dtype.names is None:
+        return {}
+    for name in matlab_structure.dtype.names:
+        if isinstance(matlab_structure[0][name][0].dtype, np.dtypes.VoidDType):
+            result[name] = matlab_struct_to_dict(matlab_structure[0][name][0])
+        else:
+            if matlab_structure[0][name][0].size == 0:
+                result[name] = None
+            elif isinstance(matlab_structure[0][name][0][0], np.ndarray):
+                result[name] = matlab_structure[0][name][0][0][0]
+            else:
+                result[name] = matlab_structure[0][name][0][0]
+
+    return result
+
+def matlab_sub_struct_to_matlab_struct(matlab_structure):
+    """Turns a matlab sub structure (dtype contains key names) into a matlab structure (dict)
+
+    Parameters
+    ----------
+    matlab_structure : dict
+        matlab sub structure as read by scipy.io
+
+    Returns
+    -------
+    dict
+        matlab structure as if it would have been directly read by scipy.io
+    """
+    result = {}
+    if matlab_structure.dtype.names is None:
+        return {}
+    for name in matlab_structure.dtype.names:
+        result[name] = matlab_structure[0][name][0]
+    return result
+
+def matlab_field_to_list(matlab_structure, field_name, dim) -> list | None:
+    """Returns a matlab field as a list with dim as the number of dimensions
+
+    Parameters
+    ----------
+    matlab_structure : dict
+        matlab structure as read by scipy.io, without squeeze
+    field_name: str
+        name of field in mat structure
+    dim : int
+        Number of dimensions that the list has
+
+    Returns
+    -------
+    list | None
+        The list with the number of dimensions specified
+    """
+    if field_name not in matlab_structure or matlab_structure[field_name].size == 0:
+        return None
+    if np.issubdtype(matlab_structure[field_name].dtype, np.str_):
+        nested = np.array(matlab_structure[field_name].tolist())
+        return np.array([string.strip() for string in nested.flatten()]).reshape(nested.shape).tolist()
+    else:
+        if dim > 1:
+            return matlab_structure[field_name].tolist()
+        else:
+            return matlab_structure[field_name].tolist()[0]
 
 def remove_None(src):
     '''Substitutes None by an empty char array '''

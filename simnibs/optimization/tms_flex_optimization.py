@@ -25,7 +25,13 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilTranslation,
 )
 from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoilElements
-from simnibs.utils.matlab_read import remove_None, try_to_read_matlab_field
+from simnibs.utils.matlab_read import (
+    matlab_field_to_list,
+    matlab_struct_to_dict,
+    matlab_sub_struct_to_matlab_struct,
+    remove_None,
+    try_to_read_matlab_field,
+)
 
 from ..simulation.sim_struct import POSITION
 from ..utils.simnibs_logger import logger
@@ -41,29 +47,7 @@ from simnibs.simulation import sim_struct
 
 
 class TmsFlexOptimization:
-    """Class that defines a TMS flex optimization
-
-    Attributes
-    ------------------------------
-    date: str
-        Date and time when the session struct was initiated
-    fnamecoil: str
-        Name of coil file
-    pos: sim_struct.POSITION
-        Definition of the coil position
-    subpath: str
-        path to m2m folder
-    fnamehead: str
-        file name of mesh
-    path_optimization: str
-        path where the simulation should be saved
-    eeg_cap: str
-        Name of eeg cap (in subject space)
-    method: str
-        The optimization method 'emag' or 'distance'
-    roi: RegionOfInterest
-        The target region of interest for the 'emag' optimization
-
+    """Class that defines a flexible TMS optimization
 
     Parameters
     ------------------------
@@ -71,32 +55,52 @@ class TmsFlexOptimization:
         matlab structure
     """
 
-    date: str 
-    time_str: str 
+    date: str
+    """Date when the optimization struct was initiated"""
+    time_str: str
+    """Time when the optimization struct was initiated"""
 
-    fnamecoil: str 
-    pos: POSITION 
+    fnamecoil: str
+    """Path to the coil file (example: "path/to/coil")"""
+    pos: POSITION
+    """The initial coil position from where the optimization is started"""
 
-    fnamehead: str 
-    subpath: str 
-    path_optimization: str 
-    eeg_cap: str 
+    fnamehead: str
+    """Path to the head mesh (example: "path/to/msh")"""
+    subpath: str
+    """Path to the m2m folder of the subject (example: "path/to/m2m")"""
+    path_optimization: str
+    """Path to the output folder where the result of the optimization is saved (example: "path/to/output")"""
+    eeg_cap: str
+    """Path to a eeg cap file (example: "path/to/csv")"""
     run_simulation: bool
+    """Weather to run a full simulation at the optimized position after the optimization"""
 
-    method: str 
-    roi: RegionOfInterest 
-    global_translation_ranges: list 
-    global_rotation_ranges: list 
+    method: str
+    """The method of optimization {"distance", "emag"}"""
+    roi: RegionOfInterest
+    """The region of interest in which the e field is simulated, method = "emag" """
+    global_translation_ranges: list
+    """Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
+    global_rotation_ranges: list
+    """Ranges that describe how far the coil is allowed to rotate around the x,y,z axis [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
 
-    dither_skip: int 
-    fem_evaluation_cutoff: float 
+    dither_skip: int
+    """How many voxel positions should be skipped when creating the coil volume representation.
+        Used to speed up the optimization. When set to 0, no dithering will be applied. (example: 2 | 0), default 6"""
+    fem_evaluation_cutoff: float
+    """If the penalty from the intersection and self intersection is greater than this cutoff value, the fem will not be evaluated to save time.
+        Set to np.inf to always evaluate the fem (example: 500 | np.inf), default 1000"""
 
-    direct_eps: float 
-    direct_maxfun: int 
-    direct_maxiter: int
-    direct_locally_biased: bool 
-    direct_vol_tol: float 
-    direct_len_tol: float 
+    run_global_optimization: bool
+    """Weather to run the global optimization, the global optimization will always run first"""
+    run_local_optimization: bool
+    """Weather to run the local optimization, the local optimization will always run second"""
+
+    direct_args: dict
+    """Settings for the scipy direct global optimization"""
+    l_bfgs_b_args: dict
+    """Settings for the scipy L-BFGS-B local optimization"""
 
     def __init__(self, matlab_struct=None):
         # Date when the session was initiated
@@ -120,18 +124,17 @@ class TmsFlexOptimization:
         self.dither_skip: int = 6
         self.fem_evaluation_cutoff: float = 1000
 
-        self.direct_eps: float = 0.0001
-        self.direct_maxfun: int = None
-        self.direct_maxiter: int = 1000
-        self.direct_locally_biased: bool = False
-        self.direct_vol_tol: float = None
-        self.direct_len_tol: float = 1e-6
+        self.run_global_optimization = True
+        self.run_local_optimization = True
+
+        self.direct_args = {}
+        self.l_bfgs_b_args = {}
 
         self._prepared = False
         self._log_handlers = []
 
         if matlab_struct:
-           self.read_mat_struct(matlab_struct)
+            self.read_mat_struct(matlab_struct)
 
     def add_position(self, position=None):
         """Adds the position to the current optimization
@@ -139,7 +142,7 @@ class TmsFlexOptimization:
         Parameters
         -----
         position: POSITION (Optional)
-            Position structure defining the coil position (Default: empty POSITION())
+            Position structure defining the coil position
 
         Returns
         ------
@@ -158,11 +161,11 @@ class TmsFlexOptimization:
         Parameters
         -----
         roi: RegionOfInterest (Optional)
-            Region of interest structure defining the region of interest (Default: empty RegionOfInterestInitializer)
+            Region of interest structure defining the region of interest
 
         Returns
         ------
-        roi: RegionOfInterestInitializer
+        roi: RegionOfInterest
             RegionOfInterest structure defining the region of interest
         """
         if roi is None:
@@ -234,11 +237,15 @@ class TmsFlexOptimization:
 
         if self.method == "emag":
             if self.roi is not None:
-                if self.subpath is not None and self.roi.subpath is None and self.roi.mesh is None:
+                if (
+                    self.subpath is not None
+                    and self.roi.subpath is None
+                    and self.roi.mesh is None
+                ):
                     self.roi.subpath = self.subpath
                 elif self.roi.subpath is None and self.roi.mesh is None:
                     self.roi.mesh = self._mesh
-                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes()) 
+                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes())
             else:
                 raise ValueError("No ROI specified")
 
@@ -250,11 +257,11 @@ class TmsFlexOptimization:
 
         self.pos.calc_matsimnibs(self._mesh)
 
-        if self.direct_vol_tol is None:
+        if "vol_tol" not in self.direct_args:
             if self.method == "distance":
-                self.direct_vol_tol = 1e-19
+                self.direct_args["vol_tol"] = 1e-19
             else:
-                self.direct_vol_tol = 1e-16
+                self.direct_args["vol_tol"] = 1e-16
 
         self._prepared = True
 
@@ -269,7 +276,7 @@ class TmsFlexOptimization:
         Parameters
         ----------
         fname_prefix: str, optional
-            Prefix of log-file. Defaults to 'simnibs_simulation'.
+            Prefix of log-file
         """
         if not os.path.isdir(self.path_optimization):
             os.mkdir(self.path_optimization)
@@ -327,14 +334,10 @@ class TmsFlexOptimization:
                 self._global_translation_ranges,
                 self._global_rotation_ranges,
                 self.dither_skip,
-                True,
-                False,
-                self.direct_eps,
-                self.direct_maxfun,
-                self.direct_maxiter,
-                self.direct_locally_biased,
-                self.direct_vol_tol,
-                self.direct_len_tol,
+                self.run_global_optimization,
+                self.run_local_optimization,
+                self.direct_args,
+                self.l_bfgs_b_args,
             )
         elif self.method == "emag":
             initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = (
@@ -347,14 +350,10 @@ class TmsFlexOptimization:
                     self._global_rotation_ranges,
                     self.dither_skip,
                     self.fem_evaluation_cutoff,
-                    True,
-                    False,
-                    self.direct_eps,
-                    self.direct_maxfun,
-                    self.direct_maxiter,
-                    self.direct_locally_biased,
-                    self.direct_vol_tol,
-                    self.direct_len_tol,
+                    self.run_global_optimization,
+                    self.run_local_optimization,
+                    self.direct_args,
+                    self.l_bfgs_b_args,
                 )
             )
         else:
@@ -423,47 +422,68 @@ class TmsFlexOptimization:
             S.run()
 
     def to_mat(self):
-        """ Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+        """Makes a dictionary for saving a matlab structure with scipy.io.savemat()
 
         Returns
         --------------------
         dict
-            Dictionaty for usage with scipy.io.savemat
+            Dictionary for usage with scipy.io.savemat
         """
         # Generate dict from instance variables (excluding variables starting with _ or __)
         mat = {
-            key:remove_None(value) for key, value in self.__dict__.items() 
-            if not key.startswith('__')
-            and not key.startswith('_')
-            and not callable(value) 
+            key: remove_None(value)
+            for key, value in self.__dict__.items()
+            if not key.startswith("__")
+            and not key.startswith("_")
+            and not callable(value)
             and not callable(getattr(value, "__get__", None))
         }
 
         # Add class name as type (type is protected in python so it cannot be a instance variable)
-        mat['type'] = 'TmsFlexOptimization'
+        mat["type"] = "TmsFlexOptimization"
 
         # Add all instance variables that are classes
         # Manually or by calling their to_mat function
-        pos_dt = np.dtype([('type', 'O'),
-                           ('name', 'O'), ('date', 'O'),
-                           ('matsimnibs', 'O'), ('didt', 'O'),
-                           ('fnamefem', 'O'), ('centre', 'O'),
-                           ('pos_ydir', 'O'), ('distance', 'O')])
+        if self.roi is not None:
+            mat["roi"] = self.roi.to_mat()
 
-        pos_array = np.array([('POSITION', remove_None(self.pos.name),
-                                remove_None(self.pos.date),
-                                remove_None(self.pos.matsimnibs),
-                                remove_None(self.pos.didt),
-                                remove_None(self.pos.fnamefem),
-                                remove_None(self.pos.centre),
-                                remove_None(self.pos.pos_ydir),
-                                remove_None(self.pos.distance))],
-                                dtype=pos_dt)
-        mat['pos'] = pos_array
+        if self.pos is not None:
+            pos_dt = np.dtype(
+                [
+                    ("type", "O"),
+                    ("name", "O"),
+                    ("date", "O"),
+                    ("matsimnibs", "O"),
+                    ("didt", "O"),
+                    ("fnamefem", "O"),
+                    ("centre", "O"),
+                    ("pos_ydir", "O"),
+                    ("distance", "O"),
+                ]
+            )
+
+            pos_array = np.array(
+                [
+                    (
+                        "POSITION",
+                        remove_None(self.pos.name),
+                        remove_None(self.pos.date),
+                        remove_None(self.pos.matsimnibs),
+                        remove_None(self.pos.didt),
+                        remove_None(self.pos.fnamefem),
+                        remove_None(self.pos.centre),
+                        remove_None(self.pos.pos_ydir),
+                        remove_None(self.pos.distance),
+                    )
+                ],
+                dtype=pos_dt,
+            )
+            mat["pos"] = pos_array
+
         return mat
-    
+
     def read_mat_struct(self, mat):
-        """ Reads parameters from matlab structure
+        """Reads parameters from matlab structure
 
         Parameters
         ----------
@@ -475,44 +495,62 @@ class TmsFlexOptimization:
         types = get_type_hints(TmsFlexOptimization)
         for key, value in self.__dict__.items():
             if key in mat:
-                setattr(self, key, try_to_read_matlab_field(mat, key, types[key], value))
+                setattr(
+                    self, key, try_to_read_matlab_field(mat, key, types[key], value)
+                )
+
+        if "direct_args" in mat:
+            self.direct_args = matlab_struct_to_dict(mat["direct_args"])
+
+        if "l_bfgs_b_args" in mat:
+            self.l_bfgs_b_args = matlab_struct_to_dict(mat["l_bfgs_b_args"])
 
         # Load all 2d arrays manually (try_to_read_matlab_field will load only array_name[0])
-        if 'global_translation_ranges' in mat:
-            self.global_translation_ranges = mat['global_translation_ranges'].tolist()
-
-        if 'global_rotation_ranges' in mat:
-            self.global_rotation_ranges = mat['global_rotation_ranges'].tolist()
+        self.global_translation_ranges = matlab_field_to_list(
+            mat, "global_translation_ranges", 2
+        )
+        self.global_rotation_ranges = matlab_field_to_list(
+            mat, "global_rotation_ranges", 2
+        )
 
         # Load all instance variables that are classes
-        if 'pos' in mat:
-            self.pos = POSITION(mat['pos'][0][0])
+        if "pos" in mat and mat["pos"].size > 0:
+            self.pos = POSITION(mat["pos"][0][0])
+
+        if "roi" in mat and mat["roi"].size > 0:
+            self.roi = RegionOfInterest(matlab_sub_struct_to_matlab_struct(mat["roi"]))
 
         return self
-    
+
     def to_str_formatted(self):
         import pprint
+
         # Generate dict from instance variables (excluding variables starting with _ or __ or None or len == 0)
         tms_flex_dict = {
-            key:value for key, value in self.__dict__.items() 
-            if not key.startswith('__')
-            and not key.startswith('_')
-            and not callable(value) 
+            key: value
+            for key, value in self.__dict__.items()
+            if not key.startswith("__")
+            and not key.startswith("_")
+            and not callable(value)
             and not callable(getattr(value, "__get__", None))
-            and value is not None and (not hasattr(value, '__len__') or len(value) > 0)
+            and value is not None
+            and (not hasattr(value, "__len__") or len(value) > 0)
         }
 
         # Add all instance variables that are classes manually
-        tms_flex_dict['pos'] = {
-            key:value for key, value in self.pos.__dict__.items() 
-            if not key.startswith('__')
-            and not key.startswith('_')
-            and not callable(value) 
+        tms_flex_dict["pos"] = {
+            key: value
+            for key, value in self.pos.__dict__.items()
+            if not key.startswith("__")
+            and not key.startswith("_")
+            and not callable(value)
             and not callable(getattr(value, "__get__", None))
-            and value is not None and (not hasattr(value, '__len__') or len(value) > 0)
+            and value is not None
+            and (not hasattr(value, "__len__") or len(value) > 0)
         }
 
         return pprint.pformat(tms_flex_dict, indent=4)
+
 
 def _get_fast_distance_score(
     distance_function: Callable,
@@ -520,7 +558,7 @@ def _get_fast_distance_score(
     affine: npt.NDArray[np.float_],
 ) -> float:
     """Calculates the mean absolute distance from the min distance points of the coil using the distance function.
-    If no min distance points are present it will use the node positions of the casings.
+    If no min distance points are present the node positions of the casings will be used.
 
     Parameters
     ----------
@@ -558,16 +596,17 @@ def _get_fast_distance_score(
 
     return np.mean(np.abs(distance_function(min_distance_points)))
 
+
 def _get_fast_intersection_penalty(
-    element_voxel_volumes: dict,
-    element_voxel_indexes,
-    element_voxel_dither_factors,
-    element_voxel_affines: dict,
-    target_voxel_distance,
-    target_voxel_affine,
-    self_intersection_elements,
+    element_voxel_volumes: dict[TmsCoilElements, npt.NDArray[np.bool_]],
+    element_voxel_indexes: dict[TmsCoilElements, npt.NDArray[np.int_]],
+    element_voxel_dither_factors: dict[TmsCoilElements, npt.NDArray[np.float_]],
+    element_voxel_affines: dict[TmsCoilElements, npt.NDArray[np.float_]],
+    target_voxel_distance: npt.NDArray[np.float_],
+    target_voxel_affine: npt.NDArray[np.float_],
+    self_intersection_elements: list[TmsCoilElements],
     affine: npt.NDArray[np.float_],
-    order: int = 3
+    order: int = 3,
 ) -> tuple[float, float]:
     """Evaluates how far the element voxel volumes intersect with the target voxel volume measured in mm^3 (volume) * mm (depth).
     Evaluates the amount of self intersection based on the self intersection element groups measured in mm^3.
@@ -579,16 +618,20 @@ def _get_fast_intersection_penalty(
         The voxel volume (True inside, False outside) of each coil element
     element_voxel_indexes : dict[TmsCoilElements, npt.NDArray[np.int_]]
         The indexes of the inside voxels for each coil element
+    element_voxel_dither_factors : dict[TmsCoilElements, npt.NDArray[np.float_]]
+        The dither scaling factor for each voxel for each coil element
     element_voxel_affine : dict[TmsCoilElements, npt.NDArray[np.float_]]
         The affine transformations from world to voxel space for each coil element
-    target_voxel_distance : _type_
+    target_voxel_distance : npt.NDArray[np.float_]
         The voxel distance field of the target
-    target_voxel_affine : _type_
+    target_voxel_affine : npt.NDArray[np.float_]
         The affine transformations from voxel to world space for the target
     self_intersection_elements : list[TmsCoilElements]
         The groups of coil elements that need to be checked for self intersection with each other
     affine : npt.NDArray[np.float_]
         The affine transformation from coil to world space
+    order : int
+        The order of interpolation on the target_voxel_distance
 
     Returns
     -------
@@ -619,7 +662,9 @@ def _get_fast_intersection_penalty(
             vox_to_vox_affine[:3, :3] @ indexes_in_vox1.T
             + vox_to_vox_affine[:3, 3, None]
         )
-        intersections = scipy.ndimage.map_coordinates(target_voxel_distance, indexes_in_vox2, order=order, prefilter=False)
+        intersections = scipy.ndimage.map_coordinates(
+            target_voxel_distance, indexes_in_vox2, order=order, prefilter=False
+        )
         weighted_target_intersection_quibic_mm += np.sum(intersections * dither_factors)
 
     self_intersection_quibic_mm = 0
@@ -638,7 +683,9 @@ def _get_fast_intersection_penalty(
                 + vox_to_vox_affine[:3, 3, None]
             )
             voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
-            intersections = scipy.ndimage.map_coordinates(voxel_volume1, indexes_in_vox2, order=order, prefilter=False)
+            intersections = scipy.ndimage.map_coordinates(
+                voxel_volume1, indexes_in_vox2, order=order, prefilter=False
+            )
             self_intersection_quibic_mm += np.sum(intersections * dither_factors)
 
     return (
@@ -646,20 +693,60 @@ def _get_fast_intersection_penalty(
         self_intersection_quibic_mm,
     )
 
+
 def _prepare_skin_surface(mesh: Msh) -> Msh:
+    """Preparing the skin surface by removing the internal air and closing the surface
+
+    Parameters
+    ----------
+    mesh : Msh
+        The head mesh where the skin surface should be created for
+
+    Returns
+    -------
+    Msh
+        The closed skin surface without internal air
+
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the meshfix call returned an error
+    """
     try:
         skin = mesh.relabel_internal_air().crop_mesh(ElementTags.SCALP_TH_SURFACE)
         with tempfile.TemporaryDirectory() as tmp_dirname:
-            mesh_io.write_off(skin, os.path.join(tmp_dirname, 'mymesh.off'))
-            cmd=[file_finder.path2bin("meshfix"), os.path.join(tmp_dirname, 'mymesh.off'), '-a', '2.0', '-o', os.path.join(tmp_dirname, 'mymesh.off')]
-            p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            mesh_io.write_off(skin, os.path.join(tmp_dirname, "mymesh.off"))
+            cmd = [
+                file_finder.path2bin("meshfix"),
+                os.path.join(tmp_dirname, "mymesh.off"),
+                "-a",
+                "2.0",
+                "-o",
+                os.path.join(tmp_dirname, "mymesh.off"),
+            ]
+            p = subprocess.Popen(
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
             p.wait()
-            cmd=[file_finder.path2bin("meshfix"), os.path.join(tmp_dirname, 'mymesh.off'), '-a', '2.0', '-u', '1', '--vertexDensity', '0.2', '-o', os.path.join(tmp_dirname, 'mymesh.off')]
-            p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cmd = [
+                file_finder.path2bin("meshfix"),
+                os.path.join(tmp_dirname, "mymesh.off"),
+                "-a",
+                "2.0",
+                "-u",
+                "1",
+                "--vertexDensity",
+                "0.2",
+                "-o",
+                os.path.join(tmp_dirname, "mymesh.off"),
+            ]
+            p = subprocess.Popen(
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
             p.wait()
             if p.returncode != 0:
                 raise subprocess.CalledProcessError(p.returncode, cmd)
-            skin = mesh_io.read_off(os.path.join(tmp_dirname, 'mymesh.off'))
+            skin = mesh_io.read_off(os.path.join(tmp_dirname, "mymesh.off"))
     except Exception:
         skin = mesh.crop_mesh(ElementTags.SCALP_TH_SURFACE)
 
@@ -667,29 +754,27 @@ def _prepare_skin_surface(mesh: Msh) -> Msh:
 
 
 def optimize_distance(
-    coil,
+    coil: TmsCoil,
     head_mesh: Msh,
     affine: npt.NDArray[np.float_],
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    dither_skip=0,
+    dither_skip: int = 0,
     global_optimization: bool = True,
-    local_optimization: bool = False,
-    direct_eps=1e-4,
-    direct_maxfun=None,
-    direct_maxiter=1000,
-    direct_locally_biased=False,
-    direct_vol_tol=1e-19,
-    direct_len_tol=1e-6,
-) -> tuple[float, float, npt.NDArray[np.float_]]:
-    """Optimizes the deformations of the coil elements to minimize the distance between the optimization_surface
+    local_optimization: bool = True,
+    direct_args: dict | None = None,
+    l_bfgs_b_args: dict | None = None,
+) -> tuple[float, float, npt.NDArray[np.float_], list]:
+    """Optimizes the deformations of the coil elements as well as the global transformation to minimize the distance between the optimization_surface
     and the min distance points (if not present, the coil casing points) while preventing intersections of the
     optimization_surface and the intersect points (if not present, the coil casing points)
 
     Parameters
     ----------
-    optimization_surface : Msh
-        The surface the deformations have to be optimized for
+    coil : TmsCoil
+        The coil used in the optimization
+    head_mesh : Msh
+        The head mesh used in the TMS simulation and the head mesh where the scalp surface is used for coil head intersection
     affine : npt.NDArray[np.float_]
         The affine transformation that is applied to the coil
     coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
@@ -713,6 +798,8 @@ def optimize_distance(
     result_affine
         The affine matrix. If coil_translation_ranges is None than it's the input affine,
         otherwise it is the optimized affine.
+    opt_results
+        The results of the optimizations
 
     Raises
     ------
@@ -735,6 +822,20 @@ def optimize_distance(
 
     if not np.any([np.any(arr) for arr in coil.get_casing_coordinates()]):
         raise ValueError("The coil has no coil casing or min_distance points.")
+
+    if direct_args is None:
+        direct_args = {}
+    direct_args.setdefault("eps", 1e-4)
+    direct_args.setdefault("maxiter", 1000)
+    direct_args.setdefault("locally_biased", False)
+    direct_args.setdefault("vol_tol", 1e-19)
+    direct_args.setdefault("len_tol", 1e-6)
+
+    if l_bfgs_b_args is None:
+        l_bfgs_b_args = {}
+    if "options" not in l_bfgs_b_args:
+        l_bfgs_b_args["options"] = {}
+    l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
         coil, coil_rotation_ranges, coil_translation_ranges
@@ -761,7 +862,7 @@ def optimize_distance(
     initial_deformation_settings = np.array(
         [coil_deformation.current for coil_deformation in coil_deformation_ranges]
     )
-    
+
     best_f = np.inf
     best_x = None
 
@@ -787,9 +888,9 @@ def optimize_distance(
         )
 
         f = distance_penalty + (intersection_penalty + self_intersection_penalty)
-        
+
         nonlocal best_f
-        if f<best_f:
+        if f < best_f:
             nonlocal best_x
             best_x = x.copy()
             best_f = f
@@ -802,25 +903,15 @@ def optimize_distance(
 
     opt_results = []
     if global_optimization:
-        if direct_maxfun is None:
-            direct_maxfun = len(optimization_ranges) * 2000
-        direct = opt.direct(
-            cost_f_x0_w,
-            bounds=optimization_ranges,
-            eps=direct_eps,
-            maxfun=direct_maxfun,
-            maxiter=direct_maxiter,
-            locally_biased=direct_locally_biased,
-            vol_tol=direct_vol_tol,
-            len_tol=direct_len_tol,
-        )
+        direct_args.setdefault("maxfun", len(optimization_ranges) * 2000)
+        direct = opt.direct(cost_f_x0_w, bounds=optimization_ranges, **direct_args)
         if direct.fun > best_f:
-            direct.message += f''' Using better solution encountered during optimization.
+            direct.message += f""" Using better solution encountered during optimization.
             opt.fun: {direct.fun}, best_fun: {best_f}
-            opt.x: {direct.x}, best_x: {best_x}'''
+            opt.x: {direct.x}, best_x: {best_x}"""
             direct.x = best_x
             direct.fun = best_f
-            
+
         best_deformation_settings = direct.x
 
         for coil_deformation, deformation_setting in zip(
@@ -838,18 +929,18 @@ def optimize_distance(
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
             method="L-BFGS-B",
-            options={'maxls': 100}
+            **l_bfgs_b_args,
         )
-        
+
         if local_opt.fun > best_f:
-            local_opt.message += f''' Using better solution encountered during optimization.
+            local_opt.message += f""" Using better solution encountered during optimization.
             opt.fun: {local_opt.fun}, best_fun: {best_f}
-            opt.x: {local_opt.x}, best_x: {best_x}'''
+            opt.x: {local_opt.x}, best_x: {best_x}"""
             local_opt.x = best_x
             local_opt.fun = best_f
-        
+
         best_deformation_settings = local_opt.x
-            
+
         for coil_deformation, deformation_setting in zip(
             coil_deformation_ranges, best_deformation_settings
         ):
@@ -871,10 +962,11 @@ def optimize_distance(
 
 
 def get_voxel_volume(
-    coil, global_deformations: list[TmsCoilDeformation], dither_skip: int = 0
+    coil: TmsCoil, global_deformations: list[TmsCoilDeformation], dither_skip: int = 0
 ) -> tuple[
     dict[TmsCoilElements, npt.NDArray[np.bool_]],
     dict[TmsCoilElements, npt.NDArray[np.int_]],
+    dict[TmsCoilElements, npt.NDArray[np.float_]],
     dict[TmsCoilElements, npt.NDArray[np.float_]],
     list[TmsCoilElements],
 ]:
@@ -1050,29 +1142,27 @@ def add_global_deformations(
 
 
 def optimize_e_mag(
-    coil,
+    coil: TmsCoil,
     head_mesh: Msh,
     roi: FemTargetPointCloud,
     affine: npt.NDArray[np.float_],
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    dither_skip=0,
-    fem_evaluation_cutoff=1000,
+    dither_skip: int = 0,
+    fem_evaluation_cutoff: float = 1000,
     global_optimization: bool = True,
-    local_optimization: bool = False,
-    direct_eps=1e-4,
-    direct_maxfun=None,
-    direct_maxiter=1000,
-    direct_locally_biased=False,
-    direct_vol_tol=1e-16,
-    direct_len_tol=1e-6,
-    debug = False,
-) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-    """Optimizes the deformations of the coil elements to maximize the mean e-field magnitude in the ROI while preventing intersections of the
+    local_optimization: bool = True,
+    direct_args: dict | None = None,
+    l_bfgs_b_args: dict | None = None,
+    debug: bool = False,
+) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
+    """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
 
     Parameters
     ----------
+    coil : TmsCoil
+        The coil used in the optimization
     head_mesh : Msh
         The head mesh used in the TMS simulation and the head mesh where the scalp surface is used for coil head intersection
     roi: RegionOfInterest
@@ -1104,6 +1194,8 @@ def optimize_e_mag(
         The optimized affine matrix
     optimized_e_mag : npt.NDArray[np.float_]
         The e field magnitude in the roi elements after the optimization
+    opt_results : list
+        The results of the optimizations
 
     Raises
     ------
@@ -1125,6 +1217,20 @@ def optimize_e_mag(
         raise ValueError(
             "The coil has no deformations to optimize the coil element positions with."
         )
+
+    if direct_args is None:
+        direct_args = {}
+    direct_args.setdefault("eps", 1e-4)
+    direct_args.setdefault("maxiter", 1000)
+    direct_args.setdefault("locally_biased", False)
+    direct_args.setdefault("vol_tol", 1e-16)
+    direct_args.setdefault("len_tol", 1e-6)
+
+    if l_bfgs_b_args is None:
+        l_bfgs_b_args = {}
+    if "options" not in l_bfgs_b_args:
+        l_bfgs_b_args["options"] = {}
+    l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
         coil_sampled, coil_rotation_ranges, coil_translation_ranges
@@ -1163,13 +1269,14 @@ def optimize_e_mag(
     if debug:
         tracking_deformations = []
         fs = []
-            
+
     best_f = np.inf
     best_x = None
+
     def cost_f_x0_w(x):
         if debug:
             deformations = []
-            
+
         for coil_deformation, deformation_setting in zip(coil_deformation_ranges, x):
             if debug:
                 deformations.append(deformation_setting)
@@ -1195,13 +1302,13 @@ def optimize_e_mag(
         roi_e_field = fem.update_field(matsimnibs=affine)
 
         f = penalty - 100 * np.mean(roi_e_field)
-        
+
         nonlocal best_f
-        if f<best_f:
+        if f < best_f:
             nonlocal best_x
             best_x = x.copy()
             best_f = f
-        
+
         if debug:
             tracking_deformations.append(deformations)
             fs.append(f)
@@ -1214,17 +1321,12 @@ def optimize_e_mag(
         direct = opt.direct(
             cost_f_x0_w,
             bounds=[deform.range for deform in coil_deformation_ranges],
-            eps=direct_eps,
-            maxfun=direct_maxfun,
-            maxiter=direct_maxiter,
-            locally_biased=direct_locally_biased,
-            vol_tol=direct_vol_tol,
-            len_tol=direct_len_tol,
+            **direct_args,
         )
         if direct.fun > best_f:
-            direct.message += f''' Using better solution encountered during optimization.
+            direct.message += f""" Using better solution encountered during optimization.
             opt.fun: {direct.fun}, best_fun: {best_f}
-            opt.x: {direct.x}, best_x: {best_x}'''
+            opt.x: {direct.x}, best_x: {best_x}"""
             direct.x = best_x
             direct.fun = best_f
         best_deformation_settings = direct.x
@@ -1244,16 +1346,16 @@ def optimize_e_mag(
             x0=initial_deformation_settings,
             bounds=[deform.range for deform in coil_deformation_ranges],
             method="L-BFGS-B",
-            options={'maxls': 100}
-           )
-        
+            **l_bfgs_b_args,
+        )
+
         if local_opt.fun > best_f:
-            local_opt.message += f''' Using better solution encountered during optimization.
+            local_opt.message += f""" Using better solution encountered during optimization.
             opt.fun: {local_opt.fun}, best_fun: {best_f}
-            opt.x: {local_opt.x}, best_x: {best_x}'''
+            opt.x: {local_opt.x}, best_x: {best_x}"""
             local_opt.x = best_x
             local_opt.fun = best_f
-            
+
         best_deformation_settings = local_opt.x
 
         for coil_deformation, deformation_setting in zip(
@@ -1279,6 +1381,14 @@ def optimize_e_mag(
     ):
         coil_deformation.current = sampled_coil_deformation.current
     if debug:
-        return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results, tracking_deformations, fs
+        return (
+            initial_cost,
+            optimized_cost,
+            result_affine,
+            optimized_e_mag,
+            opt_results,
+            tracking_deformations,
+            fs,
+        )
     else:
         return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results

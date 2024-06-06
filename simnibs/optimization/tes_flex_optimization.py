@@ -30,7 +30,7 @@ from ..simulation.array_layout import (
 from ..simulation.onlinefem import FemTargetPointCloud, OnlineFEM, postprocess_e
 from ..mesh_tools import mesh_io, surface
 from ..utils.file_finder import SubjectFiles, Templates
-from ..utils.matlab_read import remove_None
+from ..utils.matlab_read import matlab_sub_struct_to_matlab_struct, remove_None
 from ..utils.transformations import (
     subject2mni_coords,
     create_new_connectivity_list_point_mask,
@@ -873,44 +873,7 @@ class TesFlexOptimization:
 
         self.roi = []
         for i_roi in range(self.n_roi):
-            roi_ = RegionOfInterest()
-            roi_.type = roi_dict[f"roi_{i_roi}"]["type"]
-            roi_.roi_sphere_radius = roi_dict[f"roi_{i_roi}"]["roi_sphere_radius"]
-
-            if len(roi_dict[f"roi_{i_roi}"]["roi_sphere_center_mni"]) == 0:
-                roi_.roi_sphere_center_mni = None
-            else:
-                roi_.roi_sphere_center_mni = roi_dict[f"roi_{i_roi}"][
-                    "roi_sphere_center_mni"
-                ]
-
-            if len(roi_dict[f"roi_{i_roi}"]["roi_sphere_center_subject"]) == 0:
-                roi_.roi_sphere_center_subject = None
-            else:
-                roi_.roi_sphere_center_subject = roi_dict[f"roi_{i_roi}"][
-                    "roi_sphere_center_subject"
-                ]
-
-            if len(roi_dict[f"roi_{i_roi}"]["center"]) == 0:
-                roi_.center = None
-            else:
-                roi_.center = roi_dict[f"roi_{i_roi}"]["center"]
-
-            if len(roi_dict[f"roi_{i_roi}"]["nodes"]) == 0:
-                roi_.nodes = None
-            else:
-                roi_.nodes = roi_dict[f"roi_{i_roi}"]["nodes"]
-
-            if len(roi_dict[f"roi_{i_roi}"]["con"]) == 0:
-                roi_.con = None
-            else:
-                roi_.con = roi_dict[f"roi_{i_roi}"]["con"]
-
-            if len(roi_dict[f"roi_{i_roi}"]["domains"]) == 0:
-                roi_.domains = None
-            else:
-                roi_.domains = roi_dict[f"roi_{i_roi}"]["domains"]
-
+            roi_ = RegionOfInterest(matlab_sub_struct_to_matlab_struct(roi_dict[f"roi_{i_roi}"]))
             roi_.mesh = self.mesh
 
             # reinitialize ROI
