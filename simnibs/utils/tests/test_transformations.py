@@ -430,8 +430,92 @@ class TestTransformPositions:
                                [1. / np.sqrt(2),1. / np.sqrt(2), 0]], atol=1e-2)
         assert np.allclose(z, [[0, 0, 1],
                                [0, 0, 1]])
-
-
+        
+    def test_convert_to_coord(self):
+        matsimnibs = [[-8.6748e-01,  2.6065e-01,  4.2373e-01, -3.8516e+01],
+                      [ 2.1630e-01,  9.6465e-01, -1.5056e-01, -1.9147e+01],
+                      [-4.4799e-01, -3.8958e-02, -8.9319e-01,  9.2963e+01],
+                      [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  1.0000e+00]]
+        matsimnibs2 = [[-8.8354e-01,  1.6861e-01, -4.3695e-01,  3.7300e+01],
+                      [-2.7756e-17,  9.3295e-01,  3.6000e-01, -6.2436e+01],
+                      [ 4.6835e-01,  3.1808e-01, -8.2430e-01,  8.9857e+01],
+                      [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  1.0000e+00]]
+        
+        center_MNI1 = [-3.8516e+01, -1.9147e+01, 9.2963e+01]
+        ydir_MNI1 = [2.6065e-01, 9.6465e-01, -3.8958e-02]
+        zdir_MNI1 = [4.2373e-01, -1.5056e-01, -8.9319e-01] 
+        
+        center_MNI2 = [3.7300e+01, -6.2436e+01, 8.9857e+01]
+        ydir_MNI2 = [1.6861e-01, 9.3295e-01, 3.1808e-01]
+        zdir_MNI2 = [-4.3695e-01, 3.6000e-01,  -8.2430e-01]
+        
+        coilpos = []
+        # single matsimnibs
+        coilpos.append([matsimnibs, 0])
+        coilpos.append([np.asarray(matsimnibs), 0])
+        # multiple matsimnibs
+        coilpos.append([[matsimnibs, matsimnibs2], 0])
+        coilpos.append([np.asarray([matsimnibs, matsimnibs2]), 0])
+        # single center-ydir-zdir
+        coilpos.append([(center_MNI1, ydir_MNI1, zdir_MNI1), 0])
+        coilpos.append([(np.asarray(center_MNI1), np.asarray(ydir_MNI1), np.asarray(zdir_MNI1)), 0])
+        coilpos.append([(np.asarray(center_MNI1).reshape(1,3), np.asarray(ydir_MNI1).reshape(1,3), np.asarray(zdir_MNI1).reshape(1,3)), 0])
+        # multiple center-ydir-zdir
+        coilpos.append([([center_MNI1, center_MNI2], 
+                         [ydir_MNI1, ydir_MNI2],
+                         [zdir_MNI1, zdir_MNI2]), 0])
+        coilpos.append([(np.asarray([center_MNI1, center_MNI2]), 
+                         np.asarray([ydir_MNI1, ydir_MNI2]),
+                         np.asarray([zdir_MNI1, zdir_MNI2])), 0])
+        # multiple matsimnibs - multiple distances
+        coilpos.append([[matsimnibs, matsimnibs2], [0, 4]])
+        # multiple center-ydir-zdir - multiple distances
+        coilpos.append([([center_MNI1, center_MNI2], 
+                         [ydir_MNI1, ydir_MNI2],
+                         [zdir_MNI1, zdir_MNI2]), np.asarray([0,4])])
+        
+        for k in coilpos:
+            coord = transformations._convert_to_coord(k[0],k[1])
+            assert np.all(coord[1][0] == center_MNI1)
+            assert np.all(coord[2][0][:3] == zdir_MNI1)
+            assert np.all(coord[2][0][3:6] == ydir_MNI1)
+            
+            if len(coord[0]) == 2:
+                assert np.all(coord[1][1] == center_MNI2)
+                assert np.all(coord[2][1][:3] == zdir_MNI2)
+                assert np.all(coord[2][1][3:6] == ydir_MNI2)
+    
+    @pytest.mark.slow
+    def test_mni2subject_coilpos(self, example_dataset):
+        m2m_path = os.path.join(example_dataset, "m2m_ernie")
+        
+        center_MNI1 = [-3.8516e+01, -1.9147e+01, 9.2963e+01]
+        ydir_MNI1 = [2.6065e-01, 9.6465e-01, -3.8958e-02]
+        zdir_MNI1 = [4.2373e-01, -1.5056e-01, -8.9319e-01] 
+        
+        center_MNI2 = [3.7300e+01, -6.2436e+01, 8.9857e+01]
+        ydir_MNI2 = [1.6861e-01, 9.3295e-01, 3.1808e-01]
+        zdir_MNI2 = [-4.3695e-01, 3.6000e-01,  -8.2430e-01]
+        
+        coilposIn = ([center_MNI1, center_MNI2], 
+                     [ydir_MNI1, ydir_MNI2],
+                     [zdir_MNI1, zdir_MNI2])
+        
+        coilposOut = transformations.mni2subject_coilpos(coilposIn,
+                                                         m2m_path,
+                                                         coil_skin_distance=4.)
+        
+        pos1_ref = [[-8.30281527e-01,  2.72127360e-01,  4.86394286e-01, -3.67766062e+01],
+                    [ 2.55371634e-01,  9.61448848e-01, -1.01987652e-01,  1.55271213e+00],
+                    [-4.95396857e-01,  3.95328365e-02, -8.67766798e-01,  9.43323550e+01]]
+        
+        pos2_ref = [[-8.39125484e-01,  2.51577407e-01, -4.82262611e-01, 3.75221093e+01],
+                    [-2.43669150e-02,  8.68337274e-01,  4.95375216e-01, -4.35426280e+01],
+                    [ 5.43391814e-01,  4.27433223e-01, -7.22513795e-01, 8.67288161e+01]]
+        
+        assert np.allclose(coilposOut[0][:3,:],pos1_ref, atol=1e-5)
+        assert np.allclose(coilposOut[1][:3,:],pos2_ref, atol=1e-5)
+        
 
 class TestCropVol:
     '''

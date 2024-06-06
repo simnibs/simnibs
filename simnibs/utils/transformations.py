@@ -43,9 +43,9 @@ __all__ = [
     'warp_coordinates',
     'subject2mni_coords',
     'mni2subject_coords',
+    'mni2subject_coilpos',
     'subject_atlas',
     'middle_gm_interpolation'
-
 ]
 
 
@@ -1024,6 +1024,111 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     if np.array(coordinates).ndim == 1:
         transformed = np.squeeze(transformed)
     return transformed
+
+
+def _convert_to_coord(coilpos,coil_skin_distance):
+    '''' convert coil position to input format for warp_coordinates'''
+    type_coilpos = type(coilpos)
+    coilpos = np.squeeze(np.asarray(coilpos, dtype=float))
+    coil_skin_distance = np.squeeze(np.asarray(coil_skin_distance, dtype=float))
+    coil_skin_distance = np.reshape(coil_skin_distance,(-1,1)) # ensure size (N,1)
+     
+    if coilpos.ndim != 2 and coilpos.ndim != 3:
+          raise ValueError('unknown format of coil position')
+          
+    coord = [[], [], [], ['pos1'], [], []]
+    if type_coilpos == list or type_coilpos == np.ndarray:
+        # matsimnibs
+        if coilpos.ndim == 2:
+            coilpos = np.reshape(coilpos,(1,coilpos.shape[0],coilpos.shape[1]))  # ensure size (1,4,4)
+        coord[1] = coilpos[:,:3,3]
+        
+        if len(coil_skin_distance) == 1:
+            coil_skin_distance = np.repeat(coil_skin_distance, coord[1].shape[0],axis=0)
+        coord[2] = np.hstack((coilpos[:,:3,2], coilpos[:,:3,1], coil_skin_distance))
+    elif type_coilpos == tuple:
+        # (center_pos, ydir, zdir)
+        coord[1] = coilpos[0].reshape(-1,3) # ensure size (N,3)
+        
+        if len(coil_skin_distance) == 1:
+            coil_skin_distance = np.repeat(coil_skin_distance, coord[1].shape[0],axis=0)
+        coord[2] = np.hstack((coilpos[2].reshape(-1,3), coilpos[1].reshape(-1,3), coil_skin_distance))
+    else:
+        raise ValueError('unknown format of coil position')
+    coord[0] = ['CoilPos']*coord[1].shape[0]
+    coord[3] = ['pos'+str(r) for r in range(coord[1].shape[0])]
+    return coord
+
+          
+def mni2subject_coilpos(coilpos, m2m_dir, coil_skin_distance=0., transformation_type='nonl'):
+    """
+    Converts one or more coil positions to subject space.
+    
+    NOTE: Coil centers are projected on the head surface as standard. Set
+          coil_skin_dist to ensure a specific distance of the coil center
+          to the head surface. 
+          
+          Coil centers away from the head are best defined by providing the 
+          closest positon on the surface of the MNI head and the desired 
+          coil-skin-distance.
+          
+          Non-linear transformations (used as default) are accurate for 
+          positions in the head and on its surface, but not outside the 
+          head. Thus, coil centers are automatically projected on the head 
+          surface during transformation.
+          
+    Parameters
+    ----------
+    coilpos : One or more coil positions, provided as:
+        - matsimnibs (4x4 numpy array or list of lists)
+        - list of several matsimnibs
+        - tuple (center, ydir, zdir)
+            center, ydir and zdir:
+                vectors (length 3) in case of a single postion, or
+                arrays (N,3) for N positions
+                
+    m2m_dir :  str
+        Path to the m2m_{subject_id} folder, generated during the segmentation
+        
+    coil_skin_distance : float or list, optional
+        skin-coil distance in [mm]. In case of several coil positions, either
+        a single value can be supplied that is used for all positions, or a
+        list with one value per position can be supplied. The default is 0..
+        
+    transformation_type : {'nonl', '6dof', '12dof'}, optional
+        Type of tranformation: non-linear, 6 or 12 degrees of freedom. The default is 'nonl'.
+    
+    Returns
+    -------
+    matsimnibs : numpy array (4x4) or list of numpy arrays
+        TMS coil matrix (or list of matrices) in subject space.
+    """
+    out_csv = None
+    out_geo = None
+    # for debugging: uncomment both to get geo-file for visual control
+    #out_csv = 'debug.csv'
+    #out_geo = 'debug.geo'
+    
+    coord = _convert_to_coord(coilpos, coil_skin_distance)
+    center, zdir_ydir = warp_coordinates(coord, m2m_dir,
+                                         transformation_direction='mni2subject',
+                                         transformation_type='nonl',
+                                         out_name=out_csv, out_geo=out_geo)[1:3]
+    mat_list = []
+    for k in range(len(center)):
+        mat = np.eye(4)
+        mat[:3, 3] = center[k]
+        mat[:3, 2] = zdir_ydir[k][:3]
+        mat[:3, 1] = zdir_ydir[k][3:6]
+        mat[:3, 0] = np.cross(zdir_ydir[k][3:6], zdir_ydir[k][:3])
+        # ensure right-handedness (just to be sure; should always be OK)
+        if np.linalg.det(mat[:3, :3]) <= 0:
+            raise ValueError(f'position {k}: matsimnibs is not a right-handed coordinate system')
+        mat_list.append(mat)
+    if len(mat_list) == 1:
+        mat_list = mat_list[0]
+        
+    return mat_list
 
 
 def warp_coordinates(coordinates, m2m_folder,
