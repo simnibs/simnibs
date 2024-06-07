@@ -1180,7 +1180,7 @@ def optimize_e_mag(
     dither_skip : int, optional
         How many voxel positions should be skipped when creating the coil volume representation.
         Used to speed up the optimization. When set to 0, no dithering will be applied, by default 0
-    fem_evaluation_cutoff : int, optional
+    fem_evaluation_cutoff : float, optional
         If the penalty from the intersection and self intersection is greater than this cutoff value, the fem will not be evaluated to save time.
         Set to np.inf to always evaluate the fem, by default 1000
 
@@ -1222,7 +1222,7 @@ def optimize_e_mag(
         direct_args = {}
     direct_args.setdefault("eps", 1e-4)
     direct_args.setdefault("maxiter", 1000)
-    direct_args.setdefault("locally_biased", False)
+    direct_args.setdefault("locally_biased", True)
     direct_args.setdefault("vol_tol", 1e-16)
     direct_args.setdefault("len_tol", 1e-6)
 

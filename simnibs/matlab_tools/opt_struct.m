@@ -26,7 +26,8 @@ function S = opt_struct(type)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', 'TESoptimize'};
+validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', 'TESoptimize',
+            'TmsFlexOptimization'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -101,8 +102,31 @@ switch S.type
         S.min_image_value = 0; %minimum image value to be considered. Corresponds to T_min in Ruffini et al. 2014
         S.open_in_gmsh = true; % Wether to open output in Gmsh
 
-    case 'TESoptimize'
-        S.electrode = array_layout('ElectrodeInitializer')
+    case 'TmsFlexOptimization'
+        S.fnamecoil = ''; % usually to chose from inside resources/coil_models/...
+        S.fnamehead = ''; % same as ${subID}.msh created by charm
+        S.subpath = ''; % path to the 'm2m_{subID}' folder created by charm (OPTIONAL, filled from fnamehead)
+        S.path_optimization = ''; % path to save the results
+        S.eeg_cap = ''; % file name of the CSV file with electrode positions; (OPTIONAL, filled from fnamehead)
+        S.method = 'distance'; % 'distance' or 'emag'
+        S.run_global_optimization = true; % whether to run the DIRECT global optimization
+        S.run_local_optimization = true; % whether to run the L-BFGS-B local optimization
+        S.run_simulation = true; % whether to run a normal FEM simulation to get the e-field for the final parameters
+        S.global_translation_ranges = []; % translation ranges in [mm]; format [[xmin xmax]; [ymin ymax]; [zmin zmax]];
+        S.global_rotation_ranges = []; % rotation ranges in [deg]; format [[xmin xmax]; [ymin ymax]; [zmin zmax]];
+        S.dither_skip = []; % dithering steps for the grid of the intersection tests (OPTIONAL, standard: 6)
+        S.distance = 4; % Distance from the coil to the head in [mm]
+        S.fem_evaluation_cutoff = []; % If the penalty from the intersection and self intersection is greater 
+                                      % than this cutoff value, the fem will not be evaluated to save time. 
+                                      % (OPTIONAL, standard: 1000)
+        S.pos = []; % sim_struct.POSITION to define the starting position (optional when a roi is provided)
+        S.roi = []; % opt_struct.ROI to define a brain target (optional for method = 'distance')
 
+        % options for DIRECT solver (OPTIONAL)
+        % see online documenation of scipy.optimize.direct for a list of available options
+        S.direct_args.maxiter = []; % Maximum number of iterations; added just as example here (OPTIONAL, standard 1000)
+
+        % options for L-BFGS-B solver (OPTIONAL)
+        % see online documenation of scipy.optimize.minimize(method=’L-BFGS-B’)) for a list of available options
+        S.l_bfgs_b_args.options.maxls = []; % maximal line-search steps; added just as example here (OPTIONAL, standard: 100)
 end
-
