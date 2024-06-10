@@ -15,7 +15,6 @@ from .SamsegUtility import readCroppedImages
 eps = np.finfo(float).eps
 
 # For debugging
-import matplotlib.pyplot as plt
 
 class AffineWholeHead(Affine):
 
@@ -146,6 +145,7 @@ class AffineWholeHead(Affine):
         deformation_field = np.zeros_like(mesh.points)
         deformation_field[mask_neck, x_dim] = z_dist
         if 0:
+            import matplotlib.pyplot as plt
             alphas_tmp = alphas.copy()
             alphas_tmp[mask_neck,:] = 0
             mesh.alphas = alphas_tmp
@@ -169,6 +169,7 @@ class AffineWholeHead(Affine):
                         window_id='Initial Neck', title="Initial Neck")
         
         if 0:
+            import matplotlib.pyplot as plt
             probs = mesh.rasterize_atlas(image_buffer.shape)
             probs_to_show = np.sum(probs, axis=3)
             probs_to_show = probs_to_show[:,:,31]
@@ -202,6 +203,7 @@ class AffineWholeHead(Affine):
                         window_id='Corrected Neck', title="Corrected Neck")
         
         if 0:
+            import matplotlib.pyplot as plt
             probs = mesh.rasterize_atlas(image_buffer.shape)
             probs_to_show = np.sum(probs, axis=3)
             probs_to_show = probs_to_show[:,:,31]

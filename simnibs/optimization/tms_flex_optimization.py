@@ -80,6 +80,8 @@ class TmsFlexOptimization:
     """The method of optimization {"distance", "emag"}"""
     roi: RegionOfInterest
     """The region of interest in which the e field is simulated, method = "emag" """
+    distance: float
+    """The distance at which the coil is supposed to be placed relative to the head"""
     global_translation_ranges: list
     """Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
     global_rotation_ranges: list
@@ -118,6 +120,7 @@ class TmsFlexOptimization:
 
         self.method: str = None
         self.roi: RegionOfInterest = None
+        self.distance: float = 4.0
         self.global_translation_ranges: list = None
         self.global_rotation_ranges: list = None
 
@@ -331,6 +334,7 @@ class TmsFlexOptimization:
                 self._coil,
                 self._mesh,
                 self.pos.matsimnibs,
+                self.distance,
                 self._global_translation_ranges,
                 self._global_rotation_ranges,
                 self.dither_skip,
@@ -346,6 +350,7 @@ class TmsFlexOptimization:
                     self._mesh,
                     self._roi,
                     self.pos.matsimnibs,
+                    self.distance,
                     self._global_translation_ranges,
                     self._global_rotation_ranges,
                     self.dither_skip,
@@ -758,6 +763,7 @@ def optimize_distance(
     coil: TmsCoil,
     head_mesh: Msh,
     affine: npt.NDArray[np.float_],
+    distance: float = 0,
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
     dither_skip: int = 0,
@@ -778,6 +784,8 @@ def optimize_distance(
         The head mesh used in the TMS simulation and the head mesh where the scalp surface is used for coil head intersection
     affine : npt.NDArray[np.float_]
         The affine transformation that is applied to the coil
+    distance : float
+        The distance at which the coil is supposed to be placed relative to the head
     coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
@@ -856,7 +864,7 @@ def optimize_distance(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid()
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil.get_deformation_ranges()
@@ -1147,6 +1155,7 @@ def optimize_e_mag(
     head_mesh: Msh,
     roi: FemTargetPointCloud,
     affine: npt.NDArray[np.float_],
+    distance: float = 0,
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
     dither_skip: int = 0,
@@ -1170,6 +1179,8 @@ def optimize_e_mag(
         Region of interest for the calculation of the e field
     affine : npt.NDArray[np.float_]
         The affine transformation that is applied to the coil
+    distance : float
+        The distance at which the coil is supposed to be placed relative to the head
     coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
@@ -1250,7 +1261,7 @@ def optimize_e_mag(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid()
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil_sampled.get_deformation_ranges()

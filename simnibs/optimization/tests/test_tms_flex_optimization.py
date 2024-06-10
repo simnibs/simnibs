@@ -169,7 +169,7 @@ class TestPositionOptimization:
             small_functional_3_element_coil,
             sphere3_msh,
             coil_affine,
-            np.array([[-5, 5], [-5, 5], [-20, 20]]),
+            coil_translation_ranges = np.array([[-5, 5], [-5, 5], [-20, 20]]),
         )
 
         assert before > after
