@@ -26,8 +26,8 @@ function S = opt_struct(type)
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', 'TESoptimize',
-            'TmsFlexOptimization'};
+validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', ...
+            'TmsFlexOptimization', 'RegionOfInterest'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -129,4 +129,29 @@ switch S.type
         % options for L-BFGS-B solver (OPTIONAL)
         % see online documenation of scipy.optimize.minimize(method=’L-BFGS-B’)) for a list of available options
         S.l_bfgs_b_args.options.maxls = []; % maximal line-search steps; added just as example here (OPTIONAL, standard: 100)
+
+    case 'RegionOfInterest'
+        S.method = ''; %  method to create the ROI {"manual", "custom", "surface", "volume", "volume_from_surface", "mesh+mask"}
+        S.subpath = ''; % path to the 'm2m_{subID}' folder created by charm
+        S.mesh = ''; % Path to a mesh
+
+        S.mask_space = ''; %  space the mask is defined in, method = "surface" : {"subject", "subject_lh", "fs_avg_lh", "subject_rh", "fs_avg_rh", "mni"} | method = "volume" : {"subject", "mni"}
+        S.mask_path = ''; % path to the mask, method = "surface" : (label, annot, curv, nifti) | method = "volume" : (nifti) (example: "path/to/file")
+        S.mask_value = ''; % values that are considered as the mask in the mask files, default 1 (example: 1 | [1, 2])"""
+        S.mask_operator = ''; % operator to combine the mask with the ROI {"union", "intersection", "difference"}, default "union"
+
+        S.roi_sphere_center = []; % Nx3 array; sphere center coordinates for spherical masks in mm (example: [0,0,0] | [[1,2,3]; [4,5,6]])
+        S.roi_sphere_radius = ''; % Nx1 array; radius of the spherical masks in mm (example: 5 | [3, 45])
+        S.roi_sphere_center_space = ''; % space the center coordinates of the spheres are defined in {"subject", "mni"}
+        S.roi_sphere_operator = ''; % operator to combine the mask with the ROI {"union", "intersection", "difference"}, default "union"
+
+        S.nodes = []; % Nx3 array; Only for method = "custom" -> a custom list of node coordinates (example: [[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]])"""
+        
+        S.surface_type = ''; % only for method = "surface" -> Weather the surface is the subject specific central gm surface or a custom surface {"central", "custom"}
+        S.surface_path = ''; % only for method = "surface" -> Only for surface_type = "custom" -> The path to a custom surface (msh, freesurfer, gifti)
+        S.tissues = []; % Nx1 array of int; only for method = "volume" -> a number of volume tissue tags, default 2 (example: ElementTags.GM | [ElementTags.WM, ElementTags.GM])
+        S.surface_inclusion_radius = []; % 1x1 array; only for method = "volume_from_surface" -> The radius from the surface nodes at which the volume elements should be included in mm (example: 5)
+        S.node_mask = []; % Nx1 array of bool; only for method = "mesh+mask" -> a boolean node mask (exclusive with elm_mask) (example: [True, ..., False])
+        S.elm_mask = []; % Nx1 array of bool; only for method = "mesh+mask" -> a boolean node mask (exclusive with node_mask) (example: [True, ..., False])
+
 end

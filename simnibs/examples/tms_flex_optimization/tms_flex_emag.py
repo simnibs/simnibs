@@ -1,6 +1,12 @@
+'''
+    Basic example demonstrating optimization of the electric field strength
+    in region of interest for a flat figure-8 coil
+    
+    The coil center will be placed to maximize the field strength in the ROI
+    while avoiding skin intersections
+'''
 import os
 from simnibs import opt_struct
-import simnibs
 
 # Initialize structure
 tms_opt = opt_struct.TmsFlexOptimization()
@@ -9,30 +15,34 @@ tms_opt.subpath = 'm2m_ernie'
 # Select output folder
 tms_opt.path_optimization = 'tms_optimization/'
 # Select the coil model
-tms_opt.fnamecoil = os.path.join('Drakaki_BrainStim_2022', 'Deymed_70BF.ccd')
-# Select a target for the optimization
+tms_opt.fnamecoil = os.path.join('Drakaki_BrainStim_2022', 'MagVenture_MCF-B65.ccd')
+
+# Select an initial coil position
 pos = tms_opt.add_position()
 pos.centre = 'C1'
 # Pointing towards Cz
 pos.pos_ydir = 'Cz'
 
-tms_opt.method = 'emag'
-tms_opt.global_translation_ranges = [[-10, 10],[-10, 10],[-10, 10]]
-tms_opt.global_rotation_ranges = [[-10, 10],[-10, 10],[-10, 10]]
-
+# Select ROI in which electric field will be evaluated
 roi = tms_opt.add_region_of_interest()
+# Define a ROI on the central gray matter surface(s
 roi.method = "surface"
 roi.surface_type = "central"
-
-# center of spherical ROI in subject space (in mm)
+# Center of spherical ROI in subject space (in mm)
 roi.roi_sphere_center_space = "subject"
-roi.roi_sphere_center = [-36.34, 14.53,  94.708]
+roi.roi_sphere_center = [-29.90, 1.29, 72.47]
+# Radius of spherical ROI (in mm)
+roi.roi_sphere_radius = 30
 
-# radius of spherical ROI (in mm)
-roi.roi_sphere_radius = 100
-
-tms_opt._prepare()
-print(tms_opt._roi.n_center)
-exit()
+# Set optimization method and parameters: 'emag' maximizes electric field strength in ROI
+tms_opt.method = 'emag'
+# Note: translations and rotations are defined in the "coil coordinate system":
+#       origin in the initial coil position,
+#       z-axis pointing orthogonally into the head surface,
+#       y-axis defined by pos.pos_ydir (set arbitrarily when using auto init)
+#
+# translations relative to initial position in [mm]
+tms_opt.global_translation_ranges = [[-30, 30], [-30, 30], [-30, 30]]
+tms_opt.global_rotation_ranges = [[-30, 30], [-30, 30], [-95, 95]]
 
 opt_pos=tms_opt.run()

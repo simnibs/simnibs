@@ -166,6 +166,9 @@ def read_mat(fn):
     elif structure_type.lower() == 'tdcsdistributedoptimize':
         from ..optimization.opt_struct import TDCSDistributedOptimize
         structure = TDCSDistributedOptimize.read_mat_struct(mat)
+    elif structure_type.lower() == 'tmsflexoptimization':
+        from ..optimization.opt_struct import TmsFlexOptimization
+        structure = TmsFlexOptimization.read_mat_struct(mat)
 
     else:
         raise IOError('Not a valid structure type!')

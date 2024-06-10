@@ -482,6 +482,7 @@ class TmsFlexOptimization:
 
         return mat
 
+    @classmethod
     def read_mat_struct(self, mat):
         """Reads parameters from matlab structure
 
