@@ -350,7 +350,7 @@ class TmsFlexOptimization:
                     self._mesh,
                     self._roi,
                     self.pos.matsimnibs,
-                    self.distance, 
+                    self.distance,
                     self._global_translation_ranges,
                     self._global_rotation_ranges,
                     self.dither_skip,
@@ -863,7 +863,7 @@ def optimize_distance(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance + 0.5)
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil.get_deformation_ranges()
@@ -1260,7 +1260,7 @@ def optimize_e_mag(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance + 0.5)
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil_sampled.get_deformation_ranges()
