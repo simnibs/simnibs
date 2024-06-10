@@ -213,7 +213,9 @@ class TmsFlexOptimization:
         logger.info(f"Optimization Folder: {self.path_optimization}")
 
         if self.pos is None:
-            raise ValueError("No initial position specified")
+            if self.roi is None:
+                raise ValueError("No initial position or ROI specified")
+            self.pos = auto_init_position_from_roi(self.roi, self.distance)
 
         self.pos.eeg_cap = self.eeg_cap
         self.pos._prepare()
@@ -555,6 +557,14 @@ class TmsFlexOptimization:
         }
 
         return pprint.pformat(tms_flex_dict, indent=4)
+
+
+def auto_init_position_from_roi(roi: RegionOfInterest, distance: float = 0.0):
+    pos = POSITION()
+    pos.centre = np.mean(roi.get_nodes(), axis=0)
+    pos.pos_ydir = [0, 1, 0]
+    pos.distance = distance
+    return pos
 
 
 def _get_fast_distance_score(
