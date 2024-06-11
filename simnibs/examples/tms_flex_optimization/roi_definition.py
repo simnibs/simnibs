@@ -1,9 +1,9 @@
 """
-Example to define ROIs 
+Examples to define ROIs 
 """
-
 import simnibs
 from simnibs import ElementTags
+
 
 # Surface ROI
 # ======================================================================
@@ -16,14 +16,14 @@ roi.surface_type = "central"
 
 # center of spherical ROI in MNI space (in mm)
 roi.roi_sphere_center_space = ["mni", "mni"]
-roi.roi_sphere_center = [[-43.6, -35.4, 64.3],[-43.6, -35.4, 64.3]]
+roi.roi_sphere_center = [[-38.6, -18.7, 64.8], [-38.6, -18.7, 64.8]]
 roi.roi_sphere_operator = ["intersection", "difference"]
-
 # radius of spherical ROI (in mm)
 roi.roi_sphere_radius = [20, 10]
 
-roi.write_visualization('', 'roi_surf_vis_2')
+roi.write_visualization('', 'roi_surf_vis')
 del roi
+
 
 # Volume ROI
 # ======================================================================
@@ -33,17 +33,19 @@ roi = simnibs.RegionOfInterest()
 roi.subpath = "m2m_ernie"
 roi.method = "volume"
 
+# domains to include in mask
+roi.tissues = [ElementTags.GM]
+
 # center of spherical ROI in MNI space (in mm)
 roi.roi_sphere_center_space = ["mni", "mni"]
-roi.roi_sphere_center = [[-43.6, -35.4, 64.3],[-43.6, -35.4, 64.3]]
+roi.roi_sphere_center = [[-38.6, -18.7, 64.8], [-38.6, -18.7, 64.8]]
 roi.roi_sphere_operator = ["intersection", "difference"]
 # radius of spherical ROI (in mm)
 roi.roi_sphere_radius = [40, 30]
 
-# domains to include
-roi.tissues = [ElementTags.GM]
-roi.write_visualization('', 'roi_vis_2')
+roi.write_visualization('', 'roi_vol_vis')
 del roi
+
 
 # Volume ROI from Surface ROI
 # ======================================================================
@@ -54,19 +56,20 @@ roi.subpath = "m2m_ernie"
 roi.method = "volume_from_surface"
 roi.surface_type = "central"
 
-# center of spherical ROI in MNI space (in mm)
-roi.roi_sphere_center_space = "mni"
-roi.roi_sphere_center = [-43.6, -35.4, 64.3]
-
-# radius of spherical ROI (in mm)
-roi.roi_sphere_radius = 20
-
 # domains to include
 roi.tissues = [ElementTags.GM]
 
+# center of spherical ROI in MNI space (in mm)
+roi.roi_sphere_center_space = "mni"
+roi.roi_sphere_center = [-38.6, -18.7, 64.8]
+# radius of spherical ROI (in mm)
+roi.roi_sphere_radius = 20
+# radius around surface in which volume elements will be included
 roi.surface_inclusion_radius = 5
 
+roi.write_visualization('', 'roi_vol_from_surf_vis')
 del roi
+
 
 # Custom ROI
 # ======================================================================

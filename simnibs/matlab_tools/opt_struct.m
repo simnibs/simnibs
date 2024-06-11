@@ -134,6 +134,7 @@ switch S.type
         S.method = ''; %  method to create the ROI {"manual", "custom", "surface", "volume", "volume_from_surface", "mesh+mask"}
         S.subpath = ''; % path to the 'm2m_{subID}' folder created by charm
         S.mesh = ''; % Path to a mesh
+        S.fname_visu = ''; % mesh filename for ROI visualization 
 
         S.mask_space = ''; %  space the mask is defined in, method = "surface" : {"subject", "subject_lh", "fs_avg_lh", "subject_rh", "fs_avg_rh", "mni"} | method = "volume" : {"subject", "mni"}
         S.mask_path = ''; % path to the mask, method = "surface" : (label, annot, curv, nifti) | method = "volume" : (nifti) (example: "path/to/file")

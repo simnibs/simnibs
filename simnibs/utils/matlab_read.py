@@ -98,11 +98,19 @@ def matlab_field_to_list(matlab_structure, field_name, dim) -> list | None:
     list | None
         The list with the number of dimensions specified
     """
-    if field_name not in matlab_structure or matlab_structure[field_name].size == 0:
+    if field_name not in matlab_structure.dtype.names or matlab_structure[field_name].size == 0:
         return None
     if np.issubdtype(matlab_structure[field_name].dtype, np.str_):
         nested = np.array(matlab_structure[field_name].tolist())
         return np.array([string.strip() for string in nested.flatten()]).reshape(nested.shape).tolist()
+    elif np.issubdtype(matlab_structure[field_name].dtype, 'O'):
+        field_as_list = matlab_structure[field_name].flatten().tolist()
+        for idx, subfield in enumerate(field_as_list):
+            if np.issubdtype(subfield.dtype, np.str_):
+                field_as_list[idx] = subfield.flatten()[0]
+            else:
+                field_as_list[idx] = subfield.flatten().tolist()
+        return field_as_list
     else:
         if dim > 1:
             return matlab_structure[field_name].tolist()
@@ -168,7 +176,12 @@ def read_mat(fn):
         structure = TDCSDistributedOptimize.read_mat_struct(mat)
     elif structure_type.lower() == 'tmsflexoptimization':
         from ..optimization.opt_struct import TmsFlexOptimization
-        structure = TmsFlexOptimization.read_mat_struct(mat)
+        structure = TmsFlexOptimization()
+        structure.read_mat_struct(mat)
+    elif structure_type.lower() == 'regionofinterest':
+        from .region_of_interest import RegionOfInterest
+        structure = RegionOfInterest()
+        structure.read_mat_struct(mat)
 
     else:
         raise IOError('Not a valid structure type!')

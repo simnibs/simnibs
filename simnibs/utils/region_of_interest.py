@@ -77,6 +77,7 @@ class RegionOfInterest:
         self.method = "manual"
         self.subpath = None
         self.mesh = None
+        self.fname_visu = None
 
         self.mask_space = None
         self.mask_path = None
@@ -99,7 +100,7 @@ class RegionOfInterest:
 
         self.node_mask = None
         self.elm_mask = None
-
+        
         self._prepared = False
 
         if matlab_struct:
@@ -197,7 +198,7 @@ class RegionOfInterest:
                     self._mask_type = "elm_center"
                 else:
                     raise ValueError(
-                        f'For method = "mesh+mask" either node_mask or elm_mask need to be set'
+                        'For method = "mesh+mask" either node_mask or elm_mask need to be set'
                     )
             case _:
                 raise ValueError(
@@ -238,7 +239,8 @@ class RegionOfInterest:
         self.method = try_to_read_matlab_field(mat, 'method', str)
         self.subpath = try_to_read_matlab_field(mat, 'subpath', str)
         self.mesh = try_to_read_matlab_field(mat, 'mesh', str)
-
+        self.fname_visu = try_to_read_matlab_field(mat, 'fname_visu', str)
+        
         self.mask_space = matlab_field_to_list(mat, 'mask_space', 1) 
         self.mask_path = matlab_field_to_list(mat, 'mask_path', 1) 
         self.mask_value = matlab_field_to_list(mat, 'mask_value', 1)
@@ -292,7 +294,7 @@ class RegionOfInterest:
                 case "elm_center":
                     return self._mesh.elements_baricenters().value[self._mask]
                 case _:
-                    raise ValueError(f"No mesh or surface was loaded")
+                    raise ValueError("No mesh or surface was loaded")
         else:
             roi_mesh = self.get_roi_mesh()
             match node_type:
@@ -336,7 +338,7 @@ class RegionOfInterest:
                     return Msh()
                 return self._mesh.crop_mesh(elements=elm_indexes)
             case _:
-                raise ValueError(f"No mesh or surface was loaded")
+                raise ValueError("No mesh or surface was loaded")
 
     def write_visualization(self, folder_path: str, base_file_name: str):
         """Writes a visualization of the Region of Interest to a folder
@@ -401,7 +403,7 @@ class RegionOfInterest:
             nodes,
             geo_file_path,
             np.full((len(nodes)), 1),
-            name=f"roi-nodes",
+            name="roi-nodes",
             mode="ba",
         )
         node_view = v.add_view(
@@ -430,7 +432,8 @@ class RegionOfInterest:
 
         match self._mask_type:
             case "node":
-                del self._mesh.nodedata[-1]
+                if len(self._mesh.nodedata):
+                    del self._mesh.nodedata[-1]
             case "elm_center":
                 del self._mesh.elmdata[-1]
 
@@ -496,7 +499,8 @@ class RegionOfInterest:
             surface = surface.join_mesh(surfaces[1])
         self._mesh = surface
         self._mask_type = "node"
-        self._mask = np.zeros((self._mesh.nodes.nr), dtype=np.bool_)
+        #self._mask = np.zeros((self._mesh.nodes.nr), dtype=np.bool_)
+        self._mask = np.ones((self._mesh.nodes.nr), dtype=np.bool_)
 
     def load_mesh(self, mesh: str | Msh | None = None, subpath: str | None = None):
         """Initializes the Region of Interest with a mesh either with a .msh file or a m2m folder.
@@ -527,7 +531,8 @@ class RegionOfInterest:
             raise ValueError(f"mesh or subpath needs to be set (was {mesh}, {subpath})")
 
         self._mask_type = "elm_center"
-        self._mask = np.zeros((self._mesh.elm.nr), dtype=np.bool_)
+        #self._mask = np.zeros((self._mesh.elm.nr), dtype=np.bool_)
+        self._mask = np.ones((self._mesh.elm.nr), dtype=np.bool_)
 
     def apply_surface_mask(
         self,
@@ -591,7 +596,8 @@ class RegionOfInterest:
                 mask_value = [mask_value] * len(mask_path)
 
             if mask_operator is None:
-                mask_operator = "union"
+                #mask_operator = "union"
+                mask_operator = "intersection"
 
             if isinstance(mask_operator, str):
                 mask_operator = [mask_operator] * len(mask_path)
@@ -729,7 +735,8 @@ class RegionOfInterest:
                 mask_value = [mask_value] * len(mask_path)
 
             if mask_operator is None:
-                mask_operator = "union"
+                #mask_operator = "union"
+                mask_operator = "intersection"
 
             if isinstance(mask_operator, str):
                 mask_operator = [mask_operator] * len(mask_path)
@@ -799,7 +806,8 @@ class RegionOfInterest:
             )
 
         if surface_roi_operator is None:
-            surface_roi_operator = "union"
+            #surface_roi_operator = "union"
+            surface_roi_operator = "intersection"
 
         kd_tree = scipy.spatial.cKDTree(self._mesh.elements_baricenters().value)
         index_mask = kd_tree.query_ball_point(
@@ -884,7 +892,8 @@ class RegionOfInterest:
                 roi_sphere_center_space = [roi_sphere_center_space]
 
             if roi_sphere_operator is None:
-                roi_sphere_operator = "union"
+                #roi_sphere_operator = "union"
+                roi_sphere_operator = "intersection"
 
             if isinstance(roi_sphere_operator, str):
                 roi_sphere_operator = [roi_sphere_operator] * len(roi_sphere_center)
@@ -960,7 +969,8 @@ class RegionOfInterest:
             tissues = [tissues]
 
         if tissue_mask_operator is None:
-            tissue_mask_operator = "union"
+            #tissue_mask_operator = "union"
+            tissue_mask_operator = "intersection"
 
         tissues = np.array(tissues)
 
@@ -973,6 +983,16 @@ class RegionOfInterest:
     def invert(self):
         """Inverts the current mask"""
         self._mask = ~self._mask
+        
+    def run(self, cpus=1):
+        """writes visualization for visual control"""
+        if self.fname_visu is None:
+            raise ValueError(
+                    'fname_visu (mesh filename for ROI visualization) has to be set'
+            )
+        folder_path, base_file_name = os.path.split(os.path.abspath(os.path.expanduser(self.fname_visu)))
+        base_file_name = os.path.splitext(base_file_name)[0]
+        self.write_visualization(folder_path, base_file_name)
 
 
 def _init_subject_files(subpath: str | None) -> SubjectFiles:

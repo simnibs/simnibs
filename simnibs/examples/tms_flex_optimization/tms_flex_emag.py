@@ -26,10 +26,10 @@ pos.pos_ydir = 'Cz'
 # Select ROI in which electric field will be evaluated
 roi = tms_opt.add_region_of_interest()
 # Define a ROI on the central gray matter surface(s
-roi.method = "surface"
-roi.surface_type = "central"
+roi.method = 'surface'
+roi.surface_type = 'central'
 # Center of spherical ROI in subject space (in mm)
-roi.roi_sphere_center_space = "subject"
+roi.roi_sphere_center_space = 'subject'
 roi.roi_sphere_center = [-29.90, 1.29, 72.47]
 # Radius of spherical ROI (in mm)
 roi.roi_sphere_radius = 30

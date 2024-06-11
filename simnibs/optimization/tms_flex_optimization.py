@@ -305,7 +305,7 @@ class TmsFlexOptimization:
         self._log_handlers = []
         simnibs_logger.unregister_excepthook()
 
-    def run(self):
+    def run(self, cpus=1):
         """Runs the tms flex optimization"""
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.path_optimization))
@@ -489,7 +489,6 @@ class TmsFlexOptimization:
 
         return mat
 
-    @classmethod
     def read_mat_struct(self, mat):
         """Reads parameters from matlab structure
 
@@ -502,15 +501,15 @@ class TmsFlexOptimization:
         # Datatypes come from the type hints of the instance variables
         types = get_type_hints(TmsFlexOptimization)
         for key, value in self.__dict__.items():
-            if key in mat:
+            if key in mat.dtype.names:
                 setattr(
                     self, key, try_to_read_matlab_field(mat, key, types[key], value)
                 )
 
-        if "direct_args" in mat:
+        if "direct_args" in mat.dtype.names:
             self.direct_args = matlab_struct_to_dict(mat["direct_args"])
 
-        if "l_bfgs_b_args" in mat:
+        if "l_bfgs_b_args" in mat.dtype.names:
             self.l_bfgs_b_args = matlab_struct_to_dict(mat["l_bfgs_b_args"])
 
         # Load all 2d arrays manually (try_to_read_matlab_field will load only array_name[0])
@@ -522,10 +521,10 @@ class TmsFlexOptimization:
         )
 
         # Load all instance variables that are classes
-        if "pos" in mat and mat["pos"].size > 0:
+        if "pos" in mat.dtype.names and mat["pos"].size > 0:
             self.pos = POSITION(mat["pos"][0][0])
 
-        if "roi" in mat and mat["roi"].size > 0:
+        if "roi" in mat.dtype.names and mat["roi"].size > 0:
             self.roi = RegionOfInterest(matlab_sub_struct_to_matlab_struct(mat["roi"]))
 
         return self
@@ -844,6 +843,10 @@ def optimize_distance(
 
     if direct_args is None:
         direct_args = {}
+    else:
+        for k in list(direct_args):
+            if direct_args[k] is None:
+                del direct_args[k]
     direct_args.setdefault("eps", 1e-4)
     direct_args.setdefault("maxiter", 1000)
     direct_args.setdefault("locally_biased", False)
@@ -852,8 +855,16 @@ def optimize_distance(
 
     if l_bfgs_b_args is None:
         l_bfgs_b_args = {}
+    else:
+        for k in list(l_bfgs_b_args):
+            if l_bfgs_b_args[k] is None:
+                del l_bfgs_b_args[k]
     if "options" not in l_bfgs_b_args:
         l_bfgs_b_args["options"] = {}
+    else:
+        for k in list(l_bfgs_b_args["options"]):
+            if l_bfgs_b_args["options"][k] is None:
+                del l_bfgs_b_args["options"][k]       
     l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
