@@ -2031,3 +2031,27 @@ class TestAABBTree:
         assert(tree.any_point_inside(np.array((50,30,25))==False))
         # tree.__del__()
         del tree
+
+class TestGetMinDistanceOnGrid:
+    @pytest.mark.parametrize("tag", [1003, 1004, 1005])
+    @pytest.mark.parametrize("resolution", [1, 2])
+    @pytest.mark.parametrize("offset", [-3.4, -1.2, 0, 1, 4.567])
+    def test_spheres_internal_distance(self, sphere3_msh: mesh_io.Msh, tag, resolution, offset):
+        surface = sphere3_msh.crop_mesh([tag])
+        min_distance_on_grid, grid, M, AABBTree = surface.get_min_distance_on_grid(resolution=resolution, distance_offset=offset)
+
+        radius = np.max(surface.nodes.node_coord[:, 0]) + offset
+        max_internal_distance = np.min(grid) * -1 
+        assert radius - resolution < max_internal_distance and radius + resolution > max_internal_distance
+
+
+    def test_distance_function_on_sphere(self, sphere3_msh: mesh_io.Msh,):
+        surface = sphere3_msh.crop_mesh([1005])
+        min_distance_on_grid, grid, M, AABBTree = surface.get_min_distance_on_grid(resolution=1)
+
+        radius = np.max(surface.nodes.node_coord[:, 0]) 
+        for offset in range(200):
+            distance = min_distance_on_grid(np.array([[offset, 0, 0]]))[0] * -1
+            assert radius - offset - 1.5 < distance and radius - offset + 1.5 > distance
+
+

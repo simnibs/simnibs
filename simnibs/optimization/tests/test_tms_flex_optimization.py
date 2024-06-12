@@ -11,10 +11,12 @@ from simnibs.simulation.onlinefem import FemTargetPointCloud
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
 from simnibs.optimization.tms_flex_optimization import (
+    auto_init_position_from_roi,
     optimize_distance,
     optimize_e_mag,
     TmsFlexOptimization,
 )
+from simnibs.utils.region_of_interest import RegionOfInterest
 
 
 class TestPositionOptimization:
@@ -169,7 +171,7 @@ class TestPositionOptimization:
             small_functional_3_element_coil,
             sphere3_msh,
             coil_affine,
-            np.array([[-5, 5], [-5, 5], [-20, 20]]),
+            coil_translation_ranges = np.array([[-5, 5], [-5, 5], [-20, 20]]),
         )
 
         assert before > after
@@ -328,6 +330,27 @@ class TestEMagOptimization:
 
         assert before > after
         np.testing.assert_allclose(coil_affine, affine_after)
+
+class TestAutoInit:
+    def test_auto_init(self, sphere3_msh):
+        roi = RegionOfInterest()
+        roi._mesh = sphere3_msh
+        roi.method = "volume"
+        roi.roi_sphere_center_space = "subject"
+        roi.roi_sphere_center = [85, 0, 0]
+        roi.roi_sphere_radius = 10
+
+        pos = auto_init_position_from_roi(roi, distance=5)
+
+        matsimnibs = pos.calc_matsimnibs(sphere3_msh)
+        # Radius of sphere is 95, distance is 5, together its 100
+        np.testing.assert_allclose(matsimnibs[:3, 3], [100, 0, 0], atol=1e-3)
+
+        from scipy.spatial.transform import Rotation as R
+        r = R.from_matrix(matsimnibs[:3, :3])
+        rotated = r.apply([[0, 0, 1]])
+        np.testing.assert_allclose(rotated[0], [-1, 0, 0], atol=1e-3)
+
 
 class TestMatlab:
     def test_writ_read_mat_no_deps(self, tmp_path: Path):

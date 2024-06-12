@@ -80,6 +80,8 @@ class TmsFlexOptimization:
     """The method of optimization {"distance", "emag"}"""
     roi: RegionOfInterest
     """The region of interest in which the e field is simulated, method = "emag" """
+    distance: float
+    """The distance at which the coil is supposed to be placed relative to the head"""
     global_translation_ranges: list
     """Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
     global_rotation_ranges: list
@@ -118,6 +120,7 @@ class TmsFlexOptimization:
 
         self.method: str = None
         self.roi: RegionOfInterest = None
+        self.distance: float = 4.0
         self.global_translation_ranges: list = None
         self.global_rotation_ranges: list = None
 
@@ -210,7 +213,9 @@ class TmsFlexOptimization:
         logger.info(f"Optimization Folder: {self.path_optimization}")
 
         if self.pos is None:
-            raise ValueError("No initial position specified")
+            if self.roi is None:
+                raise ValueError("No initial position or ROI specified")
+            self.pos = auto_init_position_from_roi(self.roi, self.distance)
 
         self.pos.eeg_cap = self.eeg_cap
         self.pos._prepare()
@@ -300,7 +305,7 @@ class TmsFlexOptimization:
         self._log_handlers = []
         simnibs_logger.unregister_excepthook()
 
-    def run(self):
+    def run(self, cpus=1):
         """Runs the tms flex optimization"""
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.path_optimization))
@@ -331,6 +336,7 @@ class TmsFlexOptimization:
                 self._coil,
                 self._mesh,
                 self.pos.matsimnibs,
+                self.distance,
                 self._global_translation_ranges,
                 self._global_rotation_ranges,
                 self.dither_skip,
@@ -346,6 +352,7 @@ class TmsFlexOptimization:
                     self._mesh,
                     self._roi,
                     self.pos.matsimnibs,
+                    self.distance,
                     self._global_translation_ranges,
                     self._global_rotation_ranges,
                     self.dither_skip,
@@ -494,15 +501,15 @@ class TmsFlexOptimization:
         # Datatypes come from the type hints of the instance variables
         types = get_type_hints(TmsFlexOptimization)
         for key, value in self.__dict__.items():
-            if key in mat:
+            if key in mat.dtype.names:
                 setattr(
                     self, key, try_to_read_matlab_field(mat, key, types[key], value)
                 )
 
-        if "direct_args" in mat:
+        if "direct_args" in mat.dtype.names:
             self.direct_args = matlab_struct_to_dict(mat["direct_args"])
 
-        if "l_bfgs_b_args" in mat:
+        if "l_bfgs_b_args" in mat.dtype.names:
             self.l_bfgs_b_args = matlab_struct_to_dict(mat["l_bfgs_b_args"])
 
         # Load all 2d arrays manually (try_to_read_matlab_field will load only array_name[0])
@@ -514,10 +521,10 @@ class TmsFlexOptimization:
         )
 
         # Load all instance variables that are classes
-        if "pos" in mat and mat["pos"].size > 0:
+        if "pos" in mat.dtype.names and mat["pos"].size > 0:
             self.pos = POSITION(mat["pos"][0][0])
 
-        if "roi" in mat and mat["roi"].size > 0:
+        if "roi" in mat.dtype.names and mat["roi"].size > 0:
             self.roi = RegionOfInterest(matlab_sub_struct_to_matlab_struct(mat["roi"]))
 
         return self
@@ -550,6 +557,14 @@ class TmsFlexOptimization:
         }
 
         return pprint.pformat(tms_flex_dict, indent=4)
+
+
+def auto_init_position_from_roi(roi: RegionOfInterest, distance: float = 0.0):
+    pos = POSITION()
+    pos.centre = np.mean(roi.get_nodes(), axis=0)
+    pos.pos_ydir = [0, 1, 0]
+    pos.distance = distance
+    return pos
 
 
 def _get_fast_distance_score(
@@ -757,6 +772,7 @@ def optimize_distance(
     coil: TmsCoil,
     head_mesh: Msh,
     affine: npt.NDArray[np.float_],
+    distance: float = 0,
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
     dither_skip: int = 0,
@@ -777,6 +793,8 @@ def optimize_distance(
         The head mesh used in the TMS simulation and the head mesh where the scalp surface is used for coil head intersection
     affine : npt.NDArray[np.float_]
         The affine transformation that is applied to the coil
+    distance : float
+        The distance at which the coil is supposed to be placed relative to the head
     coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
@@ -825,6 +843,10 @@ def optimize_distance(
 
     if direct_args is None:
         direct_args = {}
+    else:
+        for k in list(direct_args):
+            if direct_args[k] is None:
+                del direct_args[k]
     direct_args.setdefault("eps", 1e-4)
     direct_args.setdefault("maxiter", 1000)
     direct_args.setdefault("locally_biased", False)
@@ -833,8 +855,16 @@ def optimize_distance(
 
     if l_bfgs_b_args is None:
         l_bfgs_b_args = {}
+    else:
+        for k in list(l_bfgs_b_args):
+            if l_bfgs_b_args[k] is None:
+                del l_bfgs_b_args[k]
     if "options" not in l_bfgs_b_args:
         l_bfgs_b_args["options"] = {}
+    else:
+        for k in list(l_bfgs_b_args["options"]):
+            if l_bfgs_b_args["options"][k] is None:
+                del l_bfgs_b_args["options"][k]       
     l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
@@ -855,7 +885,7 @@ def optimize_distance(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid()
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil.get_deformation_ranges()
@@ -1146,6 +1176,7 @@ def optimize_e_mag(
     head_mesh: Msh,
     roi: FemTargetPointCloud,
     affine: npt.NDArray[np.float_],
+    distance: float = 0,
     coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
     coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
     dither_skip: int = 0,
@@ -1169,6 +1200,8 @@ def optimize_e_mag(
         Region of interest for the calculation of the e field
     affine : npt.NDArray[np.float_]
         The affine transformation that is applied to the coil
+    distance : float
+        The distance at which the coil is supposed to be placed relative to the head
     coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
@@ -1249,7 +1282,7 @@ def optimize_e_mag(
         target_voxel_distance,
         target_voxel_affine,
         cost_surface_tree,
-    ) = optimization_surface.get_min_distance_on_grid()
+    ) = optimization_surface.get_min_distance_on_grid(distance_offset=distance - 0.5)
     target_voxel_distance_inside = np.minimum(target_voxel_distance, 0) * -1
 
     coil_deformation_ranges = coil_sampled.get_deformation_ranges()

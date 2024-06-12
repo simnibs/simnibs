@@ -2349,13 +2349,17 @@ class Msh:
 
         return np.where(has_far)[0], far
 
-    def get_min_distance_on_grid(self, resolution=1.0, order=3, AABBTree=None):
+    def get_min_distance_on_grid(self, distance_offset=0.0, resolution=1.0, order=3, AABBTree=None):
         """Generates a distance to surface field on a grid
 
         Parameters
         ----------
+        distance_offset : float, optional
+            A distance offset that is subtracted from the actuall distance, by default 0.0 
         resolution : float, optional
             The resolution of the grid, by default 1.0
+        order : int
+            The order of the interpolation for the min_distance_on_grid funktion
         AABBTree : pyAABBTree, optional
             A pre-calculated AABBTree, will be generated if None, by default None
 
@@ -2396,6 +2400,7 @@ class Msh:
         inside = scipy.ndimage.distance_transform_edt(grid)
         outside = scipy.ndimage.distance_transform_edt(1 - grid)
         grid = -inside + outside
+        grid = (grid * resolution) - distance_offset
 
         def min_distance_on_grid(x):
             x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
