@@ -375,6 +375,9 @@ class TmsCoil(TcdElement):
         visualization.visibility = np.unique(visualization.mesh.elm.tag1)
 
         for i, key in enumerate(visualization.mesh.field.keys()):
+            #What is this for? O.O
+            if self.version is not None and self.version.endswith('.o'):
+                continue
             if isinstance(self.elements[i], DipoleElements):
                 visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0)
             elif isinstance(self.elements[i], LineSegmentElements):
