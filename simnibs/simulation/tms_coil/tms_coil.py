@@ -563,7 +563,8 @@ class TmsCoil(TcdElement):
             index_offset = 0 if self.casing is not None else 1
             for i, tag in enumerate(np.unique(casings.elm.tag1)):
                 casing = casings.crop_mesh(tags=[tag])
-
+                if i == 0:
+                    casing = TmsCoil._add_logo(casing)
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
                 casing.elm.tag1[:] = 0
                 if len(idx_inside):
