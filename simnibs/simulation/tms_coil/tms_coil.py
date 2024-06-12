@@ -502,6 +502,9 @@ class TmsCoil(TcdElement):
         infix=''
     ):
         for i, element in enumerate(self.elements):
+            #And here again? *.*
+            if self.version is not None and self.version.endswith('.o'):
+                continue
             points = []
             vectors = []
             if isinstance(element, DipoleElements):
