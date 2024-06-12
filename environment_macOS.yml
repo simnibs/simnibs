@@ -24,6 +24,7 @@ dependencies:
   - mkl
   - packaging
   - zlib
+  - matplotlib
   - pip:
     - simnibs/external/bin/osx/fmm3dpy-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl #because M1 does not like AVX
     - charm_gems==1.3.3
