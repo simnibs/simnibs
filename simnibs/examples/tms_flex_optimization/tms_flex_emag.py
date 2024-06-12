@@ -16,6 +16,9 @@ tms_opt.subpath = 'm2m_ernie'
 tms_opt.path_optimization = 'tms_optimization/'
 # Select the coil model
 tms_opt.fnamecoil = os.path.join('Drakaki_BrainStim_2022', 'MagVenture_MCF-B65.ccd')
+# Desired distance from the coil to the head in [mm] 
+# (standard: 4 mm, as rough estimate of the hair thickness)
+tms_opt.distance = 0
 
 # Select an initial coil position
 pos = tms_opt.add_position()
@@ -25,7 +28,7 @@ pos.pos_ydir = 'Cz'
 
 # Select ROI in which electric field will be evaluated
 roi = tms_opt.add_region_of_interest()
-# Define a ROI on the central gray matter surface(s
+# Define a ROI on the central gray matter surface(s)
 roi.method = 'surface'
 roi.surface_type = 'central'
 # Center of spherical ROI in subject space (in mm)

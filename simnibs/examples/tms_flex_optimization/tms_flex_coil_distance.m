@@ -4,8 +4,6 @@
 %    The coil center will be placed as close as possible to position C1
 %    while avoiding skin intersections
 
-
-
 % Initialize structure
 tms_opt = opt_struct('TmsFlexOptimization');
 % Subject folder

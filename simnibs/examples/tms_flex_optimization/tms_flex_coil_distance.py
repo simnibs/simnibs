@@ -15,6 +15,9 @@ tms_opt.subpath = 'm2m_ernie'
 tms_opt.path_optimization = 'tms_optimization/'
 # Select the coil model
 tms_opt.fnamecoil = os.path.join('Drakaki_BrainStim_2022', 'MagVenture_MMC-140-II.ccd')
+# Desired distance from the coil to the head in [mm] 
+# (standard: 4 mm, as rough estimate of the hair thickness)
+tms_opt.distance = 0
 
 # Select a target position
 pos = tms_opt.add_position()
